@@ -4,3 +4,4 @@ test_argparse
 *.dylib
 *.so
 *rdb
+*swp

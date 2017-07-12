@@ -1,0 +1,43 @@
+#
+#
+#
+# 
+#
+
+---
+DSP: 
+    NAME: PMBUS
+    INFO: DSP for all PMBus devices
+
+    # Properties apply to all platforms
+    COMMON:
+        PARAM:
+            ite: 
+                VALUE: 1
+                INFO: Iterations for the test
+            timeout:
+                VALUE: 15
+                INFO: 
+
+    TEST:
+        NAME: PMBUS
+        INFO: Test PMBus access on each power module
+        PLATFORM:
+            VIDEO: VENICE ROME
+            NIC: NAPLES NICE
+        PRIORITY: NORMAL 
+        PARAM:
+            timeout: 
+                VALUE:
+                    ALL: 30
+                    VIDEO: 60
+                    NAPLES: 90
+                    NAPLES#ROME: 120
+                INFO: Timeout setting for the test
+            mask:
+                VALUE:
+                    ALL: "0xFF"
+                    VIDEO: "0x1F"
+                INFO: Devices bit mask
+
+...
