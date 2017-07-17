@@ -20,6 +20,9 @@ from IPython.terminal.embed import InteractiveShellEmbed
 rds = redis.StrictRedis(host='localhost', port=6379, db=0)
 pp = pprint.PrettyPrinter()
 
+input_path = './dspYaml/'
+
+
 #=========================================================
 # To load yaml file in order
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -97,7 +100,7 @@ def parse_card_list(config_dict, key):
 
 #=========================================================
 # yaml parser
-config_file = "platform_config.yaml"
+config_file = input_path+"platform_config.yaml"
 with open(config_file) as stream:
     try:
         #config_dict = yaml.load(stream)
@@ -106,13 +109,7 @@ with open(config_file) as stream:
         print exc
         sys.exit()
 
-card_list = parse_card_list(config_dict, 'NIC')
-print card_list
-
-card_list = parse_card_list(config_dict, 'NAPLES')
-print card_list
-
-dsp_file = "pmbus.yaml"
+dsp_file = input_path+"pmbus.yaml"
 with open(dsp_file) as stream:
     try:
         #dsp_dict = yaml.load(stream)
@@ -196,7 +193,7 @@ for test in test_list:
             # Test parameter
             param_dict = test_dict['PARAM']
             for param, all_value in param_dict.items():
-                print card, test, param
+                #print card, test, param
                 param_key = fmt_param.format(card, dsp_value, test, param)
                 if all_value['INFO'] != None:
                     param_info = all_value['INFO']
@@ -218,17 +215,19 @@ for test in test_list:
 
 #=========================================================
 # Define redis command format
-fmt_sep = '\n#=========================================================\n'
-fmt_sep_1 = '#----------------------------------\n'
+#fmt_sep = '\n#=========================================================\n'
+#fmt_sep_1 = '#----------------------------------\n'
+fmt_sep = '\n'
+fmt_sep_1 = ''
 
 # DSP: SADD CARD_NAME:DSP DSP_NAME
-fmt_redis_dsp = 'ZADD {}:DSP {}\n'
+fmt_redis_dsp = 'SADD {}:DSP {}\n'
 
 # DSP INFO: SADD CARD_NAME:DSP:INFO DSP_INFO
-fmt_redis_dsp_info = 'ZADD {}:DSP:INFO {} \"{}\"\n'
+fmt_redis_dsp_info = 'SADD {}:DSP:INFO {} \"{}\"\n'
 
 # TEST: SADD CARD_NAME:DSP_NAME:TEST TEST_NAME
-fmt_redis_test = 'ZADD {}:{}:TEST {}\n'
+fmt_redis_test = 'SADD {}:{}:TEST {}\n'
 
 # TEST INFO: HSET CARD_NAME:DSP_NAME:TEST:INFO TEST_NAME TEST_INFO
 fmt_redis_test_info = 'HSET {}:{}:TEST:INFO {} \"{}\"\n'
@@ -237,7 +236,7 @@ fmt_redis_test_info = 'HSET {}:{}:TEST:INFO {} \"{}\"\n'
 fmt_redis_param = 'HSET {}:{}:{}:PARAM {} {}\n'
 
 # PARAM INFO: HSET CARD_NAME:DSP_NAME:TEST_NAME:PARAM PARAM_NAME PARAM_VALUE
-fmt_redis_param_info = 'HSET {}:{}:{}:PARAM:INFO {} {}\n'
+fmt_redis_param_info = 'HSET {}:{}:{}:PARAM:INFO {} \"{}\"\n'
 
 #=========================================================
 # Output to file
