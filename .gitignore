@@ -5,3 +5,4 @@ test_argparse
 *.so
 *rdb
 *swp
+*redis
