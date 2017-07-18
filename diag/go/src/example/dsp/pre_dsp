@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export CARD_NAME="NAPLES"
+export CARD_TYPE="NIC1"
