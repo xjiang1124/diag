@@ -6,3 +6,4 @@ test_argparse
 *rdb
 *swp
 *redis
+bin/
