@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cat NAPLES_PMBUS.redis | redis-cli -h 127.0.0.1
+
