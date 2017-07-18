@@ -221,22 +221,22 @@ fmt_sep = '\n'
 fmt_sep_1 = ''
 
 # DSP: SADD CARD_NAME:DSP DSP_NAME
-fmt_redis_dsp = 'SADD {}:DSP {}\n'
+fmt_redis_dsp = 'SADD DSP:{} {}\n'
 
 # DSP INFO: SADD CARD_NAME:DSP:INFO DSP_INFO
-fmt_redis_dsp_info = 'SADD {}:DSP:INFO {} \"{}\"\n'
+fmt_redis_dsp_info = 'SADD DSP:INFO:{} {} \"{}\"\n'
 
 # TEST: SADD CARD_NAME:DSP_NAME:TEST TEST_NAME
-fmt_redis_test = 'SADD {}:{}:TEST {}\n'
+fmt_redis_test = 'SADD TEST:{}:{} {}\n'
 
 # TEST INFO: HSET CARD_NAME:DSP_NAME:TEST:INFO TEST_NAME TEST_INFO
-fmt_redis_test_info = 'HSET {}:{}:TEST:INFO {} \"{}\"\n'
+fmt_redis_test_info = 'HSET TEST:INFO:{}:{} {} \"{}\"\n'
 
 # PARAM: HSET CARD_NAME:DSP_NAME:TEST_NAME:PARAM PARAM_NAME PARAM_VALUE
-fmt_redis_param = 'HSET {}:{}:{}:PARAM {} {}\n'
+fmt_redis_param = 'HSET PARAM:{}:{}:{} {} {}\n'
 
 # PARAM INFO: HSET CARD_NAME:DSP_NAME:TEST_NAME:PARAM PARAM_NAME PARAM_VALUE
-fmt_redis_param_info = 'HSET {}:{}:{}:PARAM:INFO {} \"{}\"\n'
+fmt_redis_param_info = 'HSET PARAM:INFO:{}:{}:{} {} \"{}\"\n'
 
 #=========================================================
 # Output to file
