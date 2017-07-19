@@ -8,6 +8,7 @@ import (
     "github.com/go-redis/redis"
 )
 
+//========================================================
 // Constant definition
 const (
     // Default timeout setting waiting for test to finish
@@ -18,14 +19,23 @@ const (
     sep = ":"
 )
 
+// Card info
 type CardInfo struct {
     cardName string
     cardType string
     dspName string
 }
 
-var cardInfo CardInfo
+// Define Test hander function type
+type tstFn func(argList []string)uint32
 
+//========================================================
+// Global variables
+var cardInfo CardInfo
+//var funcMap map[string]func(string)
+var funcMap map[string]tstFn
+
+//========================================================
 func CardInfoInit() {
     // Card name and card type are from environment variable
     cardInfo.cardName = os.Getenv("CARD_NAME")
@@ -67,37 +77,56 @@ func DspInfraMainLoop(r *redis.Client) (err error) {
     keyQue := fmt.Sprintf("QUEUE:%s:%s:%s", cardInfo.cardType, cardInfo.cardName, cardInfo.dspName)
 
 
+    iteCount := 0
     // Forever loop should be placed here
+    for {
 
-    // Wait for req from queue till timeout
-    ticker := time.NewTicker(time.Second)
-    i := 0
-    for range ticker.C {
-        testID, err := r.RPop(keyQue).Result()
-        checkRedisErr(err)
-        if testID != "" {
-            fmt.Println("testID", testID, "err", err)
-            break;
+        // Wait for req from queue till timeout
+        ticker := time.NewTicker(time.Second)
+        i := 0
+        var testID string
+        for range ticker.C {
+            testID, err = r.RPop(keyQue).Result()
+            checkRedisErr(err)
+            if testID != "" {
+                fmt.Println("testID", testID, "err", err)
+                break;
+            }
+
+            i++
+            if i >= defaultTimeout {
+                break;
+            }
+        }
+        ticker.Stop()
+
+        iteCount++
+        // Disable for now till main loop implemented
+        // If no test received, move to the next round
+        if testID == "" {
+            //return err
+            continue
         }
 
-        i++ 
-        if i >= defaultTimeout {
-            break;
+        // Match test handle table
+        testHandler := funcMap[testID]
+        if testHandler != nil {
+            testHandler([]string{"he"})
         }
-
+        break;
     }
-    ticker.Stop()
-
-    // Disable for now till main loop implemented
-    // If no test received, move to the next round
-    //if testID == "" {
-    //    continue
-    //}
-
-
-
-    fmt.Println("Done mainloop")
+    fmt.Println("Done mainloop", iteCount)
     return err
+}
+
+func hdl1(argList []string) uint32 {
+    fmt.Println("handle1", argList)
+    return 0
+}
+
+func hdl2(argList []string) uint32 {
+    fmt.Println("handle2", argList)
+    return 0
 }
 
 func main() {
@@ -106,6 +135,10 @@ func main() {
         Password: "", // no password set
         DB:       0,  // use default DB
     })
+
+    funcMap = make(map[string]tstFn)
+    funcMap["test1"] = hdl1
+    funcMap["test2"] = hdl2
 
     CardInfoInit()
     DspInfraInit(r)
