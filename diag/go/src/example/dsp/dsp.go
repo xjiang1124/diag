@@ -34,13 +34,31 @@ func CardInfoInit() {
 }
 
 func checkRedisErr(err error) {
-    if err != nil {
+    if err == redis.Nil {
+        // Key not exist
+    } else if err == nil {
+        // No error happened
+    } else {
         _, fileName, fileLine, _ := runtime.Caller(1)
         fmt.Println("err:", err, "fileName:", fileName, "fileLine", fileLine)
     }
 }
 
 func DspInfraInit(r *redis.Client) (err error) {
+    //========================================================
+    // Define all redis key here
+
+    // DSP key
+    keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.cardType, cardInfo.cardName)
+
+    _, err = r.SAdd(keyDsp, cardInfo.dspName, defaultTimeout*2).Result()
+    checkRedisErr(err)
+
+    return err
+
+}
+
+func DspInfraMainLoop(r *redis.Client) (err error) {
 
     //========================================================
     // Define all redis key here
@@ -78,12 +96,8 @@ func DspInfraInit(r *redis.Client) (err error) {
 
 
 
+    fmt.Println("Done mainloop")
     return err
-}
-
-func DspInfraMain(r *redis.Client) (err error) {
-
-    return nil
 }
 
 func main() {
@@ -92,12 +106,9 @@ func main() {
         Password: "", // no password set
         DB:       0,  // use default DB
     })
-    fmt.Printf("%T\n", r)
-
 
     CardInfoInit()
     DspInfraInit(r)
-
-    DspInfraMain(r)
+    DspInfraMainLoop(r)
 }
 
