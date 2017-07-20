@@ -5,6 +5,8 @@ import (
     "os"
     "time"
     "runtime"
+    "flag"
+    "strings"
     "github.com/go-redis/redis"
 )
 
@@ -12,20 +14,21 @@ import (
 // Constant definition
 const (
     // Default timeout setting waiting for test to finish
-    defaultTimeout = 5
+    defaultTimeout = 30
     // Each DSP should know it own name
     sep = ":"
 )
 
 // Card info
 type CardInfo struct {
+    redisIP string
     cardName string
     cardType string
     dspName string
 }
 
 // Define Test hander function type
-type TestFn func(argList []string)uint32
+type TestFn func(argList []string) int
 
 //========================================================
 // Global variables
@@ -40,6 +43,7 @@ var r *redis.Client
 //========================================================
 func CardInfoInit(dspName string) {
     // Card name and card type are from environment variable
+    cardInfo.redisIP = os.Getenv("REDIS_IP")
     cardInfo.cardName = os.Getenv("CARD_NAME")
     cardInfo.cardType = os.Getenv("CARD_TYPE")
     cardInfo.dspName = dspName
@@ -81,10 +85,21 @@ func DspInfraMainLoop() (err error) {
 
     //========================================================
     // Define all redis key here
-
     // DSP queue to receive test/cmd requests. One per DSP
-    keyQue := fmt.Sprintf("QUEUE:%s:%s:%s", cardInfo.cardType, cardInfo.cardName, cardInfo.dspName)
+    keyQueStr := "QUEUE:%s:%s:%s"
+    keyQue := fmt.Sprintf(keyQueStr, cardInfo.cardType, cardInfo.cardName, cardInfo.dspName)
 
+    // TestID: GET TEST_ID:cardType:dspName:testID testName
+    keyTestIDStr := "TEST_ID:%s:%s:%s"
+    // Test parameter: GET TEST_PARAM:cardType:dspName:testID paramStr
+    keyTestParamStr := "TEST_PARAM:%s:%s:%s"
+
+
+    // Parameter passing, needed for timeout and ite only
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    timeoutPtr := fs.Int("timeout", 30, "Timeout setting for the test")
+    itePtr := fs.Int("ite", 1, "Iterations for the test")
+    var argList []string
 
     iteCount := 0
     // Forever loop should be placed here
@@ -118,24 +133,34 @@ func DspInfraMainLoop() (err error) {
             continue
         }
 
-        // Match test handle table
-        testHandler := FuncMap[testID]
-        if testHandler != nil {
-            testHandler([]string{"he"})
+        // Get test name based on testID
+        keyTestID := fmt.Sprintf(keyTestIDStr, cardInfo.cardType, cardInfo.dspName, testID)
+        testName, err := r.Get(keyTestID).Result()
+        checkRedisErr(err)
+
+        // Get test parameter based on testID
+        keyTestParam := fmt.Sprintf(keyTestParamStr, cardInfo.cardType, cardInfo.dspName, testID)
+        testParam, err := r.Get(keyTestParam).Result()
+        checkRedisErr(err)
+
+        err = fs.Parse(argList)
+        if err != nil {
+            fmt.Println("Parse failed", err)
         }
+        fmt.Println(*timeoutPtr, *itePtr)
+
+        // Match test handle table
+        testHandler := FuncMap[testName]
+        if testHandler == nil {
+            // Ignore non-valid test/cmd entry
+            fmt.Println("No testHandler found", testID, testName)
+            continue
+        }
+        argList = strings.Split(testParam, " ")
+        testHandler(argList)
         break;
     }
     fmt.Println("Done mainloop", iteCount)
     return err
-}
-
-func hdl1(argList []string) uint32 {
-    fmt.Println("handle1", argList)
-    return 0
-}
-
-func hdl2(argList []string) uint32 {
-    fmt.Println("handle2", argList)
-    return 0
 }
 

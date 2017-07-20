@@ -2,6 +2,7 @@ package main
 
 import (
     "fmt"
+    "flag"
     "common/diagEngine"
 )
 
@@ -12,20 +13,27 @@ const (
     dspName = "PMBUS"
 )
 
-func hdl1(argList []string) uint32 {
+func TPmbusPmbusHdl(argList []string) int {
     fmt.Println("handle1", argList)
     return 0
 }
 
-func hdl2(argList []string) uint32 {
-    fmt.Println("handle2", argList)
+func TPmbusIntrHdl(argList []string) int {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    maskPtr := fs.Int("mask", 0xFF, "Devices bit mask")
+
+    err := fs.Parse(argList)
+    if err != nil {
+        fmt.Println("Parse failed", err)
+    }
+    fmt.Println("mask:", *maskPtr)
     return 0
 }
 
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
-    diagEngine.FuncMap["test1"] = hdl1
-    diagEngine.FuncMap["test2"] = hdl2
+    diagEngine.FuncMap["PMBUS"] = TPmbusPmbusHdl
+    diagEngine.FuncMap["INTR"] = TPmbusIntrHdl
 
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
