@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from os import walk
 import errno
 import sys
 import re
@@ -21,7 +22,6 @@ rds = redis.StrictRedis(host='localhost', port=6379, db=0)
 pp = pprint.PrettyPrinter()
 
 input_path = './dspYaml/'
-
 
 #=========================================================
 # To load yaml file in order
@@ -97,6 +97,10 @@ def parse_card_list(config_dict, key):
 
     return card_list
 
+#=========================================================
+
+for (dirpath, dirnames, filenames) in walk(input_path):
+    print filenames
 
 #=========================================================
 # yaml parser
@@ -294,3 +298,120 @@ for dsp_card, dsp in r_dsp_dict.items():
     f.close()
     
 
+#=========================================================
+# Generate dsp main.go
+print "Starting parsing dsp main package"
+
+fmt_header = """package main
+
+import (
+    \"fmt\"
+    \"flag\"
+    \"common/diagEngine\"
+)
+
+//========================================================
+// Constant definition
+const (
+    // Each DSP should know it own name
+    dspName = \"{}\"
+)
+"""
+
+fmt_fileName = "dsp{}.go"
+fmt_testHdl = """
+func {}{}Hdl(argList []string) int {{
+    fs := flag.NewFlagSet(\"FlagSet\", flag.ContinueOnError)
+"""
+
+fmt_testParam = "    {}Ptr := fs.Int(\"{}\", {}, \"Devices bit mask\")\n"
+
+fmt_testParamPrnt = "\"{}\", {}"
+
+fmt_testEnding = """
+
+    err := fs.Parse(argList)
+    if err != nil {{
+        fmt.Println("Parse failed", err)
+    }}
+
+    // To avoid compile error: variable not used
+    fmt.Println({})
+
+    return 0
+}}
+"""
+
+main_1 = """
+func main() {
+    diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
+"""
+   
+fmt_main_testHdl = "    diagEngine.FuncMap[\"{}\"] = {}{}Hdl\n"
+
+main_3 = """
+    diagEngine.CardInfoInit(dspName)
+    diagEngine.DspInfraInit()
+    diagEngine.DspInfraMainLoop()
+}
+"""
+
+
+header = fmt_header.format(dsp)
+fileName = fmt_fileName.format(dsp.lower().title())
+f = open(output_path+fileName, 'w')
+
+f.write(header)
+
+# Parse test handler
+# Since there may be different parameter values for one particular parameter, only pick one
+testHdl_dict = OrderedDict()
+testHdl_param_dict = OrderedDict()
+for test in test_list:
+    testHdl = fmt_testHdl.format(dsp.lower().title(), test.lower().title())
+    f.write(testHdl)
+
+    # save test hanlder for test handler mappinbg in main
+    main_testHdl = fmt_main_testHdl.format(test, dsp.lower().title(), test.lower().title())
+    testHdl_dict[test] = fmt_main_testHdl.format(test, dsp.lower().title(), test.lower().title())
+
+    # Parameter
+    testHdl_param = []
+    param_dict = OrderedDict()
+    testParamPrnt = ""
+    for param_n, value in r_param_dict.items():
+        param_n_l = param_n.split('#')
+        param = param_n_l[4]
+        param_t = param_n_l[3]
+        # Skip parameters timeout and ite since they are processed in diagEngine
+        if param == 'timeout' or param == 'ite':
+            continue
+        if param_t == test:
+            testParam = fmt_testParam.format(param, param, value)
+            param_dict[param] = testParam
+
+    paramCount = 0
+    # Get parameter string
+    for param_p, param_s in param_dict.items():
+        f.write(param_s)
+
+        # Make a print of parameter list
+        ParamPrnt = fmt_testParamPrnt.format(param_p, param_p)
+        if paramCount > 0:
+            testParamPrnt = testParamPrnt + ', '
+        testParamPrnt = testParamPrnt + ParamPrnt
+        paramCount = paramCount + 1
+
+    testEnding = fmt_testEnding.format(testParamPrnt)
+    #testEnding = fmt_testEnding.format("mask")
+    f.write(testEnding)
+
+    #testHdl_param_dict[test] = param_dict
+
+f.write(main_1)
+for _, m_testHdl in testHdl_dict.items(): 
+    f.write(m_testHdl)
+
+f.write(main_3)
+f.close()
+print "Done parsing dsp main package"
