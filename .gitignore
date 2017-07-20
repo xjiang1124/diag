@@ -6,3 +6,6 @@ test_argparse
 *rdb
 *swp
 bin/
+dsp
+goArgParser
+OUTPUT/
