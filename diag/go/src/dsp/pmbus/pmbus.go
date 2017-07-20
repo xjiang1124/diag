@@ -2,7 +2,7 @@ package main
 
 import (
     "fmt"
-    "common/dspInfra"
+    "common/diagEngine"
 )
 
 //========================================================
@@ -23,12 +23,12 @@ func hdl2(argList []string) uint32 {
 }
 
 func main() {
-    dspInfra.FuncMap = make(map[string]dspInfra.TestFn)
-    dspInfra.FuncMap["test1"] = hdl1
-    dspInfra.FuncMap["test2"] = hdl2
+    diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
+    diagEngine.FuncMap["test1"] = hdl1
+    diagEngine.FuncMap["test2"] = hdl2
 
-    dspInfra.CardInfoInit(dspName)
-    dspInfra.DspInfraInit()
-    dspInfra.DspInfraMainLoop()
+    diagEngine.CardInfoInit(dspName)
+    diagEngine.DspInfraInit()
+    diagEngine.DspInfraMainLoop()
 }
 

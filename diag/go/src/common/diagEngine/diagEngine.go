@@ -1,4 +1,4 @@
-package dspInfra
+package diagEngine
 
 import (
     "fmt"
