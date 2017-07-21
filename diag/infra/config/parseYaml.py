@@ -321,60 +321,58 @@ for filename in filenames_true:
     #=========================================================
     # Generate dsp main.go
     print "Starting parsing dsp main package"
-    
+ 
     fmt_header = """package main
-    
-    import (
-        \"fmt\"
-        \"flag\"
-        \"common/diagEngine\"
-    )
-    
-    //========================================================
-    // Constant definition
-    const (
-        // Each DSP should know it own name
-        dspName = \"{}\"
-    )
-    """
+
+import (
+    \"fmt\"
+    \"flag\"
+    \"common/diagEngine\"
+)
+
+//========================================================
+// Constant definition
+const (
+    // Each DSP should know it own name
+    dspName = \"{}\"
+)
+"""
     
     fmt_fileName = "dsp{}.go"
     fmt_testHdl = """
-    func {}{}Hdl(argList []string) int {{
-        fs := flag.NewFlagSet(\"FlagSet\", flag.ContinueOnError)
-    """
+func {}{}Hdl(argList []string) int {{
+    fs := flag.NewFlagSet(\"FlagSet\", flag.ContinueOnError)
+"""
     
     fmt_testParam = "    {}Ptr := fs.Int(\"{}\", {}, \"Devices bit mask\")\n"
     
     fmt_testParamPrnt = "\"{}\", *{}Ptr"
     
     fmt_testEnding = """
-    
-        err := fs.Parse(argList)
-        if err != nil {{
-            fmt.Println("Parse failed", err)
-        }}
-    
-        // To avoid compile error: variable not used
-        fmt.Println({})
-    
-        return 0
+
+    err := fs.Parse(argList)
+    if err != nil {{
+        fmt.Println("Parse failed", err)
     }}
-    """
+
+    // To avoid compile error: variable not used
+    fmt.Println({})
+
+    return 0
+}}
+"""
     
-    main_1 = """
-    func main() {
-        diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
-    """
-       
+    main_1 = """func main() {
+    diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
+"""
+    
     fmt_main_testHdl = "    diagEngine.FuncMap[\"{}\"] = {}{}Hdl\n"
     
     main_3 = """
-        diagEngine.CardInfoInit(dspName)
-        diagEngine.DspInfraInit()
-        diagEngine.DspInfraMainLoop()
-    }
-    """
+    diagEngine.CardInfoInit(dspName)
+    diagEngine.DspInfraInit()
+    diagEngine.DspInfraMainLoop()
+}"""
     
     
     header = fmt_header.format(dsp)
