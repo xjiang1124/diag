@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
     "flag"
+    "time"
     "common/diagEngine"
 )
 
@@ -17,11 +18,10 @@ func PmbusPmbusHdl(argList []string) int {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0xFF, "Devices bit mask")
 
-
     err := fs.Parse(argList)
-    if err != nil {
-        fmt.Println("Parse failed", err)
-    }
+    //if err != nil {
+    //    fmt.Println("Parse failed", err)
+    //}
 
     // To avoid compile error: variable not used
     fmt.Println("mask", *maskPtr)
@@ -41,7 +41,9 @@ func PmbusIntrHdl(argList []string) int {
 
     // To avoid compile error: variable not used
     fmt.Println("mask", *maskPtr)
+    time.Sleep(time.Second*5)
 
+    diagEngine.FuncMsgChan <- "DONE"
     return 0
 }
 func main() {

@@ -40,6 +40,9 @@ var FuncMap map[string]TestFn
 // Redis client
 var r *redis.Client
 
+// Function message channel
+var FuncMsgChan chan string
+
 //========================================================
 func CardInfoInit(dspName string) {
     // Card name and card type are from environment variable
@@ -65,7 +68,7 @@ func DspInfraInit() (err error) {
         Addr:     "localhost:6379",
         Password: "", // no password set
         DB:       0,  // use default DB
-    })  
+    })
 
 
     //========================================================
@@ -143,10 +146,11 @@ func DspInfraMainLoop() (err error) {
         testParam, err := r.Get(keyTestParam).Result()
         checkRedisErr(err)
 
+        argList = strings.Split(testParam, " ")
         err = fs.Parse(argList)
-        if err != nil {
-            fmt.Println("Parse failed", err)
-        }
+        //if err != nil {
+        //    fmt.Println("Parse failed", err)
+        //}
         fmt.Println(*timeoutPtr, *itePtr)
 
         // Match test handle table
@@ -157,8 +161,32 @@ func DspInfraMainLoop() (err error) {
             continue
         }
         argList = strings.Split(testParam, " ")
-        testHandler(argList)
-        break;
+
+        //========================================================
+        // Use go routine to execute test/cmd. Channel is used to communicate 
+        // between go routine and diagEngine. If timeout happens, simply close
+        // the channel and hold dsp from running
+
+        // prepare message channel to function
+        FuncMsgChan = make(chan string)
+
+        // Dispatch to test handler
+        go testHandler(argList)
+
+		// Wait for test handler gets back and check timeout as well
+		select {
+		case funcMsg := <-FuncMsgChan:
+            fmt.Println(funcMsg)
+		case <-time.After(time.Second * time.Duration(*timeoutPtr)):
+            fmt.Println("Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
+            fmt.Println("DSP is in while(1) loop")
+            for {
+			}
+		}
+
+        // Close function message channel after it is done
+        close(FuncMsgChan)
+        //break;
     }
     fmt.Println("Done mainloop", iteCount)
     return err
