@@ -349,15 +349,17 @@ func {}{}Hdl(argList []string) int {{
     fmt_testParamPrnt = "\"{}\", *{}Ptr"
     
     fmt_testEnding = """
-
     err := fs.Parse(argList)
     if err != nil {{
         fmt.Println("Parse failed", err)
     }}
 
     // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
     fmt.Println({})
 
+    // Inform diag engine that test handler is done
+    diagEngine.FuncMsgChan <- "DONE"
     return 0
 }}
 """
@@ -372,7 +374,8 @@ func {}{}Hdl(argList []string) int {{
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()
-}"""
+}
+"""
     
     
     header = fmt_header.format(dsp)
