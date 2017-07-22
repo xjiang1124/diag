@@ -19,9 +19,9 @@ func PmbusPmbusHdl(argList []string) int {
     maskPtr := fs.Int("mask", 0xFF, "Devices bit mask")
 
     err := fs.Parse(argList)
-    //if err != nil {
-    //    fmt.Println("Parse failed", err)
-    //}
+    if err != nil {
+        fmt.Println("Parse failed", err)
+    }
 
     // To avoid compile error: variable not used
     fmt.Println("mask", *maskPtr)

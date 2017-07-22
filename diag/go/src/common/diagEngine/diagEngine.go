@@ -7,6 +7,7 @@ import (
     "runtime"
     "flag"
     "strings"
+    "common/misc"
     "github.com/go-redis/redis"
 )
 
@@ -63,6 +64,19 @@ func checkRedisErr(err error) {
     }
 }
 
+func sepArgList(argList []string, engList []string) (engArgList []string, dspArgList []string) {
+    for i := 0; i < len(argList); i = i+2 {
+        if misc.ContainStr(engList, argList[i]) {
+            engArgList = append(engArgList, argList[i])
+            engArgList = append(engArgList, argList[i+1])
+        } else {
+            dspArgList = append(dspArgList, argList[i])
+            dspArgList = append(dspArgList, argList[i+1])
+        }
+    }
+    return engArgList, dspArgList
+}
+
 func DspInfraInit() (err error) {
     r = redis.NewClient(&redis.Options{
         Addr:     "localhost:6379",
@@ -87,6 +101,9 @@ func DspInfraInit() (err error) {
 func DspInfraMainLoop() (err error) {
 
     //========================================================
+    // parameter needed for diag engine
+    engList := []string {"-timeout", "-ite"}
+
     // Define all redis key here
     // DSP queue to receive test/cmd requests. One per DSP
     keyQueStr := "QUEUE:%s:%s:%s"
@@ -146,11 +163,17 @@ func DspInfraMainLoop() (err error) {
         testParam, err := r.Get(keyTestParam).Result()
         checkRedisErr(err)
 
+        // parameter timeout and ite are use by diag engine. Others are for dsp handlers
+        // To avoid flag.Parse output error message: "flag provided but not defined"
+        // Separate arguement to two part: one that diag engine needs and one for dsp handler
         argList = strings.Split(testParam, " ")
-        err = fs.Parse(argList)
-        //if err != nil {
-        //    fmt.Println("Parse failed", err)
-        //}
+        engArgList, dspArgList := sepArgList(argList, engList)
+        fmt.Println(engArgList, dspArgList)
+
+        err = fs.Parse(engArgList)
+        if err != nil {
+            fmt.Println("Parse failed", err)
+        }
         fmt.Println(*timeoutPtr, *itePtr)
 
         // Match test handle table
@@ -160,7 +183,7 @@ func DspInfraMainLoop() (err error) {
             fmt.Println("No testHandler found", testID, testName)
             continue
         }
-        argList = strings.Split(testParam, " ")
+
 
         //========================================================
         // Use go routine to execute test/cmd. Channel is used to communicate 
@@ -171,7 +194,7 @@ func DspInfraMainLoop() (err error) {
         FuncMsgChan = make(chan string)
 
         // Dispatch to test handler
-        go testHandler(argList)
+        go testHandler(dspArgList)
 
 		// Wait for test handler gets back and check timeout as well
 		select {
