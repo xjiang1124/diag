@@ -79,7 +79,7 @@ func sepArgList(argList []string, engList []string) (engArgList []string, dspArg
 
 func DspInfraInit() (err error) {
     r = redis.NewClient(&redis.Options{
-        Addr:     "localhost:6379",
+        Addr:     cardInfo.redisIP+":6379",
         Password: "", // no password set
         DB:       0,  // use default DB
     })
@@ -88,7 +88,7 @@ func DspInfraInit() (err error) {
     //========================================================
     // Define all redis key here
 
-    // DSP key
+    // DSP key: SADD DSP:cardType:cardName dspName
     keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.cardType, cardInfo.cardName)
 
     _, err = r.SAdd(keyDsp, cardInfo.dspName, defaultTimeout*2).Result()
@@ -106,6 +106,7 @@ func DspInfraMainLoop() (err error) {
 
     // Define all redis key here
     // DSP queue to receive test/cmd requests. One per DSP
+    // RPOP QUEUE:cardType:cardName:dspName
     keyQueStr := "QUEUE:%s:%s:%s"
     keyQue := fmt.Sprintf(keyQueStr, cardInfo.cardType, cardInfo.cardName, cardInfo.dspName)
 
@@ -193,19 +194,23 @@ func DspInfraMainLoop() (err error) {
         // prepare message channel to function
         FuncMsgChan = make(chan string)
 
-        // Dispatch to test handler
-        go testHandler(dspArgList)
+        // Support multiple iterations on test/cmd
+        for ite := 0; ite < *itePtr; ite++ {
+            fmt.Println("Test run #", ite)
+            // Dispatch to test handler
+            go testHandler(dspArgList)
 
-		// Wait for test handler gets back and check timeout as well
-		select {
-		case funcMsg := <-FuncMsgChan:
-            fmt.Println(funcMsg)
-		case <-time.After(time.Second * time.Duration(*timeoutPtr)):
-            fmt.Println("Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
-            fmt.Println("DSP is in while(1) loop")
-            for {
-			}
-		}
+            // Wait for test handler gets back and check timeout as well
+            select {
+            case funcMsg := <-FuncMsgChan:
+                fmt.Println(funcMsg)
+            case <-time.After(time.Second * time.Duration(*timeoutPtr)):
+                fmt.Println("Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
+                fmt.Println("DSP is in while(1) loop")
+                for {
+                }
+            }
+        }
 
         // Close function message channel after it is done
         close(FuncMsgChan)
