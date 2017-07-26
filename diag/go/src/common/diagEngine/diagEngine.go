@@ -8,6 +8,7 @@ import (
     "flag"
     "strings"
     "common/misc"
+    "common/cli"
     "github.com/go-redis/redis"
 )
 
@@ -65,13 +66,11 @@ func checkRedisErr(err error) {
 }
 
 func sepArgList(argList []string, engList []string) (engArgList []string, dspArgList []string) {
-    for i := 0; i < len(argList); i = i+2 {
+    for i := 0; i < len(argList); i = i+1 {
         if misc.ContainStr(engList, argList[i]) {
             engArgList = append(engArgList, argList[i])
-            engArgList = append(engArgList, argList[i+1])
         } else {
             dspArgList = append(dspArgList, argList[i])
-            dspArgList = append(dspArgList, argList[i+1])
         }
     }
     return engArgList, dspArgList
@@ -94,8 +93,10 @@ func DspInfraInit() (err error) {
     _, err = r.SAdd(keyDsp, cardInfo.dspName, defaultTimeout*2).Result()
     checkRedisErr(err)
 
-    return err
+    // Init cli
+    cli.Init("log_"+cardInfo.dspName+".txt")
 
+    return err
 }
 
 func DspInfraMainLoop() (err error) {
@@ -134,7 +135,7 @@ func DspInfraMainLoop() (err error) {
             testID, err = r.RPop(keyQue).Result()
             checkRedisErr(err)
             if testID != "" {
-                fmt.Println("testID", testID, "err", err)
+                cli.Println("info", "testID", testID, "err", err)
                 break;
             }
 
@@ -146,7 +147,7 @@ func DspInfraMainLoop() (err error) {
         ticker.Stop()
 
         iteCount++
-        fmt.Println(keyQue, iteCount)
+        cli.Println("d", keyQue, iteCount)
         // Disable for now till main loop implemented
         // If no test received, move to the next round
         if testID == "" {
@@ -167,21 +168,21 @@ func DspInfraMainLoop() (err error) {
         // parameter timeout and ite are use by diag engine. Others are for dsp handlers
         // To avoid flag.Parse output error message: "flag provided but not defined"
         // Separate arguement to two part: one that diag engine needs and one for dsp handler
-        argList = strings.Split(testParam, " ")
+        argList = strings.Fields(testParam)
         engArgList, dspArgList := sepArgList(argList, engList)
-        fmt.Println(engArgList, dspArgList)
+        cli.Println("i", engArgList, dspArgList)
 
         err = fs.Parse(engArgList)
         if err != nil {
-            fmt.Println("Parse failed", err)
+            cli.Println("e", "Parse failed", err)
         }
-        fmt.Println(*timeoutPtr, *itePtr)
+        cli.Println("i", *timeoutPtr, *itePtr)
 
         // Match test handle table
         testHandler := FuncMap[testName]
         if testHandler == nil {
             // Ignore non-valid test/cmd entry
-            fmt.Println("No testHandler found", testID, testName)
+            cli.Println("i", "No testHandler found", testID, testName)
             continue
         }
 
@@ -196,17 +197,18 @@ func DspInfraMainLoop() (err error) {
 
         // Support multiple iterations on test/cmd
         for ite := 0; ite < *itePtr; ite++ {
-            fmt.Println("Test run #", ite)
+            cli.Println("i", "Test run #", ite)
             // Dispatch to test handler
             go testHandler(dspArgList)
 
             // Wait for test handler gets back and check timeout as well
             select {
             case funcMsg := <-FuncMsgChan:
-                fmt.Println(funcMsg)
+                cli.Println("i", funcMsg)
             case <-time.After(time.Second * time.Duration(*timeoutPtr)):
-                fmt.Println("Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
-                fmt.Println("DSP is in while(1) loop")
+                // In case of timeout, set to infinite loop
+                cli.Println("i", "Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
+                cli.Println("i", "DSP is in while(1) loop")
                 for {
                 }
             }
@@ -216,7 +218,7 @@ func DspInfraMainLoop() (err error) {
         close(FuncMsgChan)
         //break;
     }
-    fmt.Println("Done mainloop", iteCount)
+    cli.Println("i", "Done mainloop", iteCount)
     return err
 }
 
