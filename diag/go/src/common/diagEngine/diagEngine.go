@@ -96,7 +96,8 @@ func DspInfraInit() (err error) {
     checkRedisErr(err)
 
     // Init cli
-    cli.CliInit("log_"+cardInfo.dspName+".txt", true)
+    //cli.CliInit("log_"+cardInfo.dspName+".txt", true)
+    cli.Init()
 
     return err
 }
