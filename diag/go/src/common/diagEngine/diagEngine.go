@@ -9,6 +9,8 @@ import (
     "strings"
     "common/misc"
     "common/cli"
+    //"common/logredis"
+
     "github.com/go-redis/redis"
 )
 
@@ -94,7 +96,7 @@ func DspInfraInit() (err error) {
     checkRedisErr(err)
 
     // Init cli
-    cli.Init("log_"+cardInfo.dspName+".txt")
+    cli.CliInit("log_"+cardInfo.dspName+".txt", true)
 
     return err
 }

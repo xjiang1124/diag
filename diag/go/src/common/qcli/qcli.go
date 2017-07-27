@@ -1,9 +1,14 @@
 /*
-    Package cli provides output functionalities including
+    Package qcli provides output functionalities including
     log/terminal/diag-cli with desired format
+
+    Note: Encountered difficulty on separate redis and regular
+    log output. To implment, complicated coding is needed. Put 
+    this package aside for now. Implement a simple working one 
+    without fancy format first.
  */
 
-package cli
+package qcli
 
 import (
     "fmt"
@@ -11,7 +16,9 @@ import (
     "strings"
     "io"
     "common/misc"
+
     logrus "github.com/Sirupsen/logrus"
+	"common/logredis"
 )
 
 //========================================================
@@ -29,7 +36,7 @@ var logger *logrus.Logger
 var file *os.File
 
 //========================================================
-func Init(fileName string) {
+func CliInit(fileName string, rFlag bool) {
     logger = logrus.New()
 
     if fileName != "" {
@@ -47,6 +54,26 @@ func Init(fileName string) {
         multi := io.MultiWriter(os.Stdout)
         logger.Out = multi
     }
+
+    // If true, hook redis to logrus
+    if rFlag == true {
+		hookConfig := logredis.HookConfig{
+		    Host:   "localhost",
+		    Key:    "my_redis_key",
+		    Format: "v0",
+		    App:    "my_app_name",
+		    Port:   6379,
+		    DB:     0, // optional
+		}
+
+		hook, err := logredis.NewHook(hookConfig)
+		if err == nil {
+		    logrus.AddHook(hook)
+		} else {
+		    logrus.Errorf("logredis error: %q", err)
+		}
+    }
+
     logger.Level = logLvl
 }
 
