@@ -1,9 +1,9 @@
 package main
 
 import (
-    "fmt"
     "flag"
     "common/diagEngine"
+    "common/dcli"
 )
 
 //========================================================
@@ -19,12 +19,12 @@ func PmbusPmbusHdl(argList []string) int {
 
     err := fs.Parse(argList)
     if err != nil {
-        fmt.Println("Parse failed", err)
+        dcli.Println("f", "Parse failed", err)
     }
 
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
-    fmt.Println("mask", *maskPtr)
+    dcli.Println("t", "mask", *maskPtr)
 
     // Inform diag engine that test handler is done
     diagEngine.FuncMsgChan <- "DONE"
@@ -37,12 +37,12 @@ func PmbusIntrHdl(argList []string) int {
 
     err := fs.Parse(argList)
     if err != nil {
-        fmt.Println("Parse failed", err)
+        dcli.Println("f", "Parse failed", err)
     }
 
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
-    fmt.Println("mask", *maskPtr)
+    dcli.Println("t", "mask", *maskPtr)
 
     // Inform diag engine that test handler is done
     diagEngine.FuncMsgChan <- "DONE"
@@ -53,6 +53,7 @@ func main() {
     diagEngine.FuncMap["PMBUS"] = PmbusPmbusHdl
     diagEngine.FuncMap["INTR"] = PmbusIntrHdl
 
+    dcli.Init("log_"+dspName+".txt")
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()

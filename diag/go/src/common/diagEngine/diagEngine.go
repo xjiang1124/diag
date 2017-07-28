@@ -9,7 +9,6 @@ import (
     "strings"
     "common/misc"
     "common/cli"
-    //"common/logredis"
 
     "github.com/go-redis/redis"
 )
@@ -96,17 +95,16 @@ func DspInfraInit() (err error) {
     checkRedisErr(err)
 
     // Init cli
-    //cli.CliInit("log_"+cardInfo.dspName+".txt", true)
-    cli.Init()
+    cli.Init("log_"+cardInfo.dspName+".txt")
 
     return err
 }
+var DshID int = -1
 
 func DspInfraMainLoop() (err error) {
 
     //========================================================
     // parameter needed for diag engine
-    engList := []string {"-timeout", "-ite"}
 
     // Define all redis key here
     // DSP queue to receive test/cmd requests. One per DSP
@@ -124,6 +122,9 @@ func DspInfraMainLoop() (err error) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     timeoutPtr := fs.Int("timeout", 30, "Timeout setting for the test")
     itePtr := fs.Int("ite", 1, "Iterations for the test")
+    dshIDPtr := fs.Int("dshID", 1, "diag Shell ID")
+
+    engList := []string {"-timeout", "-ite", "dshID"}
     var argList []string
 
     iteCount := 0
@@ -179,7 +180,8 @@ func DspInfraMainLoop() (err error) {
         if err != nil {
             cli.Println("e", "Parse failed", err)
         }
-        cli.Println("i", *timeoutPtr, *itePtr)
+        DshID = *dshIDPtr
+        cli.Println("i", *timeoutPtr, *itePtr, DshID)
 
         // Match test handle table
         testHandler := FuncMap[testName]

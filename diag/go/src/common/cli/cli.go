@@ -20,8 +20,15 @@ var (
     Error   *log.Logger
 )
 
-func Init() {
+func Init(fileName string) {
 	multi := io.MultiWriter(os.Stdout)
+    if fileName != "" {
+        file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
+        if err != nil {
+            log.Fatal("Open file failed!", fileName)
+        }
+        multi = io.MultiWriter(os.Stdout, file)
+    }
 
 	var traceHandle io.Writer = multi
 	var infoHandle io.Writer = multi

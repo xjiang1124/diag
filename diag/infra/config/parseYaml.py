@@ -325,9 +325,9 @@ for filename in filenames_true:
     fmt_header = """package main
 
 import (
-    \"fmt\"
     \"flag\"
     \"common/diagEngine\"
+    \"common/dcli\"
 )
 
 //========================================================
@@ -351,12 +351,12 @@ func {}{}Hdl(argList []string) int {{
     fmt_testEnding = """
     err := fs.Parse(argList)
     if err != nil {{
-        fmt.Println("Parse failed", err)
+        dcli.Println("f", "Parse failed", err)
     }}
 
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
-    fmt.Println({})
+    dcli.Println("t", {})
 
     // Inform diag engine that test handler is done
     diagEngine.FuncMsgChan <- "DONE"
@@ -371,6 +371,7 @@ func {}{}Hdl(argList []string) int {{
     fmt_main_testHdl = "    diagEngine.FuncMap[\"{}\"] = {}{}Hdl\n"
     
     main_3 = """
+    dcli.Init("log_"+dspName+".txt")
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()
