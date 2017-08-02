@@ -14,7 +14,7 @@ import (
 )
 
 var (
-    Trace   *log.Logger
+    Debug   *log.Logger
     Info    *log.Logger
     Warning *log.Logger
     Error   *log.Logger
@@ -30,12 +30,12 @@ func Init(fileName string) {
         multi = io.MultiWriter(os.Stdout, file)
     }
 
-	var traceHandle io.Writer = multi
+	var debugHandle io.Writer = multi
 	var infoHandle io.Writer = multi
 	var warningHandle io.Writer = multi
 	var errorHandle io.Writer = multi
 
-	Trace = log.New(traceHandle, "TRACE: ", 0)
+	Debug = log.New(debugHandle, "DEBUG: ", 0)
 
     Info = log.New(infoHandle, "INFO: ", 0)
 
@@ -53,8 +53,8 @@ func Println(lvl string, a...interface{}) (err error) {
     outStr = misc.TrimSuffix(outStr, "]\n")
     outStr = misc.TrimPrefix(outStr, "[")
     switch lvl {
-    case "trace", "t":
-        Trace.Println(outStr)
+    case "debug", "d":
+        Debug.Println(outStr)
     case "info", "i":
         Info.Println(outStr)
     case "warn", "w":
@@ -62,7 +62,7 @@ func Println(lvl string, a...interface{}) (err error) {
     case "error", "e":
         Error.Println(outStr)
     default:
-        Trace.Println(outStr)
+        Debug.Println(outStr)
     }
 
     return nil

@@ -359,7 +359,8 @@ func {}{}Hdl(argList []string) int {{
     dcli.Println("t", {})
 
     // Inform diag engine that test handler is done
-    diagEngine.FuncMsgChan <- "DONE"
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- 0
     return 0
 }}
 """
@@ -378,7 +379,7 @@ func {}{}Hdl(argList []string) int {{
 }
 """
     
-    
+    diagEngineParam = ['timeout', 'ite', 'dshid']
     header = fmt_header.format(dsp)
     fileName = fmt_fileName.format(dsp.lower().title())
     f = open(output_path+fileName, 'w')
@@ -406,7 +407,8 @@ func {}{}Hdl(argList []string) int {{
             param = param_n_l[4]
             param_t = param_n_l[3]
             # Skip parameters timeout and ite since they are processed in diagEngine
-            if param == 'timeout' or param == 'ite':
+            #if param == 'timeout' or param == 'ite':
+            if param in diagEngineParam:
                 continue
             if param_t == test:
                 testParam = fmt_testParam.format(param, param, value)

@@ -44,7 +44,7 @@ var FuncMap map[string]TestFn
 var r *redis.Client
 
 // Function message channel
-var FuncMsgChan chan string
+var FuncMsgChan chan int
 
 //========================================================
 func CardInfoInit(dspName string) {
@@ -91,7 +91,7 @@ func DspInfraInit() (err error) {
     // DSP key: SADD DSP:cardType:cardName dspName
     keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.cardType, cardInfo.cardName)
 
-    _, err = r.SAdd(keyDsp, cardInfo.dspName, defaultTimeout*2).Result()
+    _, err = r.SAdd(keyDsp, cardInfo.dspName).Result()
     checkRedisErr(err)
 
     // Init cli
@@ -109,23 +109,34 @@ func DspInfraMainLoop() (err error) {
     // Define all redis key here
     // DSP queue to receive test/cmd requests. One per DSP
     // RPOP QUEUE:cardType:cardName:dspName
-    keyQueStr := "QUEUE:%s:%s:%s"
-    keyQue := fmt.Sprintf(keyQueStr, cardInfo.cardType, cardInfo.cardName, cardInfo.dspName)
+    keyQueFmt := "QUEUE:%s:%s"
+    keyQue := fmt.Sprintf(keyQueFmt, cardInfo.cardType, cardInfo.dspName)
 
     // TestID: GET TEST_ID:cardType:dspName:testID testName
-    keyTestIDStr := "TEST_ID:%s:%s:%s"
+    keyTestIDFmt := "TEST_ID:%s:%s:%s"
     // Test parameter: GET TEST_PARAM:cardType:dspName:testID paramStr
-    keyTestParamStr := "TEST_PARAM:%s:%s:%s"
+    keyTestParamFmt := "TEST_PARAM:%s:%s:%s"
 
+    // Test history
+    // Success: INCR HIST:cardType:dspName:testName:SUCCESS
+    keyHistSuccFmt := "HIST:%s:%s:%s:SUCCESS"
+    // Fail: INCR HIST:cardType:dspName:testName:FAILURE
+    keyHistFailFmt := "HIST:%s:%s:%s:FAILURE"
+
+    // Test result: SET TEST_RESULT:test_id err_code
+    keyResultFmt := "TEST_RESULT:%s"
 
     // Parameter passing, needed for timeout and ite only
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     timeoutPtr := fs.Int("timeout", 30, "Timeout setting for the test")
     itePtr := fs.Int("ite", 1, "Iterations for the test")
-    dshIDPtr := fs.Int("dshID", 1, "diag Shell ID")
+    dshIDPtr := fs.Int("dshid", 1, "diag Shell ID")
 
-    engList := []string {"-timeout", "-ite", "dshID"}
+    engList := []string {"-timeout", "-ite", "-dshid"}
     var argList []string
+
+    var funcMsg int
+    var histKey string
 
     iteCount := 0
     // Forever loop should be placed here
@@ -160,12 +171,13 @@ func DspInfraMainLoop() (err error) {
         }
 
         // Get test name based on testID
-        keyTestID := fmt.Sprintf(keyTestIDStr, cardInfo.cardType, cardInfo.dspName, testID)
+        keyTestID := fmt.Sprintf(keyTestIDFmt, cardInfo.cardType, cardInfo.dspName, testID)
         testName, err := r.Get(keyTestID).Result()
         checkRedisErr(err)
 
         // Get test parameter based on testID
-        keyTestParam := fmt.Sprintf(keyTestParamStr, cardInfo.cardType, cardInfo.dspName, testID)
+        keyTestParam := fmt.Sprintf(keyTestParamFmt, cardInfo.cardType, cardInfo.dspName, testID)
+        cli.Println("d", keyTestParam)
         testParam, err := r.Get(keyTestParam).Result()
         checkRedisErr(err)
 
@@ -191,14 +203,13 @@ func DspInfraMainLoop() (err error) {
             continue
         }
 
-
         //========================================================
         // Use go routine to execute test/cmd. Channel is used to communicate 
         // between go routine and diagEngine. If timeout happens, simply close
         // the channel and hold dsp from running
 
         // prepare message channel to function
-        FuncMsgChan = make(chan string)
+        FuncMsgChan = make(chan int)
 
         // Support multiple iterations on test/cmd
         for ite := 0; ite < *itePtr; ite++ {
@@ -208,7 +219,7 @@ func DspInfraMainLoop() (err error) {
 
             // Wait for test handler gets back and check timeout as well
             select {
-            case funcMsg := <-FuncMsgChan:
+            case funcMsg = <-FuncMsgChan:
                 cli.Println("i", funcMsg)
             case <-time.After(time.Second * time.Duration(*timeoutPtr)):
                 // In case of timeout, set to infinite loop
@@ -217,6 +228,18 @@ func DspInfraMainLoop() (err error) {
                 for {
                 }
             }
+            // Process test return code
+            if funcMsg == 0 {
+                histKey = fmt.Sprintf(keyHistSuccFmt, cardInfo.cardType, cardInfo.dspName, testName)
+            } else {
+                histKey = fmt.Sprintf(keyHistFailFmt, cardInfo.cardType, cardInfo.dspName, testName)
+            }
+            r.Incr(histKey)
+
+            keyResult := fmt.Sprintf(keyResultFmt, testID)
+            r.Set(keyResult, funcMsg, 0)
+
+            cli.Println("i", "Test Done. testID:", testID, "testName:", testName)
         }
 
         // Close function message channel after it is done

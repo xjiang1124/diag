@@ -27,7 +27,8 @@ func PmbusPmbusHdl(argList []string) int {
     dcli.Println("t", "mask", *maskPtr)
 
     // Inform diag engine that test handler is done
-    diagEngine.FuncMsgChan <- "DONE"
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- 0
     return 0
 }
 
@@ -45,7 +46,8 @@ func PmbusIntrHdl(argList []string) int {
     dcli.Println("t", "mask", *maskPtr)
 
     // Inform diag engine that test handler is done
-    diagEngine.FuncMsgChan <- "DONE"
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- 0
     return 0
 }
 func main() {

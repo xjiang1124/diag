@@ -51,6 +51,9 @@ DSP:
             timeout:
                 VALUE: 15
                 INFO: Test timeout setting 
+            dshid:
+                VALUE: 0
+                INFO: Diag shell ID index
 
     TEST#PMBUS:
         INFO: Test PMBus access on each power module
