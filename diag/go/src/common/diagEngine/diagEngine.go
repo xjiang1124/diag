@@ -94,6 +94,10 @@ func DspInfraInit() (err error) {
     _, err = r.SAdd(keyDsp, cardInfo.dspName).Result()
     checkRedisErr(err)
 
+    // Card dict
+    _, err = r.HSet("CARD_DICT", cardInfo.cardType, cardInfo.cardName).Result()
+    checkRedisErr(err)
+
     // Init cli
     cli.Init("log_"+cardInfo.dspName+".txt")
 
