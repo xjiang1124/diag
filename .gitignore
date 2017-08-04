@@ -8,3 +8,4 @@ test_argparse
 bin/
 goArgParser
 OUTPUT/
+*pyc

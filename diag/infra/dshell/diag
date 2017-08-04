@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import redis
+import logging
+from time import sleep
+import argparse
+
+from IPython import embed
+from traitlets.config.loader import Config
+from IPython.terminal.prompts import Prompts, Token
+from IPython.terminal.embed import InteractiveShellEmbed
+
+from diagEngineHost import diagEngineHost
+
+#==========================================================
+parser = argparse.ArgumentParser(description="Diagnostic inteface")
+parser.add_argument("-v", "--verbose", action="store_true")
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-s", "--shell", action="store_true", help="Get into diag shell")
+group.add_argument("-r", "--runtest", action="store_true", help="Run test")
+parser.add_argument("-c", "--cardname", help="Target card name, e.g. NIC1", type=str, default='')
+parser.add_argument("-d", "--dspname", help="Target DSP name, e.g. PMBUS", type=str, default='')
+parser.add_argument("-t", "--testname", help="Target test name, e.g. INTR", type=str, default='')
+parser.add_argument("-p", "--parameter", help="Test Parameter, e.g. \"timeout=10 mask=0x1F\"", type=str, default='')
+args = parser.parse_args()
+
+# if no arguement specified
+if (len(sys.argv) == 1):
+    parser.print_help()
+    sys.exit()
+
+#==========================================================
+diaghost = diagEngineHost()
+
+#==========================================================
+# Start inter active mode
+if args.shell == True:
+    dshid = diaghost.dshid
+    promptStr = 'DiagSH[{}]'
+    prompt = promptStr.format(dshid)
+    
+    class MyPrompt(Prompts):
+        def in_prompt_tokens(self, cli=None):
+            return [(Token.Prompt, prompt)]
+        def out_prompt_tokens(self, cli=None):
+            return [(Token.Prompt, prompt)]
+    
+    try:
+        get_ipython
+    except NameError:
+        banner  ='Entering Diag Shell'
+        exit_msg = 'Exiting Diag Shell'
+        cfg = Config()
+        prompt_config = cfg.TerminalInteractiveShell.prompts_class
+        prompt_config.in_template = 'DiagSH: '
+    
+    else:
+        banner = '*** Nested DiagSHELL ***'
+        exit_msg = '*** Back in main DiagSHELL ***'
+    
+    ipshell = InteractiveShellEmbed(banner1=banner, exit_msg=exit_msg)
+    
+    ipshell.prompts = MyPrompt(ipshell)
+    
+    ipshell()
+    sys.exit()
+
+# Convert input parameter string to 
+def convertParam(param):
+    paramList = dict()
+    paramList1 = param.split()
+    for item in paramList1:
+        paramkv = item.split('=')
+        paramList[paramkv[0]] = paramkv[1]
+    return paramList
+
+if args.runtest == True:
+    paramList = convertParam(args.parameter)
+    print paramList
+    diaghost.runTest(args.cardname, args.dspname, args.testname, paramList)
+    sys.exit()
