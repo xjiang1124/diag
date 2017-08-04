@@ -78,6 +78,5 @@ def convertParam(param):
 
 if args.runtest == True:
     paramList = convertParam(args.parameter)
-    print paramList
     diaghost.runTest(args.cardname, args.dspname, args.testname, paramList)
     sys.exit()

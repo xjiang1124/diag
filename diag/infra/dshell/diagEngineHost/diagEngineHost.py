@@ -52,10 +52,6 @@ class diagEngineHost:
         logging.basicConfig(format=FORMAT)
         self.logger.setLevel(logging.DEBUG)
 
-    #==========================================================
-    def temp(self):
-        print 'temp'
-
     def getBrdName(self, cardNm):
         brdNm = self.r.hget(self.cardDictKey, cardNm)
         return brdNm
@@ -66,7 +62,6 @@ class diagEngineHost:
         if (cardNm=='' and dspNm=='' and testNm=='') or \
            (cardNm!='' and dspNm=='' and testNm!=''):
             message = messageFmt.format(cardNm, dspNm, testNm)
-            print cardNm=='', dspNm=='', testNm==''
             self.logger.error(message)
             return -1
     
@@ -81,7 +76,6 @@ class diagEngineHost:
         else:
             # One DSP only
             dspList = [dspNm]
-        print dspList
     
         # Get test list
         tests = []
@@ -105,6 +99,7 @@ class diagEngineHost:
         for dftParam in dftParamList:
             dftParamValue = self.r.hget(paramKeyStr, dftParam)
             paramDict[dftParam] = dftParamValue
+        paramDict['dshid'] = self.dshid
     
         # Apply user setting to param list
         for p, v in param.items():
@@ -120,7 +115,7 @@ class diagEngineHost:
         testList = self.parseCardInfo(cardNm, dspNm, testNm)
         if testList == -1:
             return -1
-        print testList
+        #print testList
         
         paramKey = '{}:{}:{}'
         paramDict = dict()
@@ -132,7 +127,7 @@ class diagEngineHost:
             else:
                 testParamDict = self.parseTestParam(test[0], test[1], test[2])
             paramDict[paramKeyStr] = testParamDict
-        print paramDict
+        #print paramDict
     
         # Compose test entries
         testL = []
@@ -148,7 +143,6 @@ class diagEngineHost:
             paramFmt = ' -{}={}'
             for paramN, paramV in testParamDict.items():
                 paramStr = paramStr+paramFmt.format(paramN, paramV)
-            paramStr = paramStr+paramFmt.format('dshid', self.dshid)
     
             # Leave an entry for testID and test result
             testL.append([cardN, dspN, testN, 'testId', paramStr, None])
@@ -177,6 +171,7 @@ class diagEngineHost:
         self.r.lpush(testQueKeyStr, testId)
 
     def dispatchTestList (self, testList):
+        print '=== Test started ==='
         for test in testList:
             self.dispatchTest(test)
 
@@ -214,7 +209,7 @@ class diagEngineHost:
     
     def showTestResult (self, testList):
         testResultFmt = '{:6} {:10} {:10} {:>10}'
-        print 'All tests finished'
+        print '=== All tests finished ==='
         print '----------------- Test Result -----------------'
         testResultStr = testResultFmt.format('CARD', 'DSP', 'TEST', 'RESULT')
         print testResultStr
@@ -223,16 +218,31 @@ class diagEngineHost:
                 testR = 'PASS'
             else:
                 testR = "FAIL"
-            testResultStr = testResultFmt.format(test[0], test[1], test[2], test[5])
+            testResultStr = testResultFmt.format(test[0], test[1], test[2], testR)
             print testResultStr
         print '--------------- Test Result Done --------------'
     
+    def showTestList(self, testList):
+        testResultFmt = '{:<6} {:8} {:10} {:10} {}'
+        print '----------------- Test List -----------------'
+        testResultStr = testResultFmt.format('IDX', 'CARD', 'DSP', 'TEST', 'PARAM')
+        print testResultStr
+        idx = 0
+        for test in testList:
+            testResultStr = testResultFmt.format(idx, test[0], test[1], test[2], test[4])
+            print testResultStr
+            idx = idx+1
+        print '--------------- Test List Done --------------'
+
+
     def runTest (self, cardName='', dspName='', testName='', param=dict()):
     
         testList = self.parseTestInfo(cardName, dspName, testName, param)
         if testList == -1:
             return -1
     
+        self.showTestList(testList)
+
         self.dispatchTestList(testList)
     
         self.waitForTestFinish(testList)
