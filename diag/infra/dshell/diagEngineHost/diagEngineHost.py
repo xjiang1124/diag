@@ -214,7 +214,7 @@ class diagEngineHost:
         testResultStr = testResultFmt.format('CARD', 'DSP', 'TEST', 'RESULT')
         print testResultStr
         for test in testList:
-            if test[5] == 0:
+            if test[5] == '0':
                 testR = 'PASS'
             else:
                 testR = "FAIL"
@@ -223,7 +223,7 @@ class diagEngineHost:
         print '--------------- Test Result Done --------------'
     
     def showTestList(self, testList):
-        testResultFmt = '{:<6} {:8} {:10} {:10} {}'
+        testResultFmt = '{:<6} {:10} {:10} {:10} {}'
         print '----------------- Test List -----------------'
         testResultStr = testResultFmt.format('IDX', 'CARD', 'DSP', 'TEST', 'PARAM')
         print testResultStr
