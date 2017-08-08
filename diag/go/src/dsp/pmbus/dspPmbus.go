@@ -2,8 +2,11 @@ package main
 
 import (
     "flag"
+    "fmt"
+
     "common/diagEngine"
     "common/dcli"
+    "common/i2c"
 )
 
 //========================================================
@@ -44,6 +47,12 @@ func PmbusIntrHdl(argList []string) int {
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
     dcli.Println("t", "mask", *maskPtr)
+
+    fmt.Println("I2C fmt")
+    dcli.Println("d", "I2C!!!")
+    var readData [4]uint
+    ic := i2c.NewI2c(3)
+    ic.Read(2, 3, &readData[0], 4)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
