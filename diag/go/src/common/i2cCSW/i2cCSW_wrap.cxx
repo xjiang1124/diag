@@ -8,9 +8,9 @@
  * interface file instead.
  * ----------------------------------------------------------------------------- */
 
-// source: ../../common/i2c/i2c.i
+// source: ../../common/i2cCSW/i2cCSW.i
 
-#define SWIGMODULE i2c
+#define SWIGMODULE i2cCSW
 
 #ifdef __cplusplus
 /* SwigValueWrapper is described in swig.swg */
@@ -166,8 +166,8 @@ template <typename T> T SwigValueInit() {
 
 
 
-typedef long long intgo;
-typedef unsigned long long uintgo;
+typedef int intgo;
+typedef unsigned int uintgo;
 
 
 
@@ -227,13 +227,13 @@ static void Swig_free(void* p) {
 }
 
 
-#include "i2c.h"
+#include "i2cCSW.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void _wrap_Swig_free_i2c_3b2501dbc6abdc62(void *_swig_go_0) {
+void _wrap_Swig_free_i2cCSW_bf9d99c9d8ac4c22(void *_swig_go_0) {
   void *arg1 = (void *) 0 ;
   
   arg1 = *(void **)&_swig_go_0; 
@@ -243,47 +243,22 @@ void _wrap_Swig_free_i2c_3b2501dbc6abdc62(void *_swig_go_0) {
 }
 
 
-I2c *_wrap_new_I2c_i2c_3b2501dbc6abdc62(intgo _swig_go_0) {
+intgo _wrap_Read_i2cCSW_bf9d99c9d8ac4c22(intgo _swig_go_0, intgo _swig_go_1, intgo *_swig_go_2, intgo _swig_go_3) {
   int arg1 ;
-  I2c *result = 0 ;
-  I2c *_swig_go_result;
-  
-  arg1 = (int)_swig_go_0; 
-  
-  result = (I2c *)new I2c(arg1);
-  *(I2c **)&_swig_go_result = (I2c *)result; 
-  return _swig_go_result;
-}
-
-
-intgo _wrap_I2c_Read_i2c_3b2501dbc6abdc62(I2c *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo *_swig_go_3, intgo _swig_go_4) {
-  I2c *arg1 = (I2c *) 0 ;
   int arg2 ;
-  int arg3 ;
-  I2c::uint32 *arg4 = (I2c::uint32 *) 0 ;
-  int arg5 ;
+  int *arg3 = (int *) 0 ;
+  int arg4 ;
   int result;
   intgo _swig_go_result;
   
-  arg1 = *(I2c **)&_swig_go_0; 
+  arg1 = (int)_swig_go_0; 
   arg2 = (int)_swig_go_1; 
-  arg3 = (int)_swig_go_2; 
-  arg4 = *(I2c::uint32 **)&_swig_go_3; 
-  arg5 = (int)_swig_go_4; 
+  arg3 = *(int **)&_swig_go_2; 
+  arg4 = (int)_swig_go_3; 
   
-  result = (int)(arg1)->Read(arg2,arg3,arg4,arg5);
+  result = (int)Read(arg1,arg2,arg3,arg4);
   _swig_go_result = result; 
   return _swig_go_result;
-}
-
-
-void _wrap_delete_I2c_i2c_3b2501dbc6abdc62(I2c *_swig_go_0) {
-  I2c *arg1 = (I2c *) 0 ;
-  
-  arg1 = *(I2c **)&_swig_go_0; 
-  
-  delete arg1;
-  
 }
 
 

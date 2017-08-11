@@ -6,8 +6,18 @@ import (
 
     "common/diagEngine"
     "common/dcli"
-    "common/i2c"
+
+    //"unsafe"
+    //"common/i2cCSW"
+    //"common/i2c"
 )
+
+// #cgo CFLAGS: -I../../common/i2cc
+// #cgo LDFLAGS: ../../../pkg/linux_amd64/common/i2c.a
+// #include <stdlib.h>
+// #include "../../common/i2cc/i2c.h"
+import "C"
+
 
 //========================================================
 // Constant definition
@@ -50,9 +60,34 @@ func PmbusIntrHdl(argList []string) int {
 
     fmt.Println("I2C fmt")
     dcli.Println("d", "I2C!!!")
-    var readData [4]uint
-    ic := i2c.NewI2c(3)
-    ic.Read(2, 3, &readData[0], 4)
+
+    //var readData int 
+    //rd := C.int(readData)
+    rd := [4]C.int {1, 2, 3, 4}
+    C.I2cRead(2, 3, &rd[0], 4)
+    dcli.Println("d", rd)
+    C.I2cWrite(2, 3, &rd[0], 4)
+
+    var readData [4]int
+    readData[0] = int(rd[0])
+    dcli.Println("d", readData)
+
+    //var readData[4] int 
+    //rdp :=(*[4]int)(unsafe.Pointer(&readData[0]))
+    ////defer C.free(unsafe.Pointer(rdp))
+    //C.I2cRead(2, 3, rdp, 4)
+
+    // go to C
+    //var readData int
+    //i2cCSW.Read(2, 3, &readData, 4)
+
+    // go to C++ class
+    //var readData[4] int
+    //i2c := i2c.NewI2c()
+    //i2c.Read(2, 3, &readData[0], 2)
+    //dcli.Println("d", readData)
+    //readData = [4]int{1,2,3,4}
+    //i2c.Write(2, 3, &readData[0], 4)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
