@@ -7,6 +7,7 @@ import (
     "fmt"
     "os"
     "strconv"
+    "encoding/json"
 
     "common/cli"
     "common/misc"
@@ -18,8 +19,11 @@ import (
 // redis client
 var r *redis.Client
 
-func Init(fileName string) {
-    cli.Init(fileName)
+// Output mode
+var outputMode int
+
+func Init(fileName string, mode int) {
+    cli.Init(fileName, mode)
 
     redisIP := os.Getenv("REDIS_IP")
     r = redis.NewClient(&redis.Options{
@@ -27,6 +31,7 @@ func Init(fileName string) {
         Password:   "",
         DB:         0,
     })
+    outputMode = mode
 }
 
 func Println(lvl string, a...interface{}) (err error) {
@@ -37,6 +42,22 @@ func Println(lvl string, a...interface{}) (err error) {
     // Remove the extra stuff
     outStr = misc.TrimSuffix(outStr, "]\n")
     outStr = misc.TrimPrefix(outStr, "[")
+
+    cardInfo := diagEngine.GetCardInfo()
+    cardPre := cardInfo.CardType+"#"+cardInfo.CardName
+    // Structural output
+    if (outputMode == 1) {
+        var dat map[string]interface{}
+        outStr = cli.FmtJsonOut(outStr)
+        outStrByte := []byte(outStr)
+        json.Unmarshal(outStrByte, &dat)
+        //dat["CARD"] = diagEngine.CardInfo.CardType+"#"+diagEngine.CardInfo.CardName
+        dat["CARD"] = cardInfo.CardType+"#"+cardInfo.CardName
+        b, _ := json.Marshal(dat)
+        outStr = fmt.Sprintln(string(b))
+    } else {
+        outStr = "["+cardPre+"]"+" ["+cli.TStamp()+"] " + outStr
+    }
 
     r.LPush("dshbuf:"+strconv.Itoa(diagEngine.DshID), outStr)
 

@@ -6,6 +6,7 @@ import (
 
     "common/diagEngine"
     "common/dcli"
+    "config"
 
     //"unsafe"
     //"common/i2cCSW"
@@ -99,7 +100,7 @@ func main() {
     diagEngine.FuncMap["PMBUS"] = PmbusPmbusHdl
     diagEngine.FuncMap["INTR"] = PmbusIntrHdl
 
-    dcli.Init("log_"+dspName+".txt")
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()

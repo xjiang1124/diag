@@ -7,6 +7,8 @@ import (
     "runtime"
     "flag"
     "strings"
+
+    "config"
     "common/misc"
     "common/cli"
 
@@ -25,8 +27,8 @@ const (
 // Card info
 type CardInfo struct {
     redisIP string
-    cardName string
-    cardType string
+    CardName string
+    CardType string
     dspName string
 }
 
@@ -46,12 +48,19 @@ var r *redis.Client
 // Function message channel
 var FuncMsgChan chan int
 
+// DShell I
+var DshID int = -1
+
 //========================================================
+func GetCardInfo() CardInfo {
+    return cardInfo
+}
+
 func CardInfoInit(dspName string) {
     // Card name and card type are from environment variable
     cardInfo.redisIP = os.Getenv("REDIS_IP")
-    cardInfo.cardName = os.Getenv("CARD_NAME")
-    cardInfo.cardType = os.Getenv("CARD_TYPE")
+    cardInfo.CardName = os.Getenv("CARD_NAME")
+    cardInfo.CardType = os.Getenv("CARD_TYPE")
     cardInfo.dspName = dspName
 }
 
@@ -88,22 +97,21 @@ func DspInfraInit() (err error) {
     //========================================================
     // Define all redis key here
 
-    // DSP key: SADD DSP:cardType:cardName dspName
-    keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.cardType, cardInfo.cardName)
+    // DSP key: SADD DSP:CardType:CardName dspName
+    keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.CardType, cardInfo.CardName)
 
     _, err = r.SAdd(keyDsp, cardInfo.dspName).Result()
     checkRedisErr(err)
 
     // Card dict
-    _, err = r.HSet("CARD_DICT", cardInfo.cardType, cardInfo.cardName).Result()
+    _, err = r.HSet("CARD_DICT", cardInfo.CardType, cardInfo.CardName).Result()
     checkRedisErr(err)
 
     // Init cli
-    cli.Init("log_"+cardInfo.dspName+".txt")
+    cli.Init("log_"+cardInfo.dspName+".txt", config.OutputMode)
 
     return err
 }
-var DshID int = -1
 
 func DspInfraMainLoop() (err error) {
 
@@ -112,19 +120,19 @@ func DspInfraMainLoop() (err error) {
 
     // Define all redis key here
     // DSP queue to receive test/cmd requests. One per DSP
-    // RPOP QUEUE:cardType:cardName:dspName
+    // RPOP QUEUE:CardType:CardName:dspName
     keyQueFmt := "QUEUE:%s:%s"
-    keyQue := fmt.Sprintf(keyQueFmt, cardInfo.cardType, cardInfo.dspName)
+    keyQue := fmt.Sprintf(keyQueFmt, cardInfo.CardType, cardInfo.dspName)
 
-    // TestID: GET TEST_ID:cardType:dspName:testID testName
+    // TestID: GET TEST_ID:CardType:dspName:testID testName
     keyTestIDFmt := "TEST_ID:%s:%s:%s"
-    // Test parameter: GET TEST_PARAM:cardType:dspName:testID paramStr
+    // Test parameter: GET TEST_PARAM:CardType:dspName:testID paramStr
     keyTestParamFmt := "TEST_PARAM:%s:%s:%s"
 
     // Test history
-    // Success: INCR HIST:cardType:dspName:testName:SUCCESS
+    // Success: INCR HIST:CardType:dspName:testName:SUCCESS
     keyHistSuccFmt := "HIST:%s:%s:%s:SUCCESS"
-    // Fail: INCR HIST:cardType:dspName:testName:FAILURE
+    // Fail: INCR HIST:CardType:dspName:testName:FAILURE
     keyHistFailFmt := "HIST:%s:%s:%s:FAILURE"
 
     // Test result: SET TEST_RESULT:test_id err_code
@@ -145,7 +153,6 @@ func DspInfraMainLoop() (err error) {
     iteCount := 0
     // Forever loop should be placed here
     for {
-
         // Wait for req from queue till timeout
         ticker := time.NewTicker(time.Second)
         i := 0
@@ -175,12 +182,12 @@ func DspInfraMainLoop() (err error) {
         }
 
         // Get test name based on testID
-        keyTestID := fmt.Sprintf(keyTestIDFmt, cardInfo.cardType, cardInfo.dspName, testID)
+        keyTestID := fmt.Sprintf(keyTestIDFmt, cardInfo.CardType, cardInfo.dspName, testID)
         testName, err := r.Get(keyTestID).Result()
         checkRedisErr(err)
 
         // Get test parameter based on testID
-        keyTestParam := fmt.Sprintf(keyTestParamFmt, cardInfo.cardType, cardInfo.dspName, testID)
+        keyTestParam := fmt.Sprintf(keyTestParamFmt, cardInfo.CardType, cardInfo.dspName, testID)
         cli.Println("d", keyTestParam)
         testParam, err := r.Get(keyTestParam).Result()
         checkRedisErr(err)
@@ -194,7 +201,7 @@ func DspInfraMainLoop() (err error) {
 
         err = fs.Parse(engArgList)
         if err != nil {
-            cli.Println("e", "Parse failed", err)
+            cli.Println("e", "PARSE FAILED!", err)
         }
         DshID = *dshIDPtr
         cli.Println("i", *timeoutPtr, *itePtr, DshID)
@@ -217,6 +224,7 @@ func DspInfraMainLoop() (err error) {
 
         // Support multiple iterations on test/cmd
         for ite := 0; ite < *itePtr; ite++ {
+            cli.Println("i", "=== TEST STARTED === testID:", testID, "testName:", testName)
             cli.Println("i", "Test run #", ite)
             // Dispatch to test handler
             go testHandler(dspArgList)
@@ -234,16 +242,16 @@ func DspInfraMainLoop() (err error) {
             }
             // Process test return code
             if funcMsg == 0 {
-                histKey = fmt.Sprintf(keyHistSuccFmt, cardInfo.cardType, cardInfo.dspName, testName)
+                histKey = fmt.Sprintf(keyHistSuccFmt, cardInfo.CardType, cardInfo.dspName, testName)
             } else {
-                histKey = fmt.Sprintf(keyHistFailFmt, cardInfo.cardType, cardInfo.dspName, testName)
+                histKey = fmt.Sprintf(keyHistFailFmt, cardInfo.CardType, cardInfo.dspName, testName)
             }
             r.Incr(histKey)
 
             keyResult := fmt.Sprintf(keyResultFmt, testID)
             r.Set(keyResult, funcMsg, 0)
 
-            cli.Println("i", "Test Done. testID:", testID, "testName:", testName)
+            cli.Println("i", "=== TEST DONE === testID:", testID, "testName:", testName)
         }
 
         // Close function message channel after it is done

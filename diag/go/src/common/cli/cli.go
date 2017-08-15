@@ -9,6 +9,9 @@ import (
     "os"
     "io"
     "log"
+    "time"
+    "strings"
+    "encoding/json"
 
     "common/misc"
 )
@@ -20,7 +23,16 @@ var (
     Error   *log.Logger
 )
 
-func Init(fileName string) {
+type OutputFmt struct {
+    timeStamp int
+    outStr int
+}
+
+var OutputMode int
+
+func Init(fileName string, mode int) {
+    OutputMode = mode
+
 	multi := io.MultiWriter(os.Stdout)
     if fileName != "" {
         file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
@@ -35,13 +47,42 @@ func Init(fileName string) {
 	var warningHandle io.Writer = multi
 	var errorHandle io.Writer = multi
 
-	Debug = log.New(debugHandle, "DEBUG: ", 0)
+	Debug = log.New(debugHandle,    "[DEBUG]:   ", 0)
 
-    Info = log.New(infoHandle, "INFO: ", 0)
+    Info = log.New(infoHandle,      "[INFO]:    ", 0)
 
-    Warning = log.New(warningHandle, "WARNING: ", 0)
+    Warning = log.New(warningHandle,"[WARNING]: ", 0)
 
-    Error = log.New(errorHandle, "ERROR: ", 0)
+    Error = log.New(errorHandle,    "[ERROR]:   ", 0)
+}
+
+func unixMilli(t time.Time) int64 {
+        return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+}
+
+func makeTimestampMilli() int64 {
+        return unixMilli(time.Now())
+}
+
+func TStamp() string {
+	m := makeTimestampMilli()
+    timeStr := fmt.Sprintln(time.Unix(m/1e3, (m%1e3)*int64(time.Millisecond)/int64(time.Nanosecond)))
+    timeStrs := strings.Split(timeStr, " ")
+
+    return timeStrs[0]+"-"+timeStrs[1]
+}
+
+func FmtJsonOut(outStr string) string {
+    //m := OutputFmt{TStamp(), outStr}
+    //m := map[string]string{"timestamp": "12345", "outStr": "outStrO"}
+    m := make(map[string]string)
+    m["timestamp"] = TStamp()
+    m["LOG"] = outStr
+    b, _ := json.Marshal(m)
+
+    jsonOut := fmt.Sprintln(string(b))
+    fmt.Println(jsonOut)
+    return jsonOut
 }
 
 // Println outputs per desired log level
@@ -52,6 +93,16 @@ func Println(lvl string, a...interface{}) (err error) {
     // Remove the extra stuff
     outStr = misc.TrimSuffix(outStr, "]\n")
     outStr = misc.TrimPrefix(outStr, "[")
+
+    timeStr := TStamp()
+
+    // Control output for special format
+    if (OutputMode == 1) {
+        outStr = FmtJsonOut(outStr)
+    } else {
+        outStr = "["+timeStr+"]"+" "+outStr
+    }
+
     switch lvl {
     case "debug", "d":
         Debug.Println(outStr)
