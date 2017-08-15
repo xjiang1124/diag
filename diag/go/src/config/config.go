@@ -1,5 +1,5 @@
 package config
 
 const (
-    OutputMode = 0
+    OutputMode = 1
 )

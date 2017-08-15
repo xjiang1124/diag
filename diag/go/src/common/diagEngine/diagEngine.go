@@ -97,6 +97,8 @@ func DspInfraInit() (err error) {
     //========================================================
     // Define all redis key here
 
+    //========================================================
+    // Define all redis key here
     // DSP key: SADD DSP:CardType:CardName dspName
     keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.CardType, cardInfo.CardName)
 
@@ -110,7 +112,56 @@ func DspInfraInit() (err error) {
     // Init cli
     cli.Init("log_"+cardInfo.dspName+".txt", config.OutputMode)
 
+    registerDSP()
+
     return err
+}
+
+func registerDSP () {
+    keyDspFmt := "EXP:DSP:%s:%s:%s"
+    keyCardFmt := "EXP:CARD:%s:%s"
+
+    keyDsp := fmt.Sprintf(keyDspFmt, cardInfo.CardType, cardInfo.CardName, cardInfo.dspName)
+    keyCard := fmt.Sprintf(keyCardFmt, cardInfo.CardType, cardInfo.CardName)
+
+    // Create key entries
+    _, err := r.Set(keyDsp, 1, 0).Result()
+    checkRedisErr(err)
+    _, err = r.Set(keyCard, 1, 0).Result()
+    checkRedisErr(err)
+
+    // Set expiration
+    tout := time.Second *time.Duration(defaultTimeout*2)
+    _, err = r.Expire(keyDsp, tout).Result()
+    checkRedisErr(err)
+    _, err = r.Expire(keyCard, tout).Result()
+    checkRedisErr(err)
+
+    // Set NON-EXPIRATION keys to support missing DSP/Card 
+    keyDsp = fmt.Sprintf("NON"+keyDspFmt, cardInfo.CardType, cardInfo.CardName, cardInfo.dspName)
+    keyCard = fmt.Sprintf("NON"+keyCardFmt, cardInfo.CardType, cardInfo.CardName)
+
+    // Create key entries
+    _, err = r.Set(keyDsp, 1, 0).Result()
+    checkRedisErr(err)
+    _, err = r.Set(keyCard, 1, 0).Result()
+    checkRedisErr(err)
+
+}
+
+func renewDSP (timeout int) {
+    keyDspFmt := "EXP:DSP:%s:%s:%s"
+    keyCardFmt := "EXP:CARD:%s:%s"
+
+    keyDsp := fmt.Sprintf(keyDspFmt, cardInfo.CardType, cardInfo.CardName, cardInfo.dspName)
+    keyCard := fmt.Sprintf(keyCardFmt, cardInfo.CardType, cardInfo.CardName)
+
+    // Set expiration
+    tout := time.Second * time.Duration(timeout+defaultTimeout*2)
+    _, err := r.Expire(keyDsp, tout).Result()
+    checkRedisErr(err)
+    _, err = r.Expire(keyCard, tout).Result()
+    checkRedisErr(err)
 }
 
 func DspInfraMainLoop() (err error) {
@@ -134,6 +185,8 @@ func DspInfraMainLoop() (err error) {
     keyHistSuccFmt := "HIST:%s:%s:%s:SUCCESS"
     // Fail: INCR HIST:CardType:dspName:testName:FAILURE
     keyHistFailFmt := "HIST:%s:%s:%s:FAILURE"
+    // Timeout: INCR HIST:CardType:dspName:testName:TIMEOUT
+    keyHistTimeoutFmt := "HIST:%s:%s:%s:TIMEOUT"
 
     // Test result: SET TEST_RESULT:test_id err_code
     keyResultFmt := "TEST_RESULT:%s"
@@ -151,12 +204,16 @@ func DspInfraMainLoop() (err error) {
     var histKey string
 
     iteCount := 0
+    stopOnErrEn := 0
+    stopOnErrFlag := 0
+    i := 0
+    var testID string
     // Forever loop should be placed here
     for {
+        renewDSP(0)
         // Wait for req from queue till timeout
         ticker := time.NewTicker(time.Second)
-        i := 0
-        var testID string
+        i = 0
         for range ticker.C {
             testID, err = r.RPop(keyQue).Result()
             checkRedisErr(err)
@@ -174,10 +231,27 @@ func DspInfraMainLoop() (err error) {
 
         iteCount++
         cli.Println("d", keyQue, iteCount)
-        // Disable for now till main loop implemented
+
         // If no test received, move to the next round
         if testID == "" {
             //return err
+            continue
+        }
+
+        // Get stop_on_error setting
+        stopOnErrLvl, err := r.Get("STOP_ON_ERROR").Result()
+        checkRedisErr(err)
+        if (stopOnErrLvl == "" || stopOnErrLvl == "0") {
+            stopOnErrFlag = 0
+            stopOnErrEn = 0
+        } else {
+            stopOnErrFlag = 1
+        }
+
+        // In case of stop_on_error, return a skip signature
+        if (stopOnErrEn == 1) {
+            keyResult := fmt.Sprintf(keyResultFmt, testID)
+            r.Set(keyResult, 0xBEEF, 0)
             continue
         }
 
@@ -206,6 +280,7 @@ func DspInfraMainLoop() (err error) {
         DshID = *dshIDPtr
         cli.Println("i", *timeoutPtr, *itePtr, DshID)
 
+
         // Match test handle table
         testHandler := FuncMap[testName]
         if testHandler == nil {
@@ -224,6 +299,9 @@ func DspInfraMainLoop() (err error) {
 
         // Support multiple iterations on test/cmd
         for ite := 0; ite < *itePtr; ite++ {
+            // Renew DSP expiration based on timeout of the test
+            renewDSP(*timeoutPtr)
+
             cli.Println("i", "=== TEST STARTED === testID:", testID, "testName:", testName)
             cli.Println("i", "Test run #", ite)
             // Dispatch to test handler
@@ -232,9 +310,11 @@ func DspInfraMainLoop() (err error) {
             // Wait for test handler gets back and check timeout as well
             select {
             case funcMsg = <-FuncMsgChan:
-                cli.Println("i", funcMsg)
             case <-time.After(time.Second * time.Duration(*timeoutPtr)):
                 // In case of timeout, set to infinite loop
+                histKey = fmt.Sprintf(keyHistTimeoutFmt, cardInfo.CardType, cardInfo.dspName, testName)
+                r.Incr(histKey)
+
                 cli.Println("i", "Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
                 cli.Println("i", "DSP is in while(1) loop")
                 for {
@@ -252,6 +332,12 @@ func DspInfraMainLoop() (err error) {
             r.Set(keyResult, funcMsg, 0)
 
             cli.Println("i", "=== TEST DONE === testID:", testID, "testName:", testName)
+
+            // Check stop_on_error
+            if (stopOnErrFlag > 0 && funcMsg != 0) {
+                stopOnErrEn = 1
+                break;
+            }
         }
 
         // Close function message channel after it is done

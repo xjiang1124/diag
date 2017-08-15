@@ -4,10 +4,12 @@
 package dcli
 
 import (
+    "encoding/json"
     "fmt"
     "os"
+    "runtime"
+    "strings"
     "strconv"
-    "encoding/json"
 
     "common/cli"
     "common/misc"
@@ -42,6 +44,16 @@ func Println(lvl string, a...interface{}) (err error) {
     // Remove the extra stuff
     outStr = misc.TrimSuffix(outStr, "]\n")
     outStr = misc.TrimPrefix(outStr, "[")
+
+    switch lvl {
+    case "debug", "d":
+        // Debug print, give file and line number
+        _, fn, line, _ := runtime.Caller(1)
+        fnArr := strings.Split(fn, "/")
+        fnOnly := fnArr[len(fnArr)-1]
+        outStr = fmt.Sprintln(fnOnly, line, outStr)
+    default:
+    }
 
     cardInfo := diagEngine.GetCardInfo()
     cardPre := cardInfo.CardType+"#"+cardInfo.CardName

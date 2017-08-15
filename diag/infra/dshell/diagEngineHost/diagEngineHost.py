@@ -52,6 +52,9 @@ class diagEngineHost:
         logging.basicConfig(format=FORMAT)
         self.logger.setLevel(logging.DEBUG)
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.r.execute_command("QUIT")
+
     def getBrdName(self, cardNm):
         brdNm = self.r.hget(self.cardDictKey, cardNm)
         return brdNm
@@ -216,6 +219,8 @@ class diagEngineHost:
         for test in testList:
             if test[5] == '0':
                 testR = 'PASS'
+            elif test[5] == '48879': # skip signature
+                testR = 'SKIP'
             else:
                 testR = "FAIL"
             testResultStr = testResultFmt.format(test[0], test[1], test[2], testR)
@@ -248,6 +253,19 @@ class diagEngineHost:
         self.waitForTestFinish(testList)
         self.showTestResult(testList)
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.r.execute_command("QUIT")
+    def setStopOnErr (self, stopOnErr):
+        key = "STOP_ON_ERROR"
+        if stopOnErr == 0:
+            stopOnErrV = 0
+            print "Stop_on_error disabled"
+        else:
+            stopOnErrV = 1
+            print "Stop_on_error enabled"
+        self.r.set(key, stopOnErrV)
+
+    def showCard (self):
+        key = "EXP:CARD*"
+        cards = self.r.keys(key)
+        print cards
+        return 0
 
