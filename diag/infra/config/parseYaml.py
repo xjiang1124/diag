@@ -73,7 +73,6 @@ def parse_card_list(config_dict, key):
 
     return card_list
 
-
 #=========================================================
 # Delete all files in the given directory
 # Input: target folder
@@ -101,9 +100,9 @@ fmt_dsp = '{}#DSP'
 fmt_dsp_info = '{}#DSP#INFO'
 
 # CARD_NAME#TEST#TEST_NAME
-fmt_test = '{}#TEST#{}'
+fmt_test = '{}#{}#{}'
 # CARD_NAME#TEST#INFO#TEST_NAME
-fmt_test_info = '{}#TEST#INFO#{}'
+fmt_test_info = '{}#{}#INFO#{}'
 
 # CARD_NAME#PARAM#DSP_NAME#TEST_NAME#PARAM_NAME
 fmt_param = '{}#PARAM#{}#{}#{}'
@@ -130,8 +129,10 @@ filenames_true = filter(r.match, filenames)
 for filename in filenames_true:
 
     # bypass config.yaml since it is already loaded
-    if filename == "platform_config.yaml": 
+    if filename == "platform_config.yaml":
         continue
+
+    print "====", "Processing", filename, "===="
 
     #=========================================================
     dsp_file = input_path+filename
@@ -149,16 +150,18 @@ for filename in filenames_true:
     r_dsp_info_dict = OrderedDict()
     r_test_dict = OrderedDict()
     r_test_info_dict = OrderedDict()
-    r_param_dict = OrderedDict()
-    r_param_info_dict = OrderedDict()
+    r_test_param_dict = OrderedDict()
+    r_test_param_info_dict = OrderedDict()
+    r_test_list_dict = OrderedDict()
     
     # Get all test entries
-    r = re.compile('TEST#.*')
+    r = re.compile('(TEST)|(CMD)#.*')
     test_pre_list = filter(r.match, dsp_dict['DSP'].keys()) 
     test_list = []
     for test_pre in test_pre_list:
         test_list.append(test_pre.split('#')[1])
-    
+        r_test_list_dict[test_pre.split('#')[1]] = test_pre.split('#')[0]
+
     # Get all card entries of this dsp
     all_card_list = parse_card_list(config_dict, 'ALL')
     
@@ -166,11 +169,12 @@ for filename in filenames_true:
     param_common_dict = dsp_dict['DSP']['COMMON']['PARAM']
     
     for test in test_list:
+        test_type = r_test_list_dict[test]
         #print test
-        test_dict = dsp_dict['DSP']['TEST#'+test]
+        test_dict = dsp_dict['DSP'][test_type+'#'+test]
         # Iterate on each platform. 
         # Final output is per card_name
-        pf_dict = dsp_dict['DSP']['TEST#'+test]['PLATFORM']
+        pf_dict = dsp_dict['DSP'][test_type+'#'+test]['PLATFORM']
         for c_type in pf_dict.keys():
             if pf_dict[c_type] == None:
                 continue
@@ -194,13 +198,13 @@ for filename in filenames_true:
                 r_dsp_info_dict[dsp_info_key] = dsp_info_value
     
                 # Test
-                test_key = fmt_test.format(card, test)
+                test_key = fmt_test.format(card, test_type, test)
                 test_value = test
                 r_test_dict[test_key] = test_value
     
                 # Test info
-                test_key_info = fmt_test_info.format(card, test)
-                test_info_value = dsp_dict['DSP']['TEST#'+test]['INFO']
+                test_key_info = fmt_test_info.format(card, test_type, test)
+                test_info_value = dsp_dict['DSP'][test_type+'#'+test]['INFO']
                 r_test_info_dict[test_key] = test_info_value
     
                 # Apply parameter setting from COMMON section
@@ -209,11 +213,11 @@ for filename in filenames_true:
                 for param, param_v in param_common_dict.items():
                     param_key = fmt_param.format(card, dsp_value, test, param)
                     param_value = param_v['VALUE']
-                    r_param_dict[param_key] = param_value
+                    r_test_param_dict[param_key] = param_value
                     #print card, test, param_key, param_value
     
                     param_value = param_v['INFO']
-                    r_param_info_dict[param_key] = param_value
+                    r_test_param_info_dict[param_key] = param_value
     
                 # Test parameter
                 param_dict = test_dict['PARAM']
@@ -222,21 +226,21 @@ for filename in filenames_true:
                     param_key = fmt_param.format(card, dsp_value, test, param)
                     if all_value['INFO'] != None:
                         param_info = all_value['INFO']
-                        r_param_info_dict[param_key] = param_info
+                        r_test_param_info_dict[param_key] = param_info
                         #print param_info
     
                     for value_card, value_value in all_value['VALUE'].items():
                         param_value = value_value
                         # adopt setting in case of 'ALL'
                         if value_card == 'ALL': 
-                            r_param_dict[param_key] = param_value
+                            r_test_param_dict[param_key] = param_value
                         else:
                             # to support mutiple card with '#'
                             p_cards = value_card.split('#')
                             for p_card in p_cards:
                                 p_card_list = parse_card_list(config_dict, p_card)
                                 if card in p_card_list:
-                                    r_param_dict[param_key] = param_value
+                                    r_test_param_dict[param_key] = param_value
     
     #=========================================================
     # Define redis command format
@@ -252,10 +256,10 @@ for filename in filenames_true:
     fmt_redis_dsp_info = 'SADD DSP:INFO:{} {} \"{}\"\n'
     
     # TEST: SADD CARD_NAME:DSP_NAME:TEST TEST_NAME
-    fmt_redis_test = 'SADD TEST:{}:{} {}\n'
+    fmt_redis_test = 'SADD {}:{}:{} {}\n'
     
     # TEST INFO: HSET CARD_NAME:DSP_NAME:TEST:INFO TEST_NAME TEST_INFO
-    fmt_redis_test_info = 'HSET TEST:INFO:{}:{} {} \"{}\"\n'
+    fmt_redis_test_info = 'HSET {}:INFO:{}:{} {} \"{}\"\n'
     
     # PARAM: HSET CARD_NAME:DSP_NAME:TEST_NAME:PARAM PARAM_NAME PARAM_VALUE
     fmt_redis_param = 'HSET PARAM:{}:{}:{} {} {}\n'
@@ -286,20 +290,21 @@ for filename in filenames_true:
         # TEST
         # loop through test_dict and find tests under the card
         for test_card, test in r_test_dict.items():
+            test_type = r_test_list_dict[test]
             card_t = test_card.split('#')[0]
             if card == card_t:
                 #print test, card
                 f.write(fmt_sep)
-                output_str = fmt_redis_test.format(card, dsp, test)
+                output_str = fmt_redis_test.format(test_type, card, dsp, test)
                 f.write(output_str)
     
                 # TEST INFO
-                test_info = r_test_info_dict[card+'#TEST#'+test]
-                output_str = fmt_redis_test_info.format(card, dsp, test, test_info)
+                test_info = r_test_info_dict[card+'#'+test_type+'#'+test]
+                output_str = fmt_redis_test_info.format(test_type, card, dsp, test, test_info)
                 f.write(output_str)
     
                 # PARAM
-                for param_card, param_v in r_param_dict.items():
+                for param_card, param_v in r_test_param_dict.items():
                     card_p = param_card.split('#')[0]
                     test_p = param_card.split('#')[3]
                     param_n = param_card.split('#')[4]
@@ -309,7 +314,7 @@ for filename in filenames_true:
                         output_str = fmt_redis_param.format(card, dsp, test, param_n, param_v)
                         f.write(output_str)
     
-                        param_i = r_param_info_dict[card+'#PARAM#'+dsp+'#'+test+'#'+param_n]
+                        param_i = r_test_param_info_dict[card+'#PARAM#'+dsp+'#'+test+'#'+param_n]
                         output_str = fmt_redis_param_info.format(card, dsp, test, param_n, param_i)
                         f.write(output_str)
     
@@ -402,7 +407,7 @@ func {}{}Hdl(argList []string) int {{
         testHdl_param = []
         param_dict = OrderedDict()
         testParamPrnt = ""
-        for param_n, value in r_param_dict.items():
+        for param_n, value in r_test_param_dict.items():
             param_n_l = param_n.split('#')
             param = param_n_l[4]
             param_t = param_n_l[3]
@@ -439,3 +444,5 @@ func {}{}Hdl(argList []string) int {{
     f.write(main_3)
     f.close()
     print "Done parsing dsp main package"
+    
+    print "====", "Done", filename, "====\n"

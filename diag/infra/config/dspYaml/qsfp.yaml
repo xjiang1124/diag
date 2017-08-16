@@ -1,0 +1,84 @@
+#
+# DSP YAML Configuration Rules
+#
+# PARAM under COMMON apply to all tests/cmds as default setting. If the value is 
+# redefined in TEST/CMD section, previous default is overwritten by the new value.
+#
+# For each parameter entry, "VALUE" and "INFO" fields are mandatory. INFO can be
+# empty though.
+#
+# Parameter value convention
+# 1. "ALL", platform name, and individual card name are allowed
+# 2. "ALL" applies the setting to all cards in "PLATFORM"
+# 3. If platform name is specified, setting applies to all cards under the specific
+#    DSP. 
+# 4. Multiple card names can be used on the same setting separated by "#"
+# 5. Previous setting is overwritting by later ones, e.g. NAPLES timeout first got 
+#    set to 30 and change to 60 after evaluating the next line.
+#    timeout:
+#       VALUE:
+#           ALL:30
+#           NAPLES:60
+#
+# PRIORTY:
+# Three levels of priority are supported
+# 1. SYS_EXC: system wide exclusive. Only the particular test is allowed to run 
+#    through out entire systems (e.g., amoung all NIC cards).
+# 2. CARD_EXC: card level exclusive. Only the particular test can be outstanding
+#    whin the host card.
+# 3. NORMAL: test can run with other tests.
+#
+# Remarks:
+# 1. Do not use the same name between platform and card. Parser will get confused
+# 2. Use quotes on hex numbers (as string) since python converts raw hex value to a
+#    integer.
+# 3. "ALL" is reserved phrase. If used with platform, it means every card under the
+#    particular card type. If used with parameter, it means parameter setting applies
+#    to all cards defined under "PLATFORM" section.
+#
+
+---
+DSP: 
+    NAME: QSFP
+    INFO: DSP for QSFP interface
+
+    # Properties apply to all platforms
+    COMMON:
+        PARAM:
+            ite: 
+                VALUE: 1
+                INFO: Iterations for the test
+            timeout:
+                VALUE: 30
+                INFO: Test timeout setting 
+            dshid:
+                VALUE: 0
+                INFO: Diag shell ID index
+
+    TEST#I2C:
+        INFO: Test QSFP I2C bus
+        PLATFORM:
+            NIC: NAPLES
+        PRIORITY: NORMAL 
+        PARAM:
+            timeout: 
+                VALUE:
+                    ALL: 120
+                INFO: Timeout setting for the test
+            mask:
+                VALUE:
+                    ALL: "0x3"
+                INFO: Devices bit mask
+
+    CMD#laseren:
+        INFO: Enable optical module laser
+        PLATFORM:
+            NIC: ALL
+        PRIORITY: NORMAL
+        PARAM:
+            inst:
+                VALUE:
+                    ALL: 0
+                INFO: Devices instance index
+
+...
