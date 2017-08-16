@@ -1,7 +1,9 @@
 package main
 
 import (
+    "config"
     "flag"
+
     "common/diagEngine"
     "common/dcli"
 )
@@ -55,7 +57,7 @@ func main() {
     diagEngine.FuncMap["I2C"] = QsfpI2CHdl
     diagEngine.FuncMap["laseren"] = QsfpLaserenHdl
 
-    dcli.Init("log_"+dspName+".txt")
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()

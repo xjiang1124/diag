@@ -330,7 +330,9 @@ for filename in filenames_true:
     fmt_header = """package main
 
 import (
+    \"config\"
     \"flag\"
+
     \"common/diagEngine\"
     \"common/dcli\"
 )
@@ -377,7 +379,7 @@ func {}{}Hdl(argList []string) int {{
     fmt_main_testHdl = "    diagEngine.FuncMap[\"{}\"] = {}{}Hdl\n"
     
     main_3 = """
-    dcli.Init("log_"+dspName+".txt")
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()
