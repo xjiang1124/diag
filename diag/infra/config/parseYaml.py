@@ -220,6 +220,11 @@ for filename in filenames_true:
                     r_test_param_info_dict[param_key] = param_value
     
                 # Test parameter
+
+                # Allow PARAM section to be empty
+                if test_dict['PARAM'] == None:
+                    continue
+
                 param_dict = test_dict['PARAM']
                 for param, all_value in param_dict.items():
                     #print card, test, param
@@ -345,7 +350,7 @@ const (
 )
 """
     
-    fmt_fileName = "dsp{}.go"
+    fmt_fileName = "{}.go"
     fmt_testHdl = """
 func {}{}Hdl(argList []string) int {{
     fs := flag.NewFlagSet(\"FlagSet\", flag.ContinueOnError)
@@ -388,7 +393,7 @@ func {}{}Hdl(argList []string) int {{
     
     diagEngineParam = ['timeout', 'ite', 'dshid']
     header = fmt_header.format(dsp)
-    fileName = fmt_fileName.format(dsp.lower().title())
+    fileName = fmt_fileName.format(dsp.lower())
     f = open(output_path+fileName, 'w')
     
     f.write(header)
