@@ -1,6 +1,11 @@
 package errType
 
-const (
-    Success         = 0
-    Fail            = -1
+const(
+    // INFO_GENERAL
+    Success              = 0
+    Fail                 = -1
+    // INFO_DIAGMGR
+    Skip                 = 100
+    Timeout              = 101
+    Invalidtest          = 102
 )

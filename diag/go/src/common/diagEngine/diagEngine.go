@@ -8,9 +8,10 @@ import (
     "flag"
     "strings"
 
-    "config"
-    "common/misc"
     "common/cli"
+    "common/errType"
+    "common/misc"
+    "config"
 
     "github.com/go-redis/redis"
 )
@@ -230,7 +231,7 @@ func DspInfraMainLoop() (err error) {
         ticker.Stop()
 
         iteCount++
-        cli.Println("d", keyQue, iteCount)
+        cli.Println("i", "Hearbeat", iteCount)
 
         // If no test received, move to the next round
         if testID == "" {
@@ -251,7 +252,7 @@ func DspInfraMainLoop() (err error) {
         // In case of stop_on_error, return a skip signature
         if (stopOnErrEn == 1) {
             keyResult := fmt.Sprintf(keyResultFmt, testID)
-            RedisClient.Set(keyResult, 0xBEEF, 0)
+            RedisClient.Set(keyResult, errType.Skip, 0)
             continue
         }
 
@@ -286,6 +287,8 @@ func DspInfraMainLoop() (err error) {
         if testHandler == nil {
             // Ignore non-valid test/cmd entry
             cli.Println("i", "No testHandler found", testID, testName)
+            keyResult := fmt.Sprintf(keyResultFmt, testID)
+            RedisClient.Set(keyResult, errType.Skip, 0)
             continue
         }
 
@@ -328,9 +331,6 @@ func DspInfraMainLoop() (err error) {
             }
             RedisClient.Incr(histKey)
 
-            keyResult := fmt.Sprintf(keyResultFmt, testID)
-            RedisClient.Set(keyResult, funcMsg, 0)
-
             cli.Println("i", "=== TEST DONE === testID:", testID, "testName:", testName)
 
             // Check stop_on_error
@@ -339,6 +339,9 @@ func DspInfraMainLoop() (err error) {
                 break;
             }
         }
+
+        keyResult := fmt.Sprintf(keyResultFmt, testID)
+        RedisClient.Set(keyResult, funcMsg, 0)
 
         // Close function message channel after it is done
         close(FuncMsgChan)

@@ -11,8 +11,9 @@ import (
     "log"
     "os"
     "runtime"
-    "time"
+    "strconv"
     "strings"
+    "time"
 
     "common/misc"
 )
@@ -106,7 +107,7 @@ func Println(lvl string, a...interface{}) (err error) {
             fnArr = strings.Split(fn, "/")
             fnOnly = fnArr[len(fnArr)-1]
         }
-        outStr = fmt.Sprintln(fnOnly, line, outStr)
+        outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
     default:
     }
 

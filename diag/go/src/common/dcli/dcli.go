@@ -51,7 +51,7 @@ func Println(lvl string, a...interface{}) (err error) {
         _, fn, line, _ := runtime.Caller(1)
         fnArr := strings.Split(fn, "/")
         fnOnly := fnArr[len(fnArr)-1]
-        outStr = fmt.Sprintln(fnOnly, line, outStr)
+        outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
     default:
     }
 

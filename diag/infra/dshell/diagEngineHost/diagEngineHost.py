@@ -3,6 +3,7 @@ import sys
 import redis
 import logging
 from time import sleep
+from errType import errType
 
 #==========================================================
 # Class implementation
@@ -44,6 +45,8 @@ class diagEngineHost:
         self.r = redis.StrictRedis(host=redisIP, port=6379, db=0)
 
         self.dshid = self.r.incr("DSHID")
+
+        self.errType = errType()
 
         #==========================================================
         # Logger init
@@ -212,18 +215,19 @@ class diagEngineHost:
             print dspOutput
     
     def showTestResult (self, testList):
-        testResultFmt = '{:6} {:10} {:10} {:>10}'
+        testResultFmt = '{:6} {:10} {:10} {:10}'
         print '=== All tests finished ==='
         print '----------------- Test Result -----------------'
         testResultStr = testResultFmt.format('CARD', 'DSP', 'TEST', 'RESULT')
         print testResultStr
         for test in testList:
-            if test[5] == '0':
-                testR = 'PASS'
-            elif test[5] == '48879': # skip signature
-                testR = 'SKIP'
-            else:
-                testR = "FAIL"
+            #if test[5] == '0':
+            #    testR = 'PASS'
+            #elif test[5] == '48879': # skip signature
+            #    testR = 'SKIP'
+            #else:
+            #    testR = "FAIL"
+            testR = self.errType.toName(int(test[5]))
             testResultStr = testResultFmt.format(test[0], test[1], test[2], testR)
             print testResultStr
         print '--------------- Test Result Done --------------'
