@@ -6,6 +6,7 @@ import (
 
     "common/diagEngine"
     "common/dcli"
+    "common/errType"
 )
 
 //========================================================
@@ -30,8 +31,8 @@ func QsfpI2CHdl(argList []string) int {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- 0
-    return 0
+    diagEngine.FuncMsgChan <- errType.Success
+    return errType.Success
 }
 
 func QsfpLaserenHdl(argList []string) int {
@@ -49,8 +50,8 @@ func QsfpLaserenHdl(argList []string) int {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- 0
-    return 0
+    diagEngine.FuncMsgChan <- errType.Success
+    return errType.Success
 }
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)

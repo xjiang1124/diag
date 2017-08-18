@@ -33,7 +33,7 @@ type CardInfo struct {
 }
 
 // Define Test hander function type
-type TestFn func(argList []string) int
+type TestFn func(argList []string)
 
 //========================================================
 // Global variables
@@ -43,7 +43,7 @@ var cardInfo CardInfo
 var FuncMap map[string]TestFn
 
 // Redis client
-var r *redis.Client
+var RedisClient *redis.Client
 
 // Function message channel
 var FuncMsgChan chan int
@@ -64,7 +64,7 @@ func CardInfoInit(dspName string) {
     cardInfo.dspName = dspName
 }
 
-func checkRedisErr(err error) {
+func CheckRedisErr(err error) {
     if err == redis.Nil {
         // Key not exist
     } else if err == nil {
@@ -87,7 +87,7 @@ func sepArgList(argList []string, engList []string) (engArgList []string, dspArg
 }
 
 func DspInfraInit() (err error) {
-    r = redis.NewClient(&redis.Options{
+    RedisClient = redis.NewClient(&redis.Options{
         Addr:     cardInfo.redisIP+":6379",
         Password: "", // no password set
         DB:       0,  // use default DB
@@ -102,12 +102,12 @@ func DspInfraInit() (err error) {
     // DSP key: SADD DSP:CardType:CardName dspName
     keyDsp := fmt.Sprintf("DSP:%s:%s", cardInfo.CardType, cardInfo.CardName)
 
-    _, err = r.SAdd(keyDsp, cardInfo.dspName).Result()
-    checkRedisErr(err)
+    _, err = RedisClient.SAdd(keyDsp, cardInfo.dspName).Result()
+    CheckRedisErr(err)
 
     // Card dict
-    _, err = r.HSet("CARD_DICT", cardInfo.CardType, cardInfo.CardName).Result()
-    checkRedisErr(err)
+    _, err = RedisClient.HSet("CARD_DICT", cardInfo.CardType, cardInfo.CardName).Result()
+    CheckRedisErr(err)
 
     // Init cli
     cli.Init("log_"+cardInfo.dspName+".txt", config.OutputMode)
@@ -125,27 +125,27 @@ func registerDSP () {
     keyCard := fmt.Sprintf(keyCardFmt, cardInfo.CardType, cardInfo.CardName)
 
     // Create key entries
-    _, err := r.Set(keyDsp, 1, 0).Result()
-    checkRedisErr(err)
-    _, err = r.Set(keyCard, 1, 0).Result()
-    checkRedisErr(err)
+    _, err := RedisClient.Set(keyDsp, 1, 0).Result()
+    CheckRedisErr(err)
+    _, err = RedisClient.Set(keyCard, 1, 0).Result()
+    CheckRedisErr(err)
 
     // Set expiration
     tout := time.Second *time.Duration(defaultTimeout*2)
-    _, err = r.Expire(keyDsp, tout).Result()
-    checkRedisErr(err)
-    _, err = r.Expire(keyCard, tout).Result()
-    checkRedisErr(err)
+    _, err = RedisClient.Expire(keyDsp, tout).Result()
+    CheckRedisErr(err)
+    _, err = RedisClient.Expire(keyCard, tout).Result()
+    CheckRedisErr(err)
 
     // Set NON-EXPIRATION keys to support missing DSP/Card 
     keyDsp = fmt.Sprintf("NON"+keyDspFmt, cardInfo.CardType, cardInfo.CardName, cardInfo.dspName)
     keyCard = fmt.Sprintf("NON"+keyCardFmt, cardInfo.CardType, cardInfo.CardName)
 
     // Create key entries
-    _, err = r.Set(keyDsp, 1, 0).Result()
-    checkRedisErr(err)
-    _, err = r.Set(keyCard, 1, 0).Result()
-    checkRedisErr(err)
+    _, err = RedisClient.Set(keyDsp, 1, 0).Result()
+    CheckRedisErr(err)
+    _, err = RedisClient.Set(keyCard, 1, 0).Result()
+    CheckRedisErr(err)
 
 }
 
@@ -158,10 +158,10 @@ func renewDSP (timeout int) {
 
     // Set expiration
     tout := time.Second * time.Duration(timeout+defaultTimeout*2)
-    _, err := r.Expire(keyDsp, tout).Result()
-    checkRedisErr(err)
-    _, err = r.Expire(keyCard, tout).Result()
-    checkRedisErr(err)
+    _, err := RedisClient.Expire(keyDsp, tout).Result()
+    CheckRedisErr(err)
+    _, err = RedisClient.Expire(keyCard, tout).Result()
+    CheckRedisErr(err)
 }
 
 func DspInfraMainLoop() (err error) {
@@ -215,8 +215,8 @@ func DspInfraMainLoop() (err error) {
         ticker := time.NewTicker(time.Second)
         i = 0
         for range ticker.C {
-            testID, err = r.RPop(keyQue).Result()
-            checkRedisErr(err)
+            testID, err = RedisClient.RPop(keyQue).Result()
+            CheckRedisErr(err)
             if testID != "" {
                 cli.Println("info", "testID", testID, "err", err)
                 break;
@@ -239,8 +239,8 @@ func DspInfraMainLoop() (err error) {
         }
 
         // Get stop_on_error setting
-        stopOnErrLvl, err := r.Get("STOP_ON_ERROR").Result()
-        checkRedisErr(err)
+        stopOnErrLvl, err := RedisClient.Get("STOP_ON_ERROR").Result()
+        CheckRedisErr(err)
         if (stopOnErrLvl == "" || stopOnErrLvl == "0") {
             stopOnErrFlag = 0
             stopOnErrEn = 0
@@ -251,20 +251,20 @@ func DspInfraMainLoop() (err error) {
         // In case of stop_on_error, return a skip signature
         if (stopOnErrEn == 1) {
             keyResult := fmt.Sprintf(keyResultFmt, testID)
-            r.Set(keyResult, 0xBEEF, 0)
+            RedisClient.Set(keyResult, 0xBEEF, 0)
             continue
         }
 
         // Get test name based on testID
         keyTestID := fmt.Sprintf(keyTestIDFmt, cardInfo.CardType, cardInfo.dspName, testID)
-        testName, err := r.Get(keyTestID).Result()
-        checkRedisErr(err)
+        testName, err := RedisClient.Get(keyTestID).Result()
+        CheckRedisErr(err)
 
         // Get test parameter based on testID
         keyTestParam := fmt.Sprintf(keyTestParamFmt, cardInfo.CardType, cardInfo.dspName, testID)
         cli.Println("d", keyTestParam)
-        testParam, err := r.Get(keyTestParam).Result()
-        checkRedisErr(err)
+        testParam, err := RedisClient.Get(keyTestParam).Result()
+        CheckRedisErr(err)
 
         // parameter timeout and ite are use by diag engine. Others are for dsp handlers
         // To avoid flag.Parse output error message: "flag provided but not defined"
@@ -313,7 +313,7 @@ func DspInfraMainLoop() (err error) {
             case <-time.After(time.Second * time.Duration(*timeoutPtr)):
                 // In case of timeout, set to infinite loop
                 histKey = fmt.Sprintf(keyHistTimeoutFmt, cardInfo.CardType, cardInfo.dspName, testName)
-                r.Incr(histKey)
+                RedisClient.Incr(histKey)
 
                 cli.Println("i", "Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
                 cli.Println("i", "DSP is in while(1) loop")
@@ -326,10 +326,10 @@ func DspInfraMainLoop() (err error) {
             } else {
                 histKey = fmt.Sprintf(keyHistFailFmt, cardInfo.CardType, cardInfo.dspName, testName)
             }
-            r.Incr(histKey)
+            RedisClient.Incr(histKey)
 
             keyResult := fmt.Sprintf(keyResultFmt, testID)
-            r.Set(keyResult, funcMsg, 0)
+            RedisClient.Set(keyResult, funcMsg, 0)
 
             cli.Println("i", "=== TEST DONE === testID:", testID, "testName:", testName)
 

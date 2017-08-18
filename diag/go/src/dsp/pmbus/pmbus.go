@@ -6,6 +6,7 @@ import (
 
     "common/diagEngine"
     "common/dcli"
+    "common/errType"
     "config"
 
     //"unsafe"
@@ -27,7 +28,7 @@ const (
     dspName = "PMBUS"
 )
 
-func PmbusPmbusHdl(argList []string) int {
+func PmbusPmbusHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0xFF, "Devices bit mask")
 
@@ -42,11 +43,11 @@ func PmbusPmbusHdl(argList []string) int {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- 0
-    return 0
+    diagEngine.FuncMsgChan <- errType.Success
+    return
 }
 
-func PmbusIntrHdl(argList []string) int {
+func PmbusIntrHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0xFF, "Devices bit mask")
 
@@ -92,8 +93,8 @@ func PmbusIntrHdl(argList []string) int {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- 0
-    return 0
+    diagEngine.FuncMsgChan <- errType.Success
+    return
 }
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)

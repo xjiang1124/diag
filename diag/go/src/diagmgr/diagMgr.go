@@ -1,103 +1,138 @@
 package main
 
 import (
-    "os/exec"
+    "flag"
     "os"
-    "fmt"
-//    "log"
-//    "io/ioutil"
+    "os/exec"
     "strings"
-    "github.com/go-redis/redis"
+
+    "config"
     "common/diagEngine"
+    "common/dcli"
+    "common/errType"
 )
 
+//========================================================
 // Constant definition
 const (
     // Each DSP should know it own name
     dspName = "DIAGMGR"
 )
 
-var dsp_map = make(map[string]int)
+var dspMap = make(map[string]int)
 
-func process_start(processName []string) int {
-
-    for i := range processName {
-
-        cmd := exec.Command(processName[i])
-    
-        err := cmd.Start(); if err != nil {
-            fmt.Fprintln(os.Stderr, "Error starting Cmd", err)
-            return 1
-        }
-    
-        dsp_map[processName[i]] = cmd.Process.Pid
-        fmt.Printf("DSP %s is started\n", processName[i])
-    }
-    return 0
+func getDspList() []string {
+    cardInfo := diagEngine.GetCardInfo()
+    dspList, err := diagEngine.RedisClient.SMembers("DSP:"+cardInfo.CardName).Result()
+    diagEngine.CheckRedisErr(err)
+    return dspList
 }
 
-func process_stop(processName []string) int {
+func startNicDsp() int {
+    dspList := getDspList()
 
-    for i := range processName {
-        pid, exist := dsp_map[processName[i]]; if exist == false {
-            fmt.Printf("No process named %s is under diag manager\n", processName[i])
-            return 1
+    for _, dsp := range dspList {
+        if dsp == "DIAGMGR" {
+            continue
         }
-    
-        process, err := os.FindProcess(pid); if err != nil {
-            fmt.Printf("No process named %s is running\n", processName[i])
-            return 1
+
+        filename := config.DiagNicBinPath+strings.ToLower(dsp)
+        cmd := exec.Command(filename)
+
+        err := cmd.Start()
+        if err != nil {
+            dcli.Println("F", "Error starting Cmd", err)
+            return errType.Fail
         }
-    
-        err = process.Kill(); if err != nil {
-            fmt.Printf("Kill process %s, pid %d failed\n", processName[i], pid)
-            return 1
-        }
-    
-        delete(dsp_map, processName[i])
-        fmt.Printf("DSP %s is stopped successfully!\n", processName[i])
+
+        dspMap[dsp] = cmd.Process.Pid
     }
-    return 0
+
+    return errType.Success
+}
+
+func DiagmgrDsp_StartHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    cardPtr := fs.String("card", "NIC", "Target NIC or HOST")
+
+    err := fs.Parse(argList)
+    if err != nil {
+        dcli.Println("f", "Parse failed", err)
+    }
+
+    retVal := errType.Success
+    if (*cardPtr == "NIC") {
+        retVal = startNicDsp()
+    } else {
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- retVal
+    return 
+}
+
+func DiagmgrDsp_StopHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    err := fs.Parse(argList)
+    if err != nil {
+        dcli.Println("f", "Parse failed", err)
+    }
+
+    retVal := 0
+    for dsp, pid := range (dspMap) {
+        dcli.Println("i", "Terminating DSP: ", dsp)
+        process, err := os.FindProcess(pid)
+        if err != nil {
+            dcli.Println("f", "No process named is running:", pid)
+            retVal += 1
+            dcli.Println("i", "Terminating DSP", dsp, "failed")
+            continue
+        }
+
+        err = process.Kill()
+        if (err != nil) {
+            dcli.Println("f", "Terminating process failed: dsp, pid")
+            retVal += 1
+            dcli.Println("i", "Terminating DSP", dsp, "failed")
+            continue
+        }
+        dcli.Println("i", "Termination Done:", dsp)
+        delete(dspMap, dsp)
+    }
+
+    // Inform diag engine that test handler is done// Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.Success
+    return
+}
+
+func DiagmgrShow_DspHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    err := fs.Parse(argList)
+    if err != nil {
+        dcli.Println("f", "Parse failed", err)
+    }
+
+    for dsp, pid := range (dspMap) {
+        dcli.Println("i", "DSP:", dsp, "pid:", pid)
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.Success
+    return
 }
 
 func main() {
-
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
-    diagEngine.FuncMap["dsp_start"] = process_start
-    diagEngine.FuncMap["dsp_stop"] = process_stop
+    diagEngine.FuncMap["DSP_START"] = DiagmgrDsp_StartHdl
+    diagEngine.FuncMap["DSP_STOP"] = DiagmgrDsp_StopHdl
+    diagEngine.FuncMap["DSP_SHOW"] = DiagmgrShow_DspHdl
 
-//    bytes, err := ioutil.ReadFile("dsp.txt"); if err != nil {
-//        log.Fatal(err)
-//    }
-//    
-
-    redisClient:= redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-    dspList, err := redisClient.SMembers("DSP:"+os.Getenv("CARD_NAME")).Result()
-
-    fmt.Println(dspList, len(dspList))
-
-    for i := range dspList {
-
-        cmd := exec.Command(strings.ToLower(dspList[i]))
-
-        err = cmd.Start()
-	    if err != nil {
-	    fmt.Fprintln(os.Stderr, "Error starting Cmd", err)
-	    os.Exit(1)
-        }
-
-        dsp_map[dspList[i]] = cmd.Process.Pid
-    }
-    for k,v := range dsp_map {
-        fmt.Printf("DSP %s, PID %d\n", k, v)
-        
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()
-    }
 }

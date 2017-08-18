@@ -1,4 +1,6 @@
 #!/bin/sh
 
 cat NAPLES_PMBUS.redis | redis-cli -h 127.0.0.1
+cat NAPLES_QSFP.redis | redis-cli -h 127.0.0.1
+cat NAPLES_DIAGMGR.redis | redis-cli -h 127.0.0.1
 

@@ -1,5 +1,8 @@
 package config
 
 const (
-    OutputMode = 1
+    OutputMode = 0
+
+    DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
+    DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
 )

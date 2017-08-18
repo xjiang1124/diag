@@ -129,6 +129,7 @@ filenames_true = filter(r.match, filenames)
 for filename in filenames_true:
 
     # bypass config.yaml since it is already loaded
+    #if filename == "platform_config.yaml" or filename == "pmbus.yaml" or filename == "qsfp.yaml":
     if filename == "platform_config.yaml":
         continue
 
@@ -335,11 +336,12 @@ for filename in filenames_true:
     fmt_header = """package main
 
 import (
-    \"config\"
     \"flag\"
 
     \"common/diagEngine\"
     \"common/dcli\"
+    \"common/errType\"
+    \"config\"
 )
 
 //========================================================
@@ -352,32 +354,32 @@ const (
     
     fmt_fileName = "{}.go"
     fmt_testHdl = """
-func {}{}Hdl(argList []string) int {{
+func {}{}Hdl(argList []string) {{
     fs := flag.NewFlagSet(\"FlagSet\", flag.ContinueOnError)
 """
     
-    fmt_testParam = "    {}Ptr := fs.Int(\"{}\", {}, \"Devices bit mask\")\n"
+    fmt_testParam = "    {}Ptr := fs.Int(\"{}\", {}, \"{}\")\n"
     
     fmt_testParamPrnt = "\"{}\", *{}Ptr"
     
     fmt_testEnding = """
     err := fs.Parse(argList)
     if err != nil {{
-        dcli.Println("f", "Parse failed", err)
+        dcli.Println("e", "Parse failed", err)
     }}
 
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
-    dcli.Println("t", {})
+    dcli.Println("i", {})
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- 0
-    return 0
+    diagEngine.FuncMsgChan <- errType.Success
+    return
 }}
 """
     
-    main_1 = """func main() {
+    main_1 = """\nfunc main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
 """
     
@@ -423,7 +425,8 @@ func {}{}Hdl(argList []string) int {{
             if param in diagEngineParam:
                 continue
             if param_t == test:
-                testParam = fmt_testParam.format(param, param, value)
+                param_info = r_test_param_info_dict[param_n]
+                testParam = fmt_testParam.format(param, param, value, param_info)
                 param_dict[param] = testParam
     
         paramCount = 0

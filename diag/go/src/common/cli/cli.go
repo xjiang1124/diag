@@ -82,7 +82,7 @@ func FmtJsonOut(outStr string) string {
     b, _ := json.Marshal(m)
 
     jsonOut := fmt.Sprintln(string(b))
-    fmt.Println(jsonOut)
+    //fmt.Println(jsonOut)
     return jsonOut
 }
 

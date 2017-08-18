@@ -187,6 +187,7 @@ class diagEngineHost:
                 testId = test[3]
                 testResultKeyStr = self.testResultKey.format(testId)
                 testResult = self.r.get(testResultKeyStr)
+                #print testId, testResult
                 # Test result shows up
                 if testResult != None:
                     test[5] = testResult
