@@ -41,6 +41,7 @@
 DSP: 
     NAME: QSFP
     INFO: DSP for QSFP interface
+    TYPE: HOST
 
     # Properties apply to all platforms
     COMMON:

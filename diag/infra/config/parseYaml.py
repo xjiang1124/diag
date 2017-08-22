@@ -6,6 +6,7 @@ import errno
 import sys
 import re
 import yaml
+import pickle
 import pprint
 import redis
 from collections import OrderedDict
@@ -123,6 +124,11 @@ with open(config_file) as stream:
 for (dirpath, dirnames, filenames) in walk(input_path):
     print filenames
 
+dsp_card_dict = OrderedDict()
+dsp_type_dict = OrderedDict()
+card_dsp_dev_dict = OrderedDict()
+card_dsp_host_dict = OrderedDict()
+
 # Exclude unnecessory file like .swp
 r = re.compile('.*yaml$')
 filenames_true = filter(r.match, filenames)
@@ -154,7 +160,11 @@ for filename in filenames_true:
     r_test_param_dict = OrderedDict()
     r_test_param_info_dict = OrderedDict()
     r_test_list_dict = OrderedDict()
+
+    card_list_all = []
     
+    dsp_type_dict[dsp_dict['DSP']['NAME']] = dsp_dict['DSP']['TYPE']
+
     # Get all test entries
     r = re.compile('(TEST)|(CMD)#.*')
     test_pre_list = filter(r.match, dsp_dict['DSP'].keys()) 
@@ -247,7 +257,27 @@ for filename in filenames_true:
                                 p_card_list = parse_card_list(config_dict, p_card)
                                 if card in p_card_list:
                                     r_test_param_dict[param_key] = param_value
-    
+            card_list_all = card_list_all + card_list
+
+    # Get dsp/card and card/dsp mapping
+    card_list_all = list(set(card_list_all))
+    dsp = dsp_dict["DSP"]["NAME"]
+    dsp_card_dict[dsp] = card_list_all
+    dsp_card_dict[dsp] = card_list_all
+
+    for card in card_list_all:
+        if dsp_type_dict[dsp] == 'DEV':
+            if card in card_dsp_dev_dict.keys():
+                card_dsp_dev_dict[card] = card_dsp_dev_dict[card]+[dsp]
+            else:
+                card_dsp_dev_dict[card] = [dsp]
+        elif dsp_type_dict[dsp] == 'HOST':
+            if card in card_dsp_host_dict.keys():
+                card_dsp_host_dict[card] = card_dsp_host_dict[card]+[dsp]
+            else:
+                card_dsp_host_dict[card] = [dsp]
+       
+
     #=========================================================
     # Define redis command format
     #fmt_sep = '\n#=========================================================\n'
@@ -256,11 +286,17 @@ for filename in filenames_true:
     fmt_sep_1 = ''
     
     # DSP: SADD CARD_NAME:DSP DSP_NAME
-    fmt_redis_dsp = 'SADD DSP:{} {}\n'
+    fmt_redis_dsp_all = 'SADD DSP:{} {}\n'
     
     # DSP INFO: SADD CARD_NAME:DSP:INFO DSP_INFO
     fmt_redis_dsp_info = 'SADD DSP:INFO:{} {} \"{}\"\n'
+     
+    # DSP: SADD DSP:CARDNAME:DEV DSP_NAME
+    fmt_redis_dsp_dev = 'SADD DSP:{}:DEV {}\n'
     
+    # DSP: SADD DSP:CARDNAME:HOST DSP_NAME
+    fmt_redis_dsp_host = 'SADD DSP:{}:HOST {}\n'
+
     # TEST: SADD CARD_NAME:DSP_NAME:TEST TEST_NAME
     fmt_redis_test = 'SADD {}:{}:{} {}\n'
     
@@ -285,14 +321,20 @@ for filename in filenames_true:
         f = open(output_file, 'w')
     
         # DSP
-        output_str = fmt_redis_dsp.format(card, dsp)
-        f.write(output_str)
-    
-        # DSP INFO
+        output_str = fmt_redis_dsp_all.format(card, dsp)
+        f.write(output_str)# DSP INFO
         dsp_info = r_dsp_info_dict[dsp_card+'#INFO']
         output_str = fmt_redis_dsp_info.format(card, dsp, dsp_info)
         f.write(output_str)
     
+        # Add DSP to DEV/HOST list
+        dsp_type = dsp_type_dict[dsp]
+        if dsp_type == 'DEV':
+            output_str = fmt_redis_dsp_dev.format(card, dsp)
+        elif dsp_type == 'HOST':
+            output_str = fmt_redis_dsp_host.format(card, dsp)
+        f.write(output_str)
+
         # TEST
         # loop through test_dict and find tests under the card
         for test_card, test in r_test_dict.items():
@@ -456,3 +498,13 @@ func {}{}Hdl(argList []string) {{
     print "Done parsing dsp main package"
     
     print "====", "Done", filename, "====\n"
+
+with open(output_path+'card_dsp_dev_dict.pickle', 'wb') as handle:
+    pickle.dump(card_dsp_dev_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+with open(output_path+'card_dsp_host_dict.pickle', 'wb') as handle:
+    pickle.dump(card_dsp_host_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+# Load data (deserialize)
+#with open('filename.pickle', 'rb') as handle:
+#    unserialized_data = pickle.load(handle)

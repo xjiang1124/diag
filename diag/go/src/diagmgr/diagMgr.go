@@ -2,6 +2,7 @@ package main
 
 import (
     "flag"
+    "io/ioutil"
     "os"
     "os/exec"
     "strings"
@@ -20,23 +21,39 @@ const (
 )
 
 var dspMap = make(map[string]int)
+var cardName string
+var cardType string
 
-func getDspList() []string {
-    cardInfo := diagEngine.GetCardInfo()
-    dspList, err := diagEngine.RedisClient.SMembers("DSP:"+cardInfo.CardName).Result()
+func init() {
+    cardName = os.Getenv("CARD_NAME")
+    cardType = os.Getenv("CARD_TYPE")
+}
+
+func getDspListDev() []string {
+    dspList, err := diagEngine.RedisClient.SMembers("DSP:"+cardName+":DEV").Result()
     diagEngine.CheckRedisErr(err)
     return dspList
 }
 
-func startNicDsp() int {
-    dspList := getDspList()
+//func getFilesFromPath(path string) []string {
+func getFilesFromPath(path string) []string{
+    files, err := ioutil.ReadDir(path)
+    if err != nil {
+        dcli.Println("f", "Failed to read file list")
+    }
 
+    fileList := make([]string, len(files))
+    for idx, file := range files {
+        dcli.Println("i", file.Name())
+        fileList[idx] = file.Name()
+    }
+    return fileList
+}
+
+func startDsp(dspList []string, path string) int {
     for _, dsp := range dspList {
-        if dsp == "DIAGMGR" {
-            continue
-        }
-
-        filename := config.DiagNicBinPath+strings.ToLower(dsp)
+        dcli.Println("i", "Starting DSP:", dsp)
+        filename := path+strings.ToLower(dsp)
         cmd := exec.Command(filename)
 
         err := cmd.Start()
@@ -46,6 +63,7 @@ func startNicDsp() int {
         }
 
         dspMap[dsp] = cmd.Process.Pid
+        dcli.Println("i", "Starting DSP:", dsp, "Done")
     }
 
     return errType.Success
@@ -62,8 +80,11 @@ func DiagmgrDsp_StartHdl(argList []string) {
 
     retVal := errType.Success
     if (*cardPtr == "NIC") {
-        retVal = startNicDsp()
+        dspList := getDspListDev()
+        retVal = startDsp(dspList, config.DiagNicBinPath)
     } else {
+        dspList := getFilesFromPath(config.DiagHostBinPath)
+        retVal = startDsp(dspList, config.DiagHostBinPath)
     }
 
     // Inform diag engine that test handler is done
@@ -103,7 +124,11 @@ func DiagmgrDsp_StopHdl(argList []string) {
     }
 
     // Inform diag engine that test handler is done// Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.Success
+    if (retVal != 0) {
+        diagEngine.FuncMsgChan <- errType.Fail
+    } else {
+        diagEngine.FuncMsgChan <- errType.Success
+    }
     return
 }
 

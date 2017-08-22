@@ -41,6 +41,7 @@
 DSP: 
     NAME: PMBUS
     INFO: DSP for all PMBus devices
+    TYPE: DEV
 
     # Properties apply to all platforms
     COMMON:

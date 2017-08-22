@@ -16,7 +16,7 @@ const (
     dspName = "QSFP"
 )
 
-func QsfpI2CHdl(argList []string) int {
+func QsfpI2CHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0x3, "Devices bit mask")
 
@@ -32,10 +32,10 @@ func QsfpI2CHdl(argList []string) int {
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- errType.Success
-    return errType.Success
+    return
 }
 
-func QsfpLaserenHdl(argList []string) int {
+func QsfpLaserenHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     instPtr := fs.Int("inst", 0, "Devices bit mask")
 
@@ -51,7 +51,7 @@ func QsfpLaserenHdl(argList []string) int {
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- errType.Success
-    return errType.Success
+    return
 }
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)

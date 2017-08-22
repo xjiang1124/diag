@@ -41,6 +41,7 @@
 DSP: 
     NAME: DIAGMGR
     INFO: DSP to manage all test DSPs 
+    TYPE: DH
 
     # Properties apply to all platforms
     COMMON:
@@ -74,6 +75,10 @@ DSP:
             NIC: ALL
         PRIORITY: NORMAL 
         PARAM:
+            card:
+                VALUE: 
+                    ALL: "\"NIC\""
+                INFO: Target NIC or HOST
 
     TEST#DSP_SHOW:
         INFO: Show all DSPs under diagMgr control
