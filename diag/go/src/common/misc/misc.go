@@ -56,6 +56,18 @@ func ContainStrExact(target []string, src string) bool {
 }
 
 /*
+    RmStrFromSlice removes string from given slice
+*/
+func RmStrFromSlice(target []string, src string) []string {
+    for idx, t := range target {
+        if t == src {
+            return append(target[:idx], target[idx+1:]...)
+        }
+    }
+    return target
+}
+
+/*
 	TrimSuffix trims the last charaters from the given string
  */
 func TrimSuffix(s, suffix string) string {

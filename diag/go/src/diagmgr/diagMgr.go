@@ -2,7 +2,7 @@ package main
 
 import (
     "flag"
-    "io/ioutil"
+    //"io/ioutil"
     "os"
     "os/exec"
     "strings"
@@ -11,6 +11,7 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
+    "common/misc"
 )
 
 //========================================================
@@ -29,25 +30,14 @@ func init() {
     cardType = os.Getenv("CARD_TYPE")
 }
 
-func getDspListDev() []string {
-    dspList, err := diagEngine.RedisClient.SMembers("DSP:"+cardName+":DEV").Result()
+func getDspList() []string {
+    dspList, err := diagEngine.RedisClient.SMembers("DSP:"+cardName).Result()
     diagEngine.CheckRedisErr(err)
+
+    // Remove diagmgr from the list
+    dspList = misc.RmStrFromSlice(dspList, "DIAGMGR")
+
     return dspList
-}
-
-//func getFilesFromPath(path string) []string {
-func getFilesFromPath(path string) []string{
-    files, err := ioutil.ReadDir(path)
-    if err != nil {
-        dcli.Println("f", "Failed to read file list")
-    }
-
-    fileList := make([]string, len(files))
-    for idx, file := range files {
-        dcli.Println("i", file.Name())
-        fileList[idx] = file.Name()
-    }
-    return fileList
 }
 
 func startDsp(dspList []string, path string) int {
@@ -71,7 +61,6 @@ func startDsp(dspList []string, path string) int {
 
 func DiagmgrDsp_StartHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-    cardPtr := fs.String("card", "NIC", "Target NIC or HOST")
 
     err := fs.Parse(argList)
     if err != nil {
@@ -79,16 +68,12 @@ func DiagmgrDsp_StartHdl(argList []string) {
     }
 
     retVal := errType.Success
-    if (*cardPtr == "NIC") {
-        dspList := getDspListDev()
-        retVal = startDsp(dspList, config.DiagNicBinPath)
-    } else {
-        dspList := getFilesFromPath(config.DiagHostBinPath)
+    dspList := getDspList()
+    if (cardName == "HOST") {
         retVal = startDsp(dspList, config.DiagHostBinPath)
+    } else {
+        retVal = startDsp(dspList, config.DiagNicBinPath)
     }
-
-    // Inform diag engine that test handler is done
-    // Use chan to return error code
     diagEngine.FuncMsgChan <- retVal
     return 
 }

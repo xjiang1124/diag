@@ -41,7 +41,6 @@
 DSP: 
     NAME: DIAGMGR
     INFO: DSP to manage all test DSPs 
-    TYPE: DH
 
     # Properties apply to all platforms
     COMMON:
@@ -61,18 +60,16 @@ DSP:
         PLATFORM:
             VIDEO: ALL
             NIC: ALL
+            HOST: ALL
         PRIORITY: NORMAL 
         PARAM:
-            card:
-                VALUE: 
-                    ALL: "\"NIC\""
-                INFO: Target NIC or HOST
 
     TEST#DSP_STOP:
         INFO: Stop DSPs on specified card
         PLATFORM:
             VIDEO: ALL
             NIC: ALL
+            HOST: ALL
         PRIORITY: NORMAL 
         PARAM:
             card:
@@ -85,6 +82,7 @@ DSP:
         PLATFORM:
             VIDEO: ALL
             NIC: ALL
+            HOST: ALL
         PRIORITY: NORMAL 
         PARAM:
 

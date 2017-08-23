@@ -125,7 +125,7 @@ for (dirpath, dirnames, filenames) in walk(input_path):
     print filenames
 
 dsp_card_dict = OrderedDict()
-dsp_type_dict = OrderedDict()
+#dsp_type_dict = OrderedDict()
 card_dsp_dev_dict = OrderedDict()
 card_dsp_host_dict = OrderedDict()
 
@@ -163,7 +163,7 @@ for filename in filenames_true:
 
     card_list_all = []
     
-    dsp_type_dict[dsp_dict['DSP']['NAME']] = dsp_dict['DSP']['TYPE']
+    #dsp_type_dict[dsp_dict['DSP']['NAME']] = dsp_dict['DSP']['TYPE']
 
     # Get all test entries
     r = re.compile('(TEST)|(CMD)#.*')
@@ -265,17 +265,17 @@ for filename in filenames_true:
     dsp_card_dict[dsp] = card_list_all
     dsp_card_dict[dsp] = card_list_all
 
-    for card in card_list_all:
-        if dsp_type_dict[dsp] == 'DEV':
-            if card in card_dsp_dev_dict.keys():
-                card_dsp_dev_dict[card] = card_dsp_dev_dict[card]+[dsp]
-            else:
-                card_dsp_dev_dict[card] = [dsp]
-        elif dsp_type_dict[dsp] == 'HOST':
-            if card in card_dsp_host_dict.keys():
-                card_dsp_host_dict[card] = card_dsp_host_dict[card]+[dsp]
-            else:
-                card_dsp_host_dict[card] = [dsp]
+    #for card in card_list_all:
+    #    if dsp_type_dict[dsp] == 'DEV':
+    #        if card in card_dsp_dev_dict.keys():
+    #            card_dsp_dev_dict[card] = card_dsp_dev_dict[card]+[dsp]
+    #        else:
+    #            card_dsp_dev_dict[card] = [dsp]
+    #    elif dsp_type_dict[dsp] == 'HOST':
+    #        if card in card_dsp_host_dict.keys():
+    #            card_dsp_host_dict[card] = card_dsp_host_dict[card]+[dsp]
+    #        else:
+    #            card_dsp_host_dict[card] = [dsp]
        
 
     #=========================================================
@@ -328,12 +328,12 @@ for filename in filenames_true:
         f.write(output_str)
     
         # Add DSP to DEV/HOST list
-        dsp_type = dsp_type_dict[dsp]
-        if dsp_type == 'DEV':
-            output_str = fmt_redis_dsp_dev.format(card, dsp)
-        elif dsp_type == 'HOST':
-            output_str = fmt_redis_dsp_host.format(card, dsp)
-        f.write(output_str)
+        #dsp_type = dsp_type_dict[dsp]
+        #if dsp_type == 'DEV':
+        #    output_str = fmt_redis_dsp_dev.format(card, dsp)
+        #elif dsp_type == 'HOST':
+        #    output_str = fmt_redis_dsp_host.format(card, dsp)
+        #f.write(output_str)
 
         # TEST
         # loop through test_dict and find tests under the card
@@ -499,11 +499,11 @@ func {}{}Hdl(argList []string) {{
     
     print "====", "Done", filename, "====\n"
 
-with open(output_path+'card_dsp_dev_dict.pickle', 'wb') as handle:
-    pickle.dump(card_dsp_dev_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open(output_path+'card_dsp_host_dict.pickle', 'wb') as handle:
-    pickle.dump(card_dsp_host_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+#with open(output_path+'card_dsp_dev_dict.pickle', 'wb') as handle:
+#    pickle.dump(card_dsp_dev_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+#
+#with open(output_path+'card_dsp_host_dict.pickle', 'wb') as handle:
+#    pickle.dump(card_dsp_host_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 # Load data (deserialize)
 #with open('filename.pickle', 'rb') as handle:

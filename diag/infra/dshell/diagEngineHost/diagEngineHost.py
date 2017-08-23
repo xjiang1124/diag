@@ -14,10 +14,22 @@ class diagEngineHost:
         
         # CARD name dictionary, e.g. HSET CARD_DICT NIC1 NAPLES
         self.cardDictKey = 'CARD_DICT'
-        
+  
+        # card key, e.g. keys EXP:CARD:NIC1*
+        self.cardAllKey = 'EXP:CARD:{}*'
+   
+        # card key, e.g. GET EXT:CARD:CARD:NIC1:NAPLES
+        self.cardKey = 'EXP:CARD:{}:{}'
+     
         # DSP key, e.g. SADD/SMEMBERS DSP:NIC1:NAPLES
         self.dspKey = 'DSP:{}:{}'
+         
+        # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
+        self.dspExpAllKey = 'EXP:DSP:{}:{}*'
         
+        # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
+        self.dspExpKey = 'EXP:DSP:{}:{}:{}'
+
         # DSP TEST, e.g. SADD/SMEMBERS TEST:NAPLES:PMBUS
         self.dspTestKey = 'TEST:{}:{}'
         
@@ -69,7 +81,7 @@ class diagEngineHost:
            (cardNm!='' and dspNm=='' and testNm!=''):
             message = messageFmt.format(cardNm, dspNm, testNm)
             self.logger.error(message)
-            return -1
+            return [], -1
     
         # In ase cardNm is empty, take it as local card
         if cardNm == '':
@@ -78,11 +90,28 @@ class diagEngineHost:
     
         if dspNm=='':
             # cardNm pnly case: get all tests under all DSPs
-            dspList = self.r.smembers(dspKey.format(cardNm,brdNme))
+            #dspList = self.r.smembers(dspKey.format(cardNm,brdNme))
+            dspListTemp = self.r.keys(self.dspExpAllKey.format(cardNm, brdNm))
+            dspList = []
+            for dspFull in dspListTemp:
+                dsp = dspFull.split(":")[4]
+                # Exclude diagMgr
+                if dsp == "DIAGMGR":
+                    continue
+                dspList.append(dsp)
         else:
             # One DSP only
-            dspList = [dspNm]
-    
+            # Check whether the dsp is alive
+            keyExist = self.r.exists(self.dspExpKey.format(cardNm, brdNm, dspNm))
+            if keyExist == True:
+                #if dspNm == "DIAGMGR":
+                #    print "DIAGMGR is not an active DSP"
+                #    return [], -1
+                dspList = [dspNm]
+            else:
+                print "_NOT_ a live DSP:", dspNm
+                return [], -1
+
         # Get test list
         tests = []
         for dsp in dspList:
@@ -94,7 +123,7 @@ class diagEngineHost:
                     tests.append(testItem)
             else:
                 tests.append([cardNm, dsp, testNm])
-        return tests
+        return tests, 0
 
     def parseTestParam(self, cardNm='', dspNm='', testNm='', param=dict()):
         # Get all default parameters
@@ -118,9 +147,9 @@ class diagEngineHost:
         cardNm = cardNm.upper()
         dspNm = dspNm.upper()
         testNm = testNm.upper()
-        testList = self.parseCardInfo(cardNm, dspNm, testNm)
-        if testList == -1:
-            return -1
+        testList, err = self.parseCardInfo(cardNm, dspNm, testNm)
+        if err == -1:
+            return [], -1
         #print testList
         
         paramKey = '{}:{}:{}'
@@ -153,7 +182,7 @@ class diagEngineHost:
             # Leave an entry for testID and test result
             testL.append([cardN, dspN, testN, 'testId', paramStr, None])
     
-        return testL
+        return testL, 0
 
     def dispatchTest (self, test):
         cardNm = test[0]
@@ -183,6 +212,7 @@ class diagEngineHost:
 
     def waitForTestFinish (self, testList):
         testDone = False
+        fmtTestDone = "--- Test Done: {}:{}:{} ---"
         while True:
             for test in testList:
                 self.listenToDsp()
@@ -192,8 +222,10 @@ class diagEngineHost:
                 testResult = self.r.get(testResultKeyStr)
                 #print testId, testResult
                 # Test result shows up
-                if testResult != None:
+                if testResult != None and test[5] == None:
                     test[5] = testResult
+                    testDoneStr = fmtTestDone.format(test[0], test[1], test[2])
+                    print testDoneStr
     
             # Check whether all tests have result back
             for test in testList:
@@ -215,7 +247,7 @@ class diagEngineHost:
             print dspOutput
     
     def showTestResult (self, testList):
-        testResultFmt = '{:6} {:10} {:10} {:10}'
+        testResultFmt = '{:6} {:10} {:10} {:11}'
         print '=== All tests finished ==='
         print '----------------- Test Result -----------------'
         testResultStr = testResultFmt.format('CARD', 'DSP', 'TEST', 'RESULT')
@@ -247,8 +279,8 @@ class diagEngineHost:
 
     def runTest (self, cardName='', dspName='', testName='', param=dict()):
     
-        testList = self.parseTestInfo(cardName, dspName, testName, param)
-        if testList == -1:
+        testList, err = self.parseTestInfo(cardName, dspName, testName, param)
+        if err == -1:
             return -1
     
         self.showTestList(testList)
@@ -270,7 +302,129 @@ class diagEngineHost:
 
     def showCard (self):
         key = "EXP:CARD*"
+        fmtShowCard = "{:<15}{}"
+        print "========================================"
+        showCardStr = fmtShowCard.format("CARD_IDX", "CARD_NAME")
+        print showCardStr
+        print "----------------------------------------"
         cards = self.r.keys(key)
-        print cards
+        for card in cards:
+            cardType = card.split(':')[2]
+            cardName = card.split(':')[3]
+            if cardName != 'HOST':
+                showCardStr = fmtShowCard.format(cardType, cardName)
+                print showCardStr
+        print "========================================"
         return 0
+
+    def checkCardExist(self, cardTp):
+        key = "CARD_DICT"
+        cardNm = self.r.hget(key, cardTp)
+        key = self.cardKey
+        return self.r.exists(key.format(cardTp, cardNm))
+
+    def checkDspExist(self, cardTp, dspNm):
+        if self.checkCardExist(cardTp) == False:
+            return False
+
+        key = "CARD_DICT"
+        cardNm = self.r.hget(key, cardTp)
+        key = self.dspExpKey
+
+        return self.r.exists(key.format(cardTp, cardNm, dspNm))
+
+    def getCardNmFromDict(self, cardTp):
+        return self.r.hget("CARD_DICT", cardTp.upper())
+
+    def getCardList(self, cardTp=""):
+        cardTp = cardTp.upper()
+        cards = []
+        if cardTp == "":
+            key = "EXP:CARD*"
+            # Get all cards
+            cardListFull = self.r.keys(key)
+            for cardFull in cardListFull:
+                cards.append(cardFull.split(":")[2])
+        else:
+            exist = self.checkCardExist(cardTp)
+            if exist != True:
+                print "_NOT_ a live card:", cardTp
+                return [], -1
+            cards = [cardTp]
+        return cards, 0
+
+    def getDspList(self, cardTp=""):
+        cardTp = cardTp.upper()
+        if self.checkCardExist(cardTp) != True:
+            print "_NOT_ a live card:", cardTp
+            return [], -1
+
+        #print fmtDsp.format("DSP_NAME", "STATUS")
+        cardNm = self.getCardNmFromDict(cardTp)
+        dspListFull = self.r.keys(self.dspExpAllKey.format(cardTp, cardNm))
+        dspList = []
+        for dspFull in dspListFull:
+            dspList.append(dspFull.split(":")[4])
+        return dspList, 0
+
+    def getTestList(self, cardTp="", dspNm=""):
+        cardTp = cardTp.upper()
+        if self.checkCardExist(cardTp) != True:
+            print "_NOT_ a live card:", cardTp
+            return [], -1
+
+        dspNm = dspNm.upper()
+        if self.checkDspExist(cardTp, dspNm) != True:
+            print "_NOT_ a live dsp:", cardTp+":"+dspNm
+            return [], -1
+
+        testList = self.r.smembers(self.dspTestKey.format(self.getBrdName(cardTp), dspNm))
+        return testList, 0
+
+    def showDsp (self, cardTp=""):
+        cards, err = self.getCardList(cardTp)
+        if err != 0:
+            return
+
+        # Display DSPs
+        for card in cards:
+            fmtCard = "============ {} ============"
+            print fmtCard.format(card)
+            fmtDsp = "{:<20}{}"
+            #print fmtDsp.format("DSP_NAME", "STATUS")
+            cardNm = self.getCardNmFromDict(card)
+            dspListFull = self.r.keys(self.dspExpAllKey.format(card, cardNm))
+            for dspFull in dspListFull:
+                dsp = dspFull.split(":")[4]
+                if dsp == "DIAGMRG":
+                    continue
+                print fmtDsp.format(dsp, "NA")
+        return
+
+    def showTest (self, cardTp="", dspNm=""):
+        dspNm = dspNm.upper()
+        cards, err = self.getCardList(cardTp)
+        if err != 0:
+            return
+
+        fmtCard = "============ {} ============"
+        fmtDsp = "-------- {} --------"
+        fmtTest = "{:<20}{}"
+        # Display DSPs
+        for card in cards:
+            print fmtCard.format(card)
+            dspList, err = self.getDspList(card)
+            if err != 0:
+                return
+            for dsp in dspList:
+                # Skip DIAGMGR
+                if dsp == "DIAGMGR":
+                    continue
+                print fmtDsp.format(dsp)
+                testList, err = self.getTestList(card, dsp)
+                if err != 0:
+                    continue
+                for test in testList:
+                    print fmtTest.format(test, "inactive")
+        return
 
