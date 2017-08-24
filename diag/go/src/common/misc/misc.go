@@ -5,6 +5,7 @@ package misc
 
 import (
     "strings"
+    "time"
 )
 
 //========================================================
@@ -14,6 +15,11 @@ import (
 // Global variables
 
 //========================================================
+
+func SleepInSec(numSec int) {
+    time.Sleep(time.Duration(numSec) * time.Second)
+}
+
 
 /* 
     GetElemIdx finds index of given element in the slice

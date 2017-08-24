@@ -9,5 +9,6 @@ INFO_DIAGMGR: DiagEgine error code
 skip: 100
 timeout: 101
 invalidTest: 102
+permSkip: 103
 
 ...

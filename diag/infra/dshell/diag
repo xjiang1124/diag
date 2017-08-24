@@ -12,7 +12,7 @@ from traitlets.config.loader import Config
 from IPython.terminal.prompts import Prompts, Token
 from IPython.terminal.embed import InteractiveShellEmbed
 
-from diagEngineHost import diagEngineHost
+from diagEngineHost import diagEngineHost, diagSts
 
 #==========================================================
 parser = argparse.ArgumentParser(description="Diagnostic inteface")
@@ -37,6 +37,7 @@ if (len(sys.argv) == 1):
 
 #==========================================================
 diaghost = diagEngineHost()
+diagsts = diagSts()
 
 #==========================================================
 # Start inter active mode

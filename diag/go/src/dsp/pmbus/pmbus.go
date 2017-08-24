@@ -7,6 +7,7 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
+    "common/misc"
     "config"
 
     //"unsafe"
@@ -90,6 +91,8 @@ func PmbusIntrHdl(argList []string) {
     //dcli.Println("d", readData)
     //readData = [4]int{1,2,3,4}
     //i2c.Write(2, 3, &readData[0], 4)
+
+    misc.SleepInSec(60)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code

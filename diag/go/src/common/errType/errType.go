@@ -8,4 +8,5 @@ const(
     Skip                 = 100
     Timeout              = 101
     Invalidtest          = 102
+    Permskip             = 103
 )

@@ -8,6 +8,7 @@ class errType:
         self.mapV["Skip"] = 100
         self.mapV["Timeout"] = 101
         self.mapV["Invalidtest"] = 102
+        self.mapV["Permskip"] = 103
 
         self.mapN = dict()
         # INFO_GENERAL
@@ -17,6 +18,7 @@ class errType:
         self.mapN[100] = "Skip"
         self.mapN[101] = "Timeout"
         self.mapN[102] = "Invalidtest"
+        self.mapN[103] = "Permskip"
 
     def toName(self, value):
         return self.mapN[value]

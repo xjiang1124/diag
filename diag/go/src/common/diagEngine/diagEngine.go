@@ -175,6 +175,8 @@ func DspInfraMainLoop() (err error) {
     // RPOP QUEUE:CardType:CardName:dspName
     keyQueFmt := "QUEUE:%s:%s"
     keyQue := fmt.Sprintf(keyQueFmt, cardInfo.CardType, cardInfo.dspName)
+    keyQueStsFmt := "QUEUE:STATUS:%s:%s"
+    keyQueSts := fmt.Sprintf(keyQueStsFmt, cardInfo.CardType, cardInfo.dspName)
 
     // TestID: GET TEST_ID:CardType:dspName:testID testName
     keyTestIDFmt := "TEST_ID:%s:%s:%s"
@@ -207,28 +209,18 @@ func DspInfraMainLoop() (err error) {
     iteCount := 0
     stopOnErrEn := 0
     stopOnErrFlag := 0
-    i := 0
+    timeoutFlag := 0
+    retValHost := 0
+    //i := 0
     var testID string
     // Forever loop should be placed here
     for {
-        renewDSP(0)
-        // Wait for req from queue till timeout
-        ticker := time.NewTicker(time.Second)
-        i = 0
-        for range ticker.C {
-            testID, err = RedisClient.RPop(keyQue).Result()
-            CheckRedisErr(err)
-            if testID != "" {
-                cli.Println("info", "testID", testID, "err", err)
-                break;
-            }
+        // Update queue status
+        _, err = RedisClient.RPop(keyQueSts).Result()
 
-            i++
-            if i >= defaultTimeout {
-                break;
-            }
-        }
-        ticker.Stop()
+        renewDSP(0)
+        testID, err = RedisClient.BRPopLPush(keyQue, keyQueSts, time.Second * time.Duration(30)).Result()
+        CheckRedisErr(err)
 
         iteCount++
         cli.Println("i", "Hearbeat", iteCount)
@@ -242,17 +234,27 @@ func DspInfraMainLoop() (err error) {
         // Get stop_on_error setting
         stopOnErrLvl, err := RedisClient.Get("STOP_ON_ERROR").Result()
         CheckRedisErr(err)
-        if (stopOnErrLvl == "" || stopOnErrLvl == "0") {
-            stopOnErrFlag = 0
-            stopOnErrEn = 0
-        } else {
-            stopOnErrFlag = 1
+        // Never get out if 0xFF
+        if stopOnErrEn != 0xFF {
+            if (stopOnErrLvl == "" || stopOnErrLvl == "0") {
+                stopOnErrFlag = 0
+                stopOnErrEn = 0
+            } else {
+                stopOnErrFlag = 1
+            }
         }
 
         // In case of stop_on_error, return a skip signature
         if (stopOnErrEn == 1) {
             keyResult := fmt.Sprintf(keyResultFmt, testID)
             RedisClient.Set(keyResult, errType.Skip, 0)
+            continue
+        }
+
+        // sRreturn a permskip signature
+        if (stopOnErrEn == 0xFF) {
+            keyResult := fmt.Sprintf(keyResultFmt, testID)
+            RedisClient.Set(keyResult, errType.Permskip, 0)
             continue
         }
 
@@ -314,20 +316,23 @@ func DspInfraMainLoop() (err error) {
             select {
             case funcMsg = <-FuncMsgChan:
             case <-time.After(time.Second * time.Duration(*timeoutPtr)):
-                // In case of timeout, set to infinite loop
-                histKey = fmt.Sprintf(keyHistTimeoutFmt, cardInfo.CardType, cardInfo.dspName, testName)
-                RedisClient.Incr(histKey)
-
+                timeoutFlag = 1
                 cli.Println("i", "Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
-                cli.Println("i", "DSP is in while(1) loop")
-                for {
-                }
+                cli.Println("i", "DSP is in PermSkip mode")
+                stopOnErrEn = 0xFF
             }
+
             // Process test return code
-            if funcMsg == 0 {
-                histKey = fmt.Sprintf(keyHistSuccFmt, cardInfo.CardType, cardInfo.dspName, testName)
+            if timeoutFlag == 0 {
+                if funcMsg == 0 {
+                    histKey = fmt.Sprintf(keyHistSuccFmt, cardInfo.CardType, cardInfo.dspName, testName)
+                } else {
+                    histKey = fmt.Sprintf(keyHistFailFmt, cardInfo.CardType, cardInfo.dspName, testName)
+                }
+                retValHost = funcMsg
             } else {
-                histKey = fmt.Sprintf(keyHistFailFmt, cardInfo.CardType, cardInfo.dspName, testName)
+                histKey = fmt.Sprintf(keyHistTimeoutFmt, cardInfo.CardType, cardInfo.dspName, testName)
+                retValHost = errType.Timeout
             }
             RedisClient.Incr(histKey)
 
@@ -336,16 +341,20 @@ func DspInfraMainLoop() (err error) {
             // Check stop_on_error
             if (stopOnErrFlag > 0 && funcMsg != 0) {
                 stopOnErrEn = 1
-                break;
+                break
+            }
+            if stopOnErrEn == 0xFF {
+                break
             }
         }
 
+        // Inform Host test is done
         keyResult := fmt.Sprintf(keyResultFmt, testID)
-        RedisClient.Set(keyResult, funcMsg, 0)
-
+        RedisClient.Set(keyResult, retValHost, 0)
         // Close function message channel after it is done
-        close(FuncMsgChan)
-        //break;
+        if retValHost != errType.Timeout {
+           close(FuncMsgChan)
+        }
     }
     cli.Println("i", "Done mainloop", iteCount)
     return err
