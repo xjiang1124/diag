@@ -51,6 +51,8 @@ class diagEngineHost:
         # Test history, e.g. GET HIST:NIC1:PMBUS:INTR:FAILURE
         self.testHistKeyFmt = 'HIST:{}:{}:{}:{}'
 
+        # Skip list, e.g. SADD SKIPLIST NIC1:PMBUS:INTR
+        self.skiplistKey = "SKIPLIST"
         #==========================================================
         # e.g. NIC1
         self.cardName = os.environ['CARD_TYPE']
@@ -88,6 +90,10 @@ class diagEngineHost:
             self.logger.error(message)
             return [], -1
     
+        cardNm = cardNm.upper()
+        dspNm = dspNm.upper()
+        testNm = testNm.upper()
+
         # In ase cardNm is empty, take it as local card
         if cardNm == '':
             cardNm = self.cardName
@@ -112,9 +118,6 @@ class diagEngineHost:
             # Check whether the dsp is alive
             keyExist = self.r.exists(self.dspExpKeyFmt.format(cardNm, brdNm, dspNm))
             if keyExist == True:
-                #if dspNm == "DIAGMGR":
-                #    print "DIAGMGR is not an active DSP"
-                #    return [], -1
                 dspList = [dspNm]
             else:
                 print "_NOT_ a live DSP:", dspNm
@@ -122,6 +125,7 @@ class diagEngineHost:
 
         # Get test list
         tests = []
+        fmtSkipOutput = "--- {}:{}:{} is in skiplist ---"
         for dsp in dspList:
             if testNm == '':
                 # Get tests per dsp
@@ -213,15 +217,39 @@ class diagEngineHost:
         testQueKey = self.testQueKeyFmt.format(cardNm, dspNm)
         self.r.lpush(testQueKey, testId)
 
+    def remSkippedTest(self, testList):
+        while(True):
+            repeat = False
+            for idx, test in enumerate(testList):
+                cardTp = test[0]
+                dspNm = test[1]
+                testNm = test[2]
+                if self.checkIfSkipped(cardTp, dspNm, testNm) == True:
+                    fmtSkipOutput = "--- {}:{}:{} is in skiplist ---"
+                    skipOutput = fmtSkipOutput.format(cardTp, dspNm, testNm)
+                    print skipOutput
+                    testList = testList[:idx]+testList[idx+1:]
+                    repeat = True
+                    break
+            if repeat == False:
+                break
+        return testList
+
     def dispatchTestList (self, testList):
+        # Check Skiplist
+        testList = self.remSkippedTest(testList)
+
         print '=== Test started ==='
         for test in testList:
             self.dispatchTest(test)
+        return testList
 
     def waitForTestFinish (self, testList):
         testDone = False
         fmtTestDone = "--- Test Done: {}:{}:{} ---"
         while True:
+            if len(testList) == 0:
+                testDone = True
             for test in testList:
                 self.listenToDsp()
     
@@ -293,7 +321,7 @@ class diagEngineHost:
     
         self.showTestList(testList)
 
-        self.dispatchTestList(testList)
+        testList = self.dispatchTestList(testList)
     
         self.waitForTestFinish(testList)
         self.showTestResult(testList)
@@ -371,6 +399,31 @@ class diagEngineHost:
 
         testList = self.r.smembers(self.dspTestKeyFmt.format(self.getBrdName(cardTp), dspNm))
         return testList, 0
+
+    def checkIfSkipped(self, cardTp, dspNm, testNm):
+        return self.r.sismember(self.skiplistKey, cardTp+":"+dspNm+":"+testNm)
+
+    def skip(self, cardTp="", dspNm="", testNm=""):
+        cardTp = cardTp.upper()
+        dspNm = dspNm.upper()
+        testNm = testNm.upper()
+
+        testList, err = self.parseCardInfo(cardTp, dspNm, testNm)
+        fmtSkipMem = "{}:{}:{}"
+        for test in testList:
+            skipMem = fmtSkipMem.format(test[0], test[1], test[2])
+            self.r.sadd(self.skiplistKey, skipMem)
+
+    def unskip(self, cardTp="", dspNm="", testNm=""):
+        cardTp = cardTp.upper()
+        dspNm = dspNm.upper()
+        testNm = testNm.upper()
+
+        testList, err = self.parseCardInfo(cardTp, dspNm, testNm)
+        fmtSkipMem = "{}:{}:{}"
+        for test in testList:
+            skipMem = fmtSkipMem.format(test[0], test[1], test[2])
+            self.r.srem(self.skiplistKey, skipMem)
 
 #==========================================================
 # Diag host status class
@@ -521,8 +574,15 @@ class diagSts(diagEngineHost):
                     testHistStr = fmtTestHist.format(test, histSucc, histFail, histTout)
                     print testHistStr
 
+    def showSkip(self):
+        skipMems = self.r.smembers(self.skiplistKey)
+        print "======== Skip List ======="
+        for skip in skipMems:
+            #[card, dsp, test] = skip.split(":")
+            print skip
+
     # Clean up system
-    def sysClean(self):
+    def cleanSys(self):
         dshbufList = self.r.keys("dshbuf*")
         for dshbuf in dshbufList:
             self.r.delete(dshbuf)
@@ -533,4 +593,11 @@ class diagSts(diagEngineHost):
             self.r.delete(que)
         print "que cleared"
 
+
+    # Clean up system
+    def cleanHist(self):
+        histList = self.r.keys("HIST:*")
+        for hist in histList:
+            self.r.delete(hist)
+        print "Test history cleared"
 
