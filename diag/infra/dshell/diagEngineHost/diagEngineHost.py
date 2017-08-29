@@ -129,7 +129,7 @@ class diagEngineHost:
         for dsp in dspList:
             if testNm == '':
                 # Get tests per dsp
-                testList = self.r.smembers(self.dspTestKeyFmt.format(self.brdName, dsp))
+                testList = self.r.smembers(self.dspTestKeyFmt.format(self.getBrdName(cardNm), dsp))
                 for test in testList:
                     testItem = [cardNm, dsp, test]
                     tests.append(testItem)
@@ -162,7 +162,6 @@ class diagEngineHost:
         testList, err = self.parseCardInfo(cardNm, dspNm, testNm)
         if err == -1:
             return [], -1
-        #print testList
         
         paramKeyFmt = '{}:{}:{}'
         paramDict = dict()
@@ -325,6 +324,22 @@ class diagEngineHost:
     
         self.waitForTestFinish(testList)
         self.showTestResult(testList)
+
+    def paraRun(self, testItems):
+        testListAll = []
+        for testitem in testItems:
+            testList, err = self.parseTestInfo(testitem[0], testitem[1], testitem[2], testitem[3])
+            if err == -1:
+                return -1
+            testListAll = testListAll + testList
+        #print testListAll
+ 
+        self.showTestList(testListAll)
+
+        testList = self.dispatchTestList(testListAll)
+    
+        self.waitForTestFinish(testListAll)
+        self.showTestResult(testListAll)
 
     def setStopOnErr (self, stopOnErr):
         key = "STOP_ON_ERROR"

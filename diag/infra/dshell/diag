@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import redis
-import logging
-from time import sleep
 import argparse
+import logging
+import os
+import redis
+import shlex
+import sys
+from time import sleep
 
 from IPython import embed
 from traitlets.config.loader import Config
@@ -22,6 +23,8 @@ group.add_argument("-sh", "--shell", action="store_true", help="Get into diag sh
 group.add_argument("-r", "--runtest", action="store_true", help="Run test; format: diag -r -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]")
 group.add_argument("-skip", "--skiptest", action="store_true", help="Skip test; format: diag -skip -c CARD_IDX [-d DSP][-t TEST]")
 group.add_argument("-uskip", "--unskiptest", action="store_true", help="Unskip test; format: diag -skip -c CARD_IDX [-d DSP][-t TEST]")
+
+group.add_argument("-pr", "--parallelRuntest", action='append', type=str, help="")
 
 group.add_argument("-scard", "--showCard", action="store_true", help="Show card list")
 group.add_argument("-sdsp", "--showDsp", action="store_true", help="Show DSP list; if cardName specified, show DSP list on particular card; Otherwise, show DSPs of all cards")
@@ -138,3 +141,48 @@ if args.cleanHistory == True:
     diagsts.cleanHist()
     sys.exit()
 
+if args.parallelRuntest != None:
+    paraTest = args.parallelRuntest
+    testItems = []
+    for test in paraTest:
+        test = test.split()[1:]
+
+        # In parallel run, parameter is encapsulated by quote signs.
+        # Following code is to remove the quote signs and concatenate all parameter into
+        # one single parameter string
+        test1 = []
+        paramStart = 0
+        paramEnd = 0
+        item1 = ""
+        for item in test:
+            # parameter concanetation starts
+            if item[0] == "\"":
+                item = item[1:]
+                paramStart = 1
+            # parameter concanetation ends
+            if item[len(item)-1] == "\"":
+                item = item[:len(item)-1]
+                paramEnd = 1
+
+            if paramStart == 1:
+                item1 = item1 + " " + item
+            else:
+                item1 = item
+                test1.append(item1)
+                item1 = ""
+
+            if paramEnd == 1:
+                paramStart = 0
+                paramEnd = 0
+                test1.append(item1)
+                item1 = ""
+
+        argss = parser.parse_args(test1)
+        param = argss.parameter
+        if param[0] == "\"":
+            param = param[1:]
+        if param[len(param)-1] == "\"":
+            param = param[0:len(param)-1]
+        paramList = convertParam(param)
+        testItems.append([argss.cardidx, argss.dspname, argss.testname, paramList])
+    diaghost.paraRun(testItems)
