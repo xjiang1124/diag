@@ -16,20 +16,39 @@ from IPython.terminal.embed import InteractiveShellEmbed
 from diagEngineHost import diagEngineHost, diagSts
 
 #==========================================================
-parser = argparse.ArgumentParser(description="Diagnostic inteface")
-parser.add_argument("-v", "--verbose", action="store_true")
+parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-sh", "--shell", action="store_true", help="Get into diag shell")
-group.add_argument("-r", "--runtest", action="store_true", help="Run test; format: diag -r -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]")
-group.add_argument("-skip", "--skiptest", action="store_true", help="Skip test; format: diag -skip -c CARD_IDX [-d DSP][-t TEST]")
-group.add_argument("-uskip", "--unskiptest", action="store_true", help="Unskip test; format: diag -skip -c CARD_IDX [-d DSP][-t TEST]")
+group.add_argument("-r", "--runtest", action="store_true", 
+        help='''\
+Run test
+format: diag -r -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]\
+''')
+group.add_argument("-skip", "--skiptest", action="store_true",
+        help='''\
+Skip test
+format: diag -skip -c CARD_IDX [-d DSP][-t TEST]
+''')
+group.add_argument("-uskip", "--unskiptest", action="store_true",
+        help='''\
+Unskip test
+format: diag -skip -c CARD_IDX [-d DSP][-t TEST]
+''')
 
-group.add_argument("-pr", "--parallelRuntest", action='append', type=str, help="")
+group.add_argument("-pr", "--parallelRuntest", action='append', type=str,
+        help='''\
+Parallel run test
+format: diag -pr 't -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]'
+''')
 
 group.add_argument("-scard", "--showCard", action="store_true", help="Show card list")
 group.add_argument("-sdsp", "--showDsp", action="store_true", help="Show DSP list; if cardName specified, show DSP list on particular card; Otherwise, show DSPs of all cards")
 group.add_argument("-stest", "--showTest", action="store_true", help="Show test list; if cardName and dspName specified, show test list on particular card; Otherwise, show tests of all cards")
-group.add_argument("-shist", "--showHist", action="store_true", help="display per test pass/fail/timeout history; format: diag -shist [-c CARD_IDX] [-d DSP]")
+group.add_argument("-shist", "--showHist", action="store_true", 
+        help='''\
+Display per test pass/fail/timeout history
+format: diag -shist [-c CARD_IDX] [-d DSP]
+''')
 group.add_argument("-sskip", "--showSkip", action="store_true", help="Show skeped test list")
 
 group.add_argument("-csys", "--cleanSystem", action="store_true", help="Housekeeping command, clean all the queues and queue status")
