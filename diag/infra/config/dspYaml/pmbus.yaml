@@ -44,6 +44,7 @@ DSP:
     TYPE: DEV
 
     # Properties apply to all platforms
+    # Do not remove ite/timeout/dshid which are needed for all DSPs
     COMMON:
         PARAM:
             ite: 

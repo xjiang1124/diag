@@ -112,7 +112,7 @@ fmt_param_info = '{}#PARAM#INFO#{}#{}#{}'
 
 #=========================================================
 # yaml parser
-config_file = input_path+"platform_config.yaml"
+config_file = "platform_config.yaml"
 with open(config_file) as stream:
     try:
         #config_dict = yaml.load(stream)
@@ -498,13 +498,3 @@ func {}{}Hdl(argList []string) {{
     print "Done parsing dsp main package"
     
     print "====", "Done", filename, "====\n"
-
-#with open(output_path+'card_dsp_dev_dict.pickle', 'wb') as handle:
-#    pickle.dump(card_dsp_dev_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-#
-#with open(output_path+'card_dsp_host_dict.pickle', 'wb') as handle:
-#    pickle.dump(card_dsp_host_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-# Load data (deserialize)
-#with open('filename.pickle', 'rb') as handle:
-#    unserialized_data = pickle.load(handle)

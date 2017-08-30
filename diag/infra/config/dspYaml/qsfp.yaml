@@ -44,6 +44,7 @@ DSP:
     #TYPE: HOST
 
     # Properties apply to all platforms
+    # Do not remove ite/timeout/dshid which are needed for all DSPs
     COMMON:
         PARAM:
             ite: 
@@ -59,12 +60,12 @@ DSP:
     TEST#I2C:
         INFO: Test QSFP I2C bus
         PLATFORM:
-            HOST: HOST
+            NIC: NAPLES
         PRIORITY: NORMAL 
         PARAM:
             timeout: 
                 VALUE:
-                    ALL: 120
+                    ALL: 60
                 INFO: Timeout setting for the test
             mask:
                 VALUE:
@@ -74,7 +75,7 @@ DSP:
     CMD#laseren:
         INFO: Enable optical module laser
         PLATFORM:
-            HOST: ALL
+            NIC: NAPLES
         PRIORITY: NORMAL
         PARAM:
             inst:
