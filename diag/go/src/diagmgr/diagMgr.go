@@ -6,6 +6,7 @@ import (
     "os"
     "os/exec"
     "strings"
+    "syscall"
 
     "config"
     "common/diagEngine"
@@ -21,7 +22,8 @@ const (
     dspName = "DIAGMGR"
 )
 
-var dspMap = make(map[string]int)
+//var dspMap = make(map[string]int)
+var dspMap = make(map[string] *exec.Cmd)
 var cardName string
 var cardType string
 
@@ -45,18 +47,47 @@ func startDsp(dspList []string, path string) int {
         dcli.Println("i", "Starting DSP:", dsp)
         filename := path+strings.ToLower(dsp)
         cmd := exec.Command(filename)
+        //cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
         err := cmd.Start()
         if err != nil {
             dcli.Println("F", "Error starting Cmd", err)
             return errType.Fail
         }
+        //cmd.Wait()
 
-        dspMap[dsp] = cmd.Process.Pid
+        //dspMap[dsp] = cmd.Process.Pid
+        dspMap[dsp] = cmd
         dcli.Println("i", "Starting DSP:", dsp, "Done")
     }
 
     return errType.Success
+}
+
+func stopDsp() int {
+    retVal := 0
+    //for dsp, pid := range (dspMap) {
+    for dsp, cmd := range (dspMap) {
+        dcli.Println("i", "Terminating DSP: ", dsp)
+
+        err = cmd.Process.Kill()
+        if (err != nil) {
+            dcli.Println("f", "Terminating process failed: dsp, pid")
+            retVal += 1
+            dcli.Println("i", "Terminating DSP", dsp, "failed")
+            continue
+        }
+
+        dcli.Println("i", "Termination Done:", dsp)
+        delete(dspMap, dsp)
+    }
+
+    if retVal == 0 {
+        return errType.Success
+    } else {
+        return errType.Fail
+    }
+
 }
 
 func DiagmgrDsp_StartHdl(argList []string) {
@@ -66,8 +97,15 @@ func DiagmgrDsp_StartHdl(argList []string) {
     if err != nil {
         dcli.Println("f", "Parse failed", err)
     }
-
     retVal := errType.Success
+
+    // Stop all DSPs first
+    retVal = stopDsp()
+    if retVal != errType.Success {
+        diagEngine.FuncMsgChan <- retVal
+        return 
+    }
+
     dspList := getDspList()
     if (cardName == "HOST") {
         retVal = startDsp(dspList, config.DiagHostBinPath)
@@ -86,34 +124,8 @@ func DiagmgrDsp_StopHdl(argList []string) {
         dcli.Println("f", "Parse failed", err)
     }
 
-    retVal := 0
-    for dsp, pid := range (dspMap) {
-        dcli.Println("i", "Terminating DSP: ", dsp)
-        process, err := os.FindProcess(pid)
-        if err != nil {
-            dcli.Println("f", "No process named is running:", pid)
-            retVal += 1
-            dcli.Println("i", "Terminating DSP", dsp, "failed")
-            continue
-        }
-
-        err = process.Kill()
-        if (err != nil) {
-            dcli.Println("f", "Terminating process failed: dsp, pid")
-            retVal += 1
-            dcli.Println("i", "Terminating DSP", dsp, "failed")
-            continue
-        }
-        dcli.Println("i", "Termination Done:", dsp)
-        delete(dspMap, dsp)
-    }
-
-    // Inform diag engine that test handler is done// Use chan to return error code
-    if (retVal != 0) {
-        diagEngine.FuncMsgChan <- errType.Fail
-    } else {
-        diagEngine.FuncMsgChan <- errType.Success
-    }
+    retVal := stopDsp()
+    diagEngine.FuncMsgChan <- retVal
     return
 }
 
