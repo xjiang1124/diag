@@ -16,7 +16,7 @@ import (
 )
 
 // #cgo CFLAGS: -I../../common/i2cc
-// #cgo LDFLAGS: ../../../pkg/linux_amd64/common/i2c.a
+// #cgo LDFLAGS: -li2c
 // #include <stdlib.h>
 // #include "../../common/i2cc/i2c.h"
 import "C"

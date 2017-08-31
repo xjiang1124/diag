@@ -9,6 +9,10 @@ GO_INSTALL=$(GO_CMD) install
 #GOPATH=$(TOP_DIR)/diag/go
 #CGO_LDFLAGS=-L$(GOPATH)/pkg/linux_amd64/common
 
+#C
+CC_ARM=aarch64-linux-gnu-gcc-6
+CC_X86=gcc
+
 # The name of the executable (default is current directory name)
 TARGET := $(shell echo $${PWD\#\#*/})
 .DEFAULT_GOAL: $(TARGET)
@@ -29,8 +33,24 @@ include path.mk
 
 all: check install
 
+arm_go_build:
+	@for p in $(SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc-6 $(GO_BUILD) -x -o $(GOBIN)/arm/$$p $$p || exit 1; \
+	 done
+
 c_build:
-	@$(MAKE) -C $(TOP_DIR)/diag/go/src/common/$(C_SRC_DIR)
+	@for p in $(C_SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		$(MAKE) -C $(TOP_DIR)/diag/go/src/common/$$p || exit 1; \
+	done
+#	@$(MAKE) -C $(TOP_DIR)/diag/go/src/common/$(C_SRC_DIR)
+
+c_arm_build:
+	@for p in $(C_SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		$(MAKE) -e CC=$(CC_ARM) -C $(TOP_DIR)/diag/go/src/common/$$p || exit 1; \
+	done
 
 build:
 	@for p in $(SRC_DIR); do \

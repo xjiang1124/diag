@@ -1,12 +1,13 @@
 .PHONY: all
 
-all: i2c
+all: libi2c
 
-i2c:
-	gcc -c *.c
-	ar rs i2c.a *.o
-	ar rs ${GOPATH}/pkg/linux_amd64/common/i2c.a *.o
+libi2c:
+	@echo $(CC)
+	$(CC) -c *.c
+	ar rs libi2c.a *.o
+	ar rs ${GOPATH}/pkg/linux_amd64/common/libi2c.a *.o
 
 clean:
-	rm -rf ${GOPATH}/pkg/linux_amd64/common/i2c.a *.o *.a
+	rm -rf ${GOPATH}/pkg/linux_amd64/common/libi2c.a *.o *.a
 
