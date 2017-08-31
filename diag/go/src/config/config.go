@@ -6,4 +6,8 @@ const (
 
     DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
     DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/host/"
+
+    DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
+    DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/go/bin/host/"
+
 )

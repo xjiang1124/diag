@@ -16,6 +16,7 @@ import (
     "time"
 
     "common/misc"
+    "config"
 )
 
 var (
@@ -35,9 +36,16 @@ var OutputMode int
 func Init(fileName string, mode int) {
     OutputMode = mode
 
+    cardName := os.Getenv("CARD_NAME")
+    path := config.DiagNicLogPath
+    if cardName == "HOST" {
+        path = config.DiagHostLogPath
+    }
+
 	multi := io.MultiWriter(os.Stdout)
     if fileName != "" {
-        file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
+        //file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
+        file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY|os.O_SYNC, 0666)
         if err != nil {
             log.Fatal("Open file failed!", fileName)
         }
@@ -49,13 +57,13 @@ func Init(fileName string, mode int) {
 	var warningHandle io.Writer = multi
 	var errorHandle io.Writer = multi
 
-	Debug = log.New(debugHandle,    "[DEBUG]:   ", 0)
+	Debug = log.New(debugHandle,    "[DEBUG]  ", 0)
 
-    Info = log.New(infoHandle,      "[INFO]:    ", 0)
+    Info = log.New(infoHandle,      "[INFO]   ", 0)
 
-    Warning = log.New(warningHandle,"[WARNING]: ", 0)
+    Warning = log.New(warningHandle,"[WARNING]", 0)
 
-    Error = log.New(errorHandle,    "[ERROR]:   ", 0)
+    Error = log.New(errorHandle,    "[ERROR]  ", 0)
 }
 
 func unixMilli(t time.Time) int64 {
