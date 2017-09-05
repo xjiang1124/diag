@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "i2c.h"
-#include "../../../include/diag.h"
+#include "../../include/diag.h"
 
 //#define DPRINTF(f_, ...) {printf((f_), __VA_ARGS__); fflush(stdout);}
 
