@@ -1,23 +1,23 @@
 // pmb.go specifies PMBus commands implementations
 package pmbCmd
 
-func readByte(devAddr uint32, regAddr uint32) value uint32 {
+func readByte(devName string, regAddr uint32) value uint32 {
     return 0
 }
 
-func writeByte(devAddr uint32, regAddr uint32, value uint32) value uint32 {
+func writeByte(devName string, regAddr uint32, value uint32) value uint32 {
     return 0
 }
 
-func readWord(devAddr uint32, regAddr uint32) value uint32 {
+func readWord(devName string, regAddr uint32) value uint32 {
     return 0
 }
 
-func writeWord(devAddr uint32, regAddr uint32, value uint32) value uint32 {
+func writeWord(devName string, regAddr uint32, value uint32) value uint32 {
     return 0
 }
 
-func sendByte(devAddr uint32, regAddr uint32) value uint32 {
+func sendByte(devName string, regAddr uint32) value uint32 {
     return 0
 }
 
