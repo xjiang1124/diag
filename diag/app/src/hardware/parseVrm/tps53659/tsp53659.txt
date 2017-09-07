@@ -1,0 +1,556 @@
+00h PAGE Selects which channel subsequent
+PMBus commands address RW All commands
+address Channel A N/A
+01h OPERATION
+Enable or disable each channel,
+enter or exit margin, configure the
+assertion of VR_HOT
+RW
+Conversion
+disabled. Margin
+None.
+00h 00h
+02h ON_OFF_CONFIG
+Configure the combination of
+OPERATION, and enable pin
+required to enable power conversion
+for each channel.
+RW,
+NVM
+AVR_EN/BEN pins
+only. 17h 17h
+03h CLEAR_FAULT Clears all fault status registers to 00h
+and releases PMB_ALERT W Write-only N/A
+04h PHASE
+Selects which phase of the active
+channel subsequent PMBus
+commands address
+RW Commands
+address all phases. FFh FFh
+10h WRITE_PROTECT
+Used to control writing to the volatile
+operating memory (PMBus and
+restore from NVM).
+RW
+Writes to all
+commands are
+allowed
+00h
+11h STORE_DEFAULT_ALL Stores all current storable register
+settings into NVM as new defaults. W Write-only N/A
+12h RESTORE_DEFAULT_ALL Restores all storable register settings
+from NVM. W Write-only N/A
+19h CAPABILITY
+Provides a way for a host system to
+determine key PMBus capabilities of
+the device.
+R
+1 MHz, PEC,
+PMB_ALERT
+Supported
+D0h
+1Bh SMBALERT_MASK
+(STATUS_VOUT)
+Selects which faults/status bits may
+to assert PMB_ALERT
+RW,
+NVM
+All bits may assert
+PMB_ALERT 00h 00h
+1Bh SMBALERT_MASK
+(STATUS_IOUT)
+Selects which faults/status bits may
+to assert PMB_ALERT
+RW,
+NVM
+All bits may assert
+PMB_ALERT 00h 00h
+1Bh SMBALERT_MASK
+(STATUS_INPUT)
+Selects which faults/status bits may
+to assert PMB_ALERT
+RW,
+NVM
+LOW_VIN does not
+assert
+PMB_ALERT
+08h 08h
+1Bh SMBALERT_MASK
+(STATUS_TEMPERATURE)
+Selects which faults/status bits may
+to assert PMB_ALERT
+RW,
+NVM
+All bits may assert
+PMB_ALERT 00h 00h
+1Bh SMBALERT_MASK
+(STATUS_CML)
+Selects which faults/status bits may
+to assert PMB_ALERT
+RW,
+NVM
+All bits may assert
+PMB_ALERT 00h 00h
+1Bh SMBALERT_MASK
+(STATUS_MFR_SPECIFIC)
+Selects which faults/status bits may
+to assert PMB_ALERT
+RW,
+NVM
+All bits may assert
+PMB_ALERT 00h 00h
+20h VOUT_MODE Read-only output mode indicator R(1)
+VID mode.
+VR13 5mV (Ch A),
+VR13 10mV (Ch B)
+27h 24h
+21h VOUT_COMMAND Output voltage target. RW,
+NVM
+1.200 V (Ch A)
+2.560V (Ch B) 00BFh 00CFh
+24h VOUT_MAX Sets the maximum output voltage RW,
+NVM
+1.520 V (Ch A)
+3.040 V (Ch B) 00FFh 00FFh
+25h VOUT_MARGIN_HIGH
+Load the unit with the voltage to
+which the output is to be changed
+when OPERATION command is set
+to “Margin High”.
+RW 0.000 V (Ch A)
+0.000 V (Ch B) 0000h 0000h
+26h VOUT_MARGIN_LOW
+Load the unit with the voltage to
+which the output is to be changed
+when OPERATION command is set
+to “Margin Low”.
+RW 0.000 V (Ch A)
+0.000 V (Ch B) 0000h 0000h
+27h VOUT_TRANSITION_RATE Used to set slew rate settings for
+output voltage updates
+RW,
+NVM
+10 mV/μs (Ch A)
+10 mV/μs (Ch B) E0A0h E0A0h
+28h VOUT_DROOP
+The VOUT_DROOP sets the rate, in
+mV/A (mΩ) at which the output
+voltage decreases (or increases) with
+increasing (or decreasing) output
+current for use with Adaptive Voltage
+Positioning
+RW,
+NVM
+0.375 mΩ (Ch A)
+0.500 mΩ (Ch B) D018h D020h
+29h VOUT_SCALE_LOOP Used for scaling the VID code RW,
+NVM
+1.000 (Ch A)
+1.125 (Ch B) E808h E809h
+2Ah VOUT_SCALE_MONITOR Used for scaling output voltage
+telemetry
+RW,
+NVM
+1.000 (Ch A)
+1.125 (Ch B) E808h E809h
+2Bh VOUT_MIN Sets the minimum output voltage RW,
+NVM
+0.000 V (Ch A)
+0.000 V (Ch B) 0000h 0000h
+33h FREQUENCY_SWITCH Sets the switching frequency RW,
+NVM
+600 kHz (Ch A)
+600 kHz (Ch B) 0258h 0258h
+35h VIN_ON
+Sets value of input voltage at which
+the device should start power
+conversion.
+RW,
+NVM 4.000 V F010h
+38h IOUT_CAL_GAIN Sets the ratio of voltage at the current
+sense pins to the sensed current.
+RW,
+NVM
+5.000 mΩ (Ch A)
+5.000 mΩ (Ch B) D140h D140h
+39h IOUT_CAL_OFFSET Used to null offsets in the output
+current sensing circuit
+RW,
+NVM
+0.000 A (Ch A)
+0.000 A (Ch B)
+(All Phases)
+E800h E800h
+40h VOUT_OV_FAULT_LIMIT
+Sets the value of the sensed output
+voltage which triggers an output
+overvoltage fault
+R 1.520 V (Ch A)
+2.800 V (Ch B) 00FFh 00E7h
+41h VOUT_OV_FAULT_RESPONSE Sets the converter response to an
+output overvoltage event R Shutdown, do not
+restart 80h 80h
+44h VOUT_UV_FAULT_LIMIT
+Sets the value of the sensed output
+voltage which triggers an output
+undervoltage fault
+R 0.000 V (Ch A)
+0.000 V (Ch B) 0000h 0000h
+45h VOUT_UV_FAULT_RESPONSE Sets the converter response to an
+output undervoltage event
+RW,
+NVM
+Shutdown, do not
+restart 80h 80h
+46h IOUT_OC_FAULT_LIMIT Sets the output Over Current fault
+limit
+RW,
+NVM(1)
+106 A (Ch A)
+25 A (Ch B) 006Ah 0019h
+47h IOUT_OC_FAULT_RESPONSE Define the over-current fault
+response.
+RW,
+NVM
+Shutdown, do not
+restart C0h C0h
+4Ah IOUT_OC_WARN_LIMIT
+Sets the value of the output current
+that causes the over current detector
+to indicate an over current warning.
+RW,
+NVM(1)
+85 A (Ch A)
+20 A (Ch B) 0055h 0014h
+4Fh OT_FAULT_LIMIT
+Sets the temperature, in degrees
+Celsius, of the unit at which it should
+indicate an Over temperature Fault.
+RW,
+NVM(1)
+115 °C (Ch A)
+115 °C (Ch B) 0073h 0073h
+50h OT_FAULT_RESPONSE Sets the converter response to an
+over temperature fault.
+RW,
+NVM
+Shutdown, do not
+restart 80h 80h
+51h OT_WARN_LIMIT
+Sets the temperature, in degrees
+Celsius, of the unit at which it should
+indicate an Over temperature
+warning.
+RW 105 °C (Ch A)
+105 °C (Ch B) 0069h 0069h
+55h VIN_OV_FAULT_LIMIT
+Set the voltage, in volts, of the unit at
+which it should indicate a Vin Overvoltage
+Fault.
+RW,
+NVM 17.000 V 0011h
+56h VIN_OV_FAULT_RESPONSE
+Instructs the device on what action to
+take in response to an input
+overvoltage fault.
+R Continue
+Uninterrupted 00h
+59h VIN_UV_FAULT_LIMIT
+Sets the value of the input voltage
+that causes an Input Under voltage
+Fault
+RW,
+NVM 4.250 V F011h
+5Ah VIN_UV_FAULT_RESPONSE Sets the converter response to an
+input undervoltage event R Shutdown, do not
+restart C0h
+5Bh IIN_OC_FAULT_LIMIT
+Sets the value in amperes that
+causes the over current fault
+condition of the input current
+RW,
+NVM 16.0 A F820h
+5Ch IIN_OC_FAULT_RESPONSE Sets the converter response to input
+overcurrent events R Shutdown, do not
+restart C0h
+5Dh IIN_OC_WARN_LIMIT
+Sets the value in amperes that
+causes the over current warning
+condition of the input current
+RW,
+NVM 16.0 A F820h
+60h TON_DELAY
+Sets the time, in milliseconds, from
+when a start condition is received (as
+programmed by the
+ON_OFF_CONFIG command) until
+the output voltage starts to rise.
+RW,
+NVM
+1.408 ms
+0.480 ms BAD1h B1ECh
+6Bh PIN_OP_WARN_LIMIT
+The PIN_OP_WARN_LIMIT
+command sets the value of the input
+power, in watts, that causes a
+warning that the input power is high
+RW 450 W 08E1h
+78h STATUS_BYTE PMBus read-only status and flag bits. RW Current Status N/A N/A
+79h STATUS_WORD PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Ah STATUS_VOUT PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Bh STATUS_IOUT PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Ch STATUS_INPUT PMBus read-only status and flag bits. RW Current Status N/A
+7Dh STATUS_TEMPERATURE PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Eh STATUS_CML PMBus read-only status and flag bits. RW Current Status N/A
+80h STATUS_MFR_SPECIFIC PMBus read-only status and flag bits. RW Current Status N/A N/A
+88h READ_VIN Returns the input voltage in volts R Current Status N/A
+89h READ_IIN Returns the input current in amperes R Current Status N/A
+8Bh READ_VOUT Returns the output voltage in VID
+format R Current Status N/A N/A
+8Ch READ_IOUT Returns the output current in
+amperes R Current Status N/A N/A
+8Dh READ_TEMPERATURE_1 Returns the highest power stage
+temperature in °C R Current Status N/A N/A
+96h READ_POUT Returns the output power in Watts R Current Status N/A N/A
+97h READ_PIN Returns the input power in Watts R Current Status N/A
+98h PMBUS_REVISION
+Returns the version of the PMBus
+specification to which this device
+complies
+R PMBus 1.3
+Part I, Part II 33h
+99h MFR_ID Loads the unit with bits that contain
+the manufacturer’s ID
+RW,
+NVM
+Arbitrary NVM for
+user 0000h
+9Ah MFR_MODEL Loads the unit with bits that contain
+the manufacturer’s model number
+RW,
+NVM
+Arbitrary NVM for
+user 0000h
+9Bh MFR_REVISION Loads the unit with bits that contain
+the manufacturer’s model revision
+RW,
+NVM
+Arbitrary NVM for
+user 0400h
+9Dh MFR_DATE Loads the unit with bits that contain
+the manufacture date
+RW,
+NVM December 2016 100Ch
+9Eh MFR_SERIAL NVM Checksum R NVM checksum 1AE2A532h
+A3h MFR_PIN_MAX Sets or retrieves the maximum rated
+value, in watts, of the input power R 60 W 003Ch
+ADh IC_DEVICE_ID Returns a number indicating the part
+number of the device R TPS53659 59h
+AEh IC_DEVICE_REV Returns a number indicating the
+device revision R ES2.1/Rev 5 04h
+B0h USER_DATA_00 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B1h USER_DATA_01 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B2h USER_DATA_02 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B3h USER_DATA_03 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B4h USER_DATA_04 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B5h USER_DATA_05 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B6h USER_DATA_06 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B7h USER_DATA_07 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B8h USER_DATA_08 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+B9h USER_DATA_09 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+BAh USER_DATA_10 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+BBh USER_DATA_11 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+BCh USER_DATA_12 Used for batch NVM programming. RW,
+NVM
+Current
+configuration
+Factory Default
+Settings
+D0h MFR_SPECIFIC_00
+Configures per-phase overcurrent
+levels, current share thresholds, and
+other miscellaneous settings.
+RW,
+NVM
+Misc. configuration,
+See register maps 243Ah 3431h
+D1h MFR_SPECIFIC_01
+Configures the IOUT gain factor for
+the SVID interface, program and read
+back the SVID physical address.
+RW,
+NVM
+Misc. configuration,
+See register maps 0300h(2) 0210h(2)
+D2h MFR_SPECIFIC_02
+Selects which interface (PMBus or
+SVID) has control of the output
+voltage
+RW,
+NVM
+SVID Control (Ch
+A)
+PMBus control (Ch
+B)
+02h 01h
+D3h MFR_SPECIFIC_03 Returns information regarding current
+imbalance warnings for each phase R Current status N/A N/A
+D4h MFR_SPECIFIC_04 Returns the output voltage for the
+active channel, in linear format R Current status N/A N/A
+D5h MFR_SPECIFIC_05
+Used to trim the output voltage of the
+active channel, by applying an offset
+to the currently selected VID code.
+RW,
+NVM
+27.5 mV offset (Ch
+A)
+0.00 mV offset (Ch
+B)
+16h 00h
+D6h MFR_SPECIFIC_06
+Configures dynamic load line options
+for both channels, and selects Auto-
+DCM operation.
+RW,
+NVM
+Misc. configuration,
+See register maps 0000h 1000h
+D7h MFR_SPECIFIC_07 Configures the internal loop
+compensation for both channels.
+RW,
+NVM
+Misc. configuration,
+See to register
+maps
+1144h 3624h
+D8h MFR_SPECIFIC_08
+Used to identify catastrophic faults
+which occur first, and store this
+information to NVM
+RW,
+NVM Current status 00h 00h
+D9h MFR_SPECIFIC_09
+Used to configure non-linear transient
+performance enhancements such as
+undershoot reduction (USR)
+RW,
+NVM
+Misc. configuration,
+See register maps 70C7h 04C7h
+DAh MFR_SPECIFIC_10
+Used to configure input current
+sensing, and set the maximum output
+current
+RW,
+NVM
+Misc. configuration,
+See register maps 3255h 0014h
+DBh MFR_SPECIFIC_11 Boot-up VID code for each channel RW,
+NVM
+VID 191d (Ch A)
+VID 207d (Ch B) BFh CFh
+DCh MFR_SPECIFIC_12
+Used to configure input current
+sensing, and other miscellaneous
+settings
+RW,
+NVM
+Misc. configuration,
+See register maps D700h 0780h
+DDh MFR_SPECIFIC_13
+Used to configure output voltage slew
+rates, VR Mode, and other
+miscellaneous settings.
+RW,
+NVM
+Misc. configuration,
+See register maps 95E5h 0185h
+DEh MFR_SPECIFIC_14
+Used to configure dynamic phase
+shedding, and compensation ramp
+amplitude, and dynamic ramp
+amplitude during USR, and different
+power states
+RW,
+NVM
+Misc. configuration,
+See register maps 0083h 0005h
+DFh MFR_SPECIFIC_15 Used to configure dynamic phase
+shedding.
+RW,
+NVM
+Misc. configuration,
+See register maps 0000h 0000h
+E4h MFR_SPECIFIC_20 Used to set the maximum operational
+phase number, on-the-fly.
+RW,
+NVM
+Misc. configuration,
+See register maps Hardware Configured
+F0h MFR_SPECIFIC_32 Used to set the input over-power
+warning RW 450 W 00E1h
+F8h MFR_SPECIFIC_40 Sets the value for Input power sensor
+scaling value for SVID RW 120 W 3Ch
+FAh MFR_SPECIFIC_42 NVM Security RW,
+NVM NVM Security Key 0000h

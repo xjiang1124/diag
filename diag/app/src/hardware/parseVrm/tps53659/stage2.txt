@@ -1,0 +1,105 @@
+00h PAGE Selects which channel subsequent
+01h OPERATION
+02h ON_OFF_CONFIG
+03h CLEAR_FAULT Clears all fault status registers to 00h
+04h PHASE
+10h WRITE_PROTECT
+11h STORE_DEFAULT_ALL Stores all current storable register
+12h RESTORE_DEFAULT_ALL Restores all storable register settings
+19h CAPABILITY
+1Bh SMBALERT_MASK
+1Bh SMBALERT_MASK
+1Bh SMBALERT_MASK
+1Bh SMBALERT_MASK
+1Bh SMBALERT_MASK
+1Bh SMBALERT_MASK
+20h VOUT_MODE Read-only output mode indicator R(1)
+21h VOUT_COMMAND Output voltage target. RW,
+24h VOUT_MAX Sets the maximum output voltage RW,
+25h VOUT_MARGIN_HIGH
+26h VOUT_MARGIN_LOW
+27h VOUT_TRANSITION_RATE Used to set slew rate settings for
+28h VOUT_DROOP
+29h VOUT_SCALE_LOOP Used for scaling the VID code RW,
+2Ah VOUT_SCALE_MONITOR Used for scaling output voltage
+2Bh VOUT_MIN Sets the minimum output voltage RW,
+33h FREQUENCY_SWITCH Sets the switching frequency RW,
+35h VIN_ON
+38h IOUT_CAL_GAIN Sets the ratio of voltage at the current
+39h IOUT_CAL_OFFSET Used to null offsets in the output
+40h VOUT_OV_FAULT_LIMIT
+41h VOUT_OV_FAULT_RESPONSE Sets the converter response to an
+44h VOUT_UV_FAULT_LIMIT
+45h VOUT_UV_FAULT_RESPONSE Sets the converter response to an
+46h IOUT_OC_FAULT_LIMIT Sets the output Over Current fault
+47h IOUT_OC_FAULT_RESPONSE Define the over-current fault
+4Ah IOUT_OC_WARN_LIMIT
+4Fh OT_FAULT_LIMIT
+50h OT_FAULT_RESPONSE Sets the converter response to an
+51h OT_WARN_LIMIT
+55h VIN_OV_FAULT_LIMIT
+56h VIN_OV_FAULT_RESPONSE
+59h VIN_UV_FAULT_LIMIT
+5Ah VIN_UV_FAULT_RESPONSE Sets the converter response to an
+5Bh IIN_OC_FAULT_LIMIT
+5Ch IIN_OC_FAULT_RESPONSE Sets the converter response to input
+5Dh IIN_OC_WARN_LIMIT
+60h TON_DELAY
+6Bh PIN_OP_WARN_LIMIT
+78h STATUS_BYTE PMBus read-only status and flag bits. RW Current Status N/A N/A
+79h STATUS_WORD PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Ah STATUS_VOUT PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Bh STATUS_IOUT PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Ch STATUS_INPUT PMBus read-only status and flag bits. RW Current Status N/A
+7Dh STATUS_TEMPERATURE PMBus read-only status and flag bits. RW Current Status N/A N/A
+7Eh STATUS_CML PMBus read-only status and flag bits. RW Current Status N/A
+80h STATUS_MFR_SPECIFIC PMBus read-only status and flag bits. RW Current Status N/A N/A
+88h READ_VIN Returns the input voltage in volts R Current Status N/A
+89h READ_IIN Returns the input current in amperes R Current Status N/A
+8Bh READ_VOUT Returns the output voltage in VID
+8Ch READ_IOUT Returns the output current in
+8Dh READ_TEMPERATURE_1 Returns the highest power stage
+96h READ_POUT Returns the output power in Watts R Current Status N/A N/A
+97h READ_PIN Returns the input power in Watts R Current Status N/A
+98h PMBUS_REVISION
+99h MFR_ID Loads the unit with bits that contain
+9Ah MFR_MODEL Loads the unit with bits that contain
+9Bh MFR_REVISION Loads the unit with bits that contain
+9Dh MFR_DATE Loads the unit with bits that contain
+9Eh MFR_SERIAL NVM Checksum R NVM checksum 1AE2A532h
+A3h MFR_PIN_MAX Sets or retrieves the maximum rated
+ADh IC_DEVICE_ID Returns a number indicating the part
+AEh IC_DEVICE_REV Returns a number indicating the
+B0h USER_DATA_00 Used for batch NVM programming. RW,
+B1h USER_DATA_01 Used for batch NVM programming. RW,
+B2h USER_DATA_02 Used for batch NVM programming. RW,
+B3h USER_DATA_03 Used for batch NVM programming. RW,
+B4h USER_DATA_04 Used for batch NVM programming. RW,
+B5h USER_DATA_05 Used for batch NVM programming. RW,
+B6h USER_DATA_06 Used for batch NVM programming. RW,
+B7h USER_DATA_07 Used for batch NVM programming. RW,
+B8h USER_DATA_08 Used for batch NVM programming. RW,
+B9h USER_DATA_09 Used for batch NVM programming. RW,
+BAh USER_DATA_10 Used for batch NVM programming. RW,
+BBh USER_DATA_11 Used for batch NVM programming. RW,
+BCh USER_DATA_12 Used for batch NVM programming. RW,
+D0h MFR_SPECIFIC_00
+D1h MFR_SPECIFIC_01
+D2h MFR_SPECIFIC_02
+D3h MFR_SPECIFIC_03 Returns information regarding current
+D4h MFR_SPECIFIC_04 Returns the output voltage for the
+D5h MFR_SPECIFIC_05
+D6h MFR_SPECIFIC_06
+D7h MFR_SPECIFIC_07 Configures the internal loop
+D8h MFR_SPECIFIC_08
+D9h MFR_SPECIFIC_09
+DAh MFR_SPECIFIC_10
+DBh MFR_SPECIFIC_11 Boot-up VID code for each channel RW,
+DCh MFR_SPECIFIC_12
+DDh MFR_SPECIFIC_13
+DEh MFR_SPECIFIC_14
+DFh MFR_SPECIFIC_15 Used to configure dynamic phase
+E4h MFR_SPECIFIC_20 Used to set the maximum operational
+F0h MFR_SPECIFIC_32 Used to set the input over-power
+F8h MFR_SPECIFIC_40 Sets the value for Input power sensor
+FAh MFR_SPECIFIC_42 NVM Security RW,
