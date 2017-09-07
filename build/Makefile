@@ -35,8 +35,8 @@ all: check install
 
 arm_go_build:
 	@for p in $(SRC_DIR); do \
-		echo "==> Build $$p ..."; \
-		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc-6 $(GO_BUILD) -x -o $(GOBIN)/arm/$$p $$p || exit 1; \
+		echo "==> Build $$p ..."; echo $(notdir $(addprefix /, $$p)); \
+		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc-6 $(GO_BUILD) -o $(GOBIN)/arm/$$p $$p || exit 1; \
 	 done
 
 c_build:
