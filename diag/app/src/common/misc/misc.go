@@ -7,6 +7,8 @@ import (
     //"fmt"
     "strings"
     "time"
+
+    "common/errType"
 )
 
 //========================================================
@@ -16,6 +18,35 @@ import (
 // Global variables
 
 //========================================================
+
+/*
+    Twos complement with given number of bits
+    Effective bits should be already shited to the right side
+ */
+func TwoCmplBits(data uint32, numBits uint32) (retVal int, err int) {
+    var msb uint32
+
+    if numBits == 0 {
+        return 0, errType.Invalidparam
+    }
+
+    // Remove upper bits just in case
+    data = data & (1 << numBits - 1)
+
+    msb = 1 << (numBits - 1)
+    sign := data & msb
+
+    retVal = int(data)
+    if sign == 0 {
+        return retVal, errType.Success
+    }
+
+    // Negative number, make upper bits all one
+    data = data | (^(1 << numBits - 1))
+    retVal = int((^data + 1)) * (-1)
+
+    return retVal, errType.Success
+}
 
 /*
     Convert uint32 into 4 byte slice
