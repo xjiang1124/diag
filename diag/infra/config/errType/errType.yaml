@@ -3,6 +3,7 @@
 ---
 INFO_GENERAL: General error code
 success: 0
+invalidParam: 1
 fail: -1
 
 INFO_DIAGMGR: DiagEgine error code

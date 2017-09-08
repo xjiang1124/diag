@@ -5,7 +5,10 @@ cat tsp53659.txt | grep '^[0-9A-Z][0-9A-Z]h' > stage1.txt
 mv stage1.txt stage2.txt
 
 # Print out in format name=offset
-cat stage2.txt | awk -F " " '{print $2 "=0x" $1}' > stage3.txt
+cat stage2.txt | awk -F " " '{print "    " $2 " = 0x" $1}' > stage3.txt
 
 # remove last 'h in each line
-awk '1' RS='h\n' stage4.txt
+awk '1' RS='h\n' stage3.txt > stage4.txt
+
+# remove duplicate
+cat stage4.txt | uniq > stage5.txt

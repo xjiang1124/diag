@@ -1,9 +1,10 @@
 /*
     Package misc provides miscellenance functions
 */
-package misc 
+package misc
 
 import (
+    //"fmt"
     "strings"
     "time"
 )
@@ -16,6 +17,29 @@ import (
 
 //========================================================
 
+/*
+    Convert uint32 into 4 byte slice
+ */
+func U32ToBytes(dataU32 uint32, byteArr []byte) {
+    for i:=0; i<4; i++ {
+        byteArr[i] = byte(dataU32 & 0xFF)
+        dataU32 = dataU32 >> 8
+    }
+}
+
+/*
+    Convert uint32 into 4 byte slice
+ */
+func BytesToU32(dataU32 *uint32, byteArr []byte) {
+    *dataU32 = 0
+    for i:=0; i<4; i++ {
+        *dataU32 = (*dataU32 << 8) | uint32(byteArr[3-i])
+    }
+}
+
+/*
+    Sleep function in second
+ */
 func SleepInSec(numSec int) {
     time.Sleep(time.Duration(numSec) * time.Second)
 }

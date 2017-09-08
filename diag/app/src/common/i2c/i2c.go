@@ -2,13 +2,31 @@
 package i2c
 
 import (
+    //"fmt"
+
+    "config"
     "common/errType"
+    "hardware/vrmsim"
 )
 
-func Read(devNameString string, offset uint32, data []byte, numBytes uint32) uint32 {
+func Read(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
+    if config.SimMode == 1 {
+        return ReadSim(i2cIdx, devAddr, offset, data, numBytes)
+    }
     return errType.Success
 }
 
-func Write(devNameString string, offset uint32, data []byte, numBytes uint32) uint32 {
+func Write(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
     return errType.Success
 }
+
+func ReadSim(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
+    retVal := errType.Success
+
+    // VRM_CAPRI
+    if i2cIdx == 2 && devAddr == 0xC4  {
+        retVal = vrmsim.GetDefaultValue(vrmsim.Tps53659RegSim, offset, data)
+    }
+    return retVal
+}
+

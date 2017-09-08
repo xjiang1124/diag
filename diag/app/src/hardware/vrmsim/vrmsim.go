@@ -1,0 +1,41 @@
+package vrmsim
+import (
+    "common/errType"
+    "common/misc"
+)
+
+type I2cRegSim struct {
+    offset uint32
+    value uint32
+    numByte uint32
+}
+
+var Tps53659RegSim = []I2cRegSim {
+    I2cRegSim {0x00, 0x00, 2}, // Page
+    I2cRegSim {0x01, 0x00, 2}, // Operation
+    I2cRegSim {0x02, 0x00, 2}, // on_off_config
+    I2cRegSim {0x20, 0x27, 2}, // VOUT_mode
+    I2cRegSim {0x21, 0xBF, 2}, // VOUT_command
+    I2cRegSim {0x25, 0x00, 2}, // VOUT_MARGIN_HIGH
+    I2cRegSim {0x26, 0x00, 2}, // VOUT_MARGIN_LOW
+    I2cRegSim {0x79, 0x00, 2}, // STATUS_WORD
+    I2cRegSim {0x88, 0x00, 2}, // READ_VIN
+    I2cRegSim {0x89, 0x00, 2}, // READ_IIN
+    I2cRegSim {0x8B, 0x6F, 2}, // READ_VOUT
+    I2cRegSim {0x8C, 0x00, 2}, // READ_IOUT
+    I2cRegSim {0x8D, 0x00, 2}, // READ_TEMP_1
+    I2cRegSim {0x96, 0x00, 2}, // READ_PIN
+    I2cRegSim {0x97, 0x00, 2}, // READ_POUT
+    I2cRegSim {0xAD, 0x59, 2}, // IC_DEVICE_ID
+}
+
+func GetDefaultValue(regTbl []I2cRegSim, offset uint32, data []byte) int {
+    for _, reg := range(regTbl) {
+        if reg.offset == offset {
+            misc.U32ToBytes(reg.value, data)
+            return errType.Success
+        }
+    }
+    return errType.Fail
+}
+

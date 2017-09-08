@@ -3,6 +3,7 @@ class errType:
         self.mapV = dict()
         # INFO_GENERAL
         self.mapV["Success"] = 0
+        self.mapV["Invalidparam"] = 1
         self.mapV["Fail"] = -1
         # INFO_DIAGMGR
         self.mapV["Skip"] = 100
@@ -13,6 +14,7 @@ class errType:
         self.mapN = dict()
         # INFO_GENERAL
         self.mapN[0] = "Success"
+        self.mapN[1] = "Invalidparam"
         self.mapN[-1] = "Fail"
         # INFO_DIAGMGR
         self.mapN[100] = "Skip"
