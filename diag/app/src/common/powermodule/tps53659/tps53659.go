@@ -12,6 +12,11 @@ import (
     "hardware/tps53659Reg"
 )
 
+type TPS53659 struct {
+    numPhases int
+}
+
+
 /*
     Calculate voltage output from vid value
     Formula comes from TPS53659 data sheet
@@ -72,7 +77,7 @@ func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
 }
 
 
-func ReadVout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     var data uint32
     var dacStepRegVal uint32
     var dacStep uint32
@@ -95,7 +100,7 @@ func ReadVout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, de
     return integer, dec, errType.Success
 }
 
-func ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     var data uint32
 
     // Write page register
@@ -112,7 +117,7 @@ func ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, de
     return
 }
 
-func ReadIoutPhase(i2cIdx uint32, devAddr uint32, channel uint32, phase uint32) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadIoutPhase(i2cIdx uint32, devAddr uint32, channel uint32, phase uint32) (integer uint32, dec uint32, err int) {
     var data uint32
 
     // Write page register
@@ -132,7 +137,7 @@ func ReadIoutPhase(i2cIdx uint32, devAddr uint32, channel uint32, phase uint32) 
 /*
     Read register with EXP format and calculate output
  */
-func ReadRegExp(i2cIdx uint32, devAddr uint32, channel uint32, addrAddr uint32) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadRegExp(i2cIdx uint32, devAddr uint32, channel uint32, addrAddr uint32) (integer uint32, dec uint32, err int) {
     var data uint32
 
     // Write page register
@@ -147,33 +152,33 @@ func ReadRegExp(i2cIdx uint32, devAddr uint32, channel uint32, addrAddr uint32) 
     return
 }
 
-func ReadVin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_VIN)
+func (tps53659 *TPS53659) ReadVin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_VIN)
     return
 }
 
-func ReadIin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_IIN)
+func (tps53659 *TPS53659) ReadIin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_IIN)
     return
 }
 
-func ReadTemp(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_TEMPERATURE_1)
+func (tps53659 *TPS53659) ReadTemp(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_TEMPERATURE_1)
     return
 }
 
-func ReadPout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_POUT)
+func (tps53659 *TPS53659) ReadPout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_POUT)
     return
 }
 
-func ReadPin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_PIN)
+func (tps53659 *TPS53659) ReadPin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_PIN)
     return
 }
 
-func ReadVoutLn(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.MFR_SPECIFIC_04)
+func (tps53659 *TPS53659) ReadVoutLn(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.MFR_SPECIFIC_04)
     return
 }
 

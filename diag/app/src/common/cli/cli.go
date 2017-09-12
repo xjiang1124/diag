@@ -95,13 +95,11 @@ func FmtJsonOut(outStr string) string {
     return jsonOut
 }
 
-// Println outputs per desired log level
-func Println(lvl string, a...interface{}) (err error) {
-
-    outStr := fmt.Sprintln(a)
+func formatOutput(lvl string, pOutStr string) string {
+    var outStr string
     // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
     // Remove the extra stuff
-    outStr = misc.TrimSuffix(outStr, "]\n")
+    outStr = misc.TrimSuffix(pOutStr, "]\n")
     outStr = misc.TrimPrefix(outStr, "[")
 
     switch lvl {
@@ -127,6 +125,14 @@ func Println(lvl string, a...interface{}) (err error) {
     } else {
         outStr = "["+timeStr+"]"+" "+outStr
     }
+    return outStr
+}
+
+// Println outputs per desired log level
+func Println(lvl string, a...interface{}) (err error) {
+
+    outStr := fmt.Sprintln(a)
+    outStr = formatOutput(lvl, outStr)
 
     switch lvl {
     case "debug", "d":
@@ -144,3 +150,58 @@ func Println(lvl string, a...interface{}) (err error) {
     return nil
 }
 
+func formatOutput1(lvl string, pOutStr string) string {
+    var outStr string
+    // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
+    // Remove the extra stuff
+    //outStr = misc.TrimSuffix(pOutStr, "]\n")
+    //outStr = misc.TrimPrefix(outStr, "[")
+    outStr = pOutStr
+
+    switch lvl {
+    case "debug", "d":
+        // Debug print, give file and line number
+        _, fn, line, _ := runtime.Caller(1)
+        fnArr := strings.Split(fn, "/")
+        fnOnly := fnArr[len(fnArr)-1]
+        if (fnOnly == "dcli.go") {
+            _, fn, line, _ = runtime.Caller(2)
+            fnArr = strings.Split(fn, "/")
+            fnOnly = fnArr[len(fnArr)-1]
+        }
+        outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
+    default:
+    }
+
+    timeStr := TStamp()
+
+    // Control output for special format
+    if (OutputMode == 1) {
+        outStr = FmtJsonOut(outStr)
+    } else {
+        outStr = "["+timeStr+"]"+" "+outStr
+    }
+    return outStr
+}
+
+func Printf(lvl string, format string, a ...interface{}) error {
+
+    outStr := fmt.Sprintf(format, a)
+    outStr = formatOutput1(lvl, outStr)
+
+    switch lvl {
+    case "debug", "d":
+        Debug.Println(outStr)
+    case "info", "i":
+        Info.Println(outStr)
+    case "warn", "w":
+        Warning.Println(outStr)
+    case "error", "e":
+        Error.Println(outStr)
+    default:
+        Debug.Println(outStr)
+    }
+
+    return nil
+
+}

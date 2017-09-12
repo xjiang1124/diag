@@ -2,7 +2,7 @@
 package pmbCmd
 
 import (
-    "fmt"
+    //"fmt"
 
     "common/errType"
     "common/i2c"
@@ -31,14 +31,14 @@ func WriteByte(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
 func ReadWord(i2cIdx uint32, devAddr uint32, regAddr uint32, dataPtr *uint32) int {
     byteArray := make([]byte, 4)
 
-    fmt.Printf("0x%x\n", regAddr)
+    //fmt.Printf("0x%x\n", regAddr)
     retVal := i2c.Read(i2cIdx, devAddr, regAddr, byteArray, 2)
     if retVal != errType.Success {
         return retVal
     }
 
     misc.BytesToU32(dataPtr, byteArray)
-    fmt.Println(byteArray)
+    //fmt.Println(byteArray)
     return errType.Success
 }
 

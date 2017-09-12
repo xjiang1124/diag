@@ -3,6 +3,7 @@ package main
 import (
     "bufio"
     "flag"
+    "fmt"
     "os"
     "os/exec"
     "regexp"
@@ -13,6 +14,10 @@ import (
     "config"
     "common/errType"
     "common/misc"
+
+    "hardware/hwvrm"
+    "common/powermodule/tps53659"
+    "common/powermodule/tpsAll"
 )
 
 var cardInfo diagEngine.CardInfo
@@ -58,6 +63,65 @@ func getCpuTemp(compFlag bool) int{
     return errType.Success
 }
 
+func getVrmStatus() int {
+    var tps tpsAll.TpsAll
+    var tps53659 tps53659.TPS53659
+
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP"}
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, "VRM")
+    for _, title := range(vrmTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", outStr)
+
+
+    for _, vrm := range(hwvrm.VrmTbl) {
+        if vrm.Comp == "TPS53659" {
+            tps = &tps53659
+        }
+        outStr = fmt.Sprintf(fmtNameStr, vrm.Name)
+
+        dig, frac, _ := tps.ReadPout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadVout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadIout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadPin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadVin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadIin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadTemp(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        cli.Println("i", outStr)
+    }
+
+    return errType.Success
+}
+
+
 
 func main () {
     // Initialization
@@ -78,6 +142,7 @@ func main () {
             misc.SleepInSec(*intvPtr)
         }
     } else {
+        getVrmStatus()
         // Print CPU temp
         getCpuTemp(*compPtr)
     }

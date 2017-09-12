@@ -8,12 +8,12 @@ const (
     SimMode = 1
 
     // Binary files location
-    //DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
-    //DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/host/"
+    //DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
+    //DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
 
     // Log file target location
-    //DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
-    //DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/go/bin/host/"
+    //DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
+    //DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
 )
 
 var DiagNicBinPath string
@@ -24,12 +24,12 @@ var DiagHostLogPath string
 func init() {
     if SimMode == 1 {
         // Binary files location
-        DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
-        DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/go/bin/host/"
+        DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
+        DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
 
         // Log file target location
-        DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/go/bin/"
-        DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/go/bin/host/"
+        DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
+        DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
     } else {
         // Binary files location
         DiagNicBinPath = ""
