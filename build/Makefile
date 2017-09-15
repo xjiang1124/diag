@@ -42,14 +42,14 @@ arm_go_build:
 c_build:
 	@for p in $(C_SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		$(MAKE) -C $(TOP_DIR)/diag/go/src/common/$$p || exit 1; \
+		$(MAKE) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 	done
 #	@$(MAKE) -C $(TOP_DIR)/diag/go/src/common/$(C_SRC_DIR)
 
 c_arm_build:
 	@for p in $(C_SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		$(MAKE) -e CC=$(CC_ARM) -C $(TOP_DIR)/diag/go/src/common/$$p || exit 1; \
+		$(MAKE) -e CC=$(CC_ARM) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 	done
 
 build:

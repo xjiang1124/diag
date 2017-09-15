@@ -15,10 +15,10 @@ import (
     //"common/i2c"
 )
 
-// #cgo CFLAGS: -I../../common/i2cc
+// #cgo CFLAGS: -I../../../../lib/
 // #cgo LDFLAGS: -li2c
 // #include <stdlib.h>
-// #include "../../common/i2cc/i2c.h"
+// #include "../../../../lib/i2c/i2c.h"
 import "C"
 
 

@@ -6,7 +6,7 @@ import (
     "os"
     "os/exec"
     "strings"
-    "syscall"
+    //"syscall"
 
     "config"
     "common/diagEngine"
@@ -70,7 +70,7 @@ func stopDsp() int {
     for dsp, cmd := range (dspMap) {
         dcli.Println("i", "Terminating DSP: ", dsp)
 
-        err = cmd.Process.Kill()
+        err := cmd.Process.Kill()
         if (err != nil) {
             dcli.Println("f", "Terminating process failed: dsp, pid")
             retVal += 1

@@ -20,6 +20,16 @@ import (
 //========================================================
 
 /*
+    Read modify write    
+*/
+func Rmw(origData uint32, newData uint32, startBit uint32, numBits uint32) (retVal uint32, err int) {
+    var mask uint32
+
+    mask = (1 << numBits - 1) << startBit
+    retVal = (origData & mask) | ((newData << startBit) & mask)
+    return
+}
+/*
     Twos complement with given number of bits
     Effective bits should be already shited to the right side
  */

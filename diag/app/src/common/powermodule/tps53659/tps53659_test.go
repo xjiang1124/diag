@@ -108,3 +108,20 @@ func TestReadPout(t *testing.T) {
         )
     }
 }
+
+func TestSetMargin(t *testing.T) {
+    var tps TPS53659
+    pcts := []int{0, -3, 3}
+    for _, pct := range(pcts) {
+        err := tps.SetVMargin(2, 0xC4, 0, pct)
+        if err != 0 {
+            t.Error (
+                "For", 0xC4,
+                "expected", 0,
+                "got", err,
+            )
+        } else {
+            fmt.Println(pct, err)
+        }
+    }
+}
