@@ -156,7 +156,8 @@ func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint3
     // Write page register
     pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.VOUT_COMMAND, &data)
+    // Read Vboot
+    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.MFR_SPECIFIC_11, &data)
 
     pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.VOUT_MODE, &dacStepRegVal)
 
@@ -252,20 +253,6 @@ func (tps53659 *TPS53659) ReadVoutLn(i2cIdx uint32, devAddr uint32, channel uint
     return
 }
 
-const (
-    MARGIN_NONE = 0
-    MARGIN_HIGH = 1
-    MARGIN_LOW  = 2
-
-    MARGIN_NONE_CMD = 0x80
-    MARGIN_HIGH_CMD = 0xA4
-    MARGIN_LOW_CMD  = 0x94
-
-    CTRL_SVID  = 0x2
-    CTRL_PMBUS = 0x1
-)
-
-
 func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint32, pct int) (err int) {
     var marginReg uint32
     var marginCmd uint32
@@ -274,12 +261,12 @@ func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint
     var dacStep uint32
 
     if pct == 0 {
-        marginCmd = MARGIN_NONE_CMD
+        marginCmd = tps53659Reg.MARGIN_NONE_CMD
     } else if pct > 0 {
-        marginCmd = MARGIN_HIGH_CMD
+        marginCmd = tps53659Reg.MARGIN_HIGH_CMD
         marginReg = tps53659Reg.VOUT_MARGIN_HIGH
     } else {
-        marginCmd = MARGIN_LOW_CMD
+        marginCmd = tps53659Reg.MARGIN_LOW_CMD
         marginReg = tps53659Reg.VOUT_MARGIN_LOW
     }
 
@@ -306,7 +293,7 @@ func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint
     pmbCmd.WriteWord(i2cIdx, devAddr, marginReg, uint32(vidTgt))
 
     // Set to PMBus control
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.MFR_SPECIFIC_02, CTRL_PMBUS)
+    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.MFR_SPECIFIC_02, tps53659Reg.CTRL_PMBUS)
 
     // Enable Vmargin
     pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.OPERATION, marginCmd)

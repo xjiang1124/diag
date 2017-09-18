@@ -8,6 +8,15 @@ const (
     DAC_STEP_10MV = 0x24
 )
 
+const (
+    MARGIN_NONE_CMD = 0x80
+    MARGIN_HIGH_CMD = 0xA4
+    MARGIN_LOW_CMD  = 0x94
+
+    CTRL_SVID  = 0x2
+    CTRL_PMBUS = 0x1
+)
+
 // Register/Command offset
 const (
     PAGE = 0x00

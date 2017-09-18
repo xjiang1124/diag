@@ -28,8 +28,15 @@ var Tps53659RegSim = []I2cRegSim {
     I2cRegSim {0x97, 0xD145, 2}, // READ_PIN
     I2cRegSim {0xAD, 0x59, 2}, // IC_DEVICE_ID
     I2cRegSim {0xD4, 0xD139, 2}, // MFR_SPECIFIC_04
+    I2cRegSim {0xDB, 0xBF, 2}, // VOUT_command
 }
 
+var Tps549a20RegSim = []I2cRegSim {
+    I2cRegSim {0x01, 0x00, 2}, // Operation
+    I2cRegSim {0x02, 0x00, 2}, // on_off_config
+    I2cRegSim {0x79, 0xA5, 2}, // STATUS_WORD
+    I2cRegSim {0xD4, 0xD139, 2}, // MFR_SPECIFIC_04
+}
 func GetDefaultValue(regTbl []I2cRegSim, offset uint32, data []byte) int {
     for _, reg := range(regTbl) {
         if reg.offset == offset {

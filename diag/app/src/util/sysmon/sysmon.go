@@ -17,6 +17,7 @@ import (
 
     "hardware/hwvrm"
     "common/powermodule/tps53659"
+    "common/powermodule/tps549a20"
     "common/powermodule/tpsAll"
 )
 
@@ -66,6 +67,7 @@ func getCpuTemp(compFlag bool) int{
 func getVrmStatus() int {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps549a20 tps549a20.TPS549A20
 
     vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
@@ -80,43 +82,81 @@ func getVrmStatus() int {
     }
     cli.Println("i", outStr)
 
-
+    //for _, vrmName := range(hwvrm.Tps53659Tbl) {
+    //    vrm, _ := hwvrm.GetVrmInfoByName (vrmName)
     for _, vrm := range(hwvrm.VrmTbl) {
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS549A20" {
+            tps = &tps549a20
+        } else {
+            continue
         }
+
         outStr = fmt.Sprintf(fmtNameStr, vrm.Name)
 
         dig, frac, _ := tps.ReadVboot(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadPout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadVout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadIout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadPin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadVin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadIin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         dig, frac, _ = tps.ReadTemp(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        if dig == 0 && frac == 0 {
+            outStrTemp = "-.-"
+        } else {
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         status, _ := tps.ReadStatus(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
