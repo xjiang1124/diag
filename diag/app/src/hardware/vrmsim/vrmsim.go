@@ -18,7 +18,7 @@ var Tps53659RegSim = []I2cRegSim {
     I2cRegSim {0x21, 0xBF, 2}, // VOUT_command
     I2cRegSim {0x25, 0x00, 2}, // VOUT_MARGIN_HIGH
     I2cRegSim {0x26, 0x00, 2}, // VOUT_MARGIN_LOW
-    I2cRegSim {0x79, 0x00, 2}, // STATUS_WORD
+    I2cRegSim {0x79, 0xA5, 2}, // STATUS_WORD
     I2cRegSim {0x88, 0xF029, 2}, // READ_VIN
     I2cRegSim {0x89, 0xD14F, 2}, // READ_IIN
     I2cRegSim {0x8B, 0x6F, 2}, // READ_VOUT

@@ -67,7 +67,7 @@ func getVrmStatus() int {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
 
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP"}
+    vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -87,7 +87,11 @@ func getVrmStatus() int {
         }
         outStr = fmt.Sprintf(fmtNameStr, vrm.Name)
 
-        dig, frac, _ := tps.ReadPout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ := tps.ReadVboot(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        dig, frac, _ = tps.ReadPout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
         outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
@@ -113,6 +117,10 @@ func getVrmStatus() int {
 
         dig, frac, _ = tps.ReadTemp(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
         outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        status, _ := tps.ReadStatus(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        outStrTemp = fmt.Sprintf("0x%X", status)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
         cli.Println("i", outStr)

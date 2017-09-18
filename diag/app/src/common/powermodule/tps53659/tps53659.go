@@ -114,6 +114,16 @@ func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
     return integer, dec, errType.Success
 }
 
+func (tps53659 *TPS53659) ReadStatus(i2cIdx uint32, devAddr uint32, channel uint32) (status uint32, err int) {
+
+    // Write page register
+    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+
+    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.STATUS_WORD, &status)
+
+    return
+}
+
 
 func (tps53659 *TPS53659) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     var data uint32
@@ -138,6 +148,28 @@ func (tps53659 *TPS53659) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32
     return integer, dec, errType.Success
 }
 
+func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
+    var data uint32
+    var dacStepRegVal uint32
+    var dacStep uint32
+
+    // Write page register
+    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+
+    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.VOUT_COMMAND, &data)
+
+    pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.VOUT_MODE, &dacStepRegVal)
+
+    if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+
+    integer, dec, _ = calcVoltFromVid(byte(data), dacStep)
+
+    return integer, dec, errType.Success
+}
 func (tps53659 *TPS53659) ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     var data uint32
 
