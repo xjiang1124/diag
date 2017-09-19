@@ -28,8 +28,8 @@ func init() {
         DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
 
         // Log file target location
-        DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
-        DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
+        DiagNicLogPath = "/home/xguo2/workspace/psdiag/log/"
+        DiagHostLogPath = "/home/xguo2/workspace/psdiag/log/host/"
     } else {
         // Binary files location
         DiagNicBinPath = ""

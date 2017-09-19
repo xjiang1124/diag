@@ -16,6 +16,9 @@ type TPS53659 struct {
     numPhases int
 }
 
+const (
+    DEVICE_ID = 0x59
+)
 
 /*
     Calculate voltage output from vid value
@@ -171,6 +174,7 @@ func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint3
 
     return integer, dec, errType.Success
 }
+
 func (tps53659 *TPS53659) ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     var data uint32
 
@@ -251,6 +255,13 @@ func (tps53659 *TPS53659) ReadPin(i2cIdx uint32, devAddr uint32, channel uint32)
 func (tps53659 *TPS53659) ReadVoutLn(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.MFR_SPECIFIC_04)
     return
+}
+
+func (tps53659 *TPS53659) ReadDeviceID(i2cIdx uint32, devAddr uint32) (devID byte, err int) {
+    var data uint32
+    err = pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.IC_DEVICE_ID, &data)
+    devID = byte(data)
+    return devID, err
 }
 
 func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint32, pct int) (err int) {

@@ -7,9 +7,13 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
+    "hardware/hwvrm"
     "common/misc"
+    "common/powermodule/tps53659"
+    //"common/powermodule/tps549a20"
     "config"
 
+    // Used by swig/C 
     //"unsafe"
     //"common/i2cCSW"
     //"common/i2c"
@@ -29,6 +33,23 @@ const (
     dspName = "PMBUS"
 )
 
+/*
+    Read Device ID and compare with expected one
+ */
+func testTps53659DevId() int {
+    var tps tps53659.TPS53659
+    for _, vrmName := range(hwvrm.Tps53659Tbl) {
+        vrm, _ := hwvrm.GetVrmInfoByName(vrmName)
+        devID, _ := tps.ReadDeviceID(vrm.I2cIdx, vrm.DevAddr)
+        if devID != tps53659.DEVICE_ID {
+            dcli.Println("F", "Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)
+            return errType.Fail
+        }
+    }
+    return errType.Success
+}
+
+
 func PmbusPmbusHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0xFF, "Devices bit mask")
@@ -41,6 +62,13 @@ func PmbusPmbusHdl(argList []string) {
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
     dcli.Println("t", "mask", *maskPtr)
+
+    errTest := testTps53659DevId()
+    if errTest != errType.Success {
+        diagEngine.FuncMsgChan <- errType.Fail
+        return
+    }
+
 
     // Inform diag engine that test handler is done
     // Use chan to return error code

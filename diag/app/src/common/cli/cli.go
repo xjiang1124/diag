@@ -41,6 +41,8 @@ func Init(fileName string, mode int) {
     if cardName == "HOST" {
         path = config.DiagHostLogPath
     }
+    // Create log folder if not exists
+    _ = os.Mkdir(path, os.ModePerm)
 
 	multi := io.MultiWriter(os.Stdout)
     if fileName != "" {
