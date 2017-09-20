@@ -2,14 +2,14 @@
 
 ---
 INFO_GENERAL: General error code
-success: 0
-invalidParam: 1
-fail: -1
+SUCCESS: 0
+INVALID_PARAM: 1
+FAIL: -1
 
 INFO_DIAGMGR: DiagEgine error code
-skip: 100
-timeout: 101
-invalidTest: 102
-permSkip: 103
+SKIP: 100
+TIMEOUT: 101
+INVALID_TEST: 102
+PERM_SKIP: 103
 
 ...

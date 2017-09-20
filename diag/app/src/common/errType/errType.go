@@ -2,12 +2,12 @@ package errType
 
 const(
     // INFO_GENERAL
-    Success              = 0
-    Invalidparam         = 1
-    Fail                 = -1
+    GENERAL_SUCCESS      = 0
+    GENERAL_INVALID_PARAM = 1
+    GENERAL_FAIL         = -1
     // INFO_DIAGMGR
-    Skip                 = 100
-    Timeout              = 101
-    Invalidtest          = 102
-    Permskip             = 103
+    DIAGMGR_SKIP         = 100
+    DIAGMGR_TIMEOUT      = 101
+    DIAGMGR_INVALID_TEST = 102
+    DIAGMGR_PERM_SKIP    = 103
 )

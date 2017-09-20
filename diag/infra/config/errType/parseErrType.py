@@ -89,9 +89,12 @@ for err, value in errDict.items():
     if err.find("INFO") >= 0:
         errInfo = infoFmt.format(err)
         f.write(errInfo)
+
+        errPrefix = errInfo.split("_")[1]
+        errPrefix = errPrefix[:-1]
     else:
         # Check comment part
-        errStr = errFmt.format(err.title(), value)
+        errStr = errFmt.format(errPrefix+"_"+err.upper(), value)
         f.write(errStr)
 
 f.write(goEnding)
@@ -124,9 +127,12 @@ for err, value in errDict.items():
     if err.find("INFO") >= 0:
         pyErrInfo = pyInfoFmt.format(err, value)
         f.write(pyErrInfo)
+
+        errPrefix = errInfo.split("_")[1]
+        errPrefix = errPrefix[:-1]
     else:
         # Check comment part
-        pyMapVStr = pyMapVFmt.format(err.title(), value)
+        pyMapVStr = pyMapVFmt.format(errPrefix+"_"+err.upper(), value)
         f.write(pyMapVStr)
 
 f.write(pyMid)
@@ -134,9 +140,12 @@ for err, value in errDict.items():
     if err.find("INFO") >= 0:
         pyErrInfo = pyInfoFmt.format(err, value)
         f.write(pyErrInfo)
+
+        errPrefix = errInfo.split("_")[1]
+        errPrefix = errPrefix[:-1]
     else:
         # Check comment part
-        pyMapNStr = pyMapNFmt.format(value, err.title())
+        pyMapNStr = pyMapNFmt.format(value, errPrefix+"_"+err.upper())
         f.write(pyMapNStr)
 
 f.write(pyFunc)
