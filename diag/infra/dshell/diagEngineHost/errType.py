@@ -2,9 +2,13 @@ class errType:
     def __init__(self):
         self.mapV = dict()
         # INFO_GENERAL
-        self.mapV["DIAGMGR_SUCCESS"] = 0
-        self.mapV["DIAGMGR_INVALID_PARAM"] = 1
-        self.mapV["DIAGMGR_FAIL"] = -1
+        self.mapV["SUCCESS"] = 0
+        self.mapV["FAIL"] = -1
+        self.mapV["INVALID_PARAM"] = 1
+        self.mapV["SKIP"] = 2
+        self.mapV["TIMEOUT"] = 3
+        self.mapV["INVALID_TEST"] = 4
+        self.mapV["PERM_SKIP"] = 5
         # INFO_DIAGMGR
         self.mapV["DIAGMGR_SKIP"] = 100
         self.mapV["DIAGMGR_TIMEOUT"] = 101
@@ -13,9 +17,13 @@ class errType:
 
         self.mapN = dict()
         # INFO_GENERAL
-        self.mapN[0] = "DIAGMGR_SUCCESS"
-        self.mapN[1] = "DIAGMGR_INVALID_PARAM"
-        self.mapN[-1] = "DIAGMGR_FAIL"
+        self.mapN[0] = "SUCCESS"
+        self.mapN[-1] = "FAIL"
+        self.mapN[1] = "INVALID_PARAM"
+        self.mapN[2] = "SKIP"
+        self.mapN[3] = "TIMEOUT"
+        self.mapN[4] = "INVALID_TEST"
+        self.mapN[5] = "PERM_SKIP"
         # INFO_DIAGMGR
         self.mapN[100] = "DIAGMGR_SKIP"
         self.mapN[101] = "DIAGMGR_TIMEOUT"

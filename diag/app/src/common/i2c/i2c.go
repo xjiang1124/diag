@@ -13,15 +13,15 @@ func Read(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes ui
     if config.SimMode == 1 {
         return ReadSim(i2cIdx, devAddr, offset, data, numBytes)
     }
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func Write(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func ReadSim(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
-    retVal := errType.Success
+    retVal := errType.SUCCESS
 
     // vrm_capri
     if i2cIdx == 2 && devAddr == 0xc4  {

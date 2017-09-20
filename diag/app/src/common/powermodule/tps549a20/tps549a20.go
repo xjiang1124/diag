@@ -20,11 +20,11 @@ func (tps549a20 *TPS549A20) ReadStatus(i2cIdx uint32, devAddr uint32, channel ui
 
 
 func (tps549a20 *TPS549A20) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    return integer, dec, errType.Success
+    return integer, dec, errType.SUCCESS
 }
 
 func (tps549a20 *TPS549A20) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    return integer, dec, errType.Success
+    return integer, dec, errType.SUCCESS
 }
 func (tps549a20 *TPS549A20) ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
     return
@@ -59,7 +59,7 @@ func (tps549a20 *TPS549A20) SetVMargin(i2cIdx uint32, devAddr uint32, channel ui
     var marginVal uint32
 
     if pct > 12 || pct < -12 {
-        return errType.Invalidparam
+        return errType.INVALID_PARAM
     }
 
     if pct == 0 {

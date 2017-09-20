@@ -85,16 +85,18 @@ infoFilter = "INFO"
 goOutputFile = output_path+'errType.go'
 f = open(goOutputFile, 'w')
 f.write(goHeader)
-for err, value in errDict.items():
-    if err.find("INFO") >= 0:
-        errInfo = infoFmt.format(err)
-        f.write(errInfo)
+for category, errCodes in errDict.items():
+    errInfo = infoFmt.format(category)
+    f.write(errInfo)
 
-        errPrefix = errInfo.split("_")[1]
-        errPrefix = errPrefix[:-1]
+    errPrefix = category.split("_")[1]
+    if errPrefix.find("GENERAL") >= 0:
+        errPrefix = ""
     else:
-        # Check comment part
-        errStr = errFmt.format(errPrefix+"_"+err.upper(), value)
+        errPrefix = errPrefix+"_"
+
+    for err, value in errCodes.items():
+        errStr = errFmt.format(errPrefix+err.upper(), value)
         f.write(errStr)
 
 f.write(goEnding)
@@ -123,29 +125,66 @@ infoFilter = "INFO"
 pyOutputFile = output_path+'errType.py'
 f = open(pyOutputFile, 'w')
 f.write(pyHeader)
-for err, value in errDict.items():
-    if err.find("INFO") >= 0:
-        pyErrInfo = pyInfoFmt.format(err, value)
-        f.write(pyErrInfo)
+#for err, value in errDict.items():
+#    if err.find("INFO") >= 0:
+#        pyErrInfo = pyInfoFmt.format(err, value)
+#        f.write(pyErrInfo)
+#
+#        errPrefix = pyErrInfo.split("_")[1]
+#        errPrefix = errPrefix[:-1]
+#        if errPrefix.find("GENERAL") >= 0:
+#            errPrefix = ""
+#        else:
+#            errPrefix = errPrefix+"_"
+#    else:
+#        # Check comment part
+#        pyMapVStr = pyMapVFmt.format(errPrefix+err.upper(), value)
+#        f.write(pyMapVStr)
 
-        errPrefix = errInfo.split("_")[1]
-        errPrefix = errPrefix[:-1]
+for category, errCodes in errDict.items():
+    pyErrInfo = pyInfoFmt.format(category)
+    f.write(pyErrInfo)
+
+    errPrefix = category.split("_")[1]
+    if errPrefix.find("GENERAL") >= 0:
+        errPrefix = ""
     else:
-        # Check comment part
-        pyMapVStr = pyMapVFmt.format(errPrefix+"_"+err.upper(), value)
+        errPrefix = errPrefix+"_"
+
+    for err, value in errCodes.items():
+        pyMapVStr = pyMapVFmt.format(errPrefix+err.upper(), value)
         f.write(pyMapVStr)
 
 f.write(pyMid)
-for err, value in errDict.items():
-    if err.find("INFO") >= 0:
-        pyErrInfo = pyInfoFmt.format(err, value)
-        f.write(pyErrInfo)
 
-        errPrefix = errInfo.split("_")[1]
-        errPrefix = errPrefix[:-1]
+#for err, value in errDict.items():
+#    if err.find("INFO") >= 0:
+#        pyErrInfo = pyInfoFmt.format(err, value)
+#        f.write(pyErrInfo)
+#
+#        errPrefix = pyErrInfo.split("_")[1]
+#        errPrefix = errPrefix[:-1]
+#        if errPrefix.find("GENERAL") >= 0:
+#            errPrefix = ""
+#        else:
+#            errPrefix = errPrefix+"_"
+#    else:
+#        # Check comment part
+#        pyMapNStr = pyMapNFmt.format(value, errPrefix+err.upper())
+#        f.write(pyMapNStr)
+
+for category, errCodes in errDict.items():
+    pyErrInfo = pyInfoFmt.format(category)
+    f.write(pyErrInfo)
+
+    errPrefix = category.split("_")[1]
+    if errPrefix.find("GENERAL") >= 0:
+        errPrefix = ""
     else:
-        # Check comment part
-        pyMapNStr = pyMapNFmt.format(value, errPrefix+"_"+err.upper())
+        errPrefix = errPrefix+"_"
+
+    for err, value in errCodes.items():
+        pyMapNStr = pyMapNFmt.format(value, errPrefix+err.upper())
         f.write(pyMapNStr)
 
 f.write(pyFunc)

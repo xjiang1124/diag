@@ -247,14 +247,14 @@ func DspInfraMainLoop() (err error) {
         // In case of stop_on_error, return a skip signature
         if (stopOnErrEn == 1) {
             keyResult := fmt.Sprintf(keyResultFmt, testID)
-            RedisClient.Set(keyResult, errType.Skip, 0)
+            RedisClient.Set(keyResult, errType.SKIP, 0)
             continue
         }
 
         // sRreturn a permskip signature
         if (stopOnErrEn == 0xFF) {
             keyResult := fmt.Sprintf(keyResultFmt, testID)
-            RedisClient.Set(keyResult, errType.Permskip, 0)
+            RedisClient.Set(keyResult, errType.PERM_SKIP, 0)
             continue
         }
 
@@ -290,7 +290,7 @@ func DspInfraMainLoop() (err error) {
             // Ignore non-valid test/cmd entry
             cli.Println("i", "No testHandler found", testID, testName)
             keyResult := fmt.Sprintf(keyResultFmt, testID)
-            RedisClient.Set(keyResult, errType.Skip, 0)
+            RedisClient.Set(keyResult, errType.SKIP, 0)
             continue
         }
 
@@ -332,7 +332,7 @@ func DspInfraMainLoop() (err error) {
                 retValHost = funcMsg
             } else {
                 histKey = fmt.Sprintf(keyHistTimeoutFmt, cardInfo.CardType, cardInfo.dspName, testName)
-                retValHost = errType.Timeout
+                retValHost = errType.TIMEOUT
             }
             RedisClient.Incr(histKey)
 
@@ -352,7 +352,7 @@ func DspInfraMainLoop() (err error) {
         keyResult := fmt.Sprintf(keyResultFmt, testID)
         RedisClient.Set(keyResult, retValHost, 0)
         // Close function message channel after it is done
-        if retValHost != errType.Timeout {
+        if retValHost != errType.TIMEOUT {
            close(FuncMsgChan)
         }
     }

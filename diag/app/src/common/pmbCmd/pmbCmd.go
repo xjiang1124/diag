@@ -13,19 +13,19 @@ func ReadByte(i2cIdx uint32, devAddr uint32, regAddr uint32, dataPtr *uint32) in
     byteArray := make([]byte, 4)
 
     retVal := i2c.Read(i2cIdx, devAddr, regAddr, byteArray, 1)
-    if retVal != errType.Success {
+    if retVal != errType.SUCCESS {
         return retVal
     }
 
     misc.BytesToU32(dataPtr, byteArray)
     //fmt.Println(byteArray)
-    return errType.Success
+    return errType.SUCCESS
 
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func WriteByte(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func ReadWord(i2cIdx uint32, devAddr uint32, regAddr uint32, dataPtr *uint32) int {
@@ -33,20 +33,20 @@ func ReadWord(i2cIdx uint32, devAddr uint32, regAddr uint32, dataPtr *uint32) in
 
     //fmt.Printf("0x%x\n", regAddr)
     retVal := i2c.Read(i2cIdx, devAddr, regAddr, byteArray, 2)
-    if retVal != errType.Success {
+    if retVal != errType.SUCCESS {
         return retVal
     }
 
     misc.BytesToU32(dataPtr, byteArray)
     //fmt.Println(byteArray)
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func WriteWord(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func SendByte(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 

@@ -41,9 +41,9 @@ func GetDefaultValue(regTbl []I2cRegSim, offset uint32, data []byte) int {
     for _, reg := range(regTbl) {
         if reg.offset == offset {
             misc.U32ToBytes(reg.value, data)
-            return errType.Success
+            return errType.SUCCESS
         }
     }
-    return errType.Fail
+    return errType.FAIL
 }
 

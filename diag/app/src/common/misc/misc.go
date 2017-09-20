@@ -37,7 +37,7 @@ func TwoCmplBits(data uint32, numBits uint32) (retVal int, err int) {
     var msb uint32
 
     if numBits == 0 {
-        return 0, errType.Invalidparam
+        return 0, errType.INVALID_PARAM
     }
 
     // Remove upper bits just in case
@@ -48,14 +48,14 @@ func TwoCmplBits(data uint32, numBits uint32) (retVal int, err int) {
 
     retVal = int(data)
     if sign == 0 {
-        return retVal, errType.Success
+        return retVal, errType.SUCCESS
     }
 
     // Negative number, make upper bits all one
     data = data | (^(1 << numBits - 1))
     retVal = int((^data + 1)) * (-1)
 
-    return retVal, errType.Success
+    return retVal, errType.SUCCESS
 }
 
 /*

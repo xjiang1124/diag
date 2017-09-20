@@ -27,9 +27,9 @@ var Tps546a20Tbl = []string {"VRM_HBM_P1V2", "VRM_ARMD_P0V9" }
 func GetVrmInfoByName(name string) (vrmInfo VrmInfo, err int) {
     for _, vrmInf := range(VrmTbl) {
         if name == vrmInf.Name {
-            return vrmInf, errType.Success
+            return vrmInf, errType.SUCCESS
         }
     }
-    return vrmInfo, errType.Fail
+    return vrmInfo, errType.FAIL
 
 }

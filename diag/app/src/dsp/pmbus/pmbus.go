@@ -43,10 +43,10 @@ func testTps53659DevId() int {
         devID, _ := tps.ReadDeviceID(vrm.I2cIdx, vrm.DevAddr)
         if devID != tps53659.DEVICE_ID {
             dcli.Println("F", "Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)
-            return errType.Fail
+            return errType.FAIL
         }
     }
-    return errType.Success
+    return errType.SUCCESS
 }
 
 
@@ -64,15 +64,15 @@ func PmbusPmbusHdl(argList []string) {
     dcli.Println("t", "mask", *maskPtr)
 
     errTest := testTps53659DevId()
-    if errTest != errType.Success {
-        diagEngine.FuncMsgChan <- errType.Fail
+    if errTest != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- errType.FAIL
         return
     }
 
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.Success
+    diagEngine.FuncMsgChan <- errType.SUCCESS
     return
 }
 
@@ -124,7 +124,7 @@ func PmbusIntrHdl(argList []string) {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.Success
+    diagEngine.FuncMsgChan <- errType.SUCCESS
     return
 }
 func main() {

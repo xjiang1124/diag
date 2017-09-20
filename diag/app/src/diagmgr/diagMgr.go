@@ -52,7 +52,7 @@ func startDsp(dspList []string, path string) int {
         err := cmd.Start()
         if err != nil {
             dcli.Println("F", "Error starting Cmd", err)
-            return errType.Fail
+            return errType.FAIL
         }
         //cmd.Wait()
 
@@ -61,7 +61,7 @@ func startDsp(dspList []string, path string) int {
         dcli.Println("i", "Starting DSP:", dsp, "Done")
     }
 
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func stopDsp() int {
@@ -83,9 +83,9 @@ func stopDsp() int {
     }
 
     if retVal == 0 {
-        return errType.Success
+        return errType.SUCCESS
     } else {
-        return errType.Fail
+        return errType.FAIL
     }
 
 }
@@ -97,11 +97,11 @@ func DiagmgrDsp_StartHdl(argList []string) {
     if err != nil {
         dcli.Println("f", "Parse failed", err)
     }
-    retVal := errType.Success
+    retVal := errType.SUCCESS
 
     // Stop all DSPs first
     retVal = stopDsp()
-    if retVal != errType.Success {
+    if retVal != errType.SUCCESS {
         diagEngine.FuncMsgChan <- retVal
         return 
     }
@@ -143,7 +143,7 @@ func DiagmgrShow_DspHdl(argList []string) {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.Success
+    diagEngine.FuncMsgChan <- errType.SUCCESS
     return
 }
 

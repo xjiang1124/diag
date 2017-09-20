@@ -53,7 +53,7 @@ func getCpuTemp(compFlag bool) int{
 
     if err != nil {
         cli.Println("f", "failed to run sensor command")
-        return errType.Fail
+        return errType.FAIL
     }
     if compFlag == true {
         outputBufComp(string(out))
@@ -61,7 +61,7 @@ func getCpuTemp(compFlag bool) int{
         outputBuf(string(out))
     }
 
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func getVrmStatus() int {
@@ -166,7 +166,7 @@ func getVrmStatus() int {
         cli.Println("i", outStr)
     }
 
-    return errType.Success
+    return errType.SUCCESS
 }
 
 

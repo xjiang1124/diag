@@ -27,14 +27,14 @@ const (
 func calcVoltFromVid (vid byte, dacStep uint32) (integer uint32, dec uint32, err int) {
     var volt uint32
     var base uint32
-    err = errType.Success
+    err = errType.SUCCESS
 
     if vid == 0 {
         return 0, 0, err
     }
 
     if (dacStep != 5 && dacStep != 10) {
-        return 0, 0, errType.Invalidparam
+        return 0, 0, errType.INVALID_PARAM
     }
 
     if dacStep == 5 {
@@ -45,7 +45,7 @@ func calcVoltFromVid (vid byte, dacStep uint32) (integer uint32, dec uint32, err
 
     volt = (uint32(vid) - 1) * dacStep + base
 
-    return volt/1000, volt%1000, errType.Success
+    return volt/1000, volt%1000, errType.SUCCESS
 }
 
 /*
@@ -58,14 +58,14 @@ func calcVidFromVolt (tgtVoltMv uint32, dacStep uint32) (vid byte, err int) {
     var vidMax uint32
     var vidStep uint32
 
-    err = errType.Success
+    err = errType.SUCCESS
 
     if tgtVoltMv == 0 {
         return 0, err
     }
 
     if (dacStep != 5 && dacStep != 10) {
-        return 0, errType.Invalidparam
+        return 0, errType.INVALID_PARAM
     }
 
     if dacStep == 5 {
@@ -83,7 +83,7 @@ func calcVidFromVolt (tgtVoltMv uint32, dacStep uint32) (vid byte, err int) {
             return byte(vidStep), err
         }
     }
-    return 0, errType.Fail
+    return 0, errType.FAIL
 }
 
 /*
@@ -103,7 +103,7 @@ func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
     manFloat = float64(input & 0x7FF)
 
     expInt, err = misc.TwoCmplBits(expUint, 5)
-    if err != errType.Success {
+    if err != errType.SUCCESS {
         return 0, 0, err
     }
 
@@ -114,7 +114,7 @@ func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
     integer = uint32(intpart)
     dec = uint32(div*1000)
 
-    return integer, dec, errType.Success
+    return integer, dec, errType.SUCCESS
 }
 
 func (tps53659 *TPS53659) ReadStatus(i2cIdx uint32, devAddr uint32, channel uint32) (status uint32, err int) {
@@ -148,7 +148,7 @@ func (tps53659 *TPS53659) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32
 
     integer, dec, _ = calcVoltFromVid(byte(data), dacStep)
 
-    return integer, dec, errType.Success
+    return integer, dec, errType.SUCCESS
 }
 
 func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
@@ -172,7 +172,7 @@ func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint3
 
     integer, dec, _ = calcVoltFromVid(byte(data), dacStep)
 
-    return integer, dec, errType.Success
+    return integer, dec, errType.SUCCESS
 }
 
 func (tps53659 *TPS53659) ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
