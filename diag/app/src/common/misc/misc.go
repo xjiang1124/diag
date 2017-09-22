@@ -79,6 +79,14 @@ func BytesToU32(dataU32 *uint32, byteArr []byte) {
 }
 
 /*
+    Convert uint32 into 4 byte slice
+ */
+func BytesToU16(byteArr []byte) (dataU16 uint16) {
+    dataU16 = uint16(byteArr[1]) << 8 | uint16(byteArr[0])
+    return dataU16
+}
+
+/*
     Sleep function in second
  */
 func SleepInSec(numSec int) {

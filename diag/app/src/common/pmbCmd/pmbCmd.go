@@ -5,48 +5,38 @@ import (
     //"fmt"
 
     "common/errType"
+    //"common/i2c"
     "common/i2c"
     "common/misc"
 )
 
-func ReadByte(i2cIdx uint32, devAddr uint32, regAddr uint32, dataPtr *uint32) int {
-    byteArray := make([]byte, 4)
+func ReadByte(devName string, regAddr uint64) (data byte, err int) {
+    dataArray, err := i2c.Read(devName, regAddr, 1)
+    data = dataArray[0]
+    return
+}
 
-    retVal := i2c.Read(i2cIdx, devAddr, regAddr, byteArray, 1)
-    if retVal != errType.SUCCESS {
-        return retVal
-    }
-
-    misc.BytesToU32(dataPtr, byteArray)
-    //fmt.Println(byteArray)
-    return errType.SUCCESS
-
+func WriteByte(devName string, regAddr uint64, data byte) int {
     return errType.SUCCESS
 }
 
-func WriteByte(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
-    return errType.SUCCESS
-}
-
-func ReadWord(i2cIdx uint32, devAddr uint32, regAddr uint32, dataPtr *uint32) int {
-    byteArray := make([]byte, 4)
-
+func ReadWord(devName string, regAddr uint64) (data uint16, err int) {
     //fmt.Printf("0x%x\n", regAddr)
-    retVal := i2c.Read(i2cIdx, devAddr, regAddr, byteArray, 2)
-    if retVal != errType.SUCCESS {
-        return retVal
+    byteArray, err := i2c.Read(devName, regAddr, 2)
+    //_, err = i2c1.Read(devName, regAddr, 2)
+    if err != errType.SUCCESS {
+        return data, err
     }
 
-    misc.BytesToU32(dataPtr, byteArray)
-    //fmt.Println(byteArray)
+    data = misc.BytesToU16(byteArray)
+    return data, errType.SUCCESS
+}
+
+func WriteWord(devName string, regAddr uint64, data uint16) (err int) {
     return errType.SUCCESS
 }
 
-func WriteWord(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
-    return errType.SUCCESS
-}
-
-func SendByte(i2cIdx uint32, devAddr uint32, regAddr uint32, data uint32) int {
+func SendByte(devName string, regAddr uint64, data byte) int {
     return errType.SUCCESS
 }
 

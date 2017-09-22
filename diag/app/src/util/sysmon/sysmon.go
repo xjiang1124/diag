@@ -69,6 +69,15 @@ func getVrmStatus() int {
     var tps53659 tps53659.TPS53659
     var tps549a20 tps549a20.TPS549A20
 
+    var vrmTbl []hwvrm.VrmInfo
+    cardName := os.Getenv("CARD_NAME")
+    if cardName == "NAPLES" {
+        vrmTbl = hwvrm.VrmTblNaples
+    } else {
+        cli.Println("f", "Unsupported card:", cardName)
+        return errType.FAIL
+    }
+
     vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
@@ -84,7 +93,7 @@ func getVrmStatus() int {
 
     //for _, vrmName := range(hwvrm.Tps53659Tbl) {
     //    vrm, _ := hwvrm.GetVrmInfoByName (vrmName)
-    for _, vrm := range(hwvrm.VrmTbl) {
+    for _, vrm := range(vrmTbl) {
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
         } else if vrm.Comp == "TPS549A20" {
@@ -95,7 +104,7 @@ func getVrmStatus() int {
 
         outStr = fmt.Sprintf(fmtNameStr, vrm.Name)
 
-        dig, frac, _ := tps.ReadVboot(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ := tps.ReadVboot(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -103,7 +112,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadPout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadPout(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -111,7 +120,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadVout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadVout(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -119,7 +128,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadIout(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadIout(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -127,7 +136,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadPin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadPin(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -135,7 +144,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadVin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadVin(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -143,7 +152,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadIin(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadIin(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -151,7 +160,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        dig, frac, _ = tps.ReadTemp(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        dig, frac, _ = tps.ReadTemp(vrm.Name, vrm.Channel)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
@@ -159,7 +168,7 @@ func getVrmStatus() int {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        status, _ := tps.ReadStatus(vrm.I2cIdx, vrm.DevAddr, vrm.Channel)
+        status, _ := tps.ReadStatus(vrm.Name, vrm.Channel)
         outStrTemp = fmt.Sprintf("0x%X", status)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

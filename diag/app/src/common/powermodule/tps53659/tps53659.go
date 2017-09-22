@@ -117,28 +117,28 @@ func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadStatus(i2cIdx uint32, devAddr uint32, channel uint32) (status uint32, err int) {
+func (tps53659 *TPS53659) ReadStatus(devName string, channel byte) (status uint16, err int) {
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.STATUS_WORD, &status)
+    status, err = pmbCmd.ReadWord(devName, tps53659Reg.STATUS_WORD)
 
     return
 }
 
 
-func (tps53659 *TPS53659) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    var data uint32
-    var dacStepRegVal uint32
+func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    var data uint16
+    var dacStepRegVal byte
     var dacStep uint32
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.READ_VOUT, &data)
+    data, err = pmbCmd.ReadWord(devName, tps53659Reg.READ_VOUT)
 
-    pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.VOUT_MODE, &dacStepRegVal)
+    dacStepRegVal, err = pmbCmd.ReadByte(devName, tps53659Reg.VOUT_MODE)
 
     if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
         dacStep = 5
@@ -151,18 +151,18 @@ func (tps53659 *TPS53659) ReadVout(i2cIdx uint32, devAddr uint32, channel uint32
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    var data uint32
-    var dacStepRegVal uint32
+func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    var data uint16
+    var dacStepRegVal byte
     var dacStep uint32
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
     // Read Vboot
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.MFR_SPECIFIC_11, &data)
+    data, err = pmbCmd.ReadWord(devName, tps53659Reg.MFR_SPECIFIC_11)
 
-    pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.VOUT_MODE, &dacStepRegVal)
+    dacStepRegVal, err = pmbCmd.ReadByte(devName, tps53659Reg.VOUT_MODE)
 
     if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
         dacStep = 5
@@ -175,100 +175,89 @@ func (tps53659 *TPS53659) ReadVboot(i2cIdx uint32, devAddr uint32, channel uint3
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadIout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    var data uint32
+func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    var data uint16
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
     // Write phase register: all phases
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PHASE, 0x80)
+    pmbCmd.WriteByte(devName, tps53659Reg.PHASE, 0x80)
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.READ_IOUT, &data)
-
-    // Only lower 16-bit
-    data = data & 0xFFFF
-    integer, dec, err = getExpOutput(uint16(data))
+    data, err = pmbCmd.ReadWord(devName, tps53659Reg.READ_IOUT)
+    integer, dec, err = getExpOutput(data)
     return
 }
 
-func (tps53659 *TPS53659) ReadIoutPhase(i2cIdx uint32, devAddr uint32, channel uint32, phase uint32) (integer uint32, dec uint32, err int) {
-    var data uint32
+func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte) (integer uint32, dec uint32, err int) {
+    var data uint16
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
     // Write phase register: all phases
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PHASE, phase)
+    pmbCmd.WriteByte(devName, tps53659Reg.PHASE, phase)
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.READ_IOUT, &data)
-
-    // Only lower 16-bit
-    data = data & 0xFFFF
-    integer, dec, err = getExpOutput(uint16(data))
+    data, err = pmbCmd.ReadWord(devName, tps53659Reg.READ_IOUT)
+    integer, dec, err = getExpOutput(data)
     return
 }
 
 /*
     Read register with EXP format and calculate output
  */
-func (tps53659 *TPS53659) ReadRegExp(i2cIdx uint32, devAddr uint32, channel uint32, addrAddr uint32) (integer uint32, dec uint32, err int) {
-    var data uint32
+func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint64) (integer uint32, dec uint32, err int) {
+    var data uint16
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, addrAddr, &data)
-
-    // Only lower 16-bit
-    data = data & 0xFFFF
-    integer, dec, err = getExpOutput(uint16(data))
+    data, err = pmbCmd.ReadWord(devName, addrAddr)
+    integer, dec, err = getExpOutput(data)
 
     return
 }
 
-func (tps53659 *TPS53659) ReadVin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_VIN)
+func (tps53659 *TPS53659) ReadVin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_VIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadIin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_IIN)
+func (tps53659 *TPS53659) ReadIin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_IIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadTemp(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_TEMPERATURE_1)
+func (tps53659 *TPS53659) ReadTemp(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_TEMPERATURE_1)
     return
 }
 
-func (tps53659 *TPS53659) ReadPout(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_POUT)
+func (tps53659 *TPS53659) ReadPout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_POUT)
     return
 }
 
-func (tps53659 *TPS53659) ReadPin(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.READ_PIN)
+func (tps53659 *TPS53659) ReadPin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_PIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadVoutLn(i2cIdx uint32, devAddr uint32, channel uint32) (integer uint32, dec uint32, err int) {
-    integer, dec, err = tps53659.ReadRegExp(i2cIdx, devAddr, channel, tps53659Reg.MFR_SPECIFIC_04)
+func (tps53659 *TPS53659) ReadVoutLn(devName string, channel byte) (integer uint32, dec uint32, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.MFR_SPECIFIC_04)
     return
 }
 
-func (tps53659 *TPS53659) ReadDeviceID(i2cIdx uint32, devAddr uint32) (devID byte, err int) {
-    var data uint32
-    err = pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.IC_DEVICE_ID, &data)
-    devID = byte(data)
+func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
+    devID, err = pmbCmd.ReadByte(devName, tps53659Reg.IC_DEVICE_ID)
     return devID, err
 }
 
-func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint32, pct int) (err int) {
-    var marginReg uint32
-    var marginCmd uint32
-    var data uint32
-    var dacStepRegVal uint32
+func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err int) {
+    var marginReg uint64
+    var marginCmd byte
+    var data uint16
+    var dacStepRegVal byte
     var dacStep uint32
 
     if pct == 0 {
@@ -282,9 +271,9 @@ func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint
     }
 
     // Write page register
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.PAGE, channel)
+    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    pmbCmd.ReadByte(i2cIdx, devAddr, tps53659Reg.VOUT_MODE, &dacStepRegVal)
+    dacStepRegVal, err = pmbCmd.ReadByte(devName, tps53659Reg.VOUT_MODE)
 
     if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
         dacStep = 5
@@ -292,7 +281,7 @@ func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint
         dacStep = 10
     }
 
-    pmbCmd.ReadWord(i2cIdx, devAddr, tps53659Reg.VOUT_COMMAND, &data)
+    data, err = pmbCmd.ReadWord(devName, tps53659Reg.VOUT_COMMAND)
 
     integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
     voltMv := integer *1000 + dec
@@ -301,13 +290,13 @@ func (tps53659 *TPS53659) SetVMargin(i2cIdx uint32, devAddr uint32, channel uint
 
     // Update VOUT_MARGIN_HIGH/HOW with target VID
     vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
-    pmbCmd.WriteWord(i2cIdx, devAddr, marginReg, uint32(vidTgt))
+    pmbCmd.WriteWord(devName, marginReg, uint16(vidTgt))
 
     // Set to PMBus control
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.MFR_SPECIFIC_02, tps53659Reg.CTRL_PMBUS)
+    pmbCmd.WriteByte(devName, tps53659Reg.MFR_SPECIFIC_02, tps53659Reg.CTRL_PMBUS)
 
     // Enable Vmargin
-    pmbCmd.WriteByte(i2cIdx, devAddr, tps53659Reg.OPERATION, marginCmd)
+    pmbCmd.WriteByte(devName, tps53659Reg.OPERATION, marginCmd)
 
     return
 

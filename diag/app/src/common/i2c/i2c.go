@@ -6,33 +6,48 @@ import (
 
     "config"
     "common/errType"
-    "hardware/vrmsim"
+    //"hardware/vrmsim"
 )
 
-func Read(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
+// #cgo CFLAGS: -I../../../../lib/
+// #cgo LDFLAGS: -li2csim
+// #include <stdlib.h>
+// #include "../../../../lib/i2csim/i2csim.h"
+import "C"
+import "unsafe"
+
+func Read(devName string, offset uint64, numBytes uint64) (data []byte, err int) {
     if config.SimMode == 1 {
-        return ReadSim(i2cIdx, devAddr, offset, data, numBytes)
+        return PalReadSim(devName, offset, numBytes)
     }
-    return errType.SUCCESS
+    return data, errType.SUCCESS
 }
 
 func Write(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
     return errType.SUCCESS
 }
 
-func ReadSim(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
-    retVal := errType.SUCCESS
+func PalReadSim(devName string, offset uint64, numBytes uint64) (data []uint8, err int) {
+    var pDevName *C.char = C.CString(devName)
+    defer C.free(unsafe.Pointer(pDevName))
+    var offsetC C.uint64
+    var numBytesC C.uint64
+    err = errType.SUCCESS
 
-    // vrm_capri
-    if i2cIdx == 2 && devAddr == 0xc4  {
-        retVal = vrmsim.GetDefaultValue(vrmsim.Tps53659RegSim, offset, data)
+    offsetC = C.uint64(offset)
+    numBytesC = C.uint64(numBytes)
+
+    // Maximum number of byte is 16
+    rd := [16]C.char{0, 0, 0, 0}
+
+    if numBytes > 16 {
+        return data, errType.INVALID_PARAM
     }
 
-    // vrm_capri
-    if i2cIdx == 2 && (devAddr == 0x36 || devAddr == 0x38) {
-        retVal = vrmsim.GetDefaultValue(vrmsim.Tps549a20RegSim, offset, data)
-    }
+    C.pal_i2c_read(pDevName, offsetC, &rd[0], numBytesC)
+    data = C.GoBytes(unsafe.Pointer(&rd[0]), C.int(numBytesC))
 
-    return retVal
+    return data, err
 }
+
 
