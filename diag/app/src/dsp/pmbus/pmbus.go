@@ -46,7 +46,7 @@ func testTps53659DevId() int {
             return errType.FAIL
         }
     }
-    return errType.SUCCESS
+    return errType.SUCCES
 }
 
 
