@@ -38,9 +38,9 @@ const (
  */
 func testTps53659DevId() int {
     var tps tps53659.TPS53659
-    for _, vrmName := range(hwvrm.Tps53659Tbl) {
+    for _, vrmName := range(hwvrm.Tps53659TblNaples) {
         vrm, _ := hwvrm.GetVrmInfoByName(vrmName)
-        devID, _ := tps.ReadDeviceID(vrm.I2cIdx, vrm.DevAddr)
+        devID, _ := tps.ReadDeviceID(vrm.Name)
         if devID != tps53659.DEVICE_ID {
             dcli.Println("F", "Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)
             return errType.FAIL

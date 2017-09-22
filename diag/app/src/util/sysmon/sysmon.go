@@ -91,8 +91,6 @@ func getVrmStatus() int {
     }
     cli.Println("i", outStr)
 
-    //for _, vrmName := range(hwvrm.Tps53659Tbl) {
-    //    vrm, _ := hwvrm.GetVrmInfoByName (vrmName)
     for _, vrm := range(vrmTbl) {
         if vrm.Comp == "TPS53659" {
             tps = &tps53659

@@ -1,6 +1,9 @@
 package hwvrm
 
 import (
+    "os"
+
+    "common/cli"
     "common/errType"
 )
 
@@ -24,8 +27,18 @@ var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }
 
 var Tps546a20TblNaples = []string {"VRM_HBM", "VRM_ARMD" }
 
-func GetVrmInfoByName(VrmTbl []VrmInfo, name string) (vrmInfo VrmInfo, err int) {
-    for _, vrmInf := range(VrmTbl) {
+func GetVrmInfoByName(name string) (vrmInfo VrmInfo, err int) {
+    var vrmTbl []VrmInfo
+    cardName := os.Getenv("CARD_NAME")
+    if cardName == "NAPLES" {
+        vrmTbl = VrmTblNaples
+    } else {
+        cli.Println("f", "Unsupported card:", cardName)
+        err = errType.FAIL
+        return
+    }
+
+    for _, vrmInf := range(vrmTbl) {
         if name == vrmInf.Name {
             return vrmInf, errType.SUCCESS
         }

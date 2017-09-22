@@ -4,4 +4,8 @@ SRC_DIR=		\
 	dsp/qsfp    \
 	util/sysmon
 
-C_SRC_DIR=i2c
+#C_SRC_DIR=i2c
+
+C_SRC_DIR=		\
+	i2c			\
+	i2csim
