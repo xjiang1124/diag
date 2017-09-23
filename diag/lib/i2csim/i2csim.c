@@ -86,6 +86,11 @@ i2cRegSim_t tps549a20RegHbmSim[] = {
     {0xD4, 0xD139, 2}, // MFR_SPECIFIC_04
 };
 
+i2cRegSim_t pcf85263aSim[] = {
+    {0x01, 0x23, 2},
+    {0x02, 0x45, 2},
+};
+
 int get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *pData, uint64 numBytes) {
     for (int i = 0; i < tblSize; i++) {
         if (pRegTbl[i].offset == offset) {
@@ -133,6 +138,13 @@ int64 pal_i2c_read(uint8* pDevName, uint64 offset, uint8 *pData, uint64 numBytes
     else if (strcmp(pI2cinfo->pDevName, "VRM_ARM") == 0) {
         pI2cReg = tps549a20RegArmSim;
         tblSize = sizeof(tps549a20RegArmSim)/sizeof(i2cRegSim_t);
+    }
+    else if (strcmp(pI2cinfo->pDevName, "RTC") == 0) {
+        pI2cReg = pcf85263aSim;
+        tblSize = sizeof(pcf85263aSim)/sizeof(i2cRegSim_t);
+    }
+    else {
+        return -1;
     }
 
     get_reg_value(pI2cReg, tblSize, offset, pData, numBytes);
