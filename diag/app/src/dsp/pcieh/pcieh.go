@@ -31,7 +31,7 @@ func Pcie_HPcieHdl(argList []string) {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.Success
+    diagEngine.FuncMsgChan <- errType.SUCCESS
     return
 }
 
