@@ -23,7 +23,7 @@ uint8 qsfp_1_a0[]      = "QSFP_1_A0";
 uint8 qsfp_1_a2[]      = "QSFP_1_A2";
 uint8 fru[]            = "FRU";
 uint8 rtc[]            = "RTC";
-uint8 temp_sensor[]    = "TEM_SENSOR";
+uint8 temp_sensor[]    = "TEMP_SENSOR";
 uint8 vrm_capri_dvdd[] = "VRM_CAPRI_DVDD";
 uint8 vrm_capri_avdd[] = "VRM_CAPRI_AVDD";
 uint8 vrm_hbm[]        = "VRM_HBM";
@@ -91,6 +91,20 @@ i2cRegSim_t pcf85263aSim[] = {
     {0x02, 0x45, 2},
 };
 
+i2cRegSim_t tmp422Sim[] = {
+    {0x00, 0x23, 2},
+    {0x01, 0x45, 2},
+    {0x02, 0xF6, 2},
+    {0x08, 0x80, 2},
+    {0x09, 0x00, 2},
+    {0x0A, 0x3C, 2},
+    {0x10, 0x20, 2},
+    {0x11, 0x30, 2},
+    {0x12, 0xF0, 2},
+    {0xFE, 0x55, 2},
+    {0xFF, 0x22, 2},
+};
+
 int get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *pData, uint64 numBytes) {
     for (int i = 0; i < tblSize; i++) {
         if (pRegTbl[i].offset == offset) {
@@ -142,6 +156,10 @@ int64 pal_i2c_read(uint8* pDevName, uint64 offset, uint8 *pData, uint64 numBytes
     else if (strcmp(pI2cinfo->pDevName, "RTC") == 0) {
         pI2cReg = pcf85263aSim;
         tblSize = sizeof(pcf85263aSim)/sizeof(i2cRegSim_t);
+    }
+    else if (strcmp(pI2cinfo->pDevName, "TEMP_SENSOR") == 0) {
+        pI2cReg = tmp422Sim;
+        tblSize = sizeof(tmp422Sim)/sizeof(i2cRegSim_t);
     }
     else {
         return -1;

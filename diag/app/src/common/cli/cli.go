@@ -31,6 +31,13 @@ type OutputFmt struct {
     outStr int
 }
 
+const (
+    INIT_NONE = 0
+    INIT_DONE = 1
+)
+
+var initStatus int = INIT_NONE
+
 var OutputMode int
 
 func Init(fileName string, mode int) {
@@ -66,6 +73,8 @@ func Init(fileName string, mode int) {
     Warning = log.New(warningHandle,"[WARNING]", 0)
 
     Error = log.New(errorHandle,    "[ERROR]  ", 0)
+
+    initStatus = INIT_DONE
 }
 
 func unixMilli(t time.Time) int64 {
@@ -136,19 +145,33 @@ func Println(lvl string, a...interface{}) (err error) {
     outStr := fmt.Sprintln(a)
     outStr = formatOutput(lvl, outStr)
 
-    switch lvl {
-    case "debug", "d":
-        Debug.Println(outStr)
-    case "info", "i":
-        Info.Println(outStr)
-    case "warn", "w":
-        Warning.Println(outStr)
-    case "error", "e":
-        Error.Println(outStr)
-    default:
-        Debug.Println(outStr)
+    if initStatus == INIT_DONE {
+        switch lvl {
+        case "debug", "d":
+            Debug.Println(outStr)
+        case "info", "i":
+            Info.Println(outStr)
+        case "warn", "w":
+            Warning.Println(outStr)
+        case "error", "e":
+            Error.Println(outStr)
+        default:
+            Debug.Println(outStr)
+        }
+    } else {
+        switch lvl {
+        case "debug", "d":
+            fmt.Println("[DEBUG]  ", outStr)
+        case "info", "i":
+            fmt.Println("[INFO]   ", outStr)
+        case "warn", "w":
+            fmt.Println("[WARNING]", outStr)
+        case "error", "e":
+            fmt.Println("[ERROR]  ", outStr)
+        default:
+            fmt.Println("[DEBUG]  ", outStr)
+        }
     }
-
     return nil
 }
 

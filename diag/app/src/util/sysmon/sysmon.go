@@ -19,6 +19,8 @@ import (
     "common/powermodule/tps53659"
     "common/powermodule/tps549a20"
     "common/powermodule/tpsAll"
+
+    "common/tempsensor/tmp422"
 )
 
 var cardInfo diagEngine.CardInfo
@@ -48,6 +50,9 @@ func outputBufComp(buf string) {
 }
 
 func getCpuTemp(compFlag bool) int{
+    cli.Println("i", "============================")
+    cli.Println("i", "CPU Status")
+
     cmdPath := config.DiagHostBinPath
     out, err := exec.Command(cmdPath+"sensors", "-A", "--no-adapter").Output()
 
@@ -60,6 +65,7 @@ func getCpuTemp(compFlag bool) int{
     } else {
         outputBuf(string(out))
     }
+    cli.Println("i", "\n")
 
     return errType.SUCCESS
 }
@@ -78,6 +84,9 @@ func getVrmStatus() int {
         return errType.FAIL
     }
 
+    cli.Println("i", "============================")
+    cli.Println("i", "VRM Status")
+
     vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
@@ -85,7 +94,7 @@ func getVrmStatus() int {
 
     var outStr string
     var outStrTemp string
-    outStr = fmt.Sprintf(fmtNameStr, "VRM")
+    outStr = fmt.Sprintf(fmtNameStr, "NAME")
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
@@ -173,9 +182,17 @@ func getVrmStatus() int {
         cli.Println("i", outStr)
     }
 
+    cli.Println("i", "\n")
     return errType.SUCCESS
 }
 
+func dispTemp() (err int) {
+    cli.Println("i", "============================")
+    cli.Println("i", "Temp Sensor Readings")
+    tmp422.DispTemp("TEMP_SENSOR")
+    cli.Println("i", "\n")
+    return
+}
 
 
 func main () {
@@ -198,6 +215,7 @@ func main () {
         }
     } else {
         getVrmStatus()
+        dispTemp()
         // Print CPU temp
         getCpuTemp(*compPtr)
     }

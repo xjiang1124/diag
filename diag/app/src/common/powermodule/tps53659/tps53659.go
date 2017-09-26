@@ -1,5 +1,3 @@
-// Go compiler wants a .go file in package
-
 package tps53659
 
 import (
@@ -24,9 +22,9 @@ const (
     Calculate voltage output from vid value
     Formula comes from TPS53659 data sheet
  */
-func calcVoltFromVid (vid byte, dacStep uint32) (integer uint32, dec uint32, err int) {
-    var volt uint32
-    var base uint32
+func calcVoltFromVid (vid byte, dacStep uint64) (integer uint64, dec uint64, err int) {
+    var volt uint64
+    var base uint64
     err = errType.SUCCESS
 
     if vid == 0 {
@@ -43,7 +41,7 @@ func calcVoltFromVid (vid byte, dacStep uint32) (integer uint32, dec uint32, err
         base = 500
     }
 
-    volt = (uint32(vid) - 1) * dacStep + base
+    volt = (uint64(vid) - 1) * dacStep + base
 
     return volt/1000, volt%1000, errType.SUCCESS
 }
@@ -51,12 +49,12 @@ func calcVoltFromVid (vid byte, dacStep uint32) (integer uint32, dec uint32, err
 /*
     Calculate vid from given voltage (in mv unit)
  */
-func calcVidFromVolt (tgtVoltMv uint32, dacStep uint32) (vid byte, err int) {
-    var volt uint32
-    var voltNext uint32
-    var base uint32
-    var vidMax uint32
-    var vidStep uint32
+func calcVidFromVolt (tgtVoltMv uint64, dacStep uint64) (vid byte, err int) {
+    var volt uint64
+    var voltNext uint64
+    var base uint64
+    var vidMax uint64
+    var vidStep uint64
 
     err = errType.SUCCESS
 
@@ -92,17 +90,17 @@ func calcVidFromVolt (tgtVoltMv uint32, dacStep uint32) (vid byte, err int) {
     upper 5 bits: Linear two's complement format exponent.
     lower 11 bits: Linear two's complement format mantissa.
  */
-func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
-    var expUint uint32
-    var expInt int
+func getExpOutput(input uint16) (integer uint64, dec uint64, err int) {
+    var expUint uint64
+    var expInt int64
     var expFloat float64
     var manFloat float64
     var expOutFloat float64
 
-    expUint = uint32(input >> 11)
+    expUint = uint64(input >> 11)
     manFloat = float64(input & 0x7FF)
 
-    expInt, err = misc.TwoCmplBits(expUint, 5)
+    expInt, err = misc.TwoCmplBits64(expUint, 5)
     if err != errType.SUCCESS {
         return 0, 0, err
     }
@@ -111,8 +109,8 @@ func getExpOutput(input uint16) (integer uint32, dec uint32, err int) {
     expOutFloat = math.Pow(2, expFloat) * manFloat
     intpart, div := math.Modf(expOutFloat)
 
-    integer = uint32(intpart)
-    dec = uint32(div*1000)
+    integer = uint64(intpart)
+    dec = uint64(div*1000)
 
     return integer, dec, errType.SUCCESS
 }
@@ -128,10 +126,10 @@ func (tps53659 *TPS53659) ReadStatus(devName string, channel byte) (status uint1
 }
 
 
-func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     var data uint16
     var dacStepRegVal byte
-    var dacStep uint32
+    var dacStep uint64
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -151,10 +149,10 @@ func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint32
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint64, dec uint64, err int) {
     var data uint16
     var dacStepRegVal byte
-    var dacStep uint32
+    var dacStep uint64
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -175,7 +173,7 @@ func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint3
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     var data uint16
 
     // Write page register
@@ -189,7 +187,7 @@ func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint32
     return
 }
 
-func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte) (integer uint64, dec uint64, err int) {
     var data uint16
 
     // Write page register
@@ -206,7 +204,7 @@ func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte
 /*
     Read register with EXP format and calculate output
  */
-func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint64) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint64) (integer uint64, dec uint64, err int) {
     var data uint16
 
     // Write page register
@@ -218,32 +216,32 @@ func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint
     return
 }
 
-func (tps53659 *TPS53659) ReadVin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadVin(devName string, channel byte) (integer uint64, dec uint64, err int) {
     integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_VIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadIin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadIin(devName string, channel byte) (integer uint64, dec uint64, err int) {
     integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_IIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadTemp(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadTemp(devName string, channel byte) (integer uint64, dec uint64, err int) {
     integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_TEMPERATURE_1)
     return
 }
 
-func (tps53659 *TPS53659) ReadPout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadPout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_POUT)
     return
 }
 
-func (tps53659 *TPS53659) ReadPin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadPin(devName string, channel byte) (integer uint64, dec uint64, err int) {
     integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_PIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadVoutLn(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps53659 *TPS53659) ReadVoutLn(devName string, channel byte) (integer uint64, dec uint64, err int) {
     integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.MFR_SPECIFIC_04)
     return
 }
@@ -258,7 +256,7 @@ func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err
     var marginCmd byte
     var data uint16
     var dacStepRegVal byte
-    var dacStep uint32
+    var dacStep uint64
 
     if pct == 0 {
         marginCmd = tps53659Reg.MARGIN_NONE_CMD
@@ -285,7 +283,7 @@ func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err
 
     integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
     voltMv := integer *1000 + dec
-    voltMvTemp := voltMv * uint32(100+pct)
+    voltMvTemp := voltMv * uint64(100+pct)
     voltMvTgt := voltMvTemp / 100
 
     // Update VOUT_MARGIN_HIGH/HOW with target VID

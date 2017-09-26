@@ -1,6 +1,14 @@
 package config
 
 const (
+    MODE_REGULAR = 0
+    MODE_JSON = 0
+
+    DSIABLE = 0
+    ENABLE = 1
+)
+
+const (
     // 0: regular output; 1: JSON format
     OutputMode = 0
 
@@ -22,7 +30,7 @@ var DiagNicLogPath string
 var DiagHostLogPath string
 
 func init() {
-    if SimMode == 1 {
+    if SimMode == ENABLE {
         // Binary files location
         DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
         DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"

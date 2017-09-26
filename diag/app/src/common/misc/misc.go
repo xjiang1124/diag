@@ -13,6 +13,16 @@ import (
 
 //========================================================
 // Constant definition
+const (
+    ONE_BYTE = 1
+    TWO_BYTE = 2
+    FOUR_BYTE = 4
+
+    BITS_8 = 8
+    BITS_16 = 16
+    BITS_32 = 32
+
+)
 
 //========================================================
 // Global variables
@@ -22,7 +32,7 @@ import (
 /*
     Read modify write    
 */
-func Rmw(origData uint32, newData uint32, startBit uint32, numBits uint32) (retVal uint32, err int) {
+func Rmw32(origData uint32, newData uint32, startBit uint32, numBits uint32) (retVal uint32, err int) {
     var mask uint32
 
     mask = (1 << numBits - 1) << startBit
@@ -33,10 +43,10 @@ func Rmw(origData uint32, newData uint32, startBit uint32, numBits uint32) (retV
     Twos complement with given number of bits
     Effective bits should be already shited to the right side
  */
-func TwoCmplBits(data uint32, numBits uint32) (retVal int, err int) {
+func TwoCmplBits32(data uint32, numBits uint32) (retVal int, err int) {
     var msb uint32
 
-    if numBits == 0 {
+    if numBits == 0 || numBits > 32 {
         return 0, errType.INVALID_PARAM
     }
 
@@ -57,32 +67,68 @@ func TwoCmplBits(data uint32, numBits uint32) (retVal int, err int) {
 
     return retVal, errType.SUCCESS
 }
-
 /*
-    Convert uint32 into 4 byte slice
+    Twos complement with given number of bits
+    Effective bits should be already shited to the right side
  */
-func U32ToBytes(dataU32 uint32, byteArr []byte) {
-    for i:=0; i<4; i++ {
-        byteArr[i] = byte(dataU32 & 0xFF)
-        dataU32 = dataU32 >> 8
+func TwoCmplBits64(data uint64, numBits uint64) (retVal int64, err int) {
+    var msb uint64
+
+    if numBits == 0 || numBits > 64 {
+        return 0, errType.INVALID_PARAM
     }
+
+    // Remove upper bits just in case
+    data = data & (1 << numBits - 1)
+
+    msb = 1 << (numBits - 1)
+    sign := data & msb
+
+    retVal = int64(data)
+    if sign == 0 {
+        return retVal, errType.SUCCESS
+    }
+
+    // Negative number, make upper bits all one
+    data = data | (^(1 << numBits - 1))
+    retVal = int64((^data + 1)) * (-1)
+
+    return retVal, errType.SUCCESS
 }
 
 /*
-    Convert uint32 into 4 byte slice
+    Convert byte slice to uint32
  */
-func BytesToU32(dataU32 *uint32, byteArr []byte) {
-    *dataU32 = 0
-    for i:=0; i<4; i++ {
-        *dataU32 = (*dataU32 << 8) | uint32(byteArr[3-i])
+func BytesToU32(byteArr []byte, numBytes uint64) (dataU32 uint32) {
+    dataU32 = 0
+    var i uint64
+    for i=0; i<numBytes; i++ {
+        dataU32 = (dataU32 << 8) | uint32(byteArr[numBytes-i-1])
     }
+    return
+
+}
+/*
+    Convert byte slice to uint64
+ */
+func BytesToU64(byteArr []byte, numBytes uint64) (dataU64 uint64) {
+    dataU64 = 0
+    var i uint64
+    for i=0; i<numBytes; i++ {
+        dataU64 = (dataU64 << 8) | uint64(byteArr[numBytes-i-1])
+    }
+    return
 }
 
 /*
-    Convert uint32 into 4 byte slice
+    Convert byte slice to uint16
  */
-func BytesToU16(byteArr []byte) (dataU16 uint16) {
-    dataU16 = uint16(byteArr[1]) << 8 | uint16(byteArr[0])
+func BytesToU16(byteArr []byte, numBytes uint64) (dataU16 uint16) {
+    dataU16 = 0
+    var i uint64
+    for i=0; i<numBytes; i++ {
+        dataU16 = (dataU16 << 8) | uint16(byteArr[numBytes-i-1])
+    }
     return dataU16
 }
 

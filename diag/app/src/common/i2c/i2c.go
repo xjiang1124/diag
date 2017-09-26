@@ -17,7 +17,7 @@ import "C"
 import "unsafe"
 
 func Read(devName string, offset uint64, numBytes uint64) (data []byte, err int) {
-    if config.SimMode == 1 {
+    if config.SimMode == config.ENABLE {
         return PalReadSim(devName, offset, numBytes)
     }
     return data, errType.SUCCESS

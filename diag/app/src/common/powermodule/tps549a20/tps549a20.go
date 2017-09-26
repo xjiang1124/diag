@@ -19,38 +19,38 @@ func (tps549a20 *TPS549A20) ReadStatus(devName string, channel byte) (status uin
 }
 
 
-func (tps549a20 *TPS549A20) ReadVout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadVout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func (tps549a20 *TPS549A20) ReadVboot(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadVboot(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
-func (tps549a20 *TPS549A20) ReadIout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadIout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
-func (tps549a20 *TPS549A20) ReadVin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadVin(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
-func (tps549a20 *TPS549A20) ReadIin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadIin(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
-func (tps549a20 *TPS549A20) ReadTemp(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadTemp(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
-func (tps549a20 *TPS549A20) ReadPout(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadPout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
-func (tps549a20 *TPS549A20) ReadPin(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadPin(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
-func (tps549a20 *TPS549A20) ReadVoutLn(devName string, channel byte) (integer uint32, dec uint32, err int) {
+func (tps549a20 *TPS549A20) ReadVoutLn(devName string, channel byte) (integer uint64, dec uint64, err int) {
     return
 }
 
