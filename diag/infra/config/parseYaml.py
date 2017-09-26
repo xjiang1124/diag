@@ -405,9 +405,9 @@ func {}{}Hdl(argList []string) {{
     fmt_testParamPrnt = "\"{}\", *{}Ptr"
     
     fmt_testEnding = """
-    err := fs.Parse(argList)
-    if err != nil {{
-        dcli.Println("e", "Parse failed", err)
+    errFs := fs.Parse(argList)
+    if errFs != nil {{
+        dcli.Println("e", "Parse failed", errFs)
     }}
 
     // To avoid compile error: variable not used

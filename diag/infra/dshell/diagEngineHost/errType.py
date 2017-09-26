@@ -14,6 +14,9 @@ class errType:
         self.mapV["DIAGMGR_TIMEOUT"] = 101
         self.mapV["DIAGMGR_INVALID_TEST"] = 102
         self.mapV["DIAGMGR_PERM_SKIP"] = 103
+        # INFO_TEMPSENSOR
+        self.mapV["TEMPSENSOR_INVALID_ID"] = 200
+        self.mapV["TEMPSENSOR_OVER_LIMIT"] = 201
 
         self.mapN = dict()
         # INFO_GENERAL
@@ -29,6 +32,9 @@ class errType:
         self.mapN[101] = "DIAGMGR_TIMEOUT"
         self.mapN[102] = "DIAGMGR_INVALID_TEST"
         self.mapN[103] = "DIAGMGR_PERM_SKIP"
+        # INFO_TEMPSENSOR
+        self.mapN[200] = "TEMPSENSOR_INVALID_ID"
+        self.mapN[201] = "TEMPSENSOR_OVER_LIMIT"
 
     def toName(self, value):
         return self.mapN[value]

@@ -65,7 +65,7 @@ func getCpuTemp(compFlag bool) int{
     } else {
         outputBuf(string(out))
     }
-    cli.Println("i", "\n")
+    cli.Println("i", "")
 
     return errType.SUCCESS
 }
@@ -182,7 +182,7 @@ func getVrmStatus() int {
         cli.Println("i", outStr)
     }
 
-    cli.Println("i", "\n")
+    cli.Println("i", "")
     return errType.SUCCESS
 }
 
@@ -190,7 +190,7 @@ func dispTemp() (err int) {
     cli.Println("i", "============================")
     cli.Println("i", "Temp Sensor Readings")
     tmp422.DispTemp("TEMP_SENSOR")
-    cli.Println("i", "\n")
+    cli.Println("i", "")
     return
 }
 

@@ -1,8 +1,8 @@
 package tmp422Reg
 
 const (
-    MFG_ID = 0x55
-    DEVICE_ID = 0x21
+    MFG_ID_V = 0x55
+    DEV_ID_V = 0x22
 )
 
 const (
@@ -12,6 +12,12 @@ const (
 
     MAX_CHANNEL = 3
 )
+
+const (
+    LIMIT_LOW = 5
+    LIMIT_HIGH = 125
+)
+
 
 const (
     LOCAL_TEMP_HIGH uint64 = 0x00
@@ -31,8 +37,8 @@ const (
     N_CORR_2 uint64 = 0x22
     N_CORR_3 uint64 = 0x23
     SOFT_RESET uint64 = 0xFC
-    MGF_ID uint64 = 0xFE
-    DEV_ID uint64 = 0x21
+    MFG_ID uint64 = 0xFE
+    DEV_ID uint64 = 0xFF
 )
 
 

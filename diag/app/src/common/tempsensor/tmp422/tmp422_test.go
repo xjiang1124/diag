@@ -3,6 +3,7 @@ package tmp422
 import (
     //"fmt"
     "testing"
+    "hardware/tmp422Reg"
 )
 
 type TestVector struct {
@@ -33,6 +34,29 @@ func TestReadVout(t *testing.T) {
     }
 }
 
+func TestReadDevId(t *testing.T) {
+    id, err := ReadDevId("TEMP_SENSOR")
+    if id != tmp422Reg.DEV_ID_V || err != 0 {
+        t.Error (
+            "\n",
+            "Expected ID, err", tmp422Reg.DEV_ID_V, 0,
+            "\n",
+            "Received ID, err", id, err,
+        )
+    }
+}
+
+func TestReadMfgId(t *testing.T) {
+    id, err := ReadMfgId("TEMP_SENSOR")
+    if id != tmp422Reg.MFG_ID_V || err != 0 {
+        t.Error (
+            "\n",
+            "Expected ID, err", tmp422Reg.MFG_ID_V, 0,
+            "\n",
+            "Received ID, err", id, err,
+        )
+    }
+}
 func TestDispTemp(t *testing.T) {
     err := DispTemp("TEMP_SENSOR")
     if err != 0 {
