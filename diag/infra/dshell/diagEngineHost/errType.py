@@ -9,6 +9,7 @@ class errType:
         self.mapV["TIMEOUT"] = 3
         self.mapV["INVALID_TEST"] = 4
         self.mapV["PERM_SKIP"] = 5
+        self.mapV["INVALID_LOCK"] = 6
         # INFO_DIAGMGR
         self.mapV["DIAGMGR_SKIP"] = 100
         self.mapV["DIAGMGR_TIMEOUT"] = 101
@@ -27,6 +28,7 @@ class errType:
         self.mapN[3] = "TIMEOUT"
         self.mapN[4] = "INVALID_TEST"
         self.mapN[5] = "PERM_SKIP"
+        self.mapN[6] = "INVALID_LOCK"
         # INFO_DIAGMGR
         self.mapN[100] = "DIAGMGR_SKIP"
         self.mapN[101] = "DIAGMGR_TIMEOUT"

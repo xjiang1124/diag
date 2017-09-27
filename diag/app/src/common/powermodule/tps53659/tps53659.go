@@ -4,6 +4,7 @@ import (
     //"fmt"
     "math"
 
+    "common/dmutex"
     "common/errType"
     "common/misc"
     "common/pmbCmd"
@@ -116,6 +117,11 @@ func getExpOutput(input uint16) (integer uint64, dec uint64, err int) {
 }
 
 func (tps53659 *TPS53659) ReadStatus(devName string, channel byte) (status uint16, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -130,6 +136,12 @@ func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint64
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
+
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -154,6 +166,12 @@ func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint6
     var dacStepRegVal byte
     var dacStep uint64
 
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
+
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
@@ -176,6 +194,12 @@ func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint6
 func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint64, dec uint64, err int) {
     var data uint16
 
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
+
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
 
@@ -189,6 +213,12 @@ func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint64
 
 func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte) (integer uint64, dec uint64, err int) {
     var data uint16
+
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -206,6 +236,12 @@ func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte
  */
 func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint64) (integer uint64, dec uint64, err int) {
     var data uint16
+
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -247,6 +283,12 @@ func (tps53659 *TPS53659) ReadVoutLn(devName string, channel byte) (integer uint
 }
 
 func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
+
     devID, err = pmbCmd.ReadByte(devName, tps53659Reg.IC_DEVICE_ID)
     return devID, err
 }
@@ -257,6 +299,12 @@ func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
+
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
 
     if pct == 0 {
         marginCmd = tps53659Reg.MARGIN_NONE_CMD

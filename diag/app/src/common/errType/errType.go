@@ -9,6 +9,7 @@ const(
     TIMEOUT              = 3
     INVALID_TEST         = 4
     PERM_SKIP            = 5
+    INVALID_LOCK         = 6
     // INFO_DIAGMGR
     DIAGMGR_SKIP         = 100
     DIAGMGR_TIMEOUT      = 101

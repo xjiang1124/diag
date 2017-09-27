@@ -209,6 +209,9 @@ func main () {
 
     if (*tPtr == true) {
         for {
+            getVrmStatus()
+            dispTemp()
+
             // Print CPU temp
             getCpuTemp(*compPtr)
             misc.SleepInSec(*intvPtr)

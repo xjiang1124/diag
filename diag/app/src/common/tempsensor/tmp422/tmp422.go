@@ -4,6 +4,7 @@ import (
     "fmt"
 
     "common/cli"
+    "common/dmutex"
     "common/errType"
     "common/i2c"
     "common/misc"
@@ -11,12 +12,24 @@ import (
 )
 
 func ReadMfgId(devName string) (id byte, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
+
     idBytes, err := i2c.Read(devName, tmp422Reg.MFG_ID, misc.ONE_BYTE)
     id = byte(idBytes[0])
     return
 }
 
 func ReadDevId(devName string) (id byte, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
+
     idBytes, err := i2c.Read(devName, tmp422Reg.DEV_ID, misc.ONE_BYTE)
     id = byte(idBytes[0])
     return
@@ -26,7 +39,11 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
     var tempHighAddr uint64
     var tempLowAddr uint64
 
-    err = errType.SUCCESS
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(devName)
 
     switch channel {
     case tmp422Reg.LOCAL_TEMP:

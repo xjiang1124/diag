@@ -459,7 +459,7 @@ class diagSts(diagEngineHost):
             cardType = card.split(':')[2]
             cardName = card.split(':')[3]
             if cardName != 'HOST':
-                cardSts = "inactive"
+                cardSts = "idle"
                 keyDsp = fmtKeyDsp.format(cardType)
                 dspFullList = self.r.keys(keyDsp) 
                 for dspFull in dspFullList:
@@ -496,7 +496,7 @@ class diagSts(diagEngineHost):
                 testQueStsKey = self.testQueStsKeyFmt.format(card, dsp)
                 queSts = self.r.llen(testQueStsKey)
                 if queSts <= 0:
-                    sts = "inactive"
+                    sts = "idle"
                 else:
                     sts = "active"
 
@@ -532,7 +532,7 @@ class diagSts(diagEngineHost):
                 queSts = self.r.llen(testQueStsKey)
 
                 for test in testList:
-                    sts = "inactive"
+                    sts = "idle"
                     if queSts > 0:
                         testId = self.r.lindex(testQueStsKey, -1)
                         testStr = self.testKeyFmt.format(card, dsp, testId)

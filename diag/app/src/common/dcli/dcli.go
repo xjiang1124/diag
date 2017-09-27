@@ -18,6 +18,13 @@ import (
     "github.com/go-redis/redis"
 )
 
+const (
+    INIT_NONE = 0
+    INIT_DONE = 1
+)
+
+var initStatus int = INIT_NONE
+
 // redis client
 var r *redis.Client
 
@@ -34,10 +41,15 @@ func Init(fileName string, mode int) {
         DB:         0,
     })
     outputMode = mode
+    initStatus = INIT_DONE
 }
 
 func Println(lvl string, a...interface{}) (err error) {
     cli.Println(lvl, a)
+
+    if initStatus == INIT_NONE {
+        return nil
+    }
 
     outStr := fmt.Sprintln(a)
     // fmt.Sprintln add "[ ]\n" at begining and end of the string. 

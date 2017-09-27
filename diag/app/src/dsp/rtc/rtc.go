@@ -6,10 +6,9 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
-    "common/i2c"
     "common/misc"
+    "common/rtc/pcf85263a"
     "config"
-    "hardware/pcf85263aReg"
 )
 
 //========================================================
@@ -28,30 +27,28 @@ func RtcI2CHdl(argList []string) {
         diagEngine.FuncMsgChan <- errType.FAIL
     }
 
-    data, err := i2c.Read("RTC", pcf85263aReg.SECONDS, 1)
+    _, _, _, _, _, secondPre, err := pcf85263a.ReadTime("RTC")
     if err != errType.SUCCESS {
         diagEngine.FuncMsgChan <- errType.FAIL
     }
-    minutesPre := data[0] & 0x7F
 
     misc.SleepInSec(3)
 
-    data, err = i2c.Read("RTC", pcf85263aReg.SECONDS, 1)
+    _, _, _, _, _, secondPost, err := pcf85263a.ReadTime("RTC")
     if err != errType.SUCCESS {
         diagEngine.FuncMsgChan <- errType.FAIL
     }
-    minutesPost := data[0] & 0x7F
 
     // Turn around
-    if minutesPost < minutesPre {
-        minutesPost = minutesPost + 60
+    if secondPost < secondPre {
+        secondPost = secondPost + 60
     }
 
-    diff := minutesPost - minutesPre
+    diff := secondPost - secondPre
     if (diff > 2 && diff < 4) {
         diagEngine.FuncMsgChan <- errType.SUCCESS
     } else {
-        dcli.Println("e", "time difference is", diff)
+        dcli.Println("e", "time difference is", diff, ";expected: 3")
         diagEngine.FuncMsgChan <- errType.FAIL
     }
     return

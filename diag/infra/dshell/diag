@@ -39,6 +39,7 @@ group.add_argument("-pr", "--parallelRuntest", action='append', type=str,
         help='''\
 Parallel run test
 format: diag -pr 't -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]'
+example: ./diag -pr 't -c nic1 -d pmbus -t intr -p timeout=45' -pr 't -c nic1 -d pmbus -t pmbus -p "timeout=30 ite=2"'
 ''')
 
 group.add_argument("-scard", "--showCard", action="store_true", help="Show card list")
