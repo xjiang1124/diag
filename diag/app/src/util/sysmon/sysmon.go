@@ -25,11 +25,17 @@ import (
 
 var cardInfo diagEngine.CardInfo
 
+var flagName string = config.DiagNicBinPath+"sysmon.flag"
+
 func Init(procName string) {
     cli.Init("log_"+procName+".txt", config.OutputMode)
     // Do not card DSP name here
     diagEngine.CardInfoInit(procName)
     cardInfo = diagEngine.GetCardInfo()
+}
+
+func exitContMode () {
+    os.Remove(flagName)
 }
 
 func outputBuf(buf string) {
@@ -110,7 +116,6 @@ func dispTemp() (err int) {
     return
 }
 
-
 func main () {
     // Initialization
     procNameTemp := strings.Split(os.Args[0], "/")
@@ -119,12 +124,33 @@ func main () {
 
     // Define input arguement
     tPtr := flag.Bool("t", false, "Enable timebased system monitoring")
+    qPtr := flag.Bool("q", false, "Quit continuous mode")
     intvPtr := flag.Int("intv", 30, "Time interval(in sec) to ready system status info")
     compPtr := flag.Bool("c", false, "Enable compact output")
     flag.Parse()
 
+    if (*qPtr == true) {
+        os.Remove(flagName)
+        return
+    }
+
     if (*tPtr == true) {
+        //flagName := config.DiagNicBinPath+"sysmon.flag"
+        f, err := os.OpenFile(flagName, os.O_RDWR|os.O_CREATE, 0755)
+        if err != nil {
+            cli.Println("e", err)
+            return
+        }
+        if err := f.Close(); err != nil {
+            cli.Println("e", err)
+            return
+        }
         for {
+            _, err := os.Stat(flagName)
+            if os.IsNotExist(err) {
+                cli.Println("i", "Exit continuous mode")
+                return
+            }
             getVrmStatus()
             dispTemp()
 
