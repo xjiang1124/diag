@@ -18,4 +18,7 @@ const(
     // INFO_TEMPSENSOR
     TEMPSENSOR_INVALID_ID = 200
     TEMPSENSOR_OVER_LIMIT = 201
+    // INFO_I2C
+    I2C_RD_FAIL          = 300
+    I2C_WR_FAIL          = 301
 )

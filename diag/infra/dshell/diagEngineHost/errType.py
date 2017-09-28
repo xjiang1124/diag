@@ -18,6 +18,9 @@ class errType:
         # INFO_TEMPSENSOR
         self.mapV["TEMPSENSOR_INVALID_ID"] = 200
         self.mapV["TEMPSENSOR_OVER_LIMIT"] = 201
+        # INFO_I2C
+        self.mapV["I2C_RD_FAIL"] = 300
+        self.mapV["I2C_WR_FAIL"] = 301
 
         self.mapN = dict()
         # INFO_GENERAL
@@ -37,6 +40,9 @@ class errType:
         # INFO_TEMPSENSOR
         self.mapN[200] = "TEMPSENSOR_INVALID_ID"
         self.mapN[201] = "TEMPSENSOR_OVER_LIMIT"
+        # INFO_I2C
+        self.mapN[300] = "I2C_RD_FAIL"
+        self.mapN[301] = "I2C_WR_FAIL"
 
     def toName(self, value):
         return self.mapN[value]

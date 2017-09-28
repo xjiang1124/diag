@@ -109,7 +109,13 @@ i2cRegSim_t tmp422Sim[] = {
     {0xFF, 0x22, 2},
 };
 
-int get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *pData, uint64 numBytes) {
+int64 get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *pData, uint64 numBytes) {
+    // Inject error case
+    if (offset == 0xEF) {
+        printf("Offset=0xEF, return failure\n");
+        return -1;
+    }
+
     for (int i = 0; i < tblSize; i++) {
         if (pRegTbl[i].offset == offset) {
             uint64 temp = pRegTbl[i].value;
@@ -123,7 +129,7 @@ int get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *pD
     return 0;
 }
 
-int get_i2c_info (i2cInfo_t *pI2cTbl, uint64 tblSize, uint8* pDevName, i2cInfo_t **pI2cInfo) {
+int64 get_i2c_info (i2cInfo_t *pI2cTbl, uint64 tblSize, uint8* pDevName, i2cInfo_t **pI2cInfo) {
     for (int i = 0; i < tblSize; i++) {
         if (strcmp(pI2cTbl[i].pDevName, pDevName) == 0) {
             *pI2cInfo = &(pI2cTbl[i]);
@@ -169,9 +175,9 @@ int64 pal_i2c_read(uint8* pDevName, uint64 offset, uint8 *pData, uint64 numBytes
         return -1;
     }
 
-    get_reg_value(pI2cReg, tblSize, offset, pData, numBytes);
+    ret = get_reg_value(pI2cReg, tblSize, offset, pData, numBytes);
 
-    return 0;
+    return ret;
 
 }
 
@@ -187,14 +193,14 @@ int64 pal_i2c_write(uint8* pDevName, uint64 offset, uint8 *data, uint64 numBytes
 // SPI API - CPLD
 
 // Is there maximum number of byte?
-uint64 pal_spi_read(uint64 offset, uint8 *data, uint64 numBytes);
-uint64 pal_spi_write(uint64 offset, uint8 *data, uint64 numBytes);
+int64 pal_spi_read(uint64 offset, uint8 *data, uint64 numBytes);
+int64 pal_spi_write(uint64 offset, uint8 *data, uint64 numBytes);
 
 
 //=======================================
 // QSPI API - QSPI flash
 
 // Is there maximum number of byte?
-uint64 pal_qspi_read(uint64 offset, uint8 *data, uint64 numBytes);
-uint64 pal_qspi_write(uint64 offset, uint8 *data, uint64 numBytes);
+int64 pal_qspi_read(uint64 offset, uint8 *data, uint64 numBytes);
+int64 pal_qspi_write(uint64 offset, uint8 *data, uint64 numBytes);
 

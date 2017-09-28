@@ -32,6 +32,7 @@ func PalReadSim(devName string, offset uint64, numBytes uint64) (data []uint8, e
     defer C.free(unsafe.Pointer(pDevName))
     var offsetC C.uint64
     var numBytesC C.uint64
+    var retC C.int64
     err = errType.SUCCESS
 
     offsetC = C.uint64(offset)
@@ -44,8 +45,12 @@ func PalReadSim(devName string, offset uint64, numBytes uint64) (data []uint8, e
         return data, errType.INVALID_PARAM
     }
 
-    C.pal_i2c_read(pDevName, offsetC, &rd[0], numBytesC)
+    retC = C.pal_i2c_read(pDevName, offsetC, &rd[0], numBytesC)
     data = C.GoBytes(unsafe.Pointer(&rd[0]), C.int(numBytesC))
+
+    if retC != 0 {
+        err = errType.I2C_RD_FAIL
+    }
 
     return data, err
 }

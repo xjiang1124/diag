@@ -10,7 +10,7 @@ import (
     "strings"
 
     "common/cli"
-    "common/diagEngine"
+//    "common/diagEngine"
     "config"
     "common/errType"
     "common/misc"
@@ -23,15 +23,15 @@ import (
     "common/tempsensor/tmp422"
 )
 
-var cardInfo diagEngine.CardInfo
+//var cardInfo diagEngine.CardInfo
 
 var flagName string = config.DiagNicBinPath+"sysmon.flag"
 
 func Init(procName string) {
     cli.Init("log_"+procName+".txt", config.OutputMode)
     // Do not card DSP name here
-    diagEngine.CardInfoInit(procName)
-    cardInfo = diagEngine.GetCardInfo()
+//    diagEngine.CardInfoInit(procName)
+//    cardInfo = diagEngine.GetCardInfo()
 }
 
 func exitContMode () {
