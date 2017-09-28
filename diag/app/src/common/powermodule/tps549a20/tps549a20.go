@@ -3,8 +3,9 @@
 package tps549a20
 
 import (
-    //"fmt"
+    "fmt"
 
+    "common/cli"
     "common/errType"
     "common/pmbCmd"
     "hardware/tps549a20Reg"
@@ -13,48 +14,41 @@ import (
 type TPS549A20 struct {
 }
 
-func (tps549a20 *TPS549A20) ReadStatus(devName string, channel byte) (status uint16, err int) {
+func (tps549a20 *TPS549A20) ReadStatus(devName string) (status uint16, err int) {
     status, err = pmbCmd.ReadWord(devName, tps549a20Reg.STATUS_WORD)
     return
 }
 
+func (tps549a20 *TPS549A20) DispStatus(devName string) (err int) {
+    vrmTitle := []string {"STATUS"}
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
 
-func (tps549a20 *TPS549A20) ReadVout(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return integer, dec, errType.SUCCESS
-}
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, "NAME")
+    for _, title := range(vrmTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", "--------------------")
+    cli.Println("i", outStr)
 
-func (tps549a20 *TPS549A20) ReadVboot(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return integer, dec, errType.SUCCESS
-}
-func (tps549a20 *TPS549A20) ReadIout(devName string, channel byte) (integer uint64, dec uint64, err int) {
+    status, err := tps549a20.ReadStatus(devName)
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+    outStrTemp = fmt.Sprintf("0x%X", status)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    cli.Println("i", outStr)
+
     return
+
 }
 
-func (tps549a20 *TPS549A20) ReadVin(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return
-}
-
-func (tps549a20 *TPS549A20) ReadIin(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return
-}
-
-func (tps549a20 *TPS549A20) ReadTemp(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return
-}
-
-func (tps549a20 *TPS549A20) ReadPout(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return
-}
-
-func (tps549a20 *TPS549A20) ReadPin(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return
-}
-
-func (tps549a20 *TPS549A20) ReadVoutLn(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    return
-}
-
-func (tps549a20 *TPS549A20) SetVMargin(devName string, channel byte, pct int) (err int) {
+func (tps549a20 *TPS549A20) SetVMargin(devName string, pct int) (err int) {
     var marginCmd byte
     var marginVal byte
 

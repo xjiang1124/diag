@@ -1,9 +1,10 @@
 package tps53659
 
 import (
-    //"fmt"
+    "fmt"
     "math"
 
+    "common/cli"
     "common/dmutex"
     "common/errType"
     "common/misc"
@@ -18,6 +19,14 @@ type TPS53659 struct {
 const (
     DEVICE_ID = 0x59
 )
+
+var channelMap map[string]byte
+
+func init() {
+    channelMap = make(map[string]byte)
+    channelMap["VRM_CAPRI_DVDD"] = 0
+    channelMap["VRM_CAPRI_AVDD"] = 1
+}
 
 /*
     Calculate voltage output from vid value
@@ -86,7 +95,7 @@ func calcVidFromVolt (tgtVoltMv uint64, dacStep uint64) (vid byte, err int) {
 }
 
 /*
-    tps53659 has many register using EXP format.
+    3659 has many register using EXP format.
     16-bit value, 
     upper 5 bits: Linear two's complement format exponent.
     lower 11 bits: Linear two's complement format mantissa.
@@ -116,12 +125,14 @@ func getExpOutput(input uint16) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadStatus(devName string, channel byte) (status uint16, err int) {
+func (tps53659 *TPS53659) ReadStatus(devName string) (status uint16, err int) {
     err = dmutex.Lock(devName)
     if err != errType.SUCCESS {
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -132,7 +143,7 @@ func (tps53659 *TPS53659) ReadStatus(devName string, channel byte) (status uint1
 }
 
 
-func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadVout(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
@@ -142,6 +153,8 @@ func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint64
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -161,7 +174,7 @@ func (tps53659 *TPS53659) ReadVout(devName string, channel byte) (integer uint64
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
@@ -171,6 +184,8 @@ func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint6
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -191,7 +206,7 @@ func (tps53659 *TPS53659) ReadVboot(devName string, channel byte) (integer uint6
     return integer, dec, errType.SUCCESS
 }
 
-func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
 
     err = dmutex.Lock(devName)
@@ -199,6 +214,8 @@ func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint64
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -211,7 +228,7 @@ func (tps53659 *TPS53659) ReadIout(devName string, channel byte) (integer uint64
     return
 }
 
-func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err int) {
     var data uint16
 
     err = dmutex.Lock(devName)
@@ -219,6 +236,8 @@ func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -234,7 +253,7 @@ func (tps53659 *TPS53659) ReadIoutPhase(devName string, channel byte, phase byte
 /*
     Read register with EXP format and calculate output
  */
-func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint64) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadRegExp(devName string, addrAddr uint64) (integer uint64, dec uint64, err int) {
     var data uint16
 
     err = dmutex.Lock(devName)
@@ -242,6 +261,8 @@ func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     // Write page register
     pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
@@ -252,33 +273,33 @@ func (tps53659 *TPS53659) ReadRegExp(devName string, channel byte, addrAddr uint
     return
 }
 
-func (tps53659 *TPS53659) ReadVin(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_VIN)
+func (tps53659 *TPS53659) ReadVin(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, tps53659Reg.READ_VIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadIin(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_IIN)
+func (tps53659 *TPS53659) ReadIin(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, tps53659Reg.READ_IIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadTemp(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_TEMPERATURE_1)
+func (tps53659 *TPS53659) ReadTemp(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, tps53659Reg.READ_TEMPERATURE_1)
     return
 }
 
-func (tps53659 *TPS53659) ReadPout(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_POUT)
+func (tps53659 *TPS53659) ReadPout(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, tps53659Reg.READ_POUT)
     return
 }
 
-func (tps53659 *TPS53659) ReadPin(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.READ_PIN)
+func (tps53659 *TPS53659) ReadPin(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, tps53659Reg.READ_PIN)
     return
 }
 
-func (tps53659 *TPS53659) ReadVoutLn(devName string, channel byte) (integer uint64, dec uint64, err int) {
-    integer, dec, err = tps53659.ReadRegExp(devName, channel, tps53659Reg.MFR_SPECIFIC_04)
+func (tps53659 *TPS53659) ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, tps53659Reg.MFR_SPECIFIC_04)
     return
 }
 
@@ -293,7 +314,7 @@ func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
     return devID, err
 }
 
-func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err int) {
+func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     var marginReg uint64
     var marginCmd byte
     var data uint16
@@ -305,6 +326,8 @@ func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err
         return
     }
     defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
 
     if pct == 0 {
         marginCmd = tps53659Reg.MARGIN_NONE_CMD
@@ -345,6 +368,95 @@ func (tps53659 *TPS53659) SetVMargin(devName string, channel byte, pct int) (err
     pmbCmd.WriteByte(devName, tps53659Reg.OPERATION, marginCmd)
 
     return
-
 }
 
+
+func (tps53659 *TPS53659) DispStatus(devName string) (err int) {
+    vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, "NAME")
+    for _, title := range(vrmTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", "--------------------")
+    cli.Println("i", outStr)
+
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    dig, frac, _ := tps53659.ReadVboot(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadPout(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadVout(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadIout(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadPin(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadVin(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadIin(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = tps53659.ReadTemp(devName)
+    if dig == 0 && frac == 0 {
+        outStrTemp = "-.-"
+    } else {
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    }
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    status, _ := tps53659.ReadStatus(devName)
+    outStrTemp = fmt.Sprintf("0x%X", status)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    cli.Println("i", outStr)
+
+    return
+}

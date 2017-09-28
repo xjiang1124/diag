@@ -3,7 +3,7 @@ package main
 import (
     "bufio"
     "flag"
-    "fmt"
+    //"fmt"
     "os"
     "os/exec"
     "regexp"
@@ -87,19 +87,6 @@ func getVrmStatus() int {
     cli.Println("i", "============================")
     cli.Println("i", "VRM Status")
 
-    vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
-    var fmtDigFrac string = "%d.%03d"
-    fmtStr := "%-10s"
-    fmtNameStr := "%-20s"
-
-    var outStr string
-    var outStrTemp string
-    outStr = fmt.Sprintf(fmtNameStr, "NAME")
-    for _, title := range(vrmTitle) {
-        outStr = outStr + fmt.Sprintf(fmtStr, title)
-    }
-    cli.Println("i", outStr)
-
     for _, vrm := range(vrmTbl) {
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
@@ -108,78 +95,7 @@ func getVrmStatus() int {
         } else {
             continue
         }
-
-        outStr = fmt.Sprintf(fmtNameStr, vrm.Name)
-
-        dig, frac, _ := tps.ReadVboot(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadPout(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadVout(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadIout(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadPin(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadVin(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadIin(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        dig, frac, _ = tps.ReadTemp(vrm.Name, vrm.Channel)
-        if dig == 0 && frac == 0 {
-            outStrTemp = "-.-"
-        } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-        }
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        status, _ := tps.ReadStatus(vrm.Name, vrm.Channel)
-        outStrTemp = fmt.Sprintf("0x%X", status)
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-        cli.Println("i", outStr)
+        tps.DispStatus(vrm.Name)
     }
 
     cli.Println("i", "")

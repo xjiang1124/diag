@@ -82,7 +82,7 @@ i2cRegSim_t tps549a20RegArmSim[] = {
 i2cRegSim_t tps549a20RegHbmSim[] = {
     {0x01, 0x00, 2}, // Operation
     {0x02, 0x00, 2}, // on_off_config
-    {0x79, 0xA5, 2}, // STATUS_WORD
+    {0x79, 0x53, 2}, // STATUS_WORD
     {0xD4, 0xD139, 2}, // MFR_SPECIFIC_04
 };
 
