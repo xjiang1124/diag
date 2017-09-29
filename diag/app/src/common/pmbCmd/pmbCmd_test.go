@@ -90,7 +90,7 @@ func TestReadWriteWord (t *testing.T) {
     }
 
     data, err = ReadWord("VRM_CAPRI_DVDD", 0x89)
-    if data != 0x1DF4  || err != errType.SUCCESS {
+    if data != 0x1DF4 || err != errType.SUCCESS {
         t.Error (
             "offset", 0x89,
             "expected", 0x1D4F, 0,

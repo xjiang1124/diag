@@ -5,10 +5,20 @@ SRC_DIR=		\
 	dsp/rtc     \
 	dsp/pcieh   \
 	dsp/tempsensor     \
-	util/sysmon
+	util/sysmon	\
+	util/periutil
 
 #C_SRC_DIR=i2c
 
 C_SRC_DIR=		\
 	i2c			\
 	i2csim
+
+GO_TEST_DIR=	\
+	common/powermodule/tps53659		\
+	common/powermodule/tps549a20	\
+	common/tempsensor/tmp422		\
+	common/rtc/pcf85263a			\
+	common/pmbCmd					\
+	common/dmutex					\
+	util/periutil					

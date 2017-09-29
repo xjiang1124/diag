@@ -4,7 +4,7 @@
 package misc
 
 import (
-    "fmt"
+    //"fmt"
     "reflect"
     "strings"
     "time"
@@ -180,8 +180,6 @@ func U32ToBytes(dataU32 uint32) (byteArr []byte) {
 func U16ToBytes(dataU16 uint16) (byteArr []byte) {
     byteArr = make([]byte, 2)
     for i:=0; i<2; i++ {
-        temp := byte(dataU16 & 0xFF)
-        fmt.Println("d", temp)
         byteArr[i] = byte(dataU16 & 0xFF)
         dataU16 = (dataU16 >> 8)
     }

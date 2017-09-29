@@ -6,6 +6,7 @@ TOP_DIR = "$(shell dirname $(BUILD_DIR))"
 GO_CMD=go
 GO_BUILD=$(GO_CMD) build
 GO_INSTALL=$(GO_CMD) install
+GO_TEST=$(GO_CMD) test
 #GOPATH=$(TOP_DIR)/diag/go
 #CGO_LDFLAGS=-L$(GOPATH)/pkg/linux_amd64/common
 
@@ -69,6 +70,13 @@ build:
 	@for p in $(SRC_DIR); do \
 		echo "==> Build $$p ..."; \
 		$(GO_BUILD) $$p || exit 1; \
+	done
+#	@echo $(SRC);go build $(LDFLAGS) $(SRC)
+
+test:
+	@for p in $(GO_TEST_DIR); do \
+		echo "==> Build $$p ..."; \
+		$(GO_TEST) $$p || exit 1; \
 	done
 #	@echo $(SRC);go build $(LDFLAGS) $(SRC)
 
