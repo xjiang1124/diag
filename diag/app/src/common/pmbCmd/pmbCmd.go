@@ -16,23 +16,27 @@ func ReadByte(devName string, regAddr uint64) (data byte, err int) {
     return
 }
 
-func WriteByte(devName string, regAddr uint64, data byte) int {
-    return errType.SUCCESS
+func WriteByte(devName string, regAddr uint64, data byte) (err int) {
+    var dataArr = []byte{data}
+    err = i2c.Write(devName, regAddr, dataArr, misc.ONE_BYTE)
+    return
 }
 
 func ReadWord(devName string, regAddr uint64) (data uint16, err int) {
-    //fmt.Printf("0x%x\n", regAddr)
     byteArray, err := i2c.Read(devName, regAddr, misc.TWO_BYTE)
-    //_, err = i2c1.Read(devName, regAddr, 2)
     if err != errType.SUCCESS {
-        return data, err
+        return
     }
 
     data = misc.BytesToU16(byteArray, misc.TWO_BYTE)
-    return data, errType.SUCCESS
+    return
 }
 
 func WriteWord(devName string, regAddr uint64, data uint16) (err int) {
+    dataArr := misc.U16ToBytes(data)
+    err = i2c.Write(devName, regAddr, dataArr, misc.TWO_BYTE)
+    return
+
     return errType.SUCCESS
 }
 

@@ -119,6 +119,9 @@ int64 get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *
     for (int i = 0; i < tblSize; i++) {
         if (pRegTbl[i].offset == offset) {
             uint64 temp = pRegTbl[i].value;
+            if (pRegTbl[i].numByte < numBytes) {
+                printf("[%s] [%d]: Invalid number of bytes %lld\n", __FUNCTION__, __LINE__, numBytes);
+            }
             for (int j = 0; j < numBytes; j++) {
                 pData[j] = (uint8) (temp & 0xFF);
                 temp = temp >> 8;
@@ -126,7 +129,31 @@ int64 get_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *
             return 0;
         }
     }
-    return 0;
+    printf("Can not locate regiser at offset 0x%llX\n", offset);
+    return -1;
+}
+
+int64 set_reg_value(i2cRegSim_t *pRegTbl, uint64 tblSize, uint64 offset, uint8 *pData, uint64 numBytes) {
+    // Inject error case
+    if (offset == 0xEF) {
+        printf("Offset=0xEF, return failure\n");
+        return -1;
+    }
+
+    for (int i = 0; i < tblSize; i++) {
+        if (pRegTbl[i].offset == offset) {
+            if (pRegTbl[i].numByte < numBytes) {
+                printf("[%s] [%d]: Invalid number of bytes %lld\n", __FUNCTION__, __LINE__, numBytes);
+            }
+            uint8 *pTemp = (uint8 *)(&(pRegTbl[i].value));
+            for (int j = 0; j < numBytes; j++) {
+                pTemp[j] = pData[j];
+            }
+            return 0;
+        }
+    }
+    printf("Can not locate regiser at offset 0x%llX\n", offset);
+    return -1;
 }
 
 int64 get_i2c_info (i2cInfo_t *pI2cTbl, uint64 tblSize, uint8* pDevName, i2cInfo_t **pI2cInfo) {
@@ -139,39 +166,44 @@ int64 get_i2c_info (i2cInfo_t *pI2cTbl, uint64 tblSize, uint8* pDevName, i2cInfo
     return -1;
 } 
 
+int64 locate_reg_tbl(uint8* pDevName, i2cRegSim_t **ppI2cTbl, uint64 *pTblSize) {
+
+    if ((strcmp(pDevName, "VRM_CAPRI_DVDD") == 0) ||
+        (strcmp(pDevName, "VRM_CAPRI_AVDD") == 0)) {
+        *ppI2cTbl = tps53659RegSim;
+        *pTblSize = sizeof(tps53659RegSim)/sizeof(i2cRegSim_t);
+    }
+    else if (strcmp(pDevName, "VRM_HBM") == 0) {
+        *ppI2cTbl = tps549a20RegHbmSim;
+        *pTblSize = sizeof(tps549a20RegHbmSim)/sizeof(i2cRegSim_t);
+    }
+    else if (strcmp(pDevName, "VRM_ARM") == 0) {
+        *ppI2cTbl = tps549a20RegArmSim;
+        *pTblSize = sizeof(tps549a20RegArmSim)/sizeof(i2cRegSim_t);
+    }
+    else if (strcmp(pDevName, "RTC") == 0) {
+        *ppI2cTbl = pcf85263aSim;
+        *pTblSize = sizeof(pcf85263aSim)/sizeof(i2cRegSim_t);
+    }
+    else if (strcmp(pDevName, "TEMP_SENSOR") == 0) {
+        *ppI2cTbl = tmp422Sim;
+        *pTblSize = sizeof(tmp422Sim)/sizeof(i2cRegSim_t);
+    }
+    else {
+        return -1;
+    }
+    return 0;
+}
+
 int64 pal_i2c_read(uint8* pDevName, uint64 offset, uint8 *pData, uint64 numBytes) {
     i2cInfo_t *pI2cinfo;
     int ret;
     uint64 tblSize = sizeof(i2cTbl)/sizeof(i2cInfo_t);
     i2cRegSim_t *pI2cReg;
 
-    ret = get_i2c_info (i2cTbl, tblSize, pDevName, &pI2cinfo);
+    ret = locate_reg_tbl(pDevName, &pI2cReg, &tblSize);
     if (ret != 0) {
-        return ret;
-    }
-
-    if ((strcmp(pI2cinfo->pDevName, "VRM_CAPRI_DVDD") == 0) ||
-        (strcmp(pI2cinfo->pDevName, "VRM_CAPRI_AVDD") == 0)) {
-        pI2cReg = tps53659RegSim;
-        tblSize = sizeof(tps53659RegSim)/sizeof(i2cRegSim_t);
-    }
-    else if (strcmp(pI2cinfo->pDevName, "VRM_HBM") == 0) {
-        pI2cReg = tps549a20RegHbmSim;
-        tblSize = sizeof(tps549a20RegHbmSim)/sizeof(i2cRegSim_t);
-    }
-    else if (strcmp(pI2cinfo->pDevName, "VRM_ARM") == 0) {
-        pI2cReg = tps549a20RegArmSim;
-        tblSize = sizeof(tps549a20RegArmSim)/sizeof(i2cRegSim_t);
-    }
-    else if (strcmp(pI2cinfo->pDevName, "RTC") == 0) {
-        pI2cReg = pcf85263aSim;
-        tblSize = sizeof(pcf85263aSim)/sizeof(i2cRegSim_t);
-    }
-    else if (strcmp(pI2cinfo->pDevName, "TEMP_SENSOR") == 0) {
-        pI2cReg = tmp422Sim;
-        tblSize = sizeof(tmp422Sim)/sizeof(i2cRegSim_t);
-    }
-    else {
+        printf("[%s] [%d]: Failed to locate I2C table\n", __FUNCTION__, __LINE__);
         return -1;
     }
 
@@ -185,6 +217,21 @@ int64 pal_i2c_read(uint8* pDevName, uint64 offset, uint8 *pData, uint64 numBytes
  * When numByte == 0, work as PMBus send byte command
  */
 int64 pal_i2c_write(uint8* pDevName, uint64 offset, uint8 *data, uint64 numBytes){
+    i2cInfo_t *pI2cinfo;
+    int ret;
+    uint64 tblSize = sizeof(i2cTbl)/sizeof(i2cInfo_t);
+    i2cRegSim_t *pI2cReg;
+
+    ret = locate_reg_tbl(pDevName, &pI2cReg, &tblSize);
+    if (ret != 0) {
+        printf("[%s] [%d]: Failed to locate I2C table\n", __FUNCTION__, __LINE__);
+        return -1;
+    }
+
+    ret = set_reg_value(pI2cReg, tblSize, offset, data, numBytes);
+
+    return ret;
+
     return 0;
 }
 

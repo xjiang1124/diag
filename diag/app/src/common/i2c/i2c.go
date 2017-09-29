@@ -23,7 +23,10 @@ func Read(devName string, offset uint64, numBytes uint64) (data []byte, err int)
     return data, errType.SUCCESS
 }
 
-func Write(i2cIdx uint32, devAddr uint32, offset uint32, data []byte, numBytes uint32) int {
+func Write(devName string, offset uint64, data []byte, numBytes uint64) int {
+    if config.SimMode == config.ENABLE {
+        return PalWriteSim(devName, offset, numBytes, data)
+    }
     return errType.SUCCESS
 }
 
@@ -55,4 +58,33 @@ func PalReadSim(devName string, offset uint64, numBytes uint64) (data []uint8, e
     return data, err
 }
 
+func PalWriteSim(devName string, offset uint64, numBytes uint64, data []uint8) (err int) {
+    var pDevName *C.char = C.CString(devName)
+    defer C.free(unsafe.Pointer(pDevName))
+    var offsetC C.uint64
+    var numBytesC C.uint64
+    var retC C.int64
+    err = errType.SUCCESS
 
+    offsetC = C.uint64(offset)
+    numBytesC = C.uint64(numBytes)
+
+    rd := [16]C.char{0, 0, 0, 0}
+
+    if numBytes > 16 {
+        return errType.INVALID_PARAM
+    }
+
+    var i uint64
+    for i = 0; i < numBytes; i++ {
+        rd[i] = C.char(data[i])
+    }
+
+    retC = C.pal_i2c_write(pDevName, offsetC, &rd[0], numBytesC)
+
+    if retC != 0 {
+        err = errType.I2C_RD_FAIL
+    }
+
+    return err
+}

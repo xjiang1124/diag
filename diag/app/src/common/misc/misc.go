@@ -4,7 +4,7 @@
 package misc
 
 import (
-    //"fmt"
+    "fmt"
     "reflect"
     "strings"
     "time"
@@ -150,6 +150,43 @@ func BytesToU16(byteArr []byte, numBytes uint64) (dataU16 uint16) {
     return dataU16
 }
 
+/*
+    Convert byte slice to uint16
+ */
+func U64ToBytes(dataU64 uint64) (byteArr []byte) {
+    byteArr = make([]byte, 8)
+    for i:=0; i<8; i++ {
+        byteArr[i] = byte(dataU64 & 0xFF)
+        dataU64 = (dataU64 >> 8)
+    }
+    return
+}
+
+/*
+    Convert byte slice to uint16
+ */
+func U32ToBytes(dataU32 uint32) (byteArr []byte) {
+    byteArr = make([]byte, 4)
+    for i:=0; i<4; i++ {
+        byteArr[i] = byte(dataU32 & 0xFF)
+        dataU32 = (dataU32 >> 8)
+    }
+    return
+}
+
+/*
+    Convert byte slice to uint16
+ */
+func U16ToBytes(dataU16 uint16) (byteArr []byte) {
+    byteArr = make([]byte, 2)
+    for i:=0; i<2; i++ {
+        temp := byte(dataU16 & 0xFF)
+        fmt.Println("d", temp)
+        byteArr[i] = byte(dataU16 & 0xFF)
+        dataU16 = (dataU16 >> 8)
+    }
+    return
+}
 /*
     Sleep function in second
  */
