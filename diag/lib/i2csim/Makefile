@@ -4,10 +4,10 @@ all: libi2csim
 
 libi2csim:
 	@echo $(CC)
-	$(CC) -c *.c
-	ar rs libi2csim.a *.o
-	ar rs ${GOPATH}/pkg/linux_amd64/common/libi2csim.a *.o
+	$(CC) -static -c *.c
+	ar rcs libi2csim.a *.o
+	ar rcs ${GOPATH}/pkg/linux_$(ARCH)/common/libi2csim.a *.o
 
 clean:
-	rm -rf ${GOPATH}/pkg/linux_amd64/common/libi2csim.a *.o *.a
+	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/common/libi2csim.a *.o *.a
 
