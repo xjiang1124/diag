@@ -24,6 +24,7 @@ group.add_argument("-r", "--runtest", action="store_true",
 Run test
 format: diag -r -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]\
 ''')
+group.add_argument("-param", "--setParam", action="store_true", help="User specifies test parameters")
 group.add_argument("-skip", "--skiptest", action="store_true",
         help='''\
 Skip test
@@ -51,6 +52,7 @@ Display per test pass/fail/timeout history
 format: diag -shist [-c CARD_IDX] [-d DSP]
 ''')
 group.add_argument("-sskip", "--showSkip", action="store_true", help="Show skeped test list")
+group.add_argument("-sparam", "--showParam", action="store_true", help="Show parameter setting of specified test")
 
 group.add_argument("-csys", "--cleanSystem", action="store_true", help="Housekeeping command, clean all the queues and queue status")
 group.add_argument("-chist", "--cleanHistory", action="store_true", help="Housekeeping command, clean test histories")
@@ -123,6 +125,15 @@ if args.runtest == True:
 
 if args.stopOnErr == 0 or args.stopOnErr == 1:
     diaghost.setStopOnErr(args.stopOnErr)
+    sys.exit()
+
+if args.setParam == True:
+    paramList = convertParam(args.parameter)
+    diaghost.setParam(args.cardidx, args.dspname, args.testname, paramList)
+    sys.exit()
+
+if args.showParam == True:
+    diagsts.showParam(args.cardidx, args.dspname, args.testname)
     sys.exit()
 
 if args.skiptest == True:

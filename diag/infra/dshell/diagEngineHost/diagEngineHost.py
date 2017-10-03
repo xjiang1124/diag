@@ -35,7 +35,10 @@ class diagEngineHost:
         
         # Param key, e.g. HSET PARAM:NAPLES:PMBUS:INTR timeout 50
         self.paramKeyFmt = 'PARAM:{}:{}:{}'
-        
+         
+        # Param key, e.g. HSET PARAM:NIC1:NAPLES:PMBUS:INTR timeout 50
+        self.paramKeySetFmt = 'PARAM:{}:{}:{}:{}'
+       
         # Test request, e.g. set TEST_ID:NIC1:PMBUS:101 INTR
         self.testKeyFmt = 'TEST_ID:{}:{}:{}'
         # Test parameter, e.g. set TEST_PARAM:NIC1:PMBUS:101 " -timeout=120 -ite=3 -mask=0x11 -dshid=3"
@@ -146,6 +149,16 @@ class diagEngineHost:
         for dftParam in dftParamList:
             dftParamValue = self.r.hget(paramKey, dftParam)
             paramDict[dftParam] = dftParamValue
+
+        # User setting with setParam command
+        paramUsrKey = self.paramKeySetFmt.format(cardNm, brdNm, dspNm, testNm)
+        usrParamList = self.r.hkeys(paramUsrKey)
+        for usrParam in usrParamList:
+            usrParamValue = self.r.hget(paramUsrKey, usrParam)
+            if usrParamValue == None:
+                continue
+            paramDict[usrParam] = usrParamValue
+
         paramDict['dshid'] = self.dshid
     
         # Apply user setting to param list
@@ -440,6 +453,35 @@ class diagEngineHost:
             skipMem = fmtSkipMem.format(test[0], test[1], test[2])
             self.r.srem(self.skiplistKey, skipMem)
 
+    def setParam(self, cardNm='', dspNm='', testNm='', paramUser=dict()):
+        if cardNm == "":
+            print "Please specify card name"
+            return -1
+        if dspNm == "":
+            print "Please specify dsp name"
+            return -1
+        if testNm == "":
+            print "Please specify test name"
+            return -1
+
+        testInfo, err = self.parseCardInfo(cardNm, dspNm, testNm)
+        if err != 0:
+            return -1
+        cardNm = cardNm.upper()
+        dspNm = dspNm.upper()
+        testNm = testNm.upper()
+
+        cardTp = self.getBrdName(cardNm)
+        paramKey = self.paramKeyFmt.format(cardTp, dspNm, testNm)
+        for key, value in paramUser.items():
+            keyExist = self.r.hexists(paramKey, key)
+            if keyExist != True:
+                print "Invalid parameter:", key
+            else:
+                # Add parameter setting
+                paramSetKey = self.paramKeySetFmt.format(cardNm, cardTp, dspNm, testNm)
+                self.r.hset(paramSetKey, key, value)
+
 #==========================================================
 # Diag host status class
 class diagSts(diagEngineHost):
@@ -595,6 +637,43 @@ class diagSts(diagEngineHost):
         for skip in skipMems:
             #[card, dsp, test] = skip.split(":")
             print skip
+
+    def showParam(self, cardNm="", dspNm="", testNm=""):
+        if cardNm == "":
+            print "Please specify card name"
+            return -1
+        if dspNm == "":
+            print "Please specify dsp name"
+            return -1
+        if testNm == "":
+            print "Please specify test name"
+            return -1
+
+        testInfo, err = self.parseCardInfo(cardNm, dspNm, testNm)
+        if err != 0:
+            return -1
+
+        cardNm = cardNm.upper()
+        dspNm = dspNm.upper()
+        testNm = testNm.upper()
+        cardTp = self.getBrdName(cardNm)
+
+        paramKey = self.paramKeyFmt.format(cardTp, dspNm, testNm)
+        paramNames = self.r.hkeys(paramKey)
+
+        paramSetKey = self.paramKeySetFmt.format(cardNm, cardTp, dspNm, testNm)
+
+        title = "===== {}:{}:{}:{} =====".format(cardNm, cardTp, dspNm, testNm)
+        print title
+
+        for key in paramNames:
+            val = self.r.hget(paramKey, key)
+            valSet = self.r.hget(paramSetKey, key)
+            print "----------"
+            print "name:", key
+            print "default:", val
+            print "User setting:", valSet
+
 
     # Clean up system
     def cleanSys(self):
