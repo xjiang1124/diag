@@ -63,13 +63,13 @@ arm_64_go_build:
 arm_32_go_build:
 	@for p in $(SRC_DIR); do \
 		echo "==> Build $$p ..."; echo $(notdir $(addprefix /, $$p)); \
-		env GOOS=linux GOARM=7 GOARCH=arm CGO_ENABLED=1 CC=$(CC_ARM_32) $(GO_BUILD) -x --ldflags '-extldflags "-Wl,-no-pie"' -o $(GOBIN)/arm32/$$p $$p || exit 1; \
+		env GOOS=linux GOARM=7 GOARCH=arm CGO_ENABLED=1 CC=$(CC_ARM_32) $(GO_BUILD) -x --ldflags '-linkmode=external -extldflags "-no-pie"' -o $(GOBIN)/arm32/$$p $$p || exit 1; \
 	done
 
 build:
 	@for p in $(SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		$(GO_BUILD) $$p || exit 1; \
+		$(GO_BUILD) -o $(GOBIN)/x86/$$p $$p || exit 1; \
 	done
 #	@echo $(SRC);go build $(LDFLAGS) $(SRC)
 
