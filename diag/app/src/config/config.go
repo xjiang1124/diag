@@ -32,7 +32,7 @@ var DiagHostLogPath string
 func init() {
     if SimMode == ENABLE {
         // Binary files location
-        DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
+        DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/x86/"
         DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
 
         // Log file target location

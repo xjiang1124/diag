@@ -110,7 +110,7 @@ func DiagmgrDsp_StartHdl(argList []string) {
     if (cardName == "HOST") {
         retVal = startDsp(dspList, config.DiagHostBinPath)
     } else {
-        retVal = startDsp(dspList, config.DiagNicBinPath)
+        retVal = startDsp(dspList, config.DiagNicBinPath+"dsp/")
     }
     diagEngine.FuncMsgChan <- retVal
     return 

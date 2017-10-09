@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+from concurrent.futures import ProcessPoolExecutor
+
+def timeout_five(self, fnc, *args, **kwargs, timeout=0):
+    with ProcessPoolExecutor() as p:
+        f = p.submit(fnc, *args, **kwargs)
+        return f.result(timeout)
+
+def someFunc(tempArg=123, timeout=0):
+    print
+
+

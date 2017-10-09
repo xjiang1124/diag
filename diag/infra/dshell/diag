@@ -210,10 +210,11 @@ if args.parallelRuntest != None:
 
         argss = parser.parse_args(test1)
         param = argss.parameter
-        if param[0] == "\"":
-            param = param[1:]
-        if param[len(param)-1] == "\"":
-            param = param[0:len(param)-1]
+        if param != "":
+            if param[0] == "\"":
+                param = param[1:]
+            if param[len(param)-1] == "\"":
+                param = param[0:len(param)-1]
         paramList = convertParam(param)
         testItems.append([argss.cardidx, argss.dspname, argss.testname, paramList])
     diaghost.paraRun(testItems)

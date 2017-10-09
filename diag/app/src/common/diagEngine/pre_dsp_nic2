@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export REDIS_IP="127.0.0.1"
+export CARD_NAME="NAPLES"
+export CARD_TYPE="NIC2"
