@@ -157,9 +157,16 @@ func renewDSP (timeout int) {
     keyDsp := fmt.Sprintf(keyDspFmt, cardInfo.CardType, cardInfo.CardName, cardInfo.dspName)
     keyCard := fmt.Sprintf(keyCardFmt, cardInfo.CardType, cardInfo.CardName)
 
+    // Create key entries
+    // Without this step, if key is expired for some reason, expire will not recover the key
+    _, err := RedisClient.Set(keyDsp, 1, 0).Result()
+    CheckRedisErr(err)
+    _, err = RedisClient.Set(keyCard, 1, 0).Result()
+    CheckRedisErr(err)
+
     // Set expiration
     tout := time.Second * time.Duration(timeout+defaultTimeout*2)
-    _, err := RedisClient.Expire(keyDsp, tout).Result()
+    _, err = RedisClient.Expire(keyDsp, tout).Result()
     CheckRedisErr(err)
     _, err = RedisClient.Expire(keyCard, tout).Result()
     CheckRedisErr(err)
