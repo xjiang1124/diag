@@ -218,3 +218,7 @@ if args.parallelRuntest != None:
         paramList = convertParam(param)
         testItems.append([argss.cardidx, argss.dspname, argss.testname, paramList])
     diaghost.paraRun(testItems)
+    sys.exit()
+
+print "Invalid parameter!"
+parser.print_usage()
