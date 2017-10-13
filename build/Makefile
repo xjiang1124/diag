@@ -11,8 +11,8 @@ GO_TEST=$(GO_CMD) test
 #CGO_LDFLAGS=-L$(GOPATH)/pkg/linux_amd64/common
 
 #C
-CC_ARM_64=aarch64-linux-gnu-gcc-6
-CC_ARM_32=arm-linux-gnueabi-gcc
+CC_ARM_64=aarch64-linux-gnu-gcc
+#CC_ARM_32=arm-linux-gnueabi-gcc
 CC_X86=gcc
 
 # The name of the executable (default is current directory name)
@@ -48,11 +48,11 @@ c_arm_64_build:
 		$(MAKE) -e ARCH=arm64 CC=$(CC_ARM_64) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 	done
 
-c_arm_32_build:
-	@for p in $(C_SRC_DIR); do \
-		echo "==> Build $$p ..."; \
-		$(MAKE) -Wl,-no-pie -e ARCH=arm CC=$(CC_ARM_32) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
-	done
+#c_arm_32_build:
+#	@for p in $(C_SRC_DIR); do \
+#		echo "==> Build $$p ..."; \
+#		$(MAKE) -Wl,-no-pie -e ARCH=arm CC=$(CC_ARM_32) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
+#	done
 
 arm_64_go_build:
 	@for p in $(SRC_DIR); do \
@@ -60,16 +60,16 @@ arm_64_go_build:
 		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=$(CC_ARM_64) $(GO_BUILD) -o $(GOBIN)/arm/$$p $$p || exit 1; \
 	done
 
-arm_32_go_build:
-	@for p in $(SRC_DIR); do \
-		echo "==> Build $$p ..."; echo $(notdir $(addprefix /, $$p)); \
-		env GOOS=linux GOARM=7 GOARCH=arm CGO_ENABLED=1 CC=$(CC_ARM_32) $(GO_BUILD) -x --ldflags '-linkmode=external -extldflags "-no-pie"' -o $(GOBIN)/arm32/$$p $$p || exit 1; \
-	done
+#arm_32_go_build:
+#	@for p in $(SRC_DIR); do \
+#		echo "==> Build $$p ..."; echo $(notdir $(addprefix /, $$p)); \
+#		env GOOS=linux GOARM=7 GOARCH=arm CGO_ENABLED=1 CC=$(CC_ARM_32) $(GO_BUILD) -x --ldflags '-linkmode=external -extldflags "-no-pie"' -o $(GOBIN)/arm32/$$p $$p || exit 1; \
+#	done
 
 build:
 	@for p in $(SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		$(GO_BUILD) -o $(GOBIN)/x86/$$p $$p || exit 1; \
+		$(GO_BUILD) -o $(GOBIN)/x86_64/$$p $$p || exit 1; \
 	done
 #	@echo $(SRC);go build $(LDFLAGS) $(SRC)
 

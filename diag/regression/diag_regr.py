@@ -77,13 +77,16 @@ for card, slots in config_dict.items():
     for slot in slotArr:
         slot_dict[slot] = card
 
+#diagBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/x86_64/"
+#diagInfraPath = "/home/xguo2/workspace/psdiag/diag/infra/dshell/"
+diagBinPath = "/home/mtp/diag/"
+diagInfraPath = "/home/mtp/diag/dshell/"
+
 cardNm = "NIC1"
 mfgMode = "P2C"
-regrDict = card_dict["NAPLES"][mfgMode]
+regrDict = cards_dict["NAPLES"][mfgMode]
 
 def parseRegrDict(cardNm, regrDict):
-    diagBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/x86/"
-    diagInfraPath = "/home/xguo2/workspace/psdiag/diag/infra/dshell/"
     diagCmd = diagInfraPath + "diag"
 
     #=============================
@@ -194,8 +197,5 @@ with ProcessPool(max_workers=20, max_tasks=6) as pool:
     future.add_done_callback(task_done)
     future = pool.schedule(runRegr, args=[cmdList2])
     future.add_done_callback(task_done)
-
-
-#runRegr(cmdList)
 
 print "====", "Regression Done", "====\n"
