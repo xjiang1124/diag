@@ -20,7 +20,6 @@ import (
 )
 
 // #cgo CFLAGS: -I../../../../lib/
-// #cgo LDFLAGS: -li2c
 // #include <stdlib.h>
 // #include "../../../../lib/i2c/i2c.h"
 import "C"
@@ -33,6 +32,7 @@ const (
     dspName = "PMBUS"
 )
 
+// #ccccgo LDFLAGS: /home/xguo2//workspace/psdiag/diag/app/pkg/linux_arm64/common/libi2c.a
 /*
     Read Device ID and compare with expected one
  */

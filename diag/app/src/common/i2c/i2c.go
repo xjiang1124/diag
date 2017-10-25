@@ -10,7 +10,6 @@ import (
 )
 
 // #cgo CFLAGS: -I../../../../lib/
-// #cgo LDFLAGS: -li2csim
 // #include <stdlib.h>
 // #include "../../../../lib/i2csim/i2csim.h"
 import "C"
@@ -23,6 +22,8 @@ func Read(devName string, offset uint64, numBytes uint64) (data []byte, err int)
     return data, errType.SUCCESS
 }
 
+// #ccccgo LDFLAGS: ${SRCDIR}/../../../pkg/linux_arm64/common/libi2csim.a
+// #ccccgo LDFLAGS: /home/xguo2//workspace/psdiag/diag/app/pkg/linux_arm64/common/libi2csim.a
 func Write(devName string, offset uint64, data []byte, numBytes uint64) int {
     if config.SimMode == config.ENABLE {
         return PalWriteSim(devName, offset, numBytes, data)

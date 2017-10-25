@@ -57,7 +57,7 @@ c_arm_64_build:
 arm_64_go_build:
 	@for p in $(SRC_DIR); do \
 	        echo "==> Build $$p ..."; echo $(notdir $(addprefix /, $$p)); \
-		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=$(CC_ARM_64) $(GO_BUILD) -o $(GOBIN)/arm/$$p $$p || exit 1; \
+		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS="$(TOP_DIR)/diag/app/pkg/linux_arm64/common/libi2csim.a $(TOP_DIR)/diag/app/pkg/linux_arm64/common/libi2c.a" CC=$(CC_ARM_64) $(GO_BUILD) -o $(GOBIN)/arm64/$$p $$p || exit 1; \
 	done
 
 #arm_32_go_build:
