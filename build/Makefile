@@ -69,7 +69,7 @@ arm_64_go_build:
 build:
 	@for p in $(SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		$(GO_BUILD) -o $(GOBIN)/x86_64/$$p $$p || exit 1; \
+		env CGO_LDFLAGS="$(TOP_DIR)/diag/app/pkg/linux_amd64/common/libi2csim.a $(TOP_DIR)/diag/app/pkg/linux_amd64/common/libi2c.a" $(GO_BUILD) -o $(GOBIN)/x87_64/$$p $$p || exit 1; \
 	done
 #	@echo $(SRC);go build $(LDFLAGS) $(SRC)
 
