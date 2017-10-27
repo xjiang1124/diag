@@ -58,7 +58,12 @@ then
     redis-cli -h $REDIS_IP set DIAG_UP 1
     echo "Diag engine turned on"
 fi
-echo "redisFlag $redisFlag"
+
+# Load all the redis keys
+cat $DIAG_DIR/config/redis/* | redis-cli -h $REDIS_IP &>/dev/null
+echo "Redis keys loaded"
+
+#echo "redisFlag $redisFlag"
 
 echo "Preparing diag environment -- Done"
 
