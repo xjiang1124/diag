@@ -15,13 +15,8 @@ const (
     // Simulation mode control; 0: no simulation; 1: simuation mode enabled
     SimMode = 1
 
-    // Binary files location
-    //DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
-    //DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
-
-    // Log file target location
-    //DiagNicLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/"
-    //DiagHostLogPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
+    // PAL simuation mode select; 0: diable; 1: enable
+    PalSimEnable = 1
 )
 
 var DiagNicBinPath string
@@ -40,11 +35,11 @@ func init() {
         DiagHostLogPath = "/home/xguo2/workspace/psdiag/log/host/"
     } else {
         // Binary files location
-        DiagNicBinPath = "/home/mtp/diag/dsp"
+        DiagNicBinPath = "/home/diag/diag/"
         DiagHostBinPath = ""
 
         // Log file target location
-        DiagNicLogPath = "/home/mpt/diag/log/"
+        DiagNicLogPath = "/home/diag/diag/log/"
         DiagHostLogPath = ""
     }
 }

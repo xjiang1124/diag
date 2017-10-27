@@ -16,7 +16,7 @@ import "C"
 import "unsafe"
 
 func Read(devName string, offset uint64, numBytes uint64) (data []byte, err int) {
-    if config.SimMode == config.ENABLE {
+    if config.PalSimEnable == config.ENABLE {
         return PalReadSim(devName, offset, numBytes)
     }
     return data, errType.SUCCESS
@@ -25,7 +25,7 @@ func Read(devName string, offset uint64, numBytes uint64) (data []byte, err int)
 // #ccccgo LDFLAGS: ${SRCDIR}/../../../pkg/linux_arm64/common/libi2csim.a
 // #ccccgo LDFLAGS: /home/xguo2//workspace/psdiag/diag/app/pkg/linux_arm64/common/libi2csim.a
 func Write(devName string, offset uint64, data []byte, numBytes uint64) int {
-    if config.SimMode == config.ENABLE {
+    if config.PalSimEnable == config.ENABLE {
         return PalWriteSim(devName, offset, numBytes, data)
     }
     return errType.SUCCESS
