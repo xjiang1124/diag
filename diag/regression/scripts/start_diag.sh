@@ -54,8 +54,9 @@ redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
 if [[ $redisFlag != "1" ]]
 then
     $DIAG_DIR/tools/redis-server --daemonize yes
-    echo "Diag engine turned on"
+    redis-cli -h $REDIS_IP CONFIG SET protected-mode no
     redis-cli -h $REDIS_IP set DIAG_UP 1
+    echo "Diag engine turned on"
 fi
 echo "redisFlag $redisFlag"
 
