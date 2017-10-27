@@ -9,9 +9,6 @@ mkdir -p ${top_dir}/diag/app/pkg/linux_amd64/common/
 mkdir -p ${top_dir}/diag/app/pkg/linux_arm64/common/
 
 cd build
-make c_build
-make build
-#make test
-make c_arm_64_build
-make arm_64_go_build
+make amd64
+make arm64
 

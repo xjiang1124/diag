@@ -4,9 +4,9 @@ include path.mk
 BUILD_DIR = $(shell pwd)
 TOP_DIR = "$(shell dirname $(BUILD_DIR))"
 
-.PHONY: all build clean install uninstall fmt simplify check run
+.PHONY: all
 
-all: check install
+all: amd64 arm64
 
 c_amd64:
 	@for p in $(C_SRC_DIR); do \
