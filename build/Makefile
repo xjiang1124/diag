@@ -1,48 +1,21 @@
-SHELL := /bin/bash
+include common.mk
+include path.mk
 
 BUILD_DIR = $(shell pwd)
 TOP_DIR = "$(shell dirname $(BUILD_DIR))"
-
-GO_CMD=go
-GO_BUILD=$(GO_CMD) build
-GO_INSTALL=$(GO_CMD) install
-GO_TEST=$(GO_CMD) test
-#GOPATH=$(TOP_DIR)/diag/go
-#CGO_LDFLAGS=-L$(GOPATH)/pkg/linux_amd64/common
-
-#C
-CC_ARM_64=aarch64-linux-gnu-gcc
-#CC_ARM_32=arm-linux-gnueabi-gcc
-CC_X86=gcc
-
-# The name of the executable (default is current directory name)
-TARGET := $(shell echo $${PWD\#\#*/})
-.DEFAULT_GOAL: $(TARGET)
-
-# These will be provided to the target
-VERSION := 1.0.0
-BUILD := `git rev-parse HEAD`
-
-# Use linker flags to provide version/build settings to the target
-LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
-
-# go source files, ignore unnecessary directories
-#SRC = $(shell find $(TOP_DIR)/diag/go/src -type f -name '*.go' -not -path "$(TOP_DIR)/diag/go/src/github.com/*" -not -path "$(TOP_DIR)/diag/go/src/example/*")
-#SRC_DIR = "$(shell dirname $(SRC))"
-include path.mk
 
 .PHONY: all build clean install uninstall fmt simplify check run
 
 all: check install
 
-c_build:
+c_amd64:
 	@for p in $(C_SRC_DIR); do \
 		echo "==> Build $$p ..."; \
 		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 	done
-#	@$(MAKE) -C $(TOP_DIR)/diag/go/src/common/$(C_SRC_DIR)
+#	@$(MAKE) -C $(TOP_DIR)/diag/go/src/clib/$(C_SRC_DIR)
 
-c_arm_64_build:
+c_arm64:
 	@for p in $(C_SRC_DIR); do \
 		echo "==> Build $$p ..."; \
 		$(MAKE) -e ARCH=arm64 CC=$(CC_ARM_64) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
@@ -54,10 +27,10 @@ c_arm_64_build:
 #		$(MAKE) -Wl,-no-pie -e ARCH=arm CC=$(CC_ARM_32) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 #	done
 
-arm_64_go_build:
+go_arm64_1:
 	@for p in $(SRC_DIR); do \
 	        echo "==> Build $$p ..."; echo $(notdir $(addprefix /, $$p)); \
-		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS="$(TOP_DIR)/diag/app/pkg/linux_arm64/common/libi2csim.a $(TOP_DIR)/diag/app/pkg/linux_arm64/common/libi2c.a" CC=$(CC_ARM_64) $(GO_BUILD) -o $(GOBIN)/arm64/$$p $$p || exit 1; \
+		env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS="$(TOP_DIR)/diag/app/pkg/linux_arm64/clib/libi2csim.a $(TOP_DIR)/diag/app/pkg/linux_arm64/clib/libi2c.a" CC=$(CC_ARM_64) $(GO_BUILD) -o $(GOBIN)/arm64/$$p $$p || exit 1; \
 	done
 
 #arm_32_go_build:
@@ -66,12 +39,50 @@ arm_64_go_build:
 #		env GOOS=linux GOARM=7 GOARCH=arm CGO_ENABLED=1 CC=$(CC_ARM_32) $(GO_BUILD) -x --ldflags '-linkmode=external -extldflags "-no-pie"' -o $(GOBIN)/arm32/$$p $$p || exit 1; \
 #	done
 
-build:
+go_amd64_1:
 	@for p in $(SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		env CGO_LDFLAGS="$(TOP_DIR)/diag/app/pkg/linux_amd64/common/libi2csim.a $(TOP_DIR)/diag/app/pkg/linux_amd64/common/libi2c.a" $(GO_BUILD) -o $(GOBIN)/x87_64/$$p $$p || exit 1; \
+		env CGO_LDFLAGS="$(TOP_DIR)/diag/app/pkg/linux_amd64/clib/libi2csim.a $(TOP_DIR)/diag/app/pkg/linux_amd64/clib/libi2c.a" $(GO_BUILD) -o $(GOBIN)/linux_amd64/$$p $$p || exit 1; \
 	done
 #	@echo $(SRC);go build $(LDFLAGS) $(SRC)
+
+go_amd64:
+	@for p in $(SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		cd $(TOP_DIR)/diag/app/src/$$p; \
+		$(MAKE) ARCH=amd64  || exit 1; \
+	done
+
+go_arm64:
+	@for p in $(SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		cd $(TOP_DIR)/diag/app/src/$$p; \
+		$(MAKE) ARCH=arm64  || exit 1; \
+	done
+
+amd64:
+	@for p in $(C_SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
+	done
+
+	@for p in $(SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		cd $(TOP_DIR)/diag/app/src/$$p; \
+		$(MAKE) ARCH=amd64  || exit 1; \
+	done
+
+arm64:
+	@for p in $(C_SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		$(MAKE) -e ARCH=arm64 CC=$(CC_ARM_64) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
+	done
+
+	@for p in $(SRC_DIR); do \
+		echo "==> Build $$p ..."; \
+		cd $(TOP_DIR)/diag/app/src/$$p; \
+		$(MAKE) ARCH=arm64  || exit 1; \
+	done
 
 test:
 	@for p in $(GO_TEST_DIR); do \
@@ -80,30 +91,23 @@ test:
 	done
 #	@echo $(SRC);go build $(LDFLAGS) $(SRC)
 
-clean:
-	@rm -f $(GOPATH)/bin/*
+c_amd64-clean:
+	rm -f $(GOPATH)/pkg/linux_amd64/clib/*
 
-install:
-	@for p in $(SRC_DIR); do \
-		echo "==> Build $$p ..."; \
-		$(GO_INSTALL) $$p || exit 1; \
-	done
-#	@go install $(LDFLAGS)
+c_arm64-clean:
+	rm -f $(GOPATH)/pkg/linux_arm64/clib/*
 
-uninstall: clean
-	@rm -f $$(which ${TARGET})
+go_amd64-clean:
+	rm -rf $(GOPATH)/bin/linux_amd64/*
 
-fmt:
-	@gofmt -l -w $(SRC)
+go_arm64-clean:
+	rm -rf $(GOPATH)/bin/linux_arm64/*
+	
+amd64-clean:
+	rm -rf $(GOPATH)/pkg/linux_amd64/clib/*
+	rm -rf $(GOPATH)/bin/linux_amd64/*
 
-simplify:
-	@gofmt -s -l -w $(SRC)
-
-check:
-	@test -z $(shell gofmt -l main.go | tee /dev/stderr) || echo "[WARN] Fix formatting issues with 'make fmt'"
-	@for d in $$(go list ./... | grep -v /vendor/); do golint $${d}; done
-	@go tool vet ${SRC}
-
-run: install
-	@$(TARGET)
-											
+arm64-clean:
+	rm -rf $(GOPATH)/pkg/linux_arm64/*
+	rm -rf $(GOPATH)/bin/linux_arm64/*
+										
