@@ -7,7 +7,7 @@ MODULE_NAME=$(shell basename $(BUILD_DIR))
 .PHONY: all
 
 all:
-	env GOOS=linux GOARCH=${ARCH} CGO_ENABLED=1 CGO_LDFLAGS="$(BUILD_DIR)/../../../../../diag/app/pkg/linux_${ARCH}/clib/libi2csim.a $(BUILD_DIR)/../../../../../diag/app/pkg/linux_${ARCH}/clib/libi2c.a" CC=$(CMPL) $(GO_BUILD) -o arch_${ARCH}/$(MODULE_NAME)
+	env GOOS=linux GOARCH=${ARCH} CGO_ENABLED=1 CC=$(CMPL) $(GO_BUILD) -o arch_${ARCH}/$(MODULE_NAME)
 	@mkdir -p $(GOBIN)/linux_${ARCH}/dsp/
 	@cp arch_${ARCH}/$(MODULE_NAME) $(GOBIN)/linux_${ARCH}/dsp/
 

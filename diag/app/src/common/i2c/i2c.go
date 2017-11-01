@@ -10,6 +10,7 @@ import (
 )
 
 // #cgo CFLAGS: -I../../../../lib/
+// #cgo LDFLAGS: -li2c -li2csim
 // #include <stdlib.h>
 // #include "../../../../lib/i2csim/i2csim.h"
 import "C"
