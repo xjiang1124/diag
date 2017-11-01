@@ -13,3 +13,4 @@ OUTPUT/
 diag/app/pkg/
 log/
 arch_*/
+images/

@@ -6,7 +6,7 @@ then
 else
     if [[ $1 == "arm" || $1 == "arm64" ]]
     then
-        arch=arm
+        arch=arm64
     else
         arch=x86_64
     fi

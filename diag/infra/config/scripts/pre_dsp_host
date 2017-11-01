@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export REDIS_IP="127.0.0.1"
+export REDIS_IP="192.168.70.236"
 #hostIdx=$(redis-cli -h ${REDIS_IP} -p 6379 INCR HOST_IDX)
 #export CARD_TYPE="HOST"${hostIdx}
 export CARD_NAME="HOST"
