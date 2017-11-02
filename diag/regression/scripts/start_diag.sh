@@ -2,13 +2,13 @@
 
 if [[ $# -eq 0 ]]
 then
-    arch=x86_64
+    arch=amd64
 else
     if [[ $1 == "arm" || $1 == "arm64" ]]
     then
         arch=arm64
     else
-        arch=x86_64
+        arch=amd64
     fi
 fi
 
@@ -20,7 +20,7 @@ echo "-------------------"
 echo "Extracting files"
 rm -rf diag/
 tar xzf image_$arch.tar
-mv x86_64/ diag/
+mv $arch/ diag/
 echo "Extracting files -- Done"
 
 # Set up environment
@@ -38,7 +38,7 @@ echo "PATH=\$PATH:$DIAG_DIR/dshell" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
-if [[ $arch == "arm" ]]
+if [[ $arch == "arm64" ]]
 then
     source $DIAG_DIR/scripts/pre_dsp_nic1
 else
@@ -49,19 +49,24 @@ fi
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
 
-# Start redis if it is not running
-redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
-if [[ $redisFlag != "1" ]]
+if [[ $arch == "amd64" ]]
 then
-    $DIAG_DIR/tools/redis-server --daemonize yes
-    redis-cli -h $REDIS_IP CONFIG SET protected-mode no
-    redis-cli -h $REDIS_IP set DIAG_UP 1
-    echo "Diag engine turned on"
+    # Start redis if it is not running
+    redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
+    if [[ $redisFlag != "1" ]]
+    then
+        $DIAG_DIR/tools/redis-server --daemonize yes
+        # Wait for 1s for redis-server to get ready
+        sleep 1s
+        $DIAG_DIR/tools/redis-cli CONFIG SET protected-mode no
+        $DIAG_DIR/tools/redis-cli -h $REDIS_IP set DIAG_UP 1
+        echo "Diag engine turned on"
+    fi
+    
+    # Load all the redis keys
+    cat $DIAG_DIR/config/redis/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
+    echo "Redis keys loaded"
 fi
-
-# Load all the redis keys
-cat $DIAG_DIR/config/redis/* | redis-cli -h $REDIS_IP &>/dev/null
-echo "Redis keys loaded"
 
 #echo "redisFlag $redisFlag"
 
