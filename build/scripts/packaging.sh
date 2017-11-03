@@ -47,6 +47,7 @@ echo "Copying all files"
 cd $BUILD_DIR
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/dsp/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/util/ $TEMP_DIR/
+cp -r $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/util/
 
 cp -r $TOP_DIR/diag/infra/dshell/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/infra/config/OUTPUT/*redis $TEMP_DIR/config/redis/
@@ -55,6 +56,9 @@ cp -r $TOP_DIR/diag/infra/config/scripts/* $TEMP_DIR/scripts/
 cp -r $TOP_DIR/diag/regression/ $TEMP_DIR/
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
+
+# ARM specified files
+
 echo "Copying all files -- Done"
 
 # Prepare image

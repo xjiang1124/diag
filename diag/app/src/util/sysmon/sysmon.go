@@ -56,23 +56,30 @@ func outputBufComp(buf string) {
 }
 
 func getCpuTemp(compFlag bool) int{
+
+    // Check ARM/Intel CPU type
+    out, err := exec.Command("/home/diag/diag/util/cpuinfo.sh").Output()
+
     cli.Println("i", "============================")
     cli.Println("i", "CPU Status")
 
-    cmdPath := config.DiagHostBinPath
-    out, err := exec.Command(cmdPath+"sensors", "-A", "--no-adapter").Output()
-
-    if err != nil {
-        cli.Println("f", "failed to run sensor command")
-        return errType.FAIL
-    }
-    if compFlag == true {
-        outputBufComp(string(out))
-    } else {
+    if string(out[0]) == "0" {
+        out, err = exec.Command("/home/diag/diag/util/mvl_showtemp.sh").CombinedOutput()
         outputBuf(string(out))
-    }
-    cli.Println("i", "")
+    } else {
+        out, err = exec.Command("sensors", "-A", "--no-adapter").Output()
 
+        if err != nil {
+            cli.Println("f", "failed to run sensor command")
+            return errType.FAIL
+        }
+        if compFlag == true {
+            outputBufComp(string(out))
+        } else {
+            outputBuf(string(out))
+        }
+        cli.Println("i", "")
+    }
     return errType.SUCCESS
 }
 
