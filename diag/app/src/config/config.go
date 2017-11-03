@@ -13,7 +13,7 @@ const (
     OutputMode = 0
 
     // Simulation mode control; 0: no simulation; 1: simuation mode enabled
-    SimMode = 1
+    SimMode = 0
 
     // PAL simuation mode select; 0: diable; 1: enable
     PalSimEnable = 1
@@ -27,7 +27,7 @@ var DiagHostLogPath string
 func init() {
     if SimMode == ENABLE {
         // Binary files location
-        DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/x86_64/"
+        DiagNicBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/linux_amd64/"
         DiagHostBinPath = "/home/xguo2/workspace/psdiag/diag/app/bin/host/"
 
         // Log file target location
