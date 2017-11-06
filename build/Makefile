@@ -1,7 +1,7 @@
 include common.mk
 include path.mk
 
-BUILD_DIR = $(shell pwd)
+#BUILD_DIR = $(shell pwd)
 TOP_DIR = "$(shell dirname $(BUILD_DIR))"
 
 .PHONY: all
@@ -18,7 +18,7 @@ c_amd64:
 c_arm64:
 	@for p in $(C_SRC_DIR); do \
 		echo "==> Build $$p ..."; \
-		$(MAKE) -e ARCH=arm64 CC=$(CC_ARM_64) -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
+		$(MAKE) -e ARCH=arm64 -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 	done
 
 #c_arm_32_build:
@@ -71,6 +71,8 @@ amd64:
 		cd $(TOP_DIR)/diag/app/src/$$p; \
 		$(MAKE) ARCH=amd64  || exit 1; \
 	done
+	cd $(BUILD_DIR)
+	scripts/packaging.sh
 
 arm64:
 	@for p in $(C_SRC_DIR); do \
@@ -83,6 +85,8 @@ arm64:
 		cd $(TOP_DIR)/diag/app/src/$$p; \
 		$(MAKE) ARCH=arm64  || exit 1; \
 	done
+	cd $(BUILD_DIR)
+	scripts/packaging.sh arm64
 
 test:
 	@for p in $(GO_TEST_DIR); do \
@@ -99,6 +103,7 @@ c_arm64-clean:
 
 go_amd64-clean:
 	rm -rf $(GOPATH)/bin/linux_amd64/*
+	include $(TOP_DIR)/build/common.mk
 
 go_arm64-clean:
 	rm -rf $(GOPATH)/bin/linux_arm64/*
@@ -106,8 +111,10 @@ go_arm64-clean:
 amd64-clean:
 	rm -rf $(GOPATH)/pkg/linux_amd64/clib/*
 	rm -rf $(GOPATH)/bin/linux_amd64/*
+	rm -rf $(BUILD_DIR)/images/*amd64*
 
 arm64-clean:
 	rm -rf $(GOPATH)/pkg/linux_arm64/*
 	rm -rf $(GOPATH)/bin/linux_arm64/*
+	rm -rf $(BUILD_DIR)/images/*arm64*
 										
