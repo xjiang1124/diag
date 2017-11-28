@@ -30,4 +30,8 @@ const (
     MARGIN_NONE_CMD = 0x80
     MARGIN_HIGH_CMD = 0xA4
     MARGIN_LOW_CMD  = 0x94
+    //MARGIN_NONE_CMD = 0x00
+    //MARGIN_HIGH_CMD = 0x24
+    //MARGIN_LOW_CMD  = 0x14
+
 )

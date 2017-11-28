@@ -2,21 +2,24 @@ package config
 
 const (
     MODE_REGULAR = 0
-    MODE_JSON = 0
+    MODE_JSON = 1
 
-    DSIABLE = 0
+    DISABLE = 0
     ENABLE = 1
 )
 
 const (
     // 0: regular output; 1: JSON format
-    OutputMode = 0
+    OutputMode = DISABLE
 
     // Simulation mode control; 0: no simulation; 1: simuation mode enabled
-    SimMode = 0
+    SimMode = DISABLE
 
     // PAL simuation mode select; 0: diable; 1: enable
-    PalSimEnable = 1
+    PalSimEnable = ENABLE
+
+    // SMB mode: 0: disable, 1: enable
+    SmbusMode = DISABLE
 )
 
 var DiagNicBinPath string

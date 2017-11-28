@@ -10,6 +10,7 @@ class errType:
         self.mapV["INVALID_TEST"] = 4
         self.mapV["PERM_SKIP"] = 5
         self.mapV["INVALID_LOCK"] = 6
+        self.mapV["UNSUPPORTED_CARD"] = 7
         # INFO_DIAGMGR
         self.mapV["DIAGMGR_SKIP"] = 100
         self.mapV["DIAGMGR_TIMEOUT"] = 101
@@ -21,6 +22,13 @@ class errType:
         # INFO_I2C
         self.mapV["I2C_RD_FAIL"] = 300
         self.mapV["I2C_WR_FAIL"] = 301
+        # INFO_SMB
+        self.mapV["SMB_OPEN_FAIL"] = 400
+        self.mapV["SMB_CLOSE_FAIL"] = 401
+        self.mapV["SMB_READ_FAIL"] = 402
+        self.mapV["SMB_WRITE_FAIL"] = 403
+        self.mapV["SMB_INF_BUSY"] = 404
+        self.mapV["SMB_INF_INVALID"] = 405
 
         self.mapN = dict()
         # INFO_GENERAL
@@ -32,6 +40,7 @@ class errType:
         self.mapN[4] = "INVALID_TEST"
         self.mapN[5] = "PERM_SKIP"
         self.mapN[6] = "INVALID_LOCK"
+        self.mapN[7] = "UNSUPPORTED_CARD"
         # INFO_DIAGMGR
         self.mapN[100] = "DIAGMGR_SKIP"
         self.mapN[101] = "DIAGMGR_TIMEOUT"
@@ -43,6 +52,13 @@ class errType:
         # INFO_I2C
         self.mapN[300] = "I2C_RD_FAIL"
         self.mapN[301] = "I2C_WR_FAIL"
+        # INFO_SMB
+        self.mapN[400] = "SMB_OPEN_FAIL"
+        self.mapN[401] = "SMB_CLOSE_FAIL"
+        self.mapN[402] = "SMB_READ_FAIL"
+        self.mapN[403] = "SMB_WRITE_FAIL"
+        self.mapN[404] = "SMB_INF_BUSY"
+        self.mapN[405] = "SMB_INF_INVALID"
 
     def toName(self, value):
         return self.mapN[value]

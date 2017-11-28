@@ -30,7 +30,19 @@ const (
 
 //========================================================
 
+/*
+    Integer verion of min
+ */
+func Min(a, b int) int {
+    if a < b {
+        return a
+    }
+    return b
+}
 
+/*
+    Check whether  s has element of elem
+ */
 func HasElem(s interface{}, elem interface{}) bool {
     arrV := reflect.ValueOf(s)
 

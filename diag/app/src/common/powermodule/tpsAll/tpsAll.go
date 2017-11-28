@@ -11,4 +11,5 @@ type TpsAll interface {
 //    ReadTemp(devName string) (integer uint64, dec uint64, err int)
     ReadStatus(devName string) (status uint16, err int)
     DispStatus(devName string) (err int)
+    SetVMargin(devName string, pct int) (err int)
 }

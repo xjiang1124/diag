@@ -58,7 +58,7 @@ func Init(fileName string, mode int) {
         //file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
         file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY|os.O_SYNC, 0666)
         if err != nil {
-            log.Fatal("Open file failed!", fileName)
+            log.Fatal("Open file failed!", path, fileName)
         }
         multi = io.MultiWriter(os.Stdout, file)
     }
@@ -92,7 +92,9 @@ func TStamp() string {
     timeStr := fmt.Sprintln(time.Unix(m/1e3, (m%1e3)*int64(time.Millisecond)/int64(time.Nanosecond)))
     timeStrs := strings.Split(timeStr, " ")
 
-    return timeStrs[0]+"-"+timeStrs[1]
+    timeStr = fmt.Sprintf("%-23s", timeStrs[0]+"-"+timeStrs[1])
+    return timeStr
+
 }
 
 func FmtJsonOut(outStr string) string {
@@ -118,11 +120,11 @@ func formatOutput(lvl string, pOutStr string) string {
     switch lvl {
     case "debug", "d":
         // Debug print, give file and line number
-        _, fn, line, _ := runtime.Caller(1)
+        _, fn, line, _ := runtime.Caller(2)
         fnArr := strings.Split(fn, "/")
         fnOnly := fnArr[len(fnArr)-1]
         if (fnOnly == "dcli.go") {
-            _, fn, line, _ = runtime.Caller(2)
+            _, fn, line, _ = runtime.Caller(3)
             fnArr = strings.Split(fn, "/")
             fnOnly = fnArr[len(fnArr)-1]
         }
@@ -155,7 +157,7 @@ func Println(lvl string, a...interface{}) (err error) {
             Info.Println(outStr)
         case "warn", "w":
             Warning.Println(outStr)
-        case "error", "e":
+        case "error", "e", "f":
             Error.Println(outStr)
         default:
             Debug.Println(outStr)
@@ -168,7 +170,7 @@ func Println(lvl string, a...interface{}) (err error) {
             fmt.Println("[INFO]   ", outStr)
         case "warn", "w":
             fmt.Println("[WARNING]", outStr)
-        case "error", "e":
+        case "error", "e", "f":
             fmt.Println("[ERROR]  ", outStr)
         default:
             fmt.Println("[DEBUG]  ", outStr)
@@ -177,22 +179,23 @@ func Println(lvl string, a...interface{}) (err error) {
     return nil
 }
 
-func formatOutput1(lvl string, pOutStr string) string {
-    var outStr string
-    // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
-    // Remove the extra stuff
-    //outStr = misc.TrimSuffix(pOutStr, "]\n")
-    //outStr = misc.TrimPrefix(outStr, "[")
-    outStr = pOutStr
+func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
+    formatArr := strings.Split(format, " ")
+    if len(formatArr) != len(a) {
+        fmt.Println("Warning: format and intput string are at different len!")
+    }
+    for i:=0; i<misc.Min(len(formatArr), len(a)); i++ {
+        outStr = outStr + fmt.Sprintf(formatArr[i], a[i])
+    }
 
     switch lvl {
     case "debug", "d":
         // Debug print, give file and line number
-        _, fn, line, _ := runtime.Caller(1)
+        _, fn, line, _ := runtime.Caller(2)
         fnArr := strings.Split(fn, "/")
         fnOnly := fnArr[len(fnArr)-1]
         if (fnOnly == "dcli.go") {
-            _, fn, line, _ = runtime.Caller(2)
+            _, fn, line, _ = runtime.Caller(3)
             fnArr = strings.Split(fn, "/")
             fnOnly = fnArr[len(fnArr)-1]
         }
@@ -208,13 +211,12 @@ func formatOutput1(lvl string, pOutStr string) string {
     } else {
         outStr = "["+timeStr+"]"+" "+outStr
     }
-    return outStr
+    return
 }
 
 func Printf(lvl string, format string, a ...interface{}) error {
 
-    outStr := fmt.Sprintf(format, a)
-    outStr = formatOutput1(lvl, outStr)
+    outStr := formatOutput1(lvl, format, a)
 
     switch lvl {
     case "debug", "d":
@@ -223,7 +225,7 @@ func Printf(lvl string, format string, a ...interface{}) error {
         Info.Println(outStr)
     case "warn", "w":
         Warning.Println(outStr)
-    case "error", "e":
+    case "error", "e", "f":
         Error.Println(outStr)
     default:
         Debug.Println(outStr)

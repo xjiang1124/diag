@@ -19,6 +19,8 @@ var mutexTbl = []mutexInfo {
     mutexInfo {mName: "QSFP_0"},
     mutexInfo {mName: "TEMP_SENSOR"},
     mutexInfo {mName: "VRM_CAPRI"},
+    mutexInfo {mName: "VRM_3V3"},
+    mutexInfo {mName: "VRM_1V2"},
 }
 
 func init() {

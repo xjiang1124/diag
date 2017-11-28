@@ -9,6 +9,7 @@ import (
     "common/errType"
     "common/misc"
     "common/pmbCmd"
+    "common/smbus"
     "hardware/tps53659Reg"
 )
 
@@ -26,6 +27,7 @@ func init() {
     channelMap = make(map[string]byte)
     channelMap["VRM_CAPRI_DVDD"] = 0
     channelMap["VRM_CAPRI_AVDD"] = 1
+
 }
 
 /*
@@ -87,7 +89,8 @@ func calcVidFromVolt (tgtVoltMv uint64, dacStep uint64) (vid byte, err int) {
     for vidStep = 1; vidStep < vidMax; vidStep++ {
         volt = (vidStep - 1) * dacStep + base
         voltNext = vidStep * dacStep + base
-        if volt < tgtVoltMv && voltNext > tgtVoltMv {
+        if (volt <= tgtVoltMv) && (voltNext > tgtVoltMv) {
+            //cli.Println("tgtVoltMv", tgtVoltMv, "vidStep", vidStep, "volt", volt, "voltNext", voltNext)
             return byte(vidStep), err
         }
     }
@@ -130,6 +133,11 @@ func (tps53659 *TPS53659) ReadStatus(devName string) (status uint16, err int) {
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -152,6 +160,11 @@ func (tps53659 *TPS53659) ReadVout(devName string) (integer uint64, dec uint64, 
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -183,6 +196,11 @@ func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64,
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -213,6 +231,12 @@ func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, 
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -260,6 +284,12 @@ func (tps53659 *TPS53659) ReadRegExp(devName string, addrAddr uint64) (integer u
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -308,6 +338,12 @@ func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
     defer dmutex.Unlock(devName)
 
     devID, err = pmbCmd.ReadByte(devName, tps53659Reg.IC_DEVICE_ID)
@@ -325,6 +361,11 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     if err != errType.SUCCESS {
         return
     }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -359,6 +400,7 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
 
     // Update VOUT_MARGIN_HIGH/HOW with target VID
     vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
+    //cli.Println("d", "voltMvTgt:", voltMvTgt, "vidTgt:", vidTgt, "reg:", marginReg)
     pmbCmd.WriteWord(devName, marginReg, uint16(vidTgt))
 
     // Set to PMBus control
