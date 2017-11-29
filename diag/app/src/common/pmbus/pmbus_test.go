@@ -1,4 +1,4 @@
-package pmbCmd
+package pmbus
 
 import (
     //"fmt"

@@ -1,5 +1,5 @@
 // pmb.go specifies PMBus commands implementations
-package pmbCmd
+package pmbus
 
 import (
     //"fmt"
@@ -59,10 +59,10 @@ func WriteWord(devName string, regAddr uint64, data uint16) (err int) {
     return
 }
 
-func SendByte(devName string, data byte) (err int) {
+func SendByte(devName string, cmd byte) (err int) {
     if config.SmbusMode == config.DISABLE {
     } else {
-        err = smbus.SendByte(devName, data)
+        err = smbus.SendByte(devName, cmd)
     }
     return
 

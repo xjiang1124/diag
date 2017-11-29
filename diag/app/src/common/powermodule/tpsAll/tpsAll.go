@@ -12,4 +12,9 @@ type TpsAll interface {
     ReadStatus(devName string) (status uint16, err int)
     DispStatus(devName string) (err int)
     SetVMargin(devName string, pct int) (err int)
+    ReadByte(devName string, regAddr uint64) (data byte, err int)
+    ReadWord(devName string, regAddr uint64) (data uint16, err int)
+    WriteByte(devName string, regAddr uint64, data byte) (err int)
+    WriteWord(devName string, regAddr uint64, data uint16) (err int)
+    SendByte(devName string, data byte) (err int)
 }

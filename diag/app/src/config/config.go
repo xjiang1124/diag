@@ -19,7 +19,8 @@ const (
     PalSimEnable = ENABLE
 
     // SMB mode: 0: disable, 1: enable
-    SmbusMode = DISABLE
+    //SmbusMode = DISABLE
+    SmbusMode = ENABLE
 )
 
 var DiagNicBinPath string

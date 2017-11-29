@@ -27,8 +27,8 @@ var VrmTblNicPower = []VrmInfo {
     //       name              comp         Bus    devAddr  channel 
     VrmInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x0,   0x62,    0x0 },
     VrmInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x0,   0x62,    0x1 },
-    VrmInfo {"VRM_3V3",        "TPS549A20", 0x0,   0x1B,    0x0 },
-    VrmInfo {"VRM_1V2",        "TPS549A20", 0x0,   0x1C,    0x0 },
+    VrmInfo {"VRM_3V3",        "TPS549A20", 0x0,   0x1C,    0x0 },
+    VrmInfo {"VRM_1V2",        "TPS549A20", 0x0,   0x1B,    0x0 },
 }
 
 var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }

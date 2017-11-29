@@ -8,7 +8,7 @@ import (
     "common/dmutex"
     "common/errType"
     "common/misc"
-    "common/pmbCmd"
+    "common/pmbus"
     "common/smbus"
     "hardware/tps53659Reg"
 )
@@ -143,9 +143,9 @@ func (tps53659 *TPS53659) ReadStatus(devName string) (status uint16, err int) {
     channel := channelMap[devName]
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    status, err = pmbCmd.ReadWord(devName, tps53659Reg.STATUS_WORD)
+    status, err = pmbus.ReadWord(devName, tps53659Reg.STATUS_WORD)
 
     return
 }
@@ -170,11 +170,11 @@ func (tps53659 *TPS53659) ReadVout(devName string) (integer uint64, dec uint64, 
     channel := channelMap[devName]
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    data, err = pmbCmd.ReadWord(devName, tps53659Reg.READ_VOUT)
+    data, err = pmbus.ReadWord(devName, tps53659Reg.READ_VOUT)
 
-    dacStepRegVal, err = pmbCmd.ReadByte(devName, tps53659Reg.VOUT_MODE)
+    dacStepRegVal, err = pmbus.ReadByte(devName, tps53659Reg.VOUT_MODE)
 
     if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
         dacStep = 5
@@ -206,12 +206,12 @@ func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64,
     channel := channelMap[devName]
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
     // Read Vboot
-    data, err = pmbCmd.ReadWord(devName, tps53659Reg.MFR_SPECIFIC_11)
+    data, err = pmbus.ReadWord(devName, tps53659Reg.MFR_SPECIFIC_11)
 
-    dacStepRegVal, err = pmbCmd.ReadByte(devName, tps53659Reg.VOUT_MODE)
+    dacStepRegVal, err = pmbus.ReadByte(devName, tps53659Reg.VOUT_MODE)
 
     if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
         dacStep = 5
@@ -236,18 +236,17 @@ func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, 
         return
     }
     defer smbus.Close()
-
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
     // Write phase register: all phases
-    pmbCmd.WriteByte(devName, tps53659Reg.PHASE, 0x80)
+    pmbus.WriteByte(devName, tps53659Reg.PHASE, 0x80)
 
-    data, err = pmbCmd.ReadWord(devName, tps53659Reg.READ_IOUT)
+    data, err = pmbus.ReadWord(devName, tps53659Reg.READ_IOUT)
     integer, dec, err = getExpOutput(data)
     return
 }
@@ -264,12 +263,12 @@ func (tps53659 *TPS53659) ReadIoutPhase(devName string, phase byte) (integer uin
     channel := channelMap[devName]
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
     // Write phase register: all phases
-    pmbCmd.WriteByte(devName, tps53659Reg.PHASE, phase)
+    pmbus.WriteByte(devName, tps53659Reg.PHASE, phase)
 
-    data, err = pmbCmd.ReadWord(devName, tps53659Reg.READ_IOUT)
+    data, err = pmbus.ReadWord(devName, tps53659Reg.READ_IOUT)
     integer, dec, err = getExpOutput(data)
     return
 }
@@ -295,9 +294,9 @@ func (tps53659 *TPS53659) ReadRegExp(devName string, addrAddr uint64) (integer u
     channel := channelMap[devName]
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    data, err = pmbCmd.ReadWord(devName, addrAddr)
+    data, err = pmbus.ReadWord(devName, addrAddr)
     integer, dec, err = getExpOutput(data)
 
     return
@@ -346,7 +345,7 @@ func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
 
     defer dmutex.Unlock(devName)
 
-    devID, err = pmbCmd.ReadByte(devName, tps53659Reg.IC_DEVICE_ID)
+    devID, err = pmbus.ReadByte(devName, tps53659Reg.IC_DEVICE_ID)
     return devID, err
 }
 
@@ -381,9 +380,9 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     }
 
     // Write page register
-    pmbCmd.WriteByte(devName, tps53659Reg.PAGE, channel)
+    pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
 
-    dacStepRegVal, err = pmbCmd.ReadByte(devName, tps53659Reg.VOUT_MODE)
+    dacStepRegVal, err = pmbus.ReadByte(devName, tps53659Reg.VOUT_MODE)
 
     if dacStepRegVal == tps53659Reg.DAC_STEP_5MV {
         dacStep = 5
@@ -391,7 +390,7 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
         dacStep = 10
     }
 
-    data, err = pmbCmd.ReadWord(devName, tps53659Reg.VOUT_COMMAND)
+    data, err = pmbus.ReadWord(devName, tps53659Reg.VOUT_COMMAND)
 
     integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
     voltMv := integer *1000 + dec
@@ -401,13 +400,13 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     // Update VOUT_MARGIN_HIGH/HOW with target VID
     vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
     //cli.Println("d", "voltMvTgt:", voltMvTgt, "vidTgt:", vidTgt, "reg:", marginReg)
-    pmbCmd.WriteWord(devName, marginReg, uint16(vidTgt))
+    pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
 
     // Set to PMBus control
-    pmbCmd.WriteByte(devName, tps53659Reg.MFR_SPECIFIC_02, tps53659Reg.CTRL_PMBUS)
+    pmbus.WriteByte(devName, tps53659Reg.MFR_SPECIFIC_02, tps53659Reg.CTRL_PMBUS)
 
     // Enable Vmargin
-    pmbCmd.WriteByte(devName, tps53659Reg.OPERATION, marginCmd)
+    pmbus.WriteByte(devName, tps53659Reg.OPERATION, marginCmd)
 
     return
 }
@@ -502,3 +501,109 @@ func (tps53659 *TPS53659) DispStatus(devName string) (err int) {
 
     return
 }
+
+func (tps53659 *TPS53659) ReadByte(devName string, regAddr uint64) (data byte, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    data, err = pmbus.ReadByte(devName, regAddr)
+    return
+}
+
+func (tps53659 *TPS53659) ReadWord(devName string, regAddr uint64) (data uint16, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    data, err = pmbus.ReadWord(devName, regAddr)
+    return
+}
+
+func (tps53659 *TPS53659) WriteByte(devName string, regAddr uint64, data byte) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.WriteByte(devName, regAddr, data)
+    return
+}
+
+func (tps53659 *TPS53659) WriteWord(devName string, regAddr uint64, data uint16) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.WriteWord(devName, regAddr, data)
+    return
+}
+
+func (tps53659 *TPS53659) SendByte(devName string, data byte) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, tps53659Reg.PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.SendByte(devName, data)
+    return
+}
+

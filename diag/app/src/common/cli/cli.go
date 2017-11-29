@@ -180,14 +180,15 @@ func Println(lvl string, a...interface{}) (err error) {
 }
 
 func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
-    formatArr := strings.Split(format, " ")
-    if len(formatArr) != len(a) {
-        fmt.Println("Warning: format and intput string are at different len!")
-    }
-    for i:=0; i<misc.Min(len(formatArr), len(a)); i++ {
-        outStr = outStr + fmt.Sprintf(formatArr[i], a[i])
-    }
+    //formatArr := strings.Split(format, " ")
+    //if len(formatArr) != len(a) {
+    //    fmt.Println("Warning: format and intput string are at different len!")
+    //}
+    //for i:=0; i<misc.Min(len(formatArr), len(a)); i++ {
+    //    outStr = outStr + fmt.Sprintf(formatArr[i], a[i])
+    //}
 
+    outStr = fmt.Sprintf(format, a...)
     switch lvl {
     case "debug", "d":
         // Debug print, give file and line number
@@ -217,18 +218,32 @@ func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
 func Printf(lvl string, format string, a ...interface{}) error {
 
     outStr := formatOutput1(lvl, format, a)
-
-    switch lvl {
-    case "debug", "d":
-        Debug.Println(outStr)
-    case "info", "i":
-        Info.Println(outStr)
-    case "warn", "w":
-        Warning.Println(outStr)
-    case "error", "e", "f":
-        Error.Println(outStr)
-    default:
-        Debug.Println(outStr)
+    if initStatus == INIT_DONE {
+        switch lvl {
+        case "debug", "d":
+            Debug.Println(outStr)
+        case "info", "i":
+            Info.Println(outStr)
+        case "warn", "w":
+            Warning.Println(outStr)
+        case "error", "e", "f":
+            Error.Println(outStr)
+        default:
+            Debug.Println(outStr)
+        }
+    } else {
+        switch lvl {
+        case "debug", "d":
+            fmt.Println("[DEBUG]  ", outStr)
+        case "info", "i":
+            fmt.Println("[INFO]   ", outStr)
+        case "warn", "w":
+            fmt.Println("[WARNING]", outStr)
+        case "error", "e", "f":
+            fmt.Println("[ERROR]  ", outStr)
+        default:
+            fmt.Println("[DEBUG]  ", outStr)
+        }
     }
 
     return nil
