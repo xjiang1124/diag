@@ -137,3 +137,39 @@ func SendByte(devName string, data byte) (err int) {
     }
     return
 }
+
+/**
+ * ReadBlock
+ * Read block smbus command. LSB is at highest byte. MSB is at byte[0]
+ */
+func ReadBlock(devName string, regAddr uint64, buf []byte) (byteCnt int, err int) {
+    if smbInfo.devName != devName {
+        err = errType.SMB_INF_INVALID
+        return
+    }
+    byteCnt, errgo := smbInfo.smb.Read_block_data(byte(regAddr), buf)
+    if errgo != nil {
+        cli.Println("f", errgo)
+        err = errType.SMB_READ_FAIL
+        return
+    }
+    return byteCnt, err
+}
+
+/**
+ * WriteBlock
+ * Write block smbus command. LSB is at highest byte. MSB is at byte[0]
+ */
+func WriteBlock(devName string, regAddr uint64, buf []byte) (byteCnt int, err int) {
+    if smbInfo.devName != devName {
+        err = errType.SMB_INF_INVALID
+        return
+    }
+    byteCnt, errgo := smbInfo.smb.Write_block_data(byte(regAddr), buf)
+    if errgo != nil {
+        cli.Println("f", errgo)
+        err = errType.SMB_READ_FAIL
+        return
+    }
+    return byteCnt, err
+}

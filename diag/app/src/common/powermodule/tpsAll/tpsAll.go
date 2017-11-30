@@ -17,4 +17,6 @@ type TpsAll interface {
     WriteByte(devName string, regAddr uint64, data byte) (err int)
     WriteWord(devName string, regAddr uint64, data uint16) (err int)
     SendByte(devName string, data byte) (err int)
+    ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int)
+    WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int)
 }

@@ -607,3 +607,34 @@ func (tps53659 *TPS53659) SendByte(devName string, data byte) (err int) {
     return
 }
 
+func (tps53659 *TPS53659) ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    byteCnt, err = pmbus.ReadBlock(devName, regAddr, dataBuf)
+    return
+}
+
+func (tps53659 *TPS53659) WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    byteCnt, err = pmbus.WriteBlock(devName, regAddr, dataBuf)
+    return
+}

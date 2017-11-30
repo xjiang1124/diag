@@ -107,91 +107,6 @@ func margin(devName string, pct int) (err int){
     return
 }
 
-func read(devName string, regAddr uint64, mode string) (err int) {
-    var tps tpsAll.TpsAll
-    var tps53659 tps53659.TPS53659
-    var tps549a20 tps549a20.TPS549A20
-    var data uint16
-    var dataB byte
-
-    mode = strings.ToUpper(mode)
-    if (mode != "B" && mode != "W") {
-        cli.Println("e", "Unsupported mode:", mode)
-        err = errType.INVALID_PARAM
-        return
-    }
-
-    for _, vrm := range(hwInfo.vrmTbl) {
-        if devName != vrm.Name {
-            continue
-        }
-        if vrm.Comp == "TPS53659" {
-            tps = &tps53659
-        } else if vrm.Comp == "TPS549A20" {
-            tps = &tps549a20
-        } else {
-            continue
-        }
-        if mode == "B" {
-            dataB, err = tps.ReadByte(devName, regAddr)
-            data = uint16(dataB)
-            cli.Printf("d", "data=0x%x", data)
-        } else {
-            data, err = tps.ReadWord(devName, regAddr)
-            cli.Printf("d", "data=0x%x", data)
-        }
-        if err != errType.SUCCESS {
-            cli.Println("e", "Failed to read device", devName, "at", regAddr)
-            return
-        }
-        cli.Printf("i", "Read device %s at addr 0x%d; data=0x%x", devName, regAddr, data)
-        return
-    }
-    cli.Println("e", "Faied to find device", devName)
-    err = errType.INVALID_PARAM
-    return
-}
-
-func write(devName string, regAddr uint64, data uint16, mode string) (err int) {
-    var tps tpsAll.TpsAll
-    var tps53659 tps53659.TPS53659
-    var tps549a20 tps549a20.TPS549A20
-
-    mode = strings.ToUpper(mode)
-    if (mode != "B" && mode != "W") {
-        cli.Println("e", "Unsupported mode:", mode)
-        err = errType.INVALID_PARAM
-        return
-    }
-
-    for _, vrm := range(hwInfo.vrmTbl) {
-        if devName != vrm.Name {
-            continue
-        }
-        if vrm.Comp == "TPS53659" {
-            tps = &tps53659
-        } else if vrm.Comp == "TPS549A20" {
-            tps = &tps549a20
-        } else {
-            continue
-        }
-        if mode == "B" {
-            err = tps.WriteByte(devName, regAddr, byte(data))
-        } else {
-            err = tps.WriteWord(devName, regAddr, data)
-        }
-        if err != errType.SUCCESS {
-            cli.Printf("i", "Write device %s at addr 0x%d with data=0x%x failed: 0x%x", devName, regAddr, data, err)
-        } else {
-           cli.Printf("i", "Write device %s at addr 0x%d with data=0x%x - Done", devName, regAddr, data)
-        }
-        return
-    }
-    cli.Println("e", "Faied to find device", devName)
-    err = errType.INVALID_PARAM
-    return
-}
-
 func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode string) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
@@ -251,6 +166,48 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
     return
 }
 
+func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err int) {
+    var tps tpsAll.TpsAll
+    var tps53659 tps53659.TPS53659
+    var byteCnt int
+    dataLen := 6
+    dataBuf := make([]byte, dataLen)
+
+    for _, vrm := range(hwInfo.vrmTbl) {
+        if devName != vrm.Name {
+            continue
+        }
+        if vrm.Comp == "TPS53659" {
+            tps = &tps53659
+        } else {
+            continue
+        }
+        switch rws {
+        case "READ_BLK":
+            byteCnt, err = tps.ReadBlock(devName, regAddr, dataBuf)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read block device", devName, "at", regAddr)
+            } else {
+                cli.Printf("i", "Read block device %s at addr 0x%x with %d bytes", devName, regAddr, byteCnt)
+                for i:=0; i<len(dataBuf); i++ {
+                    cli.Printf("i", "data[%d] = 0x%x", i, dataBuf[i])
+                }
+            }
+        case "WRITE_BLK":
+            byteCnt, err = tps.WriteBlock(devName, regAddr, dataBuf)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to write block device", devName, "at", regAddr)
+            } else {
+                cli.Printf("i", "Write block device %s at addr 0x%x with %d bytes", devName, regAddr, byteCnt)
+            }
+        }
+        return
+    }
+    cli.Println("e", "Faied to find device", devName)
+    err = errType.INVALID_PARAM
+    return
+}
+
 func main() {
     devNamePtr := flag.String("dev", "ALL", "Device name")
     statusPtr := flag.Bool("status", false, "Device status")
@@ -258,18 +215,20 @@ func main() {
     marginPtr := flag.Bool("margin", false, "Enable voltage marigining")
     pctPtr := flag.Int("pct", 0x0, "Margin percentage")
     readPtr := flag.Bool("rd", false, "Read register value")
+    readBlkPtr := flag.Bool("rdb", false, "Read register block value")
     writePtr := flag.Bool("wr", false, "Write register value")
+    writeBlkPtr := flag.Bool("wrb", false, "Write register block value")
     sendPtr := flag.Bool("sd", false, "Send byte")
     modePtr := flag.String("mode", "b", "r/w mode: byte(b) or word(w)")
     addrPtr := flag.Uint64("addr", 0, "Register addr")
-    dataPtr := flag.Int("data", 0, "Data value")
+    dataPtr := flag.Uint64("data", 0, "Data value")
     flag.Parse()
 
     //cli.Println("devNamePtr:", *devNamePtr, "statusPtr:", *statusPtr, "marginPtr:", *marginPtr, "pctPtr:", *pctPtr)
     //cli.Println("i", *readPtr, *writePtr, *sendPtr, *addrPtr, *dataPtr)
     devName := strings.ToUpper(*devNamePtr)
     addr := *addrPtr
-    data := uint16(*dataPtr)
+    data := *dataPtr
     mode := strings.ToUpper(*modePtr)
     pct := *pctPtr
     if *statusPtr == true {
@@ -299,17 +258,27 @@ func main() {
     }
 
     if *readPtr == true {
-        readWriteSend("READ", devName, addr, data, mode)
+        readWriteSend("READ", devName, addr, uint16(data), mode)
         return
     }
 
     if *writePtr == true {
-        readWriteSend("WRITE", devName, addr, data, mode)
+        readWriteSend("WRITE", devName, addr, uint16(data), mode)
         return
     }
 
     if *sendPtr == true {
-        readWriteSend("SEND", devName, addr, data, mode)
+        readWriteSend("SEND", devName, addr, uint16(data), mode)
+        return
+    }
+
+    if *readBlkPtr == true {
+        readWriteBlk("READ_BLK", devName, addr, data)
+        return
+    }
+
+    if *writeBlkPtr == true {
+        readWriteBlk("WRITE_BLK", devName, addr, data)
         return
     }
 

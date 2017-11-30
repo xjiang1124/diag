@@ -191,3 +191,13 @@ func (tps549a20 *TPS549A20) SendByte(devName string, data byte) (err int) {
     err = pmbus.SendByte(devName, data)
     return
 }
+
+func (tps549a20 *TPS549A20) ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    cli.Println("i", "Read block is not supported!")
+    return
+}
+
+func (tps549a20 *TPS549A20) WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    cli.Println("i", "Write block is not supported!")
+    return
+}

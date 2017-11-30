@@ -68,3 +68,22 @@ func SendByte(devName string, cmd byte) (err int) {
 
 }
 
+func ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    if config.SmbusMode == config.DISABLE {
+        _, err1 := i2c.Read(devName, regAddr, misc.ONE_BYTE)
+        err = err1
+    } else {
+        byteCnt, err = smbus.ReadBlock(devName, regAddr, dataBuf)
+    }
+    return
+}
+
+func WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    if config.SmbusMode == config.DISABLE {
+        err1 := i2c.Write(devName, regAddr, dataBuf, misc.ONE_BYTE)
+        err = err1
+    } else {
+        byteCnt, err = smbus.WriteBlock(devName, regAddr, dataBuf)
+    }
+    return
+}

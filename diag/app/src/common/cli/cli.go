@@ -118,7 +118,7 @@ func formatOutput(lvl string, pOutStr string) string {
     outStr = misc.TrimPrefix(outStr, "[")
 
     switch lvl {
-    case "debug", "d":
+    case "debug", "d", "error", "e":
         // Debug print, give file and line number
         _, fn, line, _ := runtime.Caller(2)
         fnArr := strings.Split(fn, "/")
@@ -180,17 +180,9 @@ func Println(lvl string, a...interface{}) (err error) {
 }
 
 func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
-    //formatArr := strings.Split(format, " ")
-    //if len(formatArr) != len(a) {
-    //    fmt.Println("Warning: format and intput string are at different len!")
-    //}
-    //for i:=0; i<misc.Min(len(formatArr), len(a)); i++ {
-    //    outStr = outStr + fmt.Sprintf(formatArr[i], a[i])
-    //}
-
     outStr = fmt.Sprintf(format, a...)
     switch lvl {
-    case "debug", "d":
+    case "debug", "d", "error", "e":
         // Debug print, give file and line number
         _, fn, line, _ := runtime.Caller(2)
         fnArr := strings.Split(fn, "/")
