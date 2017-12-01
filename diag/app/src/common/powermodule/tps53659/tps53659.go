@@ -1,8 +1,13 @@
 package tps53659
 
 import (
+    "bufio"
+    "encoding/hex"
     "fmt"
     "math"
+    "os"
+    "reflect"
+    "strings"
 
     "common/cli"
     "common/dmutex"
@@ -19,6 +24,7 @@ type TPS53659 struct {
 
 const (
     DEVICE_ID = 0x59
+    VERIFY_FLAG = "=== READ VERIFY ==="
 )
 
 var channelMap map[string]byte
@@ -636,5 +642,195 @@ func (tps53659 *TPS53659) WriteBlock(devName string, regAddr uint64, dataBuf []b
     defer dmutex.Unlock(devName)
 
     byteCnt, err = pmbus.WriteBlock(devName, regAddr, dataBuf)
+    return
+}
+
+func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool) (err int) {
+    verifyStart := false
+
+    if mode != "VERIFY" && mode != "PROGRAM" {
+        cli.Println("e", "Invalid mode:", mode)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    defer dmutex.Unlock(devName)
+
+    file, errgo := os.Open(fileName)
+    if errgo != nil {
+        cli.Println("e", "Failed to open file:", fileName, errgo)
+        err = errType.FAIL
+        return
+    }
+    defer file.Close()
+
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+        if mode == "VERIFY" {
+            // Image after this flag is form read verification
+            if strings.Contains(scanner.Text(), VERIFY_FLAG) {
+                verifyStart = true
+                continue
+            }
+
+            if verifyStart == false {
+                continue
+            }
+        } else { // Program
+            // Image after this flag is form read verification
+            if strings.Contains(scanner.Text(), VERIFY_FLAG) {
+                break
+            }
+        }
+
+        cmd := strings.Split(scanner.Text(), ",")
+        cli.Println("i", cmd)
+        // Remove prefix "0x". regAddr is always a byte
+        regAddr, _ := hex.DecodeString(cmd[1][2:4])
+
+        // WriteByte and WriteWord: remove first "0x" and last two char (PEC)
+        // BlockWrite: remove first "0x" and next two char (byte count), and last two char (PEC)
+        switch cmd[0] {
+        case "ReadByte":
+            var readData byte
+            dataStr := cmd[2][2:len(cmd[2])]
+            data, errgo := hex.DecodeString(dataStr)
+            if errgo != nil {
+                cli.Println("e", "Failed to DEcodeString", err)
+                err = errType.FAIL
+                return
+            }
+            cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+            readData, err = pmbus.ReadByte(devName, uint64(regAddr[0]))
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to read byte data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+
+            if readData != data[0] {
+                cli.Printf("e", "Data mismatch! addr=0x%x, expected 0x%x, read back 0x%x", regAddr[0], data[0], readData)
+                err = errType.FAIL
+            }
+        case "ReadWord":
+            var readData uint16
+            dataStr := cmd[2][2:len(cmd[2])]
+            dataArr, _ := hex.DecodeString(dataStr)
+            data := uint16(dataArr[0]) | uint16(dataArr[1] << 8)
+            cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+
+            readData, err = pmbus.ReadWord(devName, uint64(regAddr[0]))
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to read word data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+
+            if readData != data {
+                cli.Printf("e", "Data mismatch! addr=0x%x, expected 0x%x, read back 0x%x", regAddr[0], data, readData)
+                err = errType.FAIL
+            }
+
+        case "BlockRead":
+            dataStr := cmd[2][4:len(cmd[2])]
+            dataLenStr := cmd[2][2:4]
+            data, _ := hex.DecodeString(dataStr)
+            dataLenArr, _ := hex.DecodeString(dataLenStr)
+            dataLen := dataLenArr[0]
+
+            readData := make([]byte, dataLen)
+            var byteCnt int
+            byteCnt, err = pmbus.ReadBlock(devName, uint64(regAddr[0]), readData)
+            cli.Printf("i", "Expected 0x%x; received 0x%x", data, readData)
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to read block data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+            if byteCnt != int(dataLen) {
+                cli.Println("e", "Read block data length mismatch! expected", dataLen, "received", byteCnt)
+                err = errType.FAIL
+            }
+            if reflect.DeepEqual(data, readData) != true {
+                cli.Printf("e", "Read block data mismatch! addr=0x%x, expected 0x%x, received 0x%x", regAddr[0], data, readData)
+                err = errType.FAIL
+            }
+
+        case "WriteByte":
+            dataStr := cmd[2][2:len(cmd[2])-2]
+            data, _ := hex.DecodeString(dataStr)
+            //cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+            err = pmbus.WriteByte(devName, uint64(regAddr[0]), data[0])
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to write byte data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+
+        case "WriteWord":
+            dataStr := cmd[2][2:len(cmd[2])-2]
+            dataArr, _ := hex.DecodeString(dataStr)
+            data := uint16(dataArr[0]) | uint16(dataArr[1] << 8)
+            //cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+            err = pmbus.WriteWord(devName, uint64(regAddr[0]), data)
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to write word data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+
+        case "BlockWrite":
+            dataStr := cmd[2][4:len(cmd[2])-2]
+            data, _ := hex.DecodeString(dataStr)
+            //dataLenStr := cmd[2][2:4]
+            //dataLenArr, _ := hex.DecodeString(dataLenStr)
+            //dataLen := dataLenArr[0]
+
+            //cli.Println("i", dataStr, dataLenStr, data)
+            cli.Printf("i", "0x%x", data)
+            //var byteCnt int
+            _, err = pmbus.WriteBlock(devName, uint64(regAddr[0]), data)
+
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to write block data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+            //if byteCnt != int(dataLen) {
+            //    cli.Println("e", "Write block data length mismatch! expected", dataLen, "received", byteCnt)
+            //    err = errType.FAIL
+            //}
+
+        case "SendByte":
+            cli.Println("i", "SendByte", cmd[1])
+            err = pmbus.SendByte(devName, regAddr[0])
+
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Failed to send byte data! addr=0x%x", regAddr[0])
+                err = errType.FAIL
+            }
+
+        default:
+            cli.Println("e", "Unsupported cmd", cmd[0])
+            err = errType.FAIL
+            break
+        }
+    }
+
+    if errgo = scanner.Err(); errgo != nil {
+        cli.Println("e", "Failed to read file:", fileName, errgo)
+        err = errType.FAIL
+    }
+
+    if err != errType.SUCCESS {
+        cli.Println("i", mode, "failed!", err)
+    } else {
+        cli.Println("i", mode, "Done")
+    }
+
     return
 }

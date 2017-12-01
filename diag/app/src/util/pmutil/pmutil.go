@@ -75,7 +75,7 @@ func dispStatusAll() {
     }
 }
 
-func info() {
+func list() {
     cli.Println("i", "--------------------")
     cli.Printf("i", "%-15s %-10s %-5s %-5s", "Device", "Component", "Bus", "DevAddr")
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -189,6 +189,7 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err 
                 cli.Println("e", "Failed to read block device", devName, "at", regAddr)
             } else {
                 cli.Printf("i", "Read block device %s at addr 0x%x with %d bytes", devName, regAddr, byteCnt)
+                cli.Printf("i", "0x%x", dataBuf)
                 for i:=0; i<len(dataBuf); i++ {
                     cli.Printf("i", "data[%d] = 0x%x", i, dataBuf[i])
                 }
@@ -208,10 +209,52 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err 
     return
 }
 
+func program (devName string, fileName string, verbose bool) (err int) {
+    var tps tpsAll.TpsAll
+    var tps53659 tps53659.TPS53659
+
+    for _, vrm := range(hwInfo.vrmTbl) {
+        if devName != vrm.Name {
+            continue
+        }
+        if vrm.Comp == "TPS53659" {
+            tps = &tps53659
+        } else {
+            continue
+        }
+        err = tps.ProgramVerifyNvm(devName, fileName, "PROGRAM", verbose)
+        return
+    }
+    cli.Println("e", "Faied to find device", devName)
+    err = errType.INVALID_PARAM
+    return
+}
+
+func verify (devName string, fileName string, verbose bool) (err int) {
+    var tps tpsAll.TpsAll
+    var tps53659 tps53659.TPS53659
+
+    for _, vrm := range(hwInfo.vrmTbl) {
+        if devName != vrm.Name {
+            continue
+        }
+        if vrm.Comp == "TPS53659" {
+            tps = &tps53659
+        } else {
+            continue
+        }
+        err = tps.ProgramVerifyNvm(devName, fileName, "VERIFY", verbose)
+        return
+    }
+    cli.Println("e", "Faied to find device", devName)
+    err = errType.INVALID_PARAM
+    return
+}
+
 func main() {
     devNamePtr := flag.String("dev", "ALL", "Device name")
     statusPtr := flag.Bool("status", false, "Device status")
-    infoPtr := flag.Bool("info", false, "VRM info")
+    listPtr := flag.Bool("list", false, "VRM list")
     marginPtr := flag.Bool("margin", false, "Enable voltage marigining")
     pctPtr := flag.Int("pct", 0x0, "Margin percentage")
     readPtr := flag.Bool("rd", false, "Read register value")
@@ -222,6 +265,10 @@ func main() {
     modePtr := flag.String("mode", "b", "r/w mode: byte(b) or word(w)")
     addrPtr := flag.Uint64("addr", 0, "Register addr")
     dataPtr := flag.Uint64("data", 0, "Data value")
+    programPtr := flag.Bool("program", false, "Program with specified file")
+    verifyPtr := flag.Bool("verify", false, "Verify NVM content with specified file")
+    filePtr := flag.String("file", "", "/path/to/image.file")
+    verbosePtr := flag.Bool("verbose", false, "Verbose")
     flag.Parse()
 
     //cli.Println("devNamePtr:", *devNamePtr, "statusPtr:", *statusPtr, "marginPtr:", *marginPtr, "pctPtr:", *pctPtr)
@@ -231,6 +278,7 @@ func main() {
     data := *dataPtr
     mode := strings.ToUpper(*modePtr)
     pct := *pctPtr
+    verbose := *verbosePtr
     if *statusPtr == true {
         if *devNamePtr == "ALL" {
             dispStatusAll()
@@ -252,8 +300,8 @@ func main() {
         return
     }
 
-    if *infoPtr == true {
-        info()
+    if *listPtr == true {
+        list()
         return
     }
 
@@ -282,5 +330,12 @@ func main() {
         return
     }
 
+    if *programPtr == true {
+        program(devName, *filePtr, verbose)
+    }
+
+    if *verifyPtr == true {
+        verify(devName, *filePtr, verbose)
+    }
 }
 

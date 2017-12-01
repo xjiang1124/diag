@@ -19,4 +19,5 @@ type TpsAll interface {
     SendByte(devName string, data byte) (err int)
     ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int)
     WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int)
+    ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool) (err int)
 }
