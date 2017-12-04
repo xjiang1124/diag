@@ -36,6 +36,28 @@ func init() {
     }
 }
 
+func devInfo(devName string) {
+    var tps tpsAll.TpsAll
+    var tps53659 tps53659.TPS53659
+    var tps549a20 tps549a20.TPS549A20
+
+    for _, vrm := range(hwInfo.vrmTbl) {
+        if devName != vrm.Name {
+            continue
+        }
+        if vrm.Comp == "TPS53659" {
+            tps = &tps53659
+        } else if vrm.Comp == "TPS549A20" {
+            tps = &tps549a20
+        } else {
+            continue
+        }
+        tps.Info(vrm.Name)
+        return
+    }
+    cli.Println("e", "Faied to find device", devName)
+}
+
 func dispStatus(devName string) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
@@ -255,6 +277,7 @@ func main() {
     devNamePtr := flag.String("dev", "ALL", "Device name")
     statusPtr := flag.Bool("status", false, "Device status")
     listPtr := flag.Bool("list", false, "VRM list")
+    infoPtr := flag.Bool("info", false, "Device info")
     marginPtr := flag.Bool("margin", false, "Enable voltage marigining")
     pctPtr := flag.Int("pct", 0x0, "Margin percentage")
     readPtr := flag.Bool("rd", false, "Read register value")
@@ -337,5 +360,10 @@ func main() {
     if *verifyPtr == true {
         verify(devName, *filePtr, verbose)
     }
+
+    if *infoPtr == true {
+        devInfo(devName)
+    }
+
 }
 

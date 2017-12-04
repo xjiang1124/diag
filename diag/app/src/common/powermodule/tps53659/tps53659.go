@@ -7,6 +7,7 @@ import (
     "math"
     "os"
     "reflect"
+    "sort"
     "strings"
 
     "common/cli"
@@ -18,22 +19,37 @@ import (
     "hardware/tps53659Reg"
 )
 
-type TPS53659 struct {
-    numPhases int
-}
-
 const (
     DEVICE_ID = 0x59
     VERIFY_FLAG = "=== READ VERIFY ==="
 )
 
+type TPS53659 struct {
+    numPhases int
+}
+
+type DEV_INFO struct {
+    addr uint64
+    numByte int
+    access string
+}
+
 var channelMap map[string]byte
+var devInfoMap map[string]DEV_INFO
 
 func init() {
     channelMap = make(map[string]byte)
     channelMap["VRM_CAPRI_DVDD"] = 0
     channelMap["VRM_CAPRI_AVDD"] = 1
 
+    devInfoMap = make(map[string]DEV_INFO)
+    devInfoMap["MFR_ID"] = DEV_INFO{tps53659Reg.MFR_ID, 2, "BLOCK"}
+    devInfoMap["MFR_MODEL"] = DEV_INFO{tps53659Reg.MFR_MODEL, 2, "BLOCK"}
+    devInfoMap["MFR_REVISION"] = DEV_INFO{tps53659Reg.MFR_REVISION, 2, "BLOCK"}
+    devInfoMap["MFR_DATE"] = DEV_INFO{tps53659Reg.MFR_DATE, 2, "BLOCK"}
+    devInfoMap["MFR_SERIAL"] = DEV_INFO{tps53659Reg.MFR_SERIAL, 4, "BLOCK"}
+    devInfoMap["IC_DEVICE_ID"] = DEV_INFO{tps53659Reg.IC_DEVICE_ID, 1, "BLOCK"}
+    devInfoMap["IC_DEVICE_REV"] = DEV_INFO{tps53659Reg.IC_DEVICE_REV, 1, "BLOCK"}
 }
 
 /*
@@ -647,6 +663,7 @@ func (tps53659 *TPS53659) WriteBlock(devName string, regAddr uint64, dataBuf []b
 
 func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool) (err int) {
     verifyStart := false
+    var errCnt int
 
     if mode != "VERIFY" && mode != "PROGRAM" {
         cli.Println("e", "Invalid mode:", mode)
@@ -678,6 +695,7 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
     for scanner.Scan() {
         if mode == "VERIFY" {
             // Image after this flag is form read verification
+            // Start to verify after the flag
             if strings.Contains(scanner.Text(), VERIFY_FLAG) {
                 verifyStart = true
                 continue
@@ -694,7 +712,7 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
         }
 
         cmd := strings.Split(scanner.Text(), ",")
-        cli.Println("i", cmd)
+        if verbose == true { cli.Println("i", cmd) }
         // Remove prefix "0x". regAddr is always a byte
         regAddr, _ := hex.DecodeString(cmd[1][2:4])
 
@@ -710,33 +728,37 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
                 err = errType.FAIL
                 return
             }
-            cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+            if verbose == true {
+                cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+            }
             readData, err = pmbus.ReadByte(devName, uint64(regAddr[0]))
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read byte data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
             if readData != data[0] {
                 cli.Printf("e", "Data mismatch! addr=0x%x, expected 0x%x, read back 0x%x", regAddr[0], data[0], readData)
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
         case "ReadWord":
             var readData uint16
             dataStr := cmd[2][2:len(cmd[2])]
             dataArr, _ := hex.DecodeString(dataStr)
             data := uint16(dataArr[0]) | uint16(dataArr[1] << 8)
-            cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+            if verbose == true {
+                cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+            }
 
             readData, err = pmbus.ReadWord(devName, uint64(regAddr[0]))
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read word data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
             if readData != data {
                 cli.Printf("e", "Data mismatch! addr=0x%x, expected 0x%x, read back 0x%x", regAddr[0], data, readData)
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
         case "BlockRead":
@@ -749,18 +771,20 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
             readData := make([]byte, dataLen)
             var byteCnt int
             byteCnt, err = pmbus.ReadBlock(devName, uint64(regAddr[0]), readData)
-            cli.Printf("i", "Expected 0x%x; received 0x%x", data, readData)
+            if verbose == true {
+                cli.Printf("i", "Expected 0x%x; received 0x%x", data, readData)
+            }
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read block data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
             if byteCnt != int(dataLen) {
                 cli.Println("e", "Read block data length mismatch! expected", dataLen, "received", byteCnt)
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
             if reflect.DeepEqual(data, readData) != true {
                 cli.Printf("e", "Read block data mismatch! addr=0x%x, expected 0x%x, received 0x%x", regAddr[0], data, readData)
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
         case "WriteByte":
@@ -770,7 +794,7 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
             err = pmbus.WriteByte(devName, uint64(regAddr[0]), data[0])
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write byte data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
         case "WriteWord":
@@ -781,42 +805,38 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
             err = pmbus.WriteWord(devName, uint64(regAddr[0]), data)
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write word data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
         case "BlockWrite":
+            // Do not check number of byte written. API always return 0
             dataStr := cmd[2][4:len(cmd[2])-2]
             data, _ := hex.DecodeString(dataStr)
-            //dataLenStr := cmd[2][2:4]
-            //dataLenArr, _ := hex.DecodeString(dataLenStr)
-            //dataLen := dataLenArr[0]
 
-            //cli.Println("i", dataStr, dataLenStr, data)
-            cli.Printf("i", "0x%x", data)
-            //var byteCnt int
+            if verbose == true {
+                cli.Printf("i", "0x%x", data)
+            }
             _, err = pmbus.WriteBlock(devName, uint64(regAddr[0]), data)
 
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write block data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
-            //if byteCnt != int(dataLen) {
-            //    cli.Println("e", "Write block data length mismatch! expected", dataLen, "received", byteCnt)
-            //    err = errType.FAIL
-            //}
 
         case "SendByte":
-            cli.Println("i", "SendByte", cmd[1])
+            if verbose == true {
+                cli.Println("i", "SendByte", cmd[1])
+            }
             err = pmbus.SendByte(devName, regAddr[0])
 
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to send byte data! addr=0x%x", regAddr[0])
-                err = errType.FAIL
+                errCnt = errCnt + 1
             }
 
         default:
             cli.Println("e", "Unsupported cmd", cmd[0])
-            err = errType.FAIL
+            errCnt = errCnt + 1
             break
         }
     }
@@ -826,7 +846,8 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
         err = errType.FAIL
     }
 
-    if err != errType.SUCCESS {
+    if errCnt != 0 {
+        err = errType.FAIL
         cli.Println("i", mode, "failed!", err)
     } else {
         cli.Println("i", mode, "Done")
@@ -834,3 +855,48 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
 
     return
 }
+
+func (tps53659 *TPS53659) Info(devName string) (err int) {
+    var outKey string
+    var outValue string
+    var dataBuf []byte
+    //var numByte int
+
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
+    // Sort keys; otherwise the sequence will be random
+    keys := make([]string, 0)
+    for k, _ := range(devInfoMap) {
+        keys = append(keys, k)
+    }
+    sort.Strings(keys)
+
+    cli.Println("i", "--------------------")
+    outKey = fmt.Sprintf("%-14s ", "Device")
+    outValue = fmt.Sprintf("%-14s ", devName)
+    for _, k := range(keys) {
+        v := devInfoMap[k]
+        if v.access == "BLOCK" {
+            dataBuf = make([]byte, v.numByte)
+            //numByte, err = pmbus.ReadBlock(devName, v.addr, dataBuf)
+            _, err = pmbus.ReadBlock(devName, v.addr, dataBuf)
+        }
+        outKey = outKey + fmt.Sprintf("%-14s", k)
+        outValue = outValue + fmt.Sprintf("0x%-11x ", dataBuf)
+    }
+    cli.Println("i", outKey)
+    cli.Println("i", outValue)
+
+    return
+}
+
+

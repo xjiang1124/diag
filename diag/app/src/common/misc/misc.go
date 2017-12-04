@@ -277,3 +277,12 @@ func TrimPrefix(s, prefix string) string {
     return s
 }
 
+/*
+    Return keys of the given map
+ */
+func Keys(m map[string]interface{}) (keys []string) {
+    for k := range m {
+        keys = append(keys, k)
+    }
+    return keys
+}

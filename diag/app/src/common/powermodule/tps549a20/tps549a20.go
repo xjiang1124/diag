@@ -206,3 +206,8 @@ func (tps549a20 *TPS549A20) ProgramVerifyNvm(devName string, fileName string, mo
     cli.Println("i", "Write block is not supported!")
     return
 }
+
+func (tps549a20 *TPS549A20) Info(devName string) (err int) {
+    cli.Println("i", "Write block is not supported!")
+    return
+}

@@ -213,28 +213,28 @@ func Printf(lvl string, format string, a ...interface{}) error {
     if initStatus == INIT_DONE {
         switch lvl {
         case "debug", "d":
-            Debug.Println(outStr)
+            Debug.Printf("%s", outStr)
         case "info", "i":
-            Info.Println(outStr)
+            Info.Printf("%s", outStr)
         case "warn", "w":
-            Warning.Println(outStr)
+            Warning.Printf("%s", outStr)
         case "error", "e", "f":
-            Error.Println(outStr)
+            Error.Printf("%s", outStr)
         default:
-            Debug.Println(outStr)
+            Debug.Printf("%s", outStr)
         }
     } else {
         switch lvl {
         case "debug", "d":
-            fmt.Println("[DEBUG]  ", outStr)
+            fmt.Printf("[DEBUG]   %s", outStr)
         case "info", "i":
-            fmt.Println("[INFO]   ", outStr)
+            fmt.Printf("[INFO]    %s", outStr)
         case "warn", "w":
-            fmt.Println("[WARNING]", outStr)
+            fmt.Printf("[WARNING] %s", outStr)
         case "error", "e", "f":
-            fmt.Println("[ERROR]  ", outStr)
+            fmt.Printf("[ERROR]   %s", outStr)
         default:
-            fmt.Println("[DEBUG]  ", outStr)
+            fmt.Printf("[DEBUG]   %s", outStr)
         }
     }
 
