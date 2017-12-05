@@ -1,12 +1,13 @@
-SRC_DIR=		\
-	diagmgr 	\
-	dsp/pmbus   \
-	dsp/qsfp    \
-	dsp/rtc     \
-	dsp/pcieh   \
-	dsp/tempsensor     \
-	util/sysmon	\
-	util/periutil
+SRC_DIR=				\
+	diagmgr 			\
+	dsp/pmbus   		\
+	dsp/qsfp    		\
+	dsp/rtc     		\
+	dsp/pcieh   		\
+	dsp/tempsensor     	\
+	util/sysmon			\
+	util/periutil 		\
+	util/pmutil
 
 #C_SRC_DIR=i2c
 
@@ -21,4 +22,5 @@ GO_TEST_DIR=	\
 	common/rtc/pcf85263a			\
 	common/pmbCmd					\
 	common/dmutex					\
-	util/periutil					
+	util/periutil					\
+	util/pmutil						
