@@ -788,9 +788,13 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
             }
 
         case "WriteByte":
-            dataStr := cmd[2][2:len(cmd[2])-2]
+            dataStr := cmd[2][2:len(cmd[2])]
             data, _ := hex.DecodeString(dataStr)
-            //cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+
+            if verbose == true {
+                cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+            }
+
             err = pmbus.WriteByte(devName, uint64(regAddr[0]), data[0])
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write byte data! addr=0x%x", regAddr[0])
@@ -798,10 +802,13 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
             }
 
         case "WriteWord":
-            dataStr := cmd[2][2:len(cmd[2])-2]
+            dataStr := cmd[2][2:len(cmd[2])]
             dataArr, _ := hex.DecodeString(dataStr)
             data := uint16(dataArr[0]) | uint16(dataArr[1] << 8)
-            //cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+
+            if verbose == true {
+                cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+            }
             err = pmbus.WriteWord(devName, uint64(regAddr[0]), data)
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write word data! addr=0x%x", regAddr[0])
@@ -810,7 +817,7 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
 
         case "BlockWrite":
             // Do not check number of byte written. API always return 0
-            dataStr := cmd[2][4:len(cmd[2])-2]
+            dataStr := cmd[2][4:len(cmd[2])]
             data, _ := hex.DecodeString(dataStr)
 
             if verbose == true {

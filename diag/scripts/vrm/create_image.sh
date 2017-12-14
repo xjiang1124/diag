@@ -10,5 +10,5 @@ grep -e "^Read" -e "^BlockRead" -e "^Write" -e "^BlockWrite" -e "^SendByte" pro_
 echo "=== READ VERIFY ===" > ver_temp1
 grep -e "^Read" -e "^BlockRead" -e "^Write" -e "^BlockWrite" -e "^SendByte" ver_temp >> ver_temp1
 
-cat pro_temp1 ver_temp1 > naples_53659.img
-sed -i 's/,0x62,/,/g' naples_53659.img
+cat pro_temp1 ver_temp1 > naples_53659_pre.img
+sed -i 's/,0x62,/,/g' naples_53659_pre.img
