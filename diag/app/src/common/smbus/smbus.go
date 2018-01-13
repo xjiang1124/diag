@@ -138,6 +138,20 @@ func SendByte(devName string, data byte) (err int) {
     return
 }
 
+func ReceiveByte(devName string) (data byte, err int) {
+    if smbInfo.devName != devName {
+        err = errType.SMB_INF_INVALID
+        return
+    }
+    data, errgo := smbInfo.smb.Read_byte()
+    if errgo != nil {
+        cli.Println("f", errgo)
+        err = errType.SMB_WRITE_FAIL
+        return
+    }
+    return
+}
+
 /**
  * ReadBlock
  * Read block smbus command. LSB is at highest byte. MSB is at byte[0]

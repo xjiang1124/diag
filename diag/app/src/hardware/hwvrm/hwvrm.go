@@ -15,6 +15,8 @@ type VrmInfo struct {
     Channel byte // TPS53659 only
 }
 
+// Naples PMBus table
+// devAddr is 7-bit address
 var VrmTblNaples = []VrmInfo {
     //       name              comp         Bus    devAddr  channel 
     VrmInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x2,   0xC4,    0x0 },
@@ -23,12 +25,25 @@ var VrmTblNaples = []VrmInfo {
     VrmInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x38,    0x0 },
 }
 
+// NIC power board PMBus table
+// bus field is linux I2C device index at /dev/i2c-x
+// devAddress is 7-bit address
 var VrmTblNicPower = []VrmInfo {
     //       name              comp         Bus    devAddr  channel 
     VrmInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x0,   0x62,    0x0 },
     VrmInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x0,   0x62,    0x1 },
     VrmInfo {"VRM_3V3",        "TPS549A20", 0x0,   0x1C,    0x0 },
     VrmInfo {"VRM_1V2",        "TPS549A20", 0x0,   0x1B,    0x0 },
+}
+
+// MTP PMBus table
+// bus field is linux I2C device index at /dev/i2c-x
+// devAddress is 7-bit address
+var VrmTblMtp = []VrmInfo {
+    //       name    comp         Bus  devAddr  channel 
+    VrmInfo {"PSU1", "BEL_POWER", 0x0, 0xB0,    0x0 },
+    VrmInfo {"PSU2", "BEL_POWER", 0x0, 0xB0,    0x0 },
+    VrmInfo {"DC",   "TPS549A20", 0x0, 0x38,    0x0 },
 }
 
 var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }
@@ -61,6 +76,9 @@ func GetVrmTable(cardName string) (vrmTbl []VrmInfo, err int) {
         return
     } else if cardName == "NIC_POWER" {
         vrmTbl = VrmTblNicPower
+        return
+    } else if cardName == "MTP" {
+        vrmTbl = VrmTblMtp
         return
     } else {
         cli.Println("f", "Unsupported card:", cardName)

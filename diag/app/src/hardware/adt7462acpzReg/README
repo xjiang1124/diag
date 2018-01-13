@@ -1,0 +1,7 @@
+grep -A1 '^0x.*$' temp >> temp1
+cat temp1 | grep -v "-" >> temp2
+sed 's/,//' temp2 >> temp3
+tr a-z A-Z < temp3 >> temp4
+sed 's/0X/0x/' temp4 >> temp5
+# Manually get reg_pre
+cat reg_pre | awk -F " " '{print "    " $2 " uint64 = " $1}' > adt7462acpzReg.go

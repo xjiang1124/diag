@@ -1,0 +1,585 @@
+onfig 0 R/W SW Reset VID # Bytes # Bytes #Bytes # Bytes # Bytes # Bytes 0x20 Yes Yes
+0x01 Config 1 R/W RDY Lock SC DFS ALERT Res Res Mon 0x81 Yes Yes
+0x02 Config 2 R/W #FP #FP FMS VRD2 VRD1 PWM Res FAST 0x80 Yes Yes
+0x03 Config 3 R/W V_Core_
+Low
+XOR CI_R TT VID_T SDA SCL GPIO 0x00 Yes Yes
+0x07 TACH
+Enable
+R/W T8E T7E T6E T5E T4E T3E T2E T1E 0x00 Yes Yes
+0x08 TACH
+Config
+R/W Res Res Res Res DC 4/8 DC 3/7 DC 2/6 DC 1/5 0x0F Yes Yes
+0x09 GPIO1_
+Bhvr
+R/W D4 P4 D3 P3 D2 P2 D1 P1 0x00 Yes Yes
+0x0A GPIO2_
+Bhvr
+R/W D8 P8 D7 P7 D6 P6 D5 P5 0x00 Yes Yes
+0x0B TMIN_Cal1 R/W Res Res P2R2 P2R1 P1R2 P1R1 R2 R1 0x00 Yes Yes
+0x0C TMIN_Cal2 R/W Res Ctrl
+Loop
+Select
+CYR2 CYR2 CYR2 CYR1 CYR1 CYR1 0x40 Yes Yes
+0x0D THERM
+Conf
+R/W TW2 TW2 TW2 TW1 TW1 TW1 B2 B1 0x00 Yes Yes
+0x0E Conf_
+THERM1
+R/W Res Res Res R3 R2 R1 Local T1TE 0x00 Yes Yes
+0x0F Conf_
+THERM2
+R/W Res Res Res R3 R2 R1 Local T2TE 0x00 Yes Yes
+0x10 Pin Conf 1 R/W VID D1 D3 Pin 1 Pin 2 Pin 3 Pin 4 Pin 7 0x7F Yes Yes
+0x11 Pin Conf 2 R/W Pin 8 Pin 13 Pin 15 Pin 19 Pin 21 Pin 22 Pin 23 Pin 23 0xCE Yes Yes
+0x12 Pin Conf 3 R/W Pin 24 Pin 24 Pin 25 Pin 25 Pin 26 Pin 26 Pin 27 Res 0x42 Yes Yes
+0x13 Pin Conf 4 R/W Pin 28 Pin 28 Pin 29 Pin 29 Pin 31 Pin 32 Res Res 0xFC Yes Yes
+0x14 Easy Conf R/W Res Res Res Op5 Op4 Op3 Op2 Op1 0x01 Yes Yes
+0x16 EDO
+Enable
+R/W CS CS CS CS CS SC EDO2 EDO1 0x00 Yes Yes
+0x18 Attenuators
+1 En
+R/W Pin 22 Pin 21 Pin 19 Pin 15 Pin 13 Pin 8 Pin 7 Res 0xFF Yes Yes
+0x19 Attenuators
+2 En
+R/W Res Res Pin 29 Pin 28 Res Pin 25 Pin 24 Pin 23 0x37 Yes Yes
+0x1A Enhanced
+Acoustics 1
+R/W RR2 RR2 RR2 RR1 RR1 RR1 En2 En1 0x00 Yes Yes
+0x1B Enhanced
+Acoustics 2
+R/W RR4 RR4 RR4 RR3 RR3 RR3 En4 En3 0x00 Yes Yes
+0x1C Fan Freewheel
+Test
+R/W Fan 8 Fan 7 Fan 6 Fan 5 Fan 4 Fan 3 Fan 2 Fan 1 0x00 Yes Yes
+0x1D Fans
+Present
+R/W F8P F7P F6P F5P F4P F3P F2P F1P 0x00 Yes Yes
+0x1E Fan Freewheel
+TestEn
+R/W Fan 8 Fan 7 Fan 6 Fan 5 Fan 4 Fan 3 Fan 2 Fan 1 0x00 Yes Yes
+0x21 PWM1
+Config
+R/W BHVR BHVR BHVR INV SLOW Spin Spin Spin 0x11 Yes Yes
+0x22 PWM2
+Config
+R/W BHVR BHVR BHVR INV SLOW Spin Spin Spin 0x31 Yes Yes
+0x23 PWM3
+Config
+R/W BHVR BHVR BHVR INV SLOW Spin Spin Spin 0x51 Yes Yes
+0x24 PWM4
+Config
+R/W BHVR BHVR BHVR INV SLOW Spin Spin Spin 0x71 Yes Yes
+0x25 PWM1,
+PWM2
+Freq
+R/W F2 F2 F2 F1 F1 F1 Min 2 Min 1 0x90 Yes Yes
+0x26 PWM3,
+PWM4
+Freq
+R/W F4 F4 F4 F3 F3 F3 Min 4 Min 3 0x90 Yes Yes
+ADT7462
+www.onsemi.com
+56
+Table 34. REGISTER MAP
+Addr
+Lock
+able
+SW
+Reset
+De-
+Description R/W Bit 7 Bit 6 Bit 5 Bit 4 Bit 3 Bit 2 Bit 1 Bit 0 fault
+0x28 PWM1 Min R/W 7 6 5 4 3 2 1 0 0x80 Yes Yes
+0x29 PWM2 Min R/W 7 6 5 4 3 2 1 0 0x80 Yes Yes
+0x2A PWM3 Min R/W 7 6 5 4 3 2 1 0 0x80 Yes Yes
+0x2B PWM4 Min R/W 7 6 5 4 3 2 1 0 0x80 Yes Yes
+0x2C PWM1 to
+PWM4 Max
+R/W 7 6 5 4 3 2 1 0 0xC0 Yes Yes
+0x30 Thermal
+Mask 1
+R/W R3D R2D R1D R3 R2 R1 Local Res 0x00 Yes No
+0x31 Thermal
+Mask 2
+R/W VRD2 VRD1 T2S T2A T2% T1S T1A T1% 0xC0 Yes No
+0x32 Voltage
+Mask 1
+R/W P23 +5V P19 P15 +3.3V +12V3 +12V2 +12V1 0x00 Yes No
+0x33 Voltage
+Mask 2
+R/W +1.5V1
+(ICH)
++1.5V2
+(3GIO)
+P26 P25 P24 Res Res Res 0x00 Yes No
+0x34 Fan Mask R/W Fan 8 Fan 7 Fan 6 Fan 5 Fan 4 Fan 3 Fan 2 Fan 1 0x00 Yes No
+0x35 Digital
+Mask
+R/W CI VID SCSI2 SCSI1 FAN2MAX Res Res Res 0x38 Yes No
+0x36 GPIO Mask R/W GPIO8 GPIO7 GPIO6 GPIO5 GPIO4 GPIO3 GPIO2 GPIO1 0x00 Yes No
+0x37 EDO Mask
+1
+R/W Volt Temp Fan Res GPIO4 GPIO3 GPIO2 GPIO1 0x00 Yes No
+0x38 EDO Mask
+2
+R/W Volt Temp Fan Res GPIO4 GPIO3 GPIO2 GPIO1 0x00 Yes No
+0x3D Device ID R 7 6 5 4 3 2 1 0 0x62 No N/A
+0x3E Comp ID R 7 6 5 4 3 2 1 0 0x41 No N/A
+0x3F Rev No R 7 6 5 4 3 2 1 0 0x04 No N/A
+0x44 Local Low
+Temp Limit
+R/W 7 6 5 4 3 2 1 0 0x40 No No
+0x45 Remote
+1/Pin 15
+Low Temp
+Limit
+R/W 7 6 5 4 3 2 1 0 0x40 No No
+0x46 Remote 2
+Low Temp
+Limit
+R/W 7 6 5 4 3 2 1 0 0x40 No No
+0x47 Remote
+3/Pin 19
+Low Temp
+Limit
+R/W 7 6 5 4 3 2 1 0 0x40 No No
+0x48 Local High
+Limit
+R/W 7 6 5 4 3 2 1 0 0x95 No No
+0x49 Remote
+1/Pin 15
+High Limit
+R/W 7 6 5 4 3 2 1 0 0x95 No No
+0x4A Remote 2
+High Limit
+R/W 7 6 5 4 3 2 1 0 0x95 No No
+0x4B Remote
+3/Pin 19
+High Limit
+R/W 7 6 5 4 3 2 1 0 0x95 No No
+0x4C Local
+THERM1/
++1.5V2
+(3GIO)
+High
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x4D Remote 1
+THERM1
+Limit
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x4E Remote 2
+THERM1
+Limit
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x4F Remote 3
+THERM1
+Limit
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+ADT7462
+www.onsemi.com
+57
+Table 34. REGISTER MAP
+Addr
+Lock
+able
+SW
+Reset
+De-
+Description R/W Bit 7 Bit 6 Bit 5 Bit 4 Bit 3 Bit 2 Bit 1 Bit 0 fault
+0x50 Local
+THERM2/
++1.5V1
+(ICH) High
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x51 Remote 1
+THERM2
+Limit
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x52 Remote 2
+THERM2
+Limit
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x53 Remote 3
+THERM2
+Limit
+R/W 7 6 5 4 3 2 1 0 0xA4 No Yes
+0x54 Local/Remote1
+Temp Hyst
+R/W LH LH LH LH R1H R1H R1H R1H 0x44 No Yes
+0x55 Remote 2/
+Remote 3
+Temp Hyst
+R/W R2H R2H R2H R2H R3H R3H R3H R3H 0x44 No Yes
+0x56 Local Offset R/W 7 6 5 4 3 2 1 0 0x00 No Yes
+0x57 Remote 1
+Offset
+R/W 7 6 5 4 3 2 1 0 0x00 No Yes
+0x58 Remote 2
+Offset
+R/W 7 6 5 4 3 2 1 0 0x00 No Yes
+0x59 Remote 3
+Offset
+R/W 7 6 5 4 3 2 1 0 0x00 No Yes
+0x5A Remote 1
+Operating
+Point
+R/W 7 6 5 4 3 2 1 0 0xA4 Yes Yes
+0x5B Remote 2
+Operating
+Point
+R/W 7 6 5 4 3 2 1 0 0xA4 Yes Yes
+0x5C Local Temp
+TMIN
+R/W 7 6 5 4 3 2 1 0 0x9A Yes Yes
+0x5D Remote 1
+Temp TMIN
+R/W 7 6 5 4 3 2 1 0 0x9A Yes Yes
+0x5E Remote 2
+Temp TMIN
+R/W 7 6 5 4 3 2 1 0 0x9A Yes Yes
+0x5F Remote 3
+Temp TMIN
+R/W 7 6 5 4 3 2 1 0 0x9A Yes Yes
+0x60 Local
+TRANGE/
+Hyst
+R/W Range Range Range Range Hys Hys Hys Hys 0xC4 Yes Yes
+0x61 Remote 1
+TRANGE/
+Hyst
+R/W Range Range Range Range Hys Hys Hys Hys 0xC4 Yes Yes
+0x62 Remote 2
+TRANGE/
+Hyst
+R/W Range Range Range Range Hys Hys Hys Hys 0xC4 Yes Yes
+0x63 Remote 3
+TRANGE/
+Hyst
+R/W Range Range Range Range Hys Hys Hys Hys 0xC4 Yes Yes
+0x64 Operating
+Point Hyst
+R/W Hys Hys Hys Hys Res Res Res Res 0x40 Yes Yes
+0x68 +3.3V
+High Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No No
+0x69 Pin 23
+Voltage
+High Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No No
+0x6A Pin 24
+Voltage
+High Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No No
+0x6B Pin 25
+Voltage
+High Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No No
+ADT7462
+www.onsemi.com
+58
+Table 34. REGISTER MAP
+Addr
+Lock
+able
+SW
+Reset
+De-
+Description R/W Bit 7 Bit 6 Bit 5 Bit 4 Bit 3 Bit 2 Bit 1 Bit 0 fault
+0x6C Pin 26
+Voltage
+High Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No No
+0x6D +12V1
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x6E +12V2
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x6F +12V3
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x70 +3.3V Low
+Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x71 +5V Low
+Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x72 Pin 23
+Voltage
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x20 No No
+0x73 Pin 24
+Voltage
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x74 Pin 25
+Voltage
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x75 Pin 26
+Voltage
+Low Limit
+R/W 7 6 5 4 3 2 1 0 0x80 No No
+0x76 +1.5V2
+(3GIO) Low
+Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x77 +1.5V1
+(ICH) Low
+Limit
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0x78 TACH1
+Limit/VID
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x79 TACH2
+Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x7A TACH3
+Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x7B TACH4
+Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x7C TACH5/+12
+V1 High
+Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x7D TACH6/+12
+V2 High
+Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x7E TACH7/+5V
+High Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x7F TACH8/+12
+V3 High
+Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x80 THERM1
+Timer Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x81 THERM2
+Timer Limit
+R/W 7 6 5 4 3 2 1 0 0xFF No Yes
+0x88 Local Temp
+Value,
+LSBs
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x89 Local Temp
+Value,
+MSBs
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x8A Remote 1
+Temp,
+LSBs
+R 7 6 5 4 3 2 1 0 0x00 No No
+ADT7462
+www.onsemi.com
+59
+Table 34. REGISTER MAP
+Addr
+Lock
+able
+SW
+Reset
+De-
+Description R/W Bit 7 Bit 6 Bit 5 Bit 4 Bit 3 Bit 2 Bit 1 Bit 0 fault
+0x8B Remote 1
+Temp,
+MSBs,
+Pin 15 Volt
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x8C Remote 2
+Temp,
+LSBs
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x8D Remote 2
+Temp,
+MSBs
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x8E Remote 3
+Temp,
+LSBs
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x8F Remote 3
+Temp,
+MSBs,
+Pin 19 Volt
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x90 Pin 23
+Voltage
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x91 Pin 24
+Voltage
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x92 Pin 25
+Voltage
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x93 Pin 26
+Voltage
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x94 +1.5V1
+(ICH) Volt
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x95 +1.5V2
+(3GIO)
+Voltage
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x96 +3.3V
+Voltage
+R 7 6 5 4 3 2 1 0 0x00 No No
+0x97 VID Value R 7 6 5 4 3 2 1 0 0x00 No No
+0x98 TACH1
+Value,
+LSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x99 TACH1
+Value,
+MSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x9A TACH2
+Value,
+LSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x9B TACH2
+Value,
+MSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x9C TACH3
+Value,
+LSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x9D TACH3
+Value,
+MSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x9E TACH4
+Value,
+LSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0x9F TACH4
+Value,
+MSBs
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA0 Unused R 7 6 5 4 3 2 1 0 N/A No No
+0xA1 Unused R 7 6 5 4 3 2 1 0 N/A No No
+0xA2 TACH5
+Value, LSB
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA3 TACH5
+MSB/
++12V1V
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA4 TACH6
+Value, LSB
+R 7 6 5 4 3 2 1 0 0xFF No No
+ADT7462
+www.onsemi.com
+60
+Table 34. REGISTER MAP
+Addr
+Lock
+able
+SW
+Reset
+De-
+Description R/W Bit 7 Bit 6 Bit 5 Bit 4 Bit 3 Bit 2 Bit 1 Bit 0 fault
+0xA5 TACH6
+MSB/+12V
+2 Voltage
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA6 TACH7
+Value, LSB
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA7 TACH7
+MSB/+5V
+Voltage
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA8 TACH8
+Value, LSB
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xA9 TACH8
+MSB/+12V
+3 Voltage
+R 7 6 5 4 3 2 1 0 0xFF No No
+0xAA PWM1
+Duty Cycle
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0xAB PWM2
+Duty Cycle
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0xAC PWM3
+Duty Cycle
+R/W 7 6 5 4 3 2 1 0 0xC0 No No
+0xAD PWM4
+Duty Cycle
+R/W 7 6 5 4 3 2 1 0 0x00 No No
+0xAE THERM1
+%On−Time
+R 7 6 5 4 3 2 1 0 0x00 No No
+0xAF THERM2
+%On−Time
+R 7 6 5 4 3 2 1 0 0x00 No No
+0xB8 Thermal
+Status 1,
+Host
+R R3D R2D R1D R3 R2 R1 Local Res 0x00 Yes No
+0xB9 Thermal
+Status 2,
+Host
+R VR2 VR1 T2S T2A T2% T1S T1A T1% 0x00 Yes No
+0xBA Thermal
+Status 3,
+Host
+R R3T2 R2T2 R1T2 LT2 R3T1 R2T1 R1T1 LT1 0x00 Yes No
+0xBB Voltage
+Status 1,
+Host
+R Pin 23 +5V Pin 19 Pin 15 +3.3V +12V3 +12V2 +12V1 0x00 Yes No
+0xBC Voltage
+Status 2,
+Host
+R +1.5V1
+(ICH)
++1.5V2
+(3GIO)
+Pin 26 Pin 25 Pin 24 Res Res Res 0x00 Yes No
+0xBD Fan Status,
+Host
+R Fan 8 Fan 7 Fan 6 Fan 5 Fan 4 Fan 3 Fan 2 Fan 1 0x00 Yes No
+0xBE Digital
+Status,
+Host
+R CI VID SCSI2 SCSI1 FAN2MAX Res Res Res 0x00 Yes No
+0xBF GPIO
+Status,
+Host
+R/W GPIO8 GPIO7 GPIO6 GPIO5 GPIO4 GPIO3 GPIO2 GPIO1 0x00 Yes No
+0xC0 Thermal
+Status 1,
+BMC
+R R3D R2D R1D R3 R2 R1 Local Res 0x00 Yes No
+0xC1 Thermal
+Status 2,
+BMC
+R VR2 VR1 T2S T2A T2% T1S T1A T1% 0x00 Yes No
+0xC3 Voltage
+Status 1,
+BMC
+R Pin 23 +5V Pin 19 Pin 15 +3.3V +12V3 +12V2 +12V1 0x00 Yes No
+0xC4 Voltage
+Status 2,
+BMC
+R +1.5V1
+(ICH)
++1.5V2
+(3GIO)
+Pin 26 Pin 25 Pin 24 Res Res Res 0x00 Yes No
+0xC5 Fan Status,
+BMC
+R Fan 8 Fan 7 Fan 6 Fan 5 Fan 4 Fan 3 Fan 2 Fan 1 0x00 Yes No
+0xC6 Digital
+Status,
+BMC
+R CI VID SCSI2 SCSI1 FAN2MAX Res Res Res 0x00 Yes No
