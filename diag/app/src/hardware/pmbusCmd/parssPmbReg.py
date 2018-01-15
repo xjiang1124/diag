@@ -4,7 +4,7 @@ import re
 import sys
 
 # constant and data structure definition in go
-title_str = """package pmbusReg
+title_str = """package pmbusCmd
 
 // Access mode
 const (
