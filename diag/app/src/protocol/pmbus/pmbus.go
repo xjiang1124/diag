@@ -6,9 +6,9 @@ import (
 
 
     "common/errType"
-    "common/i2c"
+    "protocol/i2c"
     "common/misc"
-    "common/smbus"
+    "protocol/smbus"
     "config"
 )
 

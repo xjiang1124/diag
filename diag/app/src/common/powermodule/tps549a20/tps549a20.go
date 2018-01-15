@@ -8,8 +8,8 @@ import (
     "common/cli"
     "common/dmutex"
     "common/errType"
-    "common/pmbus"
-    "common/smbus"
+    "protocol/pmbus"
+    "protocol/smbus"
     "hardware/tps549a20Reg"
 )
 

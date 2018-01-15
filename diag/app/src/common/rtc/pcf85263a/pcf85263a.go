@@ -3,7 +3,7 @@ package pcf85263a
 import (
     "common/cli"
     "common/errType"
-    "common/i2c"
+    "protocol/i2c"
     "common/misc"
     "hardware/pcf85263aReg"
 )

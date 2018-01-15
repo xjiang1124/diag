@@ -20,7 +20,6 @@ GO_TEST_DIR=	\
 	common/powermodule/tps549a20	\
 	common/tempsensor/tmp422		\
 	common/rtc/pcf85263a			\
-	common/pmbCmd					\
 	common/dmutex					\
 	util/periutil					\
 	util/pmutil						

@@ -9,7 +9,7 @@ import (
     //"common/misc"
     "common/powermodule/tps53659"
     //"common/powermodule/tps549a20"
-    //"common/smbus"
+    //"protocol/smbus"
 
 )
 

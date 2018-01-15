@@ -15,8 +15,7 @@ import (
 
     // Used by swig/C 
     //"unsafe"
-    //"common/i2cCSW"
-    //"common/i2c"
+    //"protocol/i2c"
 )
 
 // #cgo CFLAGS: -I../../../../lib/

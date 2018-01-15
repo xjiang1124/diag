@@ -14,8 +14,8 @@ import (
     "common/dmutex"
     "common/errType"
     "common/misc"
-    "common/pmbus"
-    "common/smbus"
+    "protocol/pmbus"
+    "protocol/smbus"
     "hardware/tps53659Reg"
 )
 
