@@ -40,10 +40,10 @@ var VrmTblNicPower = []VrmInfo {
 // bus field is linux I2C device index at /dev/i2c-x
 // devAddress is 7-bit address
 var VrmTblMtp = []VrmInfo {
-    //       name    comp         Bus  devAddr  channel 
-    VrmInfo {"PSU1", "BEL_POWER", 0x0, 0xB0,    0x0 },
-    VrmInfo {"PSU2", "BEL_POWER", 0x0, 0xB0,    0x0 },
-    VrmInfo {"DC",   "TPS549A20", 0x0, 0x38,    0x0 },
+    //       name     comp         Bus  devAddr  channel 
+    VrmInfo {"PSU_1", "BEL_POWER", 0x0, 0xB0,    0x0 },
+    VrmInfo {"PSU_2", "BEL_POWER", 0x0, 0xB0,    0x0 },
+    VrmInfo {"DC",    "TPS549A20", 0x0, 0x38,    0x0 },
 }
 
 var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }

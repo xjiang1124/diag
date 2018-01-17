@@ -1,6 +1,7 @@
 package dmutex
 
 import (
+    "os"
     "strings"
 
     "github.com/alexflint/go-filemutex"
@@ -15,7 +16,7 @@ type mutexInfo struct {
     mName string
 }
 
-var mutexTbl = []mutexInfo {
+var pwrMutexTbl = []mutexInfo {
     mutexInfo {mName: "QSFP_0"},
     mutexInfo {mName: "TEMP_SENSOR"},
     mutexInfo {mName: "VRM_CAPRI"},
@@ -23,7 +24,28 @@ var mutexTbl = []mutexInfo {
     mutexInfo {mName: "VRM_1V2"},
 }
 
+var mtpMutexTbl = []mutexInfo {
+    mutexInfo {mName: "PSU_0"},
+    mutexInfo {mName: "PSU_1"},
+    mutexInfo {mName: "DC"},
+    mutexInfo {mName: "OSC"},
+    mutexInfo {mName: "FAN_CTLR"},
+}
+
+var mutexTbl  []mutexInfo
+
 func init() {
+    cardName := os.Getenv("CARD_NAME")
+
+    if cardName == "NIC_POWER" {
+        mutexTbl = pwrMutexTbl
+    } else if cardName == "MTP" {
+        mutexTbl = mtpMutexTbl
+    } else {
+        cli.Println("e", "Invalid card name:", cardName)
+        return;
+    }
+
     for i, _ := range(mutexTbl) {
         //lockName := config.DiagNicBinPath+mutexTbl[i].mName+".lock"
         lockName := "/tmp/"+mutexTbl[i].mName+".lock"

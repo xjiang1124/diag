@@ -15,7 +15,6 @@ import (
     "common/errType"
     "common/misc"
     "protocol/pmbus"
-    "protocol/smbus"
     "hardware/tps53659Reg"
 )
 
@@ -155,11 +154,11 @@ func (tps53659 *TPS53659) ReadStatus(devName string) (status uint16, err int) {
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -182,11 +181,11 @@ func (tps53659 *TPS53659) ReadVout(devName string) (integer uint64, dec uint64, 
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -218,11 +217,11 @@ func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64,
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -253,11 +252,11 @@ func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, 
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -305,11 +304,11 @@ func (tps53659 *TPS53659) ReadRegExp(devName string, addrAddr uint64) (integer u
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     defer dmutex.Unlock(devName)
 
@@ -359,11 +358,11 @@ func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     defer dmutex.Unlock(devName)
 
@@ -382,11 +381,11 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -529,11 +528,11 @@ func (tps53659 *TPS53659) ReadByte(devName string, regAddr uint64) (data byte, e
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -550,11 +549,11 @@ func (tps53659 *TPS53659) ReadWord(devName string, regAddr uint64) (data uint16,
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -571,11 +570,11 @@ func (tps53659 *TPS53659) WriteByte(devName string, regAddr uint64, data byte) (
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -592,11 +591,11 @@ func (tps53659 *TPS53659) WriteWord(devName string, regAddr uint64, data uint16)
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -613,11 +612,11 @@ func (tps53659 *TPS53659) SendByte(devName string, data byte) (err int) {
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
@@ -634,11 +633,11 @@ func (tps53659 *TPS53659) ReadBlock(devName string, regAddr uint64, dataBuf []by
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     byteCnt, err = pmbus.ReadBlock(devName, regAddr, dataBuf)
@@ -650,11 +649,11 @@ func (tps53659 *TPS53659) WriteBlock(devName string, regAddr uint64, dataBuf []b
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     byteCnt, err = pmbus.WriteBlock(devName, regAddr, dataBuf)
@@ -675,11 +674,11 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     defer dmutex.Unlock(devName)
 
@@ -873,11 +872,11 @@ func (tps53659 *TPS53659) Info(devName string) (err int) {
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
     // Sort keys; otherwise the sequence will be random

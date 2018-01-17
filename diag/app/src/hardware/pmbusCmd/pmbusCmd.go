@@ -1,4 +1,4 @@
-package pmbusReg
+package pmbusCmd
 
 // Access mode
 const (

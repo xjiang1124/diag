@@ -87,3 +87,21 @@ func WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, er
     }
     return
 }
+
+func Open(devName string) (err int) {
+    //cli.Println("d", smbInfo)
+    if (config.SmbusMode == config.DISABLE) {
+        return
+    }
+    err = smbus.Open(devName)
+    return
+}
+
+func Close() (err int) {
+    if (config.SmbusMode == config.DISABLE) {
+        return
+    }
+
+    err = smbus.Close()
+    return err
+}
