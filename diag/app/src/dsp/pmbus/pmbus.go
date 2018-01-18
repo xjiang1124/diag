@@ -7,7 +7,7 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
-    "hardware/smbtbl"
+    "hardware/i2ctbl"
     "common/misc"
     "device/powermodule/tps53659"
     //"device/powermodule/tps549a20"
@@ -38,8 +38,8 @@ const (
  */
 func testTps53659DevId() int {
     var tps tps53659.TPS53659
-    for _, vrmName := range(smbtbl.Tps53659TblNaples) {
-        vrm, _ := smbtbl.GetVrmInfoByName(vrmName)
+    for _, vrmName := range(i2ctbl.Tps53659TblNaples) {
+        vrm, _ := i2ctbl.GetI2cInfoByName(vrmName)
         devID, _ := tps.ReadDeviceID(vrm.Name)
         if devID != tps53659.DEVICE_ID {
             dcli.Println("F", "Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)

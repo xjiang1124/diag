@@ -8,17 +8,17 @@ import (
     "common/errType"
     "common/cli"
     "config"
-    "hardware/smbtbl"
+    "hardware/i2ctbl"
 )
 
 
-type SmbInfo struct {
+type I2cInfo struct {
     devName string
     smb *smbusdev.SMBus
-    vrmInfo smbtbl.VrmInfo
+    vrmInfo i2ctbl.I2cInfo
 }
 
-var smbInfo SmbInfo
+var smbInfo I2cInfo
 
 func init () {
     //smbInfo.smb = smbusdev.New()
@@ -38,7 +38,7 @@ func Open(devName string) (err int) {
         return
     }
     cardName := os.Getenv("CARD_NAME")
-    smbInfo.vrmInfo, err = smbtbl.GetVrmInfoByNameTbl(cardName, devName)
+    smbInfo.vrmInfo, err = i2ctbl.GetI2cInfoByNameTbl(cardName, devName)
     if err != errType.SUCCESS {
         return err
     }
