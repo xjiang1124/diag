@@ -8,9 +8,9 @@ import (
 
     "common/cli"
     "common/errType"
-    "common/powermodule/tps53659"
-    "common/powermodule/tps549a20"
-    "common/powermodule/tpsAll"
+    "device/powermodule/tps53659"
+    "device/powermodule/tps549a20"
+    "device/powermodule/tpsAll"
 
     "config"
     "hardware/hwvrm"

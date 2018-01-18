@@ -7,7 +7,7 @@ import (
     "common/dcli"
     "common/errType"
     "common/misc"
-    "common/rtc/pcf85263a"
+    "device/rtc/pcf85263a"
     "config"
 )
 

@@ -7,7 +7,7 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
-    "common/tempsensor/tmp422"
+    "device/tempsensor/tmp422"
     "hardware/tmp422Reg"
     "config"
 )

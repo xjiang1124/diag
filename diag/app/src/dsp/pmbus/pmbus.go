@@ -9,8 +9,8 @@ import (
     "common/errType"
     "hardware/hwvrm"
     "common/misc"
-    "common/powermodule/tps53659"
-    //"common/powermodule/tps549a20"
+    "device/powermodule/tps53659"
+    //"device/powermodule/tps549a20"
     "config"
 
     // Used by swig/C 

@@ -16,11 +16,11 @@ import (
     "common/misc"
 
     "hardware/hwvrm"
-    "common/powermodule/tps53659"
-    "common/powermodule/tps549a20"
-    "common/powermodule/tpsAll"
+    "device/powermodule/tps53659"
+    "device/powermodule/tps549a20"
+    "device/powermodule/tpsAll"
 
-    "common/tempsensor/tmp422"
+    "device/tempsensor/tmp422"
 )
 
 //var cardInfo diagEngine.CardInfo
