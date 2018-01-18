@@ -1,19 +1,21 @@
 package smbus
 
 import (
+    "os"
+
     "github.com/go-smbus"
 
     "common/errType"
     "common/cli"
     "config"
-    "hardware/hwvrm"
+    "hardware/smbtbl"
 )
 
 
 type SmbInfo struct {
     devName string
     smb *smbusdev.SMBus
-    vrmInfo hwvrm.VrmInfo
+    vrmInfo smbtbl.VrmInfo
 }
 
 var smbInfo SmbInfo
@@ -35,7 +37,8 @@ func Open(devName string) (err int) {
         err = errType.SMB_INF_BUSY
         return
     }
-    smbInfo.vrmInfo, err = hwvrm.GetVrmInfoByNameTbl("NIC_POWER", devName)
+    cardName := os.Getenv("CARD_NAME")
+    smbInfo.vrmInfo, err = smbtbl.GetVrmInfoByNameTbl(cardName, devName)
     if err != errType.SUCCESS {
         return err
     }

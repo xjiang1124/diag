@@ -13,12 +13,12 @@ import (
     "device/powermodule/tpsAll"
 
     "config"
-    "hardware/hwvrm"
+    "hardware/smbtbl"
 )
 
 type HwInfo struct {
     cardName string
-    vrmTbl []hwvrm.VrmInfo
+    vrmTbl []smbtbl.VrmInfo
 }
 
 var hwInfo HwInfo
@@ -30,7 +30,7 @@ func init() {
     cli.Init("log_"+procName+".txt", config.OutputMode)
 
     hwInfo.cardName = os.Getenv("CARD_NAME")
-    hwInfo.vrmTbl, err = hwvrm.GetVrmTable(hwInfo.cardName)
+    hwInfo.vrmTbl, err = smbtbl.GetVrmTable(hwInfo.cardName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to initialize:", err)
     }

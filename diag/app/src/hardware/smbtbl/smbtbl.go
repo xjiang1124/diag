@@ -1,4 +1,4 @@
-package hwvrm
+package smbtbl
 
 import (
     "os"
