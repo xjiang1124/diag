@@ -15,6 +15,7 @@ type I2cInfo struct {
     Channel byte // TPS53659 only
 }
 
+//=========================================
 // Naples PMBus table
 // devAddr is 7-bit address
 var NaplesVrmTbl = []I2cInfo {
@@ -25,6 +26,10 @@ var NaplesVrmTbl = []I2cInfo {
     I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x38,    0x0 },
 }
 
+var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }
+var Tps546a20TblNaples = []string {"VRM_HBM", "VRM_ARMD" }
+
+//=========================================
 // NIC power board PMBus table
 // bus field is linux I2C device index at /dev/i2c-x
 // devAddress is 7-bit address
@@ -36,19 +41,26 @@ var NicPowerVrmTbl = []I2cInfo {
     I2cInfo {"VRM_1V2",        "TPS549A20", 0x0,   0x1B,    0x0 },
 }
 
+//=========================================
 // MTP PMBus table
 // bus field is linux I2C device index at /dev/i2c-x
 // devAddress is 7-bit address
-var MtpVrmTbl = []I2cInfo {
+var MtpI2cTbl = []I2cInfo {
     //       name     comp         Bus  devAddr  channel 
     I2cInfo {"PSU_1", "BEL_POWER", 0x0, 0xB0,    0x0 },
     I2cInfo {"PSU_2", "BEL_POWER", 0x0, 0xB0,    0x0 },
     I2cInfo {"DC",    "TPS549A20", 0x0, 0x38,    0x0 },
+    I2cInfo {"FAN",   "ADT7462",   0x0, 0x5C,    0x0 },
+    I2cInfo {"CLKGEN","SI52144",   0x0, 0xD6,    0x0 },
+    I2cInfo {"HUB_1", "TCA9546A",  0x0, 0xE0,    0x0 },
+    I2cInfo {"HUB_2", "TCA9546A",  0x0, 0xE2,    0x0 },
+    I2cInfo {"HUB_3", "TCA9546A",  0x0, 0xE4,    0x0 },
+    I2cInfo {"HUB_4", "TCA9546A",  0x0, 0xE6,    0x0 },
 }
 
-var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }
-
-var Tps546a20TblNaples = []string {"VRM_HBM", "VRM_ARMD" }
+// Dev status list
+// Device name must match I2C table
+var MtpStaDevList = []string{"PSU_1", "PSU_2", "DC", "FAN"}
 
 func GetI2cInfoByName(name string) (vrmInfo I2cInfo, err int) {
     var vrmTbl []I2cInfo
@@ -78,7 +90,7 @@ func GetVrmTable(cardName string) (vrmTbl []I2cInfo, err int) {
         vrmTbl = NicPowerVrmTbl
         return
     } else if cardName == "MTP" {
-        vrmTbl = MtpVrmTbl
+        vrmTbl = MtpI2cTbl
         return
     } else {
         cli.Println("f", "Unsupported card:", cardName)
@@ -93,6 +105,8 @@ func GetI2cInfoByNameTbl(tblName string, devName string) (vrmInfo I2cInfo, err i
         vrmTbl = NaplesVrmTbl
     } else if tblName == "NIC_POWER" {
         vrmTbl = NicPowerVrmTbl
+    }else if tblName = "MTP" {
+        vrmTbl = MtpI2cTbl
     } else {
         cli.Println("f", "Unsupported card:", tblName)
         err = errType.FAIL
