@@ -286,3 +286,25 @@ func Keys(m map[string]interface{}) (keys []string) {
     }
     return keys
 }
+
+func SetBits8(orig byte, val byte, startBit uint, numBits uint) (data byte, err int) {
+    var mask byte
+    if (startBit > 7) || (numBits > 8) {
+        err = errType.INVALID_PARAM
+    }
+
+    if numBits == 8 {
+        mask = 0xFF
+    } else {
+        mask = 1 << numBits
+        mask = mask - 1
+        mask = mask << startBit
+    }
+
+    data = orig & (^mask)
+    data = data | (val << startBit)
+
+    return
+}
+
+

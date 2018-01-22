@@ -27,17 +27,6 @@ func DispStatus(devName string) (err int) {
     var outStr string
     var outStrTemp string
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    err = pmbus.Open(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer pmbus.Close()
-    defer dmutex.Unlock(devName)
-
     // MFR info
     cli.Println("i", "--------------------")
     dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
