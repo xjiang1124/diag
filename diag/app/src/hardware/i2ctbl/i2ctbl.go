@@ -1,4 +1,4 @@
-package i2ctbl
+package hwinfo
 
 import (
     "fmt"

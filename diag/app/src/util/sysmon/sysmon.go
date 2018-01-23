@@ -15,7 +15,7 @@ import (
     "common/errType"
     "common/misc"
 
-    "hardware/i2ctbl"
+    "hardware/hwinfo"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/powermodule/tpsAll"
@@ -88,10 +88,10 @@ func getVrmStatus() int {
     var tps53659 tps53659.TPS53659
     var tps549a20 tps549a20.TPS549A20
 
-    var vrmTbl []i2ctbl.I2cInfo
+    var vrmTbl []hwinfo.I2cInfo
     cardName := os.Getenv("CARD_NAME")
     if cardName == "NAPLES" {
-        vrmTbl = i2ctbl.NaplesVrmTbl
+        vrmTbl = hwinfo.NaplesVrmTbl
     } else {
         cli.Println("f", "Unsupported card:", cardName)
         return errType.FAIL

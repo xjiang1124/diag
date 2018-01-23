@@ -13,12 +13,12 @@ import (
     "device/powermodule/tpsAll"
 
     "config"
-    "hardware/i2ctbl"
+    "hardware/hwinfo"
 )
 
 type HwInfo struct {
     cardName string
-    vrmTbl []i2ctbl.I2cInfo
+    vrmTbl []hwinfo.I2cInfo
 }
 
 var hwInfo HwInfo
@@ -30,7 +30,7 @@ func init() {
     cli.Init("log_"+procName+".txt", config.OutputMode)
 
     hwInfo.cardName = os.Getenv("CARD_NAME")
-    hwInfo.vrmTbl, err = i2ctbl.GetI2cTable(hwInfo.cardName)
+    hwInfo.vrmTbl, err = hwinfo.GetI2cTable(hwInfo.cardName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to initialize:", err)
     }

@@ -8,7 +8,7 @@ import (
 
     "common/cli"
     "common/errType"
-    "hardware/i2ctbl"
+    "hardware/hwinfo"
     //"config"
 )
 
@@ -41,7 +41,7 @@ func init() {
     var mInfo mutexInfo
     cardName := os.Getenv("CARD_NAME")
 
-    i2cTbl, err := i2ctbl.GetI2cTable(cardName)
+    i2cTbl, err := hwinfo.GetI2cTable(cardName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to get I2C table: ", err)
         return

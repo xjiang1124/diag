@@ -9,14 +9,14 @@ import (
     "common/dmutex"
     "common/errType"
 
-    "hardware/i2ctbl"
+    "hardware/hwinfo"
 
     "protocol/smbus"
 )
 
 type HwInfo struct {
     cardName string
-    i2cTbl []i2ctbl.I2cInfo
+    i2cTbl []hwinfo.I2cInfo
 }
 
 var hwInfo HwInfo
@@ -25,7 +25,7 @@ func init() {
     var err int
 
     hwInfo.cardName = os.Getenv("CARD_NAME")
-    hwInfo.i2cTbl, err = i2ctbl.GetI2cTable(hwInfo.cardName)
+    hwInfo.i2cTbl, err = hwinfo.GetI2cTable(hwInfo.cardName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to initialize:", err)
     }
@@ -129,7 +129,8 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
 }
 
 func main() {
-    devNamePtr  := flag.String("dev",  "ALL", "Device name")
+    infoPtr     := flag.Bool("info",   false, "Show I2C info table")
+    devNamePtr  := flag.String("dev",  "",    "Device name")
     readPtr     := flag.Bool(  "rd",   false, "Read register value")
     readBlkPtr  := flag.Bool(  "rdb",  false, "Read register block value")
     writePtr    := flag.Bool(  "wr",   false, "Write register value")
@@ -171,6 +172,11 @@ func main() {
 
     if *writeBlkPtr == true {
         readWriteBlk("WRITE_BLK", devName, addr, data, numByte)
+        return
+    }
+
+    if *infoPtr == true {
+        hwinfo.DispI2cInfoAll(hwInfo.cardName)
         return
     }
 }
