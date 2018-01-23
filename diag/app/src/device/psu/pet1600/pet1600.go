@@ -21,7 +21,7 @@ const (
 )
 
 func DispStatus(devName string) (err int) {
-    var fmtDigFrac string = "%d.%03d"
+    var fmtDig string = "0x%x"
     var fmtStr = "%-10s"
     var fmtNameStr = "%-20s"
     var outStr string

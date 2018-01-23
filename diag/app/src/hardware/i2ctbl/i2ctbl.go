@@ -1,6 +1,7 @@
 package i2ctbl
 
 import (
+    "fmt"
     "os"
 
     "common/cli"
@@ -82,7 +83,7 @@ func GetI2cInfoByName(name string) (vrmInfo I2cInfo, err int) {
 
 }
 
-func GetVrmTable(cardName string) (vrmTbl []I2cInfo, err int) {
+func GetI2cTable(cardName string) (vrmTbl []I2cInfo, err int) {
     if cardName == "NAPLES" {
         vrmTbl = NaplesVrmTbl
         return
@@ -105,7 +106,7 @@ func GetI2cInfoByNameTbl(tblName string, devName string) (vrmInfo I2cInfo, err i
         vrmTbl = NaplesVrmTbl
     } else if tblName == "NIC_POWER" {
         vrmTbl = NicPowerVrmTbl
-    }else if tblName = "MTP" {
+    }else if tblName == "MTP" {
         vrmTbl = MtpI2cTbl
     } else {
         cli.Println("f", "Unsupported card:", tblName)
@@ -121,3 +122,42 @@ func GetI2cInfoByNameTbl(tblName string, devName string) (vrmInfo I2cInfo, err i
     return vrmInfo, errType.FAIL
 
 }
+
+func DispI2cInfoAll(cardName string) (err int) {
+    var fmtDig string = "%d"
+    var fmtStr = "%-10s"
+    var outStr string
+    var outStrTemp string
+
+    var i2cTbl []I2cInfo
+
+    // Titles
+    i2cTitle := []string {"DEV_NAME", "COMP", "BUS", "DEV_ADDR", "PAGE(PMBus)"}
+    outStr = fmt.Sprintf(fmtStr, "NAME")
+    for _, title := range(i2cTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", "--------------------")
+    cli.Println("i", outStr)
+
+    outStr = ""
+    i2cTbl, err = GetI2cTable(cardName)
+    for _, i2cInfo := range(i2cTbl) {
+        outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Name)
+        outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Comp)
+
+        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Bus)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.DevAddr)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Channel)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    }
+    cli.Println("i", outStr)
+
+    return
+}
+
+

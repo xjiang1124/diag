@@ -8,6 +8,7 @@ import (
 
     "common/cli"
     "common/errType"
+    "hardware/i2ctbl"
     //"config"
 )
 
@@ -16,6 +17,7 @@ type mutexInfo struct {
     mName string
 }
 
+/*
 var pwrMutexTbl = []mutexInfo {
     mutexInfo {mName: "QSFP_0"},
     mutexInfo {mName: "TEMP_SENSOR"},
@@ -31,12 +33,32 @@ var mtpMutexTbl = []mutexInfo {
     mutexInfo {mName: "OSC"},
     mutexInfo {mName: "FAN_CTLR"},
 }
+*/
 
 var mutexTbl  []mutexInfo
 
 func init() {
+    var mInfo mutexInfo
     cardName := os.Getenv("CARD_NAME")
 
+    i2cTbl, err := i2ctbl.GetI2cTable(cardName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to get I2C table: ", err)
+        return
+    }
+
+    for _, i2cInfo := range(i2cTbl) {
+        mInfo.mName = i2cInfo.Name
+        lockName := "/tmp/"+mInfo.mName+".lock"
+        m, err := filemutex.New(lockName)
+        if err != nil {
+            cli.Println("e", "Failed to initialize lock:", lockName)
+        }
+        mInfo.mHdl = m
+        mutexTbl = append(mutexTbl, mInfo)
+    }
+
+/*
     if cardName == "NIC_POWER" {
         mutexTbl = pwrMutexTbl
     } else if cardName == "MTP" {
@@ -55,6 +77,7 @@ func init() {
         }
         mutexTbl[i].mHdl = m
     }
+*/
 }
 
 func Lock(mName string) (err int){
