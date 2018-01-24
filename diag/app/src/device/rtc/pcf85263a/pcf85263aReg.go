@@ -1,4 +1,4 @@
-package pcf85263aReg 
+package pcf85263a
 
 const (
     SECONDS_100TH uint64 = 0x00

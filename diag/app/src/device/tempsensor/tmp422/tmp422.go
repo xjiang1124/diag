@@ -8,7 +8,6 @@ import (
     "common/errType"
     "protocol/i2c"
     "common/misc"
-    "hardware/tmp422Reg"
 )
 
 func ReadMfgId(devName string) (id byte, err int) {
@@ -18,7 +17,7 @@ func ReadMfgId(devName string) (id byte, err int) {
     }
     defer dmutex.Unlock(devName)
 
-    idBytes, err := i2c.Read(devName, tmp422Reg.MFG_ID, misc.ONE_BYTE)
+    idBytes, err := i2c.Read(devName, MFG_ID, misc.ONE_BYTE)
     id = byte(idBytes[0])
     return
 }
@@ -30,7 +29,7 @@ func ReadDevId(devName string) (id byte, err int) {
     }
     defer dmutex.Unlock(devName)
 
-    idBytes, err := i2c.Read(devName, tmp422Reg.DEV_ID, misc.ONE_BYTE)
+    idBytes, err := i2c.Read(devName, DEV_ID, misc.ONE_BYTE)
     id = byte(idBytes[0])
     return
 }
@@ -46,15 +45,15 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
     defer dmutex.Unlock(devName)
 
     switch channel {
-    case tmp422Reg.LOCAL_TEMP:
-        tempHighAddr = tmp422Reg.LOCAL_TEMP_HIGH
-        tempLowAddr = tmp422Reg.LOCAL_TEMP_LOW
-    case tmp422Reg.REMOTE_TEMP1:
-        tempHighAddr = tmp422Reg.REMOTE_TEMP_HIGH1
-        tempLowAddr = tmp422Reg.REMOTE_TEMP_LOW1
-    case tmp422Reg.REMOTE_TEMP2:
-        tempHighAddr = tmp422Reg.REMOTE_TEMP_HIGH2
-        tempLowAddr = tmp422Reg.REMOTE_TEMP_LOW2
+    case LOCAL_TEMP:
+        tempHighAddr = LOCAL_TEMP_HIGH
+        tempLowAddr = LOCAL_TEMP_LOW
+    case REMOTE_TEMP1:
+        tempHighAddr = REMOTE_TEMP_HIGH1
+        tempLowAddr = REMOTE_TEMP_LOW1
+    case REMOTE_TEMP2:
+        tempHighAddr = REMOTE_TEMP_HIGH2
+        tempLowAddr = REMOTE_TEMP_LOW2
     default:
         err = errType.INVALID_PARAM
         return
@@ -95,7 +94,7 @@ func DispTemp(devName string) (err int) {
     cli.Println("i", titleStr)
 
     var outStr string
-    for i:=0; i<tmp422Reg.MAX_CHANNEL; i++ {
+    for i:=0; i<MAX_CHANNEL; i++ {
         integer, dec, err := ReadTemp(devName, byte(i))
         if err != errType.SUCCESS {
             return err

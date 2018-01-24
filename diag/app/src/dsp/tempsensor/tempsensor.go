@@ -8,7 +8,6 @@ import (
     "common/dcli"
     "common/errType"
     "device/tempsensor/tmp422"
-    "hardware/tmp422Reg"
     "config"
 )
 
@@ -33,9 +32,9 @@ func TempsensorDev_IdHdl(argList []string) {
         return
     }
 
-    if id != tmp422Reg.MFG_ID_V {
-        //dcli.Println("e", "Invalid MFG ID, expected:", tmp422Reg.MFG_ID_V, "received:", id)
-        fmt.Println("e", "Invalid MFG ID, expected:", tmp422Reg.MFG_ID_V, "received:", id)
+    if id != tmp422.MFG_ID_V {
+        //dcli.Println("e", "Invalid MFG ID, expected:", tmp422.MFG_ID_V, "received:", id)
+        fmt.Println("e", "Invalid MFG ID, expected:", tmp422.MFG_ID_V, "received:", id)
         diagEngine.FuncMsgChan <- errType.TEMPSENSOR_INVALID_ID
         return
     }
@@ -47,8 +46,8 @@ func TempsensorDev_IdHdl(argList []string) {
         return
     }
 
-    if id != tmp422Reg.DEV_ID_V {
-        dcli.Println("e", "Invalid DEV ID, expected:", tmp422Reg.MFG_ID_V, "received:", id)
+    if id != tmp422.DEV_ID_V {
+        dcli.Println("e", "Invalid DEV ID, expected:", tmp422.MFG_ID_V, "received:", id)
         diagEngine.FuncMsgChan <- errType.TEMPSENSOR_INVALID_ID
         return
     }
@@ -69,14 +68,14 @@ func TempsensorTempHdl(argList []string) {
 
     var err int
     var tempList = []string {"Local:", "Remote1", "Remote2"}
-    for i:=0; i<tmp422Reg.MAX_CHANNEL; i++ {
+    for i:=0; i<tmp422.MAX_CHANNEL; i++ {
         integer, dec, err1 := tmp422.ReadTemp("TEMP_SENSOR", byte(i))
         if err != errType.SUCCESS {
             err = err1
         }
         temp := fmt.Sprintf("%d.%04d", integer, dec)
         dcli.Println("i", tempList[i], temp)
-        if integer < tmp422Reg.LIMIT_LOW || integer > tmp422Reg.LIMIT_HIGH {
+        if integer < tmp422.LIMIT_LOW || integer > tmp422.LIMIT_HIGH {
             dcli.Println("e", "Temperature over limit!")
             err = errType.TEMPSENSOR_OVER_LIMIT
         }

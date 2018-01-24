@@ -1,4 +1,4 @@
-package tmp422Reg
+package tmp422
 
 const (
     MFG_ID_V = 0x55

@@ -16,10 +16,10 @@ C_SRC_DIR=		\
 	i2csim
 
 GO_TEST_DIR=	\
-	common/powermodule/tps53659		\
-	common/powermodule/tps549a20	\
-	common/tempsensor/tmp422		\
-	common/rtc/pcf85263a			\
+	device/powermodule/tps53659		\
+	device/powermodule/tps549a20	\
+	device/tempsensor/tmp422		\
+	device/rtc/pcf85263a			\
 	common/dmutex					\
 	util/periutil					\
 	util/pmutil						
