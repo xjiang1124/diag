@@ -10,7 +10,6 @@ import (
     "common/errType"
     "protocol/pmbus"
     "protocol/smbus"
-    "hardware/tps549a20Reg"
 )
 
 type TPS549A20 struct {
@@ -30,7 +29,7 @@ func (tps549a20 *TPS549A20) ReadStatus(devName string) (status uint16, err int) 
     defer smbus.Close()
     defer dmutex.Unlock(devName)
 
-    status, err = pmbus.ReadWord(devName, tps549a20Reg.STATUS_WORD)
+    status, err = pmbus.ReadWord(devName, STATUS_WORD)
     return
 }
 
@@ -86,17 +85,17 @@ func (tps549a20 *TPS549A20) SetVMargin(devName string, pct int) (err int) {
     defer dmutex.Unlock(devName)
 
     if pct == 0 {
-        marginCmd = tps549a20Reg.MARGIN_NONE_CMD
+        marginCmd = MARGIN_NONE_CMD
     } else if pct > 0 {
-        marginCmd = tps549a20Reg.MARGIN_HIGH_CMD
+        marginCmd = MARGIN_HIGH_CMD
         marginVal = byte(pct) << 4
     } else {
-        marginCmd = tps549a20Reg.MARGIN_LOW_CMD
+        marginCmd = MARGIN_LOW_CMD
         marginVal = byte(-pct)
     }
 
-    pmbus.WriteByte(devName, tps549a20Reg.VOUT_MARGIN, marginVal)
-    pmbus.WriteByte(devName, tps549a20Reg.OPERATION, marginCmd)
+    pmbus.WriteByte(devName, VOUT_MARGIN, marginVal)
+    pmbus.WriteByte(devName, OPERATION, marginCmd)
 
     return
 

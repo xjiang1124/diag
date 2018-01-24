@@ -1,4 +1,4 @@
-package tps549a20Reg
+package tps549a20
 
 const (
     CHAN_A = 0
