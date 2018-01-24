@@ -1,4 +1,4 @@
-package hwinfo
+package i2cinfo
 
 import (
     "fmt"
@@ -6,6 +6,8 @@ import (
 
     "common/cli"
     "common/errType"
+
+    //"device/psu/pet1600"
 )
 
 type I2cInfo struct {

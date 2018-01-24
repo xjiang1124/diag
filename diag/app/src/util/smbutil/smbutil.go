@@ -9,14 +9,14 @@ import (
     "common/dmutex"
     "common/errType"
 
-    "hardware/hwinfo"
+    "hardware/i2cinfo"
 
     "protocol/smbus"
 )
 
 type HwInfo struct {
     cardName string
-    i2cTbl []hwinfo.I2cInfo
+    i2cTbl []i2cinfo.I2cInfo
 }
 
 var hwInfo HwInfo
@@ -25,7 +25,7 @@ func init() {
     var err int
 
     hwInfo.cardName = os.Getenv("CARD_NAME")
-    hwInfo.i2cTbl, err = hwinfo.GetI2cTable(hwInfo.cardName)
+    hwInfo.i2cTbl, err = i2cinfo.GetI2cTable(hwInfo.cardName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to initialize:", err)
     }
@@ -176,7 +176,7 @@ func main() {
     }
 
     if *infoPtr == true {
-        hwinfo.DispI2cInfoAll(hwInfo.cardName)
+        i2cinfo.DispI2cInfoAll(hwInfo.cardName)
         return
     }
 }

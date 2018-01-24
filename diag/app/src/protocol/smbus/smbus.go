@@ -8,14 +8,14 @@ import (
     "common/errType"
     "common/cli"
     "config"
-    "hardware/hwinfo"
+    "hardware/i2cinfo"
 )
 
 
 type I2cInfo struct {
     devName string
     smb *smbusdev.SMBus
-    vrmInfo hwinfo.I2cInfo
+    vrmInfo i2cinfo.I2cInfo
 }
 
 var smbInfo I2cInfo
@@ -38,7 +38,7 @@ func Open(devName string) (err int) {
         return
     }
     cardName := os.Getenv("CARD_NAME")
-    smbInfo.vrmInfo, err = hwinfo.GetI2cInfoByNameTbl(cardName, devName)
+    smbInfo.vrmInfo, err = i2cinfo.GetI2cInfoByNameTbl(cardName, devName)
     if err != errType.SUCCESS {
         return err
     }

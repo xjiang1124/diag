@@ -4,9 +4,7 @@ import (
     "fmt"
 
     "common/cli"
-    "common/dmutex"
-    "common/errType"
-    "protocol/pmbus"
+    //"common/errType"
 
 	"hardware/pmbusCmd"
 )
@@ -26,6 +24,8 @@ func DispStatus(devName string) (err int) {
     var fmtNameStr = "%-20s"
     var outStr string
     var outStrTemp string
+    var dig uint64
+    var frac uint64
 
     // MFR info
     cli.Println("i", "--------------------")
@@ -66,11 +66,11 @@ func DispStatus(devName string) (err int) {
     funcs[5] = pmbusCmd.ReadIinLnr
 
     for _, rfunc := range(funcs) {
-        dig, frac, _ := rfunc(devName, pmbusCmd.PAGE_0)
+        dig, frac, _ = rfunc(devName, pmbusCmd.PAGE_0)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+            outStrTemp = fmt.Sprintf(fmtDig, dig, frac)
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     }
@@ -99,7 +99,7 @@ func DispStatus(devName string) (err int) {
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
-            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+            outStrTemp = fmt.Sprintf(fmtDig, dig, frac)
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     }
