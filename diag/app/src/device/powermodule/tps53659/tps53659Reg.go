@@ -1,4 +1,4 @@
-package tps53659Reg
+package tps53659
 
 const (
     CHAN_A = 0
