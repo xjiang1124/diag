@@ -1,4 +1,4 @@
-package bet1600
+package pet1600
 
 import (
     "fmt"

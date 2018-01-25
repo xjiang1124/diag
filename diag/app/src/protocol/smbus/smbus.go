@@ -1,8 +1,6 @@
 package smbus
 
 import (
-    "os"
-
     "github.com/go-smbus"
 
     "common/errType"
@@ -37,8 +35,7 @@ func Open(devName string) (err int) {
         err = errType.SMB_INF_BUSY
         return
     }
-    cardName := os.Getenv("CARD_NAME")
-    smbInfo.vrmInfo, err = i2cinfo.GetI2cInfoByNameTbl(cardName, devName)
+    smbInfo.vrmInfo, err = i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         return err
     }

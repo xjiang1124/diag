@@ -81,7 +81,7 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
     return
 }
 
-func DispTemp(devName string) (err int) {
+func DispStatus(devName string) (err int) {
     err = errType.SUCCESS
 
     degSym := fmt.Sprintf("(%cC)",0xB0)
@@ -92,6 +92,8 @@ func DispTemp(devName string) (err int) {
         titleStr = titleStr + tmpStr
     }
     cli.Println("i", titleStr)
+    cli.Println("i", "To be implemented"
+    return
 
     var outStr string
     for i:=0; i<MAX_CHANNEL; i++ {

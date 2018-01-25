@@ -42,6 +42,7 @@ func devInfo(devName string) {
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
+        cli.Println("i", vrm.Name)
         if devName != vrm.Name {
             continue
         }

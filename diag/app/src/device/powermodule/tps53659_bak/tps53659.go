@@ -4,6 +4,7 @@ import (
     "bufio"
     "encoding/hex"
     "fmt"
+    "math"
     "os"
     "reflect"
     "sort"
@@ -12,8 +13,7 @@ import (
     "common/cli"
     "common/dmutex"
     "common/errType"
-    "hardware/i2cinfo"
-    "hardware/pmbusCmd"
+    "common/misc"
     "protocol/pmbus"
 )
 
@@ -22,22 +22,31 @@ const (
     VERIFY_FLAG = "=== READ VERIFY ==="
 )
 
+type TPS53659 struct {
+    numPhases int
+}
+
 type DEV_INFO struct {
     addr uint64
     numByte int
     access string
 }
 
+var channelMap map[string]byte
 var devInfoMap map[string]DEV_INFO
 
 func init() {
+    channelMap = make(map[string]byte)
+    channelMap["VRM_CAPRI_DVDD"] = 0
+    channelMap["VRM_CAPRI_AVDD"] = 1
+
     devInfoMap = make(map[string]DEV_INFO)
-    devInfoMap["MFR_ID"]        = DEV_INFO{MFR_ID, 2, "BLOCK"}
-    devInfoMap["MFR_MODEL"]     = DEV_INFO{MFR_MODEL, 2, "BLOCK"}
-    devInfoMap["MFR_REVISION"]  = DEV_INFO{MFR_REVISION, 2, "BLOCK"}
-    devInfoMap["MFR_DATE"]      = DEV_INFO{MFR_DATE, 2, "BLOCK"}
-    devInfoMap["MFR_SERIAL"]    = DEV_INFO{MFR_SERIAL, 4, "BLOCK"}
-    devInfoMap["IC_DEVICE_ID"]  = DEV_INFO{IC_DEVICE_ID, 1, "BLOCK"}
+    devInfoMap["MFR_ID"] = DEV_INFO{MFR_ID, 2, "BLOCK"}
+    devInfoMap["MFR_MODEL"] = DEV_INFO{MFR_MODEL, 2, "BLOCK"}
+    devInfoMap["MFR_REVISION"] = DEV_INFO{MFR_REVISION, 2, "BLOCK"}
+    devInfoMap["MFR_DATE"] = DEV_INFO{MFR_DATE, 2, "BLOCK"}
+    devInfoMap["MFR_SERIAL"] = DEV_INFO{MFR_SERIAL, 4, "BLOCK"}
+    devInfoMap["IC_DEVICE_ID"] = DEV_INFO{IC_DEVICE_ID, 1, "BLOCK"}
     devInfoMap["IC_DEVICE_REV"] = DEV_INFO{IC_DEVICE_REV, 1, "BLOCK"}
 }
 
@@ -108,7 +117,38 @@ func calcVidFromVolt (tgtVoltMv uint64, dacStep uint64) (vid byte, err int) {
     return 0, errType.FAIL
 }
 
-func ReadStatus(devName string) (status uint16, err int) {
+/*
+    3659 has many register using EXP format.
+    16-bit value, 
+    upper 5 bits: Linear two's complement format exponent.
+    lower 11 bits: Linear two's complement format mantissa.
+ */
+func getExpOutput(input uint16) (integer uint64, dec uint64, err int) {
+    var expUint uint64
+    var expInt int64
+    var expFloat float64
+    var manFloat float64
+    var expOutFloat float64
+
+    expUint = uint64(input >> 11)
+    manFloat = float64(input & 0x7FF)
+
+    expInt, err = misc.TwoCmplBits64(expUint, 5)
+    if err != errType.SUCCESS {
+        return 0, 0, err
+    }
+
+    expFloat = float64(expInt)
+    expOutFloat = math.Pow(2, expFloat) * manFloat
+    intpart, div := math.Modf(expOutFloat)
+
+    integer = uint64(intpart)
+    dec = uint64(div*1000)
+
+    return integer, dec, errType.SUCCESS
+}
+
+func (tps53659 *TPS53659) ReadStatus(devName string) (status uint16, err int) {
     err = dmutex.Lock(devName)
     if err != errType.SUCCESS {
         return
@@ -120,17 +160,18 @@ func ReadStatus(devName string) (status uint16, err int) {
     defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
-    status, err = pmbusCmd.ReadStatusWord(devName, page)
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, channel)
+
+    status, err = pmbus.ReadWord(devName, STATUS_WORD)
+
     return
 }
 
 
-func ReadVout(devName string) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadVout(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
@@ -146,13 +187,10 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, PAGE, channel)
 
     data, err = pmbus.ReadWord(devName, READ_VOUT)
 
@@ -169,7 +207,7 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
@@ -185,13 +223,10 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, PAGE, channel)
 
     // Read Vboot
     data, err = pmbus.ReadWord(devName, MFR_SPECIFIC_11)
@@ -209,7 +244,7 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func ReadIout(devName string) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
 
     err = dmutex.Lock(devName)
@@ -223,23 +258,20 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, PAGE, channel)
 
     // Write phase register: all phases
     pmbus.WriteByte(devName, PHASE, 0x80)
 
     data, err = pmbus.ReadWord(devName, READ_IOUT)
-    integer, dec, err = pmbusCmd.Linear11(data)
+    integer, dec, err = getExpOutput(data)
     return
 }
 
-func ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err int) {
     var data uint16
 
     err = dmutex.Lock(devName)
@@ -248,26 +280,25 @@ func ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err 
     }
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, PAGE, channel)
 
     // Write phase register: all phases
     pmbus.WriteByte(devName, PHASE, phase)
 
     data, err = pmbus.ReadWord(devName, READ_IOUT)
-    integer, dec, err = pmbusCmd.Linear11(data)
+    integer, dec, err = getExpOutput(data)
     return
 }
 
 /*
-    Read register with linear 11 format and calculate output
+    Read register with EXP format and calculate output
  */
-func ReadRegLnr11(devName string, cmd uint64) (integer uint64, dec uint64, err int) {
+func (tps53659 *TPS53659) ReadRegExp(devName string, addrAddr uint64) (integer uint64, dec uint64, err int) {
+    var data uint16
+
     err = dmutex.Lock(devName)
     if err != errType.SUCCESS {
         return
@@ -277,49 +308,51 @@ func ReadRegLnr11(devName string, cmd uint64) (integer uint64, dec uint64, err i
         return
     }
     defer pmbus.Close()
+
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
-    integer, dec, err = pmbusCmd.ReadLnr11(devName, page, cmd)
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, channel)
+
+    data, err = pmbus.ReadWord(devName, addrAddr)
+    integer, dec, err = getExpOutput(data)
 
     return
 }
 
-func ReadVin(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_VIN)
+func (tps53659 *TPS53659) ReadVin(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, READ_VIN)
     return
 }
 
-func ReadIin(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_IIN)
+func (tps53659 *TPS53659) ReadIin(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, READ_IIN)
     return
 }
 
-func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_TEMPERATURE_1)
+func (tps53659 *TPS53659) ReadTemp(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, READ_TEMPERATURE_1)
     return
 }
 
-func ReadPout(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_POUT)
+func (tps53659 *TPS53659) ReadPout(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, READ_POUT)
     return
 }
 
-func ReadPin(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_PIN)
+func (tps53659 *TPS53659) ReadPin(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, READ_PIN)
     return
 }
 
-func ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, MFR_SPECIFIC_04)
+func (tps53659 *TPS53659) ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
+    integer, dec, err = tps53659.ReadRegExp(devName, MFR_SPECIFIC_04)
     return
 }
 
-func ReadDeviceID(devName string) (devID byte, err int) {
+func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
     err = dmutex.Lock(devName)
     if err != errType.SUCCESS {
         return
@@ -336,7 +369,7 @@ func ReadDeviceID(devName string) (devID byte, err int) {
     return devID, err
 }
 
-func SetVMargin(devName string, pct int) (err int) {
+func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     var marginReg uint64
     var marginCmd byte
     var data uint16
@@ -354,10 +387,7 @@ func SetVMargin(devName string, pct int) (err int) {
     defer pmbus.Close()
     defer dmutex.Unlock(devName)
 
-    page, err := i2cinfo.GetPage(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+    channel := channelMap[devName]
 
     if pct == 0 {
         marginCmd = MARGIN_NONE_CMD
@@ -370,7 +400,7 @@ func SetVMargin(devName string, pct int) (err int) {
     }
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, PAGE, channel)
 
     dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE)
 
@@ -402,7 +432,7 @@ func SetVMargin(devName string, pct int) (err int) {
 }
 
 
-func DispStatus(devName string) (err int) {
+func (tps53659 *TPS53659) DispStatus(devName string) (err int) {
     vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
@@ -419,7 +449,7 @@ func DispStatus(devName string) (err int) {
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, _ := ReadVboot(devName)
+    dig, frac, _ := tps53659.ReadVboot(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -427,7 +457,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPout(devName)
+    dig, frac, _ = tps53659.ReadPout(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -435,7 +465,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVout(devName)
+    dig, frac, _ = tps53659.ReadVout(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -443,7 +473,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadIout(devName)
+    dig, frac, _ = tps53659.ReadIout(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -451,7 +481,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPin(devName)
+    dig, frac, _ = tps53659.ReadPin(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -459,7 +489,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVin(devName)
+    dig, frac, _ = tps53659.ReadVin(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -467,7 +497,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadIin(devName)
+    dig, frac, _ = tps53659.ReadIin(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -475,7 +505,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadTemp(devName)
+    dig, frac, _ = tps53659.ReadTemp(devName)
     if dig == 0 && frac == 0 {
         outStrTemp = "-.-"
     } else {
@@ -483,7 +513,7 @@ func DispStatus(devName string) (err int) {
     }
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    status, _ := ReadStatus(devName)
+    status, _ := tps53659.ReadStatus(devName)
     outStrTemp = fmt.Sprintf("0x%X", status)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
@@ -492,7 +522,144 @@ func DispStatus(devName string) (err int) {
     return
 }
 
-func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool) (err int) {
+func (tps53659 *TPS53659) ReadByte(devName string, regAddr uint64) (data byte, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    data, err = pmbus.ReadByte(devName, regAddr)
+    return
+}
+
+func (tps53659 *TPS53659) ReadWord(devName string, regAddr uint64) (data uint16, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    data, err = pmbus.ReadWord(devName, regAddr)
+    return
+}
+
+func (tps53659 *TPS53659) WriteByte(devName string, regAddr uint64, data byte) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.WriteByte(devName, regAddr, data)
+    return
+}
+
+func (tps53659 *TPS53659) WriteWord(devName string, regAddr uint64, data uint16) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.WriteWord(devName, regAddr, data)
+    return
+}
+
+func (tps53659 *TPS53659) SendByte(devName string, data byte) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    channel := channelMap[devName]
+    err = pmbus.WriteByte(devName, PAGE, channel)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.SendByte(devName, data)
+    return
+}
+
+func (tps53659 *TPS53659) ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    byteCnt, err = pmbus.ReadBlock(devName, regAddr, dataBuf)
+    return
+}
+
+func (tps53659 *TPS53659) WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+    defer dmutex.Unlock(devName)
+
+    byteCnt, err = pmbus.WriteBlock(devName, regAddr, dataBuf)
+    return
+}
+
+func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool) (err int) {
     verifyStart := false
     var errCnt int
 
@@ -694,7 +861,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
     return
 }
 
-func Info(devName string) (err int) {
+func (tps53659 *TPS53659) Info(devName string) (err int) {
     var outKey string
     var outValue string
     var dataBuf []byte

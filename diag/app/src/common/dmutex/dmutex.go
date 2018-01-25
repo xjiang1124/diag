@@ -1,7 +1,6 @@
 package dmutex
 
 import (
-    "os"
     "strings"
 
     "github.com/alexflint/go-filemutex"
@@ -9,7 +8,6 @@ import (
     "common/cli"
     "common/errType"
     "hardware/i2cinfo"
-    //"config"
 )
 
 type mutexInfo struct {
@@ -39,15 +37,8 @@ var mutexTbl  []mutexInfo
 
 func init() {
     var mInfo mutexInfo
-    cardName := os.Getenv("CARD_NAME")
 
-    i2cTbl, err := i2cinfo.GetI2cTable(cardName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to get I2C table: ", err)
-        return
-    }
-
-    for _, i2cInfo := range(i2cTbl) {
+    for _, i2cInfo := range(i2cinfo.I2cTbl) {
         mInfo.mName = i2cInfo.Name
         lockName := "/tmp/"+mInfo.mName+".lock"
         m, err := filemutex.New(lockName)

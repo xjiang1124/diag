@@ -7,7 +7,8 @@ SRC_DIR=				\
 	dsp/tempsensor     	\
 	util/sysmon			\
 	util/periutil 		\
-	util/pmutil
+	util/smbutil 		\
+	util/devmgr
 
 #C_SRC_DIR=i2c
 
@@ -21,5 +22,4 @@ GO_TEST_DIR=	\
 	device/tempsensor/tmp422		\
 	device/rtc/pcf85263a			\
 	common/dmutex					\
-	util/periutil					\
-	util/pmutil						
+	util/periutil					

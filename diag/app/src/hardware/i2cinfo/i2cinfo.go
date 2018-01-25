@@ -6,8 +6,6 @@ import (
 
     "common/cli"
     "common/errType"
-
-    //"device/psu/pet1600"
 )
 
 type I2cInfo struct {
@@ -15,8 +13,10 @@ type I2cInfo struct {
     Comp    string
     Bus     uint32 // I2C controllor index
     DevAddr byte
-    Channel byte // TPS53659 only
+    Page    byte   // PMBus device page number
 }
+
+var I2cTbl []I2cInfo
 
 //=========================================
 // Naples PMBus table
@@ -28,9 +28,6 @@ var NaplesVrmTbl = []I2cInfo {
     I2cInfo {"VRM_HBM",        "TPS549A20", 0x2,   0x36,    0x0 },
     I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x38,    0x0 },
 }
-
-var Tps53659TblNaples= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD" }
-var Tps546a20TblNaples = []string {"VRM_HBM", "VRM_ARMD" }
 
 //=========================================
 // NIC power board PMBus table
@@ -61,105 +58,81 @@ var MtpI2cTbl = []I2cInfo {
     I2cInfo {"HUB_4", "TCA9546A",  0x0, 0xE6,    0x0 },
 }
 
-// Dev status list
-// Device name must match I2C table
-var MtpStaDevList = []string{"PSU_1", "PSU_2", "DC", "FAN"}
-
-func GetI2cInfoByName(name string) (vrmInfo I2cInfo, err int) {
-    var vrmTbl []I2cInfo
+func init() {
     cardName := os.Getenv("CARD_NAME")
+
     if cardName == "NAPLES" {
-        vrmTbl = NaplesVrmTbl
-    } else {
-        cli.Println("f", "Unsupported card:", cardName)
-        err = errType.FAIL
-        return
-    }
-
-    for _, vrmInf := range(vrmTbl) {
-        if name == vrmInf.Name {
-            return vrmInf, errType.SUCCESS
-        }
-    }
-    return vrmInfo, errType.FAIL
-
-}
-
-func GetI2cTable(cardName string) (vrmTbl []I2cInfo, err int) {
-    if cardName == "NAPLES" {
-        vrmTbl = NaplesVrmTbl
+        I2cTbl = NaplesVrmTbl
         return
     } else if cardName == "NIC_POWER" {
-        vrmTbl = NicPowerVrmTbl
+        I2cTbl = NicPowerVrmTbl
         return
     } else if cardName == "MTP" {
-        vrmTbl = MtpI2cTbl
+        I2cTbl = MtpI2cTbl
         return
     } else {
         cli.Println("f", "Unsupported card:", cardName)
-        err = errType.UNSUPPORTED_CARD
         return
     }
 }
 
-func GetI2cInfoByNameTbl(tblName string, devName string) (vrmInfo I2cInfo, err int) {
-    var vrmTbl []I2cInfo
-    if  tblName == "NAPLES" {
-        vrmTbl = NaplesVrmTbl
-    } else if tblName == "NIC_POWER" {
-        vrmTbl = NicPowerVrmTbl
-    }else if tblName == "MTP" {
-        vrmTbl = MtpI2cTbl
-    } else {
-        cli.Println("f", "Unsupported card:", tblName)
-        err = errType.FAIL
-        return
-    }
-
-    for _, vrmInf := range(vrmTbl) {
-        if devName == vrmInf.Name {
-            return vrmInf, errType.SUCCESS
+func GetI2cInfo(devName string) (i2cInfo I2cInfo, err int) {
+    for _, i2cInf := range(I2cTbl) {
+        if devName == i2cInf.Name {
+            return i2cInf, errType.SUCCESS
         }
     }
-    return vrmInfo, errType.FAIL
+    err = errType.INVALID_PARAM
+    return
 
 }
 
-func DispI2cInfoAll(cardName string) (err int) {
+func DispI2cInfoAll() (err int) {
     var fmtDig string = "%d"
-    var fmtStr = "%-10s"
+    var fmtHex string = "0x%x"
+    var fmtStr = "%-15s"
     var outStr string
     var outStrTemp string
 
-    var i2cTbl []I2cInfo
-
     // Titles
     i2cTitle := []string {"DEV_NAME", "COMP", "BUS", "DEV_ADDR", "PAGE(PMBus)"}
-    outStr = fmt.Sprintf(fmtStr, "NAME")
     for _, title := range(i2cTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
     cli.Println("i", "--------------------")
     cli.Println("i", outStr)
 
-    outStr = ""
-    i2cTbl, err = GetI2cTable(cardName)
-    for _, i2cInfo := range(i2cTbl) {
+    for _, i2cInfo := range(I2cTbl) {
+        outStr = ""
+
         outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Name)
         outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Comp)
 
         outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Bus)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.DevAddr)
+        outStrTemp = fmt.Sprintf(fmtHex, i2cInfo.DevAddr)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Channel)
+        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Page)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        cli.Println("i", outStr)
     }
-    cli.Println("i", outStr)
 
     return
 }
 
+func GetPage(devName string) (page byte, err int) {
+    for _, i2cinfo := range(I2cTbl) {
+        if i2cinfo.Name == devName {
+            page = i2cinfo.Page
+            return
+        }
+    }
+    cli.Println("f", "Unsupported card:", devName)
+    err = errType.INVALID_PARAM
+    return
+
+}
 

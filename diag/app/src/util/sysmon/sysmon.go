@@ -14,13 +14,9 @@ import (
     "config"
     "common/errType"
     "common/misc"
+    "hardware/hwinfo"
 
-    "hardware/i2cinfo"
-    "device/powermodule/tps53659"
-    "device/powermodule/tps549a20"
-    "device/powermodule/tpsAll"
-
-    "device/tempsensor/tmp422"
+    //"device/tempsensor/tmp422"
 )
 
 //var cardInfo diagEngine.CardInfo
@@ -29,9 +25,6 @@ var flagName string = config.DiagNicBinPath+"sysmon.flag"
 
 func Init(procName string) {
     cli.Init("log_"+procName+".txt", config.OutputMode)
-    // Do not card DSP name here
-//    diagEngine.CardInfoInit(procName)
-//    cardInfo = diagEngine.GetCardInfo()
 }
 
 func exitContMode () {
@@ -84,31 +77,11 @@ func getCpuTemp(compFlag bool) int{
 }
 
 func getVrmStatus() int {
-    var tps tpsAll.TpsAll
-    var tps53659 tps53659.TPS53659
-    var tps549a20 tps549a20.TPS549A20
-
-    var vrmTbl []i2cinfo.I2cInfo
-    cardName := os.Getenv("CARD_NAME")
-    if cardName == "NAPLES" {
-        vrmTbl = i2cinfo.NaplesVrmTbl
-    } else {
-        cli.Println("f", "Unsupported card:", cardName)
-        return errType.FAIL
-    }
-
     cli.Println("i", "============================")
     cli.Println("i", "VRM Status")
 
-    for _, vrm := range(vrmTbl) {
-        if vrm.Comp == "TPS53659" {
-            tps = &tps53659
-        } else if vrm.Comp == "TPS549A20" {
-            tps = &tps549a20
-        } else {
-            continue
-        }
-        tps.DispStatus(vrm.Name)
+    for dev, dispFunc := range(hwinfo.DispStaList) {
+        dispFunc(dev)
     }
 
     cli.Println("i", "")
@@ -118,8 +91,8 @@ func getVrmStatus() int {
 func dispTemp() (err int) {
     cli.Println("i", "============================")
     cli.Println("i", "Temp Sensor Readings")
-    tmp422.DispTemp("TEMP_SENSOR")
-    cli.Println("i", "")
+    //tmp422.DispTemp("TEMP_SENSOR")
+    cli.Println("i", "To be implemented")
     return
 }
 
