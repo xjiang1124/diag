@@ -97,6 +97,47 @@ func GetI2cInfo(devName string) (i2cInfo I2cInfo, err int) {
 
 }
 
+func DispI2cInfo(devName string) (err int) {
+    var fmtDig string = "%d"
+    var fmtHex string = "0x%x"
+    var fmtStr = "%-15s"
+    var outStr string
+    var outStrTemp string
+
+    // Titles
+    i2cTitle := []string {"DEV_NAME", "COMP", "BUS", "DEV_ADDR", "PAGE(PMBus)"}
+    for _, title := range(i2cTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", "--------------------")
+    cli.Println("i", outStr)
+
+    for _, i2cInfo := range(I2cTbl) {
+        if i2cInfo.Name != devName {
+            continue
+        }
+        outStr = ""
+
+        outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Name)
+        outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Comp)
+
+        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Bus)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        outStrTemp = fmt.Sprintf(fmtHex, i2cInfo.DevAddr)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        outStrTemp = fmt.Sprintf(fmtDig, i2cInfo.Page)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+        cli.Println("i", outStr)
+        return
+    }
+    err = errType.SUCCESS
+    cli.Println("f", "Unsupported device:", devName)
+    return
+}
+
 func DispI2cInfoAll() (err int) {
     var fmtDig string = "%d"
     var fmtHex string = "0x%x"

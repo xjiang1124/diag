@@ -18,14 +18,18 @@ type DispStaFunc func(devName string)(err int)
 //===============================
 // Naples 
 // Pmbus test list
-var NaplesPmbusTestList= []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD", "VRM_HBM", "VRM_ARM"}
+var NaplesPmbusTestList = []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD", "VRM_HBM", "VRM_ARM"}
 // Status display list
 var naplesDispStaList map[string]DispStaFunc
+// EEPROM list
+var naplesEepList = []string {"FRU"}
 
 //===============================
 // MTP
 // Status display list
 var mtpDispStaList map[string]DispStaFunc
+// EEPROM list
+var mtpEepList = []string {"FRU"}
 
 //===============================
 // NIC POWER
@@ -36,13 +40,16 @@ var nicPwrDispStaList map[string]DispStaFunc
 // Internal lookup table
 var dispMap map[string]map[string]DispStaFunc
 var pmbusTestMap map[string][]string
+var eepromMap map[string][]string
 
 //===============================
 // Public data
 // Dev display list
 var DispStaList map[string]DispStaFunc
-// Pmbus test device liest
+// Pmbus test device list
 var PmbusTestList []string
+// EEPROM  device list
+var EepromList []string
 
 func init() {
     // Can only do map initialization here
@@ -73,16 +80,27 @@ func init() {
     nicPwrDispStaList["VRM_1V2"]        = tps549a20.DispStatus
 
     //===============================
+    // Dictionaries for all platforms
+    // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
     dispMap["NAPLES"]    = naplesDispStaList
     dispMap["MTP"]       = mtpDispStaList
     dispMap["NIC_POWER"] = nicPwrDispStaList
 
+    // Pmbus test list
     pmbusTestMap = make(map[string][]string)
     pmbusTestMap["NAPLES"] = NaplesPmbusTestList
 
+    // EEPROM list
+    eepromMap = make(map[string][]string)
+    eepromMap["NAPLES"] = naplesEepList
+    eepromMap["MTP"]    = mtpEepList
+
+    //===============================
+    // Platform specified list
     cardName := os.Getenv("CARD_NAME")
-    DispStaList = dispMap[cardName]
+    DispStaList   = dispMap[cardName]
     PmbusTestList = pmbusTestMap[cardName]
+    EepromList    = eepromMap[cardName]
 }
 
