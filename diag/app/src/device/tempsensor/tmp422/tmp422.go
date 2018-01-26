@@ -92,7 +92,7 @@ func DispStatus(devName string) (err int) {
         titleStr = titleStr + tmpStr
     }
     cli.Println("i", titleStr)
-    cli.Println("i", "To be implemented"
+    cli.Println("i", "To be implemented")
     return
 
     var outStr string

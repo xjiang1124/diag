@@ -27,6 +27,15 @@ var NaplesVrmTbl = []I2cInfo {
     I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x2,   0xC4,    0x1 },
     I2cInfo {"VRM_HBM",        "TPS549A20", 0x2,   0x36,    0x0 },
     I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x38,    0x0 },
+    I2cInfo {"FRU",            "AT24C02C",  0x2,   0xA0,    0x0 },
+    I2cInfo {"RTC",            "PCF85263A", 0x2,   0xA2,    0x0 },
+    I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x98,    0x0 },
+
+    I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0xA0,    0x0 },
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0xA2,    0x0 },
+
+    I2cInfo {"QSFP_2_FRU",     "QSFP",      0x0,   0xA0,    0x0 },
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0xA2,    0x0 },
 }
 
 //=========================================
@@ -56,6 +65,7 @@ var MtpI2cTbl = []I2cInfo {
     I2cInfo {"HUB_2", "TCA9546A",  0x0, 0xE2,    0x0 },
     I2cInfo {"HUB_3", "TCA9546A",  0x0, 0xE4,    0x0 },
     I2cInfo {"HUB_4", "TCA9546A",  0x0, 0xE6,    0x0 },
+    I2cInfo {"FRU",   "AT24C02C",  0x0, 0xA0,    0x0 },
 }
 
 func init() {
