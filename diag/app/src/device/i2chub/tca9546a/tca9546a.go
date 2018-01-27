@@ -35,7 +35,7 @@ func DisableAllChan(devName string) (err int) {
 }
 
 /*
-    Disable all channels
+    Read channel enable/disable info
  */
 func ReadStatus(devName string) (data byte, err int) {
     data, err = smbus.ReceiveByte(devName)

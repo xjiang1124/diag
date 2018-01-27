@@ -129,7 +129,7 @@ func main() {
     filePtr     := flag.String("file",    "",    "VRM - /path/to/image.file")
     verbosePtr  := flag.Bool(  "verbose", false, "Verbose")
     speedPtr    := flag.Bool(  "speed",   false, "FAN - Set fan speed")
-    maskPtr     := flag.Uint64(   "mask",    0x7,   "FAN - fan instance mask")
+    maskPtr     := flag.Uint64("mask",    0x7,   "FAN - fan instance mask")
     flag.Parse()
 
     //cli.Println("devNamePtr:", *devNamePtr, "statusPtr:", *statusPtr, "marginPtr:", *marginPtr, "pctPtr:", *pctPtr)

@@ -2,10 +2,11 @@ package hwinfo
 
 import (
     "os"
-    "device/psu/pet1600"
+
+    "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
-    "device/fanctrl/adt7462"
+    "device/psu/pet1600"
     "device/tempsensor/tmp422"
 )
 
@@ -14,6 +15,13 @@ const (
 )
 
 type DispStaFunc func(devName string)(err int)
+
+type I2cHubInfo struct {
+    hubName string
+    channel byte
+}
+
+var cardName string
 
 //===============================
 // Naples 
@@ -30,6 +38,8 @@ var naplesEepList = []string {"FRU"}
 var mtpDispStaList map[string]DispStaFunc
 // EEPROM list
 var mtpEepList = []string {"FRU"}
+// I2C hub map
+var mtpI2cHubMap map[string] I2cHubInfo
 
 //===============================
 // NIC POWER
@@ -41,6 +51,7 @@ var nicPwrDispStaList map[string]DispStaFunc
 var dispMap map[string]map[string]DispStaFunc
 var pmbusTestMap map[string][]string
 var eepromMap map[string][]string
+var i2cHubMap map[string]map[string]I2cHubInfo
 
 //===============================
 // Public data
@@ -50,6 +61,8 @@ var DispStaList map[string]DispStaFunc
 var PmbusTestList []string
 // EEPROM  device list
 var EepromList []string
+// I2C hub map
+var I2cHubMap map[string] I2cHubInfo
 
 func init() {
     // Can only do map initialization here
@@ -70,6 +83,24 @@ func init() {
     mtpDispStaList["PSU_2"] = pet1600.DispStatus
     mtpDispStaList["DC"]    = tps549a20.DispStatus
     mtpDispStaList["FAN"]   = adt7462.DispStatus
+
+    mtpI2cHubMap = make(map[string]I2cHubInfo)
+    mtpI2cHubMap["UUT_1"]  = I2cHubInfo{"HUB_1", 0}
+    mtpI2cHubMap["UUT_2"]  = I2cHubInfo{"HUB_1", 1}
+    mtpI2cHubMap["UUT_3"]  = I2cHubInfo{"HUB_1", 2}
+    mtpI2cHubMap["UUT_4"]  = I2cHubInfo{"HUB_1", 3}
+    mtpI2cHubMap["UUT_5"]  = I2cHubInfo{"HUB_2", 0}
+    mtpI2cHubMap["UUT_6"]  = I2cHubInfo{"HUB_2", 1}
+    mtpI2cHubMap["UUT_7"]  = I2cHubInfo{"HUB_2", 2}
+    mtpI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
+    mtpI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
+    mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
+    mtpI2cHubMap["PSU_1"]  = I2cHubInfo{"HUB_4", 0}
+    mtpI2cHubMap["PSU_2"]  = I2cHubInfo{"HUB_4", 1}
+    mtpI2cHubMap["FAN"]    = I2cHubInfo{"HUB_4", 2}
+    mtpI2cHubMap["FRU"]    = I2cHubInfo{"HUB_4", 2}
+    mtpI2cHubMap["DC"]     = I2cHubInfo{"HUB_4", 3}
+    mtpI2cHubMap["CLKGEN"] = I2cHubInfo{"HUB_4", 3}
 
     //===============================
     // NIC_POWER
@@ -96,11 +127,15 @@ func init() {
     eepromMap["NAPLES"] = naplesEepList
     eepromMap["MTP"]    = mtpEepList
 
+    // I2C hub map
+    i2cHubMap["MTP"] = mtpI2cHubMap
+
     //===============================
     // Platform specified list
-    cardName := os.Getenv("CARD_NAME")
+    cardName = os.Getenv("CARD_NAME")
     DispStaList   = dispMap[cardName]
     PmbusTestList = pmbusTestMap[cardName]
     EepromList    = eepromMap[cardName]
+    I2cHubMap     = i2cHubMap[cardName]
 }
 

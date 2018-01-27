@@ -1,7 +1,7 @@
 package dmutex
 
 import (
-    "strings"
+    "strconv"
 
     "github.com/alexflint/go-filemutex"
 
@@ -15,90 +15,41 @@ type mutexInfo struct {
     mName string
 }
 
-/*
-var pwrMutexTbl = []mutexInfo {
-    mutexInfo {mName: "QSFP_0"},
-    mutexInfo {mName: "TEMP_SENSOR"},
-    mutexInfo {mName: "VRM_CAPRI"},
-    mutexInfo {mName: "VRM_3V3"},
-    mutexInfo {mName: "VRM_1V2"},
-}
-
-var mtpMutexTbl = []mutexInfo {
-    mutexInfo {mName: "PSU_0"},
-    mutexInfo {mName: "PSU_1"},
-    mutexInfo {mName: "DC"},
-    mutexInfo {mName: "OSC"},
-    mutexInfo {mName: "FAN_CTLR"},
-}
-*/
-
-var mutexTbl  []mutexInfo
+var mutexMap map[string]*filemutex.FileMutex
 
 func init() {
-    var mInfo mutexInfo
-
+    mutexMap = make(map[string]*filemutex.FileMutex)
     for _, i2cInfo := range(i2cinfo.I2cTbl) {
-        mInfo.mName = i2cInfo.Name
-        lockName := "/tmp/"+mInfo.mName+".lock"
+        lockName := "/tmp/"+"i2c-"+strconv.Itoa(int(i2cInfo.Bus))+".lock"
         m, err := filemutex.New(lockName)
         if err != nil {
             cli.Println("e", "Failed to initialize lock:", lockName)
+            continue
         }
-        mInfo.mHdl = m
-        mutexTbl = append(mutexTbl, mInfo)
+        mutexMap[i2cInfo.Name] = m
     }
 
-/*
-    if cardName == "NIC_POWER" {
-        mutexTbl = pwrMutexTbl
-    } else if cardName == "MTP" {
-        mutexTbl = mtpMutexTbl
-    } else {
-        cli.Println("e", "Invalid card name:", cardName)
-        return;
-    }
-
-    for i, _ := range(mutexTbl) {
-        //lockName := config.DiagNicBinPath+mutexTbl[i].mName+".lock"
-        lockName := "/tmp/"+mutexTbl[i].mName+".lock"
-        m, err := filemutex.New(lockName)
-        if err != nil {
-            cli.Println("e", "Failed to initialize lock:", lockName)
-        }
-        mutexTbl[i].mHdl = m
-    }
-*/
 }
 
 func Lock(mName string) (err int){
-    for i, _ := range(mutexTbl) {
-        if strings.Contains(mName, mutexTbl[i].mName) == true {
-            mutexTbl[i].mHdl.Lock()
-            return
-        }
+    mHdl, ok := mutexMap[mName]
+    if ok == false {
+        err = errType.INVALID_LOCK
+        return
     }
-    return errType.INVALID_LOCK
+    mHdl.Lock()
+    return
 }
 
-func Unlock(mName string) {
-    for _, m := range(mutexTbl) {
-        if strings.Contains(mName, m.mName) == true {
-            m.mHdl.Unlock()
-        }
+func Unlock(mName string) (err int) {
+    mHdl, ok := mutexMap[mName]
+    if ok == false {
+        err = errType.INVALID_LOCK
+        return
     }
-}
+    mHdl.Unlock()
+    return
 
-func TestLock() {
-    //lockName := config.DiagNicBinPath+"temp"
-    //lockName := "/tmp/foo.lock"
-    lockName := "/home/xguo2/workspace/psdiag/diag/app/src/common/dmutex/foo.lock"
-    m, err := filemutex.New(lockName)
-    if err != nil {
-        cli.Println("Directory did not exist or file could not created")
-    }
-    m.Lock()
-    m.Unlock()
 }
 
 

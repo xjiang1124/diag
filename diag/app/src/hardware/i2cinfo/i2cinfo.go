@@ -8,6 +8,8 @@ import (
     "common/errType"
 )
 
+var cardName string
+
 type I2cInfo struct {
     Name    string
     Comp    string
@@ -69,7 +71,7 @@ var MtpI2cTbl = []I2cInfo {
 }
 
 func init() {
-    cardName := os.Getenv("CARD_NAME")
+    cardName = os.Getenv("CARD_NAME")
 
     if cardName == "NAPLES" {
         I2cTbl = NaplesVrmTbl
