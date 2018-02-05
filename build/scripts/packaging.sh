@@ -53,7 +53,7 @@ cp -r $TOP_DIR/diag/infra/dshell/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/infra/config/OUTPUT/*redis $TEMP_DIR/config/redis/
 cp -r $TOP_DIR/diag/infra/config/scripts/* $TEMP_DIR/scripts/
 
-cp -r $TOP_DIR/diag/regression/ $TEMP_DIR/
+cp -r $TOP_DIR/diag/scripts/regression/ $TEMP_DIR/
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 
