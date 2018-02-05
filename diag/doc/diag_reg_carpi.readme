@@ -1,0 +1,33 @@
+There are two registers reserved for diag in Capri.
+
+cfg_diag_spare0 and cfg_diag_spare1
+
+egister    {
+   property description = "PXB Diag configuration register 0 ";
+   property register_output_port = true;
+   cfg_field data  ( title="select", description="register 0 for diag purposes ", reset_val=0, size=32, output_port=false );
+} cfg_diag_spare0;
+
+register    {
+   property description = "PXB Diag status register 0 ";
+   sta_field data ( title="data", description="register 0 for diag purposes" , size=32 );
+} sta_diag_spare0;
+
+register    {
+   property description = "PXB Diag configuration register 1 ";
+   property register_output_port = true;
+   cfg_field data  ( title="select", description="register 1 for diag purposes ", reset_val=0, size=32, output_port=false );
+} cfg_diag_spare1;
+
+register    {
+   property description = "PXB Diag status register 1 ";
+   sta_field data ( title="data", description="register 1 for diag purposes" , size=32 );
+} sta_diag_spare1;
+
+===========================
+Bit definition
+cfg_diag_spare0
+bit[3:0]: Slot number 1-10. Other values are invalid
+
+
+
