@@ -38,7 +38,7 @@ mkdir -p temp/$arch/tools
 mkdir -p images/
 
 # Prepare files
-cd $TOP_DIR/diag/infra/config/
+cd $TOP_DIR/diag/python/infra/config/
 ./parseYaml.py
 
 # Copy all the files needed
@@ -49,11 +49,11 @@ cp -r $TOP_DIR/diag/app/bin/linux_$arch/dsp/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/util/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/util/
 
-cp -r $TOP_DIR/diag/infra/dshell/ $TEMP_DIR/
-cp -r $TOP_DIR/diag/infra/config/OUTPUT/*redis $TEMP_DIR/config/redis/
-cp -r $TOP_DIR/diag/infra/config/scripts/* $TEMP_DIR/scripts/
+cp -r $TOP_DIR/diag/python/infra/dshell/ $TEMP_DIR/
+cp -r $TOP_DIR/diag/python/infra/config/OUTPUT/*redis $TEMP_DIR/config/redis/
+cp -r $TOP_DIR/diag/python/infra/config/scripts/* $TEMP_DIR/scripts/
 
-cp -r $TOP_DIR/diag/scripts/regression/ $TEMP_DIR/
+cp -r $TOP_DIR/diag/python/regression/ $TEMP_DIR/
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 
