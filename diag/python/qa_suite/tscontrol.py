@@ -42,10 +42,10 @@ def change_speed(child, line, speed):
 
 if __name__ == "__main__":
 
-    filename="tsinfo.yaml"
+    filename="config/tsinfo.yaml"
     tsconfig = common.load_yaml(filename)
 
-    tsinfo = tsconfig["TS1"]
+    tsinfo = tsconfig["pen-hwlab-tel-01"]
     ip = tsinfo["IP"]
     usr = tsinfo["USR"]
     pwd = tsinfo["PASSWD"]

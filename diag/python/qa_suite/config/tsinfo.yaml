@@ -1,0 +1,7 @@
+---
+pen-hwlab-tel-01:
+    IP: 192.168.65.227
+    MODEL: TS3000
+    USR: root
+    PASSWD: tslinux
+...

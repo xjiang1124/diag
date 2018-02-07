@@ -1,0 +1,20 @@
+---
+MTP001:
+    TS: pen-hwlab-tel-01
+    TS_PORT: 10
+    IP: 192.168.65.227
+    APC_1_IP:
+    APC_1_PORT:
+    APC_2_IP:
+    APC_2_PORT:
+    SLOT_1: NAPLES100 
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6: 
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10: 
+...
