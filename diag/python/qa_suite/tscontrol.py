@@ -4,6 +4,8 @@ import pexpect
 import re
 import sys
 
+sys.path.append("../lib")
+import common
 
 def start_telnet(ip, usr, pwd):
     telnet_cmd = "telnet "+ip
@@ -39,9 +41,18 @@ def change_speed(child, line, speed):
     child.expect("\# ")
 
 if __name__ == "__main__":
-    ip = "192.168.65.227"
-    usr = "root"
-    pwd = "tslinux"
+
+    filename="tsinfo.yaml"
+    tsconfig = common.load_yaml(filename)
+
+    tsinfo = tsconfig["TS1"]
+    ip = tsinfo["IP"]
+    usr = tsinfo["USR"]
+    pwd = tsinfo["PASSWD"]
+
+    #ip = "192.168.65.227"
+    #usr = "root"
+    #pwd = "tslinux"
     session = start_telnet(ip, usr, pwd)
     clear_line(session, 10)
     change_speed(session, 10, 9600)

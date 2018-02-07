@@ -1,0 +1,16 @@
+---
+TS1:
+    NAME: pen-hwlab-tel-01
+    IP: 192.168.65.227
+    MODEL: TS3000
+    USR: root
+    PASSWD: tslinux
+
+TS2:
+    NAME: pen-hwlab-tel-02
+    IP: 192.168.65.228
+    MODEL: TS3000
+    USR: root
+    PASSWD: tslinux
+
+...

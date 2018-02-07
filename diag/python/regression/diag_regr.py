@@ -15,28 +15,8 @@ from collections import OrderedDict
 from pebble import ProcessPool
 from concurrent.futures import TimeoutError
 
-#=========================================================
-# To load yaml file in order
-def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
-    class OrderedLoader(Loader):
-        pass
-    def construct_mapping(loader, node):
-        loader.flatten_mapping(node)
-        return object_pairs_hook(loader.construct_pairs(node))
-    OrderedLoader.add_constructor(
-        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-        construct_mapping)
-    return yaml.load(stream, OrderedLoader)
-
-#=========================================================
-# create output folder
-def create_folder(path):
-    try:
-        os.makedirs(path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
-
+sys.path.append("../lib")
+import common
 #=========================================================
 # Initialization
 pp = pprint.PrettyPrinter()
@@ -45,13 +25,7 @@ input_path = './config/'
 #=========================================================
 # yaml parser
 config_file = "cards.yaml"
-with open(config_file) as stream:
-    try:
-        #config_dict = yaml.load(stream)
-        config_dict = ordered_load(stream, yaml.SafeLoader)
-    except yaml.YAMLError as exc:
-        print exc
-        sys.exit()
+config_dict = common.load_yaml(config_file)
 
 for (dirpath, dirnames, filenames) in walk(input_path):
     print filenames
@@ -65,7 +39,7 @@ cards_dict = OrderedDict()
 for filename in filenames_needed:
     with open(input_path+filename) as stream:
         try:
-            card_dict = ordered_load(stream, yaml.SafeLoader)
+            card_dict = common.ordered_load(stream, yaml.SafeLoader)
         except yaml.YAMLError as exc:
             print exc
             sys.exit()
