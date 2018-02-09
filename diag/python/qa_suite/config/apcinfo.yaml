@@ -1,0 +1,7 @@
+---
+pen-hwlab-apc-01:
+    IP: 192.168.70.245
+    MODEL: RARITAN
+    USR: admin
+    PASSWD: lab123
+...
