@@ -1,5 +1,6 @@
 ---
 MTP001:
+    SKIP:
     TS: pen-hwlab-tel-01
     TS_PORT: 10
     IP: 192.168.65.227
