@@ -41,6 +41,13 @@ def turn_port_off(child, port):
     child.expect("\# ")
   
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-on", "--on", action="store_true", help="Turn on APC port")
+    group.add_argument("-off", "--off", action="store_true", help="Turn off APC port")
+    parser.add_argument("-p", "--port", type=int, help="APC port number", default=0)
+    args = parser.parse_args()
 
     filename="config/apcinfo.yaml"
     tsconfig = common.load_yaml(filename)
@@ -50,11 +57,17 @@ if __name__ == "__main__":
     usr = tsinfo["USR"]
     pwd = tsinfo["PASSWD"]
 
-    #ip = "192.168.65.227"
-    #usr = "root"
-    #pwd = "tslinux"
-    session = start_session(ip, usr, pwd)
-    turn_port_on(session, 11)
-    turn_port_off(session, 11)
-    quit_session(session)
+    if args.port == 0:
+        print "Invalid port number:", args.port
+        sys.exit()
+
+    if args.on == True:
+        session = start_session(ip, usr, pwd)
+        turn_port_on(session, args.port)
+        quit_session(session)
+
+    if args.off == True:
+        session = start_session(ip, usr, pwd)
+        turn_port_off(session, args.port)
+        quit_session(session)
 
