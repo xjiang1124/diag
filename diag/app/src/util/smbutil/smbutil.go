@@ -69,6 +69,18 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
             }
         case "SEND":
             err = smbus.SendByte(devName, byte(regAddr))
+            if err != errType.SUCCESS {
+                cli.Printf("i", "Send byte device %s of data=0x%x failed: 0x%x\n", devName, regAddr, err)
+            } else {
+                cli.Printf("i", "Send byte device %s of data=0x%x - Done\n", devName, regAddr)
+            }
+        case "RECEIVE":
+            dataB, err = smbus.ReceiveByte(devName)
+            if err != errType.SUCCESS {
+                cli.Printf("i", "Receive byte device %s failed: 0x%x\n", devName, err)
+            } else {
+                cli.Printf("i", "Receive byte device %s of data=0x%x - Done\n", devName, dataB)
+            }
         }
         return
     }
@@ -81,6 +93,18 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
     dataBuf := make([]byte, numByte)
     var byteCnt int
 
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
     for _, vrm := range(i2cinfo.I2cTbl) {
         if devName != vrm.Name {
             continue
@@ -89,12 +113,12 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
         case "READ_BLK":
             byteCnt, err = smbus.ReadBlock(devName, regAddr, dataBuf)
             if err != errType.SUCCESS {
-                cli.Println("e", "Failed to read block device", devName, "at", regAddr)
+                cli.Println("e", "Failed to read block device", devName, "at addr=", regAddr, "err code=", err)
             } else {
-                cli.Printf("i", "Read block device %s at addr 0x%x with %d bytes", devName, regAddr, byteCnt)
-                cli.Printf("i", "0x%x", dataBuf)
+                cli.Printf("i", "Read block device %s at addr 0x%x with %d bytes\n", devName, regAddr, byteCnt)
+                cli.Printf("i", "0x%x\n", dataBuf)
                 for i:=0; i<len(dataBuf); i++ {
-                    cli.Printf("i", "data[%d] = 0x%x", i, dataBuf[i])
+                    cli.Printf("i", "data[%d] = 0x%x\n", i, dataBuf[i])
                 }
             }
         case "WRITE_BLK":
@@ -120,6 +144,7 @@ func main() {
     writePtr    := flag.Bool(  "wr",   false, "Write register value")
     writeBlkPtr := flag.Bool(  "wrb",  false, "Write register block value")
     sendPtr     := flag.Bool(  "sd",   false, "Send byte")
+    recvPtr     := flag.Bool(  "rb",   false, "Receive byte")
     modePtr     := flag.String("mode", "b",   "r/w mode: byte(b) or word(w)")
     addrPtr     := flag.Uint64("addr", 0,    "Register addr")
     dataPtr     := flag.Uint64("data", 0,    "Data value")
@@ -146,6 +171,11 @@ func main() {
 
     if *sendPtr == true {
         readWriteSend("SEND", devName, addr, uint16(data), mode)
+        return
+    }
+
+    if *recvPtr == true {
+        readWriteSend("RECEIVE", devName, addr, uint16(data), mode)
         return
     }
 

@@ -128,6 +128,7 @@ func init() {
     eepromMap["MTP"]    = mtpEepList
 
     // I2C hub map
+    i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
 
     //===============================

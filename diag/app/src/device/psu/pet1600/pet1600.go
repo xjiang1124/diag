@@ -4,7 +4,8 @@ import (
     "fmt"
 
     "common/cli"
-    //"common/errType"
+    "common/dmutex"
+    "common/errType"
 
 	"hardware/pmbusCmd"
 )
@@ -19,7 +20,7 @@ const (
 )
 
 func DispStatus(devName string) (err int) {
-    var fmtDig string = "0x%x"
+    var fmtDig string = "%d.%03d"
     var fmtStr = "%-10s"
     var fmtNameStr = "%-20s"
     var outStr string
@@ -27,14 +28,27 @@ func DispStatus(devName string) (err int) {
     var dig uint64
     var frac uint64
 
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = pmbusCmd.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbusCmd.Close()
+    defer dmutex.Unlock(devName)
     // MFR info
-    cli.Println("i", "--------------------")
-    dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
-    outStr = string(dataBuf[:MFR_ID_LEN])
-    cli.Println("i", "MFR_ID:", outStr)
-    dataBuf, _ = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
-    outStr = string(dataBuf[:MFR_MODEL_LEN])
-    cli.Println("i", "MFR_MODEL:", outStr)
+    //cli.Println("i", "--------------------")
+    //dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
+    //outStr = string(dataBuf[:MFR_ID_LEN])
+    //cli.Println("i", "MFR_ID:", outStr)
+    //cli.Printf("i", "0x%x\n", dataBuf)
+
+    //dataBuf, _ = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
+    //outStr = string(dataBuf[:MFR_MODEL_LEN])
+    //cli.Println("i", "MFR_MODEL:", outStr)
 
     // Status
     title := "STATUS"
@@ -43,7 +57,8 @@ func DispStatus(devName string) (err int) {
     cli.Println("i", "--------------------")
     cli.Println("i", outStr)
     data, _ := pmbusCmd.ReadStatusWord(devName, pmbusCmd.PAGE_0)
-    outStr = fmt.Sprintf("0x%X", data)
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+    outStr = outStr + fmt.Sprintf("0x%X", data)
     cli.Println("i", outStr)
 
     // Power outputs

@@ -3,10 +3,11 @@ package pmbusCmd
 import (
     "math"
 
+    "config"
     "common/errType"
     "common/misc"
-
     "protocol/pmbus"
+    "protocol/smbus"
 )
 
 const (
@@ -17,6 +18,23 @@ const (
     VOUT_MODE_LNR = 0x0
     VOUT_MODE_VID = 0x1
 )
+
+func Open(devName string) (err int) {
+    if (config.SmbusMode == config.DISABLE) {
+        return
+    }
+    err = smbus.Open(devName)
+    return
+}
+
+func Close() (err int) {
+    if (config.SmbusMode == config.DISABLE) {
+        return
+    }
+    err = smbus.Close()
+    return
+
+}
 
 /*
 	Linear11 format
@@ -232,7 +250,7 @@ func ReadStatusWord(devName string, page byte) (data uint16, err int) {
 
 func ReadMfrId(devName string, numBytes int) (dataBuf []byte, err int) {
     dataBuf = make([]byte, numBytes)
-    retLen, err := pmbus.ReadBlock(devName, MFR_ID, dataBuf)
+    retLen, err := smbus.ReadBlock(devName, MFR_ID, dataBuf)
     if err == errType.SUCCESS {
         if retLen != numBytes {
             err = errType.PMBUS_NUM_BYTE_MISMATCH

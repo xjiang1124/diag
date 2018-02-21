@@ -129,6 +129,7 @@ func main() {
     filePtr     := flag.String("file",    "",    "VRM - /path/to/image.file")
     verbosePtr  := flag.Bool(  "verbose", false, "Verbose")
     speedPtr    := flag.Bool(  "speed",   false, "FAN - Set fan speed")
+    faninitPtr  := flag.Bool(  "faninit", false, "FAN - Initialization")
     maskPtr     := flag.Uint64("mask",    0x7,   "FAN - fan instance mask")
     flag.Parse()
 
@@ -174,5 +175,11 @@ func main() {
         fanSpeed(devName, pct, mask)
         return
     }
+
+    if *faninitPtr == true {
+        adt7462.Setup(devName)
+        return
+    }
+
 }
 

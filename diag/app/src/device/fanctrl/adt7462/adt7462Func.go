@@ -4,6 +4,7 @@ import (
     "fmt"
 
     "common/cli"
+    "common/dmutex"
     "common/errType"
     "common/misc"
     "protocol/smbus"
@@ -46,8 +47,8 @@ type config struct {
 var configTbl = []config {
     {PIN_CONF_1,  0, 8, 0x7F}, // Disable VID; Select TACH1-5, enable D1/3 --- default
     {PIN_CONF_2,  7, 1, 0x1},  // Select TACH6 --- default
-    {PIN_CONF_4,  2, 2, 0x3},  // Select PWM1/2 --- default
     {PIN_CONF_3,  2, 2, 0x0},  // Select vBATT --- default
+    {PIN_CONF_4,  2, 2, 0x3},  // Select PWM1/2 --- default
     {CONFIG_2,    2, 1, 0x1},  // High frequence mode
     {PWM1_CONFIG, 5, 3, 0x7},  // PWM1 manual mode
     {PWM2_CONFIG, 5, 3, 0x7},  // PWM2 manual mode
@@ -56,6 +57,18 @@ var configTbl = []config {
 }
 
 func Setup(devName string) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
     var data byte
     for _, config := range(configTbl) {
         data, err = smbus.ReadByte(devName, config.regAddr)
@@ -73,6 +86,7 @@ func Setup(devName string) (err int) {
             return
         }
     }
+    cli.Println("i", "Fan initialized")
     return
 }
 
@@ -88,6 +102,18 @@ func Setup(devName string) (err int) {
     7       8
  */
 func GetFanSpeed(devName string, fanIdx uint64) (rpm uint16, err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
     var tachLsbReg uint64
     var tachMsbReg uint64
     var tachLsb byte
@@ -124,6 +150,18 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint16, err int) {
     pct: fan speed percentage: 0-100
  */
 func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
     var pwmReg uint64
     var pwmVal uint64
 
@@ -140,6 +178,7 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
     pwmReg = PWM1_DUTY_CYCLE + pwmIdx
     pwmVal = pct * 100 / 39
 
+    cli.Printf("i", "Reg: 0x%x, value0x%x\n", pwmReg, byte(pwmVal))
     err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
     return
 }
@@ -157,9 +196,22 @@ func GetTemp(devName string, tempIdx uint64) (integer int, frac int,  err int) {
     var tempLsb byte
     var tempMsb byte
 
+    err = dmutex.Lock(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    defer dmutex.Unlock(devName)
+
     tempLsbReg = LOCAL_TEMP_VALUE_LSB + tempIdx * 2
     tempMsbReg = LOCAL_TEMP_VALUE_MSB + tempIdx * 2
 
+    cli.Printf("i", "Lsb: 0x%x, Msb: 0x%x\n", tempLsbReg, tempMsbReg)
     tempLsb, err = smbus.ReadByte(devName, tempLsbReg)
     tempMsb, err = smbus.ReadByte(devName, tempMsbReg)
 
@@ -172,7 +224,7 @@ func GetTemp(devName string, tempIdx uint64) (integer int, frac int,  err int) {
 func DispStatus(devName string) (err int) {
     var fmtDig string = "%d"
     var fmtDigFrac string = "%d.%02d"
-    var fmtStr = "%-10s"
+    var fmtStr = "%-15s"
     var fmtNameStr = "%-20s"
     var outStr string
     var outStrTemp string
@@ -198,8 +250,11 @@ func DispStatus(devName string) (err int) {
             cli.Println("f", "Failed to get fan speed!", i, err)
             return
         }
+        if rpm == 65535 {
+            rpm = 0
+        }
         outStrTemp = fmt.Sprintf(fmtDig, rpm)
-        outStr = outStr + fmt.Sprint(fmtStr, outStrTemp)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     }
     cli.Println("i", outStr)
 
@@ -221,7 +276,7 @@ func DispStatus(devName string) (err int) {
             return
         }
         outStrTemp = fmt.Sprintf(fmtDigFrac, integer, frac)
-        outStr = outStr + fmt.Sprint(fmtStr, outStrTemp)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     }
     cli.Println("i", outStr)
     return
