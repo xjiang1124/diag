@@ -1,6 +1,7 @@
 package adt7462
 
 const(
+    CONFIG_0 = 0x00
     CONFIG_1 = 0x01
     CONFIG_2 = 0x02
     CONFIG_3 = 0x03

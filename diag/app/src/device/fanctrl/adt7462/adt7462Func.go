@@ -45,15 +45,20 @@ type config struct {
 }
 
 var configTbl = []config {
-    {PIN_CONF_1,  0, 8, 0x7F}, // Disable VID; Select TACH1-5, enable D1/3 --- default
-    {PIN_CONF_2,  7, 1, 0x1},  // Select TACH6 --- default
-    {PIN_CONF_3,  2, 2, 0x0},  // Select vBATT --- default
-    {PIN_CONF_4,  2, 2, 0x3},  // Select PWM1/2 --- default
-    {CONFIG_2,    2, 1, 0x1},  // High frequence mode
-    {PWM1_CONFIG, 5, 3, 0x7},  // PWM1 manual mode
-    {PWM2_CONFIG, 5, 3, 0x7},  // PWM2 manual mode
-    {PWM3_CONFIG, 5, 3, 0x7},  // PWM3 manual mode
-    {TACH_ENABLE, 0, 8, 0xFF}, // Enable all TACHs
+    {PIN_CONF_1,      0, 8, 0x7F}, // Disable VID; Select TACH1-5, enable D1/3 --- default
+    {PIN_CONF_2,      7, 1, 0x1},  // Select TACH6 --- default
+    {PIN_CONF_3,      2, 2, 0x0},  // Select vBATT --- default
+    {PIN_CONF_4,      2, 2, 0x3},  // Select PWM1/2 --- default
+    {CONFIG_2,        2, 1, 0x1},  // High frequence mode
+    {PWM1_CONFIG,     5, 3, 0x7},  // PWM1 manual mode
+    {PWM2_CONFIG,     5, 3, 0x7},  // PWM2 manual mode
+    {PWM3_CONFIG,     5, 3, 0x7},  // PWM3 manual mode
+    {TACH_ENABLE,     0, 8, 0xFF}, // Enable all TACHs
+}
+var pwmConfigTbl = []config {
+    {PWM1_DUTY_CYCLE, 0, 8, 0x80}, // PWM1 initial duty cycle
+    {PWM2_DUTY_CYCLE, 0, 8, 0x80}, // PWM2 initial duty cycle
+    {PWM3_DUTY_CYCLE, 0, 8, 0x80}, // PWM3 initial duty cycle
 }
 
 func Setup(devName string) (err int) {
@@ -86,6 +91,48 @@ func Setup(devName string) (err int) {
             return
         }
     }
+
+    //============================
+    // Enable to start working
+    data, err = smbus.ReadByte(devName, CONFIG_1)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if (data & 0x80) == 0 {
+        cli.Println("f", "Device ", devName, "not ready!")
+        err = errType.FAIL
+        return
+    }
+
+    data, err = misc.SetBits8(data, 1, 5, 1)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = smbus.WriteByte(devName, CONFIG_1, data)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //============================
+    for _, config := range(pwmConfigTbl) {
+        data, err = smbus.ReadByte(devName, config.regAddr)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        data, err = misc.SetBits8(data, config.val, config.startBit, config.numBits)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        err = smbus.WriteByte(devName, config.regAddr, data)
+        if err != errType.SUCCESS {
+            return
+        }
+    }
+
     cli.Println("i", "Fan initialized")
     return
 }

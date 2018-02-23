@@ -4,9 +4,9 @@ import (
     "math"
 
     "config"
+    //"common/cli"
     "common/errType"
     "common/misc"
-    "protocol/pmbus"
     "protocol/smbus"
 )
 
@@ -64,6 +64,8 @@ func Linear11(input uint16) (integer uint64, dec uint64, err int) {
     integer = uint64(intpart)
     dec = uint64(div*1000)
 
+    //cli.Printf("d", "input=0x%x, integer=%d, dec=%d\n", input, integer, dec)
+
     return integer, dec, errType.SUCCESS
 }
 
@@ -107,14 +109,14 @@ func ReadVoutLnr(devName string, page byte) (integer uint64, dec uint64, err int
 
     // Write page register
     if (page != PAGE_NONE) {
-        err = pmbus.WriteByte(devName, PAGE, page)
+        err = smbus.WriteByte(devName, PAGE, page)
         if err != errType.SUCCESS {
             return
         }
     }
 
     // Read VOUT_MODE
-    vmode, err = pmbus.ReadByte(devName, VOUT_MODE)
+    vmode, err = smbus.ReadByte(devName, VOUT_MODE)
     if err != errType.SUCCESS {
         return
     }
@@ -123,8 +125,16 @@ func ReadVoutLnr(devName string, page byte) (integer uint64, dec uint64, err int
         return
     }
     exp = uint64(vmode & 0x1F)
+    // Sometimes can not read vmode
+    if vmode == 0 {
+        integer = 0
+        dec = 0
+        return
+    }
+    //cli.Println("d", "exp:", exp)
 
-    data, err = pmbus.ReadWord(devName, READ_VOUT)
+    data, err = smbus.ReadWord(devName, READ_VOUT)
+    //cli.Printf("d", "vmode=0x%x, exp=0x%x, data=0x%x\n", vmode, exp, data)
     if err != errType.SUCCESS {
         return
     }
@@ -142,13 +152,13 @@ func ReadLnr11(devName string, page byte, cmd uint64) (integer uint64, dec uint6
 
     // Write page register
     if (page != PAGE_NONE) {
-        err = pmbus.WriteByte(devName, PAGE, page)
+        err = smbus.WriteByte(devName, PAGE, page)
         if err != errType.SUCCESS {
             return
         }
     }
 
-    data, err = pmbus.ReadWord(devName, cmd)
+    data, err = smbus.ReadWord(devName, cmd)
 
     integer, dec, _ = Linear11(data)
 
@@ -180,6 +190,7 @@ func ReadIoutLnr(devName string, page byte) (integer uint64, dec uint64, err int
     READ_PIN
  */
 func ReadPinLnr(devName string, page byte) (integer uint64, dec uint64, err int) {
+    //cli.Println("d", "ReadPinLnr")
     integer, dec, err = ReadLnr11(devName, page, READ_PIN)
     return
 }
@@ -188,6 +199,7 @@ func ReadPinLnr(devName string, page byte) (integer uint64, dec uint64, err int)
     READ_POUT
  */
 func ReadPoutLnr(devName string, page byte) (integer uint64, dec uint64, err int) {
+    //cli.Println("d", "ReadPoutLnr")
     integer, dec, err = ReadLnr11(devName, page, READ_POUT)
     return
 }
@@ -238,13 +250,13 @@ func ReadFanSpd2Lnr(devName string, page byte) (integer uint64, dec uint64, err 
 func ReadStatusWord(devName string, page byte) (data uint16, err int) {
     // Write page register
     if (page != PAGE_NONE) {
-        err = pmbus.WriteByte(devName, PAGE, page)
+        err = smbus.WriteByte(devName, PAGE, page)
         if err != errType.SUCCESS {
             return
         }
     }
 
-    data, err = pmbus.ReadWord(devName, STATUS_WORD)
+    data, err = smbus.ReadWord(devName, STATUS_WORD)
     return
 }
 
@@ -261,7 +273,7 @@ func ReadMfrId(devName string, numBytes int) (dataBuf []byte, err int) {
 
 func ReadMfrModel(devName string, numBytes int) (dataBuf []byte, err int) {
     dataBuf = make([]byte, numBytes)
-    retLen, err := pmbus.ReadBlock(devName, MFR_MODEL, dataBuf)
+    retLen, err := smbus.ReadBlock(devName, MFR_MODEL, dataBuf)
     if err == errType.SUCCESS {
         if retLen != numBytes {
             err = errType.PMBUS_NUM_BYTE_MISMATCH
@@ -270,3 +282,10 @@ func ReadMfrModel(devName string, numBytes int) (dataBuf []byte, err int) {
     return
 }
 
+/*
+    READ_BYTE
+ */
+func ReadByte(devName string, cmd byte) (data byte, err int) {
+    data, err = smbus.ReadByte(devName, uint64(cmd))
+    return
+}

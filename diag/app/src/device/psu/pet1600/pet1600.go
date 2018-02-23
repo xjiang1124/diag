@@ -40,25 +40,44 @@ func DispStatus(devName string) (err int) {
     defer pmbusCmd.Close()
     defer dmutex.Unlock(devName)
     // MFR info
-    //cli.Println("i", "--------------------")
-    //dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
-    //outStr = string(dataBuf[:MFR_ID_LEN])
-    //cli.Println("i", "MFR_ID:", outStr)
-    //cli.Printf("i", "0x%x\n", dataBuf)
+    cli.Println("i", "--------------------")
+    dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
+    outStr = string(dataBuf[:MFR_ID_LEN])
+    cli.Println("i", "MFR_ID:", outStr)
 
-    //dataBuf, _ = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
-    //outStr = string(dataBuf[:MFR_MODEL_LEN])
-    //cli.Println("i", "MFR_MODEL:", outStr)
+    dataBuf, _ = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
+    outStr = string(dataBuf[:MFR_MODEL_LEN])
+    cli.Println("i", "MFR_MODEL:", outStr)
 
     // Status
-    title := "STATUS"
+    stsTitle := []string {"STATUS", "STS_VOUT", "STS_IOUT", "STS_INPUT",
+                          "STS_TEMP", "STS_CML", "STS_MFR", "STS_FAN"}
     outStr = fmt.Sprintf(fmtNameStr, "NAME")
-    outStr = outStr + fmt.Sprintf(fmtStr, title)
+    for _, title := range(stsTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
     cli.Println("i", "--------------------")
     cli.Println("i", outStr)
+
     data, _ := pmbusCmd.ReadStatusWord(devName, pmbusCmd.PAGE_0)
     outStr = fmt.Sprintf(fmtNameStr, devName)
-    outStr = outStr + fmt.Sprintf("0x%X", data)
+    outStrTemp = fmt.Sprintf("0x%X", data)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    stsList := []byte {pmbusCmd.STATUS_VOUT,
+                         pmbusCmd.STATUS_IOUT,
+                         pmbusCmd.STATUS_INPUT,
+                         pmbusCmd.STATUS_TEMPERATURE,
+                         pmbusCmd.STATUS_CML,
+                         pmbusCmd.STATUS_MFR_SPECIFIC,
+                         pmbusCmd.STATUS_FANS_1_2,
+                     }
+
+    for _, cmd := range(stsList) {
+        dataByte, _ := pmbusCmd.ReadByte(devName, cmd)
+        outStrTemp = fmt.Sprintf("0x%X", dataByte)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    }
     cli.Println("i", outStr)
 
     // Power outputs
