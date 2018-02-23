@@ -197,6 +197,7 @@ func U16ToBytes(dataU16 uint16) (byteArr []byte) {
     }
     return
 }
+
 /*
     Sleep function in second
  */
@@ -204,6 +205,12 @@ func SleepInSec(numSec int) {
     time.Sleep(time.Duration(numSec) * time.Second)
 }
 
+/*
+    Sleep function in micro-second
+ */
+func SleepInUSec(numUSec int) {
+    time.Sleep(time.Duration(numUSec) * time.Microsecond)
+}
 
 /* 
     GetElemIdx finds index of given element in the slice
