@@ -122,11 +122,18 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
                 }
             }
         case "WRITE_BLK":
+            if numByte > 4 {
+                cli.Println("f", "Maximun 8 bytes of block write is allowed! Reveived request of ", numByte, "bytes")
+                return errType.FAIL
+            }
+            for i:=0; uint64(i) < numByte; i++ {
+                dataBuf[i] = byte((data >> (8*uint64(i))) & 0xFF)
+            }
             byteCnt, err = smbus.WriteBlock(devName, regAddr, dataBuf)
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to write block device", devName, "at", regAddr)
             } else {
-                cli.Printf("i", "Write block device %s at addr 0x%x with %d bytes", devName, regAddr, byteCnt)
+                cli.Printf("i", "Write block device %s at addr 0x%x with %d bytes\n", devName, regAddr, byteCnt)
             }
         }
         return
