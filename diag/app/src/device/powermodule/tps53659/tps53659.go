@@ -414,7 +414,8 @@ func DispStatus(devName string) (err int) {
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    cli.Println("i", "--------------------")
+    //cli.Println("i", "--------------------")
+    cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
@@ -485,7 +486,7 @@ func DispStatus(devName string) (err int) {
 
     status, _ := ReadStatus(devName)
     outStrTemp = fmt.Sprintf("0x%X", status)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) + "\n"
 
     cli.Println("i", outStr)
 

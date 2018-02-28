@@ -4,6 +4,7 @@ import (
     //"fmt"
     "flag"
     "os"
+    "sort"
     "strings"
 
     "common/cli"
@@ -37,15 +38,30 @@ func devInfo(devName string) {
 
 func dispStatus(devName string) {
     if devName == "ALL" {
-        for dev, dispFunc := range(hwinfo.DispStaList) {
+        // golang range(map) sequence is random
+        // Sorted output
+        keys := make([]string, 0)
+        for k, _ := range(hwinfo.DispStaList) {
+            keys = append(keys, k)
+        }
+        sort.Strings(keys)
+        for _, dev := range(keys) {
+            dispFunc := hwinfo.DispStaList[dev]
+            hwinfo.EnableHubChannelExclusive(dev)
             dispFunc(dev)
         }
+
+        //for dev, dispFunc := range(hwinfo.DispStaList) {
+        //    hwinfo.EnableHubChannelExclusive(dev)
+        //    dispFunc(dev)
+        //}
     } else {
         dispFunc, ok := hwinfo.DispStaList[devName]
         if ok == false {
             cli.Println("f", "Invalde device: ", devName)
             return
         }
+        hwinfo.EnableHubChannelExclusive(devName)
         dispFunc(devName)
     }
 }
@@ -100,6 +116,8 @@ func verify (devName string, fileName string, verbose bool) (err int) {
 
 func fanSpeed(devName string, pct int, mask uint64) (err int) {
     var i uint64
+
+    hwinfo.EnableHubChannelExclusive(devName)
     for _, i2cInfo := range(i2cinfo.I2cTbl) {
         if devName != i2cInfo.Name {
             continue
@@ -177,6 +195,7 @@ func main() {
     }
 
     if *faninitPtr == true {
+        hwinfo.EnableHubChannelExclusive(devName)
         adt7462.Setup(devName)
         return
     }

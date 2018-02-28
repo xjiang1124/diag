@@ -40,7 +40,8 @@ func DispStatus(devName string) (err int) {
     defer pmbusCmd.Close()
     defer dmutex.Unlock(devName)
     // MFR info
-    cli.Println("i", "--------------------")
+    //cli.Println("i", "--------------------")
+    cli.Println("i", "=================================")
     dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
     outStr = string(dataBuf[:MFR_ID_LEN])
     cli.Println("i", "MFR_ID:", outStr)
@@ -137,7 +138,7 @@ func DispStatus(devName string) (err int) {
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     }
-    cli.Println("i", outStr)
+    cli.Println("i", outStr+"\n")
 
     return
 }

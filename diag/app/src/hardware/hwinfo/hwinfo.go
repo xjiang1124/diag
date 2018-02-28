@@ -52,6 +52,7 @@ var dispMap map[string]map[string]DispStaFunc
 var pmbusTestMap map[string][]string
 var eepromMap map[string][]string
 var i2cHubMap map[string]map[string]I2cHubInfo
+var i2cHubList map[string][]string
 
 //===============================
 // Public data
@@ -63,6 +64,7 @@ var PmbusTestList []string
 var EepromList []string
 // I2C hub map
 var I2cHubMap map[string] I2cHubInfo
+var I2cHubList []string
 
 func init() {
     // Can only do map initialization here
@@ -102,6 +104,8 @@ func init() {
     mtpI2cHubMap["DC"]     = I2cHubInfo{"HUB_4", 3}
     mtpI2cHubMap["CLKGEN"] = I2cHubInfo{"HUB_4", 3}
 
+    mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
+
     //===============================
     // NIC_POWER
     nicPwrDispStaList = make(map[string]DispStaFunc)
@@ -130,6 +134,8 @@ func init() {
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
+    i2cHubList = make(map[string][]string)
+    i2cHubList["MTP"] = mtpI2cHubList
 
     //===============================
     // Platform specified list
@@ -138,5 +144,6 @@ func init() {
     PmbusTestList = pmbusTestMap[cardName]
     EepromList    = eepromMap[cardName]
     I2cHubMap     = i2cHubMap[cardName]
+    I2cHubList    = i2cHubList[cardName]
 }
 

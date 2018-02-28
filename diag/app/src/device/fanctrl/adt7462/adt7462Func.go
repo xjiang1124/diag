@@ -258,7 +258,7 @@ func GetTemp(devName string, tempIdx uint64) (integer int, frac int,  err int) {
     tempLsbReg = LOCAL_TEMP_VALUE_LSB + tempIdx * 2
     tempMsbReg = LOCAL_TEMP_VALUE_MSB + tempIdx * 2
 
-    cli.Printf("i", "Lsb: 0x%x, Msb: 0x%x\n", tempLsbReg, tempMsbReg)
+    //cli.Printf("i", "Lsb: 0x%x, Msb: 0x%x\n", tempLsbReg, tempMsbReg)
     tempLsb, err = smbus.ReadByte(devName, tempLsbReg)
     tempMsb, err = smbus.ReadByte(devName, tempMsbReg)
 
@@ -286,7 +286,7 @@ func DispStatus(devName string) (err int) {
     for _, title := range(titles) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    cli.Println("i", "--------------------")
+    cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
@@ -325,7 +325,7 @@ func DispStatus(devName string) (err int) {
         outStrTemp = fmt.Sprintf(fmtDigFrac, integer, frac)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     }
-    cli.Println("i", outStr)
+    cli.Println("i", outStr+"\n")
     return
 }
 

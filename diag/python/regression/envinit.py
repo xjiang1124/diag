@@ -19,7 +19,8 @@ if i == 0:
     child.sendline("lab123")
     child.expect("\$ ")
 
-child.sendline("export CARD_NAME=MTP")
+child.sendline("sudo rmmod ftdi_sio")
 child.expect("\$ ")
+
 child.sendline("exit")
 child.expect(pexpect.EOF)
