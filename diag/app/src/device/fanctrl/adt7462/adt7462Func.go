@@ -148,7 +148,7 @@ func Setup(devName string) (err int) {
     6       7
     7       8
  */
-func GetFanSpeed(devName string, fanIdx uint64) (rpm uint16, err int) {
+func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
     err = dmutex.Lock(devName)
     if err != errType.SUCCESS {
         return
@@ -165,6 +165,7 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint16, err int) {
     var tachMsbReg uint64
     var tachLsb byte
     var tachMsb byte
+    var temp uint64
 
     if fanIdx > FAN_4_OUTLET {
         err = errType.SUCCESS
@@ -183,7 +184,13 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint16, err int) {
     tachLsb, err = smbus.ReadByte(devName, tachLsbReg)
     tachMsb, err = smbus.ReadByte(devName, tachMsbReg)
 
-    rpm = (uint16(tachMsb) << 8) | uint16(tachLsb)
+    // Calculate rpm
+    // 9k*60/tach
+    temp = (uint64(tachMsb) << 8) | uint64(tachLsb)
+    rpm = 90000*60/temp
+    if rpm < 100 {
+        rpm = 0
+    }
     return
 }
 
@@ -275,7 +282,7 @@ func DispStatus(devName string) (err int) {
     var fmtNameStr = "%-20s"
     var outStr string
     var outStrTemp string
-    var rpm uint16
+    var rpm uint64
     var integer int
     var frac int
 
