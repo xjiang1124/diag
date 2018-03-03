@@ -143,7 +143,14 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
     return
 }
 
+func myUsage() {
+    flag.PrintDefaults()
+    i2cinfo.DispI2cInfoAll()
+}
+
 func main() {
+    flag.Usage = myUsage
+
     infoPtr     := flag.Bool(  "info", false, "Show I2C info table")
     devNamePtr  := flag.String("dev",  "",    "Device name")
     readPtr     := flag.Bool(  "rd",   false, "Read register value")
@@ -200,5 +207,7 @@ func main() {
         i2cinfo.DispI2cInfoAll()
         return
     }
+
+    myUsage()
 }
 

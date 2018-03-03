@@ -136,7 +136,14 @@ func fanSpeed(devName string, pct int, mask uint64) (err int) {
     return
 }
 
+func myUsage() {
+    flag.PrintDefaults()
+    i2cinfo.DispI2cInfoAll()
+}
+
 func main() {
+    flag.Usage = myUsage
+
     devNamePtr  := flag.String("dev",     "ALL", "Device name")
     statusPtr   := flag.Bool(  "status",  false, "Device status")
     infoPtr     := flag.Bool(  "info",    false, "Device info")
@@ -200,5 +207,6 @@ func main() {
         return
     }
 
+    myUsage()
 }
 
