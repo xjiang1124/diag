@@ -51,13 +51,16 @@ source ~/.bash_profile
 
 if [[ $arch == "amd64" ]]
 then
+    $DIAG_DIR/regression/envinit.py
+
     # Start redis if it is not running
     redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
     if [[ $redisFlag != "1" ]]
     then
         $DIAG_DIR/tools/redis-server --daemonize yes
         # Wait for 1s for redis-server to get ready
-        sleep 1s
+        sleep 5s
+        echo "Turning on diag engine"
         $DIAG_DIR/tools/redis-cli CONFIG SET protected-mode no
         $DIAG_DIR/tools/redis-cli -h $REDIS_IP set DIAG_UP 1
         echo "Diag engine turned on"
