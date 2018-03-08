@@ -1,44 +1,37 @@
 #!/usr/bin/env python
 
+import argparse
 import pexpect
 import re
 import sys
 
-mtp_ip = "192.168.69.238"
-ssh_cmd = "ssh diag@"+mtp_ip
-bash_prompt = "\$ "
+import tscontrol
+import apccontrol
+sys.path.append("../lib")
+import common
 
-child = pexpect.spawn(ssh_cmd)
-child.logfile_read = sys.stdout
+parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
+group = parser.add_mutually_exclusive_group()
+parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
+parser.add_argument("-m", "--mode", help="Platform, e.g. P2C", type=str, default='')
+args = parser.parse_args()
 
-# With or without password
-i = child.expect(["password:", bash_prompt])
-if i==0:
-    child.sendline("lab123")
-    child.expect(bash_prompt)
+# Retrieve platform info
+filename = "config/chassis_info.yaml"
+chassis_config = common.load_yaml(filename)
+pltf_info = chassis_config[args.platform]
+if not pltf_info:
+    print "Can not retrieve platform information!")
+    sys.exit()
 
-child.sendline("ls -l")
-child.expect(bash_prompt)
+modes = args.mode.split()
+if len(modes) == 0:
+    print "Mode field can not be empty!"
+    sys.exit()
 
-child.sendline("exit")
-child.expect(pexpect.EOF)
-sys.exit()
+# Prepare for log file name, based on date, time and iteration
+filename = "config/sys_info.yaml"
+sys_config = common.load_yaml(filename)
+log_loc = sys_config["LOG_LOC"]
 
-# Parse free space info
-re_pattern = "^(\d+)\s+(\d+)\s+(\d+).*"
-re_p = re.compile(re_pattern)
-buf = child.before
-buflist = buf.splitlines()
-
-for line in buflist:
-    #print line
-    m = re_p.match(line)
-    if m:
-        break
-    else:
-        if buflist.index(line) == len(buflist)-1:
-            print "Can not find disk info! quit!"
-            sys.exit()
-child.expect(pexpect.EOF)
-
-print "=== Partition Created: Reboot needed ==="
+print "===  ==="

@@ -1,14 +1,13 @@
 ---
 MTP001:
     SKIP:
-    MODE: P2C 4C
-    TS: pen-hwlab-tel-01
+    MODE: PWRCYCL
+    TS: pen-hwlab-tel-02
     TS_PORT: 10
-    TS_IP: 192.168.65.227
-    APC_1_IP: 192.168.70.245
+    APC_1_NAME: pen-hwlab-apc-01
     APC_1_PORT: 11
-    APC_2_IP: 192.168.70.245
-    APC_2_PORT: 12
+    APC_2_NAME: pen-hwlab-apc-01
+    APC_2_PORT: 16
     SLOT_1: NAPLES100 
     SLOT_2: 
     SLOT_3: 
@@ -21,14 +20,13 @@ MTP001:
     SLOT_10: 
 
 MTP002:
-    SKIP:
+    SKIP: TRUE
     MODE: P2C
     TS: pen-hwlab-tel-01
     TS_PORT: 11
-    TS_IP: 192.168.65.227
-    APC_1_IP: 192.168.70.245
+    APC_1_NAME: pen-hwlab-apc-01
     APC_1_PORT: 13
-    APC_2_IP: 192.168.70.245
+    APC_2_NAME: pen-hwlab-apc-01
     APC_2_PORT: 14
     SLOT_1: NAPLES100 
     SLOT_2: 
