@@ -93,6 +93,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     apc = apcControl()
-    apc.turn_off("pen-hwlab-apc-01", 11, 16)
-    apc.turn_on("pen-hwlab-apc-01", 11, 16)
+    if args.on == True:
+        apc.turn_on("pen-hwlab-apc-01", args.port)
+        sys.exit()
+
+    if args.off == True:
+        apc.turn_off("pen-hwlab-apc-01", args.port)
+        sys.exit()
+
+    print "Invalid parameter"
 

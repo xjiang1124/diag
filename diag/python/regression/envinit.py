@@ -22,5 +22,7 @@ if i == 0:
 child.sendline("sudo rmmod ftdi_sio")
 child.expect("\$ ")
 
-child.sendline("exit")
-child.expect(pexpect.EOF)
+child.close()
+
+print "envinit Done"
+

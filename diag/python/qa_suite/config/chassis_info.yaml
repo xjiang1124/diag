@@ -1,13 +1,14 @@
 ---
 MTP001:
     SKIP:
-    MODE: PWRCYCL
+    MODE: MTP_QK
     TS: pen-hwlab-tel-02
     TS_PORT: 10
     APC_1_NAME: pen-hwlab-apc-01
-    APC_1_PORT: 11
+    APC_1_PORT: 17
     APC_2_NAME: pen-hwlab-apc-01
-    APC_2_PORT: 16
+    APC_2_PORT: 19
+    IP: 192.168.70.64
     SLOT_1: NAPLES100 
     SLOT_2: 
     SLOT_3: 

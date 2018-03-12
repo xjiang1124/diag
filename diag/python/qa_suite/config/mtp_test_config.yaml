@@ -1,0 +1,15 @@
+---
+MTP_QK_PRE:
+    PRE_1:
+        CMD: /home/diag/xin/envinit.py
+        SUDO: FALSE
+        TIMEOUT: 30
+        ENDING: envinit Done
+
+MTP_QK:
+    TEST_1:
+        CMD: i2cdetect -y -r 0
+        SUDO: FALSE
+        TIMEOUT: 30
+        ENDING: "\$ " 
+...

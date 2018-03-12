@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import pexpect
+import sys
+import time
 import yaml
 from collections import OrderedDict
 
@@ -33,4 +36,169 @@ def create_folder(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
+#=========================================================
+# Constant
+def constant(f):
+    def fset(self, value):
+        raise TypeError
+    def fget(self):
+        return f()
+    return property(fget, fset)
+
+class _Const(object):
+    @constant
+    def BASH_PROMPT():
+        return "\$ "
+    def PWD_PROMPT():
+        return ": "
+    def SUDO_PWD():
+        return "lab123"
+    def RET_VAL():
+        return "echo $?"
+    def EXIT():
+        return "exit"
+    def EOF():
+        return pexpect.EOF
+
+CONST = _Const()
+
+pwd_prompt = "password: "
+bash_prompt = "\$ "
+sudo_pwd = "lab123"
+
+#=============================
+# Pexpect functions
+def runcmd(cmd, timeout=30, sudo=False):
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = [CONST.PWD_PROMPT, CONST.EOF]
+    else:
+        expstr = CONST.EOF
+
+    try:
+        session = pexpect.spawn(cmd, timeout=timeout)
+        session.logfile_read = sys.stdout
+        i = session.expect(expstr, timeout=timeout)
+        if sudo == True:
+            if i == 0:
+                session.sendline(CONST.SUDO_PWD)
+                session.expect(pexpect.EOF, timeout=timeout)
+    except pexpect.TIMEOUT:
+        print "=== TIMEOUT:", cmd, "==="
+        return -1
+    return 0
+
+#=============================
+# Run command with provided session and get return value
+def run_cmd(cmd, timeout=30, sudo=False):
+    if sudo == True:
+        cmd = "sudo "+cmd
+    expstr = [pwd_prompt, bash_prompt]
+    try:
+        session = pexpect.spawn(cmd)
+        session.logfile_read = sys.stdout
+        session.timeout = timeout
+        i = session.expect(expstr)
+
+        if i == 0:
+            session.sendline(sudo_pwd)
+            session.expect(pexpect.EOF)
+        return 0
+
+    except pexpect.TIMEOUT:
+        print "=== TIMEOUT:", cmd, "==="
+        session.close()
+        return -2
+
+#=============================
+# Run command with provided session and get return value
+def bash_cmd(cmd, timeout=30, sudo=False):
+    if sudo == True:
+        cmd = "sudo "+cmd
+    expstr = [pwd_prompt, bash_prompt]
+    try:
+        session = pexpect.spawn("bash")
+        session.expect(bash_prompt)
+        session.logfile_read = sys.stdout
+        session.timeout = timeout
+
+        session.sendline(cmd)
+        i = session.expect(expstr)
+        if i == 0:
+            session.sendline(sudo_pwd)
+            session.expect(bash_prompt)
+        session.sendline("echo $?")
+        session.expect(bash_prompt)
+        if session.before == "0":
+            retval = 0
+        else:
+            retval = -1
+        session.sendline("exit")
+        session.expect(pexpect.EOF)
+        session.close()
+        return retval
+
+    except pexpect.TIMEOUT:
+        print "=== TIMEOUT:", cmd, "==="
+        session.close()
+        return -2
+
+#=============================
+# Run command with provided session and get return value
+def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
+    session.timeout = timeout
+    if sudo == True:
+        cmd = "sudo "+cmd
+    expstr = [pwd_prompt, ending]
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        #print session.before
+        if i == 0:
+            session.sendline(sudo_pwd)
+            time.sleep(0.05)
+            session.expect(bash_prompt)
+            #print session.before
+        #session.sendline("echo $?")
+        #time.sleep(0.05)
+        #session.expect(bash_prompt)
+        #if session.before == "0":
+        #    return 0
+        #else:
+        #    return -1
+        return 0
+
+    except pexpect.TIMEOUT:
+        print "=== TIMEOUT:", cmd, "==="
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return -2
+
+#=============================
+# Start bash session
+def session_start(timeout=30):
+    try:
+        session = pexpect.spawn("bash", timeout=timeout)
+        session.logfile_read = sys.stdout
+        session.expect(bash_prompt) 
+        return session
+    except pexpect.TIMEOUT:
+        print "=== Faled to spawn bash session ==="
+        return None
+
+#=============================
+# Run bash command and get return value
+def session_stop(session, timeout=30):
+    session.timeout = timeout
+    try:
+        session.sendline("exit")
+        session.expect(pexpect.EOF) 
+        return 0
+    except pexpect.TIMEOUT:
+        print "=== Faled to stop bash session ==="
+        return -1
 
