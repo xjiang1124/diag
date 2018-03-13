@@ -54,6 +54,7 @@ var configTbl = []config {
     {PWM2_CONFIG,     5, 3, 0x7},  // PWM2 manual mode
     {PWM3_CONFIG,     5, 3, 0x7},  // PWM3 manual mode
     {TACH_ENABLE,     0, 8, 0xFF}, // Enable all TACHs
+    {PWM1_TO_PWM4_MAX,0, 8, 0xFF}, // MAX speed setting
 }
 var pwmConfigTbl = []config {
     {PWM1_DUTY_CYCLE, 0, 8, 0x80}, // PWM1 initial duty cycle
@@ -231,6 +232,9 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
 
     pwmReg = PWM1_DUTY_CYCLE + pwmIdx
     pwmVal = pct * 100 / 39
+    if pct > 0 && byte(pwmVal) == 0 {
+        pwmVal = 0xFF
+    }
 
     cli.Printf("i", "Reg: 0x%x, value0x%x\n", pwmReg, byte(pwmVal))
     err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
