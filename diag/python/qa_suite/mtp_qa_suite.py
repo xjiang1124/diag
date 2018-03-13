@@ -19,26 +19,6 @@ class mtptest:
             print "Invalid MTP mode:", mode
             sys.exit(-1)
 
-    def runpre(self, mode):
-        session = common.session_start()
-        #common.session_cmd(session, "/home/diag/xin/envinit.py", ending="envinit Done")
-        #common.session_cmd(session, "i2cdetect -y -r 0")
-        for key, pre in self.mtp_pre.items():
-            cmd = pre["CMD"]
-            su = pre["SUDO"]
-            end = pre["ENDING"]
-            tout = pre["TIMEOUT"]
-            #if su == None:
-            #    su = False
-            #if end == None:
-            #    end = "\$ "
-            #if tout == None:
-            #    tout = 30
-            print "yyy cmd:", cmd, "sudo:", su, "; timeout:", tout
-            common.session_cmd(session, cmd, tout, su, end)
-        common.session_stop(session)
-        time.sleep(3)
-
     def runtest(self, mode):
         try:
             test_config = self.mtpconfig[mode]
