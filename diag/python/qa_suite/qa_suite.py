@@ -35,6 +35,7 @@ class qaSuite:
             print "Can not retrieve platform information!"
             sys.exit()
         self.pf = pf
+        self.ip = self.pfconfig["IP"]
 
         modes = modeStr.split()
         if len(modes) == 0:
@@ -42,9 +43,22 @@ class qaSuite:
             sys.exit()
         self.modes = modes
 
+    def fullpwrcycle(self):
+        # Test whether system is alive
+        # if alive, issue "sudo shutdown"
+        session = common.session_start()
+        ret = common.session_cmd(session, "ssh diag@"+self.ip, timeout=10)
+        if ret != -2:
+            common.session_cmd(session, "poweroff", sudo=True, timeout=10)
+            time.sleep(180)
+        else:
+            print "=== MTP is not responding ==="
+        session.close()
+        self.pwrcycle()
+
     def pwrcycle(self):
         self.pwr.pwraction(self.pf, "off")
-        time.sleep(5)
+        time.sleep(60)
         self.pwr.pwraction(self.pf, "on")
 
     def wait4rdySsh(self, ite=20, intv=30):
@@ -55,14 +69,17 @@ class qaSuite:
             print "--- SSH attemp #"+str(i+1)+" ---"
             try:
                 session = pexpect.spawn(cmd)
+                session.timeout=10
                 #session.logfile_read = sys.stdout
-                session.expect("password: ", timeout=10)
+                session.expect("password: ")
                 session.close()
                 print self.pf, "is ready"
                 return 0
                 break
             except pexpect.TIMEOUT:
                 print "--- SSH attemp #"+str(i+1)+" failed ---"
+            except pexpect.EOF:
+                continue
             time.sleep(intv)
         print "--- "+self.pf+" failed boot! ---"
         return -1
@@ -83,15 +100,18 @@ if __name__ == "__main__":
     for idx in range(args.ite):
         print "========== Iteration", idx+1, "=========="
         if args.pwrcycle == True:
-            qa.pwrcycle()
+            #qa.pwrcycle()
+            qa.fullpwrcycle()
             ret = qa.wait4rdySsh()
             if ret != 0 and args.stoponerror == True:
                 print "=== Stopped on error at ite "+str(idx+1)+" ==="
                 break;
         session = common.session_start()
-        ret = common.session_cmd(session, "ssh diag@192.168.70.64", timeout=30, ending="\$ ")
-        common.session_cmd(session, "cd /home/diag/xin/qa_suite/")
+        ret = common.session_cmd(session, "ssh diag@"+qa.ip, timeout=30, ending="\$ ")
+        common.session_cmd(session, "cd /home/diag/xin/qa_suite/", sudo=False)
+        #common.session_cmd(session, "/home/diag/xin/envinit.py", sudo=False, ending="envinit Done")
         common.session_cmd(session, "/home/diag/xin/qa_suite/mtp_qa_suite.py -m="+args.mode, ending="=== MTP Regression Done ===")
+
         common.session_cmd(session, "exit")
         common.session_stop(session)
     

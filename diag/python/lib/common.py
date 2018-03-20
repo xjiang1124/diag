@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import pexpect
 import sys
 import time
@@ -148,30 +149,30 @@ def bash_cmd(cmd, timeout=30, sudo=False):
 # Run command with provided session and get return value
 def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
     session.timeout = timeout
+    expstr = [pwd_prompt, ending]
     if sudo == True:
         cmd = "sudo "+cmd
-    expstr = [pwd_prompt, ending]
+        expstr = ["password for diag: "] + expstr
     try:
         session.sendline(cmd)
         time.sleep(0.05)
         i = session.expect(expstr)
         #print session.before
-        if i == 0:
+        if i < (len(expstr) - 1):
             session.sendline(sudo_pwd)
-            time.sleep(0.05)
+            time.sleep(0.1)
             session.expect(bash_prompt)
             #print session.before
-        #session.sendline("echo $?")
-        #time.sleep(0.05)
-        #session.expect(bash_prompt)
-        #if session.before == "0":
-        #    return 0
-        #else:
-        #    return -1
-        return 0
+        session.sendline("echo $?")
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        if session.before == "0":
+            return 0
+        else:
+            return -1
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print "=== TIMEOUT:", "==="
         # Send CTRL+C
         session.send(chr(3))
         time.sleep(0.05)
@@ -182,7 +183,7 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
 # Start bash session
 def session_start(timeout=30):
     try:
-        session = pexpect.spawn("bash", timeout=timeout)
+        session = pexpect.spawn("bash", timeout=timeout, ignore_sighup=False)
         session.logfile_read = sys.stdout
         session.expect(bash_prompt) 
         return session
