@@ -16,7 +16,7 @@ import (
     "common/misc"
     "hardware/hwinfo"
 
-    //"device/tempsensor/tmp422"
+    //"device/tempsensor/tmp42123"
 )
 
 //var cardInfo diagEngine.CardInfo
@@ -91,7 +91,7 @@ func getVrmStatus() int {
 func dispTemp() (err int) {
     cli.Println("i", "============================")
     cli.Println("i", "Temp Sensor Readings")
-    //tmp422.DispTemp("TEMP_SENSOR")
+    //tmp42123.DispTemp("TEMP_SENSOR")
     cli.Println("i", "To be implemented")
     return
 }

@@ -7,7 +7,7 @@ import (
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/psu/pet1600"
-    "device/tempsensor/tmp422"
+    "device/tempsensor/tmp42123"
 )
 
 const (
@@ -76,7 +76,7 @@ func init() {
     naplesDispStaList["VRM_CAPRI_AVDD"] = tps53659.DispStatus
     naplesDispStaList["VRM_HBM"]        = tps549a20.DispStatus
     naplesDispStaList["VRM_ARM"]        = tps549a20.DispStatus
-    naplesDispStaList["TEMP_SENSOR"]    = tmp422.DispStatus
+    naplesDispStaList["TEMP_SENSOR"]    = tmp42123.DispStatus
 
     //===============================
     // MTP

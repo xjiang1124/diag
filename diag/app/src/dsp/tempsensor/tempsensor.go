@@ -7,7 +7,7 @@ import (
     "common/diagEngine"
     "common/dcli"
     "common/errType"
-    "device/tempsensor/tmp422"
+    "device/tempsensor/tmp42123"
     "config"
 )
 
@@ -26,28 +26,28 @@ func TempsensorDev_IdHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    id, err := tmp422.ReadMfgId("TEMP_SENSOR")
+    id, err := tmp42123.ReadMfgId("TEMP_SENSOR")
     if err != errType.SUCCESS {
         diagEngine.FuncMsgChan <- err
         return
     }
 
-    if id != tmp422.MFG_ID_V {
-        //dcli.Println("e", "Invalid MFG ID, expected:", tmp422.MFG_ID_V, "received:", id)
-        fmt.Println("e", "Invalid MFG ID, expected:", tmp422.MFG_ID_V, "received:", id)
+    if id != tmp42123.MFG_ID_V {
+        //dcli.Println("e", "Invalid MFG ID, expected:", tmp42123.MFG_ID_V, "received:", id)
+        fmt.Println("e", "Invalid MFG ID, expected:", tmp42123.MFG_ID_V, "received:", id)
         diagEngine.FuncMsgChan <- errType.TEMPSENSOR_INVALID_ID
         return
     }
     dcli.Println("i", "Manufacture ID matches")
 
-    id, err = tmp422.ReadDevId("TEMP_SENSOR")
+    id, err = tmp42123.ReadDevId("TEMP_SENSOR")
     if err != errType.SUCCESS {
         diagEngine.FuncMsgChan <- err
         return
     }
 
-    if id != tmp422.DEV_ID_V {
-        dcli.Println("e", "Invalid DEV ID, expected:", tmp422.MFG_ID_V, "received:", id)
+    if id != tmp42123.DEV_ID_V {
+        dcli.Println("e", "Invalid DEV ID, expected:", tmp42123.MFG_ID_V, "received:", id)
         diagEngine.FuncMsgChan <- errType.TEMPSENSOR_INVALID_ID
         return
     }
@@ -68,14 +68,14 @@ func TempsensorTempHdl(argList []string) {
 
     var err int
     var tempList = []string {"Local:", "Remote1", "Remote2"}
-    for i:=0; i<tmp422.MAX_CHANNEL; i++ {
-        integer, dec, err1 := tmp422.ReadTemp("TEMP_SENSOR", byte(i))
+    for i:=0; i<tmp42123.MAX_CHANNEL; i++ {
+        integer, dec, err1 := tmp42123.ReadTemp("TEMP_SENSOR", byte(i))
         if err != errType.SUCCESS {
             err = err1
         }
         temp := fmt.Sprintf("%d.%04d", integer, dec)
         dcli.Println("i", tempList[i], temp)
-        if integer < tmp422.LIMIT_LOW || integer > tmp422.LIMIT_HIGH {
+        if integer < tmp42123.LIMIT_LOW || integer > tmp42123.LIMIT_HIGH {
             dcli.Println("e", "Temperature over limit!")
             err = errType.TEMPSENSOR_OVER_LIMIT
         }
