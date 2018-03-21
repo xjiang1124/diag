@@ -4,4 +4,11 @@ pen-hwlab-apc-01:
     MODEL: RARITAN
     USR: admin
     PASSWD: lab123
+
+pen-hwlab-apc-02:
+    IP: 192.168.72.133
+    MODEL: SCHNEIDER
+    USR: apc
+    PASSWD: apc
+
 ...

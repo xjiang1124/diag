@@ -1,4 +1,4 @@
-package tmp422
+package tmp42_123
 
 const (
     MFG_ID_V = 0x55
@@ -10,7 +10,7 @@ const (
     REMOTE_TEMP1 = 1
     REMOTE_TEMP2 = 2
 
-    MAX_CHANNEL = 3
+    MAX_CHANNEL = 2
 )
 
 const (
