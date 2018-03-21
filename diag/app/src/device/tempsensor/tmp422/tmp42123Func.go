@@ -1,4 +1,4 @@
-package tmp42_123
+package tmp42123
 
 import (
     "fmt"
