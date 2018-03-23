@@ -12,9 +12,16 @@ SRC_DIR=				\
 
 #C_SRC_DIR=i2c
 
+C_LIB_DIR=		\
+	i2c		\
+	i2csim		\
+	cpld
+
 C_SRC_DIR=		\
-	i2c			\
-	i2csim
+	jtag		\
+	cpld		\
+	mdio		\
+	spi
 
 GO_TEST_DIR=	\
 	device/powermodule/tps53659		\

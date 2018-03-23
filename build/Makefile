@@ -9,9 +9,13 @@ TOP_DIR = "$(shell dirname $(BUILD_DIR))"
 all: amd64 arm64
 
 c_amd64:
-	@for p in $(C_SRC_DIR); do \
+	@for p in $(C_LIB_DIR); do \
 		echo "==> Build $$p ..."; \
 		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
+	done
+	@for p in $(C_SRC_DIR); do\
+		echo "===> Build $$p"; \
+		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/util/$$p || exit 1; \
 	done
 #	@$(MAKE) -C $(TOP_DIR)/diag/go/src/clib/$(C_SRC_DIR)
 
