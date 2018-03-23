@@ -14,6 +14,7 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <ctype.h>
 #include "ftd2xx.h"
 
 
@@ -117,6 +118,7 @@ BYTE   cpu_res[13];
 BYTE   con_red[5];
 
 FT_STATUS jtag_init();
+FT_STATUS jtag_id(DWORD inst, DWORD* data);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
 FT_STATUS jtag_reset(DWORD inst);
