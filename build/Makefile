@@ -13,7 +13,7 @@ c_amd64:
 		echo "==> Build $$p ..."; \
 		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
 	done
-	@for p in $(C_SRC_DIR); do\
+	@for p in $(C_SRC_DIR); do \
 		echo "===> Build $$p"; \
 		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/util/$$p || exit 1; \
 	done
@@ -65,9 +65,13 @@ go_arm64:
 	done
 
 amd64:
-	@for p in $(C_SRC_DIR); do \
+	@for p in $(C_LIB_DIR); do \
 		echo "==> Build $$p ..."; \
 		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/lib/$$p || exit 1; \
+	done
+	@for p in $(C_SRC_DIR); do \
+		echo "===> Build $$p"; \
+		$(MAKE) -e ARCH=amd64 -C $(TOP_DIR)/diag/util/$$p || exit 1; \
 	done
 
 	@for p in $(SRC_DIR); do \
