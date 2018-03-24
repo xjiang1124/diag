@@ -10,12 +10,9 @@ COMMON_SRC_DIR=				\
 	util/smbutil 		\
 	util/devmgr
 
-COMMON_C_LIB_DIR=		\
+COMMON_C_SRC_DIR=		\
 	lib/i2c				\
-	lib/i2csim			\
-	lib/cpld
-
-COMMON_C_SRC_DIR=
+	lib/i2csim
 
 GO_TEST_DIR=						\
 	device/powermodule/tps53659		\
@@ -26,16 +23,15 @@ GO_TEST_DIR=						\
 	util/periutil					
 
 AMD64_SRC_DIR=
-AMD64_C_LIB_DIR=
-
 AMD64_C_SRC_DIR=		\
+	lib/cpld			\
 	util/jtag			\
 	util/cpld			\
 	util/mdio			\
 	util/spi
 
+
 ARM64_SRC_DIR=
-ARM64_C_LIB_DIR=
 ARM64_C_SRC_DIR=
 
 

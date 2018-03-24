@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 		flash_disable();
 		if(argc > 2)
 		{
-			printf("file size %d\n", sizeof(buf));
+			printf("file size %ld\n", sizeof(buf));
 			fwrite(buf, sizeof(buf), 1, fptr);
 			fclose(fptr);
 		}

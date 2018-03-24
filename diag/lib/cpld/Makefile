@@ -12,5 +12,5 @@ libacc:
 	ar rs ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc.a *.o
 
 clean:
-	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libi2c.a *.o *.a
+	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc.a *.o *.a
 

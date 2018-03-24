@@ -146,5 +146,6 @@ int flash_program();
 int flash_read(BYTE* buf, DWORD size);
 int flash_program_done();
 int flash_refresh();
+int flash_erase();
 
 #endif /* RELEASE_EXAMPLES_LOOPBACK_ACC_H_ */
