@@ -8,7 +8,8 @@ import (
     "common/errType"
 )
 
-var cardName string
+var CardName string
+var uutType string
 
 type I2cInfo struct {
     Name    string
@@ -16,28 +17,56 @@ type I2cInfo struct {
     Bus     uint32 // I2C controllor index
     DevAddr byte
     Page    byte   // PMBus device page number
+    HubName string
+    HubPort byte
 }
 
-var I2cTbl []I2cInfo
+var I2cTbl    []I2cInfo
+var UutI2cTbl []I2cInfo
+var CurI2cTbl []I2cInfo
 
 //=========================================
-// Naples PMBus table
+// Naples100 PMBus table
 // devAddr is 7-bit address
-var NaplesVrmTbl = []I2cInfo {
-    //       name              comp         Bus    devAddr  channel 
-    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x2,   0xC4,    0x0 },
-    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x2,   0xC4,    0x1 },
-    I2cInfo {"VRM_HBM",        "TPS549A20", 0x2,   0x36,    0x0 },
-    I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x38,    0x0 },
-    I2cInfo {"FRU",            "AT24C02C",  0x2,   0xA0,    0x0 },
-    I2cInfo {"RTC",            "PCF85263A", 0x2,   0xA2,    0x0 },
-    I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x98,    0x0 },
+var Naples100Tbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"VRM_HBM",        "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE", 0},
 
-    I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0xA0,    0x0 },
-    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0xA2,    0x0 },
+    I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0xA0,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0xA2,    0x0,    "HUB_NONE", 0},
 
-    I2cInfo {"QSFP_2_FRU",     "QSFP",      0x0,   0xA0,    0x0 },
-    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0xA2,    0x0 },
+    I2cInfo {"QSFP_2_FRU",     "QSFP",      0x0,   0xA0,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0xA2,    0x0,    "HUB_NONE", 0},
+}
+
+//=========================================
+// Naples100 PMBus table
+// devAddr is 7-bit address
+var NaplesMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x0,   0x62,    0x0,    "HUB_1",    2},
+    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x0,   0x62,    0x1,    "HUB_1",    2},
+    I2cInfo {"VRM_HBM",        "TPS549A20", 0x0,   0x1b,    0x0,    "HUB_1",    2},
+    I2cInfo {"VRM_ARM",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_1",    2},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_1",    2},
+    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_1",    2},
+    I2cInfo {"TSENSOR",        "TMP421",    0x0,   0x4C,    0x0,    "HUB_1",    2},
+
+    I2cInfo {"QSFP_1_FRU",     "QSFP",      0x0,   0xA0,    0x0,    "HUB_1",    1},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x0,   0xA2,    0x0,    "HUB_1",    1},
+
+    I2cInfo {"QSFP_2_FRU",     "QSFP",      0x0,   0xA0,    0x0,    "HUB_1",    3},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0xA2,    0x0,    "HUB_1",    3},
+
+    I2cInfo {"HUB_1",          "TCA9546A",  0x0,   0x74,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"PEX",            "PEX8716",   0x0,   0x38,    0x0,    "HUB_1",    0},
+    I2cInfo {"PCIE_SMB",       "PCIE_SMB",  0x0,   0x30,    0x0,    "HUB_1",    2},
 }
 
 //=========================================
@@ -45,11 +74,11 @@ var NaplesVrmTbl = []I2cInfo {
 // bus field is linux I2C device index at /dev/i2c-x
 // devAddress is 7-bit address
 var NicPowerVrmTbl = []I2cInfo {
-    //       name              comp         Bus    devAddr  channel 
-    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x8,   0x62,    0x0 },
-    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x8,   0x62,    0x1 },
-    I2cInfo {"VRM_3V3",        "TPS549A20", 0x8,   0x1C,    0x0 },
-    I2cInfo {"VRM_1V2",        "TPS549A20", 0x8,   0x1B,    0x0 },
+    //       name              comp         Bus    devAddr  channel HubName     HubPort
+    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x8,   0x62,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x8,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"VRM_3V3",        "TPS549A20", 0x8,   0x1C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"VRM_1V2",        "TPS549A20", 0x8,   0x1B,    0x0,    "HUB_NONE", 0},
 }
 
 //=========================================
@@ -57,39 +86,61 @@ var NicPowerVrmTbl = []I2cInfo {
 // bus field is linux I2C device index at /dev/i2c-x
 // devAddress is 7-bit address
 var MtpI2cTbl = []I2cInfo {
-    //       name     comp         Bus  devAddr  channel 
-    I2cInfo {"PSU_1", "BEL_POWER", 0x0, 0x5B,    0x0 },
-    I2cInfo {"PSU_2", "BEL_POWER", 0x0, 0x5B,    0x0 },
-    I2cInfo {"DC",    "TPS549A20", 0x0, 0x1C,    0x0 },
-    I2cInfo {"FAN",   "ADT7462",   0x0, 0x5C,    0x0 },
-    I2cInfo {"CLKGEN","SI52144",   0x0, 0x6B,    0x0 },
-    I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0 },
-    I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0 },
-    I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0 },
-    I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0 },
-    I2cInfo {"FRU",   "AT24C02C",  0x0, 0x50,    0x0 },
+    //       name     comp         Bus  devAddr  channel HubName     HubPort
+    I2cInfo {"PSU_1", "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    0},
+    I2cInfo {"PSU_2", "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    0},
+    I2cInfo {"DC",    "TPS549A20", 0x0, 0x1C,    0x0,    "HUB_4",    0},
+    I2cInfo {"FAN",   "ADT7462",   0x0, 0x5C,    0x0,    "HUB_4",    0},
+    I2cInfo {"CLKGEN","SI52144",   0x0, 0x6B,    0x0,    "HUB_4",    0},
+    I2cInfo {"FRU",   "AT24C02C",  0x0, 0x50,    0x0,    "HUB_4",    0},
+    I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE", 0},
 }
 
 func init() {
-    cardName = os.Getenv("CARD_NAME")
+    CardName = os.Getenv("CARD_NAME")
 
-    if cardName == "NAPLES" {
-        I2cTbl = NaplesVrmTbl
-        return
-    } else if cardName == "NIC_POWER" {
+    if CardName == "NAPLES100" {
+        I2cTbl = Naples100Tbl
+    } else if CardName == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
-        return
-    } else if cardName == "MTP" {
+    } else if CardName == "MTP" {
         I2cTbl = MtpI2cTbl
-        return
     } else {
-        cli.Println("f", "Unsupported card:", cardName)
+        cli.Println("f", "Unsupported card:", CardName)
+        return
+    }
+    CurI2cTbl = I2cTbl
+
+    uutType := os.Getenv("UUT_TYPE")
+    if uutType == "NPL_MTP" {
+        UutI2cTbl = NaplesMtpTbl
+    } else if uutType == "UUT_NONE" {
+        cli.Println("i", "No need to init UUT I2C table", CardName)
+    } else {
+        cli.Println("i", "UUT I2C table not intialized:", CardName, uutType)
         return
     }
 }
 
+
+/**
+ * To support Naples_MTP test card. 
+ * Todo: support mix of Naples in the same MTP
+ */
+func SwitchI2cTbl(uutType string) (err int) {
+    if uutType == "UUT_NONE" {
+        CurI2cTbl = I2cTbl
+    } else {
+        CurI2cTbl = UutI2cTbl
+    }
+    return
+}
+
 func GetI2cInfo(devName string) (i2cInfo I2cInfo, err int) {
-    for _, i2cInf := range(I2cTbl) {
+    for _, i2cInf := range(CurI2cTbl) {
         if devName == i2cInf.Name {
             return i2cInf, errType.SUCCESS
         }
@@ -114,7 +165,7 @@ func DispI2cInfo(devName string) (err int) {
     cli.Println("i", "--------------------")
     cli.Println("i", outStr)
 
-    for _, i2cInfo := range(I2cTbl) {
+    for _, i2cInfo := range(CurI2cTbl) {
         if i2cInfo.Name != devName {
             continue
         }
@@ -155,7 +206,7 @@ func DispI2cInfoAll() (err int) {
     cli.Println("i", "--------------------")
     cli.Println("i", outStr)
 
-    for _, i2cInfo := range(I2cTbl) {
+    for _, i2cInfo := range(CurI2cTbl) {
         outStr = ""
 
         outStr = outStr + fmt.Sprintf(fmtStr, i2cInfo.Name)
@@ -177,7 +228,7 @@ func DispI2cInfoAll() (err int) {
 }
 
 func GetPage(devName string) (page byte, err int) {
-    for _, i2cinfo := range(I2cTbl) {
+    for _, i2cinfo := range(CurI2cTbl) {
         if i2cinfo.Name == devName {
             page = i2cinfo.Page
             return

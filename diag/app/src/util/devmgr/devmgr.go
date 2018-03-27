@@ -23,7 +23,7 @@ func init() {
     cli.Init("log_"+procName+".txt", config.OutputMode)
 }
 
-func devInfo(devName string) {
+func devInfo(devName string, uut string) {
     for _, i2cInfo := range(i2cinfo.I2cTbl) {
         if devName != i2cInfo.Name {
             continue
@@ -36,7 +36,7 @@ func devInfo(devName string) {
     cli.Println("e", "Unsupported device: ", devName)
 }
 
-func dispStatus(devName string) {
+func dispStatus(devName string) (err int){
     if devName == "ALL" {
         // golang range(map) sequence is random
         // Sorted output
@@ -50,20 +50,44 @@ func dispStatus(devName string) {
             hwinfo.EnableHubChannelExclusive(dev)
             dispFunc(dev)
         }
-
-        //for dev, dispFunc := range(hwinfo.DispStaList) {
-        //    hwinfo.EnableHubChannelExclusive(dev)
-        //    dispFunc(dev)
-        //}
     } else {
+        hwinfo.EnableHubChannelExclusive(devName)
         dispFunc, ok := hwinfo.DispStaList[devName]
         if ok == false {
             cli.Println("f", "Invalde device: ", devName)
+            err = errType.INVALID_PARAM
             return
         }
-        hwinfo.EnableHubChannelExclusive(devName)
         dispFunc(devName)
     }
+    return
+}
+
+func dispStatusUut(devName string, uutName string) (err int){
+    if devName == "ALL" {
+        cli.Println("e", "\"ALL\" does not support by UUT!")
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    err = hwinfo.EnableHubChannelUut(uutName)
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    hwinfo.SwitchHwInfo(uutName)
+    i2cinfo.SwitchI2cTbl(uutName)
+    dispFunc, ok := hwinfo.DispStaList[devName]
+    if ok == false {
+        cli.Println("f", "Invalde device: ", devName)
+        err = errType.INVALID_PARAM
+        return
+    }
+    dispFunc(devName)
+    i2cinfo.SwitchI2cTbl("UUT_NONE")
+    hwinfo.SwitchHwInfo("UUT_NONE")
+
+    return
 }
 
 func margin(devName string, pct int) (err int){
@@ -84,8 +108,20 @@ func margin(devName string, pct int) (err int){
     return
 }
 
+func marginUut(devName string, pct int, uutName string) (err int) {
+    err = hwinfo.EnableHubChannelUut(uutName)
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    i2cinfo.SwitchI2cTbl(uutName)
+    err = margin(devName, pct)
+    i2cinfo.SwitchI2cTbl("UUT_NONE")
+    return
+}
+
 func program (devName string, fileName string, verbose bool) (err int) {
-    for _, i2cInfo := range(i2cinfo.I2cTbl) {
+    for _, i2cInfo := range(i2cinfo.CurI2cTbl) {
         if devName != i2cInfo.Name {
             continue
         }
@@ -99,8 +135,20 @@ func program (devName string, fileName string, verbose bool) (err int) {
     return
 }
 
+func programUut (devName string, fileName string, verbose bool, uutName string) (err int) {
+    err = hwinfo.EnableHubChannelUut(uutName)
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    i2cinfo.SwitchI2cTbl(uutName)
+    err = program(devName, fileName, verbose)
+    i2cinfo.SwitchI2cTbl("UUT_NONE")
+    return
+}
+
 func verify (devName string, fileName string, verbose bool) (err int) {
-    for _, i2cInfo := range(i2cinfo.I2cTbl) {
+    for _, i2cInfo := range(i2cinfo.CurI2cTbl) {
         if devName != i2cInfo.Name {
             continue
         }
@@ -111,6 +159,18 @@ func verify (devName string, fileName string, verbose bool) (err int) {
     }
     cli.Println("e", "Unsupported device: ", devName)
     err = errType.INVALID_PARAM
+    return
+}
+
+func verifyUut (devName string, fileName string, verbose bool, uutName string) (err int) {
+    err = hwinfo.EnableHubChannelUut(uutName)
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    i2cinfo.SwitchI2cTbl(uutName)
+    err = verify(devName, fileName, verbose)
+    i2cinfo.SwitchI2cTbl("UUT_NONE")
     return
 }
 
@@ -156,6 +216,7 @@ func main() {
     speedPtr    := flag.Bool(  "speed",   false, "FAN - Set fan speed")
     faninitPtr  := flag.Bool(  "faninit", false, "FAN - Initialization")
     maskPtr     := flag.Uint64("mask",    0x7,   "FAN - fan instance mask")
+    uutPtr      := flag.String("uut",     "UUT_NONE", "UUT name, e.g. UUT_1")
     flag.Parse()
 
     //cli.Println("devNamePtr:", *devNamePtr, "statusPtr:", *statusPtr, "marginPtr:", *marginPtr, "pctPtr:", *pctPtr)
@@ -164,35 +225,59 @@ func main() {
     pct     := *pctPtr
     verbose := *verbosePtr
     mask    := *maskPtr
+    uut     := strings.ToUpper(*uutPtr)
 
     if *statusPtr == true {
-        dispStatus(devName)
-        return
-    }
-
-    if *marginPtr == true {
-        err := margin(devName, pct)
-        if err != errType.SUCCESS {
-            cli.Println("e", "Voltage margin failed!")
-        } else {
+        if uut == "UUT_NONE" {
             dispStatus(devName)
-            cli.Println("i", "Voltage margin set at", pct, "percent")
+        } else {
+            dispStatusUut(devName, uut)
         }
         return
     }
 
+    if *marginPtr == true {
+        if uut == "UUT_NONE" {
+            err := margin(devName, pct)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Voltage margin failed!")
+            } else {
+                dispStatus(devName)
+                cli.Println("i", "Voltage margin set at", pct, "percent")
+            }
+        } else {
+            err := marginUut(devName, pct, uut)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Voltage margin failed!")
+            } else {
+                dispStatusUut(devName, uut)
+                cli.Println("i", "Voltage margin set at", pct, "percent")
+            }
+        }
+
+        return
+    }
+
     if *programPtr == true {
-        program(devName, *filePtr, verbose)
+        if uut == "UUT_NONE" {
+            program(devName, *filePtr, verbose)
+        } else {
+            programUut(devName, *filePtr, verbose, uut)
+        }
         return
     }
 
     if *verifyPtr == true {
-        verify(devName, *filePtr, verbose)
+        if uut == "UUT_NONE" {
+            verify(devName, *filePtr, verbose)
+        } else {
+            verifyUut(devName, *filePtr, verbose, uut)
+        }
         return
     }
 
     if *infoPtr == true {
-        devInfo(devName)
+        devInfo(devName, uut)
         return
     }
 

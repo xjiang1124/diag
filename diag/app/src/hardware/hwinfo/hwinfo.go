@@ -22,6 +22,7 @@ type I2cHubInfo struct {
 }
 
 var cardName string
+var uutName string
 
 //===============================
 // Naples 
@@ -97,14 +98,15 @@ func init() {
     mtpI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
     mtpI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
     mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
-    mtpI2cHubMap["PSU_1"]  = I2cHubInfo{"HUB_4", 0}
-    mtpI2cHubMap["PSU_2"]  = I2cHubInfo{"HUB_4", 1}
-    mtpI2cHubMap["FAN"]    = I2cHubInfo{"HUB_4", 2}
-    mtpI2cHubMap["FRU"]    = I2cHubInfo{"HUB_4", 2}
-    mtpI2cHubMap["DC"]     = I2cHubInfo{"HUB_4", 3}
-    mtpI2cHubMap["CLKGEN"] = I2cHubInfo{"HUB_4", 3}
+    //mtpI2cHubMap["PSU_1"]  = I2cHubInfo{"HUB_4", 0}
+    //mtpI2cHubMap["PSU_2"]  = I2cHubInfo{"HUB_4", 1}
+    //mtpI2cHubMap["FAN"]    = I2cHubInfo{"HUB_4", 2}
+    //mtpI2cHubMap["FRU"]    = I2cHubInfo{"HUB_4", 2}
+    //mtpI2cHubMap["DC"]     = I2cHubInfo{"HUB_4", 3}
+    //mtpI2cHubMap["CLKGEN"] = I2cHubInfo{"HUB_4", 3}
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
+    naplesMtpI2cHubList := []string{"HUB_1"}
 
     //===============================
     // NIC_POWER
@@ -118,24 +120,29 @@ func init() {
     // Dictionaries for all platforms
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
-    dispMap["NAPLES"]    = naplesDispStaList
+    dispMap["NAPLES100"] = naplesDispStaList
+    dispMap["NAPLES_MTP"]= naplesDispStaList
     dispMap["MTP"]       = mtpDispStaList
     dispMap["NIC_POWER"] = nicPwrDispStaList
 
     // Pmbus test list
     pmbusTestMap = make(map[string][]string)
-    pmbusTestMap["NAPLES"] = NaplesPmbusTestList
+    pmbusTestMap["NAPLES100"] = NaplesPmbusTestList
+    pmbusTestMap["NAPLES_MTP"] = NaplesPmbusTestList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
-    eepromMap["NAPLES"] = naplesEepList
+    eepromMap["NAPLES100"] = naplesEepList
+    eepromMap["NAPLES_MTP"] = naplesEepList
     eepromMap["MTP"]    = mtpEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
+
     i2cHubList = make(map[string][]string)
     i2cHubList["MTP"] = mtpI2cHubList
+    i2cHubList["NAPLES_MTP"] = naplesMtpI2cHubList
 
     //===============================
     // Platform specified list
