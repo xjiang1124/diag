@@ -88,11 +88,11 @@ var NicPowerVrmTbl = []I2cInfo {
 var MtpI2cTbl = []I2cInfo {
     //       name     comp         Bus  devAddr  channel HubName     HubPort
     I2cInfo {"PSU_1", "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    0},
-    I2cInfo {"PSU_2", "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    0},
-    I2cInfo {"DC",    "TPS549A20", 0x0, 0x1C,    0x0,    "HUB_4",    0},
-    I2cInfo {"FAN",   "ADT7462",   0x0, 0x5C,    0x0,    "HUB_4",    0},
-    I2cInfo {"CLKGEN","SI52144",   0x0, 0x6B,    0x0,    "HUB_4",    0},
-    I2cInfo {"FRU",   "AT24C02C",  0x0, 0x50,    0x0,    "HUB_4",    0},
+    I2cInfo {"PSU_2", "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    1},
+    I2cInfo {"FRU",   "AT24C02C",  0x0, 0x50,    0x0,    "HUB_4",    2},
+    I2cInfo {"FAN",   "ADT7462",   0x0, 0x5C,    0x0,    "HUB_4",    2},
+    I2cInfo {"DC",    "TPS549A20", 0x0, 0x1C,    0x0,    "HUB_4",    3},
+    I2cInfo {"CLKGEN","SI52144",   0x0, 0x6B,    0x0,    "HUB_4",    3},
     I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0,    "HUB_NONE", 0},
     I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0,    "HUB_NONE", 0},
     I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0,    "HUB_NONE", 0},
