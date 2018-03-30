@@ -6,7 +6,6 @@ import (
     "fmt"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
     "protocol/pmbus"
     "protocol/smbus"
@@ -16,18 +15,12 @@ type TPS549A20 struct {
 }
 
 func (tps549a20 *TPS549A20) ReadStatus(devName string) (status uint16, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     status, err = pmbus.ReadWord(devName, STATUS_WORD)
     return
@@ -70,11 +63,6 @@ func (tps549a20 *TPS549A20) SetVMargin(devName string, pct int) (err int) {
     if pct > 12 || pct < -12 {
         return errType.INVALID_PARAM
     }
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
 
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -82,7 +70,6 @@ func (tps549a20 *TPS549A20) SetVMargin(devName string, pct int) (err int) {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     if pct == 0 {
         marginCmd = MARGIN_NONE_CMD
@@ -102,90 +89,60 @@ func (tps549a20 *TPS549A20) SetVMargin(devName string, pct int) (err int) {
 }
 
 func (tps549a20 *TPS549A20) ReadByte(devName string, regAddr uint64) (data byte, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     data, err = pmbus.ReadByte(devName, regAddr)
     return
 }
 
 func (tps549a20 *TPS549A20) ReadWord(devName string, regAddr uint64) (data uint16, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     data, err = pmbus.ReadWord(devName, regAddr)
     return
 }
 
 func (tps549a20 *TPS549A20) WriteByte(devName string, regAddr uint64, data byte) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     err = pmbus.WriteByte(devName, regAddr, data)
     return
 }
 
 func (tps549a20 *TPS549A20) WriteWord(devName string, regAddr uint64, data uint16) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     err = pmbus.WriteWord(devName, regAddr, data)
     return
 }
 
 func (tps549a20 *TPS549A20) SendByte(devName string, data byte) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     err = pmbus.SendByte(devName, data)
     return

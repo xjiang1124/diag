@@ -4,7 +4,6 @@ import (
     "fmt"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
     "common/misc"
     "protocol/smbus"
@@ -63,17 +62,11 @@ var pwmConfigTbl = []config {
 }
 
 func Setup(devName string) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     var data byte
     for _, config := range(configTbl) {
@@ -150,17 +143,11 @@ func Setup(devName string) (err int) {
     7       8
  */
 func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     var tachLsbReg uint64
     var tachMsbReg uint64
@@ -205,17 +192,11 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
     pct: fan speed percentage: 0-100
  */
 func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     var pwmReg uint64
     var pwmVal uint64
@@ -254,17 +235,11 @@ func GetTemp(devName string, tempIdx uint64) (integer int, frac int,  err int) {
     var tempLsb byte
     var tempMsb byte
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     tempLsbReg = LOCAL_TEMP_VALUE_LSB + tempIdx * 2
     tempMsbReg = LOCAL_TEMP_VALUE_MSB + tempIdx * 2

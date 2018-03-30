@@ -5,7 +5,6 @@ import (
     "strings"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
 
     "hardware/i2cinfo"
@@ -26,17 +25,11 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
         return
     }
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     for _, vrm := range(i2cinfo.I2cTbl) {
         if devName != vrm.Name {
@@ -93,17 +86,11 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
     dataBuf := make([]byte, numByte)
     var byteCnt int
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     for _, vrm := range(i2cinfo.I2cTbl) {
         if devName != vrm.Name {

@@ -6,25 +6,18 @@ import (
     "fmt"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
     "protocol/pmbus"
     "protocol/smbus"
 )
 
 func ReadStatus(devName string) (status uint16, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     status, err = pmbus.ReadWord(devName, STATUS_WORD)
     return
@@ -68,11 +61,6 @@ func SetVMargin(devName string, pct int) (err int) {
     if pct > 12 || pct < -12 {
         return errType.INVALID_PARAM
     }
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed to lock device", devName)
-        return
-    }
 
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -80,7 +68,6 @@ func SetVMargin(devName string, pct int) (err int) {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     if pct == 0 {
         marginCmd = MARGIN_NONE_CMD

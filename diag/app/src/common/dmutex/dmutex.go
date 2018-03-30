@@ -1,13 +1,10 @@
 package dmutex
 
 import (
-    "strconv"
-
     "github.com/alexflint/go-filemutex"
 
     "common/cli"
     "common/errType"
-    "hardware/i2cinfo"
 )
 
 type mutexInfo struct {
@@ -16,24 +13,27 @@ type mutexInfo struct {
 }
 
 var mutexMap map[string]*filemutex.FileMutex
+var lockList = []string{"i2c-0", "i2c-1", "i2c-2", "i2c-3"}
 
 func init() {
     mutexMap = make(map[string]*filemutex.FileMutex)
-    for _, i2cInfo := range(i2cinfo.I2cTbl) {
-        lockName := "/tmp/"+"i2c-"+strconv.Itoa(int(i2cInfo.Bus))+".lock"
+    for _, lock := range(lockList) {
+        lockName := "/tmp/"+lock+".lock"
         m, err := filemutex.New(lockName)
         if err != nil {
             cli.Println("e", "Failed to initialize lock:", lockName)
             continue
         }
-        mutexMap[i2cInfo.Name] = m
+        mutexMap[lock] = m
     }
+    //cli.Println("d", mutexMap)
 
 }
 
 func Lock(mName string) (err int){
     mHdl, ok := mutexMap[mName]
     if ok == false {
+        cli.Println("e", "Faied to lock device:", mName)
         err = errType.INVALID_LOCK
         return
     }

@@ -139,12 +139,13 @@ func SwitchI2cTbl(uutType string) (err int) {
     return
 }
 
-func GetI2cInfo(devName string) (i2cInfo I2cInfo, err int) {
-    for _, i2cInf := range(CurI2cTbl) {
-        if devName == i2cInf.Name {
-            return i2cInf, errType.SUCCESS
+func GetI2cInfo(devName string) (i2cinfo I2cInfo, err int) {
+    for _, i2cinfo = range(CurI2cTbl) {
+        if devName == i2cinfo.Name {
+            return
         }
     }
+    cli.Println("f", "Unsupported card:", devName)
     err = errType.INVALID_PARAM
     return
 
@@ -237,6 +238,6 @@ func GetPage(devName string) (page byte, err int) {
     cli.Println("f", "Unsupported card:", devName)
     err = errType.INVALID_PARAM
     return
-
 }
+
 

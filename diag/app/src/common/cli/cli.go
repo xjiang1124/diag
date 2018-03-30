@@ -118,7 +118,7 @@ func formatOutput(lvl string, pOutStr string) string {
     outStr = misc.TrimPrefix(outStr, "[")
 
     switch lvl {
-    case "debug", "d", "error", "e":
+    case "debug", "d", "error", "e", "fail", "f":
         // Debug print, give file and line number
         _, fn, line, _ := runtime.Caller(2)
         fnArr := strings.Split(fn, "/")

@@ -4,7 +4,6 @@ import (
     "fmt"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
 
 	"hardware/pmbusCmd"
@@ -28,17 +27,11 @@ func DispStatus(devName string) (err int) {
     var dig uint64
     var frac uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = pmbusCmd.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbusCmd.Close()
-    defer dmutex.Unlock(devName)
     // MFR info
     //cli.Println("i", "--------------------")
     cli.Println("i", "=================================")

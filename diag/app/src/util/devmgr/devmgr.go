@@ -12,6 +12,7 @@ import (
     "config"
     "hardware/i2cinfo"
     "hardware/hwinfo"
+    "hardware/hwdev"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/fanctrl/adt7462"
@@ -228,51 +229,28 @@ func main() {
     uut     := strings.ToUpper(*uutPtr)
 
     if *statusPtr == true {
-        if uut == "UUT_NONE" {
-            dispStatus(devName)
-        } else {
-            dispStatusUut(devName, uut)
-        }
+        hwdev.DispStatus(devName, uut)
         return
     }
 
     if *marginPtr == true {
-        if uut == "UUT_NONE" {
-            err := margin(devName, pct)
-            if err != errType.SUCCESS {
-                cli.Println("e", "Voltage margin failed!")
-            } else {
-                dispStatus(devName)
-                cli.Println("i", "Voltage margin set at", pct, "percent")
-            }
+        err := hwdev.Margin(devName, pct, uut)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Voltage margin failed!")
         } else {
-            err := marginUut(devName, pct, uut)
-            if err != errType.SUCCESS {
-                cli.Println("e", "Voltage margin failed!")
-            } else {
-                dispStatusUut(devName, uut)
-                cli.Println("i", "Voltage margin set at", pct, "percent")
-            }
+            hwdev.DispStatus(devName, uut)
+            cli.Println("i", "Voltage margin set at", pct, "percent")
         }
-
         return
     }
 
     if *programPtr == true {
-        if uut == "UUT_NONE" {
-            program(devName, *filePtr, verbose)
-        } else {
-            programUut(devName, *filePtr, verbose, uut)
-        }
+        hwdev.Program(devName, *filePtr, verbose, uut)
         return
     }
 
     if *verifyPtr == true {
-        if uut == "UUT_NONE" {
-            verify(devName, *filePtr, verbose)
-        } else {
-            verifyUut(devName, *filePtr, verbose, uut)
-        }
+        hwdev.Verify(devName, *filePtr, verbose, uut)
         return
     }
 

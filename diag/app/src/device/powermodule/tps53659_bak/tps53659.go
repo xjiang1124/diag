@@ -11,7 +11,6 @@ import (
     "strings"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
     "common/misc"
     "protocol/pmbus"
@@ -149,16 +148,11 @@ func getExpOutput(input uint16) (integer uint64, dec uint64, err int) {
 }
 
 func (tps53659 *TPS53659) ReadStatus(devName string) (status uint16, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -176,16 +170,11 @@ func (tps53659 *TPS53659) ReadVout(devName string) (integer uint64, dec uint64, 
     var dacStepRegVal byte
     var dacStep uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -212,16 +201,11 @@ func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64,
     var dacStepRegVal byte
     var dacStep uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -247,16 +231,11 @@ func (tps53659 *TPS53659) ReadVboot(devName string) (integer uint64, dec uint64,
 func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -273,12 +252,6 @@ func (tps53659 *TPS53659) ReadIout(devName string) (integer uint64, dec uint64, 
 
 func (tps53659 *TPS53659) ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err int) {
     var data uint16
-
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -299,17 +272,11 @@ func (tps53659 *TPS53659) ReadIoutPhase(devName string, phase byte) (integer uin
 func (tps53659 *TPS53659) ReadRegExp(devName string, addrAddr uint64) (integer uint64, dec uint64, err int) {
     var data uint16
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -353,17 +320,11 @@ func (tps53659 *TPS53659) ReadVoutLn(devName string) (integer uint64, dec uint64
 }
 
 func (tps53659 *TPS53659) ReadDeviceID(devName string) (devID byte, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-
-    defer dmutex.Unlock(devName)
 
     devID, err = pmbus.ReadByte(devName, IC_DEVICE_ID)
     return devID, err
@@ -376,16 +337,11 @@ func (tps53659 *TPS53659) SetVMargin(devName string, pct int) (err int) {
     var dacStepRegVal byte
     var dacStep uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
 
@@ -523,16 +479,11 @@ func (tps53659 *TPS53659) DispStatus(devName string) (err int) {
 }
 
 func (tps53659 *TPS53659) ReadByte(devName string, regAddr uint64) (data byte, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
     err = pmbus.WriteByte(devName, PAGE, channel)
@@ -544,16 +495,11 @@ func (tps53659 *TPS53659) ReadByte(devName string, regAddr uint64) (data byte, e
 }
 
 func (tps53659 *TPS53659) ReadWord(devName string, regAddr uint64) (data uint16, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
     err = pmbus.WriteByte(devName, PAGE, channel)
@@ -565,16 +511,11 @@ func (tps53659 *TPS53659) ReadWord(devName string, regAddr uint64) (data uint16,
 }
 
 func (tps53659 *TPS53659) WriteByte(devName string, regAddr uint64, data byte) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
     err = pmbus.WriteByte(devName, PAGE, channel)
@@ -586,16 +527,11 @@ func (tps53659 *TPS53659) WriteByte(devName string, regAddr uint64, data byte) (
 }
 
 func (tps53659 *TPS53659) WriteWord(devName string, regAddr uint64, data uint16) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
     err = pmbus.WriteByte(devName, PAGE, channel)
@@ -607,16 +543,11 @@ func (tps53659 *TPS53659) WriteWord(devName string, regAddr uint64, data uint16)
 }
 
 func (tps53659 *TPS53659) SendByte(devName string, data byte) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     channel := channelMap[devName]
     err = pmbus.WriteByte(devName, PAGE, channel)
@@ -628,32 +559,22 @@ func (tps53659 *TPS53659) SendByte(devName string, data byte) (err int) {
 }
 
 func (tps53659 *TPS53659) ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     byteCnt, err = pmbus.ReadBlock(devName, regAddr, dataBuf)
     return
 }
 
 func (tps53659 *TPS53659) WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     byteCnt, err = pmbus.WriteBlock(devName, regAddr, dataBuf)
     return
@@ -668,18 +589,11 @@ func (tps53659 *TPS53659) ProgramVerifyNvm(devName string, fileName string, mode
         err = errType.INVALID_PARAM
         return
     }
-
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-
-    defer dmutex.Unlock(devName)
 
     file, errgo := os.Open(fileName)
     if errgo != nil {
@@ -867,16 +781,11 @@ func (tps53659 *TPS53659) Info(devName string) (err int) {
     var dataBuf []byte
     //var numByte int
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     // Sort keys; otherwise the sequence will be random
     keys := make([]string, 0)

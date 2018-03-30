@@ -10,7 +10,6 @@ import (
     "strings"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
     "hardware/i2cinfo"
     "hardware/pmbusCmd"
@@ -109,16 +108,11 @@ func calcVidFromVolt (tgtVoltMv uint64, dacStep uint64) (vid byte, err int) {
 }
 
 func ReadStatus(devName string) (status uint16, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -135,16 +129,11 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     var dacStepRegVal byte
     var dacStep uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -174,16 +163,11 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     var dacStepRegVal byte
     var dacStep uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -212,16 +196,11 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
 func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var data uint16
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -241,12 +220,6 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
 
 func ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err int) {
     var data uint16
-
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -268,16 +241,11 @@ func ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err 
     Read register with linear 11 format and calculate output
  */
 func ReadRegLnr11(devName string, cmd uint64) (integer uint64, dec uint64, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -320,17 +288,11 @@ func ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
 }
 
 func ReadDeviceID(devName string) (devID byte, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-
-    defer dmutex.Unlock(devName)
 
     devID, err = pmbus.ReadByte(devName, IC_DEVICE_ID)
     return devID, err
@@ -343,16 +305,11 @@ func SetVMargin(devName string, pct int) (err int) {
     var dacStepRegVal byte
     var dacStep uint64
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -503,17 +460,11 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
         return
     }
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-
-    defer dmutex.Unlock(devName)
 
     file, errgo := os.Open(fileName)
     if errgo != nil {
@@ -701,16 +652,11 @@ func Info(devName string) (err int) {
     var dataBuf []byte
     //var numByte int
 
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
-    defer dmutex.Unlock(devName)
 
     // Sort keys; otherwise the sequence will be random
     keys := make([]string, 0)

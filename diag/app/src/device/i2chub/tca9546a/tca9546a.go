@@ -2,7 +2,6 @@ package tca9546a
 
 import (
     "common/errType"
-    "common/dmutex"
 
     "protocol/smbus"
 )
@@ -15,17 +14,11 @@ const (
     All other channels will be disabled
  */
 func EnableChan(devName string, channel byte) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     var data byte
 
@@ -43,17 +36,11 @@ func EnableChan(devName string, channel byte) (err int) {
     Disable all channels
  */
 func DisableAllChan(devName string) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     err = smbus.SendByte(devName, 0)
     return
@@ -63,17 +50,11 @@ func DisableAllChan(devName string) (err int) {
     Read channel enable/disable info
  */
 func ReadStatus(devName string) (data byte, err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     data, err = smbus.ReceiveByte(devName)
     return

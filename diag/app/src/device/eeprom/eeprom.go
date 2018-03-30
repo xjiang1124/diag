@@ -5,7 +5,6 @@ import (
     "os"
 
     "common/cli"
-    "common/dmutex"
     "common/errType"
     "common/misc"
     "protocol/smbus"
@@ -87,17 +86,11 @@ func readField(devName string, offset int, numBytes int) (data []byte, err int) 
 }
 
 func ProgEeprom(devName string) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     for _, entry := range(EepromTbl) {
         err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
@@ -125,17 +118,11 @@ func UpdateMac(devName string, mac []byte) (err int) {
 }
 
 func DispEeprom(devName string) (err int) {
-    err = dmutex.Lock(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    defer dmutex.Unlock(devName)
 
     var data []byte
     fmtStr := "%-20s%-20s"
