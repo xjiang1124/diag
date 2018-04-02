@@ -11,5 +11,5 @@ MTP_QK:
         CMD: i2cdetect -y -r 0
         SUDO: FALSE
         TIMEOUT: 30
-        ENDING: "\$ " 
+        ENDING: 
 ...

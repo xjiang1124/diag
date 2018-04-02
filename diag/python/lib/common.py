@@ -24,10 +24,10 @@ def load_yaml(filename):
     with open(filename) as stream:
         try:
             #config_dict = yaml.load(stream)
-            tsconfig = ordered_load(stream, yaml.SafeLoader)
+            config = ordered_load(stream, yaml.SafeLoader)
         except yaml.YAMLError as exc:
             print exc
-    return tsconfig
+    return config
 
 #=========================================================
 # create output folder

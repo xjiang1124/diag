@@ -50,7 +50,7 @@ class qaSuite:
         ret = common.session_cmd(session, "ssh diag@"+self.ip, timeout=10)
         if ret != -2:
             common.session_cmd(session, "poweroff", sudo=True, timeout=10)
-            time.sleep(180)
+            time.sleep(60)
         else:
             print "=== MTP is not responding ==="
         session.close()
@@ -70,8 +70,10 @@ class qaSuite:
             try:
                 session = pexpect.spawn(cmd)
                 session.timeout=10
-                #session.logfile_read = sys.stdout
-                session.expect("password: ")
+                session.logfile_read = sys.stdout
+                prmt = ["password: ", "\$ "]
+                print "prmt:", prmt
+                session.expect(prmt)
                 session.close()
                 print self.pf, "is ready"
                 return 0
@@ -97,6 +99,7 @@ if __name__ == "__main__":
     qa = qaSuite()
     qa.setup(args.platform, args.mode)
     
+    print "pc:", args.pwrcycle, "ite:", args.ite
     for idx in range(args.ite):
         print "========== Iteration", idx+1, "=========="
         if args.pwrcycle == True:

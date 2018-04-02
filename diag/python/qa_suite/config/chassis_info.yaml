@@ -4,12 +4,12 @@ MTP001:
     MODE: MTP_QK
     TS: pen-hwlab-tel-02
     TS_PORT: 10
-    APC_1_NAME: pen-hwlab-apc-01
-    APC_1_PORT: 17
-    APC_2_NAME: pen-hwlab-apc-01
-    APC_2_PORT: 19
-    IP: 192.168.70.64
-    SLOT_1: NAPLES100 
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 9
+    APC_2_NAME:
+    APC_2_PORT:
+    IP: 192.168.75.205
+    SLOT_1:
     SLOT_2: 
     SLOT_3: 
     SLOT_4: 
@@ -21,15 +21,37 @@ MTP001:
     SLOT_10: 
 
 MTP002:
-    SKIP: TRUE
-    MODE: P2C
+    SKIP:
+    MODE: MTP_QK
     TS: pen-hwlab-tel-01
     TS_PORT: 11
-    APC_1_NAME: pen-hwlab-apc-01
-    APC_1_PORT: 13
-    APC_2_NAME: pen-hwlab-apc-01
-    APC_2_PORT: 14
-    SLOT_1: NAPLES100 
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 10
+    APC_2_NAME:
+    APC_2_PORT:
+    IP: 192.168.75.202
+    SLOT_1:
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6: 
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10: 
+
+MTP003:
+    SKIP:
+    MODE: MTP_QK
+    TS: pen-hwlab-tel-01
+    TS_PORT: 12
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 11
+    APC_2_NAME:
+    APC_2_PORT:
+    IP: 192.168.73.247
+    SLOT_1:
     SLOT_2: 
     SLOT_3: 
     SLOT_4: 

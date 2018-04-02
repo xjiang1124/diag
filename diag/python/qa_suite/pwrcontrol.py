@@ -37,9 +37,9 @@ class pwrControl:
                 if apcname == None or apcport == None:
                     continue
                 if action == "on":
-                    self.apccontrol.turn_on(apcname, apcport)
+                    self.apccontrol.turn_on(apcname, str(apcport))
                 else:
-                    self.apccontrol.turn_off(apcname, apcport)
+                    self.apccontrol.turn_off(apcname, str(apcport))
 
 if __name__ == "__main__":
     import argparse
