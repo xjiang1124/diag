@@ -6,7 +6,6 @@ COMMON_SRC_DIR=				\
 	dsp/pcieh   		\
 	dsp/tempsensor     	\
 	util/sysmon			\
-	util/periutil 		\
 	util/smbutil 		\
 	util/devmgr
 
@@ -19,8 +18,7 @@ GO_TEST_DIR=						\
 	device/powermodule/tps549a20	\
 	device/tempsensor/tmp422		\
 	device/rtc/pcf85263a			\
-	common/dmutex					\
-	util/periutil					
+	common/dmutex
 
 AMD64_SRC_DIR=
 AMD64_C_SRC_DIR=		\
