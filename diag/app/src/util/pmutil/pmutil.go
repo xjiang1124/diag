@@ -29,7 +29,7 @@ func init() {
     procName := procNameTemp[len(procNameTemp)-1]
     cli.Init("log_"+procName+".txt", config.OutputMode)
 
-    hwInfo.cardName = os.Getenv("CARD_NAME")
+    hwInfo.cardName = os.Getenv("CARD_TYPE")
     hwInfo.vrmTbl, err = i2cinfo.GetI2cTable(hwInfo.cardName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to initialize:", err)

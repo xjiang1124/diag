@@ -58,9 +58,9 @@ class diagEngineHost:
         self.skiplistKey = "SKIPLIST"
         #==========================================================
         # e.g. NIC1
-        self.cardName = os.environ['CARD_TYPE']
+        self.cardName = os.environ['CARD_NAME']
         # e.g. NAPLES
-        self.brdName = os.environ['CARD_NAME']
+        self.brdName = os.environ['CARD_TYPE']
         
         # Init redis
         redisIP = os.environ['REDIS_IP']
@@ -493,7 +493,6 @@ class diagSts(diagEngineHost):
         fmtShowCard = "{:<15}{:<15}{}"
         fmtKeyDsp = "EXP:DSP:{}*"
         print "========================================"
-        #showCardStr = fmtShowCard.format("CARD_IDX", "CARD_NAME")
         #print showCardStr
         #print "----------------------------------------"
         cards = self.r.keys(key)

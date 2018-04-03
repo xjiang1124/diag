@@ -43,7 +43,7 @@ var OutputMode int
 func Init(fileName string, mode int) {
     OutputMode = mode
 
-    cardName := os.Getenv("CARD_NAME")
+    cardName := os.Getenv("CARD_TYPE")
     path := config.DiagNicLogPath
     if cardName == "HOST" {
         path = config.DiagHostLogPath

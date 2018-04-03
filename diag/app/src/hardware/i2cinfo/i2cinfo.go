@@ -100,7 +100,7 @@ var MtpI2cTbl = []I2cInfo {
 }
 
 func init() {
-    CardName = os.Getenv("CARD_NAME")
+    CardName = os.Getenv("CARD_TYPE")
 
     if CardName == "NAPLES100" {
         I2cTbl = Naples100Tbl

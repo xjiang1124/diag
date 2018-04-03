@@ -44,7 +44,7 @@ var mtpTbl = []entry {
 var EepromTbl []entry
 
 func init() {
-    cardName := os.Getenv("CARD_NAME")
+    cardName := os.Getenv("CARD_TYPE")
     if cardName == "MTP" {
         EepromTbl = mtpTbl
     } else {

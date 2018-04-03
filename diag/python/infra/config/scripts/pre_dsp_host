@@ -3,5 +3,5 @@
 export REDIS_IP="127.0.0.1"
 #hostIdx=$(redis-cli -h ${REDIS_IP} -p 6379 INCR HOST_IDX)
 #export CARD_TYPE="HOST"${hostIdx}
-export CARD_NAME="MTP"
-export CARD_TYPE="HOST1"
+export CARD_NAME="MTP1"
+export CARD_TYPE="MTP"

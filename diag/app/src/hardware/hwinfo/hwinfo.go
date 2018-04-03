@@ -146,7 +146,7 @@ func init() {
 
     //===============================
     // Platform specified list
-    cardName = os.Getenv("CARD_NAME")
+    cardName = os.Getenv("CARD_TYPE")
     DispStaList   = dispMap[cardName]
     PmbusTestList = pmbusTestMap[cardName]
     EepromList    = eepromMap[cardName]
