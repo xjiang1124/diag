@@ -12,46 +12,36 @@ else
     fi
 fi
 
-echo "===================================="
-echo "Setting up diag $arch"
-
-# Extract files
-echo "-------------------"
-echo "Extracting files"
-rm -rf diag/
-tar xzf image_$arch.tar
-mv $arch/ diag/
-echo "Extracting files -- Done"
-
 # Set up environment
 echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=$(pwd)/diag
 
 # Prepare all paths
-cat $DIAG_DIR/regression/scripts/dft_profile > temp_profile
+cat $DIAG_DIR/python/regression/scripts/dft_profile > temp_profile
 echo "" >> temp_profile
 echo "# Diag set up" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR" >> temp_profile
-echo "PATH=\$PATH:$DIAG_DIR/regression" >> temp_profile
-echo "PATH=\$PATH:$DIAG_DIR/dshell" >> temp_profile
-echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/util/" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/dsp/" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/python/regression" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/python/infra" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/python/qa_suite" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
 if [[ $arch == "arm64" ]]
 then
-    source $DIAG_DIR/scripts/pre_dsp_nic1
+    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_nic1
 else
-    source $DIAG_DIR/scripts/pre_dsp_host
-    echo "source $DIAG_DIR/scripts/pre_dsp_host" >> temp_profile
+    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_host
+    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_host" >> temp_profile
 fi
 
 cp temp_profile ~/.bash_profile
-source ~/.bash_profile
 
 if [[ $arch == "amd64" ]]
 then
-    $DIAG_DIR/regression/envinit.py
+    envinit.py
 
     # Start redis if it is not running
     redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
@@ -67,7 +57,7 @@ then
     fi
     
     # Load all the redis keys
-    cat $DIAG_DIR/config/redis/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
+    cat $DIAG_DIR/python/infra/config/OUTPUT/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
     echo "Redis keys loaded"
 fi
 
