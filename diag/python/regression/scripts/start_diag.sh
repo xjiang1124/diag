@@ -33,8 +33,8 @@ if [[ $arch == "arm64" ]]
 then
     source $DIAG_DIR/python/infra/config/scripts/pre_dsp_nic1
 else
-    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_host
-    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_host" >> temp_profile
+    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
+    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
 fi
 
 cp temp_profile ~/.bash_profile
