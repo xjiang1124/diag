@@ -45,15 +45,13 @@ cd $TOP_DIR/diag/python/infra/config/
 echo "--------------------"
 echo "Copying all files"
 cd $BUILD_DIR
+cp -r $TOP_DIR/diag/app/bin/linux_$arch/diagmgr $TEMP_DIR/
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/dsp/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/util/ $TEMP_DIR/
-cp -r $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/util/
+cp -r $TOP_DIR/diag/app/bin/linux_$arch/cbin/* $TEMP_DIR/util/
+cp -r $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/scripts
 
-cp -r $TOP_DIR/diag/python/infra/dshell/ $TEMP_DIR/
-cp -r $TOP_DIR/diag/python/infra/config/OUTPUT/*redis $TEMP_DIR/config/redis/
-cp -r $TOP_DIR/diag/python/infra/config/scripts/* $TEMP_DIR/scripts/
-
-cp -r $TOP_DIR/diag/python/regression/ $TEMP_DIR/
+cp -r $TOP_DIR/diag/python/ $TEMP_DIR/
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 

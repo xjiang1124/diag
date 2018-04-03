@@ -53,7 +53,7 @@ class qaSuite:
             time.sleep(60)
         else:
             print "=== MTP is not responding ==="
-        session.close()
+        common.session_stop(session)
         self.pwrcycle()
 
     def pwrcycle(self):

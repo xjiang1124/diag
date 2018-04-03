@@ -204,9 +204,19 @@ class apcControlSch:
             self.usr = tsinfo["USR"]
             self.pwd = tsinfo["PASSWD"]
 
-        session = self.start_session()
-        self.turn_port_off(session, ports)
-        self.quit_session(session)
+        while True:
+            try:
+                session = self.start_session()
+                self.turn_port_off(session, ports)
+                self.quit_session(session)
+                break
+            except pexpect.exceptions.EOF:
+                retry_cnt = retry_cnt + 1
+                if retry_cnt >= max_retry:
+                    print "==== APC max retry reached! ===="
+                    sys.exit()
+                else:
+                    continue
 
     def turn_on(self, apc, ports):
         try:
@@ -219,9 +229,21 @@ class apcControlSch:
             self.usr = tsinfo["USR"]
             self.pwd = tsinfo["PASSWD"]
 
-        session = self.start_session()
-        self.turn_port_on(session, ports)
-        self.quit_session(session)
+        max_retry = 10
+        retry_cnt = 0
+        while True:
+            try:
+                session = self.start_session()
+                self.turn_port_on(session, ports)
+                self.quit_session(session)
+                break
+            except pexpect.exceptions.EOF:
+                retry_cnt = retry_cnt + 1
+                if retry_cnt >= max_retry:
+                    print "==== APC max retry reached! ===="
+                    sys.exit()
+                else:
+                    continue
 
 if __name__ == "__main__":
     import argparse
