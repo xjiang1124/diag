@@ -58,6 +58,7 @@ BYTE	signature_prefix = 0xAB;
 BYTE	signature_surfix = 0xBA;
 
 BYTE	is_spi_flash	= 0;
+BYTE	is_jtag_flash	= 0;
 BYTE	is_jtag			= 0;
 BYTE	is_mdio			= 0;
 
@@ -1409,6 +1410,15 @@ FT_STATUS spi_flash_init()
 	return ftStatus;
 }
 
+FT_STATUS jtag_flash_init()
+{
+	FT_STATUS       ftStatus = FT_OK;
+	is_spi_flash = 1;
+	is_jtag_flash = 1;
+	ftStatus = spi_init();
+	return ftStatus;
+}
+
 FT_STATUS spi_init()
 {
     FT_STATUS       ftStatus = FT_OK;
@@ -1545,8 +1555,10 @@ FT_STATUS spi_init()
         {
             return ftStatus;
         }
-
-        ftStatus = sendJtagCommand(ftHandle, setup_bcbus_low, sizeof setup_bcbus_high);
+        if(is_jtag_flash)
+        	ftStatus = sendJtagCommand(ftHandle, setup_bcbus_high, sizeof setup_bcbus_high);
+        else
+        	ftStatus = sendJtagCommand(ftHandle, setup_bcbus_low, sizeof setup_bcbus_high);
         if (ftStatus != FT_OK)
         {
             return ftStatus;

@@ -100,51 +100,29 @@ DWORD	dwNumBytesSent;
 DWORD 	dwNumBytesRead;
 
 BYTE	is_spi_flash;
-
+BYTE	is_jtag_flash;
 BYTE	is_mdio;
-
 BYTE	is_jtag;
-
 BYTE   setup_reg[3];
-
 BYTE   setup_spi[3];
-
 BYTE   ena_lpbk[1];
-
 BYTE   dis_lpbk[1];
-
 BYTE   setClock[3];
-
 BYTE   transceive[3];
-
 BYTE   rst_irscan[3];
-
 BYTE   mod_sel[5];
-
 BYTE   oneclock_high[3];
-
 BYTE   oneclock_low[3];
-
 BYTE   updateir_shiftdr[3];
-
 BYTE   shiftdr[2];
-
 BYTE   updatedr_reset[3];
-
 BYTE   tms_low[3];
-
 BYTE   tms_high[3];
-
 BYTE   test1[6];
-
 BYTE   test2[7];
-
 BYTE   cpu_wr[15];
-
 BYTE   cpu_rd[11];
-
 BYTE   cpu_res[13];
-
 BYTE   con_red[5];
 
 FT_STATUS jtag_init();
@@ -164,8 +142,8 @@ void spi_csdis();
 FT_STATUS spi_reg_init();
 FT_STATUS spi_mdio_init();
 FT_STATUS spi_flash_init();
+FT_STATUS jtag_flash_init();
 FT_STATUS spi_init();
-
 FT_STATUS spi_wr(BYTE address, BYTE data);
 FT_STATUS spi_rd(BYTE address, BYTE* data);
 FT_STATUS cpld_csena();

@@ -57,15 +57,19 @@ int main(int argc, char *argv[])
     }
 
     strcpy(acc_mode, argv[1]);
+    inst = xtoi(argv[2]);
+    if(inst == 0)
+    	is_jtag_flash = 1;
+
     if(!strcmp("read", acc_mode))
     {
-    	if(argc > 2)
+    	if(argc > 3)
     	{
 //			fp = open(argv[2], O_RDWR|O_CREAT, 0660);
-    		fptr = fopen(argv[2], "wb");
+    		fptr = fopen(argv[3], "wb");
 			if(fptr == NULL)
 			{
-				printf("Cannot create file %s\n", argv[2]);
+				printf("Cannot create file %s\n", argv[3]);
 				exit(1);
 			}
     	}
@@ -73,7 +77,7 @@ int main(int argc, char *argv[])
     	flash_init();
     	BYTE buf[CFG_SIZE];
     	memset(buf, 0, sizeof(buf));
-    	if(argc > 2)
+    	if(argc > 3)
     	{
     		ftStatus = flash_read(buf, sizeof(buf));
     	} else {
@@ -90,7 +94,7 @@ int main(int argc, char *argv[])
 			printf("Failure.  flash_read returned %d.\n", (int)ftStatus);
 		}
 		flash_disable();
-		if(argc > 2)
+		if(argc > 3)
 		{
 			printf("file size %lu\n", sizeof(buf));
 			fwrite(buf, sizeof(buf), 1, fptr);
@@ -102,7 +106,7 @@ int main(int argc, char *argv[])
     {
     	unsigned char buf[2000000];
     	memset(buf, 0, sizeof(buf));
-        fptr = fopen(argv[2], "rb");
+        fptr = fopen(argv[3], "rb");
     	int read_byte = fread(buf, 1, sizeof(buf), fptr);
 
 //    	BYTE* pos_start = strstr(buffer, "L0000000");
