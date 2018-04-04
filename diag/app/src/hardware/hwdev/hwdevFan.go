@@ -69,6 +69,31 @@ func FanSpeedGet(devName string, fanIdx uint64) (rpm uint64, err int) {
     return
 }
 
+func FanGetTemp(devName string, tempIdx uint64) (temp int, err int) {
+    var i2cif i2cinfo.I2cInfo
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+    if i2cif.Comp == "ADT7462" {
+        temp, _, err = adt7462.GetTemp(devName, tempIdx)
+    } else {
+        cli.Println("e", "Unsupported component: ", i2cif.Comp)
+        err = errType.INVALID_PARAM
+    }
+    return
+}
+
 func FanSetup(devName string) (err int) {
     var i2cif i2cinfo.I2cInfo
 
