@@ -217,7 +217,7 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
         pwmVal = 0xFF
     }
 
-    cli.Printf("i", "Reg: 0x%x, value0x%x\n", pwmReg, byte(pwmVal))
+    //cli.Printf("i", "Reg: 0x%x, value0x%x\n", pwmReg, byte(pwmVal))
     err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
     return
 }

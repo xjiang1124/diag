@@ -82,7 +82,7 @@ func main() {
     }
 
     if *speedPtr == true {
-        hwdev.FanSpeed(devName, pct, mask)
+        hwdev.FanSpeedSet(devName, pct, mask)
         return
     }
 

@@ -24,11 +24,23 @@ func main() {
     //var err int
     flag.Usage = myUsage
 
-    psutestPtr  := flag.Bool("psu",     false, "PSU test")
+    psuPtr  := flag.Bool("psu",     false, "PSU test")
+    fanPtr  := flag.Bool("fan",     false, "Fan test")
+    fanSpdPtr  := flag.Bool("fanspd",     false, "Fan speed test")
     flag.Parse()
 
-    if *psutestPtr == true {
+    if *psuPtr == true {
         psuTest()
+        return
+    }
+
+    if *fanPtr == true {
+        fanTest()
+        return
+    }
+
+    if *fanSpdPtr == true {
+        fanSpeedTest()
         return
     }
 

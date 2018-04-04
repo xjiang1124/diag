@@ -5,9 +5,10 @@ COMMON_SRC_DIR=				\
 	dsp/rtc     		\
 	dsp/pcieh   		\
 	dsp/tempsensor     	\
-	util/sysmon			\
+	util/devmgr			\
+	util/mtptest		\
 	util/smbutil 		\
-	util/devmgr
+	util/sysmon
 
 COMMON_C_SRC_DIR=		\
 	lib/i2c				\
