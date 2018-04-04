@@ -18,19 +18,6 @@
  */
 #include "acc.h"
 
-
-#define MDIO_INST0_CRTL_LO_REG		0x6
-#define MDIO_INST0_CRTL_HI_REG		0x7
-#define MDIO_INST0_DATA_LO_REG		0x8
-#define MDIO_INST0_DATA_HI_REG		0x9
-#define MDIO_INST1_CRTL_LO_REG		0xA
-#define MDIO_INST1_CRTL_HI_REG		0xB
-#define MDIO_INST1_DATA_LO_REG		0xC
-#define MDIO_INST1_DATA_HI_REG		0xD
-#define MDIO_ACC_ENA				0x1
-#define MDIO_RD_ENA					0x2
-#define MDIO_WR_ENA					0x4
-
 #if 0
 #include <stdio.h>
 #include <stdlib.h>
@@ -476,8 +463,6 @@ int main(int argc, char *argv[])
 //    struct timeval  startTime;
     BYTE			dev_addr = 0;
     DWORD			data = 0;
-    BYTE			data_lo = 0;
-    BYTE			data_hi = 0;
     BYTE			instance = 0;
     BYTE			offset = 0;
 
@@ -539,11 +524,7 @@ int main(int argc, char *argv[])
     if(argc > 4)
     {
     	data = xtoi(argv[4]);
-        ftStatus = spi_wr(ftHandle, (MDIO_INST0_CRTL_HI_REG + instance * 4), offset);
-        ftStatus = spi_wr(ftHandle, (MDIO_INST0_DATA_LO_REG + instance * 4), (data & 0xFF));
-        ftStatus = spi_wr(ftHandle, (MDIO_INST0_DATA_HI_REG + instance * 4), ((data >> 8) & 0xFF));
-        ftStatus = spi_wr(ftHandle, (MDIO_INST0_CRTL_LO_REG + instance * 4), (dev_addr << 3) | MDIO_WR_ENA | MDIO_ACC_ENA);
-        ftStatus = spi_wr(ftHandle, (MDIO_INST0_CRTL_LO_REG + instance * 4), 0);
+    	ftStatus = mdio_wr(instance, dev_addr, offset, data);
         if (ftStatus != FT_OK)
         {
         	printf("spi write failed!\n");
@@ -552,12 +533,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        ftStatus = spi_wr(ftHandle, (MDIO_INST0_CRTL_HI_REG + instance * 4), offset);
-        ftStatus |= spi_wr(ftHandle, (MDIO_INST0_CRTL_LO_REG + instance * 4), (dev_addr << 3) | MDIO_RD_ENA | MDIO_ACC_ENA);
-        ftStatus |= spi_wr(ftHandle, (MDIO_INST0_CRTL_LO_REG + instance * 4), 0);
-		ftStatus |= spi_rd(ftHandle, (MDIO_INST0_DATA_LO_REG + instance * 4), &data_lo);
-		ftStatus |= spi_rd(ftHandle, (MDIO_INST0_DATA_HI_REG + instance * 4), &data_hi);
-		data = data_hi << 8 | data_lo;
+    	ftStatus = mdio_rd(instance, dev_addr, offset, &data);
 		if (ftStatus != FT_OK)
 		{
 			printf("spi read failed!\n");

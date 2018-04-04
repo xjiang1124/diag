@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     if(argc > 3)
     {
     	data = (BYTE)xtoi(argv[3]);
-        ftStatus = spi_wr(ftHandle, address, data);
+        ftStatus = spi_wr(address, data);
         if (ftStatus != FT_OK)
         {
         	printf("spi write failed!\n");
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     else
     {
 //    	ftStatus = flash_id_check();
-		ftStatus = spi_rd(ftHandle, address, &data);
+		ftStatus = spi_rd(address, &data);
 		if (ftStatus != FT_OK)
 		{
 			printf("spi read failed!\n");

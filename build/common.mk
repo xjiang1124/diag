@@ -7,7 +7,7 @@ GO_BUILD=$(GO_CMD) build
 GO_INSTALL=$(GO_CMD) install
 GO_TEST=$(GO_CMD) test
 
-CGO_LDFL = "-L$(GOPATH)/pkg/linux_amd64/clib/ -L$(GOPATH)/pkg/linux_arm64/clib/"
+CGO_LDFL = "-L$(GOPATH)/pkg/linux_amd64/clib/ -L$(GOPATH)/pkg/linux_arm64/clib/ -L$(GOPATH)/../lib/third-party/" 
 GOBN = $(GOPATH)/bin/
 
 # These will be provided to the target

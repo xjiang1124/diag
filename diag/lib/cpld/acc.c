@@ -133,10 +133,10 @@ BYTE   dis_lpbk[1] =
     0x85              // disable TDI/TDO loopback
 };
 
-BYTE   set_Clock[3] =
-{
-    0x86, 0x04, 0x00  // TCK divisor: CLK = 6 MHz / (1 + 0004) == 1.2 MHz
-};
+//BYTE   set_Clock[3] =
+//{
+//    0x86, 0x04, 0x00  // TCK divisor: CLK = 6 MHz / (1 + 0004) == 1.2 MHz
+//};
 
 BYTE   cfg_clock[3] =
 {
@@ -233,7 +233,7 @@ BYTE   con_red[5] =
 
 void jtag_wr_instruction(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
 {
-//	printf("inst 0x%x, address 0x%llux, data 0x%x, flag 0x%x\n", inst, address, data, flag);
+//	printf("inst 0x%x, address 0x%llx, data 0x%x, flag 0x%x\n", inst, address, data, flag);
 	cpu_wr[0] = 0x3C;
 	cpu_wr[1] = 0x0B;
 	cpu_wr[2] = 0x00;
@@ -360,6 +360,26 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     {
         return ftStatus;
     }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    jtag_res_instruction(inst);
+    ftStatus = sendJtagCommand(ftHandle, cpu_res, sizeof cpu_res);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
     return ftStatus;
 }
 
@@ -532,6 +552,133 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     return ftStatus;
 }
 
+FT_STATUS jtag_write(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
+{
+	FT_STATUS ftStatus = FT_OK;
+    ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    jtag_wr_instruction(inst, address, data, flag);
+    ftStatus = sendJtagCommand(ftHandle, cpu_wr, sizeof cpu_wr);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    jtag_res_instruction(inst);
+    ftStatus = sendJtagCommand(ftHandle, cpu_res, sizeof cpu_res);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    return ftStatus;
+}
+
+DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag)
+{
+    FT_STATUS       ftStatus = FT_OK;
+    DWORD data;
+    int tx_buf, rx_buf, event;
+
+    ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    jtag_rd_instruction(inst, address, flag);
+    ftStatus = sendJtagCommand(ftHandle, cpu_rd, sizeof cpu_rd);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    jtag_res_instruction(inst);
+    ftStatus = sendJtagCommand(ftHandle, cpu_res, sizeof cpu_res);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+    if (ftStatus != FT_OK)
+    {
+        return ftStatus;
+    }
+
+    ftStatus = queue_read(ftHandle, &data);
+    if(ftStatus == 1)
+    {
+    	printf("Read failed due to other reason!\n");
+    }
+    else if(ftStatus == 2)
+    {
+    	//resend response after 1 second;
+        ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+        if (ftStatus != FT_OK)
+        {
+            return ftStatus;
+        }
+
+        jtag_res_instruction(inst);
+        ftStatus = sendJtagCommand(ftHandle, cpu_res, sizeof cpu_res);
+        if (ftStatus != FT_OK)
+        {
+            return ftStatus;
+        }
+
+        ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+        if (ftStatus != FT_OK)
+        {
+            return ftStatus;
+        }
+    	sleep(1);
+        ftStatus = queue_read(ftHandle, &data);
+        if(ftStatus == 2)
+        	printf("Read failed due to corruption in resend!\n");
+        else if(ftStatus == 0)
+        	printf("resend successfully!\n");
+        else
+        	printf("Read failed due to other reason in resend!\n");
+    }
+
+    return data;
+}
+
 FT_STATUS jtag_id(DWORD inst, DWORD* data)
 {
 	FT_STATUS       ftStatus = FT_OK;
@@ -594,9 +741,9 @@ FT_STATUS jtag_id(DWORD inst, DWORD* data)
     return ftStatus;
 }
 
-int xtoi(char *hexstring)
+ULONGLONG xtoi(char *hexstring)
 {
-	int	i = 0;
+	ULONGLONG	i = 0;
 
 	if ((*hexstring == '0') && (*(hexstring+1) == 'x'))
 		  hexstring += 2;
@@ -1022,6 +1169,14 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 			return 1;
 		}
     }
+
+	//check valid bit is set and error bits are clean
+	if((v_data&0x1) && !((v_data&0x6) >> 1))
+	{
+		return 0;
+	} else
+		return 3;
+
 //	printf("data 0x%08x, valid bit 0x%x, error 0x%02x, RSP 0x%02x\n", v_data, (v_data&0x1), (v_data&0x6) >> 1, (v_data&0x18) >> 3);
 //    printf("Max retry %d\n", retry);
 //	printf("Receive data:\n");
@@ -1030,7 +1185,7 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 //		printf("0x%x ", buffer[f]);
 //	}
 //	printf("\n");
-	return 0;
+
 
 corrupt:
 	printf("\nFailure. Frame was corrupted\n");
@@ -1227,6 +1382,31 @@ FT_STATUS cpld_csdis()
         return ftStatus;
     }
     return ftStatus;
+}
+
+FT_STATUS spi_reg_init()
+{
+	FT_STATUS       ftStatus = FT_OK;
+	is_spi_flash = 0;
+	ftStatus = spi_init();
+	return ftStatus;
+}
+
+FT_STATUS spi_mdio_init()
+{
+	FT_STATUS       ftStatus = FT_OK;
+	is_spi_flash = 0;
+	is_mdio = 1;
+	ftStatus = spi_init();
+	return ftStatus;
+}
+
+FT_STATUS spi_flash_init()
+{
+	FT_STATUS       ftStatus = FT_OK;
+	is_spi_flash = 1;
+	ftStatus = spi_init();
+	return ftStatus;
 }
 
 FT_STATUS spi_init()
@@ -1590,7 +1770,7 @@ FT_STATUS flash_id_check()
     return ftStatus;
 }
 
-FT_STATUS spi_wr(FT_HANDLE ftHandle, BYTE address, BYTE data)
+FT_STATUS spi_wr(BYTE address, BYTE data)
 {
 	FT_STATUS       ftStatus = FT_OK;
 
@@ -1627,7 +1807,7 @@ FT_STATUS spi_wr(FT_HANDLE ftHandle, BYTE address, BYTE data)
 	return ftStatus;
 }
 
-FT_STATUS spi_rd(FT_HANDLE ftHandle, BYTE address, BYTE* data)
+FT_STATUS spi_rd(BYTE address, BYTE* data)
 {
 	FT_STATUS       ftStatus = FT_OK;
 
@@ -1912,3 +2092,94 @@ int flash_read(BYTE* buf, DWORD size)
 	return ftStatus;
 }
 
+FT_STATUS cpld_program(char* file_name)
+{
+	FT_STATUS       ftStatus = FT_OK;
+	FILE* 			fptr;
+	unsigned char buf[2000000];
+	memset(buf, 0, sizeof(buf));
+    fptr = fopen(file_name, "rb");
+	int read_byte = fread(buf, 1, sizeof(buf), fptr);
+
+	printf("program size %d\n", read_byte);
+
+	flash_enable();
+	flash_init();
+	flash_erase();
+
+    ftStatus = flash_program(buf, read_byte);
+	if (ftStatus != FT_OK)
+	{
+		return ftStatus;
+	}
+	flash_program_done();
+	flash_disable();
+
+	fclose(fptr);
+	return ftStatus;
+}
+
+FT_STATUS cpld_read(char* file_name)
+{
+	FT_STATUS       ftStatus = FT_OK;
+	FILE* 			fptr;
+	fptr = fopen(file_name, "wb");
+	if(fptr == NULL)
+	{
+		printf("Cannot create file %s\n", file_name);
+		exit(1);
+	}
+
+	flash_enable();
+	flash_init();
+	BYTE buf[CFG_SIZE];
+	memset(buf, 0, sizeof(buf));
+
+	ftStatus = flash_read(buf, sizeof(buf));
+
+	if (ftStatus != FT_OK)
+	{
+		printf("Failure.  flash_read returned %d.\n", (int)ftStatus);
+	}
+	flash_disable();
+
+	printf("file size %lu\n", sizeof(buf));
+	fwrite(buf, sizeof(buf), 1, fptr);
+	fclose(fptr);
+
+	return ftStatus;
+}
+
+FT_STATUS mdio_wr(DWORD instance, DWORD dev_addr, DWORD offset, DWORD data)
+{
+	FT_STATUS       ftStatus = FT_OK;
+    ftStatus = spi_wr((MDIO_INST0_CRTL_HI_REG + instance * 4), offset);
+    ftStatus |= spi_wr((MDIO_INST0_DATA_LO_REG + instance * 4), (data & 0xFF));
+    ftStatus |= spi_wr((MDIO_INST0_DATA_HI_REG + instance * 4), ((data >> 8) & 0xFF));
+    ftStatus |= spi_wr((MDIO_INST0_CRTL_LO_REG + instance * 4), (dev_addr << 3) | MDIO_WR_ENA | MDIO_ACC_ENA);
+    ftStatus |= spi_wr((MDIO_INST0_CRTL_LO_REG + instance * 4), 0);
+    if (ftStatus != FT_OK)
+    {
+    	printf("spi write failed!\n");
+    }
+	return ftStatus;
+}
+
+FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data)
+{
+	FT_STATUS       ftStatus = FT_OK;
+    BYTE			data_lo = 0;
+    BYTE			data_hi = 0;
+
+	ftStatus = spi_wr((MDIO_INST0_CRTL_HI_REG + instance * 4), offset);
+	ftStatus |= spi_wr((MDIO_INST0_CRTL_LO_REG + instance * 4), (dev_addr << 3) | MDIO_RD_ENA | MDIO_ACC_ENA);
+	ftStatus |= spi_wr((MDIO_INST0_CRTL_LO_REG + instance * 4), 0);
+	ftStatus |= spi_rd((MDIO_INST0_DATA_LO_REG + instance * 4), &data_lo);
+	ftStatus |= spi_rd((MDIO_INST0_DATA_HI_REG + instance * 4), &data_hi);
+	*data = data_hi << 8 | data_lo;
+    if (ftStatus != FT_OK)
+    {
+    	printf("spi write failed!\n");
+    }
+	return ftStatus;
+}

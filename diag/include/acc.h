@@ -31,6 +31,36 @@
 #define JTAG_RST_CMD	0x01
 #define JTAG_ENA_CMD	0x02
 
+#define MDIO_INST0_CRTL_LO_REG		0x6
+#define MDIO_INST0_CRTL_HI_REG		0x7
+#define MDIO_INST0_DATA_LO_REG		0x8
+#define MDIO_INST0_DATA_HI_REG		0x9
+#define MDIO_INST1_CRTL_LO_REG		0xA
+#define MDIO_INST1_CRTL_HI_REG		0xB
+#define MDIO_INST1_DATA_LO_REG		0xC
+#define MDIO_INST1_DATA_HI_REG		0xD
+#define MDIO_ACC_ENA				0x1
+#define MDIO_RD_ENA					0x2
+#define MDIO_WR_ENA					0x4
+
+#ifndef DWORD
+#define DWORD unsigned int
+#endif
+
+#ifndef ULONGLONG
+#define ULONGLONG unsigned long long int
+#endif
+
+#ifndef ULONG
+#define ULONG unsigned int
+#endif
+
+#ifndef BYTE
+#define BYTE unsigned char
+#endif
+
+#define CFG_SIZE	(16*2175)
+
 const BYTE SPIDATALENGTH;//3 digit command + 8 digit address
 const BYTE READ;//110xxxxx
 const BYTE WRITE;//101xxxxx
@@ -54,7 +84,7 @@ extern FT_HANDLE ftHandle_a;
 extern FT_HANDLE ftHandle;
 extern unsigned char lsc_idcode_cmd[4];
 extern unsigned char lsc_enable_cmd[4];
-extern unsigned char lsc_earse_cmd[4];
+extern unsigned char lsc_erase_cmd[4];
 extern unsigned char lsc_init_cmd[4];
 extern unsigned char lsc_disable_cmd[3];
 extern unsigned char lsc_prog_done_cmd[4];
@@ -121,17 +151,23 @@ FT_STATUS jtag_init();
 FT_STATUS jtag_id(DWORD inst, DWORD* data);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
+FT_STATUS jtag_write(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
+DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag);
 FT_STATUS jtag_reset(DWORD inst);
 FT_STATUS jtag_enable(DWORD inst);
-int xtoi(char *hexstring);
+ULONGLONG xtoi(char *hexstring);
 void queue_clear(FT_HANDLE ftHandle);
 int queue_read(FT_HANDLE ftHandle, DWORD* data);
 FT_STATUS sendJtagCommand(FT_HANDLE ftHandle, BYTE *sequence, const size_t length);
 void spi_csena();
 void spi_csdis();
+FT_STATUS spi_reg_init();
+FT_STATUS spi_mdio_init();
+FT_STATUS spi_flash_init();
 FT_STATUS spi_init();
-FT_STATUS spi_wr(FT_HANDLE ftHandle, BYTE address, BYTE data);
-FT_STATUS spi_rd(FT_HANDLE ftHandle, BYTE address, BYTE* data);
+
+FT_STATUS spi_wr(BYTE address, BYTE data);
+FT_STATUS spi_rd(BYTE address, BYTE* data);
 FT_STATUS cpld_csena();
 FT_STATUS cpld_csdis();
 FT_STATUS flash_id_check();
@@ -143,9 +179,13 @@ int flash_init();
 int flash_disable();
 int flash_check_status();
 int flash_program();
+int flash_erase();
 int flash_read(BYTE* buf, DWORD size);
 int flash_program_done();
 int flash_refresh();
-int flash_erase();
+FT_STATUS mdio_wr(DWORD instance, DWORD dev_addr, DWORD offset, DWORD data);
+FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data);
+unsigned int cpld_program(char* file_name);
+unsigned int cpld_read(char* file_name);
 
 #endif /* RELEASE_EXAMPLES_LOOPBACK_ACC_H_ */

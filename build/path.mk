@@ -8,7 +8,9 @@ COMMON_SRC_DIR=				\
 	util/devmgr			\
 	util/mtptest		\
 	util/smbutil 		\
-	util/sysmon
+	util/sysmon		\
+	util/devmgr		\
+	util/cpldutil
 
 COMMON_C_SRC_DIR=		\
 	lib/i2c				\

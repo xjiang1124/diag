@@ -19,8 +19,6 @@
 #include <fcntl.h>
 #include "acc.h"
 
-#define CFG_SIZE	(16*2175)
-
 void print_usage()
 {
 	printf("CPLD utility usage:\n");
@@ -94,7 +92,7 @@ int main(int argc, char *argv[])
 		flash_disable();
 		if(argc > 2)
 		{
-			printf("file size %ld\n", sizeof(buf));
+			printf("file size %lu\n", sizeof(buf));
 			fwrite(buf, sizeof(buf), 1, fptr);
 			fclose(fptr);
 		}
@@ -102,7 +100,7 @@ int main(int argc, char *argv[])
 
     } else if(!strcmp("program", acc_mode))
     {
-    	char buf[2000000];
+    	unsigned char buf[2000000];
     	memset(buf, 0, sizeof(buf));
         fptr = fopen(argv[2], "rb");
     	int read_byte = fread(buf, 1, sizeof(buf), fptr);
