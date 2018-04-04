@@ -5,3 +5,4 @@ export REDIS_IP="127.0.0.1"
 #export CARD_TYPE="HOST"${hostIdx}
 export CARD_NAME="MTP1"
 export CARD_TYPE="MTP"
+export UUT_TYPE="NPL_MTP"

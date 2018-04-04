@@ -38,6 +38,7 @@ else
 fi
 
 cp temp_profile ~/.bash_profile
+source ~/.bash_profile
 
 if [[ $arch == "amd64" ]]
 then

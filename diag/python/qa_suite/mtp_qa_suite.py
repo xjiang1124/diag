@@ -5,7 +5,7 @@ import re
 import sys
 import time
 
-sys.path.append("/home/diag/xin/lib")
+sys.path.append("/home/diag/diag/python/lib")
 import common
 
 class mtptest:

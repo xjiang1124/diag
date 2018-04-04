@@ -92,7 +92,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-m", "--mode", help="Platform, e.g. P2C", type=str, default='')
     parser.add_argument("-i", "--ite", help="Number of interation", type=int, default=9999)
-    parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", type=bool, default=True)
+    parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", type=bool, default=False)
     parser.add_argument("-stop", "--stoponerror", help="Stop on error", type=bool, default=True)
     args = parser.parse_args()
     
@@ -111,9 +111,9 @@ if __name__ == "__main__":
                 break;
         session = common.session_start()
         ret = common.session_cmd(session, "ssh diag@"+qa.ip, timeout=30, ending="\$ ")
-        common.session_cmd(session, "cd /home/diag/xin/qa_suite/", sudo=False)
+        common.session_cmd(session, "cd /home/diag/diag/python/qa_suite/", sudo=False)
         #common.session_cmd(session, "/home/diag/xin/envinit.py", sudo=False, ending="envinit Done")
-        common.session_cmd(session, "/home/diag/xin/qa_suite/mtp_qa_suite.py -m="+args.mode, ending="=== MTP Regression Done ===")
+        common.session_cmd(session, "./mtp_qa_suite.py -m="+args.mode, ending="=== MTP Regression Done ===")
 
         common.session_cmd(session, "exit")
         common.session_stop(session)

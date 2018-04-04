@@ -1,16 +1,8 @@
 package main
 
 import (
-    //"fmt"
     "flag"
-    //"os"
     "strings"
-
-    //"common/cli"
-    //"common/errType"
-    //"config"
-    //"hardware/i2cinfo"
-    //"hardware/hwdev"
 )
 
 func init() {
