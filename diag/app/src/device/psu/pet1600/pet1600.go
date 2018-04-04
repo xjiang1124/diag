@@ -26,6 +26,7 @@ func DispStatus(devName string) (err int) {
     var outStrTemp string
     var dig uint64
     var frac uint64
+    var dataByte byte
 
     err = pmbusCmd.Open(devName)
     if err != errType.SUCCESS {
@@ -35,13 +36,19 @@ func DispStatus(devName string) (err int) {
     // MFR info
     //cli.Println("i", "--------------------")
     cli.Println("i", "=================================")
-    dataBuf, _ := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
+    dataBuf, err := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
     outStr = string(dataBuf[:MFR_ID_LEN])
     cli.Println("i", "MFR_ID:", outStr)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    dataBuf, _ = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
+    dataBuf, err = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
     outStr = string(dataBuf[:MFR_MODEL_LEN])
     cli.Println("i", "MFR_MODEL:", outStr)
+    if err != errType.SUCCESS {
+        return
+    }
 
     // Status
     stsTitle := []string {"STATUS", "STS_VOUT", "STS_IOUT", "STS_INPUT",
@@ -53,10 +60,13 @@ func DispStatus(devName string) (err int) {
     cli.Println("i", "--------------------")
     cli.Println("i", outStr)
 
-    data, _ := pmbusCmd.ReadStatusWord(devName, pmbusCmd.PAGE_0)
+    data, err := pmbusCmd.ReadStatusWord(devName, pmbusCmd.PAGE_0)
     outStr = fmt.Sprintf(fmtNameStr, devName)
     outStrTemp = fmt.Sprintf("0x%X", data)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return
+    }
 
     stsList := []byte {pmbusCmd.STATUS_VOUT,
                          pmbusCmd.STATUS_IOUT,
@@ -68,9 +78,12 @@ func DispStatus(devName string) (err int) {
                      }
 
     for _, cmd := range(stsList) {
-        dataByte, _ := pmbusCmd.ReadByte(devName, cmd)
+        dataByte, err = pmbusCmd.ReadByte(devName, cmd)
         outStrTemp = fmt.Sprintf("0x%X", dataByte)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        if err != errType.SUCCESS {
+            return
+        }
     }
     cli.Println("i", outStr)
 
@@ -94,13 +107,16 @@ func DispStatus(devName string) (err int) {
     funcs[5] = pmbusCmd.ReadIinLnr
 
     for _, rfunc := range(funcs) {
-        dig, frac, _ = rfunc(devName, pmbusCmd.PAGE_0)
+        dig, frac, err = rfunc(devName, pmbusCmd.PAGE_0)
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {
             outStrTemp = fmt.Sprintf(fmtDig, dig, frac)
         }
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        if err != errType.SUCCESS {
+            return
+        }
     }
     cli.Println("i", outStr)
 
@@ -123,7 +139,11 @@ func DispStatus(devName string) (err int) {
     funcs[4] = pmbusCmd.ReadFanSpd2Lnr
 
     for _, rfunc := range(funcs) {
-        dig, frac, _ := rfunc(devName, pmbusCmd.PAGE_NONE)
+        dig, frac, err = rfunc(devName, pmbusCmd.PAGE_NONE)
+        if err != errType.SUCCESS {
+            return
+        }
+
         if dig == 0 && frac == 0 {
             outStrTemp = "-.-"
         } else {

@@ -54,6 +54,7 @@ var pmbusTestMap map[string][]string
 var eepromMap map[string][]string
 var i2cHubMap map[string]map[string]I2cHubInfo
 var i2cHubList map[string][]string
+var psuListMap map[string][]string
 
 //===============================
 // Public data
@@ -66,6 +67,8 @@ var EepromList []string
 // I2C hub map
 var I2cHubMap map[string] I2cHubInfo
 var I2cHubList []string
+// PSU list
+var PsuList []string
 
 func init() {
     // Can only do map initialization here
@@ -98,15 +101,12 @@ func init() {
     mtpI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
     mtpI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
     mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
-    //mtpI2cHubMap["PSU_1"]  = I2cHubInfo{"HUB_4", 0}
-    //mtpI2cHubMap["PSU_2"]  = I2cHubInfo{"HUB_4", 1}
-    //mtpI2cHubMap["FAN"]    = I2cHubInfo{"HUB_4", 2}
-    //mtpI2cHubMap["FRU"]    = I2cHubInfo{"HUB_4", 2}
-    //mtpI2cHubMap["DC"]     = I2cHubInfo{"HUB_4", 3}
-    //mtpI2cHubMap["CLKGEN"] = I2cHubInfo{"HUB_4", 3}
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
     naplesMtpI2cHubList := []string{"HUB_1"}
+
+    mtpPsuList := []string{"PSU_1", "PSU_2"}
+
 
     //===============================
     // NIC_POWER
@@ -144,13 +144,20 @@ func init() {
     i2cHubList["MTP"] = mtpI2cHubList
     i2cHubList["NAPLES_MTP"] = naplesMtpI2cHubList
 
+    // PSU list
+    psuListMap = make(map[string][]string)
+    psuListMap["MTP"] = mtpPsuList
+
+
     //===============================
     // Platform specified list
+    // Remark: map may not support all platforms
     cardName = os.Getenv("CARD_TYPE")
-    DispStaList   = dispMap[cardName]
-    PmbusTestList = pmbusTestMap[cardName]
-    EepromList    = eepromMap[cardName]
-    I2cHubMap     = i2cHubMap[cardName]
-    I2cHubList    = i2cHubList[cardName]
+    DispStaList, _   = dispMap[cardName]
+    PmbusTestList, _ = pmbusTestMap[cardName]
+    EepromList, _    = eepromMap[cardName]
+    I2cHubMap, _     = i2cHubMap[cardName]
+    I2cHubList, _    = i2cHubList[cardName]
+    PsuList, _       = psuListMap[cardName]
 }
 

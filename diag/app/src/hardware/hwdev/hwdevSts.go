@@ -66,7 +66,10 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
         defer dmutex.Unlock(lockName)
     }
 
-    hwinfo.EnableHubChannelExclusive(devName)
+    err = hwinfo.EnableHubChannelExclusive(devName)
+    if err != errType.SUCCESS {
+        return
+    }
     dispFunc, ok := hwinfo.DispStaList[devName]
     if ok == false {
         cli.Println("f", "Invalde device: ", devName)
