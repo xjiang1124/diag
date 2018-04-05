@@ -767,7 +767,8 @@ FT_STATUS jtag_init()
     int             portNum = CHANNEL_B;
     DWORD           driverVersion = 0;
 
-    ftStatus = FT_Open(portNum, &ftHandle);
+    if(ftHandle == NULL)
+    	ftStatus = FT_Open(portNum, &ftHandle);
     if (ftStatus != FT_OK)
     {
         printf("FT_Open(%d) failed, with error %d.\n", portNum, (int)ftStatus);
@@ -1427,9 +1428,10 @@ FT_STATUS spi_init()
 
 //    printf("Opening FTDI device.\n");
 
-
-    ftStatus = FT_Open(CHANNEL_A, &ftHandle_a);
-    ftStatus |= FT_Open(CHANNEL_B, &ftHandle);
+    if(ftHandle_a == NULL)
+    	ftStatus = FT_Open(CHANNEL_A, &ftHandle_a);
+    if(ftHandle == NULL)
+    	ftStatus |= FT_Open(CHANNEL_B, &ftHandle);
     if (ftStatus != FT_OK)
     {
         printf("FT_Open failed, with error %d.\n", (int)ftStatus);
@@ -1858,11 +1860,21 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 //	            return ftStatus;
 //	        }
 //	printf("SPI write %d bytes\n", dwNumBytesSent);
-	usleep(1000);
+	usleep(5000);
 	ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
 //	printf("Queue have %d bytes\n", dwNumBytesSent);
 	if(dwNumBytesSent != 1 && !is_mdio)
-		printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
+	{
+		printf("SPI queue %d bytes, retry\n", dwNumBytesSent);
+		sleep(1);
+		ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
+		if(dwNumBytesSent != 1 && !is_mdio)
+		{
+			printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
+		}
+		else
+			ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+	}
 	else
 		//send out MPSSE command to MPSSE engine
 		ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);

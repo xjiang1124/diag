@@ -22,10 +22,7 @@ GO_TEST_DIR=						\
 
 AMD64_SRC_DIR=			\
 	util/cpldutil		\
-	util/jtag			\
-	util/mdio			\
-	util/mtptest		\
-	util/spi
+	util/mtptest
 
 AMD64_C_SRC_DIR=		\
 	lib/cpld
