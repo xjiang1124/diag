@@ -33,7 +33,7 @@ const (
     FAN_2_PWM = 0x01
     FAN_3_PWM = 0x02
     FAN_4_PWM = 0x03
-    NUM_PWM   = 4
+    NUM_PWM   = 3
 )
 
 type config struct {
@@ -52,8 +52,10 @@ var configTbl = []config {
     {PWM1_CONFIG,     5, 3, 0x7},  // PWM1 manual mode
     {PWM2_CONFIG,     5, 3, 0x7},  // PWM2 manual mode
     {PWM3_CONFIG,     5, 3, 0x7},  // PWM3 manual mode
-    {TACH_ENABLE,     0, 8, 0xFF}, // Enable all TACHs
+    {PWM4_CONFIG,     5, 3, 0x4},  // PWM4 manual mode
+    {TACH_ENABLE,     0, 8, 0x3F}, // Enable all TACHs
     {PWM1_TO_PWM4_MAX,0, 8, 0xFF}, // MAX speed setting
+    {DIGITAL_MASK,    7, 1, 0x1},  // Mask Chassis Intrustiion Alert
 }
 var pwmConfigTbl = []config {
     {PWM1_DUTY_CYCLE, 0, 8, 0x80}, // PWM1 initial duty cycle

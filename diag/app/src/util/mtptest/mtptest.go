@@ -20,9 +20,11 @@ func main() {
     psumaskPtr := flag.Int("psumask",     2, "PSU mask")
     fanPtr     := flag.Bool("fan",     false, "Fan test")
     fanSpdPtr  := flag.Bool("fanspd",     false, "Fan speed test")
+    fanAltPtr  := flag.Bool("fanalt",     false, "Fan alert test")
     fantmpPtr  := flag.Bool("fantmp",     false, "Fan tempe sensor test")
     tmpmodePtr := flag.String("tmpmode",     "AMB", "Fan tempe mode")
     vrmPtr     := flag.Bool("vrm",     false, "VRM test")
+    stsPtr     := flag.Bool("sts",     false, "Status check")
     flag.Parse()
 
     tmpmode := strings.ToUpper(*tmpmodePtr)
@@ -42,6 +44,11 @@ func main() {
         return
     }
 
+    if *fanAltPtr == true {
+        fanAlertTest()
+        return
+    }
+
     if *fantmpPtr == true {
         fanTempTest(tmpmode)
         return
@@ -49,6 +56,11 @@ func main() {
 
     if *vrmPtr == true {
         vrmTest()
+        return
+    }
+
+    if *stsPtr == true {
+        stsCheck(*psumaskPtr)
         return
     }
 

@@ -5,8 +5,13 @@ import (
     "common/misc"
     "common/errType"
 
+    "device/fanctrl/adt7462"
+    "device/cpld"
+
     "hardware/hwdev"
     "hardware/hwinfo"
+
+    "protocol/smbus"
 )
 
 type FanSpeedConfig struct {
@@ -83,7 +88,7 @@ func fanSpeedTest() (err int) {
             }
         }
     }
-    cli.Println("i", "#####", fan, "TEST PASSED! #####")
+    cli.Println("i", "#####", "Fan Speed", "TEST PASSED! #####")
     return
 }
 
@@ -117,6 +122,66 @@ func fanTempTest(mode string) (err int) {
     return
 }
 
+func fanAlertTest() (err int) {
+    fan := "FAN"
+
+    // Read Fan controller alert status
+    value, err := cpld.CpldRead(0x5)
+    if err != errType.SUCCESS {
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+    if (value & 0x4) != 0 {
+        cli.Printf("e", "CPLD interrupt is already set! value=0x%x\n", value)
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+    cli.Println("d", "P0")
+
+    // Lower Local Temp High Limit to trigger interrupt
+    err = hwinfo.EnableHubChannelExclusive(fan)
+    if err != errType.SUCCESS {
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+
+    cli.Println("d", "P1")
+    err = smbus.Open(fan)
+    if err != errType.SUCCESS {
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+    defer smbus.Close()
+    err = smbus.WriteByte(fan, adt7462.LOCAL_HIGH_LIMIT, 0x50)
+    if err != errType.SUCCESS {
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+    cli.Println("d", "P2")
+
+    misc.SleepInSec(1)
+
+    value, err = cpld.CpldRead(0x5)
+    if err != errType.SUCCESS {
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+    if (value & 0x4) == 0 {
+        cli.Printf("e", "CPLD interrupt is not set after trigerring! value=0x%x\n", value)
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+
+    // Restore Local Temp High Limit
+    err = smbus.WriteByte(fan, adt7462.LOCAL_HIGH_LIMIT, 0x95)
+    if err != errType.SUCCESS {
+        cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
+        return
+    }
+    cli.Println("i", "#####", "Fan Temp Sensor", "TEST PASSED! #####")
+    return
+}
+
 
 func vrmTest() (err int) {
     vrm := "DC"
@@ -128,3 +193,34 @@ func vrmTest() (err int) {
     }
     return
 }
+
+func stsCheck(psumask int) (err int) {
+    value, err := cpld.CpldRead(0x3)
+    if err != errType.SUCCESS {
+        cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
+        return
+    }
+    if value & 0x7 != 0x7 {
+        cli.Printf("e", "Fan present bit missing! read 0x%x\n", value)
+        cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
+        err = errType.FAIL
+        return
+    }
+
+    for i:=0; i<2; i++ {
+        bit := 1 << uint(i)
+        if bit & psumask == 0 {
+            continue
+        }
+        if (value >> 3) & uint(bit) == 0 {
+            cli.Printf("e", "PSU DC ok not set! read 0x%x\n", value)
+            cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
+            err = errType.FAIL
+            return
+        }
+    }
+    cli.Println("i", "#####", "Status Check", "TEST PASSED! #####")
+    return
+}
+
+

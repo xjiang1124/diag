@@ -84,6 +84,7 @@ func ReadByte(devName string, regAddr uint64) (data byte, err int) {
 
 func WriteByte(devName string, regAddr uint64, data byte) (err int) {
     if smbInfo.devName != devName {
+        cli.Println("e", "Invalid device name:", devName)
         err = errType.SMB_INF_INVALID
         return
     }
