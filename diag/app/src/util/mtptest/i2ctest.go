@@ -25,7 +25,7 @@ type FanTempConfig struct {
     tempMax int
 }
 
-func psuTest(psumask int) (err int) {
+func psuTest(psumask uint) (err int) {
     for i, psu := range(hwinfo.PsuList) {
         if (1<<uint(i)) & psumask == 0 {
             cli.Printf("i", "%s bypassed\n", psu)
@@ -194,7 +194,7 @@ func vrmTest() (err int) {
     return
 }
 
-func stsCheck(psumask int) (err int) {
+func stsCheck(psumask uint) (err int) {
     value, err := cpld.CpldRead(0x3)
     if err != errType.SUCCESS {
         cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
@@ -208,11 +208,11 @@ func stsCheck(psumask int) (err int) {
     }
 
     for i:=0; i<2; i++ {
-        bit := 1 << uint(i)
+        bit := uint(1 << uint(i))
         if bit & psumask == 0 {
             continue
         }
-        if (value >> 3) & uint(bit) == 0 {
+        if (value >> 3) & uint8(bit) == 0 {
             cli.Printf("e", "PSU DC ok not set! read 0x%x\n", value)
             cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
             err = errType.FAIL

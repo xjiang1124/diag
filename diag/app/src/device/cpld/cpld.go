@@ -83,7 +83,7 @@ func CpldWrite(addr uint8, data uint8) (err int) {
     return
 }
 
-func CpldRead(addr uint8) (data uint, err int) {
+func CpldRead(addr uint8) (data uint8, err int) {
     if err = int(C.spi_reg_init()); err > 0 {
         err = errType.FAIL
         cli.Println("e", "SPI init failed!")
@@ -94,7 +94,7 @@ func CpldRead(addr uint8) (data uint, err int) {
         err = errType.FAIL
         cli.Println("e", "CPLD read failed!")
     } else {
-        data = uint(cData)
+        data = uint8(cData)
         cli.Printf("i", "CPLD read data 0x%x\n", cData)
     }
     return
