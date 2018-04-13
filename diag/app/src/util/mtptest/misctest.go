@@ -53,9 +53,9 @@ func mvlIntTest() (err int) {
             return
         }
         if data & (1 << i) == 0 {
-            cli.Println("i", "##### Marvell switch ", i, "TEST FAILED! #####")
+            cli.Println("i", "##### Marvell switch", i, "TEST FAILED! #####")
         } else {
-            cli.Println("i", "##### Marvell switch ", i, "TEST PASSED! #####")
+            cli.Println("i", "##### Marvell switch", i, "TEST PASSED! #####")
         }
         
         //clear on source again
