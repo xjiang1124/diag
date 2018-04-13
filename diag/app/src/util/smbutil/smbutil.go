@@ -42,7 +42,7 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
                 data = uint16(dataB)
             } else {
                 data, err = smbus.ReadWord(devName, regAddr)
-                cli.Printf("d", "data=0x%x\n", data)
+                //cli.Printf("d", "data=0x%x\n", data)
             }
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device", devName, "at", regAddr)
