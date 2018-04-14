@@ -172,7 +172,7 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
             return -1
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", "==="
+        print "=== TIMEOUT:", cmd, "==="
         # Send CTRL+C
         session.send(chr(3))
         time.sleep(0.05)

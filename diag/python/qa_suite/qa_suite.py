@@ -113,7 +113,7 @@ if __name__ == "__main__":
         ret = common.session_cmd(session, "ssh diag@"+qa.ip, timeout=30, ending="\$ ")
         common.session_cmd(session, "cd /home/diag/diag/python/qa_suite/", sudo=False)
         #common.session_cmd(session, "/home/diag/xin/envinit.py", sudo=False, ending="envinit Done")
-        common.session_cmd(session, "./mtp_qa_suite.py -m="+args.mode, ending="=== MTP Regression Done ===")
+        common.session_cmd(session, "./mtp_qa_suite.py -m="+args.mode, timeout=5000, ending="=== MTP Regression Done ===")
 
         common.session_cmd(session, "exit")
         common.session_stop(session)

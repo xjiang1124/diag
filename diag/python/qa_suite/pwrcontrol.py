@@ -47,8 +47,11 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-on", "--on", action="store_true", help="Turn on APC port")
     group.add_argument("-off", "--off", action="store_true", help="Turn off APC port")
-    parser.add_argument("-p", "--port", type=int, help="APC port number", default=0)
+    parser.add_argument("-pf", "--platform", type=str, help="Platform name", default="")
     args = parser.parse_args()
 
     pwr = pwrControl()
-    pwr.pwraction("MTP001", "on")
+    if args.on == True:
+        pwr.pwraction(args.platform, "on")
+    if args.off == True:
+        pwr.pwraction(args.platform, "off")
