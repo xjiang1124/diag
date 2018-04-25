@@ -14,7 +14,8 @@ for line in sys.stdin:
         pass_cnt += 1
     elif fail_signature in line:
         fail_cnt += 1
-        print(line)
+        #print(line)
+    print(line)
     f.write(line)
 
 print("Passed {} tests, failed {} tests".format(pass_cnt, fail_cnt))

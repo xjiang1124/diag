@@ -86,38 +86,79 @@ class qaSuite:
         print "--- "+self.pf+" failed boot! ---"
         return -1
 
+def check_error(filename, num_test=0):
+    with open(filename) as f:
+        contents = f.read()
+        count_pass = contents.count("TEST PASSED")
+        count_fail = contents.count("TEST FAILED")
+
+        if count_fail != 0:
+            print "Found test failure!", count_fail
+            return -1
+
+        if count_pass != num_test:
+            print "Number of pass does not match expected", "passed:", count_pass, ", expected:", num_test
+            return -1
+
+        return 0
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
     group = parser.add_mutually_exclusive_group()
     parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-m", "--mode", help="Platform, e.g. P2C", type=str, default='')
     parser.add_argument("-i", "--ite", help="Number of interation", type=int, default=9999)
-    parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", type=bool, default=False)
-    parser.add_argument("-stop", "--stoponerror", help="Stop on error", type=bool, default=True)
+    parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", action='store_true')
+    parser.add_argument("-stop", "--stoponerror", help="Stop on error", action='store_true')
     args = parser.parse_args()
     
     qa = qaSuite()
     qa.setup(args.platform, args.mode)
     
-    print "pc:", args.pwrcycle, "ite:", args.ite
+    print "pc:", args.pwrcycle, "ite:", args.ite, "stop:", args.stoponerror
     for idx in range(args.ite):
-        print "========== Iteration", idx+1, "=========="
+
+        idx_str = str(idx+1)
+        print "========== Iteration", idx_str, "Started =========="
         if args.pwrcycle == True:
             #qa.pwrcycle()
             qa.fullpwrcycle()
             ret = qa.wait4rdySsh()
             if ret != 0 and args.stoponerror == True:
-                print "=== Stopped on error at ite "+str(idx+1)+" ==="
+                print "=== Stopped on error at ite "+idx_str+" ==="
                 break;
+
         session = common.session_start()
-        ret = common.session_cmd(session, "ssh diag@"+qa.ip, timeout=30, ending="\$ ")
-        common.session_cmd(session, "cd /home/diag/diag/python/qa_suite/", sudo=False)
+        # Start logging
+        filename = args.platform+"_temp.log"
+        common.session_cmd(session, "script -f "+filename)
+           
+        ret = common.session_cmd(session, "ssh diag@"+qa.ip)
+        common.session_cmd(session, "cd /home/diag/diag/python/qa_suite/")
         #common.session_cmd(session, "/home/diag/xin/envinit.py", sudo=False, ending="envinit Done")
         common.session_cmd(session, "./mtp_qa_suite.py -m="+args.mode, timeout=5000, ending="=== MTP Regression Done ===")
 
         common.session_cmd(session, "exit")
+
+        # Quit script command
+        common.session_cmd(session, "exit")
+
         common.session_stop(session)
-    
-        print "========== Iteration", idx+1, "Done =========="
-    
+ 
+        #==================================
+        # Post process
+        # Check MTP errors
+        if args.mode == "MTP_QK":
+            ret = check_error(filename, 5)
+            if ret != 0:
+                print "=== MTP TEST FAILED! ==="
+                if args.stoponerror == True:
+                    print "=== Stopped on error at ite "+idx_str+" ==="
+                    break
+            else:
+                print "=== MTP TEST PASSED! ==="
+   
+        print "========== Iteration", idx_str, "Done =========="
+   
     print "=== QA_SUITE Done ==="
