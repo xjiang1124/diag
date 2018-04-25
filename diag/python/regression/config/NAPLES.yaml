@@ -1,0 +1,34 @@
+---
+NAPLES:
+
+    P2C:
+        INIT:
+            SYSMON: util/sysmon:-c
+            LINK_TEST: util/periutil
+            
+        UUT_SEQ:
+            INIT:
+            PARAM: TEMPSENSOR:DEV_ID:ite:2 
+                   TEMPSENSOR:TEMP:ite:3
+            SKIP: RTC 
+            TEST: ALL
+            CLEANUP:
+        
+        UUT_PARA:
+            INIT:
+            SKIP:
+            TEST: PMBUS RTC:I2C
+            CLEANUP:
+        
+        #SYS_SEQ_INIT:
+        #SYS_SEQ_SKIP:
+        #SYS_SEQ:
+        #SYS_SEQ_CLEANUP:
+        #S
+        #SYS_PARA_INIT:
+        #SYS_PARA_SKIP:
+        #SYS_PARA:
+        #SYS_PARA_CLEANUP:
+
+
+...

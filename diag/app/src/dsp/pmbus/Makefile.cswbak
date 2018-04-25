@@ -1,0 +1,12 @@
+.PHONY: all
+
+all: ../../common/i2cCSW/i2cCSW.go
+	go install
+
+../../common/i2cCSW/i2cCSW.go:
+	swig -go -cgo -c++ -intgosize 32 ../../common/i2cCSW/i2cCSW.i
+
+clean:
+	rm -f ../../common/i2cCSW/i2cCSW.go ${GOPATH}/bin/pmbus 
+
+

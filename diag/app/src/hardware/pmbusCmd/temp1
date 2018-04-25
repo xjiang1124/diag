@@ -1,0 +1,256 @@
+00h PAGE Write Byte Read Byte 1
+01h OPERATION Write Byte Read Byte 1
+02h ON_OFF_CONFIG Write Byte Read Byte 1
+03h CLEAR_FAULTS Send Byte N/A 0
+04h PHASE Write Byte Read Byte 1
+05h PAGE_PLUS_WRITE Block Write N/A Variable
+06h PAGE_PLUS_READ N/A Block Write-Block Read Process Call Variable
+07h ZONE_CONFIG Write Word Read Word 2
+08h ZONE_ACTIVE Write Word Read Word 2
+09h Reserved
+0Ah Reserved
+0Bh Reserved
+0Ch Reserved
+0Dh Reserved
+0Eh Reserved
+0Fh Reserved
+10h WRITE_PROTECT Write Byte Read Byte 1
+11h STORE_DEFAULT_ALL Send Byte N/A 0
+12h RESTORE_DEFAULT_ALL Send Byte N/A 0
+13h STORE_DEFAULT_CODE Write Byte N/A 1
+14h RESTORE_DEFAULT_CODE Write Byte N/A 1
+15h STORE_USER_ALL Send Byte N/A 0
+16h RESTORE_USER_ALL Send Byte N/A 0
+17h STORE_USER_CODE Write Byte N/A 1
+18h RESTORE_USER_CODE Write Byte N/A 1
+19h CAPABILITY N/A Read Byte 1
+1Ah QUERY N/A Block Write-Block Read Process Call 1
+1Bh SMBALERT_MASK Write Word Block Write-Block Read Process Call 2
+1Ch Reserved
+1Dh Reserved
+1Eh Reserved
+1Fh Reserved
+20h VOUT_MODE Write Byte Read Byte 1
+21h VOUT_COMMAND Write Word Read Word 2
+22h VOUT_TRIM Write Word Read Word 2
+23h VOUT_CAL_OFFSET Write Word Read Word 2
+24h VOUT_MAX Write Word Read Word 2
+25h VOUT_MARGIN_HIGH Write Word Read Word 2
+26h VOUT_MARGIN_LOW Write Word Read Word 2
+27h VOUT_TRANSITION_RATE Write Word Read Word 2
+28h VOUT_DROOP Write Word Read Word 2
+29h VOUT_SCALE_LOOP Write Word Read Word 2
+2Ah VOUT_SCALE_MONITOR Write Word Read Word 2
+2Bh VOUT_MIN Write Word Read Word 2
+2Ch Reserved
+2Dh Reserved
+2Eh Reserved
+2Fh Reserved
+30h COEFFICIENTS N/A Block Write-Block Read Process Call 5
+31h POUT_MAX Write Word Read Word 2
+32h MAX_DUTY Write Word Read Word 2
+33h FREQUENCY_SWITCH Write Word Read Word 2
+34h POWER_MODE Write Byte Read Byte 1
+35h VIN_ON Write Word Read Word 2
+36h VIN_OFF Write Word Read Word 2
+37h INTERLEAVE Write Word Read Word 2
+38h IOUT_CAL_GAIN Write Word Read Word 2
+39h IOUT_CAL_OFFSET Write Word Read Word 2
+3Ah FAN_CONFIG_1_2 Write Byte Read Byte 1
+3Bh FAN_COMMAND_1 Write Word Read Word 2
+3Ch FAN_COMMAND_2 Write Word Read Word 2
+3Dh FAN_CONFIG_3_4 Write Byte Read Byte 1
+3Eh FAN_COMMAND_3 Write Word Read Word 2
+3Fh FAN_COMMAND_4 Write Word Read Word 2
+40h VOUT_OV_FAULT_LIMIT Write Word Read Word 2
+41h VOUT_OV_FAULT_RESPONSE Write Byte Read Byte 1
+42h VOUT_OV_WARN_LIMIT Write Word Read Word 2
+43h VOUT_UV_WARN_LIMIT Write Word Read Word 2
+44h VOUT_UV_FAULT_LIMIT Write Word Read Word 2
+45h VOUT_UV_FAULT_RESPONSE Write Byte Read Byte 1
+46h IOUT_OC_FAULT_LIMIT Write Word Read Word 2
+47h IOUT_OC_FAULT_RESPONSE Write Byte Read Byte 1
+48h IOUT_OC_LV_FAULT_LIMIT Write Word Read Word 2
+49h IOUT_OC_LV_FAULT_RESPONSE Write Byte Read Byte 1
+4Ah IOUT_OC_WARN_LIMIT Write Word Read Word 2
+4Bh IOUT_UC_FAULT_LIMIT Write Word Read Word 2
+4Ch IOUT_UC_FAULT_RESPONSE Write Byte Read Byte 1
+4Dh Reserved
+4Eh Reserved
+4Fh OT_FAULT_LIMIT Write Word Read Word 2
+50h OT_FAULT_RESPONSE Write Byte Read Byte 1
+51h OT_WARN_LIMIT Write Word Read Word 2
+52h UT_WARN_LIMIT Write Word Read Word 2
+53h UT_FAULT_LIMIT Write Word Read Word 2
+54h UT_FAULT_RESPONSE Write Byte Read Byte 1
+55h VIN_OV_FAULT_LIMIT Write Word Read Word 2
+56h VIN_OV_FAULT_RESPONSE Write Byte Read Byte 1
+57h VIN_OV_WARN_LIMIT Write Word Read Word 2
+58h VIN_UV_WARN_LIMIT Write Word Read Word 2
+59h VIN_UV_FAULT_LIMIT Write Word Read Word 2
+5Ah VIN_UV_FAULT_RESPONSE Write Byte Read Byte 1
+5Bh IIN_OC_FAULT_LIMIT Write Word Read Word 2
+5Ch IIN_OC_FAULT_RESPONSE Write Byte Read Byte 1
+5Dh IIN_OC_WARN_LIMIT Write Word Read Word 2
+5Eh POWER_GOOD_ON Write Word Read Word 2
+5Fh POWER_GOOD_OFF Write Word Read Word 2
+60h TON_DELAY Write Word Read Word 2
+61h TON_RISE Write Word Read Word 2
+62h TON_MAX_FAULT_LIMIT Write Word Read Word 2
+63h TON_MAX_FAULT_RESPONSE Write Byte Read Byte 1
+64h TOFF_DELAY Write Word Read Word 2
+65h TOFF_FALL Write Word Read Word 2
+66h TOFF_MAX_WARN_LIMIT Write Word Read Word 2
+67h Reserved (Was Used In Revision 1.0)
+68h POUT_OP_FAULT_LIMIT Write Word Read Word 2
+69h POUT_OP_FAULT_RESPONSE Write Byte Read Byte 1
+6Ah POUT_OP_WARN_LIMIT Write Word Read Word 2
+6Bh PIN_OP_WARN_LIMIT Write Word Read Word 2
+6Ch Reserved
+6Dh Reserved
+6Eh Reserved
+6Fh Reserved
+70h Reserved (Test Input Fuse A)
+71h Reserved (Test Input Fuse B)
+72h Reserved (Test Input OR-ing A)
+73h Reserved (Test Input OR-ing B)
+74h Reserved (Test Output OR-ing)
+75h Reserved
+76h Reserved
+77h Reserved
+78h STATUS_BYTE Write Byte Read Byte 1
+79h STATUS_WORD Write Word Read Word 2
+7Ah STATUS_VOUT Write Byte Read Byte 1
+7Bh STATUS_IOUT Write Byte Read Byte 1
+7Ch STATUS_INPUT Write Byte Read Byte 1
+7Dh STATUS_TEMPERATURE Write Byte Read Byte 1
+7Eh STATUS_CML Write Byte Read Byte 1
+7Fh STATUS_OTHER Write Byte Read Byte 1
+80h STATUS_MFR_SPECIFIC Write Byte Read Byte 1
+81h STATUS_FANS_1_2 Write Byte Read Byte 1
+82h STATUS_FANS_3_4 Write Byte Read Byte 1
+83h READ_KWH_IN N/A Read 32 4
+84h READ_KWH_OUT N/A Read 32 4
+85h READ_KWH_CONFIG Write Word Read Word 2
+86h READ_EIN N/A Block Read 5
+87h READ_EOUT N/A Block Read 5
+88h READ_VIN N/A Read Word 2
+89h READ_IIN N/A Read Word 2
+8Ah READ_VCAP N/A Read Word 2
+8Bh READ_VOUT N/A Read Word 2
+8Ch READ_IOUT N/A Read Word 2
+8Dh READ_TEMPERATURE_1 N/A Read Word 2
+8Eh READ_TEMPERATURE_2 N/A Read Word 2
+8Fh READ_TEMPERATURE_3 N/A Read Word 2
+90h READ_FAN_SPEED_1 N/A Read Word 2
+91h READ_FAN_SPEED_2 N/A Read Word 2
+92h READ_FAN_SPEED_3 N/A Read Word 2
+93h READ_FAN_SPEED_4 N/A Read Word 2
+94h READ_DUTY_CYCLE N/A Read Word 2
+95h READ_FREQUENCY N/A Read Word 2
+96h READ_POUT N/A Read Word 2
+97h READ_PIN N/A Read Word 2
+98h PMBUS_REVISION N/A Read Byte 1
+99h MFR_ID Block Write Block Read Variable
+9Ah MFR_MODEL Block Write Block Read Variable
+9Bh MFR_REVISION Block Write Block Read Variable
+9Ch MFR_LOCATION Block Write Block Read Variable
+9Dh MFR_DATE Block Write Block Read Variable
+9Eh MFR_SERIAL Block Write Block Read Variable
+9Fh APP_PROFILE_SUPPORT N/A Block Read Variable
+A0h MFR_VIN_MIN N/A Read Word 2
+A1h MFR_VIN_MAX N/A Read Word 2
+A2h MFR_IIN_MAX N/A Read Word 2
+A3h MFR_PIN_MAX N/A Read Word 2
+A4h MFR_VOUT_MIN N/A Read Word 2
+A5h MFR_VOUT_MAX N/A Read Word 2
+A6h MFR_IOUT_MAX N/A Read Word 2
+A7h MFR_POUT_MAX N/A Read Word 2
+A8h MFR_TAMBIENT_MAX N/A Read Word 2
+A9h MFR_TAMBIENT_MIN N/A Read Word 2
+AAh MFR_EFFICIENCY_LL N/A Block Read 14
+ABh MFR_EFFICIENCY_HL N/A Block Read 14
+ACh MFR_PIN_ACCURACY N/A Read Byte 1
+ADh IC_DEVICE_ID N/A Block Read Variable
+AEh IC_DEVICE_REV N/A Block Read Variable
+AFh Reserved
+B0h USER_DATA_00 Block Write Block Read Variable
+B1h USER_DATA_01 Block Write Block Read Variable
+B2h USER_DATA_02 Block Write Block Read Variable
+B3h USER_DATA_03 Block Write Block Read Variable
+B4h USER_DATA_04 Block Write Block Read Variable
+B5h USER_DATA_05 Block Write Block Read Variable
+B6h USER_DATA_06 Block Write Block Read Variable
+B7h USER_DATA_07 Block Write Block Read Variable
+B8h USER_DATA_08 Block Write Block Read Variable
+B9h USER_DATA_09 Block Write Block Read Variable
+BAh USER_DATA_10 Block Write Block Read Variable
+BBh USER_DATA_11 Block Write Block Read Variable
+BCh USER_DATA_12 Block Write Block Read Variable
+BDh USER_DATA_13 Block Write Block Read Variable
+BEh USER_DATA_14 Block Write Block Read Variable
+BFh USER_DATA_15 Block Write Block Read Variable
+C0h MFR_MAX_TEMP_1 Write Word Read Word 2
+C1h MFR_MAX_TEMP_2 Write Word Read Word 2
+C2h MFR_MAX_TEMP_3 Write Word Read Word 2
+C3h Reserved
+C4h MFR_SPECIFIC_C4 Mfr Defined Mfr Defined Mfr Defined
+C5h MFR_SPECIFIC_C5 Mfr Defined Mfr Defined Mfr Defined
+C6h MFR_SPECIFIC_C6 Mfr Defined Mfr Defined Mfr Defined
+C7h MFR_SPECIFIC_C7 Mfr Defined Mfr Defined Mfr Defined
+C8h MFR_SPECIFIC_C8 Mfr Defined Mfr Defined Mfr Defined
+C9h MFR_SPECIFIC_C9 Mfr Defined Mfr Defined Mfr Defined
+CAh MFR_SPECIFIC_CA Mfr Defined Mfr Defined Mfr Defined
+CBh MFR_SPECIFIC_CB Mfr Defined Mfr Defined Mfr Defined
+CCh MFR_SPECIFIC_CC Mfr Defined Mfr Defined Mfr Defined
+CDh MFR_SPECIFIC_CD Mfr Defined Mfr Defined Mfr Defined
+CEh MFR_SPECIFIC_CE Mfr Defined Mfr Defined Mfr Defined
+CFh MFR_SPECIFIC_CF Mfr Defined Mfr Defined Mfr Defined
+D0h MFR_SPECIFIC_D0 Mfr Defined Mfr Defined Mfr Defined
+D1h MFR_SPECIFIC_D1 Mfr Defined Mfr Defined Mfr Defined
+D2h MFR_SPECIFIC_D2 Mfr Defined Mfr Defined Mfr Defined
+D3h MFR_SPECIFIC_D3 Mfr Defined Mfr Defined Mfr Defined
+D4h MFR_SPECIFIC_D4 Mfr Defined Mfr Defined Mfr Defined
+D5h MFR_SPECIFIC_D5 Mfr Defined Mfr Defined Mfr Defined
+D6h MFR_SPECIFIC_D6 Mfr Defined Mfr Defined Mfr Defined
+D7h MFR_SPECIFIC_D7 Mfr Defined Mfr Defined Mfr Defined
+D8h MFR_SPECIFIC_D8 Mfr Defined Mfr Defined Mfr Defined
+D9h MFR_SPECIFIC_D9 Mfr Defined Mfr Defined Mfr Defined
+DAh MFR_SPECIFIC_DA Mfr Defined Mfr Defined Mfr Defined
+DBh MFR_SPECIFIC_DB Mfr Defined Mfr Defined Mfr Defined
+DCh MFR_SPECIFIC_DC Mfr Defined Mfr Defined Mfr Defined
+DDh MFR_SPECIFIC_DD Mfr Defined Mfr Defined Mfr Defined
+DEh MFR_SPECIFIC_DE Mfr Defined Mfr Defined Mfr Defined
+DFh MFR_SPECIFIC_DF Mfr Defined Mfr Defined Mfr Defined
+E0h MFR_SPECIFIC_E0 Mfr Defined Mfr Defined Mfr Defined
+E1h MFR_SPECIFIC_E1 Mfr Defined Mfr Defined Mfr Defined
+E2h MFR_SPECIFIC_E2 Mfr Defined Mfr Defined Mfr Defined
+E3h MFR_SPECIFIC_E3 Mfr Defined Mfr Defined Mfr Defined
+E4h MFR_SPECIFIC_E4 Mfr Defined Mfr Defined Mfr Defined
+E5h MFR_SPECIFIC_E5 Mfr Defined Mfr Defined Mfr Defined
+E6h MFR_SPECIFIC_E6 Mfr Defined Mfr Defined Mfr Defined
+E7h MFR_SPECIFIC_E7 Mfr Defined Mfr Defined Mfr Defined
+E8h MFR_SPECIFIC_E8 Mfr Defined Mfr Defined Mfr Defined
+E9h MFR_SPECIFIC_E9 Mfr Defined Mfr Defined Mfr Defined
+EAh MFR_SPECIFIC_EA Mfr Defined Mfr Defined Mfr Defined
+EBh MFR_SPECIFIC_EB Mfr Defined Mfr Defined Mfr Defined
+ECh MFR_SPECIFIC_EC Mfr Defined Mfr Defined Mfr Defined
+EDh MFR_SPECIFIC_ED Mfr Defined Mfr Defined Mfr Defined
+EEh MFR_SPECIFIC_EE Mfr Defined Mfr Defined Mfr Defined
+EFh MFR_SPECIFIC_EF Mfr Defined Mfr Defined Mfr Defined
+F0h MFR_SPECIFIC_F0 Mfr Defined Mfr Defined Mfr Defined
+F1h MFR_SPECIFIC_F1 Mfr Defined Mfr Defined Mfr Defined
+F2h MFR_SPECIFIC_F2 Mfr Defined Mfr Defined Mfr Defined
+F3h MFR_SPECIFIC_F3 Mfr Defined Mfr Defined Mfr Defined
+F4h MFR_SPECIFIC_F4 Mfr Defined Mfr Defined Mfr Defined
+F5h MFR_SPECIFIC_F5 Mfr Defined Mfr Defined Mfr Defined
+F6h MFR_SPECIFIC_F6 Mfr Defined Mfr Defined Mfr Defined
+F7h MFR_SPECIFIC_F7 Mfr Defined Mfr Defined Mfr Defined
+F8h MFR_SPECIFIC_F8 Mfr Defined Mfr Defined Mfr Defined
+F9h MFR_SPECIFIC_F9 Mfr Defined Mfr Defined Mfr Defined
+FAh MFR_SPECIFIC_FA Mfr Defined Mfr Defined Mfr Defined
+FBh MFR_SPECIFIC_FB Mfr Defined Mfr Defined Mfr Defined
+FCh MFR_SPECIFIC_FC Mfr Defined Mfr Defined Mfr Defined
+FDh MFR_SPECIFIC_FD Mfr Defined Mfr Defined Mfr Defined
+FEh MFR_SPECIFIC_COMMAND_EXT Extended Command Extended Command Mfr Defined
+FFh PMBUS_COMMAND_EXT Extended Command Extended Command Mfr Defined

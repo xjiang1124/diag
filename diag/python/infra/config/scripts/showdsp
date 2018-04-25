@@ -1,0 +1,11 @@
+#!/bin/sh
+
+while true
+do
+    date
+    ~/workspace/psdiag/diag/infra/dshell/diag -sdsp
+    echo "\n"
+    sleep 60
+done
+
+

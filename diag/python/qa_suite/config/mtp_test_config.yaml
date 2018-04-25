@@ -1,0 +1,15 @@
+---
+MTP_QK_PRE:
+    PRE_1:
+        CMD: /home/diag/diag/python/regression/envinit.py
+        SUDO: FALSE
+        TIMEOUT: 30
+        ENDING: envinit Done
+
+MTP_QK:
+    TEST_1:
+        CMD: mtp_test.sh
+        SUDO: FALSE
+        TIMEOUT: 300
+        ENDING: 
+...

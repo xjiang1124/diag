@@ -1,0 +1,7 @@
+#!/bin/sh
+
+killall pmbus
+killall qsfp
+killall rtc
+killall tempsensor
+killall diagmgr

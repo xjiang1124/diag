@@ -1,0 +1,2 @@
+cp OUTPUT/errType.go ../../../app/src/common/errType/
+cp OUTPUT/errType.py ../../dshell/diagEngineHost/

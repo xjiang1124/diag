@@ -32,6 +32,9 @@
 # 1. Do not use the same name between platform and card. Parser will get confused
 # 2. Use quotes on hex numbers (as string) since python converts raw hex value to a
 #    integer.
+# 3. "ALL" is reserved phrase. If used with platform, it means every card under the
+#    particular card type. If used with parameter, it means parameter setting applies
+#    to all cards defined under "PLATFORM" section.
 #
 
 ---
@@ -47,10 +50,9 @@ DSP:
                 INFO: Iterations for the test
             timeout:
                 VALUE: 15
-                INFO: 
+                INFO: Test timeout setting 
 
-    TEST:
-        NAME: PMBUS
+    TEST#PMBUS:
         INFO: Test PMBus access on each power module
         PLATFORM:
             VIDEO: VENICE ROME
@@ -68,6 +70,22 @@ DSP:
                 VALUE:
                     ALL: "0xFF"
                     VIDEO: "0x1F"
+                INFO: Devices bit mask
+
+    TEST#INTR:
+        INFO: Test power module interrupt signal
+        PLATFORM:
+            VIDEO:
+            NIC: ALL
+        PRIORITY: NORMAL 
+        PARAM:
+            timeout: 
+                VALUE:
+                    ALL: 50
+                INFO:
+            mask:
+                VALUE:
+                    ALL: "0xFF"
                 INFO: Devices bit mask
 
 ...

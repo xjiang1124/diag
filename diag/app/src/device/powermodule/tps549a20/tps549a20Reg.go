@@ -1,0 +1,37 @@
+package tps549a20
+
+const (
+    CHAN_A = 0
+    CHAN_B = 1
+
+    DAC_STEP_5MV = 0x27
+    DAC_STEP_10MV = 0x24
+)
+
+// Register/Command offset
+const (
+    OPERATION = 0x01
+    ON_OFF_CONFIG = 0x02
+    CLEAR_FAULT = 0x03
+    WRITE_PROTECT = 0x10
+    STORE_DEFAULT_ALL = 0x11
+    RESTORE_DEFAULT_ALL = 0x12
+    STATUS_WORD = 0x79
+    CUSTOM_REG = 0xD0
+    DELAY_CONTROL = 0xD1
+    MODE_SOFT_START_CONFIG = 0xD2
+    FREQUENCY_CONFIG = 0xD3
+    VOUT_ADJUSTMENT = 0xD4
+    VOUT_MARGIN = 0xD5
+    UVLO_THRESHOLD = 0xD6
+)
+
+const (
+    MARGIN_NONE_CMD = 0x80
+    MARGIN_HIGH_CMD = 0xA4
+    MARGIN_LOW_CMD  = 0x94
+    //MARGIN_NONE_CMD = 0x00
+    //MARGIN_HIGH_CMD = 0x24
+    //MARGIN_LOW_CMD  = 0x14
+
+)
