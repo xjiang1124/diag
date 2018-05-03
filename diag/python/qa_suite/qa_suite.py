@@ -72,7 +72,7 @@ class qaSuite:
                 session.timeout=10
                 session.logfile_read = sys.stdout
                 prmt = ["password: ", "\$ "]
-                print "prmt:", prmt
+                #print "prmt:", prmt
                 session.expect(prmt)
                 session.close()
                 print self.pf, "is ready"
@@ -105,7 +105,7 @@ def check_error(filename, num_test=0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
-    group = parser.add_mutually_exclusive_group()
+    #group = parser.add_mutually_exclusive_group()
     parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-m", "--mode", help="Platform, e.g. P2C", type=str, default='')
     parser.add_argument("-i", "--ite", help="Number of interation", type=int, default=9999)
@@ -150,7 +150,8 @@ if __name__ == "__main__":
         # Post process
         # Check MTP errors
         if args.mode == "MTP_QK":
-            ret = check_error(filename, 5)
+            print "Checking test result"
+            ret = check_error(filename, 8)
             if ret != 0:
                 print "=== MTP TEST FAILED! ==="
                 if args.stoponerror == True:
