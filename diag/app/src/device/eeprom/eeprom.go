@@ -44,11 +44,11 @@ var mtpTbl = []entry {
 var EepromTbl []entry
 
 func init() {
-    cardName := os.Getenv("CARD_TYPE")
-    if cardName == "MTP" {
+    cardType := os.Getenv("CARD_TYPE")
+    if cardType == "MTP" {
         EepromTbl = mtpTbl
     } else {
-        cli.Println("f", "Unsupported card: ", cardName)
+        cli.Println("e", "Unsupported card:", cardType)
     }
 }
 
@@ -111,6 +111,21 @@ func UpdateMac(devName string, mac []byte) (err int) {
     for _, entry := range(EepromTbl) {
         if entry.Name == "MAC_ADDR" {
             copy(entry.Value, mac)
+            break
+        }
+    }
+    return
+}
+
+func UpdateSN(devName string, sn []byte) (err int) {
+    if len(sn) > 20 {
+        cli.Println("f", "SN too long: ", sn)
+        return
+    }
+
+    for _, entry := range(EepromTbl) {
+        if entry.Name == "SERIAL_NUM" {
+            copy(entry.Value, sn)
             break
         }
     }
