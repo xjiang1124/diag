@@ -85,7 +85,7 @@ class mtpControl:
                 #print "prmt:", prmt
                 session.expect(prmt)
                 session.close()
-                print self.pf, "is ready"
+                print "\n", "===", self.pf, "is ready ==="
                 return 0
                 break
             except pexpect.TIMEOUT:
@@ -109,19 +109,47 @@ class mtpControl:
         common.session_stop(session)
         return retVal
 
+    def mtprdy(self, pwr):
+        if pwr == True:
+            self.fullpwrcycle()
+            ret = self.wait4rdySsh()
+            return ret
+
+        # No mandatory power cycle
+        ret = self.sshCheck()
+        if ret == 0:
+            return ret
+
+        self.fullpwrcycle()
+        ret = self.wait4rdySsh()
+        return ret
+
+    def mtpinit(self):
+        session = common.session_start()
+        common.session_cmd(session, "ssh diag@"+self.ip)
+        common.session_cmd(session, "./start_diag.sh", timeout=120, ending="Set up diag amd64 -- Done")
+        common.session_cmd(session, "exit")
+        common.session_stop(session)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
     #group = parser.add_mutually_exclusive_group()
-    parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
+    parser.add_argument("-pf", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", action='store_true')
+    parser.add_argument("-rdy", "--ready", help="Get platform ready", action='store_true')
     parser.add_argument("-off", "--off", help="Power off", action='store_true')
     args = parser.parse_args()
     
     mtp = mtpControl()
     mtp.setup(args.platform)
+
+    if args.ready == True:
+        mtp.mtprdy(args.pwrcycle)
+        sys.exit()
+
     if args.pwrcycle == True:
-        print "Full power cycle"
-        #mtp.fullpowercycle()
+        mtp.mtprdy(True)
+        sys.exit()
 
     if args.off == True:
         mtp.pwroff()

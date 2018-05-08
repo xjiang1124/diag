@@ -106,7 +106,7 @@ def check_error(filename, num_test=0):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
     #group = parser.add_mutually_exclusive_group()
-    parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
+    parser.add_argument("-pf", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-m", "--mode", help="Platform, e.g. P2C", type=str, default='')
     parser.add_argument("-i", "--ite", help="Number of interation", type=int, default=9999)
     parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", action='store_true')

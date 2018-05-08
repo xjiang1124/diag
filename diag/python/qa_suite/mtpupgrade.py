@@ -63,17 +63,10 @@ class mtpUpgrade(mtpControl):
 
         return ret
 
-    def mtpinit(self):
-        session = common.session_start()
-        common.session_cmd(session, "ssh diag@"+self.ip)
-        common.session_cmd(session, "./start_diag.sh", timeout=120, ending="Set up diag amd64 -- Done")
-        common.session_cmd(session, "exit")
-        common.session_stop(session)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
     #group = parser.add_mutually_exclusive_group()
-    parser.add_argument("-p", "--platform", help="Platform, e.g. MTP001", type=str, default='')
+    parser.add_argument("-pf", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-tp", "--type", help="Type, e.g. IOCPLD", type=str, default='')
     parser.add_argument("-fn", "--filename", help="Filename", type=str, default='')
     parser.add_argument("-full", "--full", help="Full upgrade process", action='store_true')
@@ -87,15 +80,14 @@ if __name__ == "__main__":
     print "p:", args.platform, "tp:", args.type, "f:", args.filename
     if args.full == True:
         ## Get platform ready
-        ret = mtp.sshCheck()
+        ret = mtp.mtprdy(False)
         if ret != 0:
-            mtp.pwrcycle()
-            rdy = mtp.wait4rdySsh()
+            sys.exit()
     
+        mtp.mtpinit()
         mtp.copy_file(filename)
         mtp.upgrade(args.type, filename)
-        mtp.fullpwrcycle()
-        mtp.wait4rdySsh()
+        mtp.mtprdy(True)
         mtp.mtpinit()
         ret = mtp.verify(args.type, filename)
         if ret == True:
