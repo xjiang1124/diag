@@ -133,11 +133,12 @@ class mtpControl:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
-    #group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group()
     parser.add_argument("-pf", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", action='store_true')
     parser.add_argument("-rdy", "--ready", help="Get platform ready", action='store_true')
-    parser.add_argument("-off", "--off", help="Power off", action='store_true')
+    group.add_argument("-off", "--off", help="Power off", action='store_true')
+    group.add_argument("-on", "--on", help="Power on", action='store_true')
     args = parser.parse_args()
     
     mtp = mtpControl()
