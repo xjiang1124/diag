@@ -50,23 +50,23 @@ var Naples100Tbl = []I2cInfo {
 // devAddr is 7-bit address
 var NaplesMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
-    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x0,   0x62,    0x0,    "HUB_1",    2},
-    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x0,   0x62,    0x1,    "HUB_1",    2},
-    I2cInfo {"VRM_HBM",        "TPS549A20", 0x0,   0x1b,    0x0,    "HUB_1",    2},
-    I2cInfo {"VRM_ARM",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_1",    2},
-    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_1",    2},
-    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_1",    2},
-    I2cInfo {"TSENSOR",        "TMP421",    0x0,   0x4C,    0x0,    "HUB_1",    2},
+    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x0,   0x62,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x0,   0x62,    0x1,    "NIC_HUB",    2},
+    I2cInfo {"VRM_HBM",        "TPS549A20", 0x0,   0x1b,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"VRM_ARM",        "TPS549A20", 0x0,   0x1C,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"TSENSOR",        "TMP421",    0x0,   0x4C,    0x0,    "NIC_HUB",    2},
 
-    I2cInfo {"QSFP_1_A0",      "QSFP",      0x0,   0xA0,    0x0,    "HUB_1",    1},
-    I2cInfo {"QSFP_1_A2",      "QSFP",      0x0,   0xA2,    0x0,    "HUB_1",    1},
+    I2cInfo {"QSFP_1_A0",      "QSFP",      0x0,   0xA0,    0x0,    "NIC_HUB",    1},
+    I2cInfo {"QSFP_1_A2",      "QSFP",      0x0,   0xA2,    0x0,    "NIC_HUB",    1},
 
-    I2cInfo {"QSFP_2_A0",      "QSFP",      0x0,   0xA0,    0x0,    "HUB_1",    3},
-    I2cInfo {"QSFP_2_A2",      "QSFP",      0x0,   0xA2,    0x0,    "HUB_1",    3},
+    I2cInfo {"QSFP_2_A0",      "QSFP",      0x0,   0xA0,    0x0,    "NIC_HUB",    3},
+    I2cInfo {"QSFP_2_A2",      "QSFP",      0x0,   0xA2,    0x0,    "NIC_HUB",    3},
 
-    I2cInfo {"HUB_1",          "TCA9546A",  0x0,   0x74,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"PEX",            "PEX8716",   0x0,   0x38,    0x0,    "HUB_1",    0},
-    I2cInfo {"PCIE_SMB",       "PCIE_SMB",  0x0,   0x30,    0x0,    "HUB_1",    2},
+    I2cInfo {"NIC_HUB",        "TCA9546A",  0x0,   0x74,    0x0,    "HUB_NONE",   0},
+    I2cInfo {"PEX",            "PEX8716",   0x0,   0x38,    0x0,    "NIC_HUB",    0},
+    I2cInfo {"PCIE_SMB",       "PCIE_SMB",  0x0,   0x30,    0x0,    "NIC_HUB",    2},
 }
 
 //=========================================
@@ -93,15 +93,25 @@ var MtpI2cTbl = []I2cInfo {
     I2cInfo {"FAN",   "ADT7462",   0x0, 0x5C,    0x0,    "HUB_4",    2},
     I2cInfo {"DC",    "TPS549A20", 0x0, 0x1C,    0x0,    "HUB_4",    3},
     I2cInfo {"CLKGEN","SI52144",   0x0, 0x6B,    0x0,    "HUB_4",    3},
+//    I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0,    "HUB_NONE", 0},
+//    I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0,    "HUB_NONE", 0},
+//    I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0,    "HUB_NONE", 0},
+//    I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE", 0},
+}
+
+var MtpHubI2cTbl = []I2cInfo {
     I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0,    "HUB_NONE", 0},
     I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0,    "HUB_NONE", 0},
     I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0,    "HUB_NONE", 0},
     I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE", 0},
 }
 
+
 func init() {
     CardName = os.Getenv("CARD_TYPE")
 
+    MtpI2cTbl = append(MtpI2cTbl, MtpHubI2cTbl...)
+    NaplesMtpTbl = append(NaplesMtpTbl, MtpHubI2cTbl...)
     if CardName == "NAPLES100" {
         I2cTbl = Naples100Tbl
     } else if CardName == "NIC_POWER" {

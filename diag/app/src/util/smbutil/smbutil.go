@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "flag"
     "strings"
 
@@ -150,15 +151,18 @@ func main() {
     addrPtr     := flag.Uint64("addr", 0,    "Register addr")
     dataPtr     := flag.Uint64("data", 0,    "Data value")
     numBytePtr  := flag.Uint64("nb",   0,    "Number of bytes")
+    uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     flag.Parse()
 
-    //cli.Println("devNamePtr:", *devNamePtr, "statusPtr:", *statusPtr, "marginPtr:", *marginPtr, "pctPtr:", *pctPtr)
-    //cli.Println("i", *readPtr, *writePtr, *sendPtr, *addrPtr, *dataPtr)
     devName := strings.ToUpper(*devNamePtr)
     addr := *addrPtr
     data := *dataPtr
     mode := strings.ToUpper(*modePtr)
     numByte := *numBytePtr
+
+    if *uutPtr != "UUT_NONE" {
+        i2cinfo.SwitchI2cTbl(*uutPtr)
+    }
 
     if *readPtr == true {
         readWriteSend("READ", devName, addr, uint16(data), mode)
