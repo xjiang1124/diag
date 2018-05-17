@@ -8,7 +8,7 @@ import (
     "common/errType"
 )
 
-var CardName string
+var CardType string
 var uutType string
 
 type I2cInfo struct {
@@ -57,16 +57,16 @@ var NaplesMtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "NIC_HUB",    2},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "NIC_HUB",    2},
     I2cInfo {"TSENSOR",        "TMP421",    0x0,   0x4C,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "NIC_HUB",    2},
 
-    I2cInfo {"QSFP_1_A0",      "QSFP",      0x0,   0xA0,    0x0,    "NIC_HUB",    1},
-    I2cInfo {"QSFP_1_A2",      "QSFP",      0x0,   0xA2,    0x0,    "NIC_HUB",    1},
+    I2cInfo {"QSFP_1_A0",      "QSFP",      0x0,   0x50,    0x0,    "NIC_HUB",    1},
+    I2cInfo {"QSFP_1_A2",      "QSFP",      0x0,   0x51,    0x0,    "NIC_HUB",    1},
 
-    I2cInfo {"QSFP_2_A0",      "QSFP",      0x0,   0xA0,    0x0,    "NIC_HUB",    3},
-    I2cInfo {"QSFP_2_A2",      "QSFP",      0x0,   0xA2,    0x0,    "NIC_HUB",    3},
+    I2cInfo {"QSFP_2_A0",      "QSFP",      0x0,   0x50,    0x0,    "NIC_HUB",    3},
+    I2cInfo {"QSFP_2_A2",      "QSFP",      0x0,   0x51,    0x0,    "NIC_HUB",    3},
 
     I2cInfo {"NIC_HUB",        "TCA9546A",  0x0,   0x74,    0x0,    "HUB_NONE",   0},
-    I2cInfo {"PEX",            "PEX8716",   0x0,   0x38,    0x0,    "NIC_HUB",    0},
-    I2cInfo {"PCIE_SMB",       "PCIE_SMB",  0x0,   0x30,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"PEX",            "PEX8716",   0x0,   0x30,    0x0,    "NIC_HUB",    0},
 }
 
 //=========================================
@@ -108,43 +108,64 @@ var MtpHubI2cTbl = []I2cInfo {
 
 
 func init() {
-    CardName = os.Getenv("CARD_TYPE")
+    CardType = os.Getenv("CARD_TYPE")
 
     MtpI2cTbl = append(MtpI2cTbl, MtpHubI2cTbl...)
     NaplesMtpTbl = append(NaplesMtpTbl, MtpHubI2cTbl...)
-    if CardName == "NAPLES100" {
+    if CardType == "NAPLES100" {
         I2cTbl = Naples100Tbl
-    } else if CardName == "NIC_POWER" {
+    } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
-    } else if CardName == "MTP" {
+    } else if CardType == "MTP" {
         I2cTbl = MtpI2cTbl
     } else {
-        cli.Println("f", "Unsupported card:", CardName)
+        cli.Println("f", "Unsupported card:", CardType)
         return
     }
     CurI2cTbl = I2cTbl
 
     uutType := os.Getenv("UUT_TYPE")
-    if uutType == "NPL_MTP" {
+    if uutType == "NAPLES_MTP" {
         UutI2cTbl = NaplesMtpTbl
     } else if uutType == "UUT_NONE" {
-        cli.Println("i", "No need to init UUT I2C table", CardName)
+        cli.Println("i", "No need to init UUT I2C table", CardType)
     } else {
-        cli.Println("i", "UUT I2C table not intialized:", CardName, uutType)
+        cli.Println("i", "UUT I2C table not intialized:", CardType, uutType)
         return
     }
 }
 
+/**
+ * Find UUT type based on environment variable
+ * TODO: This functionality can be implemented through redis
+ */
+func FindUutType(uutName string) (uutType string, err int) {
+    uutType, found := os.LookupEnv(uutName)
+    if found == false {
+        cli.Println("e", "Cannot find uutType with uutName", uutName)
+        err = errType.INVALID_PARAM
+    }
+    return
+}
 
 /**
  * To support Naples_MTP test card. 
  * Todo: support mix of Naples in the same MTP
  */
-func SwitchI2cTbl(uutType string) (err int) {
-    if uutType == "UUT_NONE" {
+func SwitchI2cTbl(uutName string) (err int) {
+    if uutName == "UUT_NONE" {
         CurI2cTbl = I2cTbl
+        return
+    }
+    uutType, err := FindUutType(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+    if uutType == "NAPLES_MTP" {
+        CurI2cTbl = NaplesMtpTbl
     } else {
-        CurI2cTbl = UutI2cTbl
+        cli.Println("e", "uutType not supported!", uutType)
+        err = errType.INVALID_PARAM
     }
     return
 }
@@ -155,7 +176,7 @@ func GetI2cInfo(devName string) (i2cinfo I2cInfo, err int) {
             return
         }
     }
-    cli.Println("f", "Unsupported card:", devName)
+    cli.Println("f", "Unsupported device:", devName)
     err = errType.INVALID_PARAM
     return
 

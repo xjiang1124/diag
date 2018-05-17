@@ -1,7 +1,7 @@
 package main
 
 import (
-    "fmt"
+    //"fmt"
     "flag"
     "strings"
 
@@ -32,7 +32,7 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
     }
     defer smbus.Close()
 
-    for _, vrm := range(i2cinfo.I2cTbl) {
+    for _, vrm := range(i2cinfo.CurI2cTbl) {
         if devName != vrm.Name {
             continue
         }
@@ -93,7 +93,7 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
     }
     defer smbus.Close()
 
-    for _, vrm := range(i2cinfo.I2cTbl) {
+    for _, vrm := range(i2cinfo.CurI2cTbl) {
         if devName != vrm.Name {
             continue
         }
