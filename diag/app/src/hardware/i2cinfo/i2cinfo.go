@@ -66,7 +66,7 @@ var NaplesMtpTbl = []I2cInfo {
     I2cInfo {"QSFP_2_A2",      "QSFP",      0x0,   0x51,    0x0,    "NIC_HUB",    3},
 
     I2cInfo {"NIC_HUB",        "TCA9546A",  0x0,   0x74,    0x0,    "HUB_NONE",   0},
-    I2cInfo {"PEX",            "PEX8716",   0x0,   0x30,    0x0,    "NIC_HUB",    0},
+    I2cInfo {"PEX",            "PEX8716",   0x0,   0x38,    0x0,    "NIC_HUB",    0},
 }
 
 //=========================================

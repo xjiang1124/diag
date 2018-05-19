@@ -518,6 +518,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
             if readData != data[0] {
@@ -537,6 +538,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read word data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
             if readData != data {
@@ -560,6 +562,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read block data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
             if byteCnt != int(dataLen) {
                 cli.Println("e", "Read block data length mismatch! expected", dataLen, "received", byteCnt)
@@ -582,6 +585,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         case "WriteWord":
@@ -596,6 +600,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write word data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         case "BlockWrite":
@@ -611,6 +616,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write block data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         case "SendByte":
@@ -622,6 +628,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to send byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         default:

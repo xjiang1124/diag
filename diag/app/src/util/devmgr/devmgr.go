@@ -21,7 +21,7 @@ func init() {
 
 func myUsage() {
     flag.PrintDefaults()
-    i2cinfo.DispI2cInfoAll()
+    //i2cinfo.DispI2cInfoAll()
 }
 
 func main() {
@@ -29,7 +29,8 @@ func main() {
 
     devNamePtr  := flag.String("dev",     "ALL", "Device name")
     statusPtr   := flag.Bool(  "status",  false, "Device status")
-    infoPtr     := flag.Bool(  "info",    false, "Device info")
+    infoPtr     := flag.Bool(  "info", false, "Device info")
+    listPtr     := flag.Bool(  "list", false, "Device info")
     marginPtr   := flag.Bool(  "margin",  false, "VRM - Enable voltage marigining")
     pctPtr      := flag.Int(   "pct",     0x0,   "VRM - Margin percentage; FAN - Fan speed percentage")
     programPtr  := flag.Bool(  "program", false, "VRM - Program with specified file")
@@ -49,6 +50,12 @@ func main() {
     verbose := *verbosePtr
     mask    := *maskPtr
     uut     := strings.ToUpper(*uutPtr)
+
+    if *listPtr == true {
+        i2cinfo.SwitchI2cTbl(*uutPtr)
+        i2cinfo.DispI2cInfoAll()
+        return
+    }
 
     if *statusPtr == true {
         hwdev.DispStatus(devName, uut)

@@ -2,10 +2,10 @@ package hwdev
 
 import (
     "sort"
-    "strconv"
+    //"strconv"
 
     "common/cli"
-    "common/dmutex"
+    //"common/dmutex"
     "common/errType"
 
     "device/powermodule/tps53659"
@@ -16,28 +16,52 @@ import (
 )
 
 func DevInfo(devName string, uutName string) (err int) {
-    var i2cif i2cinfo.I2cInfo
     if uutName == "UUT_NONE" {
-        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        err = devInfo(devName, true)
     } else {
-        i2cif, err = i2cinfo.GetI2cInfo(uutName)
+        err = devInfoUut(devName, uutName)
     }
-    if err != errType.SUCCESS {
-        return
+    return
+}
+
+func devInfo(devName string, lockFlag bool) (err int) {
+    var lockName string
+    var i2cif i2cinfo.I2cInfo
+
+    if lockFlag == true {
+        lockName, i2cif, err = hwinfo.LockDev(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer hwinfo.UnlockDev(lockName)
+    } else {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
     }
 
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
+    err = hwinfo.EnableHubChannelExclusive(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer dmutex.Unlock(lockName)
 
     if i2cif.Comp == "TPS53659" {
         tps53659.Info(devName)
     } else {
-        cli.Println("e", "Unsupported component:", i2cif.Comp)
+        cli.Println("e", "Unsupported component:", devName, i2cif.Comp)
     }
+    return
+}
+
+func devInfoUut(devName string, uutName string) (err int) {
+    lockName, err := hwinfo.PreUutSetup(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer hwinfo.PostUutClean(lockName)
+
+    err = devInfo(devName, false)
     return
 }
 
@@ -51,19 +75,14 @@ func DispStatus(devName string, uutName string) (err int){
 }
 
 func dispStatusDev(devName string, lockFlag bool) (err int){
-    var i2cif i2cinfo.I2cInfo
+    var lockName string
     if lockFlag == true {
-        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        lockName, _, err = hwinfo.LockDev(devName)
         if err != errType.SUCCESS {
             return
         }
+        defer hwinfo.UnlockDev(lockName)
 
-        lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-        err = dmutex.Lock(lockName)
-        if err != errType.SUCCESS {
-            return
-        }
-        defer dmutex.Unlock(lockName)
     }
 
     err = hwinfo.EnableHubChannelExclusive(devName)
@@ -81,32 +100,13 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
 }
 
 func dispStatusDevUut(devName string, uutName string) (err int){
-    var i2cif i2cinfo.I2cInfo
-    i2cif, err = i2cinfo.GetI2cInfo(uutName)
+    lockName, err := hwinfo.PreUutSetup(uutName)
     if err != errType.SUCCESS {
         return
     }
-
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
-
-    err = hwinfo.EnableHubChannelUut(uutName)
-    if err != errType.SUCCESS {
-        return err
-    }
-
-    hwinfo.SwitchHwInfo(uutName)
-    i2cinfo.SwitchI2cTbl(uutName)
+    defer hwinfo.PostUutClean(lockName)
 
     err = dispStatusDev(devName, false)
-
-    i2cinfo.SwitchI2cTbl("UUT_NONE")
-    hwinfo.SwitchHwInfo("UUT_NONE")
-
     return
 }
 

@@ -133,7 +133,7 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
 
 func myUsage() {
     flag.PrintDefaults()
-    i2cinfo.DispI2cInfoAll()
+    //i2cinfo.DispI2cInfoAll()
 }
 
 func main() {

@@ -256,12 +256,12 @@ func peRstTest(uutMask uint) (err int) {
             cli.Println("e", "CPLD write failed!")
             return
         }
-        err = hwdev.DispStatus("NPL_MTP", "UUT_NONE")
+        err = hwdev.DispStatus("NAPLES_MTP", "UUT_NONE")
         if err == errType.SUCCESS {
             errMask |= 1 << i
             cli.Println("e", "I2C is accessible when PeRst is set, inst", i, "failed")
         }
-        
+
         //unreset peRst
         peRstData &= ^(1 << (i % 8))
         err = cpld.CpldWrite(peRstReg + i/8, peRstData)

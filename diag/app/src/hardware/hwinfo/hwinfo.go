@@ -21,7 +21,7 @@ type I2cHubInfo struct {
     channel byte
 }
 
-var cardName string
+var cardType string
 var uutName string
 
 //===============================
@@ -53,7 +53,7 @@ var dispMap map[string]map[string]DispStaFunc
 var pmbusTestMap map[string][]string
 var eepromMap map[string][]string
 var i2cHubMap map[string]map[string]I2cHubInfo
-var i2cHubList map[string][]string
+var i2cHubListMap map[string][]string
 var psuListMap map[string][]string
 
 //===============================
@@ -103,7 +103,7 @@ func init() {
     mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
-    naplesMtpI2cHubList := []string{"HUB_1"}
+    naplesMtpI2cHubList := []string{"NIC_HUB"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
 
@@ -140,9 +140,9 @@ func init() {
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
 
-    i2cHubList = make(map[string][]string)
-    i2cHubList["MTP"] = mtpI2cHubList
-    i2cHubList["NAPLES_MTP"] = naplesMtpI2cHubList
+    i2cHubListMap = make(map[string][]string)
+    i2cHubListMap["MTP"] = mtpI2cHubList
+    i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
@@ -152,12 +152,12 @@ func init() {
     //===============================
     // Platform specified list
     // Remark: map may not support all platforms
-    cardName = os.Getenv("CARD_TYPE")
-    DispStaList, _   = dispMap[cardName]
-    PmbusTestList, _ = pmbusTestMap[cardName]
-    EepromList, _    = eepromMap[cardName]
-    I2cHubMap, _     = i2cHubMap[cardName]
-    I2cHubList, _    = i2cHubList[cardName]
-    PsuList, _       = psuListMap[cardName]
+    cardType = os.Getenv("CARD_TYPE")
+    DispStaList, _   = dispMap[cardType]
+    PmbusTestList, _ = pmbusTestMap[cardType]
+    EepromList, _    = eepromMap[cardType]
+    I2cHubMap, _     = i2cHubMap[cardType]
+    I2cHubList, _    = i2cHubListMap[cardType]
+    PsuList, _       = psuListMap[cardType]
 }
 

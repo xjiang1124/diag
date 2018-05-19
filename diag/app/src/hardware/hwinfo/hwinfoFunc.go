@@ -1,7 +1,10 @@
 package hwinfo
 
 import (
+    "strconv"
+
     "common/cli"
+    "common/dmutex"
     "common/errType"
     "device/i2chub/tca9546a"
     "hardware/i2cinfo"
@@ -12,22 +15,56 @@ import (
  * Todo: support mix of Naples on the same MTP
  */
 func SwitchHwInfo(uutName string) (err int) {
+    var uutType string
     if uutName == "UUT_NONE" {
-        DispStaList   = dispMap[cardName]
-        PmbusTestList = pmbusTestMap[cardName]
-        EepromList    = eepromMap[cardName]
+        DispStaList   = dispMap[cardType]
+        PmbusTestList = pmbusTestMap[cardType]
+        EepromList    = eepromMap[cardType]
+        I2cHubList    = i2cHubListMap[cardType]
     } else {
-        DispStaList   = dispMap[uutName]
-        PmbusTestList = pmbusTestMap[uutName]
-        EepromList    = eepromMap[uutName]
-        I2cHubList    = eepromMap[uutName]
+        uutType, err = i2cinfo.FindUutType(uutName)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        DispStaList   = dispMap[uutType]
+        PmbusTestList = pmbusTestMap[uutType]
+        EepromList    = eepromMap[uutType]
+        I2cHubList    = i2cHubListMap[uutType]
     }
+    return
+}
+
+/**
+ * Find UUT I2C root device
+ */
+func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
+    cardType := i2cinfo.CardType
+    hubMap, ok := i2cHubMap[cardType]
+    if ok != true {
+        cli.Println("e", "Invalid card name:", cardType)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    hubInfo, ok := hubMap[uutName]
+    if ok != true {
+        cli.Println("e", "Invalid UUT name:", uutName)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    hubI2cInfo, err := i2cinfo.GetI2cInfo(hubInfo.hubName)
+    if err != errType.SUCCESS {
+        return
+    }
+    i2cDevIdx = int(hubI2cInfo.Bus)
     return
 }
 
 func EnableHubChannel(devName string) (err int) {
     // for MTP only for now
-    if cardName != "MTP" {
+    if cardType != "MTP" {
         return
     }
 
@@ -72,7 +109,9 @@ func EnableHubChannelExclusive(devName string) (err int) {
  */
 func EnableHubChannelUut(uutName string) (err int) {
     // for MTP only for now
-    if cardName != "MTP" {
+    if cardType != "MTP" {
+        cli.Println("e", "Unsupported platform!", cardType)
+        err = errType.INVALID_PARAM
         return
     }
 
@@ -92,5 +131,68 @@ func EnableHubChannelUut(uutName string) (err int) {
     }
     err = tca9546a.EnableChan(hubInfo.hubName, hubInfo.channel)
     return
+}
+
+/**
+ * Lock I2C device
+ */
+func LockDev(devName string) (lockName string, i2cif i2cinfo.I2cInfo, err int) {
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName = "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    return
+}
+
+/**
+ * Unlock I2C device
+ */
+func UnlockDev(lockName string) {
+    dmutex.Unlock(lockName)
+}
+
+/** 
+ * Lock UUT I2C root device
+ */
+ func PreUutSetup(uutName string) (lockName string, err int) {
+    i2cDevIdx, err := FindUutI2cDev(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = EnableHubChannelUut(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = i2cinfo.SwitchI2cTbl(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = SwitchHwInfo(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+}
+
+/**
+ * Unlock UUT I2C device
+ */
+func PostUutClean(lockName string) {
+    dmutex.Unlock(lockName)
+    SwitchHwInfo("UUT_NONE")
+    i2cinfo.SwitchI2cTbl("UUT_NONE")
 }
 
