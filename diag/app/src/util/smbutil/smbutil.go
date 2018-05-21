@@ -13,10 +13,21 @@ import (
     "protocol/smbus"
 )
 
+const(
+    MDIO_ACC_ENA 		uint64 = 0x1
+    MDIO_RD_ENA			uint64 = 0x2
+    MDIO_WR_ENA			uint64 = 0x4
+    
+    MDIO_CRTL_LO_REG 	uint64 = 0x6
+    MDIO_CRTL_HI_REG 	uint64 = 0x7
+    MDIO_DATA_LO_REG 	uint64 = 0x8
+    MDIO_DATA_HI_REG 	uint64 = 0x9
+)
+
 func init() {
 }
 
-func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode string) (err int) {
+func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode string) (value uint16, err int) {
     var dataB byte
 
     mode = strings.ToUpper(mode)
@@ -40,15 +51,15 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
         case "READ":
             if mode == "B" {
                 dataB, err = smbus.ReadByte(devName, regAddr)
-                data = uint16(dataB)
+                value = uint16(dataB)
             } else {
-                data, err = smbus.ReadWord(devName, regAddr)
+                value, err = smbus.ReadWord(devName, regAddr)
                 //cli.Printf("d", "data=0x%x\n", data)
             }
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device", devName, "at", regAddr)
             } else {
-                cli.Printf("i", "Read device %s at addr 0x%x; data=0x%x\n", devName, regAddr, data)
+                cli.Printf("i", "Read device %s at addr 0x%x; data=0x%x\n", devName, regAddr, value)
             }
         case "WRITE":
             if mode == "B" {
@@ -131,6 +142,43 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
     return
 }
 
+func readWriteMdio(rws string, phyAddr uint64, regAddr uint64, data uint16, mode string) (err int) {
+    var dataL, dataH uint16
+
+    switch rws {
+        case "READ":
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_HI_REG, uint16(regAddr), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(phyAddr << 3 | MDIO_RD_ENA | MDIO_ACC_ENA), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to write device CPLD", "at", regAddr)
+            }
+            dataL, err = readWriteSend("READ", "CPLD", MDIO_DATA_LO_REG, 0, mode)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read device CPLD", "at", regAddr)
+            }
+            dataH, err = readWriteSend("READ", "CPLD", MDIO_DATA_HI_REG, 0, mode)
+            data = dataH << 8 | dataL
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read device SWITCH", "at", regAddr)
+            } else {
+                cli.Printf("i", "Read device SWITCH at addr 0x%x; data=0x%x\n", regAddr, data)
+            }
+        case "WRITE":
+            dataL = data & 0xFF
+            dataH = (data >> 8) & 0xFF 
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_HI_REG, uint16(regAddr), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_LO_REG, uint16(dataL), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_HI_REG, uint16(dataH), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(phyAddr << 3 | MDIO_WR_ENA | MDIO_ACC_ENA), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to write device CPLD", "at", regAddr)
+            }
+    }
+    return
+}
+
 func myUsage() {
     flag.PrintDefaults()
     //i2cinfo.DispI2cInfoAll()
@@ -152,6 +200,7 @@ func main() {
     dataPtr     := flag.Uint64("data", 0,    "Data value")
     numBytePtr  := flag.Uint64("nb",   0,    "Number of bytes")
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
+    phyPtr      := flag.Uint64("phy", 0,    "Phy addr")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -159,18 +208,27 @@ func main() {
     data := *dataPtr
     mode := strings.ToUpper(*modePtr)
     numByte := *numBytePtr
+    phyAddr := *phyPtr
 
     if *uutPtr != "UUT_NONE" {
         i2cinfo.SwitchI2cTbl(*uutPtr)
     }
 
     if *readPtr == true {
-        readWriteSend("READ", devName, addr, uint16(data), mode)
+        if devName == "SWITCH" {
+            readWriteMdio("READ", phyAddr, addr, uint16(data), mode)
+        } else {
+            readWriteSend("READ", devName, addr, uint16(data), mode)
+        }
         return
     }
 
     if *writePtr == true {
-        readWriteSend("WRITE", devName, addr, uint16(data), mode)
+        if devName == "SWITCH" {
+            readWriteMdio("WRITE", phyAddr, addr, uint16(data), mode)
+        } else {
+            readWriteSend("WRITE", devName, addr, uint16(data), mode)
+        }
         return
     }
 
