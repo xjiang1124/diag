@@ -1,5 +1,5 @@
 // i2c.go specifies I2C wrapper for I2C library
-package i2c
+package i2c_c
 
 import (
     //"fmt"

@@ -1,4 +1,4 @@
-package i2c
+package i2c_c
 
 import (
     //"fmt"

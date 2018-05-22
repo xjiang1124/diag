@@ -5,18 +5,18 @@ import (
 
     "common/cli"
     "common/errType"
-    "protocol/i2c"
+    "protocol/i2c_c"
     "common/misc"
 )
 
 func ReadMfgId(devName string) (id byte, err int) {
-    idBytes, err := i2c.Read(devName, MFG_ID, misc.ONE_BYTE)
+    idBytes, err := i2c_c.Read(devName, MFG_ID, misc.ONE_BYTE)
     id = byte(idBytes[0])
     return
 }
 
 func ReadDevId(devName string) (id byte, err int) {
-    idBytes, err := i2c.Read(devName, DEV_ID, misc.ONE_BYTE)
+    idBytes, err := i2c_c.Read(devName, DEV_ID, misc.ONE_BYTE)
     id = byte(idBytes[0])
     return
 }
@@ -40,13 +40,13 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
         return
     }
 
-    tempHighByte, err := i2c.Read(devName, tempHighAddr, misc.ONE_BYTE)
+    tempHighByte, err := i2c_c.Read(devName, tempHighAddr, misc.ONE_BYTE)
     if err != errType.SUCCESS {
         return
     }
     tempHigh := misc.BytesToU64(tempHighByte, misc.ONE_BYTE)
 
-    tempLowByte, err := i2c.Read(devName, tempLowAddr, misc.ONE_BYTE)
+    tempLowByte, err := i2c_c.Read(devName, tempLowAddr, misc.ONE_BYTE)
     if err != errType.SUCCESS {
         return
     }
