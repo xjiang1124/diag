@@ -188,3 +188,20 @@ func WriteBlock(devName string, regAddr uint64, buf []byte) (byteCnt int, err in
     }
     return byteCnt, err
 }
+/**
+ * WriteBlock
+ * Write block smbus command. LSB is at highest byte. MSB is at byte[0]
+ */
+func ProcessCall(devName string, cmd uint64, buf []byte) (data []byte, err int) {
+    if smbInfo.devName != devName {
+        err = errType.SMB_INF_INVALID
+        return
+    }
+    data, errgo := smbInfo.smb.Block_process_call(byte(cmd), buf)
+    if errgo != nil {
+        cli.Println("f", errgo)
+        err = errType.SMB_READ_FAIL
+        return
+    }
+    return
+}

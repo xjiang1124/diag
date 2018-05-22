@@ -121,12 +121,13 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64, numBy
                 }
             }
         case "WRITE_BLK":
-            if numByte > 4 {
+            if numByte > 8 {
                 cli.Println("f", "Maximun 8 bytes of block write is allowed! Reveived request of ", numByte, "bytes")
                 return errType.FAIL
             }
             for i:=0; uint64(i) < numByte; i++ {
                 dataBuf[i] = byte((data >> (8*uint64(i))) & 0xFF)
+                cli.Printf("d", "data[%d]=0x%x", i, dataBuf[i])
             }
             byteCnt, err = smbus.WriteBlock(devName, regAddr, dataBuf)
             if err != errType.SUCCESS {
@@ -179,6 +180,46 @@ func readWriteMdio(rws string, phyAddr uint64, regAddr uint64, data uint16, mode
     return
 }
 
+func procCallBlk(devName string, regAddr uint64, data uint64, numByte uint64) (err int) {
+    dataBuf := make([]byte, numByte)
+    var byteCnt int
+    var dataRet []byte
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    for _, vrm := range(i2cinfo.CurI2cTbl) {
+        if devName != vrm.Name {
+            continue
+        }
+        if numByte > 8 {
+            cli.Println("f", "Maximun 8 bytes of block write is allowed! Reveived request of ", numByte, "bytes")
+            return errType.FAIL
+        }
+        for i:=0; uint64(i) < numByte; i++ {
+            dataBuf[i] = byte((data >> (8*uint64(i))) & 0xFF)
+            cli.Printf("d", "data[%d]=0x%x", i, dataBuf[i])
+        }
+        dataRet, err = smbus.ProcessCall(devName, regAddr, dataBuf)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to write block device", devName, "at", regAddr)
+        } else {
+            cli.Printf("i", "Write block device %s at addr 0x%x with %d bytes\n", devName, regAddr, byteCnt)
+        }
+        for i:=0; i<len(dataRet); i++ {
+            cli.Printf("i", "data[%d] = 0x%x\n", i, dataRet[i])
+        }
+
+        return
+    }
+    cli.Println("e", "Faied to find device", devName)
+    err = errType.INVALID_PARAM
+    return
+}
+
 func myUsage() {
     flag.PrintDefaults()
     //i2cinfo.DispI2cInfoAll()
@@ -193,6 +234,7 @@ func main() {
     readBlkPtr  := flag.Bool(  "rdb",  false, "Read register block value")
     writePtr    := flag.Bool(  "wr",   false, "Write register value")
     writeBlkPtr := flag.Bool(  "wrb",  false, "Write register block value")
+    pcBlkPtr    := flag.Bool(  "pc",   false, "Process call")
     sendPtr     := flag.Bool(  "sd",   false, "Send byte")
     recvPtr     := flag.Bool(  "rb",   false, "Receive byte")
     modePtr     := flag.String("mode", "b",   "r/w mode: byte(b) or word(w)")
@@ -249,6 +291,11 @@ func main() {
 
     if *writeBlkPtr == true {
         readWriteBlk("WRITE_BLK", devName, addr, data, numByte)
+        return
+    }
+
+    if *pcBlkPtr == true {
+        procCallBlk(devName, addr, data, numByte)
         return
     }
 
