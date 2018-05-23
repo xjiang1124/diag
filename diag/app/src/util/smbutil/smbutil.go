@@ -22,6 +22,16 @@ const(
     MDIO_CRTL_HI_REG 	uint64 = 0x7
     MDIO_DATA_LO_REG 	uint64 = 0x8
     MDIO_DATA_HI_REG 	uint64 = 0x9
+    
+    SMI_CMD_REG			uint64 = 0x18
+    SMI_DATA_REG		uint64 = 0x19
+    SMI_PHY_ADDR		uint64 = 0x1C
+    
+    SMI_BUSY			uint64 = (1 << 15)
+    SMI_MODE			uint64 = (1 << 12)
+    SMI_READ			uint64 = (1 << 11)
+    SMI_WRITE			uint64 = (1 << 10)
+    DEV_BITS			uint64 = 5
 )
 
 func init() {
@@ -180,6 +190,7 @@ func readWriteMdio(rws string, phyAddr uint64, regAddr uint64, data uint16, mode
     return
 }
 
+<<<<<<< Updated upstream
 func procCallBlk(devName string, regAddr uint64, data uint64, numByte uint64) (err int) {
     dataBuf := make([]byte, numByte)
     var byteCnt int
@@ -217,6 +228,60 @@ func procCallBlk(devName string, regAddr uint64, data uint64, numByte uint64) (e
     }
     cli.Println("e", "Faied to find device", devName)
     err = errType.INVALID_PARAM
+=======
+func readWriteSmi(rws string, phyAddr uint64, regAddr uint64, data uint16, mode string) (err int) {
+    var dataL, dataH uint16
+
+    switch rws {
+        case "READ":
+            data = (uint16)(SMI_BUSY | SMI_MODE | SMI_READ | phyAddr << DEV_BITS | regAddr)
+            dataL = data & 0xFF
+            dataH = (data >> 8) & 0xFF 
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_HI_REG, uint16(SMI_CMD_REG), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_LO_REG, uint16(dataL), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_HI_REG, uint16(dataH), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(SMI_PHY_ADDR << 3 | MDIO_WR_ENA | MDIO_ACC_ENA), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
+            
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_HI_REG, uint16(SMI_DATA_REG), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(SMI_PHY_ADDR << 3 | MDIO_RD_ENA | MDIO_ACC_ENA), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to write device CPLD", "at", regAddr)
+            }
+            dataL, err = readWriteSend("READ", "CPLD", MDIO_DATA_LO_REG, 0, mode)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read device CPLD", "at", regAddr)
+            }
+            dataH, err = readWriteSend("READ", "CPLD", MDIO_DATA_HI_REG, 0, mode)
+            data = dataH << 8 | dataL
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read device SWITCH", "at", regAddr)
+            } else {
+                cli.Printf("i", "Read device SWITCH at addr 0x%x; data=0x%x\n", regAddr, data)
+            }
+        case "WRITE":
+            dataL = data & 0xFF
+            dataH = (data >> 8) & 0xFF 
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_HI_REG, uint16(SMI_DATA_REG), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_LO_REG, uint16(dataL), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_HI_REG, uint16(dataH), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(SMI_PHY_ADDR << 3 | MDIO_WR_ENA | MDIO_ACC_ENA), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to write device CPLD", "at", regAddr)
+            }
+            
+            data = (uint16)(SMI_BUSY | SMI_MODE | SMI_WRITE | phyAddr << DEV_BITS | regAddr)
+            dataL = data & 0xFF
+            dataH = (data >> 8) & 0xFF
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_HI_REG, uint16(SMI_CMD_REG), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_LO_REG, uint16(dataL), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_DATA_HI_REG, uint16(dataH), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(SMI_PHY_ADDR << 3 | MDIO_WR_ENA | MDIO_ACC_ENA), mode)
+            _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
+    }
+>>>>>>> Stashed changes
     return
 }
 
@@ -243,6 +308,7 @@ func main() {
     numBytePtr  := flag.Uint64("nb",   0,    "Number of bytes")
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     phyPtr      := flag.Uint64("phy", 0,    "Phy addr")
+    smiPtr     	:= flag.Bool(  "smi", false, "Switch smi access")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -258,7 +324,11 @@ func main() {
 
     if *readPtr == true {
         if devName == "SWITCH" {
-            readWriteMdio("READ", phyAddr, addr, uint16(data), mode)
+            if *smiPtr == true {
+                readWriteSmi("READ", phyAddr, addr, uint16(data), mode)
+            } else {
+                readWriteMdio("READ", phyAddr, addr, uint16(data), mode)
+            }
         } else {
             readWriteSend("READ", devName, addr, uint16(data), mode)
         }
@@ -267,7 +337,11 @@ func main() {
 
     if *writePtr == true {
         if devName == "SWITCH" {
-            readWriteMdio("WRITE", phyAddr, addr, uint16(data), mode)
+            if *smiPtr == true {
+                readWriteSmi("WRITE", phyAddr, addr, uint16(data), mode)
+            } else {
+                readWriteMdio("WRITE", phyAddr, addr, uint16(data), mode)
+            }
         } else {
             readWriteSend("WRITE", devName, addr, uint16(data), mode)
         }
