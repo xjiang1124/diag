@@ -190,7 +190,6 @@ func readWriteMdio(rws string, phyAddr uint64, regAddr uint64, data uint16, mode
     return
 }
 
-<<<<<<< Updated upstream
 func procCallBlk(devName string, regAddr uint64, data uint64, numByte uint64) (err int) {
     dataBuf := make([]byte, numByte)
     var byteCnt int
@@ -228,7 +227,9 @@ func procCallBlk(devName string, regAddr uint64, data uint64, numByte uint64) (e
     }
     cli.Println("e", "Faied to find device", devName)
     err = errType.INVALID_PARAM
-=======
+    return
+}
+
 func readWriteSmi(rws string, phyAddr uint64, regAddr uint64, data uint16, mode string) (err int) {
     var dataL, dataH uint16
 
@@ -281,7 +282,7 @@ func readWriteSmi(rws string, phyAddr uint64, regAddr uint64, data uint16, mode 
             _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, uint16(SMI_PHY_ADDR << 3 | MDIO_WR_ENA | MDIO_ACC_ENA), mode)
             _, err = readWriteSend("WRITE", "CPLD", MDIO_CRTL_LO_REG, 0, mode)
     }
->>>>>>> Stashed changes
+
     return
 }
 
