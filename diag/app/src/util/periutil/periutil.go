@@ -15,12 +15,6 @@ import (
     "hardware/i2cinfo"
 )
 
-const (
-    OP_I2C = 0
-    OP_SPI = 1
-    OP_QSPI = 2
-)
-
 func init() {
     cli.Init("log_periutil.txt", config.OutputMode)
 }
@@ -37,21 +31,17 @@ func main() {
     devNamePtr  := flag.String("dev",  "",    "Device name")
     readPtr     := flag.Bool(  "rd",   false, "Read register value")
     writePtr    := flag.Bool(  "wr",   false, "Write register value")
+    erdPtr      := flag.Bool(  "erd",   false, "Read PEX EEPROM")
+    ewrPtr      := flag.Bool(  "ewr",   false, "Write PEX EEPROM")
+
     addrPtr     := flag.Uint64("addr", 0,    "Register addr")
     dataPtr     := flag.Uint64("data", 0,    "Data value")
     numBytesPtr := flag.Uint64("nb",   0,    "Number of bytes")
     accModePtr  := flag.Uint64("am", 0, "Access mod, default 0: transparent ports")
-    portPtr := flag.Uint64("p", 0, "Port")
-    byteEnPtr := flag.Uint64("be", 0xF, "Byte Enable: default: 0xF")
+    portPtr     := flag.Uint64("p", 0, "Port")
+    byteEnPtr   := flag.Uint64("be", 0xF, "Byte Enable: default: 0xF")
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     flag.Parse()
-
-//    if *devNamePtr == "" ||
-//       (*readPtr == true && *writePtr == true) ||
-//       (*readPtr == true && *numBytesPtr == 0) {
-//        flag.Usage()
-//        return
-//    }
 
     devName := strings.ToUpper(*devNamePtr)
     addr := uint32(*addrPtr)
@@ -89,6 +79,32 @@ func main() {
         err = pex8716.Write(addr, data, accMode, port, byteEn)
         if err == errType.SUCCESS {
             cli.Printf("i", "PEX write at addr=0x%x with data=0x%x done\n", addr, data)
+        }
+        return
+    }
+
+    if *erdPtr == true {
+        err := pex8716.Open(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer pex8716.Close()
+        data, err := pex8716.ReadEepDw(addr, port)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "PEX read EEPROM at addr=0x%x with data=0x%x\n", addr, data)
+        }
+        return
+    }
+
+    if *ewrPtr == true {
+        err := pex8716.Open(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer pex8716.Close()
+        err = pex8716.WriteEepDw(addr, port, data)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "PEX write EEPROM at addr=0x%x with data=0x%x - done\n", addr, data)
         }
         return
     }

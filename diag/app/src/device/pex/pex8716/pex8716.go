@@ -3,8 +3,41 @@ package pex8716
 import (
     "common/cli"
     "common/errType"
+    "common/misc"
     "protocol/i2cPtcl"
 )
+
+const (
+    MAX_RETRY = 10
+    DLY_USEC  = 1000
+)
+
+const (
+    ACC_MODE_TP  = 0
+    ACC_MODE_NT  = 1
+    ACC_MODE_NTV = 2
+)
+
+const (
+    EEP_OP_WR  = 0x2
+    EEP_OP_RD  = 0x3
+    EEP_OP_RST_WR_EN = 0x4
+    EEP_OP_SET_WR_EN = 0x6
+
+    EEP_EN_ADDR_WTH_OW = 1
+    EEP_ADDR_WTH_1B = 1
+    EEP_ADDR_WTH_2B = 2
+    EEP_ADDR_WTH_3B = 3
+)
+
+const (
+    REG_EEP_STS_CTRL = 0x260
+    REG_EEP_BUF      = 0x264
+    REG_EEP_CLK_FREQ = 0x268
+    REG_EEP_3RD_ADDR = 0x26C
+    REG_EEP_CRC      = 0x270
+)
+
 
 func Open(devName string) (err int) {
     err = i2cPtcl.Open(devName)
@@ -78,18 +111,156 @@ func Write(regAddr uint32, data uint32, access_mode byte, port byte, byte_enable
 
     cmdBuf[3] = byte((regAddr & 0x3FF) >> 2)
 
-    cmdBuf[4] = byte(data & 0xFF)
-    cmdBuf[5] = byte((data>>8) & 0xFF)
-    cmdBuf[6] = byte((data>>16) & 0xFF)
-    cmdBuf[7] = byte((data>>24) & 0xFF)
+    cmdBuf[7] = byte(data & 0xFF)
+    cmdBuf[6] = byte((data>>8) & 0xFF)
+    cmdBuf[5] = byte((data>>16) & 0xFF)
+    cmdBuf[4] = byte((data>>24) & 0xFF)
 
     err = i2cPtcl.Write(cmdBuf)
     if err != errType.SUCCESS {
         cli.Printf("e", "PEX read failed. Write command failure 0x%x\n", cmdBuf)
-        return
     }
 
     return
 }
+
+/**
+ * Read one DWORD (4-byte) from EEPROM
+ */
+func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
+    var stsCtrlData uint32
+    var flag uint32
+
+    // Do not support over 32KB for now
+    if offset >= 0x7FFF {
+        cli.Printf("e", "EEPROM offset can ot exceed 0x7FFF, received: 0x%x\n", offset)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    // Compose control data
+    stsCtrlData = (offset >> 2) & 0x1FFF
+    stsCtrlData = stsCtrlData | (EEP_OP_RD << 13)
+    stsCtrlData = stsCtrlData | EEP_EN_ADDR_WTH_OW << 21
+    stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
+    cli.Printf("d", "stsCtrlData=0x%x\n", stsCtrlData)
+
+    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
+        return
+    }
+
+    // Check done flag
+    for i := 0; i < MAX_RETRY; i++ {
+        cli.Println("d", "Wait for EEP done", i)
+        data, err = Read(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "Faild to read; addr=0x%x\n", REG_EEP_STS_CTRL)
+            return
+        }
+        flag = (data >> 18) & 1
+        if flag == 0 {
+            break
+        }
+        misc.SleepInUSec(1000)
+    }
+
+    if flag != 0 {
+        cli.Println("e", "PEX EEP read timeout!")
+        err = errType.TIMEOUT
+        return
+    }
+
+    data, err = Read(REG_EEP_BUF, ACC_MODE_TP, port, 0xF)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
+    }
+    return
+
+}
+
+/**
+ * Read one DWORD (4-byte) from EEPROM
+ */
+func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
+    var stsCtrlData uint32
+    var flag uint32
+
+    // Do not support over 32KB for now
+    if offset >= 0x7FFF {
+        cli.Printf("e", "EEPROM offset can ot exceed 0x7FFF, received: 0x%x\n", offset)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    // Write data to buffer register
+    err = Write(REG_EEP_BUF, data, ACC_MODE_TP, port, 0xF)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_BUF, data)
+        return
+    }
+
+    // Write Enable latch + enable 2-byte addressing: 0x00A0C000
+    stsCtrlData = EEP_EN_ADDR_WTH_OW << 21
+    stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
+    stsCtrlData = stsCtrlData | EEP_OP_SET_WR_EN << 13
+    cli.Printf("d", "P0: stsCtrl=0x%x\n", stsCtrlData)
+
+    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
+        return
+    }
+
+    // Compose control data
+    stsCtrlData = (offset >> 2) & 0x1FFF
+    stsCtrlData = stsCtrlData | EEP_EN_ADDR_WTH_OW << 21
+    stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
+    stsCtrlData = stsCtrlData | (EEP_OP_WR << 13)
+
+    cli.Printf("d", "P1: stsCtrlData=0x%x\n", stsCtrlData)
+
+    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
+        return
+    }
+
+    // Check done flag
+    for i := 0; i < MAX_RETRY; i++ {
+        cli.Println("d", "Wait for EEP done", i)
+        data, err = Read(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "Faild to read; addr=0x%x\n", REG_EEP_STS_CTRL)
+            return
+        }
+        flag = (data >> 18) & 1
+        if flag == 0 {
+            break
+        }
+        misc.SleepInUSec(1000)
+    }
+
+    if flag != 0 {
+        cli.Println("e", "PEX EEP read timeout!")
+        err = errType.TIMEOUT
+        return
+    }
+
+    // Reset write enable
+    stsCtrlData = EEP_EN_ADDR_WTH_OW << 21
+    stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
+    stsCtrlData = stsCtrlData | EEP_OP_RST_WR_EN << 13
+    cli.Printf("d", "P2: stsCtrl=0x%x\n", stsCtrlData)
+
+    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
+    }
+    return
+
+}
+
 
 
