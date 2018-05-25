@@ -8,7 +8,7 @@ import (
     "common/cli"
     "common/errType"
     //"common/misc"
-    "device/pex/pex8716"
+    "device/pciesw/pex8716"
 
     "config"
 
@@ -63,7 +63,7 @@ func main() {
             return
         }
         defer pex8716.Close()
-        data, err := pex8716.Read(addr, accMode, port, byteEn)
+        data, err := pex8716.ReadReg(addr, accMode, port, byteEn)
         if err == errType.SUCCESS {
             cli.Printf("i", "PEX read at addr=0x%x with data=0x%x\n", addr, data)
         }
@@ -76,7 +76,7 @@ func main() {
             return
         }
         defer pex8716.Close()
-        err = pex8716.Write(addr, data, accMode, port, byteEn)
+        err = pex8716.WriteReg(addr, data, accMode, port, byteEn)
         if err == errType.SUCCESS {
             cli.Printf("i", "PEX write at addr=0x%x with data=0x%x done\n", addr, data)
         }

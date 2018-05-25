@@ -8,8 +8,10 @@ import (
 )
 
 const (
+    REG_WIDTH = 4
     MAX_RETRY = 10
     DLY_USEC  = 1000
+    BYTE_EN_ALL = 0xFF
 )
 
 const (
@@ -30,15 +32,6 @@ const (
     EEP_ADDR_WTH_3B = 3
 )
 
-const (
-    REG_EEP_STS_CTRL = 0x260
-    REG_EEP_BUF      = 0x264
-    REG_EEP_CLK_FREQ = 0x268
-    REG_EEP_3RD_ADDR = 0x26C
-    REG_EEP_CRC      = 0x270
-)
-
-
 func Open(devName string) (err int) {
     err = i2cPtcl.Open(devName)
     return
@@ -48,7 +41,7 @@ func Close() {
     i2cPtcl.Close()
 }
 
-func Read(regAddr uint32, access_mode byte, port byte, byte_enable byte) (data uint32, err int) {
+func ReadReg(regAddr uint32, access_mode byte, port byte, byte_enable byte) (data uint32, err int) {
     cli.Printf("d", "am=0x%x, p=0x%x, be=0x%x\n", access_mode, port, byte_enable)
     cmdBuf := make([]byte, 4)
     var dataBuf []byte
@@ -91,7 +84,7 @@ func Read(regAddr uint32, access_mode byte, port byte, byte_enable byte) (data u
     return
 }
 
-func Write(regAddr uint32, data uint32, access_mode byte, port byte, byte_enable byte) (err int) {
+func WriteReg(regAddr uint32, data uint32, access_mode byte, port byte, byte_enable byte) (err int) {
     cmdBuf := make([]byte, 8)
 
     if regAddr > 0xFFF {
@@ -145,7 +138,7 @@ func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
     stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
     cli.Printf("d", "stsCtrlData=0x%x\n", stsCtrlData)
 
-    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
         cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
         return
@@ -154,7 +147,7 @@ func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
     // Check done flag
     for i := 0; i < MAX_RETRY; i++ {
         cli.Println("d", "Wait for EEP done", i)
-        data, err = Read(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
+        data, err = ReadReg(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
         if err != errType.SUCCESS {
             cli.Printf("e", "Faild to read; addr=0x%x\n", REG_EEP_STS_CTRL)
             return
@@ -172,7 +165,7 @@ func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
         return
     }
 
-    data, err = Read(REG_EEP_BUF, ACC_MODE_TP, port, 0xF)
+    data, err = ReadReg(REG_EEP_BUF, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
         cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
     }
@@ -195,7 +188,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     }
 
     // Write data to buffer register
-    err = Write(REG_EEP_BUF, data, ACC_MODE_TP, port, 0xF)
+    err = WriteReg(REG_EEP_BUF, data, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
         cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_BUF, data)
         return
@@ -207,7 +200,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     stsCtrlData = stsCtrlData | EEP_OP_SET_WR_EN << 13
     cli.Printf("d", "P0: stsCtrl=0x%x\n", stsCtrlData)
 
-    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
         cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
         return
@@ -221,7 +214,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
 
     cli.Printf("d", "P1: stsCtrlData=0x%x\n", stsCtrlData)
 
-    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
         cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
         return
@@ -230,7 +223,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     // Check done flag
     for i := 0; i < MAX_RETRY; i++ {
         cli.Println("d", "Wait for EEP done", i)
-        data, err = Read(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
+        data, err = ReadReg(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
         if err != errType.SUCCESS {
             cli.Printf("e", "Faild to read; addr=0x%x\n", REG_EEP_STS_CTRL)
             return
@@ -254,7 +247,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     stsCtrlData = stsCtrlData | EEP_OP_RST_WR_EN << 13
     cli.Printf("d", "P2: stsCtrl=0x%x\n", stsCtrlData)
 
-    err = Write(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
+    err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
         cli.Printf("e", "Faild to write; addr=0x%x, data=0x%x\n", REG_EEP_STS_CTRL, stsCtrlData)
     }

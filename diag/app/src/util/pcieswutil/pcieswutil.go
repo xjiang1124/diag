@@ -2,146 +2,122 @@ package main
 
 import (
     "flag"
-//    "strings"
+    "strings"
+
     "common/cli"
-//    "common/errType"
-    "hardware/i2cinfo"
-    "common/misc"
+    "common/errType"
     "device/pciesw/pex8716"
+
+    "hardware/i2cinfo"
 )
 
-const (
-    DEVNAME string = "PCIE_SMB"
-    NUMBYTE uint = 4
-    
-    PORTCONTROL uint64 = 0x208
-    TESTPATTERN0 uint64 = 0x20c
-    TESTPATTERN1 uint64 = 0x210
-    TESTPATTERN2 uint64 = 0x214
-    TESTPATTERN3 uint64 = 0x218
-    PHYSICALTEST0 uint64 = 0x224
-    PHYSICALTEST1 uint64 = 0x228
-    PORTCOMMAND uint64 = 0x230
-    DIAGDATAQUAD0 uint64 = 0x238
-    DIAGDATAQUAD1 uint64 = 0x23C
-    DIAGDATAQUAD2 uint64 = 0x240
-    DIAGDATAQUAD3 uint64 = 0x244
-)
-
-func pexLpbkConfig() (err int) {
-    dataBuf := make([]byte, NUMBYTE)
-    pattern0 := []byte{0x11, 0x22, 0x33, 0x44}
-    pattern1 := []byte{0x55, 0x66, 0x77, 0x88}
-    pattern2 := []byte{0x11, 0x22, 0x33, 0x44}
-    pattern3 := []byte{0x55, 0x66, 0x77, 0x88}
-    
-    //clear 0x224 bit10
-    err = pex8716.PexRegRead(DEVNAME, PHYSICALTEST0, dataBuf)
-    dataBuf[1] &= 0xFB
-    err = pex8716.PexRegWrite(DEVNAME, PHYSICALTEST0, dataBuf)
-    
-    //write pattern to register
-    err = pex8716.PexRegWrite(DEVNAME, TESTPATTERN0, pattern0)
-    err = pex8716.PexRegWrite(DEVNAME, TESTPATTERN1, pattern1)
-    err = pex8716.PexRegWrite(DEVNAME, TESTPATTERN2, pattern2)
-    err = pex8716.PexRegWrite(DEVNAME, TESTPATTERN3, pattern3)
-    
-    //write reg 0x208, set bit[24, 25] 0x10, clear [28, 29]
-    err = pex8716.PexRegRead(DEVNAME, PORTCONTROL, dataBuf)
-    dataBuf[3] &= 0xCE
-    dataBuf[3] |= 0x2
-    err = pex8716.PexRegWrite(DEVNAME, PORTCONTROL, dataBuf)
-
-    //set reg 0x230 port 0 master lpbk
-    err = pex8716.PexRegRead(DEVNAME, PORTCOMMAND, dataBuf)
-    dataBuf[0] = 0
-    dataBuf[0] |= 1
-    dataBuf[1] = 0
-    dataBuf[2] = 0
-    dataBuf[3] = 0
-    err = pex8716.PexRegWrite(DEVNAME, PORTCOMMAND, dataBuf)
-    
-    //read back to make sure lpbk is ready
-    var i uint = 0
-    for ; i < 10; i++ {
-        err = pex8716.PexRegRead(DEVNAME, PORTCOMMAND, dataBuf)
-        if dataBuf[0] & 0x8 == 0 {
-            break
-        }
-    }
-    if i == 10 {
-        cli.Println("Port lpbk master state is not ready")
-    }
-    return
-}
-
-func pexTestStart() (err int) {
-    dataBuf := make([]byte, NUMBYTE)
-    //write reg 0x228 to set parallel lpbk, enable generator
-    dataBuf[2] = 0x2
-    dataBuf[3] = 0xFF
-    err = pex8716.PexRegWrite(DEVNAME, PHYSICALTEST1, dataBuf)
-    
-    return
-}
-
-func pexTestStop() (err int) {
-    dataBuf := make([]byte, NUMBYTE)
-    //clear reg 0x228
-    err = pex8716.PexRegWrite(DEVNAME, PHYSICALTEST1, dataBuf)
-    
-    return
-}
-
-func pexTestCheck() (err int) {
-    dataBuf := make([]byte, NUMBYTE)
-//    err = pex8716.PexRegRead(DEVNAME, DIAGDATAQUAD0, dataBuf)
-    for i:=0; i< 8; i++ {
-        dataBuf[3] = (byte)(i % 4)
-        err = pex8716.PexRegWrite(DEVNAME, DIAGDATAQUAD0 + (uint64)((i/4)*4), dataBuf)
-        err = pex8716.PexRegRead(DEVNAME, DIAGDATAQUAD0 + (uint64)((i/4)*4), dataBuf)
-        if dataBuf[3] & 0x80 == 0 {
-            cli.Println("Serdes", i, "UTP is not sync")
-            continue
-        }
-        if dataBuf[2] != 0 {
-            cli.Println("Serdes", i, "error, expected", dataBuf[0], "actual", dataBuf[1])
-        } else {
-            cli.Println("Serdes", i, "UTP passed!")
-        }
-    }
-    
-    return
-}
-
-func pexTestCleanup() (err int) {
-    dataBuf := make([]byte, NUMBYTE)
-    err = pex8716.PexRegWrite(DEVNAME, PHYSICALTEST1, dataBuf)
-    
-    return
+func init() {
 }
 
 func myUsage() {
     flag.PrintDefaults()
-    i2cinfo.DispI2cInfoAll()
+    //i2cinfo.DispI2cInfoAll()
 }
 
 func main() {
     flag.Usage = myUsage
-
-    durationPtr     := flag.Int(  "dura", 10, "Test duration")
+    //------------------------
+    infoPtr     := flag.Bool(  "info", false, "Show I2C info table")
+    devNamePtr  := flag.String("dev",  "",    "Device name")
+    //------------------------
+    readPtr     := flag.Bool(  "rd",   false, "Read register value")
+    writePtr    := flag.Bool(  "wr",   false, "Write register value")
+    erdPtr      := flag.Bool(  "erd",   false, "Read PEX EEPROM")
+    ewrPtr      := flag.Bool(  "ewr",   false, "Write PEX EEPROM")
+    //------------------------
+    addrPtr     := flag.Uint64("addr", 0,    "Register addr")
+    dataPtr     := flag.Uint64("data", 0,    "Data value")
+    numBytesPtr := flag.Uint64("nb",   0,    "Number of bytes")
+    accModePtr  := flag.Uint64("am", 0, "Access mod, default 0: transparent ports")
+    portPtr     := flag.Uint64("p", 0, "Port")
+    byteEnPtr   := flag.Uint64("be", 0xF, "Byte Enable: default: 0xF")
+    //------------------------
+    mtpTestPtr  := flag.Bool("mtest", false, "MTP PCIe test")
+    durationPtr := flag.Int(  "dura", 10, "Test duration")
+    //------------------------
+    uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     flag.Parse()
 
-    //cli.Println("devNamePtr:", *devNamePtr, "statusPtr:", *statusPtr, "marginPtr:", *marginPtr, "pctPtr:", *pctPtr)
-    //cli.Println("i", *readPtr, *writePtr, *sendPtr, *addrPtr, *dataPtr)
-    duration := *durationPtr
+    devName := strings.ToUpper(*devNamePtr)
+    addr := uint32(*addrPtr)
+    data := uint32(*dataPtr)
+    numBytes := *numBytesPtr
+    port := byte(*portPtr)
+    accMode := byte(*accModePtr)
+    byteEn := byte(*byteEnPtr)
+    cli.Printf("i", "port=0x%x, accMode=0x%x, byteEn=0x%x\n", port, accMode, byteEn)
 
-    pexLpbkConfig()
-    pexTestStart()
-    misc.SleepInSec(duration)
-    pexTestStop()
-    pexTestCheck()
-    pexTestCleanup()
+    cli.Println("i", data, numBytes, *writePtr)
+    if *uutPtr != "UUT_NONE" {
+        i2cinfo.SwitchI2cTbl(*uutPtr)
+    }
+
+    if *readPtr == true {
+        err := pex8716.Open(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer pex8716.Close()
+        data, err := pex8716.ReadReg(addr, accMode, port, byteEn)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "PEX read at addr=0x%x with data=0x%x\n", addr, data)
+        }
+        return
+    }
+
+    if *writePtr == true {
+        err := pex8716.Open(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer pex8716.Close()
+        err = pex8716.WriteReg(addr, data, accMode, port, byteEn)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "PEX write at addr=0x%x with data=0x%x done\n", addr, data)
+        }
+        return
+    }
+
+    if *erdPtr == true {
+        err := pex8716.Open(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer pex8716.Close()
+        data, err := pex8716.ReadEepDw(addr, port)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "PEX read EEPROM at addr=0x%x with data=0x%x\n", addr, data)
+        }
+        return
+    }
+
+    if *ewrPtr == true {
+        err := pex8716.Open(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer pex8716.Close()
+        err = pex8716.WriteEepDw(addr, port, data)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "PEX write EEPROM at addr=0x%x with data=0x%x - done\n", addr, data)
+        }
+        return
+    }
+
+    if *infoPtr == true {
+        i2cinfo.DispI2cInfoAll()
+        return
+    }
+
+    if *mtpTestPtr == true {
+        cli.Println("i", "Duration:", *durationPtr)
+        return
+    }
 
     myUsage()
 }
