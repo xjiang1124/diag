@@ -14,6 +14,7 @@ func ReadBytes(devName string, offset uint64, numBytes uint64) (data []byte, err
     if err != errType.SUCCESS {
         return
     }
+    defer smbus.Close()
 
     for i = 0; i < numBytes; i++ {
         data[i], err = smbus.ReadByte(devName, offset+i)
@@ -22,7 +23,6 @@ func ReadBytes(devName string, offset uint64, numBytes uint64) (data []byte, err
         }
     }
 
-    err = smbus.Close()
     return
 }
 
@@ -31,6 +31,7 @@ func ReadBytesUpper(devName string, offset uint64, numBytes uint64, page byte) (
     if err != errType.SUCCESS {
         return
     }
+    defer smbus.Close()
 
     err = smbus.WriteByte(devName, 127, page)
     if err != errType.SUCCESS {
@@ -42,7 +43,6 @@ func ReadBytesUpper(devName string, offset uint64, numBytes uint64, page byte) (
         return
     }
 
-    err = smbus.Close()
     return
 }
 
@@ -92,6 +92,7 @@ func LaserEnDis(devName string, enDis int) (err int) {
     if err != errType.SUCCESS {
         return
     }
+    defer smbus.Close()
 
     if enDis == ENABLE {
         data = 0x0
@@ -104,7 +105,6 @@ func LaserEnDis(devName string, enDis int) (err int) {
         return
     }
 
-    err = smbus.Close()
     return
 }
 

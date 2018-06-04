@@ -80,7 +80,7 @@ func init() {
     naplesDispStaList["VRM_CAPRI_AVDD"] = tps53659.DispStatus
     naplesDispStaList["VRM_HBM"]        = tps549a20.DispStatus
     naplesDispStaList["VRM_ARM"]        = tps549a20.DispStatus
-    naplesDispStaList["TEMP_SENSOR"]    = tmp42123.DispStatus
+    naplesDispStaList["TSENSOR"]    = tmp42123.DispStatus
 
     //===============================
     // MTP
