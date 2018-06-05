@@ -27,6 +27,7 @@ echo "PATH=\$PATH:$DIAG_DIR/dsp/" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/python/regression" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/python/infra" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/python/qa_suite" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
 if [[ $arch == "arm64" ]]

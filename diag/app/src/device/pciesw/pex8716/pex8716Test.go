@@ -19,9 +19,6 @@ func pexLpbkConfig() (err int) {
     pattern2 := uint32(0x11223344)
     pattern3 := uint32(0x55667788)
 
-    // Configuration release
-    WriteReg(REG_CONF_RLS, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
-
     //clear 0x224 bit10 => Digital loopback slave mode
     WriteReg(PHYSICALTEST0, 0, ACC_MODE_TP, port, BYTE_EN_ALL)
 
@@ -36,8 +33,13 @@ func pexLpbkConfig() (err int) {
     // clear [28, 29] => select port0
     WriteReg(PORTCONTROL, 0x02000000, ACC_MODE_TP, port, BYTE_EN_ALL)
 
+    // Configuration release
+    WriteReg(REG_CONF_RLS, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
+    misc.SleepInSec(1)
+
     //set reg 0x230 port 0 master lpbk
     WriteReg(PORTCOMMAND, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
+    misc.SleepInSec(1)
 
     //read back to make sure lpbk is ready
     var i uint = 0
@@ -62,7 +64,8 @@ func pexTestStart() (err int) {
     //dataBuf[2] = 0x2
     //dataBuf[3] = 0xFF
     //err = WriteReg(PHYSICALTEST1, dataBuf)
-    data := uint32(0xFF020000)
+    //data := uint32(0xFF020000)
+    data := uint32(0xF020000)
     WriteReg(PHYSICALTEST1, data, ACC_MODE_TP, port, BYTE_EN_ALL)
     cli.Println("i", "Test started")
     return
@@ -89,7 +92,7 @@ func pexTestCheck() (err int) {
         reg := DIAGDATAQUAD0 + (uint32)((i/4)*4)
 
         WriteReg(reg, data, ACC_MODE_TP, port, BYTE_EN_ALL)
-        data, _ = ReadReg(DIAGDATAQUAD0 + (uint32)((i/4)*4), ACC_MODE_TP, port, BYTE_EN_ALL)
+        data, _ = ReadReg(reg, ACC_MODE_TP, port, BYTE_EN_ALL)
         dataBuf = misc.U32ToBytes(data)
 
         if dataBuf[3] & 0x80 == 0 {
@@ -97,7 +100,8 @@ func pexTestCheck() (err int) {
             continue
         }
         if dataBuf[2] != 0 {
-            cli.Println("i", "Serdes", i, "error count:", dataBuf[0], "error, expected", dataBuf[0], "actual", dataBuf[1])
+            cli.Println("i", "Serdes", i, "error count:", dataBuf[2], "error, expected", dataBuf[0], "actual", dataBuf[1])
+            cli.Printf("d", ", reg=0x%x, data=0x%x, databuf3=0x%x\n", reg, data, dataBuf[2])
             err = errType.FAIL
         } else {
             cli.Println("i", "Serdes", i, "UTP passed!")
