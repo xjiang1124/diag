@@ -318,9 +318,10 @@ func main() {
     mode := strings.ToUpper(*modePtr)
     numByte := *numBytePtr
     phyAddr := *phyPtr
+    uut := strings.ToUpper(*uutPtr)
 
-    if *uutPtr != "UUT_NONE" {
-        i2cinfo.SwitchI2cTbl(*uutPtr)
+    if uut != "UUT_NONE" {
+        i2cinfo.SwitchI2cTbl(uut)
     }
 
     if *readPtr == true {

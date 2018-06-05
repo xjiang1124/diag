@@ -46,15 +46,13 @@ func main() {
     devName := strings.ToUpper(*devNamePtr)
     addr := uint32(*addrPtr)
     data := uint32(*dataPtr)
-    //numBytes := *numBytesPtr
     port := byte(*portPtr)
     accMode := byte(*accModePtr)
     byteEn := byte(*byteEnPtr)
-    //cli.Printf("i", "port=0x%x, accMode=0x%x, byteEn=0x%x\n", port, accMode, byteEn)
+    uut := strings.ToUpper(*uutPtr)
 
-    //cli.Println("i", data, numBytes, *writePtr)
-    if *uutPtr != "UUT_NONE" {
-        i2cinfo.SwitchI2cTbl(*uutPtr)
+    if uut != "UUT_NONE" {
+        i2cinfo.SwitchI2cTbl(uut)
     }
 
     if *readPtr == true {

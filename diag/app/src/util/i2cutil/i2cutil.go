@@ -128,12 +128,12 @@ func main() {
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
-    //addr := *addrPtr
     data := *dataPtr
     numBytes := *numBytesPtr
+    uut := strings.ToUpper(*uutPtr)
 
-    if *uutPtr != "UUT_NONE" {
-        i2cinfo.SwitchI2cTbl(*uutPtr)
+    if uut != "UUT_NONE" {
+        i2cinfo.SwitchI2cTbl(uut)
     }
 
     if *readPtr == true {

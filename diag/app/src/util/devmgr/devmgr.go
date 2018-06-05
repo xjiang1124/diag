@@ -52,7 +52,7 @@ func main() {
     uut     := strings.ToUpper(*uutPtr)
 
     if *listPtr == true {
-        i2cinfo.SwitchI2cTbl(*uutPtr)
+        i2cinfo.SwitchI2cTbl(uut)
         i2cinfo.DispI2cInfoAll()
         return
     }
