@@ -39,11 +39,11 @@ func pexLpbkConfig() (err int) {
 
     //set reg 0x230 port 0 master lpbk
     WriteReg(PORTCOMMAND, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
-    misc.SleepInSec(1)
 
     //read back to make sure lpbk is ready
     var i uint = 0
     for ; i < 10; i++ {
+        misc.SleepInUSec(1)
         data, _ = ReadReg(PORTCOMMAND, ACC_MODE_TP, port, BYTE_EN_ALL)
         if data & 0x8 != 0 {
             break
