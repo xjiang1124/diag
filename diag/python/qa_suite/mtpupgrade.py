@@ -79,7 +79,7 @@ class mtpUpgrade(mtpControl):
         return 0
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="Diagnostic inteface\ne.g. ./mtpupgrade.py -pf=MTP001 -tp=IOCPLD -fn=./NIC_MTP_IO.bin -full", formatter_class=argparse.RawTextHelpFormatter)
     #group = parser.add_mutually_exclusive_group()
     parser.add_argument("-pf", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-tp", "--type", help="Type, e.g. IOCPLD", type=str, default='')

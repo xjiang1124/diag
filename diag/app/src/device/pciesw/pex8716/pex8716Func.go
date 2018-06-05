@@ -42,7 +42,7 @@ func Close() {
 }
 
 func ReadReg(regAddr uint32, access_mode byte, port byte, byte_enable byte) (data uint32, err int) {
-    cli.Printf("d", "am=0x%x, p=0x%x, be=0x%x\n", access_mode, port, byte_enable)
+    //cli.Printf("d", "am=0x%x, p=0x%x, be=0x%x\n", access_mode, port, byte_enable)
     cmdBuf := make([]byte, 4)
     var dataBuf []byte
 
@@ -64,9 +64,9 @@ func ReadReg(regAddr uint32, access_mode byte, port byte, byte_enable byte) (dat
 
     cmdBuf[3] = byte((regAddr & 0x3FF) >> 2)
 
-    for i := 0; i < 4; i++ {
-        cli.Printf("d", "cmdBuf[%d]=0x%x\n", i, cmdBuf[i])
-    }
+    //for i := 0; i < 4; i++ {
+    //    cli.Printf("d", "cmdBuf[%d]=0x%x\n", i, cmdBuf[i])
+    //}
 
     err = i2cPtcl.Write(cmdBuf)
     if err != errType.SUCCESS {
@@ -108,6 +108,10 @@ func WriteReg(regAddr uint32, data uint32, access_mode byte, port byte, byte_ena
     cmdBuf[6] = byte((data>>8) & 0xFF)
     cmdBuf[5] = byte((data>>16) & 0xFF)
     cmdBuf[4] = byte((data>>24) & 0xFF)
+
+    //for i := 0; i < 8; i++ {
+    //    cli.Printf("d", "cmdBuf[%d]=0x%x\n", i, cmdBuf[i])
+    //}
 
     err = i2cPtcl.Write(cmdBuf)
     if err != errType.SUCCESS {

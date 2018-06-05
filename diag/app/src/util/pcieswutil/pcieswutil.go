@@ -32,7 +32,7 @@ func main() {
     //------------------------
     addrPtr     := flag.Uint64("addr", 0,    "Register addr")
     dataPtr     := flag.Uint64("data", 0,    "Data value")
-    numBytesPtr := flag.Uint64("nb",   0,    "Number of bytes")
+    //numBytesPtr := flag.Uint64("nb",   0,    "Number of bytes")
     accModePtr  := flag.Uint64("am", 0, "Access mod, default 0: transparent ports")
     portPtr     := flag.Uint64("p", 0, "Port")
     byteEnPtr   := flag.Uint64("be", 0xF, "Byte Enable: default: 0xF")
@@ -46,13 +46,13 @@ func main() {
     devName := strings.ToUpper(*devNamePtr)
     addr := uint32(*addrPtr)
     data := uint32(*dataPtr)
-    numBytes := *numBytesPtr
+    //numBytes := *numBytesPtr
     port := byte(*portPtr)
     accMode := byte(*accModePtr)
     byteEn := byte(*byteEnPtr)
-    cli.Printf("i", "port=0x%x, accMode=0x%x, byteEn=0x%x\n", port, accMode, byteEn)
+    //cli.Printf("i", "port=0x%x, accMode=0x%x, byteEn=0x%x\n", port, accMode, byteEn)
 
-    cli.Println("i", data, numBytes, *writePtr)
+    //cli.Println("i", data, numBytes, *writePtr)
     if *uutPtr != "UUT_NONE" {
         i2cinfo.SwitchI2cTbl(*uutPtr)
     }
@@ -115,7 +115,7 @@ func main() {
     }
 
     if *mtpTestPtr == true {
-        cli.Println("i", "Duration:", *durationPtr)
+        pex8716.UTPTest(devName, *durationPtr)
         return
     }
 

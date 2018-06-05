@@ -8,7 +8,6 @@ COMMON_SRC_DIR=				\
 	util/devmgr			\
 	util/smbutil 		\
 	util/i2cutil 		\
-	util/pcieswutil		\
 	util/sysmon
 
 COMMON_C_SRC_DIR=		\
@@ -24,11 +23,11 @@ GO_TEST_DIR=						\
 
 AMD64_SRC_DIR=			\
 	util/cpldutil		\
+	util/pcieswutil		\
 	util/mtptest
 
 AMD64_C_SRC_DIR=		\
 	lib/cpld
-
 
 ARM64_SRC_DIR=
 ARM64_C_SRC_DIR=
