@@ -15,6 +15,10 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <ctype.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <sys/file.h>
+#include <fcntl.h>
 #include "ftd2xx.h"
 
 
@@ -165,5 +169,11 @@ FT_STATUS mdio_wr(DWORD instance, DWORD dev_addr, DWORD offset, DWORD data);
 FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data);
 unsigned int cpld_program(char* file_name);
 unsigned int cpld_read(char* file_name);
+
+
+extern char*	lock_file;
+extern int		lock_fd;
+extern struct stat st0;
+extern struct stat st1;
 
 #endif /* RELEASE_EXAMPLES_LOOPBACK_ACC_H_ */

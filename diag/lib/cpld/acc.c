@@ -231,7 +231,32 @@ BYTE   con_red[5] =
 {
 	0x3C, 0x1, 0x0, 0x00, 0x82
 };
+#if 0
+char*	lock_file = "/tmp/cpld.lock";
+int		lock_fd = 0;
+struct stat st0, st1;
 
+void cpld_lock()
+{
+	while(1) {
+		lock_fd = open(lock_file, O_CREAT);
+		flock(lock_fd, LOCK_EX);
+
+		fstat(lock_fd, &st0);
+		stat(lock_fd, &st1);
+		if(st0.st_ino == st1.st_ino)
+			break;
+
+		close(lock_fd);
+	}
+}
+
+void cpld_unlock()
+{
+	flock(lock_fd, LOCK_UN);
+	close(lock_fd);
+}
+#endif
 void jtag_wr_instruction(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
 {
 //	printf("inst 0x%x, address 0x%llx, data 0x%x, flag 0x%x\n", inst, address, data, flag);
@@ -380,13 +405,20 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     {
         return ftStatus;
     }
+//temporary ignore valid bit
+    queue_read(ftHandle, &data);
+//    ftStatus = queue_read(ftHandle, &data);
+//    if(ftStatus != FT_OK)
+//    {
+//    	printf("Write response is not valid!\n");
+//    }
 
     return ftStatus;
 }
 
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
 {
-    FT_STATUS       ftStatus = FT_OK;
+	FT_STATUS       ftStatus = FT_OK;
     int tx_buf, rx_buf, event;
 
 //    ftStatus = FT_GetStatus(ftHandle, &rx_buf, &tx_buf, &event);
@@ -738,7 +770,6 @@ FT_STATUS jtag_id(DWORD inst, DWORD* data)
         else
         	printf("Read failed due to other reason in resend!\n");
     }
-
     return ftStatus;
 }
 
@@ -763,8 +794,9 @@ ULONGLONG xtoi(char *hexstring)
 
 FT_STATUS jtag_init()
 {
+
     FT_STATUS       ftStatus = FT_OK;
-    int             portNum = CHANNEL_B;
+    int             portNum = CHANNEL_A;
     DWORD           driverVersion = 0;
 
     if(ftHandle == NULL)
@@ -1118,11 +1150,11 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 							{
 								eof = 1;
 								//verification 4 bytes
-//								v_data = (buffer[f+1] & 0xF0) >> 4 | (buffer[f+2] & 0x0F) << 4;
-//								*data = (buffer[f+6] & 0x0F) << 28 | buffer[f+5] << 20 | buffer[f+4] << 12 | buffer[f+3] << 4 | (buffer[f+2] & 0xF0) >> 4;
+								v_data = (buffer[f+1] & 0xF0) >> 4 | (buffer[f+2] & 0x0F) << 4;
+								*data = (buffer[f+6] & 0x0F) << 28 | buffer[f+5] << 20 | buffer[f+4] << 12 | buffer[f+3] << 4 | (buffer[f+2] & 0xF0) >> 4;
 								//workaround on HAPS
-								v_data = (buffer[f+1] & 0xC0) >> 6 | (buffer[f+2] & 0x3F) << 6;
-								*data = (buffer[f+6] & 0x3F) << 26 | buffer[f+5] << 18 | buffer[f+4] << 10 | buffer[f+3] << 2 | (buffer[f+2] & 0xC0) >> 6;
+//								v_data = (buffer[f+1] & 0xC0) >> 6 | (buffer[f+2] & 0x3F) << 6;
+//								*data = (buffer[f+6] & 0x3F) << 26 | buffer[f+5] << 18 | buffer[f+4] << 10 | buffer[f+3] << 2 | (buffer[f+2] & 0xC0) >> 6;
 //								printf("data 0x%x\n", ((buffer[f+6] & 0x3F) << 26) | (buffer[f+5] << 18));
 //								printf("data f+2 0x%x\n", (buffer[f+2] & 0xC0) >> 2);
 								break;
@@ -1143,12 +1175,12 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 					{
 						eof = 1;
 						//verification 4 bytes
-//						v_data = (buffer[f-6] & 0xF0) >> 4 | (buffer[f-5] & 0x0F) << 4;
-//						*data = (buffer[f-1] & 0x0F) << 28 | buffer[f-2] << 20 | buffer[f-3] << 12 | buffer[f-4] << 4 | (buffer[f-5] & 0xF0) >> 4;
+						v_data = (buffer[f-6] & 0xF0) >> 4 | (buffer[f-5] & 0x0F) << 4;
+						*data = (buffer[f-1] & 0x0F) << 28 | buffer[f-2] << 20 | buffer[f-3] << 12 | buffer[f-4] << 4 | (buffer[f-5] & 0xF0) >> 4;
 
 						//workaround on HAPS
-						v_data = (buffer[f-6] & 0xC0) >> 6 | (buffer[f-5] & 0x3F) << 6;
-						*data = (buffer[f-1] & 0x3F) << 26 | buffer[f-2] << 18 | buffer[f-3] << 10 | buffer[f-4] << 2 | (buffer[f-5] & 0xC0) >> 6;
+//						v_data = (buffer[f-6] & 0xC0) >> 6 | (buffer[f-5] & 0x3F) << 6;
+//						*data = (buffer[f-1] & 0x3F) << 26 | buffer[f-2] << 18 | buffer[f-3] << 10 | buffer[f-4] << 2 | (buffer[f-5] & 0xC0) >> 6;
 
 						//						printf("data 0x%x\n", ((buffer[f-1] & 0x3F) << 26) | (buffer[f-2] << 18));
 //						printf("data f-5 0x%x\n", (buffer[f-5] & 0xC0) >> 2);
@@ -1172,15 +1204,8 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 		}
     }
 
-	//check valid bit is set and error bits are clean
-	if((v_data&0x1) && !((v_data&0x6) >> 1))
-	{
-		return 0;
-	} else
-		return 3;
-
 //	printf("data 0x%08x, valid bit 0x%x, error 0x%02x, RSP 0x%02x\n", v_data, (v_data&0x1), (v_data&0x6) >> 1, (v_data&0x18) >> 3);
-//    printf("Max retry %d\n", retry);
+	//    printf("Max retry %d\n", retry);
 //	printf("Receive data:\n");
 //	for(f = 0; f < count; f++)
 //	{
@@ -1188,6 +1213,12 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 //	}
 //	printf("\n");
 
+	//check valid bit is set and error bits are clean
+	if((v_data&0x1) && !((v_data&0x6) >> 1))
+	{
+		return 0;
+	} else
+		return 3;
 
 corrupt:
 	printf("\nFailure. Frame was corrupted\n");
@@ -1659,6 +1690,7 @@ FT_STATUS cpld_flash_wr_clear(BYTE* data, int size)
     {
         printf("Failure.  FT_Write returned %d\n", (int)ftStatus);
     }
+
     return ftStatus;
 }
 
@@ -1703,7 +1735,6 @@ FT_STATUS cpld_flash_rd(BYTE* data, int size)
 //	else
 //		//send out MPSSE command to MPSSE engine
 //		ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
-
 	return ftStatus;
 }
 
@@ -1781,6 +1812,7 @@ FT_STATUS flash_id_check()
     	printf("0x%02x ", id[i]);
     }
     printf("\n");
+
     return ftStatus;
 }
 
@@ -1900,6 +1932,7 @@ int flash_enable()
     }
     cpld_csena();
     usleep(1000);
+
 	return ftStatus;
 }
 
@@ -1916,6 +1949,7 @@ int flash_acc_enable()
     cpld_csena();
     sleep(1);
     printf("sleep 1 sec\n");
+
 	return ftStatus;
 }
 
@@ -1931,6 +1965,7 @@ int flash_init()
     }
     cpld_csena();
     usleep(1000);
+
 	return ftStatus;
 }
 
@@ -1953,7 +1988,8 @@ int flash_disable()
     sleep(3);
     printf("sleep 1 sec\n");
     cpld_csdis();
-	return ftStatus;
+
+    return ftStatus;
 }
 
 int flash_check_status()
@@ -1993,6 +2029,7 @@ int flash_check_status()
     cpld_csena();
     usleep(1000);
     }
+
 	return ftStatus;
 }
 
@@ -2009,6 +2046,7 @@ int flash_erase()
     cpld_csena();
     sleep(10);
     printf("sleep 10 sec\n");
+
 	return ftStatus;
 }
 
@@ -2025,6 +2063,7 @@ int flash_refresh()
     cpld_csena();
 //    sleep(1);
 //    printf("sleep 1 sec\n");
+
 	return ftStatus;
 }
 
@@ -2041,6 +2080,7 @@ int flash_program_done()
     cpld_csena();
     sleep(1);
     printf("sleep 1 sec\n");
+
 	return ftStatus;
 }
 
@@ -2140,6 +2180,7 @@ FT_STATUS cpld_program(char* file_name)
 	flash_disable();
 
 	fclose(fptr);
+
 	return ftStatus;
 }
 
@@ -2186,6 +2227,7 @@ FT_STATUS mdio_wr(DWORD instance, DWORD dev_addr, DWORD offset, DWORD data)
     {
     	printf("spi write failed!\n");
     }
+
 	return ftStatus;
 }
 
@@ -2205,5 +2247,6 @@ FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data)
     {
     	printf("spi write failed!\n");
     }
+
 	return ftStatus;
 }
