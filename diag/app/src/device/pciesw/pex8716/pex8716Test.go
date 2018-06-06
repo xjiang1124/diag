@@ -42,7 +42,7 @@ func pexLpbkConfig() (err int) {
 
     //read back to make sure lpbk is ready
     var i uint = 0
-    for ; i < 10; i++ {
+    for ; i < 100; i++ {
         misc.SleepInUSec(1)
         data, _ = ReadReg(PORTCOMMAND, ACC_MODE_TP, port, BYTE_EN_ALL)
         if data & 0x8 != 0 {
