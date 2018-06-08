@@ -31,7 +31,7 @@ func pexLpbkConfig() (err int) {
     //write reg 0x208 
     // set bit[24, 25] 0x10 => Gen3
     // clear [28, 29] => select port0
-    WriteReg(PORTCONTROL, 0x02000000, ACC_MODE_TP, port, BYTE_EN_ALL)
+    WriteReg(PORTCONTROL, 0x01000000, ACC_MODE_TP, port, BYTE_EN_ALL)
 
     // Configuration release
     WriteReg(REG_CONF_RLS, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
@@ -97,6 +97,7 @@ func pexTestCheck() (err int) {
 
         if dataBuf[3] & 0x80 == 0 {
             cli.Println("Serdes", i, "UTP is not sync")
+            err = errType.FAIL
             continue
         }
         if dataBuf[2] != 0 {
