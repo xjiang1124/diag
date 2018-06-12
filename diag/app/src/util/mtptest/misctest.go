@@ -6,6 +6,10 @@ import (
     "common/errType"
     "device/cpld"
     "hardware/hwdev"
+    "util/utillib"
+    "hardware/i2cinfo"
+//    "device/cpld"
+//    "util/utillib"
 )
 
 func mvlIntTest() (err int) {
@@ -276,6 +280,38 @@ func peRstTest(uutMask uint) (err int) {
         return
     }
     cli.Println("i", "#####", "PERST", "TEST PASSED! #####")
+    return
+}
+
+func pcsTest(index uint) (err int) {
+    var inst, phy, addr, data uint
+    // nic -> MTP
+    inst = index / 5
+    phy = (index % 5) + 0x10
+    addr = 0x1
+    data, _ = cpld.MvlRead(inst, phy, uint(addr))
+    if data >> 14 == 0x3 {
+        cli.Println("i", "NIC to MTP PCS is sync'd!")
+    } else {
+        cli.Println("e", "NIC to MTP PCS is NOT sync'd! PCS control register is 0x", data)
+        err = 1
+    }
+    // MTP -> nic
+    i2cinfo.SwitchI2cTblByIndex(index)
+    phy = 0xD
+    addr = 0x11
+    data, _ = utillib.ReadWriteSmi("READ", uint64(phy), uint64(addr), uint16(data), "b")
+    if (data & 0x400 > 0) && (data != 0xffff) {
+        cli.Println("i", "NIC to MTP PCS is sync'd!")
+    } else {
+        cli.Println("e", "MTP to MTP PCS is NOT sync'd! Status register is 0x", data)
+        err = 1
+    }
+    if err > 0 {
+        cli.Println("e", "##### PCS TEST FAILED! #####")
+    } else {
+        cli.Println("i", "##### PCS TEST PASSED! #####")
+    }
     return
 }
 

@@ -3,7 +3,7 @@ package i2cinfo
 import (
     "fmt"
     "os"
-
+    "strconv"
     "common/cli"
     "common/errType"
 )
@@ -158,6 +158,26 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = I2cTbl
         return
     }
+    uutType, err := FindUutType(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+    if uutType == "NAPLES_MTP" {
+        CurI2cTbl = NaplesMtpTbl
+    } else {
+        cli.Println("e", "uutType not supported!", uutType)
+        err = errType.INVALID_PARAM
+    }
+    return
+}
+
+func SwitchI2cTblByIndex(uutIndex uint) (err int) {
+    if uutIndex > 9 {
+        cli.Println("e", "uutIndex not supported!", uutIndex)
+        err = errType.INVALID_PARAM
+        return
+    }
+    uutName := "UUT_" + strconv.FormatUint(uint64(uutIndex+1), 10)
     uutType, err := FindUutType(uutName)
     if err != errType.SUCCESS {
         return

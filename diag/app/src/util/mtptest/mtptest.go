@@ -29,9 +29,12 @@ func main() {
     wdtIntPtr	:= flag.Bool("wdt",		false, "Watch dog interrupt test")
     uutPowPtr	:= flag.Bool("uut",		false, "UUT power test")
     peRstPtr	:= flag.Bool("perst",	false, "UUT pe reset test")
+    pcsPtr		:= flag.Bool("pcs",		false, "SGMII PCS sync test")
+    uutIndexPtr := flag.Uint("index",	0,		"UUT index, zero based")
     flag.Parse()
 
     tmpmode := strings.ToUpper(*tmpmodePtr)
+    index	:= *uutIndexPtr
 
     if *psuPtr == true {
         psuTest(*psumaskPtr)
@@ -85,6 +88,11 @@ func main() {
     
     if *peRstPtr == true {
         peRstTest(*psumaskPtr)
+        return
+    }
+
+    if *pcsPtr == true {
+        pcsTest(index)
         return
     }
 
