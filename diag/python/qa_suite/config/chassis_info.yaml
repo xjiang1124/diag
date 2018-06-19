@@ -30,6 +30,27 @@ MTP002:
     APC_2_NAME:
     APC_2_PORT:
     IP: 192.168.75.202
+    SLOT_1: NAPLES_MTP
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6: NAPLES_MTP
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10: NAPLES_MTP
+
+MTP003:
+    SKIP:
+    MODE: MTP_QK
+    TS: pen-hwlab-tel-01
+    TS_PORT: 7024
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 11
+    APC_2_NAME: pen-hwlab-apc-02
+    APC_2_PORT: 2
+    IP: 192.168.72.191
     SLOT_1:
     SLOT_2: 
     SLOT_3: 
@@ -41,15 +62,15 @@ MTP002:
     SLOT_9: 
     SLOT_10: 
 
-MTP003:
+MTP004:
     SKIP:
     MODE: MTP_QK
-    TS: pen-hwlab-tel-01
-    TS_PORT: 12
+    TS:
+    TS_PORT:
     APC_1_NAME: pen-hwlab-apc-02
-    APC_1_PORT: 11
-    APC_2_NAME:
-    APC_2_PORT:
+    APC_1_PORT: 20
+    APC_2_NAME: pen-hwlab-apc-02
+    APC_2_PORT: 21
     IP: 192.168.73.247
     SLOT_1:
     SLOT_2: 
