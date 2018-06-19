@@ -31,6 +31,7 @@ func main() {
     peRstPtr	:= flag.Bool("perst",	false, "UUT pe reset test")
     pcsPtr		:= flag.Bool("pcs",		false, "SGMII PCS sync test")
     uutIndexPtr := flag.Uint("index",	0,		"UUT index, zero based")
+    prstPtr		:= flag.Bool("present", false, "Present test for fan/psu/nic")
     flag.Parse()
 
     tmpmode := strings.ToUpper(*tmpmodePtr)
@@ -93,6 +94,11 @@ func main() {
 
     if *pcsPtr == true {
         pcsTest(index)
+        return
+    }
+    
+    if *prstPtr == true {
+        prstTest()
         return
     }
 
