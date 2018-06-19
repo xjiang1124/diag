@@ -6,7 +6,7 @@ import re
 import sys
 import time
 
-import tscontrol
+from tscontrol import tsControl
 import apccontrol
 sys.path.append("../lib")
 import common
@@ -96,9 +96,11 @@ class mtpControl:
         print "--- "+self.pf+" failed boot! ---"
         return -1
 
-    def wait4rdyTel(self):
+    def wait4rdyTel(self, timeout=300):
+        tscontrol = tsControl()
+        ret = tscontrol.wait4rdyTel(self.pf, timeout)
+        return ret
 
-        return -1
 
     # Use ssh to check whether MTP is alive
     def sshCheck(self):
@@ -113,10 +115,13 @@ class mtpControl:
         common.session_stop(session)
         return retVal
 
-    def mtprdy(self, pwr):
+    def mtprdy(self, pwr, tel):
         if pwr == True:
             self.fullpwrcycle()
-            ret = self.wait4rdySsh()
+            if tel == True:
+                ret = self.wait4rdyTel()
+            else:
+                ret = self.wait4rdySsh()
             return ret
 
         # No mandatory power cycle
@@ -124,8 +129,10 @@ class mtpControl:
         if ret == 0:
             return ret
 
-        self.fullpwrcycle()
-        ret = self.wait4rdySsh()
+        if tel == True:
+            ret = self.wait4rdyTel()
+        else:
+            ret = self.wait4rdySsh()
         return ret
 
     def mtpinit(self):
@@ -141,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("-pf", "--platform", help="Platform, e.g. MTP001", type=str, default='')
     parser.add_argument("-pc", "--pwrcycle", help="Power cycle enable", action='store_true')
     parser.add_argument("-rdy", "--ready", help="Get platform ready", action='store_true')
+    parser.add_argument("-tel", "--telnet", help="Wait for system ready from telnet", action='store_true')
     group.add_argument("-off", "--off", help="Power off", action='store_true')
     group.add_argument("-on", "--on", help="Power on", action='store_true')
     args = parser.parse_args()
@@ -150,12 +158,13 @@ if __name__ == "__main__":
     mtp.setup(pf)
 
     if args.ready == True:
-        mtp.mtprdy(args.pwrcycle)
-        sys.exit()
-
-    if args.pwrcycle == True:
-        mtp.mtprdy(True)
+        mtp.mtprdy(args.pwrcycle, args.telnet)
         sys.exit()
 
     if args.off == True:
         mtp.pwroff()
+        sys.exit()
+
+    if args.on == True:
+        mtp.pwron()
+        sys.exit()
