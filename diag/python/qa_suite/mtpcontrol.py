@@ -96,6 +96,10 @@ class mtpControl:
         print "--- "+self.pf+" failed boot! ---"
         return -1
 
+    def wait4rdyTel(self):
+
+        return -1
+
     # Use ssh to check whether MTP is alive
     def sshCheck(self):
         session = common.session_start()
@@ -141,8 +145,9 @@ if __name__ == "__main__":
     group.add_argument("-on", "--on", help="Power on", action='store_true')
     args = parser.parse_args()
     
+    pf = args.platform.upper()
     mtp = mtpControl()
-    mtp.setup(args.platform)
+    mtp.setup(pf)
 
     if args.ready == True:
         mtp.mtprdy(args.pwrcycle)

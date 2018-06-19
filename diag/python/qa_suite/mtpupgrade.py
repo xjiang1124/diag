@@ -94,7 +94,7 @@ if __name__ == "__main__":
     mtp = mtpUpgrade()
     mtp.setup(args.platform)
 
-    print "p:", args.platform, "tp:", args.type, "f:", args.filename
+    #print "p:", args.platform, "tp:", args.type, "f:", args.filename
     if args.type == "IOCPLD":
         if args.full == True:
             ## Get platform ready

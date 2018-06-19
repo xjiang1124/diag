@@ -64,9 +64,9 @@ func ReadReg(regAddr uint32, access_mode byte, port byte, byte_enable byte) (dat
 
     cmdBuf[3] = byte((regAddr & 0x3FF) >> 2)
 
-    //for i := 0; i < 4; i++ {
-    //    cli.Printf("d", "cmdBuf[%d]=0x%x\n", i, cmdBuf[i])
-    //}
+    for i := 0; i < 4; i++ {
+        cli.Printf("d", "cmdBuf[%d]=0x%x\n", i, cmdBuf[i])
+    }
 
     err = i2cPtcl.Write(cmdBuf)
     if err != errType.SUCCESS {

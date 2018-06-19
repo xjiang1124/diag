@@ -39,6 +39,18 @@ def create_folder(path):
             raise
 
 #=========================================================
+# Constant class
+class Const():
+    def __init__(self):
+        self.BASH_PROMPP = "\$ "
+        self.PWD_PROMPT = ": "
+        self.SUDO_PW = "lab123"
+        self.RET_VAL = "echo $?"
+        self.EXI = "exit"
+        self.DIAG_USR = "diag"
+        self.DIAG_PW = "lab123"
+        self.EOF = pexpect.EOF
+
 # Constant
 def constant(f):
     def fset(self, value):

@@ -30,7 +30,7 @@ func mvlIntTest() (err int) {
         if data & (1 << i) != 0 {
             cli.Println("e", "Marvell switch ", i, "interrup is not cleaed!")
         }
-        
+
         //test
         data, err = cpld.CpldRead(0x1)
         if err != errType.SUCCESS {
@@ -61,7 +61,7 @@ func mvlIntTest() (err int) {
         } else {
             cli.Println("i", "##### Marvell switch", i, "TEST PASSED! #####")
         }
-        
+
         //clear on source again
         _, err = cpld.MvlRead(i, 0x1b, 0x0);
         if err != errType.SUCCESS {
@@ -84,7 +84,7 @@ func wdtIntTest() (err int) {
         cli.Println("e", "Watch dog interrup is not cleaed!")
         return
     }
-    
+
     data, err = cpld.CpldRead(0xe)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
@@ -98,7 +98,7 @@ func wdtIntTest() (err int) {
     }
 
     misc.SleepInSec(35)
-    
+
     data, err = cpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
@@ -109,7 +109,7 @@ func wdtIntTest() (err int) {
     } else {
         cli.Println("i", "##### Watch dog TEST PASSED! #####")
     }
-    
+
     data, err = cpld.CpldRead(0xe)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
@@ -121,7 +121,7 @@ func wdtIntTest() (err int) {
         cli.Println("e", "CPLD write failed!")
         return
     }
-    
+
     return
 }
 
@@ -167,7 +167,7 @@ func uutPowTest(uutMask uint) (err int) {
             errMask |= 1 << i
             cli.Println("e", "12V was off, 3V3 was on, no present bit, inst", i, "failed!")
         }
-        
+
         //turn off 12V
         p12vData &= ^(1 << (i % 8))
         err = cpld.CpldWrite(p12vReg + i/8, p12vData)
@@ -186,7 +186,7 @@ func uutPowTest(uutMask uint) (err int) {
             errMask |= 1 << i
             cli.Println("e", "12V was off, 3V3 was on, still hold present bit, inst", i, "failed!")
         }
-        
+
         //turn on 12V, turn off 3.3V
         p12vData |= 1 << (i % 8)
         err = cpld.CpldWrite(p12vReg + i/8, p12vData)
@@ -211,7 +211,7 @@ func uutPowTest(uutMask uint) (err int) {
             errMask |= 1 << i
             cli.Println("e", "12V was on, 3V3 was off, still hold present bit, inst", i, "failed!")
         }
-        
+
         //turn off 12V, turn off 3.3V
         p12vData &= ^(1 << (i % 8))
         err = cpld.CpldWrite(p12vReg + i/8, p12vData)
@@ -231,7 +231,7 @@ func uutPowTest(uutMask uint) (err int) {
             cli.Println("e", "12V was off, 3V3 was off, still hold present bit, inst", i, "failed!")
         }
     }
-    
+
     if errMask > 0 {
         cli.Println("e", "##### UUT Power TEST FAILED! #####")
         err = int(errMask)

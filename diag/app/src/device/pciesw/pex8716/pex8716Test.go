@@ -13,6 +13,10 @@ func pexLpbkConfig() (err int) {
     // Everything is configured based on base port 0
     port = 0
 
+    // Configuration release
+    WriteReg(REG_CONF_RLS, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
+    misc.SleepInSec(1)
+
     //dataBuf := make([]byte, REG_WIDTH)
     pattern0 := uint32(0x11223344)
     pattern1 := uint32(0x55667788)
@@ -33,12 +37,9 @@ func pexLpbkConfig() (err int) {
     // clear [28, 29] => select port0
     WriteReg(PORTCONTROL, 0x01000000, ACC_MODE_TP, port, BYTE_EN_ALL)
 
-    // Configuration release
-    WriteReg(REG_CONF_RLS, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
-    misc.SleepInSec(1)
-
     //set reg 0x230 port 0 master lpbk
     WriteReg(PORTCOMMAND, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
+    misc.SleepInSec(1)
 
     //read back to make sure lpbk is ready
     var i uint = 0
