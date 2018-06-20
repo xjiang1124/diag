@@ -1583,15 +1583,15 @@ FT_STATUS spi_init()
 
     if(is_spi_flash)
     {
-        ftStatus = sendJtagCommand(ftHandle_a, setup_acbus_high, sizeof setup_acbus_high);
+    	if(is_jtag_flash)
+    		ftStatus = sendJtagCommand(ftHandle_a, setup_acbus_low, sizeof setup_acbus_low);
+    	else
+    		ftStatus = sendJtagCommand(ftHandle_a, setup_acbus_high, sizeof setup_acbus_high);
         if (ftStatus != FT_OK)
         {
             return ftStatus;
         }
-        if(is_jtag_flash)
-        	ftStatus = sendJtagCommand(ftHandle, setup_bcbus_high, sizeof setup_bcbus_high);
-        else
-        	ftStatus = sendJtagCommand(ftHandle, setup_bcbus_low, sizeof setup_bcbus_high);
+       	ftStatus = sendJtagCommand(ftHandle, setup_bcbus_low, sizeof setup_bcbus_high);
         if (ftStatus != FT_OK)
         {
             return ftStatus;
