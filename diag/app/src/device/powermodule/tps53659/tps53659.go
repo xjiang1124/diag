@@ -11,6 +11,7 @@ import (
 
     "common/cli"
     "common/errType"
+    "common/misc"
     "hardware/i2cinfo"
     //"hardware/pmbus"
     "protocol/pmbus"
@@ -649,6 +650,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             errCnt = errCnt + 1
             break
         }
+        misc.SleepInUSec(50000)
     }
 
     if errgo = scanner.Err(); errgo != nil {

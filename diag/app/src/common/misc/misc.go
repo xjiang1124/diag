@@ -314,4 +314,12 @@ func SetBits8(orig byte, val byte, startBit uint, numBits uint) (data byte, err 
     return
 }
 
+func ReverseSliceByte(data []byte) {
+    dataLen := len(data)
+    for i:=0; i < dataLen/2; i++ {
+        temp := data[i]
+        data[i] = data[dataLen - i - 1]
+        data[dataLen - i - 1] = temp
+    }
+}
 
