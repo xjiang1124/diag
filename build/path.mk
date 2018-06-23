@@ -6,8 +6,9 @@ COMMON_SRC_DIR=				\
 	dsp/rtc     		\
 	dsp/tempsensor     	\
 	util/devmgr			\
-	util/smbutil 		\
 	util/i2cutil 		\
+	util/rtcutil 		\
+	util/smbutil 		\
 	util/sysmon
 
 COMMON_C_SRC_DIR=		\
