@@ -323,3 +323,15 @@ func ReverseSliceByte(data []byte) {
     }
 }
 
+func GetOnes(data int) (ones int) {
+    ones = data % 10
+    return
+}
+
+func GetTens(data int) (tens int) {
+    tens = (data/10) % 10
+    return
+}
+
+
+
