@@ -7,3 +7,5 @@ mtptest -psu
 mtptest -vrm
 mtptest -mvl
 mtptest -wdt
+mtptest -pcs
+mtptest -present
