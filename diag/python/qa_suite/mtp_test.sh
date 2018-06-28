@@ -9,3 +9,4 @@ mtptest -mvl
 mtptest -wdt
 mtptest -pcs
 mtptest -present
+mtp_pcie_test.sh
