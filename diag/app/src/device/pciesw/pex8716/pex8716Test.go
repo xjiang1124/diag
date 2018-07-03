@@ -33,9 +33,9 @@ func pexLpbkConfig() (err int) {
     WriteReg(TESTPATTERN3, pattern3, ACC_MODE_TP, port, BYTE_EN_ALL)
 
     //write reg 0x208 
-    // set bit[24, 25] 0x10 => Gen3
+    // set bit[24, 25] 10b => Gen3
     // clear [28, 29] => select port0
-    WriteReg(PORTCONTROL, 0x01000000, ACC_MODE_TP, port, BYTE_EN_ALL)
+    WriteReg(PORTCONTROL, 0x02000000, ACC_MODE_TP, port, BYTE_EN_ALL)
 
     //set reg 0x230 port 0 master lpbk
     WriteReg(PORTCOMMAND, 1, ACC_MODE_TP, port, BYTE_EN_ALL)
@@ -109,11 +109,6 @@ func pexTestCheck() (err int) {
             cli.Println("i", "Serdes", i, "UTP passed!")
         }
     }
-    if err == errType.SUCCESS {
-        cli.Println("i", "#### PCIe TEST PASSED! #####")
-    } else {
-        cli.Println("e", "#### PCIe TEST FAILED! #####")
-    }
     return
 }
 
@@ -125,6 +120,7 @@ func pexTestCleanup(port byte) (err int) {
 
 func UTPTest(devName string, duration int) (err int) {
     err = Open(devName)
+    //curDura := 30
     if err != errType.SUCCESS {
         return
     }
@@ -140,7 +136,14 @@ func UTPTest(devName string, duration int) (err int) {
     cli.Println("i", "Wait for", duration, "seconds")
     misc.SleepInSec(duration)
 
-    pexTestCheck()
+    err = pexTestCheck()
+
+    if err == errType.SUCCESS {
+        cli.Println("i", "#### PCIe TEST PASSED! #####")
+    } else {
+        cli.Println("e", "#### PCIe TEST FAILED! #####")
+    }
+
     pexTestStop()
     //pexTestCleanup()
     return
