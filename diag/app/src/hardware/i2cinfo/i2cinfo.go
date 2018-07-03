@@ -32,17 +32,20 @@ var Naples100Tbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
     I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
     I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"VRM_3V3",        "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE", 0},
     I2cInfo {"VRM_HBM",        "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE", 0},
     I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
     I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE", 0},
     I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0},
     I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 2},
+    I2cInfo {"SWITCH",         "MVL6320",   0x0,   0x76,    0x0,    "HUB_NON",  2},
 
-    I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0xA0,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0xA2,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_NONE", 0},
 
-    I2cInfo {"QSFP_2_FRU",     "QSFP",      0x0,   0xA0,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0xA2,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_2_FRU",     "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0x51,    0x0,    "HUB_NONE", 0},
 }
 
 //=========================================
