@@ -39,6 +39,7 @@ func main() {
     //------------------------
     mtpTestPtr  := flag.Bool("mtest", false, "MTP PCIe test")
     durationPtr := flag.Int(  "dura", 10, "Test duration")
+    modePtr     := flag.Int(  "mode", 1, "Test mode: 0 - master lpbk on port 0; 1 - master lpbk on port 1")
     //------------------------
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     flag.Parse()
@@ -113,7 +114,7 @@ func main() {
     }
 
     if *mtpTestPtr == true {
-        pex8716.UTPTest(devName, *durationPtr)
+        pex8716.UTPTest(devName, *durationPtr, *modePtr)
         return
     }
 
