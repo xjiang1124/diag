@@ -7,6 +7,6 @@ mtptest -psu
 mtptest -vrm
 mtptest -mvl
 mtptest -wdt
-mtptest -pcs
 mtptest -present
 mtp_pcie_test.sh
+mtp_pcs_test.sh
