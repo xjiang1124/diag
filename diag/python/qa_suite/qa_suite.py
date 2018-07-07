@@ -151,7 +151,7 @@ if __name__ == "__main__":
         # Check MTP errors
         if args.mode == "MTP_QK":
             print "Checking test result"
-            ret = check_error(filename, 21)
+            ret = check_error(filename, 30)
             if ret != 0:
                 print "=== MTP TEST FAILED! ==="
                 if args.stoponerror == True:

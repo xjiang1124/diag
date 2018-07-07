@@ -10,6 +10,6 @@ MTP_QK:
     TEST_1:
         CMD: mtp_test.sh
         SUDO: FALSE
-        TIMEOUT: 300
+        TIMEOUT: 600
         ENDING: 
 ...
