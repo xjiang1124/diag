@@ -342,6 +342,7 @@ func prstTest() (err int) {
     err = cpld.CpldWrite(0x10, 0x0)
     err = cpld.CpldWrite(0x11, 0x0)
     
+    misc.SleepInUSec(500000)
     nic, err = cpld.CpldRead(0x14)
     for i = 0; i < 8; i++ {
         if nic & uint8(1 << i) > 0 {
