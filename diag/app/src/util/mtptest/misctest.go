@@ -293,7 +293,7 @@ func pcsTest(index uint) (err int) {
     if data >> 14 == 0x3 {
         cli.Println("i", "NIC to MTP PCS is sync'd!")
     } else {
-        cli.Println("e", "NIC to MTP PCS is NOT sync'd! PCS control register is 0x", data)
+        cli.Printf("e", "NIC to MTP PCS is NOT sync'd! PCS control register is 0x%x\n", data)
         err = 1
     }
     // MTP -> nic
@@ -302,9 +302,9 @@ func pcsTest(index uint) (err int) {
     addr = 0x11
     data, _ = utillib.ReadWriteSmi("READ", uint64(phy), uint64(addr), uint16(data), "b")
     if (data & 0x400 > 0) && (data != 0xffff) {
-        cli.Println("i", "NIC to MTP PCS is sync'd!")
+        cli.Println("i", "MTP to NIC PCS is sync'd!")
     } else {
-        cli.Println("e", "MTP to MTP PCS is NOT sync'd! Status register is 0x", data)
+        cli.Printf("e", "MTP to NIC PCS is NOT sync'd! Status register is 0x%x\n", data)
         err = 1
     }
     if err > 0 {
