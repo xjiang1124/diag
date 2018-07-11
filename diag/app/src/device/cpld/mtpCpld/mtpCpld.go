@@ -1,6 +1,6 @@
 package mtpCpld
 
-//#cgo CFLAGS: -I. -I../../../../include
+//#cgo CFLAGS: -I. -I../../../../../include
 //#cgo LDFLAGS: -lacc -lftd2xx
 //#include <acc.h>
 import "C"

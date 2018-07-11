@@ -5,8 +5,8 @@ import (
     "common/misc"
     "common/errType"
 
+    "device/cpld/mtpCpld"
     "device/fanctrl/adt7462"
-    "device/mtpCpld"
 
     "hardware/hwdev"
     "hardware/hwinfo"

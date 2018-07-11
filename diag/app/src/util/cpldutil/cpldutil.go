@@ -3,7 +3,7 @@ package main
 import (
     //"fmt"
     "flag"
-    "device/mtpCpld"
+    "device/cpld/mtpCpld"
 )
 
 func main() {

@@ -2,9 +2,9 @@ package main
 
 import (
     "common/cli"
+    "device/cpld/mtpCpld"
     "common/misc"
     "common/errType"
-    "device/mtpCpld"
     "hardware/hwdev"
     "util/utillib"
     "hardware/i2cinfo"
