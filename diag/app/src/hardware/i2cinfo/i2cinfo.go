@@ -30,11 +30,11 @@ var CurI2cTbl []I2cInfo
 // devAddr is 7-bit address
 var Naples100Tbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
-    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
-    I2cInfo {"VRM_3V3",        "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"VRM_HBM",        "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"VRM_ARM",        "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_CORE_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_CORE_AVDD", "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_3V3",       "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_HBM",       "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_ARM",       "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
     I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE", 0},
     I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0},
     I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE", 0},
@@ -53,10 +53,10 @@ var Naples100Tbl = []I2cInfo {
 // devAddr is 7-bit address
 var NaplesMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
-    I2cInfo {"VRM_CAPRI_DVDD", "TPS53659",  0x0,   0x62,    0x0,    "NIC_HUB",    2},
-    I2cInfo {"VRM_CAPRI_AVDD", "TPS53659",  0x0,   0x62,    0x1,    "NIC_HUB",    2},
-    I2cInfo {"VRM_HBM",        "TPS549A20", 0x0,   0x1b,    0x0,    "NIC_HUB",    2},
-    I2cInfo {"VRM_ARM",        "TPS549A20", 0x0,   0x1C,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"CAP0_CORE_DVDD", "TPS53659",  0x0,   0x62,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"CAP0_CORE_AVDD", "TPS53659",  0x0,   0x62,    0x1,    "NIC_HUB",    2},
+    I2cInfo {"CAP0_HBM",       "TPS549A20", 0x0,   0x1b,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"CAP0_ARM",       "TPS549A20", 0x0,   0x1C,    0x0,    "NIC_HUB",    2},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "NIC_HUB",    2},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "NIC_HUB",    2},
     I2cInfo {"TSENSOR",        "TMP421",    0x0,   0x4C,    0x0,    "NIC_HUB",    2},
