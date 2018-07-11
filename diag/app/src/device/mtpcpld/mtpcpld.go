@@ -1,4 +1,4 @@
-package cpld
+package mtpCpld
 
 //#cgo CFLAGS: -I. -I../../../../include
 //#cgo LDFLAGS: -lacc -lftd2xx

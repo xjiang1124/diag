@@ -3,7 +3,7 @@ package main
 import (
     //"fmt"
     "flag"
-    "device/cpld"
+    "device/mtpCpld"
 )
 
 func main() {
@@ -16,12 +16,12 @@ func main() {
     addrPtr     		:= flag.Uint64("addr",			0x0,   "Register address")
     dataPtr     		:= flag.Uint("data",			0x0,   "Write data")
     ssePtr     			:= flag.Uint("sse",				0x2,   "Size and security bit, set bit 1 indicates 2 bytes access")
-    cpldRdPtr 			:= flag.Bool("cpld-rd",			false, "CPLD register read")
-    cpldWrPtr 			:= flag.Bool("cpld-wr",			false, "CPLD register write")
+    mtpCpldRdPtr 			:= flag.Bool("mtpCpld-rd",			false, "CPLD register read")
+    mtpCpldWrPtr 			:= flag.Bool("mtpCpld-wr",			false, "CPLD register write")
     instPtr     		:= flag.Uint("inst",			0x0,   "CPLD instance")
-//    cpldIdPtr  			:= flag.Bool("cpld-id",			false, "CPLD ID read")
-    cpldFlashRdPtr  	:= flag.Bool("cpld-flash-rd", 	false, "CPLD flash read into an output file")
-    cpldFlashProgPtr   	:= flag.Bool("cpld-flash-prog",	false, "CPLD flash program")
+//    mtpCpldIdPtr  			:= flag.Bool("mtpCpld-id",			false, "CPLD ID read")
+    mtpCpldFlashRdPtr  	:= flag.Bool("mtpCpld-flash-rd", 	false, "CPLD flash read into an output file")
+    mtpCpldFlashProgPtr   	:= flag.Bool("mtpCpld-flash-prog",	false, "CPLD flash program")
     outPutPtr     		:= flag.String("output",    	"",    "Output file name")
     inPutPtr     		:= flag.String("input",    		"",    "Input file name")
     mvlRdPtr  			:= flag.Bool("mvl-rd", 			false, "Marvell switch register read")
@@ -38,52 +38,52 @@ func main() {
     
     
     if *jtagRstPtr == true {
-        cpld.JtagRest(slot)
+        mtpCpld.JtagRest(slot)
         return
     }
 
     if *jtagEnaPtr == true {
-        cpld.JtagEnable(slot)
+        mtpCpld.JtagEnable(slot)
         return
     }
     
     if *jtagWrPtr == true {
-        cpld.JtagWrite(slot, addr, data, sse)
+        mtpCpld.JtagWrite(slot, addr, data, sse)
         return
     }
 
     if *jtagRdPtr == true {
-        cpld.JtagRead(slot, addr, sse)
+        mtpCpld.JtagRead(slot, addr, sse)
         return
     }
     
-    if *cpldWrPtr == true {
-        cpld.CpldWrite(uint8(addr), uint8(data))
+    if *mtpCpldWrPtr == true {
+        mtpCpld.CpldWrite(uint8(addr), uint8(data))
         return
     }
         
-    if *cpldRdPtr == true {
-        cpld.CpldRead(uint8(addr))
+    if *mtpCpldRdPtr == true {
+        mtpCpld.CpldRead(uint8(addr))
         return
     }
 
-    if *cpldFlashRdPtr == true {
-        cpld.CpldFlashRead(inst, *outPutPtr)
+    if *mtpCpldFlashRdPtr == true {
+        mtpCpld.CpldFlashRead(inst, *outPutPtr)
         return
     }
  
-    if *cpldFlashProgPtr == true {
-        cpld.CpldFlashProg(inst, *inPutPtr)
+    if *mtpCpldFlashProgPtr == true {
+        mtpCpld.CpldFlashProg(inst, *inPutPtr)
         return
     }
  
     if *mvlWrPtr == true {
-        cpld.MvlWrite(inst, phy, uint(addr), data)
+        mtpCpld.MvlWrite(inst, phy, uint(addr), data)
         return
     }
         
     if *mvlRdPtr == true {
-        cpld.MvlRead(inst, phy, uint(addr))
+        mtpCpld.MvlRead(inst, phy, uint(addr))
         return
     }
 }

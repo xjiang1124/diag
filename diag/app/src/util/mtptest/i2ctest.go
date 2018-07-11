@@ -6,7 +6,7 @@ import (
     "common/errType"
 
     "device/fanctrl/adt7462"
-    "device/cpld"
+    "device/mtpCpld"
 
     "hardware/hwdev"
     "hardware/hwinfo"
@@ -126,7 +126,7 @@ func fanAlertTest() (err int) {
     fan := "FAN"
 
     // Read Fan controller alert status
-    value, err := cpld.CpldRead(0x5)
+    value, err := mtpCpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
         return
@@ -161,7 +161,7 @@ func fanAlertTest() (err int) {
 
     misc.SleepInSec(1)
 
-    value, err = cpld.CpldRead(0x5)
+    value, err = mtpCpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
         return
@@ -195,7 +195,7 @@ func vrmTest() (err int) {
 }
 
 func stsCheck(psumask uint) (err int) {
-    value, err := cpld.CpldRead(0x3)
+    value, err := mtpCpld.CpldRead(0x3)
     if err != errType.SUCCESS {
         cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
         return
