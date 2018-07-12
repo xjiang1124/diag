@@ -1,6 +1,6 @@
 # Use this command to turn on all UUT 12v
 # Need this to show PSU DC ok is good
-turn_on_uut 1 0
+turn_on_uut.sh 1 0
 
 i2cdetect -y -r 0
 mtptest -fan

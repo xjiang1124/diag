@@ -65,12 +65,12 @@ MTP003:
 MTP004:
     SKIP:
     MODE: MTP_QK
-    TS: pen-hwlab-tel-01
-    TS_PORT: 7045
-    APC_1_NAME: pen-hwlab-apc-02
-    APC_1_PORT: 6
-    APC_2_NAME: pen-hwlab-apc-02
-    APC_2_PORT: 13
+    TS: pen-chamber-01
+    TS_PORT: 7001
+    APC_1_NAME: pen-chamber-apc-01
+    APC_1_PORT: 1
+    APC_2_NAME: pen-chamber-apc-01
+    APC_2_PORT: 2
     IP: 192.168.73.247
     SLOT_1:
     SLOT_2: 
