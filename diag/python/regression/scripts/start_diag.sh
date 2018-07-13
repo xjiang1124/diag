@@ -15,7 +15,7 @@ fi
 # Set up environment
 echo "-------------------"
 echo "Preparing diag environment"
-DIAG_DIR=$(pwd)/diag
+DIAG_DIR=/home/diag/diag
 
 # Prepare all paths
 cat $DIAG_DIR/python/regression/scripts/dft_profile > temp_profile

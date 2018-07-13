@@ -29,7 +29,8 @@ child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/002")
 child.expect("\$ ")
 
 # Enable fan controller
-child.sendline("spi_acc reg 0xe 0x10")
+#child.sendline("spi_acc reg 0xe 0x10")
+child.sendline("cpldutil -cpld-wr -addr=0xe -data=0x10")
 child.expect("\$ ")
 child.sendline("devmgr -dev=fan -faninit")
 child.expect("\$ ")
