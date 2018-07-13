@@ -16,12 +16,12 @@ func main() {
     addrPtr     		:= flag.Uint64("addr",			0x0,   "Register address")
     dataPtr     		:= flag.Uint("data",			0x0,   "Write data")
     ssePtr     			:= flag.Uint("sse",				0x2,   "Size and security bit, set bit 1 indicates 2 bytes access")
-    mtpCpldRdPtr 			:= flag.Bool("mtpCpld-rd",			false, "CPLD register read")
-    mtpCpldWrPtr 			:= flag.Bool("mtpCpld-wr",			false, "CPLD register write")
+    cpldRdPtr 			:= flag.Bool("cpld-rd",			false, "CPLD register read")
+    cpldWrPtr 			:= flag.Bool("cpld-wr",			false, "CPLD register write")
     instPtr     		:= flag.Uint("inst",			0x0,   "CPLD instance")
-//    mtpCpldIdPtr  			:= flag.Bool("mtpCpld-id",			false, "CPLD ID read")
-    mtpCpldFlashRdPtr  	:= flag.Bool("mtpCpld-flash-rd", 	false, "CPLD flash read into an output file")
-    mtpCpldFlashProgPtr   	:= flag.Bool("mtpCpld-flash-prog",	false, "CPLD flash program")
+//    cpldIdPtr  			:= flag.Bool("cpld-id",			false, "CPLD ID read")
+    cpldFlashRdPtr  	:= flag.Bool("cpld-flash-rd", 	false, "CPLD flash read into an output file")
+    cpldFlashProgPtr   	:= flag.Bool("cpld-flash-prog",	false, "CPLD flash program")
     outPutPtr     		:= flag.String("output",    	"",    "Output file name")
     inPutPtr     		:= flag.String("input",    		"",    "Input file name")
     mvlRdPtr  			:= flag.Bool("mvl-rd", 			false, "Marvell switch register read")
@@ -57,22 +57,22 @@ func main() {
         return
     }
     
-    if *mtpCpldWrPtr == true {
+    if *cpldWrPtr == true {
         mtpCpld.CpldWrite(uint8(addr), uint8(data))
         return
     }
         
-    if *mtpCpldRdPtr == true {
+    if *cpldRdPtr == true {
         mtpCpld.CpldRead(uint8(addr))
         return
     }
 
-    if *mtpCpldFlashRdPtr == true {
+    if *cpldFlashRdPtr == true {
         mtpCpld.CpldFlashRead(inst, *outPutPtr)
         return
     }
  
-    if *mtpCpldFlashProgPtr == true {
+    if *cpldFlashProgPtr == true {
         mtpCpld.CpldFlashProg(inst, *inPutPtr)
         return
     }
