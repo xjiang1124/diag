@@ -6,15 +6,15 @@ pen-hwlab-tel-01:
     PASSWD: tslinux
 
 pen-hwlab-tel-02:
-    IP: 192.168.73.166
-    MODEL: TS3000
-    USR: root
-    PASSWD: tslinux
-
-pen-chamber-01:
     IP: 192.168.74.208
     MODEL: CISCO_2900
     USR: admin
     PASSWD: N0isystem$
+
+pen-chamber-01:
+    IP: 192.168.73.166
+    MODEL: TS3000
+    USR: root
+    PASSWD: tslinux
 
 ...

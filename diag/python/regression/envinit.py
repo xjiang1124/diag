@@ -34,7 +34,7 @@ child.sendline("cpldutil -cpld-wr -addr=0xe -data=0x10")
 child.expect("\$ ")
 child.sendline("devmgr -dev=fan -faninit")
 child.expect("\$ ")
-child.sendline("devmgr -dev=fan -speed -pct=40")
+child.sendline("devmgr -dev=fan -speed -pct=75")
 child.expect("\$ ")
 
 child.close()

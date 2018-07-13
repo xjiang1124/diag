@@ -2,8 +2,8 @@
 MTP001:
     SKIP:
     MODE: MTP_QK
-    TS: pen-hwlab-tel-01
-    TS_PORT: 7022
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2008
     APC_1_NAME: pen-hwlab-apc-02
     APC_1_PORT: 9
     APC_2_NAME:
@@ -23,8 +23,8 @@ MTP001:
 MTP002:
     SKIP:
     MODE: MTP_QK
-    TS: pen-hwlab-tel-01
-    TS_PORT: 7023
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2004
     APC_1_NAME: pen-hwlab-apc-02
     APC_1_PORT: 10
     APC_2_NAME:
@@ -44,8 +44,8 @@ MTP002:
 MTP003:
     SKIP:
     MODE: MTP_QK
-    TS: pen-hwlab-tel-01
-    TS_PORT: 7024
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2003
     APC_1_NAME: pen-hwlab-apc-02
     APC_1_PORT: 11
     APC_2_NAME: pen-hwlab-apc-02
