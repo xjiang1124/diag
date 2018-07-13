@@ -1,4 +1,4 @@
-package naples100Cpld
+package cpld
 
 func ReadReg(addr byte) (data byte, err int) {
     data = 1
