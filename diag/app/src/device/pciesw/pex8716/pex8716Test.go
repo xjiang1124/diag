@@ -125,7 +125,7 @@ func pexLpbkConfig(mode int) (err int) {
             rdyFlag = 0x80
         }
 
-        misc.SleepInUSec(1)
+        misc.SleepInUSec(500000)
         data, _ = ReadReg(PORTCOMMAND, ACC_MODE_TP, port, BYTE_EN_ALL)
         if data & rdyFlag != 0 {
             break
@@ -242,7 +242,7 @@ func pexTestCheck(mode int) (err int) {
         dataBuf = misc.U32ToBytes(data)
 
         if dataBuf[3] & syncFlag == 0 {
-            cli.Println("Serdes", i, "UTP is not sync")
+            cli.Println("Serdes", i, "UTPnot synced")
             err = errType.FAIL
             continue
         }
@@ -277,6 +277,18 @@ func UTPTest(devName string, duration int, mode int) (err int) {
     }
 
     pexTestStart(mode)
+
+    cli.Println("i", "Precheck UTP")
+    misc.SleepInSec(1)
+    err = pexTestCheck(mode)
+    if err != errType.SUCCESS {
+        cli.Println("i", "UTP precheck failed, restart UTP test")
+        pexTestStop()
+        misc.SleepInSec(1)
+        pexTestStart(mode)
+    } else {
+        cli.Println("i", "UTP precheck passed")
+    }
 
     cli.Println("i", "Wait for", duration, "seconds")
     misc.SleepInSec(duration)
