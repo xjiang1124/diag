@@ -51,46 +51,16 @@ DSP:
                 VALUE: 1
                 INFO: Iterations for the test
             timeout:
-                VALUE: 15
+                VALUE: 30
                 INFO: Test timeout setting 
             dshid:
                 VALUE: 0
                 INFO: Diag shell ID index
 
-    TEST#PMBUS:
-        INFO: Test PMBus access on each power module
+    TEST#I2C:
+        INFO: Test I2C/SMBus access of each device
         PLATFORM:
-            VIDEO: VENICE ROME
-            NIC: NAPLES100 NICE
+            NIC: NAPLES100
         PRIORITY: NORMAL 
         PARAM:
-            timeout: 
-                VALUE:
-                    ALL: 30
-                    VIDEO: 60
-                    NAPLES100: 90
-                    NAPLES100#ROME: 120
-                INFO: Timeout setting for the test
-            mask:
-                VALUE:
-                    ALL: "0xFF"
-                    VIDEO: "0x1F"
-                INFO: Devices bit mask
-
-    TEST#INTR:
-        INFO: Test power module interrupt signal
-        PLATFORM:
-            VIDEO:
-            NIC: ALL
-        PRIORITY: NORMAL 
-        PARAM:
-            timeout: 
-                VALUE:
-                    ALL: 50
-                INFO:
-            mask:
-                VALUE:
-                    ALL: "0xFF"
-                INFO: Devices bit mask
-
 ...
