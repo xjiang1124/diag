@@ -26,19 +26,19 @@ var UutI2cTbl []I2cInfo
 var CurI2cTbl []I2cInfo
 
 //=========================================
-// Naples100 PMBus table
+// Naples100 I2C table on ARM
 // devAddr is 7-bit address
 var Naples100Tbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
     I2cInfo {"CAP0_CORE_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"CAP0_CORE_AVDD", "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_ARM",       "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
     I2cInfo {"CAP0_3V3",       "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE", 0},
     I2cInfo {"CAP0_HBM",       "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"CAP0_ARM",       "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_CORE_AVDD", "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
     I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE", 0},
     I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0},
     I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 2},
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
 
     I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0x50,    0x0,    "HUB_NONE", 0},
     I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_NONE", 0},
@@ -47,6 +47,11 @@ var Naples100Tbl = []I2cInfo {
     I2cInfo {"QSFP_2_DOM",     "QSFP",      0x0,   0x51,    0x0,    "HUB_NONE", 0},
 }
 
+// Naples100 I2C table on MTP SMBus
+var Naples100MtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
+}
 //=========================================
 // Naples100 PMBus table
 // devAddr is 7-bit address
@@ -129,6 +134,8 @@ func init() {
     uutType := os.Getenv("UUT_TYPE")
     if uutType == "NAPLES_MTP" {
         UutI2cTbl = NaplesMtpTbl
+    } else if uutType == "NAPLES100" {
+        UutI2cTbl = Naples100MtpTbl
     } else if uutType == "UUT_NONE" {
         cli.Println("i", "No need to init UUT I2C table", CardType)
     } else {
