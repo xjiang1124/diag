@@ -27,9 +27,10 @@ var uutName string
 //===============================
 // Naples 
 // Pmbus test list
-var NaplesPmbusTestList = []string {"VRM_CAPRI_DVDD", "VRM_CAPRI_AVDD", "VRM_HBM", "VRM_ARM"}
+var NaplesPmbusTestList = []string {"CAP0_CORE_DVDD", "CAP0_CORE_AVDD", "CAP0_HBM", "CAP0_ARM"}
 // Status display list
-var naplesDispStaList map[string]DispStaFunc
+var naplesMtpDispStaList map[string]DispStaFunc
+var naples100DispStaList map[string]DispStaFunc
 // EEPROM list
 var naplesEepList = []string {"FRU"}
 
@@ -74,13 +75,23 @@ func init() {
     // Can only do map initialization here
 
     //===============================
-    // NIC_POWER
-    naplesDispStaList = make(map[string]DispStaFunc)
-    naplesDispStaList["VRM_CAPRI_DVDD"] = tps53659.DispStatus
-    naplesDispStaList["VRM_CAPRI_AVDD"] = tps53659.DispStatus
-    naplesDispStaList["VRM_HBM"]        = tps549a20.DispStatus
-    naplesDispStaList["VRM_ARM"]        = tps549a20.DispStatus
-    naplesDispStaList["TSENSOR"]    = tmp42123.DispStatus
+    // NAPLES_MTP
+    naplesMtpDispStaList = make(map[string]DispStaFunc)
+    naplesMtpDispStaList["CAP0_CORE_DVDD"] = tps53659.DispStatus
+    naplesMtpDispStaList["CAP0_CORE_AVDD"] = tps53659.DispStatus
+    naplesMtpDispStaList["VRM_HBM"]        = tps549a20.DispStatus
+    naplesMtpDispStaList["VRM_ARM"]        = tps549a20.DispStatus
+    naplesMtpDispStaList["TSENSOR"]    = tmp42123.DispStatus
+
+    //===============================
+    // NAPLES100
+    naples100DispStaList = make(map[string]DispStaFunc)
+    naples100DispStaList["CAP0_CORE_DVDD"] = tps53659.DispStatus
+    naples100DispStaList["CAP0_CORE_AVDD"] = tps53659.DispStatus
+    naples100DispStaList["CAP0_3V3"]        = tps549a20.DispStatus
+    naples100DispStaList["CAP0_HBM"]        = tps549a20.DispStatus
+    naples100DispStaList["CAP0_ARM"]        = tps549a20.DispStatus
+    naples100DispStaList["TSENSOR"]    = tmp42123.DispStatus
 
     //===============================
     // MTP
@@ -120,8 +131,8 @@ func init() {
     // Dictionaries for all platforms
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
-    dispMap["NAPLES100"] = naplesDispStaList
-    dispMap["NAPLES_MTP"]= naplesDispStaList
+    dispMap["NAPLES100"] = naples100DispStaList
+    dispMap["NAPLES_MTP"]= naplesMtpDispStaList
     dispMap["MTP"]       = mtpDispStaList
     dispMap["NIC_POWER"] = nicPwrDispStaList
 

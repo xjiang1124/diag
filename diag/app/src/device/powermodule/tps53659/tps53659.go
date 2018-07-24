@@ -385,74 +385,42 @@ func DispStatus(devName string) (err int) {
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    //cli.Println("i", "--------------------")
+    //cli.Println("i", "0.00.00.00.00.00.0--")
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
     dig, frac, _ := ReadVboot(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadPout(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVout(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadIout(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadPin(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVin(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadIin(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadTemp(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     status, _ := ReadStatus(devName)
@@ -687,7 +655,7 @@ func Info(devName string) (err int) {
     }
     sort.Strings(keys)
 
-    cli.Println("i", "--------------------")
+    cli.Println("i", "0.00.00.00.00.00.0--")
     outKey = fmt.Sprintf("%-14s ", "Device")
     outValue = fmt.Sprintf("%-14s ", devName)
     for _, k := range(keys) {
