@@ -1,7 +1,7 @@
-COMMON_SRC_DIR=				\
+COMMON_SRC_DIR=			\
 	diagmgr 			\
 	dsp/pcieh   		\
-	dsp/pmbus   		\
+	dsp/i2c   			\
 	dsp/qsfp    		\
 	dsp/rtc     		\
 	dsp/tempsensor     	\

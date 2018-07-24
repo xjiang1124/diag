@@ -40,7 +40,7 @@
 ---
 DSP: 
     NAME: PMBUS
-    INFO: DSP for all PMBus devices
+    INFO: DSP for all I2C/PMBus devices
     TYPE: DEV
 
     # Properties apply to all platforms
