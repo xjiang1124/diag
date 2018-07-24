@@ -60,7 +60,7 @@ DSP:
     TEST#I2C:
         INFO: Test QSFP I2C bus
         PLATFORM:
-            NIC: NAPLES
+            NIC: NAPLES100
         PRIORITY: NORMAL 
         PARAM:
             timeout: 
@@ -72,10 +72,10 @@ DSP:
                     ALL: "0x3"
                 INFO: Devices bit mask
 
-    CMD#laseren:
+    CMD#laser_en:
         INFO: Enable optical module laser
         PLATFORM:
-            NIC: NAPLES
+            NIC: NAPLES100
         PRIORITY: NORMAL
         PARAM:
             inst:
@@ -83,4 +83,9 @@ DSP:
                     ALL: 0
                 INFO: Devices instance index
 
+    CMD#present:
+        INFO: Display QSFP present status
+        PLATFORM:
+            NIC: NAPLES100
+        PARAM:
 ...

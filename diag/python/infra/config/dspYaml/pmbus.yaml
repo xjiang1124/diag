@@ -13,12 +13,12 @@
 # 3. If platform name is specified, setting applies to all cards under the specific
 #    DSP. 
 # 4. Multiple card names can be used on the same setting separated by "#"
-# 5. Previous setting is overwritting by later ones, e.g. NAPLES timeout first got 
+# 5. Previous setting is overwritting by later ones, e.g. NAPLES100 timeout first got 
 #    set to 30 and change to 60 after evaluating the next line.
 #    timeout:
 #       VALUE:
 #           ALL:30
-#           NAPLES:60
+#           NAPLES100:60
 #
 # PRIORTY:
 # Three levels of priority are supported
@@ -61,15 +61,15 @@ DSP:
         INFO: Test PMBus access on each power module
         PLATFORM:
             VIDEO: VENICE ROME
-            NIC: NAPLES NICE
+            NIC: NAPLES100 NICE
         PRIORITY: NORMAL 
         PARAM:
             timeout: 
                 VALUE:
                     ALL: 30
                     VIDEO: 60
-                    NAPLES: 90
-                    NAPLES#ROME: 120
+                    NAPLES100: 90
+                    NAPLES100#ROME: 120
                 INFO: Timeout setting for the test
             mask:
                 VALUE:
