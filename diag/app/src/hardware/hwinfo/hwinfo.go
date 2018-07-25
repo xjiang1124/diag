@@ -26,8 +26,6 @@ var uutName string
 
 //===============================
 // Naples 
-// Pmbus test list
-var NaplesPmbusTestList = []string {"CAP0_CORE_DVDD", "CAP0_CORE_AVDD", "CAP0_HBM", "CAP0_ARM"}
 // Status display list
 var naplesMtpDispStaList map[string]DispStaFunc
 var naples100DispStaList map[string]DispStaFunc

@@ -1,8 +1,8 @@
 package tmp42123
 
 const (
-    MFG_ID_V = 0x55
-    DEV_ID_V = 0x22
+    MFG_ID_V byte = 0x55
+    DEV_ID_V byte = 0x22
 )
 
 const (

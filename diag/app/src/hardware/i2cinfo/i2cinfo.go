@@ -38,7 +38,6 @@ var Naples100Tbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE", 0},
     I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0},
     I2cInfo {"TEMP_SENSOR",    "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE", 0},
-    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
 
     I2cInfo {"QSFP_1_FRU",     "QSFP",      0x1,   0x50,    0x0,    "HUB_NONE", 0},
     I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_NONE", 0},
