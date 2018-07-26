@@ -85,6 +85,12 @@ func ReadFieldUpper(devName string, field string, page byte) (data []byte, err i
     return
 }
 
+func ReadId(devName string) (id byte, err int) {
+    data, err := ReadFieldUpper(devName, "ID", 1)
+    id = data[0]
+    return
+}
+
 func LaserEnDis(devName string, enDis int) (err int) {
     var data byte
 

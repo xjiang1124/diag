@@ -3,6 +3,7 @@ package hwinfo
 import (
     "os"
 
+    //"device/cpld/naples100Cpld"
     "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
@@ -21,16 +22,43 @@ type I2cHubInfo struct {
     channel byte
 }
 
+type QsfpInfo_t struct {
+    DevName    string
+    ModRstReg  int
+    ModRstBit  int
+    LpReg      int
+    LpBit      int
+    PrstReg    int
+    PrstBit    int
+    IntrReg    int
+    IntrBit    int
+    PrstIntReg int
+    PrstIntBit int
+    RmIntReg   int
+    RmIntBit   int
+}
+
 var cardType string
 var uutName string
 
 //===============================
-// Naples 
+// Naples100 
 // Status display list
 var naplesMtpDispStaList map[string]DispStaFunc
 var naples100DispStaList map[string]DispStaFunc
+
+// I2C hub map -- dummy
+var naples100I2cHubMap map[string] I2cHubInfo
+
 // EEPROM list
 var naplesEepList = []string {"FRU"}
+
+// QSFP table
+var naples100QsfpTbl = []QsfpInfo_t {
+    //          devName   modRstReg modRstBit lpReg lpBit prstReg prstBit intrReg intrBit prstIntReg prstIntBit rmIntReg rmIntBit
+    QsfpInfo_t {"QSFP_1", 0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
+    QsfpInfo_t {"QSFP_2", 0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
+}
 
 //===============================
 // MTP
@@ -68,6 +96,8 @@ var I2cHubMap map[string] I2cHubInfo
 var I2cHubList []string
 // PSU list
 var PsuList []string
+// QSFP table
+var QsfpTbl []QsfpInfo_t
 
 func init() {
     // Can only do map initialization here
@@ -91,6 +121,9 @@ func init() {
     naples100DispStaList["CAP0_ARM"]        = tps549a20.DispStatus
     naples100DispStaList["TSENSOR"]    = tmp42123.DispStatus
 
+    // Dummy I2C hub map
+    naples100I2cHubMap = make(map[string]I2cHubInfo)
+
     //===============================
     // MTP
     mtpDispStaList = make(map[string]DispStaFunc)
@@ -113,8 +146,10 @@ func init() {
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
     naplesMtpI2cHubList := []string{"NIC_HUB"}
+    naples100I2cHubList := []string{"NIC_NONE"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
+    naples100PsuList := []string{"PSU_NONE"}
 
 
     //===============================
@@ -135,38 +170,49 @@ func init() {
     dispMap["NIC_POWER"] = nicPwrDispStaList
 
     // Pmbus test list
-    pmbusTestMap = make(map[string][]string)
-    pmbusTestMap["NAPLES100"] = NaplesPmbusTestList
-    pmbusTestMap["NAPLES_MTP"] = NaplesPmbusTestList
+    //pmbusTestMap = make(map[string][]string)
+    //pmbusTestMap["NAPLES100"] = NaplesPmbusTestList
+    //pmbusTestMap["NAPLES_MTP"] = NaplesPmbusTestList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
-    eepromMap["NAPLES100"] = naplesEepList
-    eepromMap["NAPLES_MTP"] = naplesEepList
     eepromMap["MTP"]    = mtpEepList
+    eepromMap["NAPLES_MTP"] = naplesEepList
+    eepromMap["NAPLES100"] = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
+    i2cHubMap["NAPLES100"] = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"] = mtpI2cHubList
     i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
+    i2cHubListMap["NAPLES100"] = naples100I2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
     psuListMap["MTP"] = mtpPsuList
-
+    psuListMap["NAPLES100"] = naples100PsuList
 
     //===============================
     // Platform specified list
     // Remark: map may not support all platforms
     cardType = os.Getenv("CARD_TYPE")
     DispStaList, _   = dispMap[cardType]
-    PmbusTestList, _ = pmbusTestMap[cardType]
+    //PmbusTestList, _ = pmbusTestMap[cardType]
     EepromList, _    = eepromMap[cardType]
     I2cHubMap, _     = i2cHubMap[cardType]
     I2cHubList, _    = i2cHubListMap[cardType]
     PsuList, _       = psuListMap[cardType]
+
+    //===============================
+    // Use switch case to avoid dummy data structure
+    switch cardType {
+    case "NAPLES100":
+        QsfpTbl = naples100QsfpTbl
+    default:
+        // Do nothing
+    }
 }
 

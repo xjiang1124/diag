@@ -8,8 +8,15 @@ type qsfpPage_t struct {
 
 // Laser enable/disable
 const (
-    ENABLE  = 0
-    DISABLE = 1
+    ENABLE  = 1
+    DISABLE = 0
+)
+
+// QSFP Identifier
+// SFF-8024
+const (
+    ID_QSFP_P byte = 0xD
+    ID_QSFP28 byte = 0x11
 )
 
 var lowerPage = []qsfpPage_t {

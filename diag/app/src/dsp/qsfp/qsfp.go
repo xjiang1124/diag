@@ -1,12 +1,12 @@
 package main
 
 import (
-    "config"
-    "flag"
+    //"flag"
 
     "common/diagEngine"
     "common/dcli"
-    "common/errType"
+    //"common/errType"
+    "config"
 )
 
 //========================================================
@@ -16,49 +16,30 @@ const (
     dspName = "QSFP"
 )
 
-func QsfpI2CHdl(argList []string) {
-    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-    maskPtr := fs.Int("mask", 0x3, "Devices bit mask")
+var naples100QsfpList = []string {"QSFP_1", "QSFP_2"}
+var qsfpTestList []string
 
-    err := fs.Parse(argList)
-    if err != nil {
-        dcli.Println("f", "Parse failed", err)
-    }
+//var qsfpTestMap map[string][]string
 
-    // To avoid compile error: variable not used
-    // Need to remove after implementing DSP handler
-    dcli.Println("t", "mask", *maskPtr)
+func init() {
+    cardInfo := diagEngine.GetCardInfo()
+    cardType := cardInfo.CardType
 
-    // Inform diag engine that test handler is done
-    // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.SUCCESS
-    return
-}
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
 
-func QsfpLaserenHdl(argList []string) {
-    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-    instPtr := fs.Int("inst", 0, "Devices bit mask")
+    qsfpTestMap := make(map[string][]string)
+    qsfpTestMap["NAPLES100"] = naples100QsfpList
 
-    err := fs.Parse(argList)
-    if err != nil {
-        dcli.Println("f", "Parse failed", err)
-    }
-
-    // To avoid compile error: variable not used
-    // Need to remove after implementing DSP handler
-    dcli.Println("t", "inst", *instPtr)
-
-    // Inform diag engine that test handler is done
-    // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.SUCCESS
-    return
+    qsfpTestList = qsfpTestMap[cardType]
 }
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
     diagEngine.FuncMap["I2C"] = QsfpI2CHdl
-    diagEngine.FuncMap["laseren"] = QsfpLaserenHdl
+    diagEngine.FuncMap["laser_en"] = QsfpLaser_EnHdl
+    diagEngine.FuncMap["laser_dis"] = QsfpLaser_DisHdl
+    diagEngine.FuncMap["present"] = QsfpPresentHdl
 
-    dcli.Init("log_"+dspName+".txt", config.OutputMode)
+    //dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()
