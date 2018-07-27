@@ -29,7 +29,7 @@ var CurI2cTbl []I2cInfo
 // Naples100 I2C table on ARM
 // devAddr is 7-bit address
 var Naples100Tbl = []I2cInfo {
-    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    //       name              comp         Bus    devAddr  page    HubName     HubPort 
     I2cInfo {"CAP0_CORE_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
     I2cInfo {"CAP0_ARM",       "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
     I2cInfo {"CAP0_3V3",       "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE", 0},
