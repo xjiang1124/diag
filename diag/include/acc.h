@@ -169,7 +169,7 @@ FT_STATUS mdio_wr(DWORD instance, DWORD dev_addr, DWORD offset, DWORD data);
 FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data);
 unsigned int cpld_program(char* file_name);
 unsigned int cpld_read(char* file_name);
-
+void handle_close();
 
 extern char*	lock_file;
 extern int		lock_fd;

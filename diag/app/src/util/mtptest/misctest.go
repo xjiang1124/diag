@@ -290,7 +290,7 @@ func pcsTest(index uint) (err int) {
     phy = (index % 5) + 0x10
     addr = 0x1
     data, _ = mtpCpld.MvlRead(inst, phy, uint(addr))
-    if data >> 14 == 0x3 {
+    if (data >> 14 == 0x3) && (data != 0xffff) {
         cli.Println("i", "NIC to MTP PCS is sync'd!")
     } else {
         cli.Printf("e", "NIC to MTP PCS is NOT sync'd! PCS control register is 0x%x\n", data)

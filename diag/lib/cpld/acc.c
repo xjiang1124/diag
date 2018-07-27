@@ -1908,8 +1908,12 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 			ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
 	}
 	else
+	{
 		//send out MPSSE command to MPSSE engine
 		ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+		if(!dwNumBytesSent || !dwNumBytesRead)
+			ftStatus |= 0x80;
+	}
 //	ftStatus = FT_Read(ftHandle, OutputBuffer, dwNumBytesSent, &dwNumBytesRead);
 //	for(int i = 0; i < dwNumBytesSent; i++ )
 //		printf("0x%x ", OutputBuffer[i]);
@@ -2236,17 +2240,39 @@ FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data)
 	FT_STATUS       ftStatus = FT_OK;
     BYTE			data_lo = 0;
     BYTE			data_hi = 0;
+    BYTE			max_retry = 3;
 
+retry:
 	ftStatus = spi_wr((MDIO_INST0_CRTL_HI_REG + instance * 4), offset);
 	ftStatus |= spi_wr((MDIO_INST0_CRTL_LO_REG + instance * 4), (dev_addr << 3) | MDIO_RD_ENA | MDIO_ACC_ENA);
 	ftStatus |= spi_wr((MDIO_INST0_CRTL_LO_REG + instance * 4), 0);
 	ftStatus |= spi_rd((MDIO_INST0_DATA_LO_REG + instance * 4), &data_lo);
 	ftStatus |= spi_rd((MDIO_INST0_DATA_HI_REG + instance * 4), &data_hi);
 	*data = data_hi << 8 | data_lo;
+	if((ftStatus & 0x80) && max_retry--)
+	{
+		handle_close();
+		spi_init();
+		goto retry;
+	}
     if (ftStatus != FT_OK)
     {
     	printf("spi write failed!\n");
     }
 
 	return ftStatus;
+}
+
+void handle_close()
+{
+    if(ftHandle_a)
+    {
+    	FT_Close(ftHandle_a);
+    	ftHandle_a = NULL;
+    }
+    if(ftHandle)
+    {
+    	FT_Close(ftHandle);
+    	ftHandle = NULL;
+    }
 }
