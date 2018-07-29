@@ -7,7 +7,7 @@ import (
 )
 
 // #cgo CFLAGS: -I../../../../lib/i2csim/
-// #cgo LDFLAGS: /home/xguo2//workspace/psdiag/diag/app/pkg/linux_arm64/common/libi2csim.a
+// #cgo LDFLAGS: /home/xguo2//workspace/psdiag/diag/app/pkg/linux_arm64/clib/libi2csim.a
 // #include <stdlib.h>
 // #include "../../../../lib/i2csim/i2csim.h"
 import "C"
