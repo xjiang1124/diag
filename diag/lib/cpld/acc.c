@@ -54,8 +54,9 @@ BYTE 	OutputBuffer[512];
 DWORD	dwNumBytesToSend = 0;
 DWORD	dwNumBytesSent  = 0;
 DWORD 	dwNumBytesRead;
-BYTE	signature_prefix = 0xAB;
-BYTE	signature_surfix = 0xBA;
+BYTE	signature_prefix 	= 0xAB;
+BYTE	signature_surfix 	= 0xBA;
+BYTE	signature_failure 	= 0xBB;
 
 BYTE	is_spi_flash	= 0;
 BYTE	is_jtag_flash	= 0;
@@ -278,25 +279,6 @@ void jtag_wr_instruction(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
 	cpu_wr[12] = (data >> 12) & 0xFF;
 	cpu_wr[13] = (data >> 20) & 0xFF;
 	cpu_wr[14] = (JTAG_WR_OP & 0x3) << 4 | ((data >> 28) & 0xF);
-//	cpu_wr[5] = 0;
-//	DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
-//	cpu_wr[6] = (address & 0xF) << 4 | (size) << 2 | (flag & 0x1);
-//	cpu_wr[7] = (address >> 4) & 0xFF;
-//	cpu_wr[8] = (address >> 12) & 0xFF;
-//	cpu_wr[9] = (address >> 20) & 0xFF;
-//	//hard code hbm address 2'b0
-//	cpu_wr[10] = (data & 0x3) | ((address >> 28) & 0xFF);
-//	cpu_wr[11] = (data >> 2) & 0xFF;
-//	cpu_wr[12] = (data >> 10) & 0xFF;
-//	cpu_wr[13] = (data >> 18) & 0xFF;
-//	cpu_wr[14] = (JTAG_WR_OP & 0x3) << 6 | ((data >> 26) & 0x3FF);
-
-//	printf("write: ");
-//	for(int i = 0; i < 15; i++)
-//	{
-//		printf("0x%x ", cpu_wr[i]);
-//	}
-//	printf("\n");
 }
 
 void jtag_rd_instruction(DWORD inst, ULONGLONG address, DWORD flag)
@@ -315,28 +297,6 @@ void jtag_rd_instruction(DWORD inst, ULONGLONG address, DWORD flag)
 	cpu_rd[8] = (address >> 14) & 0xFF;
 	cpu_rd[9] = (address >> 22) & 0xFF;
 	cpu_rd[10] = (JTAG_RD_OP & 0x3) << 4 | ((address >> 30) & 0xF);
-//	cpu_rd[5] = 0;
-//	DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
-//	cpu_rd[6] = (address & 0xF) << 4 | (size & 0x3) << 2 | (flag & 0x1);
-//	cpu_rd[7] = (address >> 4) & 0xFF;
-//	cpu_rd[8] = (address >> 12) & 0xFF;
-//	cpu_rd[9] = (address >> 20) & 0xFF;
-//	//hard code hbm address 2'b0
-//	cpu_rd[10] = (JTAG_RD_OP & 0x3) << 6 | ((address >> 28) & 0x3FF);
-//	printf("read: ");
-//	for(int i = 0; i < 10; i++)
-//	{
-//		printf("0x%x ", cpu_rd[i]);
-//	}
-//	printf("\n");
-
-//	cpu_rd[4] = (JTAG_RD_CMD & 0x3) << 2 | (slot & 0x300) >> 8;
-//	cpu_rd[5] = JTAG_RD_OP & 0xFF;
-//	cpu_rd[6] = (address & 0x3) << 6 | ((JTAG_RD_OP >> 8) & 0xFF);
-//	cpu_rd[7] = (address >> 2) & 0xFF;
-//	cpu_rd[8] = (address >> 10) & 0xFF;
-//	cpu_rd[9] = (address >> 18) & 0xFF;
-//	cpu_rd[10] = (address >> 26) & 0xFF;
 }
 
 void jtag_res_instruction(DWORD inst)
@@ -355,14 +315,6 @@ void jtag_res_instruction(DWORD inst)
 	cpu_res[10] = 0;
 	cpu_res[11] = 0;
 	cpu_res[12] = 0;
-
-
-//	printf("response: ");
-//	for(int i = 0; i < 10; i++)
-//	{
-//		printf("0x%x ", cpu_res[i]);
-//	}
-//	printf("\n");
 }
 
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
@@ -405,13 +357,19 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     {
         return ftStatus;
     }
-//temporary ignore valid bit
-    queue_read(ftHandle, &data);
-//    ftStatus = queue_read(ftHandle, &data);
-//    if(ftStatus != FT_OK)
-//    {
-//    	printf("Write response is not valid!\n");
-//    }
+
+    ftStatus = queue_read(ftHandle, &data);
+    if(ftStatus == 1)
+    	printf("Read failed due to other reason!\n");
+    else if(ftStatus == 4)
+    	printf("Read failed due to operation failed!\n");
+
+    //test only
+    if(ftStatus == 3)
+    {
+    	printf("return 3\n");
+    	ftStatus = 0;
+    }
 
     return ftStatus;
 }
@@ -1072,7 +1030,7 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
     struct timeval  startTime;
     int             journeyDuration = 1;
     unsigned char  *readBuffer = NULL;
-    int sof = 0, eof = 0;
+    int sof = 0, eof = 0, pre_failure = 0;
 
     gettimeofday(&startTime, NULL);
 
@@ -1144,6 +1102,8 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 					if(buffer[f] == signature_prefix)
 					{
 						sof = 1;
+						if(buffer[f] == signature_failure)
+							pre_failure = 1;
 						if(f + 7 < count + bytesRead)
 						{
 							if(buffer[f + 7] == signature_surfix)
@@ -1213,12 +1173,20 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 //	}
 //	printf("\n");
 
+	if(pre_failure == 1)
+	{
+		printf("Previous operation failed!\n");
+		return 4;
+	}
+
 	//check valid bit is set and error bits are clean
 	if((v_data&0x1) && !((v_data&0x6) >> 1))
 	{
 		return 0;
 	} else
+	{
 		return 3;
+	}
 
 corrupt:
 	printf("\nFailure. Frame was corrupted\n");
@@ -2251,7 +2219,7 @@ retry:
 	*data = data_hi << 8 | data_lo;
 	if((ftStatus & 0x80) && max_retry--)
 	{
-		handle_close();
+		ftHandle_close();
 		spi_init();
 		goto retry;
 	}
@@ -2263,7 +2231,7 @@ retry:
 	return ftStatus;
 }
 
-void handle_close()
+void ftHandle_close()
 {
     if(ftHandle_a)
     {
