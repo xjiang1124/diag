@@ -1,34 +1,17 @@
-SHELL := /bin/bash
+TOP_DIR=../../../../../
+include $(TOP_DIR)/build/common.mk
 
-BUILD_DIR = $(shell pwd)
-TOP_DIR = "$(shell dirname $(BUILD_DIR))"
+#BUILD_DIR = $(shell pwd)
+MODULE_NAME=$(shell basename $(BUILD_DIR))
 
-GO_CMD=go
-GO_BUILD=$(GO_CMD) build
-GO_INSTALL=$(GO_CMD) install
-GO_TEST=$(GO_CMD) test
-#GOPATH=$(TOP_DIR)/diag/go
-#CGO_LDFLAGS=-L$(GOPATH)/pkg/linux_amd64/common
+.PHONY: all
 
-#C
-CC_ARM_64=aarch64-linux-gnu-gcc
-CC_ARM_32=arm-linux-gnueabi-gcc
-CC_X86=gcc
+all:
+	env GOOS=linux GOARCH=${ARCH} CGO_LDFLAGS=$(CGO_LDFL) GOBIN=$(GOBN) CGO_ENABLED=1 CC=$(CMPL) $(GO_BUILD) -o arch_${ARCH}/$(MODULE_NAME)
+	@mkdir -p $(GOBN)/linux_${ARCH}/util/
+	@cp arch_${ARCH}/$(MODULE_NAME) $(GOBN)/linux_${ARCH}/util/
 
-# The name of the executable (default is current directory name)
-TARGET := $(shell echo $${PWD\#\#*/})
-.DEFAULT_GOAL: $(TARGET)
+clean:
+	rm -f arch_${ARCH}/$(MODULE_NAME)
+	rm -f $(GOBN)/${ARCH}/dsp/$(MODULE_NAME)
 
-# These will be provided to the target
-VERSION := 1.0.0
-BUILD := `git rev-parse HEAD`
-
-# Use linker flags to provide version/build settings to the target
-LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
-
-.PHONY: all build clean install uninstall fmt simplify check run
-
-all: check install
-
-arm_64_go_build:
-	env GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=$(CC_ARM_64) $(GO_BUILD) -x --ldflags '-linkmode=external -extldflags "-no-pie"' -o linkc
