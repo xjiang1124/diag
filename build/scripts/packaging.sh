@@ -61,6 +61,7 @@ cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 
 # Version
 git log --name-status HEAD^..HEAD > $TEMP_DIR/scripts/version.txt
+git status >> $TEMP_DIR/scripts/version.txt
 
 # ARM specified files
 
