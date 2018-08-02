@@ -3,12 +3,14 @@ package hwinfo
 import (
     "os"
 
-    //"device/cpld/naples100Cpld"
+    "device/board"
     "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/psu/pet1600"
     "device/tempsensor/tmp42123"
+    
+    "gopkg.in/yaml.v2"
 )
 
 const (
@@ -46,6 +48,8 @@ var uutName string
 // Status display list
 var naplesMtpDispStaList map[string]DispStaFunc
 var naples100DispStaList map[string]DispStaFunc
+//var CpldInfo Naples100info.Naples100Cpld_T
+var CpldInfo interface{}
 
 // I2C hub map -- dummy
 var naples100I2cHubMap map[string] I2cHubInfo
@@ -211,6 +215,9 @@ func init() {
     switch cardType {
     case "NAPLES100":
         QsfpTbl = naples100QsfpTbl
+        var t Naples100info.Naples100Cpld_T
+        yaml.Unmarshal([]byte(Naples100info.Naples100Cpld), &t)
+        CpldInfo = &t
     default:
         // Do nothing
     }
