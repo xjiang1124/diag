@@ -73,7 +73,7 @@ DSP:
     TEST#GPIO:
         INFO: Test GPIO pins between CPLD and Capri
         PLATFORM:
-            NIC: NAPLESi100
+            NIC: NAPLES100
         PRIORITY: NORMAL 
         PARAM:
 
