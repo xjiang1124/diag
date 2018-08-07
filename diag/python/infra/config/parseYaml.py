@@ -284,7 +284,13 @@ for filename in filenames_true:
     #fmt_sep_1 = '#----------------------------------\n'
     fmt_sep = '\n'
     fmt_sep_1 = ''
-    
+     
+    # DSP List: SADD DSP_LIST:CARD_NAME DSP_NAME
+    fmt_redis_dsp_list = 'SADD DSP_LIST:{} {}\n'
+
+    # TEST/CMD List: SADD TEST_LIST:CARD_NAME:DSP_NAME:DSP TEST_NAME
+    fmt_redis_test_list = 'SADD TEST_LIST:{}:{}:{} {}\n'
+  
     # DSP: SADD CARD_NAME:DSP DSP_NAME
     fmt_redis_dsp_all = 'SADD DSP:{} {}\n'
     
@@ -308,18 +314,26 @@ for filename in filenames_true:
     
     # PARAM INFO: HSET CARD_NAME:DSP_NAME:TEST_NAME:PARAM PARAM_NAME PARAM_VALUE
     fmt_redis_param_info = 'HSET PARAM:INFO:{}:{}:{} {} \"{}\"\n'
-    
+
+    # Output file
+    fmt_output_file = '{}_{}.redis'
+    fmt_dsplist_file = '{}_config.redis'
+   
     #=========================================================
     # Output to file
     # file naming convention
     # cardName_dspName.redis
-    fmt_output_file = '{}_{}.redis'
     create_folder(output_path)
     for dsp_card, dsp in r_dsp_dict.items():
         card = dsp_card.split('#')[0]
+
         output_file = output_path + fmt_output_file.format(card, dsp)
         f = open(output_file, 'w')
-    
+
+        dsplist_file = output_path + fmt_dsplist_file.format(card)
+        f_cfg = open(dsplist_file, 'a+')
+
+
         # DSP
         output_str = fmt_redis_dsp_all.format(card, dsp)
         f.write(output_str)# DSP INFO
@@ -351,6 +365,10 @@ for filename in filenames_true:
                 output_str = fmt_redis_test_info.format(test_type, card, dsp, test, test_info)
                 f.write(output_str)
     
+                # DSP list
+                output_str = fmt_redis_dsp_list.format(card, dsp)
+                f_cfg.write(output_str)
+
                 # PARAM
                 for param_card, param_v in r_test_param_dict.items():
                     card_p = param_card.split('#')[0]
@@ -369,6 +387,7 @@ for filename in filenames_true:
     
     
         f.close()
+        f_cfg.close()
         
     
     #=========================================================

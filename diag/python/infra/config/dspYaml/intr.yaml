@@ -60,7 +60,7 @@ DSP:
     TEST#ADVDD:
         INFO: Test INTR on AVDD and DVDD
         PLATFORM:
-            NIC: NAPLES100
+            NIC:
         PRIORITY: NORMAL 
         PARAM:
 ...

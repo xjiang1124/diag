@@ -1,14 +1,14 @@
 # Use this command to turn on all UUT 12v
 # Need this to show PSU DC ok is good
 version
-devmgr -dev=fan -speed -pct=75
+devmgr -dev=fan -speed -pct=40
 turn_on_uut.sh 1 0
 
 sensors
 i2cdetect -y -r 0
 mtptest -fan
 mtptest -fanspd
-devmgr -dev=fan -speed -pct=75
+devmgr -dev=fan -speed -pct=40
 mtptest -fantmp
 mtptest -psu
 mtptest -vrm

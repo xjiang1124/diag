@@ -33,7 +33,7 @@ func init() {
 }
 
 func getDspList() []string {
-    dspList, err := diagEngine.RedisClient.SMembers("DSP:"+cardName).Result()
+    dspList, err := diagEngine.RedisClient.SMembers("DSP_LIST:"+cardType).Result()
     diagEngine.CheckRedisErr(err)
 
     // Remove diagmgr from the list

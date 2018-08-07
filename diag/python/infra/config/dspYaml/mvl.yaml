@@ -13,12 +13,12 @@
 # 3. If platform name is specified, setting applies to all cards under the specific
 #    DSP. 
 # 4. Multiple card names can be used on the same setting separated by "#"
-# 5. Previous setting is overwritting by later ones, e.g. NAPLES100 timeout first got 
+# 5. Previous setting is overwritting by later ones, e.g. MTP timeout first got 
 #    set to 30 and change to 60 after evaluating the next line.
 #    timeout:
 #       VALUE:
 #           ALL:30
-#           NAPLES100:60
+#           MTP:60
 #
 # PRIORTY:
 # Three levels of priority are supported
@@ -59,7 +59,7 @@ DSP:
     TEST#ACC:
         INFO: Test switch accessibility
         PLATFORM:
-            NIC: NAPLES100
+            MTP: MTP
         PRIORITY: NORMAL 
         PARAM:
             timeout: 
@@ -70,7 +70,7 @@ DSP:
     TEST#PRBS:
         INFO: Run PRBS on switch ports with internal/external loopback
         PLATFORM:
-            NIC: NAPLES100
+            MTP: MTP
         PRIORITY: NORMAL 
         PARAM:
             timeout: 
@@ -89,7 +89,7 @@ DSP:
     TEST#TRF:
         INFO: Run traffic test on switch with internal/external loopback
         PLATFORM:
-            NIC: NAPLES100
+            MTP: MTP
         PRIORITY: NORMAL 
         PARAM:
             timeout: 
@@ -108,7 +108,7 @@ DSP:
     TEST#LED:
         INFO: Turn on/off/blink status and activity LEDs
         PLATFORM:
-            NIC: NAPLES100
+            MTP: MTP
         PRIORITY: NORMAL 
         PARAM:
             timeout: 

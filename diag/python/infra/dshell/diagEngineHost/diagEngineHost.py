@@ -4,6 +4,7 @@ import redis
 import logging
 from time import sleep
 from errType import errType
+from inspect import currentframe, getframeinfo
 
 #==========================================================
 # Class implementation
@@ -60,7 +61,7 @@ class diagEngineHost:
         # e.g. NIC1
         self.cardName = os.environ['CARD_NAME']
         # e.g. NAPLES
-        self.brdName = os.environ['CARD_TYPE']
+        self.cardType = os.environ['CARD_TYPE']
         
         # Init redis
         redisIP = os.environ['REDIS_IP']
@@ -80,9 +81,9 @@ class diagEngineHost:
     def __exit__(self, exc_type, exc_value, traceback):
         self.r.execute_command("QUIT")
 
-    def getBrdName(self, cardNm):
-        brdNm = self.r.hget(self.cardDictKeyFmt, cardNm)
-        return brdNm
+    def getCardType(self, cardNm):
+        cardType = self.r.hget(self.cardDictKeyFmt, cardNm)
+        return cardType
 
     def parseCardInfo(self, cardNm='', dspNm='', testNm=''):
         # Invalid input
@@ -97,18 +98,20 @@ class diagEngineHost:
         dspNm = dspNm.upper()
         testNm = testNm.upper()
 
+        print "P0", cardNm, dspNm, testNm
         # In ase cardNm is empty, take it as local card
         if cardNm == '':
             cardNm = self.cardName
         if self.checkCardExist(cardNm) == False:
+            print cardNm, "does not exit!"
             return [], -1
 
-        brdNm = self.getBrdName(cardNm)
+        cardTp = self.getCardType(cardNm)
     
         if dspNm=='':
             # cardNm pnly case: get all tests under all DSPs
             #dspList = self.r.smembers(dspKeyFmt.format(cardNm,brdNme))
-            dspListTemp = self.r.keys(self.dspExpAllKeyFmt.format(cardNm, brdNm))
+            dspListTemp = self.r.keys(self.dspExpAllKeyFmt.format(cardNm, cardTp))
             dspList = []
             for dspFull in dspListTemp:
                 dsp = dspFull.split(":")[4]
@@ -119,7 +122,7 @@ class diagEngineHost:
         else:
             # One DSP only
             # Check whether the dsp is alive
-            keyExist = self.r.exists(self.dspExpKeyFmt.format(cardNm, brdNm, dspNm))
+            keyExist = self.r.exists(self.dspExpKeyFmt.format(cardNm, cardTp, dspNm))
             if keyExist == True:
                 dspList = [dspNm]
             else:
@@ -132,7 +135,7 @@ class diagEngineHost:
         for dsp in dspList:
             if testNm == '':
                 # Get tests per dsp
-                testList = self.r.smembers(self.dspTestKeyFmt.format(self.getBrdName(cardNm), dsp))
+                testList = self.r.smembers(self.dspTestKeyFmt.format(self.getCardType(cardNm), dsp))
                 for test in testList:
                     testItem = [cardNm, dsp, test]
                     tests.append(testItem)
@@ -142,7 +145,7 @@ class diagEngineHost:
 
     def parseTestParam(self, cardNm='', dspNm='', testNm='', param=dict()):
         # Get all default parameters
-        brdNm = self.getBrdName(cardNm)
+        brdNm = self.getCardType(cardNm)
         paramKey = self.paramKeyFmt.format(brdNm, dspNm, testNm)
         dftParamList = self.r.hkeys(paramKey)
         paramDict = dict()
@@ -174,6 +177,7 @@ class diagEngineHost:
         testNm = testNm.upper()
         testList, err = self.parseCardInfo(cardNm, dspNm, testNm)
         if err == -1:
+            print "Failed to parse card info!"
             return [], -1
         
         paramKeyFmt = '{}:{}:{}'
@@ -194,7 +198,7 @@ class diagEngineHost:
             cardN = test[0]
             dspN = test[1]
             testN = test[2]
-            brdN = self.getBrdName(cardN)
+            brdN = self.getCardType(cardN)
             paramKey = paramKeyFmt.format(cardN, dspN, testN)
             testParamDict = paramDict[paramKey]
             #print testParamDict
@@ -228,6 +232,7 @@ class diagEngineHost:
         # Dispatch to test queue
         testQueKey = self.testQueKeyFmt.format(cardNm, dspNm)
         self.r.lpush(testQueKey, testId)
+        print testQueKey
 
     def remSkippedTest(self, testList):
         while(True):
@@ -329,6 +334,7 @@ class diagEngineHost:
     
         testList, err = self.parseTestInfo(cardName, dspName, testName, param)
         if err == -1:
+            print "Failed to parse test info!"
             return -1
     
         self.showTestList(testList)
@@ -364,68 +370,69 @@ class diagEngineHost:
             print "Stop_on_error enabled"
         self.r.set(key, stopOnErrV)
 
-    def checkCardExist(self, cardTp):
+    def checkCardExist(self, cardNm):
         key = "CARD_DICT"
-        cardNm = self.r.hget(key, cardTp)
+        cardTp = self.r.hget(key, cardNm)
         key = self.cardKeyFmt
-        return self.r.exists(key.format(cardTp, cardNm))
+        return self.r.exists(key.format(cardNm, cardTp))
 
-    def checkDspExist(self, cardTp, dspNm):
-        if self.checkCardExist(cardTp) == False:
+    def checkDspExist(self, cardNm, dspNm):
+        if self.checkCardExist(cardNm) == False:
             return False
 
         key = "CARD_DICT"
-        cardNm = self.r.hget(key, cardTp)
+        cardTp = self.r.hget(key, cardNm)
         key = self.dspExpKeyFmt
 
-        return self.r.exists(key.format(cardTp, cardNm, dspNm))
+        #print "__DBG__", key.format(cardNm, cardTp, dspNm)
+        return self.r.exists(key.format(cardNm, cardTp, dspNm))
 
-    def getCardNmFromDict(self, cardTp):
-        return self.r.hget("CARD_DICT", cardTp.upper())
+    def getCardTpFromDict(self, cardNm):
+        return self.r.hget("CARD_DICT", cardNm.upper())
 
-    def getCardList(self, cardTp=""):
-        cardTp = cardTp.upper()
+    def getCardList(self, cardNm=""):
+        cardNm = cardNm.upper()
         cards = []
-        if cardTp == "":
+        if cardNm == "":
             key = "EXP:CARD*"
             # Get all cards
             cardListFull = self.r.keys(key)
             for cardFull in cardListFull:
                 cards.append(cardFull.split(":")[2])
         else:
-            exist = self.checkCardExist(cardTp)
+            exist = self.checkCardExist(cardNm)
             if exist != True:
-                print "_NOT_ a live card:", cardTp
+                print "_NOT_ a live card:", cardNm
                 return [], -1
-            cards = [cardTp]
+            cards = [cardNm]
         return cards, 0
 
-    def getDspList(self, cardTp=""):
-        cardTp = cardTp.upper()
-        if self.checkCardExist(cardTp) != True:
-            print "_NOT_ a live card:", cardTp
+    def getDspList(self, cardNm=""):
+        cardNm = cardNm.upper()
+        if self.checkCardExist(cardNm) != True:
+            print "_NOT_ a live card:", cardNm
             return [], -1
 
         #print fmtDsp.format("DSP_NAME", "STATUS")
-        cardNm = self.getCardNmFromDict(cardTp)
-        dspListFull = self.r.keys(self.dspExpAllKeyFmt.format(cardTp, cardNm))
+        cardTp = self.getCardTpFromDict(cardNm)
+        dspListFull = self.r.keys(self.dspExpAllKeyFmt.format(cardNm, cardTp))
         dspList = []
         for dspFull in dspListFull:
             dspList.append(dspFull.split(":")[4])
         return dspList, 0
 
-    def getTestList(self, cardTp="", dspNm=""):
-        cardTp = cardTp.upper()
-        if self.checkCardExist(cardTp) != True:
-            print "_NOT_ a live card:", cardTp
+    def getTestList(self, cardNm="", dspNm=""):
+        cardNm = cardNm.upper()
+        if self.checkCardExist(cardNm) != True:
+            print "_NOT_ a live card:", cardNm
             return [], -1
 
         dspNm = dspNm.upper()
-        if self.checkDspExist(cardTp, dspNm) != True:
-            print "_NOT_ a live dsp:", cardTp+":"+dspNm
+        if self.checkDspExist(cardNm, dspNm) != True:
+            print "_NOT_ a live dsp:", cardNm+":"+dspNm
             return [], -1
 
-        testList = self.r.smembers(self.dspTestKeyFmt.format(self.getBrdName(cardTp), dspNm))
+        testList = self.r.smembers(self.dspTestKeyFmt.format(self.getCardType(cardNm), dspNm))
         return testList, 0
 
     def checkIfSkipped(self, cardTp, dspNm, testNm):
@@ -471,7 +478,7 @@ class diagEngineHost:
         dspNm = dspNm.upper()
         testNm = testNm.upper()
 
-        cardTp = self.getBrdName(cardNm)
+        cardTp = self.getCardType(cardNm)
         paramKey = self.paramKeyFmt.format(cardTp, dspNm, testNm)
         for key, value in paramUser.items():
             keyExist = self.r.hexists(paramKey, key)
@@ -497,38 +504,38 @@ class diagSts(diagEngineHost):
         #print "----------------------------------------"
         cards = self.r.keys(key)
         for card in cards:
-            cardType = card.split(':')[2]
-            cardName = card.split(':')[3]
-            if cardName != 'HOST':
+            cardName = card.split(':')[2]
+            cardType = card.split(':')[3]
+            if cardType != 'HOST':
                 cardSts = "idle"
-                keyDsp = fmtKeyDsp.format(cardType)
+                keyDsp = fmtKeyDsp.format(cardName)
                 dspFullList = self.r.keys(keyDsp) 
                 for dspFull in dspFullList:
                     dsp = dspFull.split(":")[4]
-                    testQueStsKey = self.testQueStsKeyFmt.format(cardType, dsp)
+                    testQueStsKey = self.testQueStsKeyFmt.format(cardName, dsp)
                     queSts = self.r.llen(testQueStsKey)
                     if queSts > 0:
                         cardSts = "active"
 
-                showCardStr = fmtShowCard.format(cardType, cardName, cardSts)
+                showCardStr = fmtShowCard.format(cardName, cardType, cardSts)
                 print showCardStr
 
         #print "========================================"
         return 0
 
-    def showDsp (self, cardTp=""):
-        cards, err = self.getCardList(cardTp)
+    def showDsp (self, cardNm=""):
+        cards, err = self.getCardList(cardNm)
         if err != 0:
             return
 
         # Display DSPs
         for card in cards:
-            fmtCard = "============ {} ============"
-            print fmtCard.format(card)
+            fmtCard = "============ {}:{} ============"
+            cardTp = self.getCardTpFromDict(card)
+            print fmtCard.format(card, cardTp)
             fmtDsp = "{:<20}{}"
             #print fmtDsp.format("DSP_NAME", "STATUS")
-            cardNm = self.getCardNmFromDict(card)
-            dspListFull = self.r.keys(self.dspExpAllKeyFmt.format(card, cardNm))
+            dspListFull = self.r.keys(self.dspExpAllKeyFmt.format(card, cardTp))
             for dspFull in dspListFull:
                 dsp = dspFull.split(":")[4]
                 if dsp == "DIAGMGR":
@@ -544,9 +551,9 @@ class diagSts(diagEngineHost):
                 print fmtDsp.format(dsp, sts)
         return
 
-    def showTest (self, cardTp="", dspNm=""):
+    def showTest (self, cardNm="", dspNm=""):
         dspNm = dspNm.upper()
-        cards, err = self.getCardList(cardTp)
+        cards, err = self.getCardList(cardNm)
         if err != 0:
             return
 
@@ -555,8 +562,8 @@ class diagSts(diagEngineHost):
         fmtTest = "{:<20}{}"
         # Display DSPs
         for card in cards:
-            cardNm = self.getCardNmFromDict(card)
-            print fmtCard.format(card, cardNm)
+            cardTp = self.getCardTpFromDict(card)
+            print fmtCard.format(card, cardTp)
             dspList, err = self.getDspList(card)
             if err != 0:
                 return
@@ -593,7 +600,7 @@ class diagSts(diagEngineHost):
         fmtDsp = "-------- {} --------"
         fmtTestHist = "{:<15}{:<10}{:<10}{:<10}"
         for card in cardList: 
-            cardNm = self.getCardNmFromDict(card)
+            cardNm = self.getCardTpFromDict(card)
             print fmtCard.format(card, cardNm)
             dspList, err = self.getDspList(card)
             if err != 0:
@@ -655,7 +662,7 @@ class diagSts(diagEngineHost):
         cardNm = cardNm.upper()
         dspNm = dspNm.upper()
         testNm = testNm.upper()
-        cardTp = self.getBrdName(cardNm)
+        cardTp = self.getCardType(cardNm)
 
         paramKey = self.paramKeyFmt.format(cardTp, dspNm, testNm)
         paramNames = self.r.hkeys(paramKey)

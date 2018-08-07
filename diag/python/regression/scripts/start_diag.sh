@@ -18,7 +18,13 @@ echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 
 # Prepare all paths
-cat $DIAG_DIR/python/regression/scripts/dft_profile > temp_profile
+if [[ $arch == "amd64" ]]
+then
+cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
+else
+cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
+fi
+
 echo "" >> temp_profile
 echo "# Diag set up" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR" >> temp_profile

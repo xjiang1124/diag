@@ -1,10 +1,5 @@
 COMMON_SRC_DIR=			\
-	diagmgr 			\
 	dsp/pcieh   		\
-	dsp/i2c   			\
-	dsp/qsfp    		\
-	dsp/rtc     		\
-	dsp/tempsensor     	\
 	util/devmgr			\
 	util/i2cutil 		\
 	util/rtcutil 		\
@@ -28,10 +23,17 @@ AMD64_SRC_DIR=			\
 	util/mtptest
 
 AMD64_C_SRC_DIR=		\
-	lib/cpld		\
+	lib/cpld			\
 	util/jtag
 
-ARM64_SRC_DIR=
+ARM64_SRC_DIR=			\
+	diagmgr 			\
+	dsp/i2c   			\
+	dsp/qsfp    		\
+	dsp/rtc     		\
+	dsp/cpld     		\
+	dsp/tempsensor
+
 ARM64_C_SRC_DIR=
 
 
