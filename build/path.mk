@@ -1,4 +1,5 @@
 COMMON_SRC_DIR=			\
+	diagmgr 			\
 	dsp/pcieh   		\
 	util/devmgr			\
 	util/i2cutil 		\
@@ -27,7 +28,6 @@ AMD64_C_SRC_DIR=		\
 	util/jtag
 
 ARM64_SRC_DIR=			\
-	diagmgr 			\
 	dsp/i2c   			\
 	dsp/qsfp    		\
 	dsp/rtc     		\
