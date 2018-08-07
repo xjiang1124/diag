@@ -32,6 +32,7 @@ ARM64_SRC_DIR=			\
 	dsp/qsfp    		\
 	dsp/rtc     		\
 	dsp/cpld     		\
+	dsp/spi    		\
 	dsp/tempsensor
 
 ARM64_C_SRC_DIR=

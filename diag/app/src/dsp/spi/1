@@ -1,0 +1,97 @@
+
+../../../../lib/spi_userspace/spi.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <readId>:
+   0:	55                   	push   %rbp
+   1:	48 89 e5             	mov    %rsp,%rbp
+   4:	48 81 ec b0 00 00 00 	sub    $0xb0,%rsp
+   b:	48 89 bd 58 ff ff ff 	mov    %rdi,-0xa8(%rbp)
+  12:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+  19:	00 00 
+  1b:	48 89 45 f8          	mov    %rax,-0x8(%rbp)
+  1f:	31 c0                	xor    %eax,%eax
+  21:	48 b8 2f 64 65 76 2f 	movabs $0x6970732f7665642f,%rax
+  28:	73 70 69 
+  2b:	48 89 45 c1          	mov    %rax,-0x3f(%rbp)
+  2f:	c7 45 c9 64 65 76 31 	movl   $0x31766564,-0x37(%rbp)
+  36:	66 c7 45 cd 2e 30    	movw   $0x302e,-0x33(%rbp)
+  3c:	c6 45 cf 00          	movb   $0x0,-0x31(%rbp)
+  40:	48 8d 45 c1          	lea    -0x3f(%rbp),%rax
+  44:	be 02 00 00 00       	mov    $0x2,%esi
+  49:	48 89 c7             	mov    %rax,%rdi
+  4c:	b8 00 00 00 00       	mov    $0x0,%eax
+  51:	e8 00 00 00 00       	callq  56 <readId+0x56>
+  56:	89 85 70 ff ff ff    	mov    %eax,-0x90(%rbp)
+  5c:	83 bd 70 ff ff ff 00 	cmpl   $0x0,-0x90(%rbp)
+  63:	79 16                	jns    7b <readId+0x7b>
+  65:	48 8d 3d 00 00 00 00 	lea    0x0(%rip),%rdi        # 6c <readId+0x6c>
+  6c:	e8 00 00 00 00       	callq  71 <readId+0x71>
+  71:	b8 01 00 00 00       	mov    $0x1,%eax
+  76:	e9 15 01 00 00       	jmpq   190 <readId+0x190>
+  7b:	48 8d 45 80          	lea    -0x80(%rbp),%rax
+  7f:	ba 40 00 00 00       	mov    $0x40,%edx
+  84:	be 00 00 00 00       	mov    $0x0,%esi
+  89:	48 89 c7             	mov    %rax,%rdi
+  8c:	e8 00 00 00 00       	callq  91 <readId+0x91>
+  91:	48 8d 45 d0          	lea    -0x30(%rbp),%rax
+  95:	ba 20 00 00 00       	mov    $0x20,%edx
+  9a:	be 00 00 00 00       	mov    $0x0,%esi
+  9f:	48 89 c7             	mov    %rax,%rdi
+  a2:	e8 00 00 00 00       	callq  a7 <readId+0xa7>
+  a7:	c7 85 6c ff ff ff 20 	movl   $0x20,-0x94(%rbp)
+  ae:	00 00 00 
+  b1:	c6 45 d0 9f          	movb   $0x9f,-0x30(%rbp)
+  b5:	c7 85 6c ff ff ff 06 	movl   $0x6,-0x94(%rbp)
+  bc:	00 00 00 
+  bf:	48 8d 45 d0          	lea    -0x30(%rbp),%rax
+  c3:	48 89 45 80          	mov    %rax,-0x80(%rbp)
+  c7:	c7 45 90 01 00 00 00 	movl   $0x1,-0x70(%rbp)
+  ce:	48 8b 85 58 ff ff ff 	mov    -0xa8(%rbp),%rax
+  d5:	48 89 45 a8          	mov    %rax,-0x58(%rbp)
+  d9:	c7 45 b0 06 00 00 00 	movl   $0x6,-0x50(%rbp)
+  e0:	48 8d 55 80          	lea    -0x80(%rbp),%rdx
+  e4:	8b 85 70 ff ff ff    	mov    -0x90(%rbp),%eax
+  ea:	be 00 6b 40 40       	mov    $0x40406b00,%esi
+  ef:	89 c7                	mov    %eax,%edi
+  f1:	b8 00 00 00 00       	mov    $0x0,%eax
+  f6:	e8 00 00 00 00       	callq  fb <readId+0xfb>
+  fb:	89 85 74 ff ff ff    	mov    %eax,-0x8c(%rbp)
+ 101:	83 bd 74 ff ff ff 00 	cmpl   $0x0,-0x8c(%rbp)
+ 108:	79 13                	jns    11d <readId+0x11d>
+ 10a:	48 8d 3d 00 00 00 00 	lea    0x0(%rip),%rdi        # 111 <readId+0x111>
+ 111:	e8 00 00 00 00       	callq  116 <readId+0x116>
+ 116:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+ 11b:	eb 73                	jmp    190 <readId+0x190>
+ 11d:	8b 85 74 ff ff ff    	mov    -0x8c(%rbp),%eax
+ 123:	89 c6                	mov    %eax,%esi
+ 125:	48 8d 3d 00 00 00 00 	lea    0x0(%rip),%rdi        # 12c <readId+0x12c>
+ 12c:	b8 00 00 00 00       	mov    $0x0,%eax
+ 131:	e8 00 00 00 00       	callq  136 <readId+0x136>
+ 136:	48 8b 85 58 ff ff ff 	mov    -0xa8(%rbp),%rax
+ 13d:	48 89 85 78 ff ff ff 	mov    %rax,-0x88(%rbp)
+ 144:	eb 32                	jmp    178 <readId+0x178>
+ 146:	48 8b 85 78 ff ff ff 	mov    -0x88(%rbp),%rax
+ 14d:	48 8d 50 01          	lea    0x1(%rax),%rdx
+ 151:	48 89 95 78 ff ff ff 	mov    %rdx,-0x88(%rbp)
+ 158:	0f b6 00             	movzbl (%rax),%eax
+ 15b:	0f b6 c0             	movzbl %al,%eax
+ 15e:	89 c6                	mov    %eax,%esi
+ 160:	48 8d 3d 00 00 00 00 	lea    0x0(%rip),%rdi        # 167 <readId+0x167>
+ 167:	b8 00 00 00 00       	mov    $0x0,%eax
+ 16c:	e8 00 00 00 00       	callq  171 <readId+0x171>
+ 171:	83 ad 6c ff ff ff 01 	subl   $0x1,-0x94(%rbp)
+ 178:	83 bd 6c ff ff ff 00 	cmpl   $0x0,-0x94(%rbp)
+ 17f:	75 c5                	jne    146 <readId+0x146>
+ 181:	bf 0a 00 00 00       	mov    $0xa,%edi
+ 186:	e8 00 00 00 00       	callq  18b <readId+0x18b>
+ 18b:	b8 00 00 00 00       	mov    $0x0,%eax
+ 190:	48 8b 4d f8          	mov    -0x8(%rbp),%rcx
+ 194:	64 48 33 0c 25 28 00 	xor    %fs:0x28,%rcx
+ 19b:	00 00 
+ 19d:	74 05                	je     1a4 <readId+0x1a4>
+ 19f:	e8 00 00 00 00       	callq  1a4 <readId+0x1a4>
+ 1a4:	c9                   	leaveq 
+ 1a5:	c3                   	retq   
