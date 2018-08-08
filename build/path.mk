@@ -33,9 +33,11 @@ ARM64_SRC_DIR=			\
 	dsp/rtc     		\
 	dsp/cpld     		\
 	dsp/spi    		\
+	dsp/intr    		\
 	dsp/tempsensor
 
-ARM64_C_SRC_DIR=
+ARM64_C_SRC_DIR=		\
+	lib/spi_userspace
 
 
 

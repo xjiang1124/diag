@@ -13,12 +13,12 @@
 # 3. If platform name is specified, setting applies to all cards under the specific
 #    DSP. 
 # 4. Multiple card names can be used on the same setting separated by "#"
-# 5. Previous setting is overwritting by later ones, e.g. NAPLES100 timeout first got 
+# 5. Previous setting is overwritting by later ones, e.g. NAPLES timeout first got 
 #    set to 30 and change to 60 after evaluating the next line.
 #    timeout:
 #       VALUE:
 #           ALL:30
-#           NAPLES100:60
+#           NAPLES:60
 #
 # PRIORTY:
 # Three levels of priority are supported
@@ -39,9 +39,8 @@
 
 ---
 DSP: 
-    NAME: INTR
-    INFO: DSP for to test interrupt signal
-    TYPE: DEV
+    NAME: INTR 
+    INFO: Interrupt tests and commands
 
     # Properties apply to all platforms
     # Do not remove ite/timeout/dshid which are needed for all DSPs
@@ -51,16 +50,16 @@ DSP:
                 VALUE: 1
                 INFO: Iterations for the test
             timeout:
-                VALUE: 30
+                VALUE: 10
                 INFO: Test timeout setting 
             dshid:
                 VALUE: 0
                 INFO: Diag shell ID index
 
-    TEST#ADVDD:
-        INFO: Test INTR on AVDD and DVDD
+    TEST#ESW:
+        INFO: Ethernet switch interrupt test 
         PLATFORM:
-            NIC:
-        PRIORITY: NORMAL 
+            NIC: NAPLES100
+        PRIORITY: NORMAL
         PARAM:
-...
+

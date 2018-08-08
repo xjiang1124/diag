@@ -28,8 +28,8 @@ func CpldMdioHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
     
-    data, _ := cpld.ReadMdio(devAddr, regOffset)
-    if data != phyId {
+    data, err := cpld.ReadMdio(devAddr, regOffset)
+    if data != phyId || err != 0 {
         dcli.Println("e", "MDIO test failed")
     } else {
         dcli.Println("i", "MDIO test passed")
@@ -93,10 +93,19 @@ func CpldWpHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    // Read WP reg
-    data, err := cpld.ReadReg(0)
+    // Read Capri cntl reg0 SD_CS_GPIO_SEL
+    data, err := cpld.ReadReg(0x10)
+    if (data & 0x8 == 0) || (err != 0) {
+        dcli.Println("e", "CPLD write protect test failed")
+        return
+    } else {
+        dcli.Println("i", "CPLD write protect test passed")
+    }
     
-    if (data != 1) || (err != 0) {
+    // Read Capri cntl reg2
+    data, err = cpld.ReadReg(0x12)
+    
+    if (data & 0xc != 0) || (err != 0) {
         dcli.Println("e", "CPLD write protect test failed")
     } else {
         dcli.Println("i", "CPLD write protect test passed")
