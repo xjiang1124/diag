@@ -24,7 +24,7 @@ func ReadMdio(phy byte, addr byte) (data uint16, err int) {
     return
 }
 
-func WriteMdio(phy byte, addr byte, data uint) (err int) {
+func WriteMdio(phy byte, addr byte, data uint16) (err int) {
     t := hwinfo.CpldInfo.(*Naples100info.Naples100Cpld_T)
     WriteReg(byte(t.ESW_MDIO_CTRL_HIGH), addr)
     WriteReg(byte(t.ESW_MDIO_DATA_LOW), byte((data >> 8) & 0xFF))
