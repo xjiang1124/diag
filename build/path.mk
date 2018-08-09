@@ -28,7 +28,8 @@ AMD64_C_SRC_DIR=		\
 	util/jtag
 
 ARM64_SRC_DIR=			\
-	dsp/i2c   			\
+	util/ledutil 		\
+	dsp/i2c 		\
 	dsp/qsfp    		\
 	dsp/rtc     		\
 	dsp/cpld     		\
