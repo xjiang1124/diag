@@ -92,7 +92,7 @@ MTP024:
     APC_1_PORT: 1
     APC_2_NAME: pen-hwlab-apc-03
     APC_2_PORT: 2
-    IP: 192.168.74.38
+    IP: 192.168.72.110
     SLOT_1:
     SLOT_2: 
     SLOT_3: 

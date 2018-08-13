@@ -15,18 +15,24 @@ class diagEngineHost:
         
         # CARD name dictionary, e.g. HSET CARD_DICT NIC1 NAPLES
         self.cardDictKeyFmt = 'CARD_DICT'
-  
+ 
         # card key, e.g. keys EXP:CARD:NIC1*
         self.cardAllKeyFmt = 'EXP:CARD:{}*'
-   
+    
+        # card key, e.g. keys EXP:CARD:NIC1*
+        self.nonexpCardAllKey = 'NONEXP:CARD:*'
+ 
         # card key, e.g. GET EXT:CARD:CARD:NIC1:NAPLES
         self.cardKeyFmt = 'EXP:CARD:{}:{}'
      
         # DSP key, e.g. SADD/SMEMBERS DSP:NIC1:NAPLES
         self.dspKeyFmt = 'DSP:{}:{}'
-         
+          
         # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
         self.dspExpAllKeyFmt = 'EXP:DSP:{}:{}*'
+        
+        # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
+        self.dspNonexpAllKeyFmt = 'NONEXP:DSP:*'
         
         # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
         self.dspExpKeyFmt = 'EXP:DSP:{}:{}:{}'
@@ -700,4 +706,38 @@ class diagSts(diagEngineHost):
         for hist in histList:
             self.r.delete(hist)
         print "Test history cleared"
+
+    # Find Lost card
+    def findLostCard(self):
+        print '--------------- Lost Card --------------'
+        lostCardFmt = '{:<10}    {:<10}'
+        nonexpKeys = self.r.keys(self.nonexpCardAllKey)
+        for card in nonexpKeys:
+            cardNm = card.split(":")[2]
+            cardTp = card.split(":")[3]
+
+            keyExist = self.r.exists(self.cardKeyFmt.format(cardNm, cardTp))
+            if keyExist == False:
+                lostCardStr = lostCardFmt.format(cardNm, cardTp)
+                print lostCardStr
+        print '------------ Lost Card Done ------------'
+
+    # Find Lost card
+    def findLostDsp(self):
+        cardFmt = "============ {}:{} ============"
+
+        print '--------------- Lost DSP --------------'
+        nonexpKeys = self.r.keys(self.dspNonexpAllKeyFmt)
+        for idx, cardDsp in enumerate(nonexpKeys):
+            cardNm = cardDsp.split(":")[2]
+            cardTp = cardDsp.split(":")[3]
+            dsp    = cardDsp.split(":")[4]
+
+            keyExist = self.r.exists(self.dspExpKeyFmt.format(cardNm, cardTp, dsp))
+            if keyExist == False:
+                if idx == 0:
+                    cardStr = cardFmt.format(cardNm, cardTp)
+                    print cardStr
+                print dsp
+        print '------------ Lost DSP Done ------------'
 
