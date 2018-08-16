@@ -1,5 +1,5 @@
 ---
-NAPLES:
+NAPLES100:
 
     P2C:
         INIT:
@@ -19,16 +19,5 @@ NAPLES:
             SKIP:
             TEST: PMBUS RTC:I2C
             CLEANUP:
-        
-        #SYS_SEQ_INIT:
-        #SYS_SEQ_SKIP:
-        #SYS_SEQ:
-        #SYS_SEQ_CLEANUP:
-        #S
-        #SYS_PARA_INIT:
-        #SYS_PARA_SKIP:
-        #SYS_PARA:
-        #SYS_PARA_CLEANUP:
-
 
 ...
