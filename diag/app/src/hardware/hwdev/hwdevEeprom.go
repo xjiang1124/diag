@@ -15,6 +15,104 @@ import (
 
 )
 
+func EepromUpdateMac(devName string, mac uint64) (err int) {
+    var i2cif i2cinfo.I2cInfo
+
+//    mac1 := mac
+//    mac1 = strings.Replace(mac1, " ", "", -1)
+//    mac1 = strings.Replace(mac1, ":", "", -1)
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.UpdateMac(devName, mac)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = eeprom.ProgEeprom(devName)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
+func EepromUpdateSn(devName string, sn string) (err int) {
+    var i2cif i2cinfo.I2cInfo
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    sn1 := make([]byte, 6)
+    copy(sn1, []byte(sn))
+    err = eeprom.UpdateSn(devName, sn1)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = eeprom.ProgEeprom(devName)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
+func EepromUpdateDate(devName string, date string) (err int) {
+    var i2cif i2cinfo.I2cInfo
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    date1 := make([]byte, 3)
+    copy(date1, []byte(date))
+    err = eeprom.UpdateDate(devName, date1)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = eeprom.ProgEeprom(devName)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
 func EepromUpdate(devName string, mac string, sn string) (err int) {
     var i2cif i2cinfo.I2cInfo
 
@@ -47,13 +145,13 @@ func EepromUpdate(devName string, mac string, sn string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.UpdateMac(devName, []byte(mac1))
+    err = eeprom.UpdateMacMtp(devName, []byte(mac1))
     if err != errType.SUCCESS {
         return
     }
 
     copy(sn1, []byte(sn))
-    err = eeprom.UpdateSN(devName, sn1)
+    err = eeprom.UpdateSn(devName, sn1)
     if err != errType.SUCCESS {
         return
     }

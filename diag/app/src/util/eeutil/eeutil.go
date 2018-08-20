@@ -31,13 +31,15 @@ func main() {
     infoPtr    := flag.Bool  ("info",   false,          "Display device info")
     dispPtr    := flag.Bool  ("disp",   false,          "Display eeprom content")
     updatePtr  := flag.Bool  ("update", false,          "Update eeprom")
-    macPtr     := flag.String("mac",    "AABBCCDDEEFF", "MAC address")
-    snPtr      := flag.String("sn",     "0123456789",   "Serial number")
+    macPtr     := flag.Uint64("mac",    0, 				"MAC address")
+    snPtr      := flag.String("sn",     "",   			"Serial number")
+    mfgDatePtr := flag.String("date",   "",   			"Manufacturing date")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
-    mac := strings.ToUpper(*macPtr)
+    mac := *macPtr
     sn := strings.ToUpper(*snPtr)
+    date := strings.ToUpper(*mfgDatePtr)
 
     if *infoPtr == true {
         dispInfo()
@@ -50,7 +52,16 @@ func main() {
     }
 
     if *updatePtr == true {
-        hwdev.EepromUpdate(devName, mac, sn)
+//        hwdev.EepromUpdate(devName, mac, sn)
+        if mac != 0 {
+            hwdev.EepromUpdateMac(devName, mac)
+        }
+        if sn != "" {
+            hwdev.EepromUpdateSn(devName, sn)
+        }
+        if date != "" {
+            hwdev.EepromUpdateDate(devName, date)
+        }
         return
     }
 
