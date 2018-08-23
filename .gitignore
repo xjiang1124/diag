@@ -19,3 +19,4 @@ diag/util/jtag/jtag_cpurd
 diag/util/cpld/cpld_program
 diag/util/spi/spi_acc
 diag/util/mdio/mdio_acc
+asic/

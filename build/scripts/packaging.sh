@@ -44,7 +44,7 @@ cd $TOP_DIR/diag/python/infra/config/
 
 # Copy all the files needed
 echo "--------------------"
-echo "Copying all files"
+echo "Copying diag files"
 cd $BUILD_DIR
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/diagmgr $TEMP_DIR/
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/dsp/ $TEMP_DIR/
@@ -63,9 +63,25 @@ cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 git log --name-status HEAD^..HEAD > $TEMP_DIR/scripts/version.txt
 git status >> $TEMP_DIR/scripts/version.txt
 
-# ARM specified files
+echo "Copying diag files -- Done"
 
-echo "Copying all files -- Done"
+# Prepare ASIC files
+echo "--------------------"
+echo "Preparing ASIC files"
+DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
+DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
+ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
+
+mkdir -p $DIAG_ASIC_PATH
+mkdir -p $DIAG_ASIC_IMG_PATH
+cd $TOP_DIR/ASIC/$arch/
+cd $TOP_DIR/ASIC/$arch/
+rsync -r $ASIC_PATH/* $DIAG_ASIC_PATH/
+
+mkdir -p $DIAG_ASIC_IMG_PATH
+cp -r $DIAG_ASIC_PATH/* $DIAG_ASIC_IMG_PATH/
+
+echo "ASIC file -- Done"
 
 # Prepare image
 echo "--------------------"
