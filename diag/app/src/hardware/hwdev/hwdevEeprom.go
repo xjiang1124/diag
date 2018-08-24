@@ -3,7 +3,6 @@ package hwdev
 import (
     "strconv"
     "strings"
-
     "common/cli"
     "common/dmutex"
     "common/errType"
@@ -15,12 +14,12 @@ import (
 
 )
 
-func EepromUpdateMac(devName string, mac uint64) (err int) {
+func EepromUpdateMac(devName string, mac string) (err int) {
     var i2cif i2cinfo.I2cInfo
 
 //    mac1 := mac
-//    mac1 = strings.Replace(mac1, " ", "", -1)
-//    mac1 = strings.Replace(mac1, ":", "", -1)
+//    mac = strings.Replace(mac, " ", "", -1)
+//    mac = strings.Replace(mac, ":", "", -1)
 
     i2cif, err = i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
@@ -36,7 +35,17 @@ func EepromUpdateMac(devName string, mac uint64) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.UpdateMac(devName, mac)
+    mac1 := make([]byte, 6)
+//    data, _ := strconv.Atoi(mac)
+    data, _ := strconv.ParseUint(mac, 16, 64)
+    mac1[0] = byte(data >> 40 & 0xFF)
+    mac1[1] = byte(data >> 32 & 0xFF)
+    mac1[2] = byte(data >> 24 & 0xFF)
+    mac1[3] = byte(data >> 16 & 0xFF)
+    mac1[4] = byte(data >> 8 & 0xFF)
+    mac1[5] = byte(data & 0xFF)
+
+    err = eeprom.UpdateMac(devName, mac1)
     if err != errType.SUCCESS {
         return
     }
@@ -66,7 +75,7 @@ func EepromUpdateSn(devName string, sn string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    sn1 := make([]byte, 6)
+    sn1 := make([]byte, 11)
     copy(sn1, []byte(sn))
     err = eeprom.UpdateSn(devName, sn1)
     if err != errType.SUCCESS {
@@ -99,7 +108,11 @@ func EepromUpdateDate(devName string, date string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
     date1 := make([]byte, 3)
-    copy(date1, []byte(date))
+    data, _ := strconv.Atoi(date)
+    date1[0] = byte(data / 10000)
+    date1[1] = byte(data % 10000 / 100)
+    date1[2] = byte(data % 100)
+//    copy(date1, []byte(date))
     err = eeprom.UpdateDate(devName, date1)
     if err != errType.SUCCESS {
         return
@@ -183,7 +196,7 @@ func EepromDisp(devName string) (err int) {
 
     err = eeprom.DispEeprom(devName)
     if err != errType.SUCCESS {
-        cli.Println("f", "EEPROM update failed!")
+        cli.Println("f", "EEPROM display failed!")
         return
     }
     return
