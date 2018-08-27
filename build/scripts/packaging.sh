@@ -68,19 +68,23 @@ echo "Copying diag files -- Done"
 # Prepare ASIC files
 echo "--------------------"
 echo "Preparing ASIC files"
-DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
-DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
-ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
+# For amd64 only
+if [[ $arch == "amd64" ]]
+then
+    DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
+    DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
+    ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
+    
+    mkdir -p $DIAG_ASIC_PATH
+    mkdir -p $DIAG_ASIC_IMG_PATH
+    cd $TOP_DIR/asic/$arch/
+    cd $TOP_DIR/asic/$arch/
+    rsync -r $ASIC_PATH/* $DIAG_ASIC_PATH/
+    
+    mkdir -p $DIAG_ASIC_IMG_PATH
+    cp -r $DIAG_ASIC_PATH/* $DIAG_ASIC_IMG_PATH/
 
-mkdir -p $DIAG_ASIC_PATH
-mkdir -p $DIAG_ASIC_IMG_PATH
-cd $TOP_DIR/asic/$arch/
-cd $TOP_DIR/asic/$arch/
-rsync -r $ASIC_PATH/* $DIAG_ASIC_PATH/
-
-mkdir -p $DIAG_ASIC_IMG_PATH
-cp -r $DIAG_ASIC_PATH/* $DIAG_ASIC_IMG_PATH/
-
+fi
 echo "ASIC file -- Done"
 
 # Prepare image
