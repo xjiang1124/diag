@@ -3,7 +3,17 @@ package cpld
 import (
     "hardware/hwinfo"
     "device/board" 
+    "common/cli"
 )
+
+// #cgo CFLAGS: -I../../../../../include
+// #cgo LDFLAGS: -lspi
+// #include <stdlib.h>
+// #include "cType.h"
+// #include "../../../../../lib/spi_userspace/spi.h"
+import "C"
+//import "unsafe"
+
 
 const (
     MDIO_ACC_ENA	= 0x1
@@ -36,11 +46,24 @@ func WriteMdio(phy byte, addr byte, data uint16) (err int) {
 }
 
 func ReadReg(addr byte) (data byte, err int) {
-    data = 1
+    var retC C.int
+    var rd C.uchar
+    retC = C.CpldRd(C.uchar(addr), &rd)
+    if retC != 0 {
+        cli.Println("e", "Failed to read CPLD")
+    }
+    data = byte(rd)
+    err = int(retC)
     return
 }
 
 func WriteReg(addr byte, data byte) (err int) {
+    var retC C.int
+    retC = C.CpldWr(C.uchar(addr), C.uchar(data))
+    if retC != 0 {
+        cli.Println("e", "Failed to write CPLD")
+    }
+    err = int(retC)
     return
 }
 
