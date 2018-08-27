@@ -1,4 +1,4 @@
-Compilation
+#Compilation
 tcsh
 
 setenv AWS /home/$USER
@@ -16,14 +16,14 @@ gen_rtl -n -j32 diag=1 x86=1
 cd $ASIC_SRC/ip/cosim/diag
 python gen_asic_lib_bundle.py --arch=x86_64
 
-Bundle
+#Bundle
 # The entire dependency is available @
 cd $ASIC_GEN/ip/cosim/diag/
 tar zcvf nic.tar.gz nic/
 
-You need to copy over to the target device. 
+#You need to copy over to the target device. 
 
-Run
+#Run
 To run on target device (x86)
 export ASIC_LIB_BUNDLE=<SOME_WRITABLE_LOCATION>
 export ASIC_SRC=$ASIC_LIB_BUNDLE/nic/asic_src
@@ -34,7 +34,7 @@ tar -zxvf nic.tar.gz
 cd $ASIC_LIB_BUNDLE/nic/asic_lib
 source source_env_path
 
-start tclsh:
+#start tclsh:
 ------------
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -43,11 +43,12 @@ source .tclrc.diag
 
 #-------------------
 # Copy to Diag folder
-# On ASIC server for now
+# For amd64
 xguo2@asic20:/vol/hw/diag/diag_repo/asic/amd64$ cp -r /vol/dump/xguo2/workspace/asic_amd64/ip/cosim/diag/nic/* .
 # Get ASIC version
 git log --name-status HEAD^..HEAD > /vol/hw/diag/diag_repo/asic/amd64/asic_version.txt
 
+# For arm64
 
 ------------
 # Xin
@@ -104,8 +105,3 @@ ln -s $ASIC_LIB_BUNDLE/asic/asic_lib/_asic_capri.so .
 mkdir -p $ASIC_SRC/ip/cosim/diag/
 cd $ASIC_SRC/ip/cosim/diag/
 ln -s /$ASIC_LIB_BUNDLE/asic/asic_lib/_asic_diag.so .
-
-
-
-
-

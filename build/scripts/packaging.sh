@@ -74,8 +74,8 @@ ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
 
 mkdir -p $DIAG_ASIC_PATH
 mkdir -p $DIAG_ASIC_IMG_PATH
-cd $TOP_DIR/ASIC/$arch/
-cd $TOP_DIR/ASIC/$arch/
+cd $TOP_DIR/asic/$arch/
+cd $TOP_DIR/asic/$arch/
 rsync -r $ASIC_PATH/* $DIAG_ASIC_PATH/
 
 mkdir -p $DIAG_ASIC_IMG_PATH
