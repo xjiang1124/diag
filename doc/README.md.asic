@@ -1,3 +1,19 @@
+# Cleanup
+rm -fr $ASIC_GEN
+
+-------------------
+# Upstream
+git remote add upstream git@github.com:pensando/asic.git
+git fetch upstream master
+#git pull upstream, git branch -vv
+git merge FETCH_HEAD
+# Or
+git merge upstream/master
+
+# push back to owner/git repo
+git push
+
+-------------------
 #Compilation
 tcsh
 
@@ -16,6 +32,7 @@ gen_rtl -n -j32 diag=1 x86=1
 cd $ASIC_SRC/ip/cosim/diag
 python gen_asic_lib_bundle.py --arch=x86_64
 
+-------------------
 #Bundle
 # The entire dependency is available @
 cd $ASIC_GEN/ip/cosim/diag/
@@ -23,6 +40,7 @@ tar zcvf nic.tar.gz nic/
 
 #You need to copy over to the target device. 
 
+-------------------
 #Run
 # To run on target device (x86)
 
@@ -95,3 +113,27 @@ ln -s $ASIC_LIB_BUNDLE/asic/asic_lib/_asic_capri.so .
 mkdir -p $ASIC_SRC/ip/cosim/diag/
 cd $ASIC_SRC/ip/cosim/diag/
 ln -s /$ASIC_LIB_BUNDLE/asic/asic_lib/_asic_diag.so .
+
+-------------------
+# Start ASIC environment
+# pen-hwlab-pc-01
+source .tclrc.diag
+# diag_open_j2c_if <usb_NO> <slot_no>
+# HAPS1
+diag_open_j2c_if 1 10
+sknobs_load_file ../haps/cfg/haps_default_sknobs.out
+capri_setup 0
+# comment to reduce output
+#plog_add_scope csr 
+cap_top_soft_reset 0
+
+cap_top_init_start 0
+cap_top_init_done  0
+cap_top_load_from_cfg 0
+
+-------------------
+# Copy file in/out HAPS
+# On confprosh
+copyout /home/xiaodhu/cpld_wr
+# On Linux
+/mnt/bin/copyin cpld_wr
