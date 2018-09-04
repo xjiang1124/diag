@@ -99,6 +99,8 @@ func init() {
     cardType := os.Getenv("CARD_TYPE")
     if cardType == "MTP" {
         EepromTbl = mtpTbl
+    } else if cardType == "MTPS" {
+        EepromTbl = mtpTbl
     } else if cardType == "NAPLES100" {
         EepromTbl = naples100Tbl
     } else {

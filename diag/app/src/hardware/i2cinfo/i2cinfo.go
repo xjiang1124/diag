@@ -105,6 +105,30 @@ var MtpI2cTbl = []I2cInfo {
 //    I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE", 0},
 }
 
+//=========================================
+// MTP-S PMBus table
+// bus field is linux I2C device index at /dev/i2c-x
+// devAddress is 7-bit address
+var MtpsI2cTbl = []I2cInfo {
+    //       name        comp         Bus  devAddr  channel HubName     HubPort
+    I2cInfo {"PSU_1",    "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    0},
+    I2cInfo {"PSU_2",    "BEL_POWER", 0x0, 0x5B,    0x0,    "HUB_4",    1},
+    I2cInfo {"FRU",      "AT24C02C",  0x0, 0x50,    0x0,    "HUB_4",    2},
+    I2cInfo {"FAN",      "ADT7462",   0x0, 0x5C,    0x0,    "HUB_4",    2},
+    I2cInfo {"CLKGEN",   "SI52144",   0x0, 0x6B,    0x0,    "HUB_4",    3},
+    I2cInfo {"659_DVDD", "TPS53659",  0x0, 0x62,    0x0,    "HUB_4",    3},
+    I2cInfo {"659_AVDD", "TPS53659",  0x0, 0x62,    0x1,    "HUB_4",    3},
+    I2cInfo {"A20_U17",  "TPS549A20", 0x0, 0x1A,    0x0,    "HUB_4",    3},
+    I2cInfo {"A20_U18",  "TPS549A20", 0x0, 0x1B,    0x0,    "HUB_4",    3},
+    I2cInfo {"A20_U40",  "TPS549A20", 0x0, 0x1F,    0x0,    "HUB_4",    3},
+    I2cInfo {"A20_U53",  "TPS549A20", 0x0, 0x1C,    0x0,    "HUB_4",    3},
+
+    I2cInfo {"HUB_5",    "TCA9546A",  0x0, 0x74,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"PEX_U21",  "PEX8716",   0x0, 0x38,    0x0,    "HUB_5",    0},
+    I2cInfo {"PEX_U22",  "PEX8716",   0x0, 0x5D,    0x0,    "HUB_5",    1},
+    I2cInfo {"PEX_U23",  "PEX8716",   0x0, 0x5D,    0x0,    "HUB_5",    2},
+}
+
 var MtpHubI2cTbl = []I2cInfo {
     I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0,    "HUB_NONE", 0},
     I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0,    "HUB_NONE", 0},
@@ -116,14 +140,18 @@ var MtpHubI2cTbl = []I2cInfo {
 func init() {
     CardType = os.Getenv("CARD_TYPE")
 
-    MtpI2cTbl = append(MtpI2cTbl, MtpHubI2cTbl...)
+    MtpI2cTbl    = append(MtpI2cTbl,    MtpHubI2cTbl...)
+    MtpsI2cTbl   = append(MtpsI2cTbl,   MtpHubI2cTbl...)
     NaplesMtpTbl = append(NaplesMtpTbl, MtpHubI2cTbl...)
+
     if CardType == "NAPLES100" {
         I2cTbl = Naples100Tbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
         I2cTbl = MtpI2cTbl
+    } else if CardType == "MTPS" {
+        I2cTbl = MtpsI2cTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return

@@ -74,6 +74,11 @@ var mtpEepList = []string {"FRU"}
 var mtpI2cHubMap map[string] I2cHubInfo
 
 //===============================
+// MTP
+// Status display list
+var mtpsDispStaList map[string]DispStaFunc
+
+//===============================
 // NIC POWER
 // Status display list
 var nicPwrDispStaList map[string]DispStaFunc
@@ -136,6 +141,20 @@ func init() {
     mtpDispStaList["DC"]    = tps549a20.DispStatus
     mtpDispStaList["FAN"]   = adt7462.DispStatus
 
+    //===============================
+    // MTP
+    mtpsDispStaList = make(map[string]DispStaFunc)
+    mtpsDispStaList["PSU_1"]    = pet1600.DispStatus
+    mtpsDispStaList["PSU_2"]    = pet1600.DispStatus
+    mtpsDispStaList["FAN"]      = adt7462.DispStatus
+    mtpsDispStaList["A20_U17"]  = tps549a20.DispStatus
+    mtpsDispStaList["A20_U18"]  = tps549a20.DispStatus
+    mtpsDispStaList["A20_U40"]  = tps549a20.DispStatus
+    mtpsDispStaList["A20_U53"]  = tps549a20.DispStatus
+    mtpsDispStaList["659_DVDD"] = tps53659.DispStatus
+    mtpsDispStaList["659_AVDD"] = tps53659.DispStatus
+
+    //===============================
     mtpI2cHubMap = make(map[string]I2cHubInfo)
     mtpI2cHubMap["UUT_1"]  = I2cHubInfo{"HUB_1", 0}
     mtpI2cHubMap["UUT_2"]  = I2cHubInfo{"HUB_1", 1}
@@ -149,6 +168,7 @@ func init() {
     mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
+    mtpsI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4", "HUB_5"}
     naplesMtpI2cHubList := []string{"NIC_HUB"}
     naples100I2cHubList := []string{"NIC_NONE"}
 
@@ -171,6 +191,7 @@ func init() {
     dispMap["NAPLES100"] = naples100DispStaList
     dispMap["NAPLES_MTP"]= naplesMtpDispStaList
     dispMap["MTP"]       = mtpDispStaList
+    dispMap["MTPS"]      = mtpsDispStaList
     dispMap["NIC_POWER"] = nicPwrDispStaList
 
     // Pmbus test list
@@ -181,22 +202,27 @@ func init() {
     // EEPROM list
     eepromMap = make(map[string][]string)
     eepromMap["MTP"]    = mtpEepList
+    eepromMap["MTPS"]   = mtpEepList
     eepromMap["NAPLES_MTP"] = naplesEepList
     eepromMap["NAPLES100"] = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
+    // MTP=MTPS
+    i2cHubMap["MTPS"] = mtpI2cHubMap
     i2cHubMap["NAPLES100"] = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"] = mtpI2cHubList
+    i2cHubListMap["MTPS"] = mtpsI2cHubList
     i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
     i2cHubListMap["NAPLES100"] = naples100I2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
     psuListMap["MTP"] = mtpPsuList
+    psuListMap["MTPS"] = mtpPsuList
     psuListMap["NAPLES100"] = naples100PsuList
 
     //===============================
