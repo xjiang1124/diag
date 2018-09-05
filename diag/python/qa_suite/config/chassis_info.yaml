@@ -104,4 +104,25 @@ MTP024:
     SLOT_9: 
     SLOT_10: 
 
+MTPS01:
+    SKIP:
+    MODE: MTP_QK
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2003
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 4
+    APC_2_NAME:
+    APC_2_PORT:
+    IP: 192.168.74.21
+    SLOT_1:
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6: 
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10: 
+
 ...
