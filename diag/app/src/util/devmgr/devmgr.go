@@ -1,7 +1,7 @@
 package main
 
 import (
-    //"fmt"
+    "fmt"
     "flag"
     "os"
     "strings"
@@ -25,14 +25,19 @@ func myUsage() {
 }
 
 func main() {
+    var err int
     flag.Usage = myUsage
 
     devNamePtr  := flag.String("dev",     "ALL", "Device name")
     statusPtr   := flag.Bool(  "status",  false, "Device status")
-    infoPtr     := flag.Bool(  "info", false, "Device info")
-    listPtr     := flag.Bool(  "list", false, "Device info")
+    infoPtr     := flag.Bool(  "info",    false, "Device info")
+    listPtr     := flag.Bool(  "list",    false, "Device info")
+    rvoutPtr    := flag.Bool(  "rvout",   false, "VRM - Read VOUT in mV")
+    rioutPtr    := flag.Bool(  "riout",   false, "VRM - Read IOUT in mA")
     marginPtr   := flag.Bool(  "margin",  false, "VRM - Enable voltage marigining")
+    margModePtr := flag.String("mgmode",  "PCT", "VRM - Vmargin mode: PCT - percentage based; MV: value (mv) based")
     pctPtr      := flag.Int(   "pct",     0x0,   "VRM - Margin percentage; FAN - Fan speed percentage")
+    VoutMvPtr   := flag.Uint64("vout",    8500,  "VRM - Margin in mv")
     programPtr  := flag.Bool(  "program", false, "VRM - Program with specified file")
     verifyPtr   := flag.Bool(  "verify",  false, "VRM - Verify NVM content with specified file")
     filePtr     := flag.String("file",    "",    "VRM - /path/to/image.file")
@@ -50,6 +55,7 @@ func main() {
     verbose := *verbosePtr
     mask    := *maskPtr
     uut     := strings.ToUpper(*uutPtr)
+    margMode:= strings.ToUpper(*margModePtr)
 
     if *listPtr == true {
         i2cinfo.SwitchI2cTbl(uut)
@@ -63,12 +69,15 @@ func main() {
     }
 
     if *marginPtr == true {
-        err := hwdev.Margin(devName, pct, uut)
+        if margMode == "PCT" {
+            err = hwdev.Margin(devName, pct, uut)
+        } else if margMode == "MV" {
+            err = hwdev.MarginByValue(devName, *VoutMvPtr, uut)
+        }
         if err != errType.SUCCESS {
             cli.Println("e", "Voltage margin failed!")
         } else {
             hwdev.DispStatus(devName, uut)
-            cli.Println("i", "Voltage margin set at", pct, "percent")
         }
         return
     }
@@ -95,6 +104,18 @@ func main() {
 
     if *faninitPtr == true {
         hwdev.FanSetup(devName)
+        return
+    }
+
+    if *rvoutPtr == true {
+        vout, _ := hwdev.ReadVout(devName, uut)
+        fmt.Println(vout)
+        return
+    }
+
+    if *rioutPtr == true {
+        iout, _ := hwdev.ReadIout(devName, uut)
+        fmt.Println(iout)
         return
     }
 

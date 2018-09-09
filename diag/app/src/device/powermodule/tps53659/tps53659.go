@@ -299,6 +299,80 @@ func ReadDeviceID(devName string) (devID byte, err int) {
     return devID, err
 }
 
+func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
+    var marginReg uint64
+    var marginCmd byte
+    var data uint16
+    var dacStepRegVal byte
+    var dacStep uint64
+
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    cli.Println("d", tgtVoutMv)
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+
+    data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
+    integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
+
+    curVoutMv := integer *1000 + dec
+    cli.Println("d", "curVoutMv:", curVoutMv)
+
+    if tgtVoutMv == curVoutMv {
+        marginCmd = MARGIN_NONE_CMD
+    } else if tgtVoutMv > curVoutMv {
+        marginCmd = MARGIN_HIGH_CMD
+        marginReg = pmbus.VOUT_MARGIN_HIGH
+    } else {
+        marginCmd = MARGIN_LOW_CMD
+        marginReg = pmbus.VOUT_MARGIN_LOW
+    }
+
+    // Update VOUT_MARGIN_HIGH/HOW with target VID
+    vidTgt, _ := calcVidFromVolt(tgtVoutMv, dacStep)
+
+    if marginCmd != MARGIN_NONE_CMD {
+        err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+        if err != errType.SUCCESS {
+            cli.Println("e", "VMargin failed!")
+            return
+        }
+    }
+    // Set to PMBus control
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    // Enable Vmargin
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    return
+}
+
 func SetVMargin(devName string, pct int) (err int) {
     var marginReg uint64
     var marginCmd byte

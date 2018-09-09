@@ -111,8 +111,8 @@ MTPS01:
     TS_PORT: 2003
     APC_1_NAME: pen-hwlab-apc-02
     APC_1_PORT: 4
-    APC_2_NAME:
-    APC_2_PORT:
+    APC_2_NAME: pen-hwlab-apc-02
+    APC_2_PORT: 3
     IP: 192.168.74.21
     SLOT_1:
     SLOT_2: 
