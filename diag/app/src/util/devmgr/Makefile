@@ -7,7 +7,7 @@ MODULE_NAME=$(shell basename $(BUILD_DIR))
 .PHONY: all
 
 all:
-	env GOOS=linux GOARCH=${ARCH} CGO_LDFLAGS=$(CGO_LDFL) GOBIN=$(GOBN) CGO_ENABLED=1 CC=$(CMPL) $(GO_BUILD) -v -o arch_${ARCH}/$(MODULE_NAME)
+	env GOOS=linux GOARCH=${ARCH} CGO_LDFLAGS=$(CGO_LDFL) GOBIN=$(GOBN) CGO_ENABLED=1 CC=$(CMPL) $(GO_BUILD) -o arch_${ARCH}/$(MODULE_NAME)
 	@mkdir -p $(GOBN)/linux_${ARCH}/util/
 	@cp arch_${ARCH}/$(MODULE_NAME) $(GOBN)/linux_${ARCH}/util/
 
