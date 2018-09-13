@@ -1,5 +1,5 @@
 /* Hierarchial argument parsing, layered over getopt.
-   Copyright (C) 1995-2017 Free Software Foundation, Inc.
+   Copyright (C) 1995-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Written by Miles Bader <miles@gnu.ai.mit.edu>.
 
@@ -511,7 +511,7 @@ extern void *__argp_input (const struct argp *__restrict __argp,
 
 #ifdef __USE_EXTERN_INLINES
 
-# if !(defined _LIBC && _LIBC)
+# if !_LIBC
 #  define __argp_usage argp_usage
 #  define __argp_state_help argp_state_help
 #  define __option_is_short _option_is_short
@@ -546,7 +546,7 @@ __NTH (__option_is_end (const struct argp_option *__opt))
   return !__opt->key && !__opt->name && !__opt->doc && !__opt->group;
 }
 
-# if !(defined _LIBC && _LIBC)
+# if !_LIBC
 #  undef __argp_usage
 #  undef __argp_state_help
 #  undef __option_is_short

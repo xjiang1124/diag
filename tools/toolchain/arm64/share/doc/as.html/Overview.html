@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the GNU Assembler "as".
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -212,7 +212,6 @@ see <a href="Invoking.html#Invoking">Command-Line Options</a>.
    [<b>-mips32r3</b>] [<b>-mips32r5</b>] [<b>-mips32r6</b>] [<b>-mips64</b>] [<b>-mips64r2</b>]
    [<b>-mips64r3</b>] [<b>-mips64r5</b>] [<b>-mips64r6</b>]
    [<b>-construct-floats</b>] [<b>-no-construct-floats</b>]
-   [<b>-mignore-branch-isa</b>] [<b>-mno-ignore-branch-isa</b>]
    [<b>-mnan=<var>encoding</var></b>]
    [<b>-trap</b>] [<b>-no-break</b>] [<b>-break</b>] [<b>-no-trap</b>]
    [<b>-mips16</b>] [<b>-no-mips16</b>]
@@ -292,10 +291,6 @@ see <a href="Invoking.html#Invoking">Command-Line Options</a>.
    [<b>-mint-register=<var>number</var></b>]
    [<b>-mgcc-abi</b>|<b>-mrx-abi</b>]
 
-<em>Target RISC-V options:</em>
-   [<b>-march</b>=<var>ISA</var>]
-   [<b>-mabi</b>=<var>ABI</var>]
-
 <em>Target s390 options:</em>
    [<b>-m31</b>|<b>-m64</b>] [<b>-mesa</b>|<b>-mzarch</b>] [<b>-march</b>=<var>CPU</var>]
    [<b>-mregnames</b>|<b>-mno-regnames</b>]
@@ -308,21 +303,10 @@ see <a href="Invoking.html#Invoking">Command-Line Options</a>.
    [<b>-USE_R1</b>][<b>-KPIC</b>][<b>-O0</b>][<b>-G</b> <var>num</var>][<b>-V</b>]
 
 <em>Target SPARC options:</em>
-   [<b>-Av6</b>|<b>-Av7</b>|<b>-Av8</b>|<b>-Aleon</b>|<b>-Asparclet</b>|<b>-Asparclite</b>
-    <b>-Av8plus</b>|<b>-Av8plusa</b>|<b>-Av8plusb</b>|<b>-Av8plusc</b>|<b>-Av8plusd</b>
-    <b>-Av8plusv</b>|<b>-Av8plusm</b>|<b>-Av9</b>|<b>-Av9a</b>|<b>-Av9b</b>|<b>-Av9c</b>
-    <b>-Av9d</b>|<b>-Av9e</b>|<b>-Av9v</b>|<b>-Av9m</b>|<b>-Asparc</b>|<b>-Asparcvis</b>
-    <b>-Asparcvis2</b>|<b>-Asparcfmaf</b>|<b>-Asparcima</b>|<b>-Asparcvis3</b>
-    <b>-Asparcvisr</b>|<b>-Asparc5</b>]
-   [<b>-xarch=v8plus</b>|<b>-xarch=v8plusa</b>]|<b>-xarch=v8plusb</b>|<b>-xarch=v8plusc</b>
-    <b>-xarch=v8plusd</b>|<b>-xarch=v8plusv</b>|<b>-xarch=v8plusm</b>|<b>-xarch=v9</b>
-    <b>-xarch=v9a</b>|<b>-xarch=v9b</b>|<b>-xarch=v9c</b>|<b>-xarch=v9d</b>|<b>-xarch=v9e</b>
-    <b>-xarch=v9v</b>|<b>-xarch=v9m</b>|<b>-xarch=sparc</b>|<b>-xarch=sparcvis</b>
-    <b>-xarch=sparcvis2</b>|<b>-xarch=sparcfmaf</b>|<b>-xarch=sparcima</b>
-    <b>-xarch=sparcvis3</b>|<b>-xarch=sparcvisr</b>|<b>-xarch=sparc5</b>
-    <b>-bump</b>]
+   [<b>-Av6</b>|<b>-Av7</b>|<b>-Av8</b>|<b>-Asparclet</b>|<b>-Asparclite</b>
+    <b>-Av8plus</b>|<b>-Av8plusa</b>|<b>-Av9</b>|<b>-Av9a</b>]
+   [<b>-xarch=v8plus</b>|<b>-xarch=v8plusa</b>] [<b>-bump</b>]
    [<b>-32</b>|<b>-64</b>]
-   [<b>&ndash;enforce-aligned-data</b>][<b>&ndash;dcti-couples-detect</b>]
 
 <em>Target TIC54X options:</em>
  [<b>-mcpu=54[123589]</b>|<b>-mcpu=54[56]lp</b>] [<b>-mfar-mode</b>|<b>-mf</b>]
@@ -1272,18 +1256,6 @@ branches.  By default &lsquo;<samp>--no-relax-branch</samp>&rsquo; is selected, 
 out-of-range branches to produce an error.
 </p>
 </dd>
-<dt><code>-mignore-branch-isa</code></dt>
-<dt><code>-mno-ignore-branch-isa</code></dt>
-<dd><p>Ignore branch checks for invalid transitions between ISA modes.  The
-semantics of branches does not provide for an ISA mode switch, so in
-most cases the ISA mode a branch has been encoded for has to be the
-same as the ISA mode of the branch&rsquo;s target label.  Therefore GAS has
-checks implemented that verify in branch assembly that the two ISA
-modes match.  &lsquo;<samp>-mignore-branch-isa</samp>&rsquo; disables these checks.  By
-default &lsquo;<samp>-mno-ignore-branch-isa</samp>&rsquo; is selected, causing any invalid
-branch requiring a transition between ISA modes to produce an error.
-</p>
-</dd>
 <dt><code>-mnan=<var>encoding</var></code></dt>
 <dd><p>Select between the IEEE 754-2008 (<samp>-mnan=2008</samp>) or the legacy
 (<samp>-mnan=legacy</samp>) NaN encoding format.  The latter is the default.
@@ -1379,12 +1351,6 @@ for a PowerPC processor.
 </p>
 
 
-
-<p>See <a href="RISC_002dV_002dOpts.html#RISC_002dV_002dOpts">RISC-V-Opts</a>, for the options available when as is configured
-for a RISC-V processor.
-</p>
-
-
 <p>See the info pages for documentation of the RX-specific options.
 </p>
 <p>The following options are available when as is configured for the s390
@@ -1401,11 +1367,9 @@ processor family.
 Architecture (esa) or the z/Architecture mode (zarch).
 </p></dd>
 <dt><code>-march=<var>processor</var></code></dt>
-<dd><p>Specify which s390 processor variant is the target, &lsquo;<samp>g5</samp>&rsquo; (or
-&lsquo;<samp>arch3</samp>&rsquo;), &lsquo;<samp>g6</samp>&rsquo;, &lsquo;<samp>z900</samp>&rsquo; (or &lsquo;<samp>arch5</samp>&rsquo;), &lsquo;<samp>z990</samp>&rsquo; (or
-&lsquo;<samp>arch6</samp>&rsquo;), &lsquo;<samp>z9-109</samp>&rsquo;, &lsquo;<samp>z9-ec</samp>&rsquo; (or &lsquo;<samp>arch7</samp>&rsquo;), &lsquo;<samp>z10</samp>&rsquo; (or
-&lsquo;<samp>arch8</samp>&rsquo;), &lsquo;<samp>z196</samp>&rsquo; (or &lsquo;<samp>arch9</samp>&rsquo;), &lsquo;<samp>zEC12</samp>&rsquo; (or &lsquo;<samp>arch10</samp>&rsquo;),
-&lsquo;<samp>z13</samp>&rsquo; (or &lsquo;<samp>arch11</samp>&rsquo;), or &lsquo;<samp>z14</samp>&rsquo; (or &lsquo;<samp>arch12</samp>&rsquo;).
+<dd><p>Specify which s390 processor variant is the target, &lsquo;<samp>g6</samp>&rsquo;, &lsquo;<samp>g6</samp>&rsquo;,
+&lsquo;<samp>z900</samp>&rsquo;, &lsquo;<samp>z990</samp>&rsquo;, &lsquo;<samp>z9-109</samp>&rsquo;, &lsquo;<samp>z9-ec</samp>&rsquo;, &lsquo;<samp>z10</samp>&rsquo;,
+&lsquo;<samp>z196</samp>&rsquo;, &lsquo;<samp>zEC12</samp>&rsquo;, or &lsquo;<samp>z13</samp>&rsquo;.
 </p></dd>
 <dt><code>-mregnames</code></dt>
 <dt><code>-mno-regnames</code></dt>

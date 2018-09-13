@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="ATOMIC_005fDEFINE.html#ATOMIC_005fDEFINE" accesskey="n" rel="next
 </div>
 <hr>
 <a name="ATOMIC_005fCAS-_002d_002d_002d-Atomic-compare-and-swap"></a>
-<h3 class="section">9.30 <code>ATOMIC_CAS</code> &mdash; Atomic compare and swap</h3>
+<h3 class="section">9.26 <code>ATOMIC_CAS</code> &mdash; Atomic compare and swap</h3>
 <a name="index-ATOMIC_005fDEFINE"></a>
 <a name="index-Atomic-subroutine_002c-compare-and-swap"></a>
 
@@ -84,8 +84,8 @@ Next: <a href="ATOMIC_005fDEFINE.html#ATOMIC_005fDEFINE" accesskey="n" rel="next
 <dd><p><code>ATOMIC_CAS</code> compares the variable <var>ATOM</var> with the value of
 <var>COMPARE</var>; if the value is the same, <var>ATOM</var> is set to the value
 of <var>NEW</var>. Additionally, <var>OLD</var> is set to the value of <var>ATOM</var>
-that was used for the comparison.  When <var>STAT</var> is present and the invocation
-was successful, it is assigned the value 0. If it is present and the invocation
+that was used for the comparison.  When <var>STAT</var> is present and the invokation
+was successful, it is assigned the value 0. If it is present and the invokation
 has failed, it is assigned a positive value; in particular, for a coindexed
 <var>ATOM</var>, if the remote image has stopped, it is assigned the value of
 <code>ISO_FORTRAN_ENV</code>&rsquo;s <code>STAT_STOPPED_IMAGE</code> and if the remote image has

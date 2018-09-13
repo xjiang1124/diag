@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -30,7 +30,8 @@
 #include <bits/shm.h>
 
 /* Define types required by the standard.  */
-#include <bits/types/time_t.h>
+#define __need_time_t
+#include <time.h>
 
 #ifdef __USE_XOPEN
 # ifndef __pid_t_defined

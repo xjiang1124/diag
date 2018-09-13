@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2018 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -272,7 +272,8 @@ This is part of the File-I/O protocol extension.  See <a href="File_002dI_002fO-
 with the register are transmitted in target byte order.  The size of
 each register and their position within the &lsquo;<samp>g</samp>&rsquo; packet are
 determined by the <small>GDB</small> internal gdbarch functions
-<code>DEPRECATED_REGISTER_RAW_SIZE</code> and <code>gdbarch_register_name</code>.
+<code>DEPRECATED_REGISTER_RAW_SIZE</code> and <code>gdbarch_register_name</code>.  The
+specification of several standard &lsquo;<samp>g</samp>&rsquo; packets is specified below.
 </p>
 <p>When reading registers from a trace frame (see <a href="Analyze-Collected-Data.html#Analyze-Collected-Data">Using the Collected Data</a>), the stub may also return a string of
 literal &lsquo;<samp>x</samp>&rsquo;&rsquo;s in place of the register data digits, to indicate
@@ -552,16 +553,13 @@ attached without being stopped if that is supported by the target.
 <dt>&lsquo;<samp>vCont<span class="roman">[</span>;<var>action</var><span class="roman">[</span>:<var>thread-id</var><span class="roman">]]</span>&hellip;</samp>&rsquo;</dt>
 <dd><a name="index-vCont-packet"></a>
 <a name="vCont-packet"></a><p>Resume the inferior, specifying different actions for each thread.
-</p>
-<p>For each inferior thread, the leftmost action with a matching
-<var>thread-id</var> is applied.  Threads that don&rsquo;t match any action
-remain in their current state.  Thread IDs are specified using the
-syntax described in <a href="#thread_002did-syntax">thread-id syntax</a>.  If multiprocess
-extensions (see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>) are supported, actions
-can be specified to match all threads in a process by using the
-&lsquo;<samp>p<var>pid</var>.-1</samp>&rsquo; form of the <var>thread-id</var>.  An action with no
-<var>thread-id</var> matches all threads.  Specifying no actions is an
-error.
+If an action is specified with no <var>thread-id</var>, then it is applied to any
+threads that don&rsquo;t have a specific action specified; if no default action is
+specified then other threads should remain stopped in all-stop mode and
+in their current state in non-stop mode.
+Specifying multiple
+default actions is an error; specifying no actions is also an error.
+Thread IDs are specified using the syntax described in <a href="#thread_002did-syntax">thread-id syntax</a>.
 </p>
 <p>Currently supported actions are:
 </p>
@@ -612,17 +610,11 @@ the corresponding stop reply should indicate that the thread has stopped with
 signal &lsquo;<samp>0</samp>&rsquo;, regardless of whether the target uses some other signal
 as an implementation detail.
 </p>
-<p>The server must ignore &lsquo;<samp>c</samp>&rsquo;, &lsquo;<samp>C</samp>&rsquo;, &lsquo;<samp>s</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo;, and
-&lsquo;<samp>r</samp>&rsquo; actions for threads that are already running.  Conversely,
-the server must ignore &lsquo;<samp>t</samp>&rsquo; actions for threads that are already
-stopped.
-</p>
-<p><em>Note:</em> In non-stop mode, a thread is considered running until
-<small>GDB</small> acknowleges an asynchronous stop notification for it with
-the &lsquo;<samp>vStopped</samp>&rsquo; packet (see <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>).
-</p>
 <p>The stub must support &lsquo;<samp>vCont</samp>&rsquo; if it reports support for
-multiprocess extensions (see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>).
+multiprocess extensions (see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>).  Note that in
+this case &lsquo;<samp>vCont</samp>&rsquo; actions can be specified to apply to all threads
+in a process by using the &lsquo;<samp>p<var>pid</var>.-1</samp>&rsquo; form of the
+<var>thread-id</var>.
 </p>
 <p>Reply:
 See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
@@ -747,20 +739,6 @@ supported; see <a href="General-Query-Packets.html#multiprocess-extensions">mult
 </dl>
 
 </dd>
-<dt>&lsquo;<samp>vMustReplyEmpty</samp>&rsquo;</dt>
-<dd><a name="index-vMustReplyEmpty-packet"></a>
-<p>The correct reply to an unknown &lsquo;<samp>v</samp>&rsquo; packet is to return the empty
-string, however, some older versions of <code>gdbserver</code> would
-incorrectly return &lsquo;<samp>OK</samp>&rsquo; for unknown &lsquo;<samp>v</samp>&rsquo; packets.
-</p>
-<p>The &lsquo;<samp>vMustReplyEmpty</samp>&rsquo; is used as a feature test to check how
-<code>gdbserver</code> handles unknown packets, it is important that this
-packet be handled in the same way as other unknown &lsquo;<samp>v</samp>&rsquo; packets.
-If this packet is handled differently to other unknown &lsquo;<samp>v</samp>&rsquo;
-packets then it is possile that <small>GDB</small> may run into problems in
-other areas, specifically around use of &lsquo;<samp>vFile:setfs:</samp>&rsquo;.
-</p>
-</dd>
 <dt>&lsquo;<samp>vRun;<var>filename</var><span class="roman">[</span>;<var>argument</var><span class="roman">]</span>&hellip;</samp>&rsquo;</dt>
 <dd><a name="index-vRun-packet"></a>
 <p>Run the program <var>filename</var>, passing it each <var>argument</var> on its
@@ -828,25 +806,22 @@ be implemented in an idempotent way.</em>
 <dt>&lsquo;<samp>Z0,<var>addr</var>,<var>kind</var><span class="roman">[</span>;<var>cond_list</var>&hellip;<span class="roman">]</span><span class="roman">[</span>;cmds:<var>persist</var>,<var>cmd_list</var>&hellip;<span class="roman">]</span></samp>&rsquo;</dt>
 <dd><a name="index-z0-packet"></a>
 <a name="index-Z0-packet"></a>
-<p>Insert (&lsquo;<samp>Z0</samp>&rsquo;) or remove (&lsquo;<samp>z0</samp>&rsquo;) a software breakpoint at address
+<p>Insert (&lsquo;<samp>Z0</samp>&rsquo;) or remove (&lsquo;<samp>z0</samp>&rsquo;) a memory breakpoint at address
 <var>addr</var> of type <var>kind</var>.
 </p>
-<p>A software breakpoint is implemented by replacing the instruction at
+<p>A memory breakpoint is implemented by replacing the instruction at
 <var>addr</var> with a software breakpoint or trap instruction.  The
-<var>kind</var> is target-specific and typically indicates the size of the
-breakpoint in bytes that should be inserted.  E.g., the <small>ARM</small> and
-<small>MIPS</small> can insert either a 2 or 4 byte breakpoint.  Some
-architectures have additional meanings for <var>kind</var>
-(see <a href="Architecture_002dSpecific-Protocol-Details.html#Architecture_002dSpecific-Protocol-Details">Architecture-Specific Protocol Details</a>); if no
-architecture-specific value is being used, it should be &lsquo;<samp>0</samp>&rsquo;.
-<var>kind</var> is hex-encoded.  <var>cond_list</var> is an optional list of
-conditional expressions in bytecode form that should be evaluated on
-the target&rsquo;s side.  These are the conditions that should be taken into
-consideration when deciding if the breakpoint trigger should be
-reported back to <small>GDB</small>.
+<var>kind</var> is target-specific and typically indicates the size of
+the breakpoint in bytes that should be inserted.  E.g., the <small>ARM</small>
+and <small>MIPS</small> can insert either a 2 or 4 byte breakpoint.  Some
+architectures have additional meanings for <var>kind</var>;
+<var>cond_list</var> is an optional list of conditional expressions in bytecode
+form that should be evaluated on the target&rsquo;s side.  These are the
+conditions that should be taken into consideration when deciding if
+the breakpoint trigger should be reported back to <var>GDBN</var>.
 </p>
 <p>See also the &lsquo;<samp>swbreak</samp>&rsquo; stop reason (see <a href="Stop-Reply-Packets.html#swbreak-stop-reason">swbreak stop reason</a>)
-for how to best report a software breakpoint event to <small>GDB</small>.
+for how to best report a memory breakpoint event to <small>GDB</small>.
 </p>
 <p>The <var>cond_list</var> parameter is comprised of a series of expressions,
 concatenated without separators. Each expression has the following form:
@@ -870,13 +845,15 @@ separators.  Each expression has the following form:
 <dl compact="compact">
 <dt>&lsquo;<samp>X <var>len</var>,<var>expr</var></samp>&rsquo;</dt>
 <dd><p><var>len</var> is the length of the bytecode expression and <var>expr</var> is the
-actual commands expression in bytecode form.
+actual conditional expression in bytecode form.
 </p>
 </dd>
 </dl>
 
+<p>see <a href="Architecture_002dSpecific-Protocol-Details.html#Architecture_002dSpecific-Protocol-Details">Architecture-Specific Protocol Details</a>.
+</p>
 <p><em>Implementation note: It is possible for a target to copy or move
-code that contains software breakpoints (e.g., when implementing
+code that contains memory breakpoints (e.g., when implementing
 overlays).  The behavior of this packet, in the presence of such a
 target, is not defined.</em>
 </p>
@@ -895,16 +872,15 @@ target, is not defined.</em>
 
 </dd>
 <dt>&lsquo;<samp>z1,<var>addr</var>,<var>kind</var></samp>&rsquo;</dt>
-<dt>&lsquo;<samp>Z1,<var>addr</var>,<var>kind</var><span class="roman">[</span>;<var>cond_list</var>&hellip;<span class="roman">]</span><span class="roman">[</span>;cmds:<var>persist</var>,<var>cmd_list</var>&hellip;<span class="roman">]</span></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>Z1,<var>addr</var>,<var>kind</var><span class="roman">[</span>;<var>cond_list</var>&hellip;<span class="roman">]</span></samp>&rsquo;</dt>
 <dd><a name="index-z1-packet"></a>
 <a name="index-Z1-packet"></a>
 <p>Insert (&lsquo;<samp>Z1</samp>&rsquo;) or remove (&lsquo;<samp>z1</samp>&rsquo;) a hardware breakpoint at
 address <var>addr</var>.
 </p>
 <p>A hardware breakpoint is implemented using a mechanism that is not
-dependent on being able to modify the target&rsquo;s memory.  The
-<var>kind</var>, <var>cond_list</var>, and <var>cmd_list</var> arguments have the
-same meaning as in &lsquo;<samp>Z0</samp>&rsquo; packets.
+dependant on being able to modify the target&rsquo;s memory.  The <var>kind</var>
+and <var>cond_list</var> have the same meaning as in &lsquo;<samp>Z0</samp>&rsquo; packets.
 </p>
 <p><em>Implementation note: A hardware breakpoint is not affected by code
 movement.</em>

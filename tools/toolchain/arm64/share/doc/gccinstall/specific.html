@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -128,6 +128,7 @@ information have to.
 </li><li> <a href="#m32r-x-elf">m32r-*-elf</a>
 </li><li> <a href="#m68k-x-x">m68k-*-*</a>
 </li><li> <a href="#m68k-uclinux">m68k-uclinux</a>
+</li><li> <a href="#mep-x-elf">mep-*-elf</a>
 </li><li> <a href="#microblaze-x-elf">microblaze-*-elf</a>
 </li><li> <a href="#mips-x-x">mips-*-*</a>
 </li><li> <a href="#mips-sgi-irix5">mips-sgi-irix5</a>
@@ -145,10 +146,6 @@ information have to.
 </li><li> <a href="#powerpcle-x-elf">powerpcle-*-elf</a>
 </li><li> <a href="#powerpcle-x-eabisim">powerpcle-*-eabisim</a>
 </li><li> <a href="#powerpcle-x-eabi">powerpcle-*-eabi</a>
-</li><li> <a href="#riscv32-x-elf">riscv32-*-elf</a>
-</li><li> <a href="#riscv32-x-linux">riscv32-*-linux</a>
-</li><li> <a href="#riscv64-x-elf">riscv64-*-elf</a>
-</li><li> <a href="#riscv64-x-linux">riscv64-*-linux</a>
 </li><li> <a href="#s390-x-linux">s390-*-linux*</a>
 </li><li> <a href="#s390x-x-linux">s390x-*-linux*</a>
 </li><li> <a href="#s390x-ibm-tpf">s390x-ibm-tpf*</a>
@@ -171,6 +168,7 @@ information have to.
 </li><li> <a href="#xtensa-x-linux">xtensa*-*-linux*</a>
 </li><li> <a href="#windows">Microsoft Windows</a>
 </li><li> <a href="#x-x-cygwin">*-*-cygwin</a>
+</li><li> <a href="#x-x-interix">*-*-interix</a>
 </li><li> <a href="#x-x-mingw32">*-*-mingw32</a>
 </li><li> <a href="#os2">OS/2</a>
 </li><li> <a href="#older">Older systems</a>
@@ -250,7 +248,10 @@ or &lsquo;<samp>arc700</samp>&rsquo;.
 </p>
 <hr /><a name="arm_002dx_002deabi"></a><a name="arm_002d_002a_002deabi"></a>
 <h3 class="heading">arm-*-eabi</h3>
-<p>ARM-family processors.
+<p>ARM-family processors.  Subtargets that use the ELF object format
+require GNU binutils 2.13 or newer.  Such subtargets include:
+<code>arm-*-netbsdelf</code>, <code>arm-*-*linux-*</code>
+and <code>arm-*-rtemseabi</code>.
 </p>
 <p>Building the Ada frontend commonly fails (an infinite loop executing
 <code>xsinfo</code>) if the host compiler is GNAT 4.8.  Host compilers built from the
@@ -273,6 +274,8 @@ can also be obtained from:
 </li><li> <a href="http://www.amelek.gda.pl/avr/">http://www.amelek.gda.pl/avr/</a>
 </li></ul>
 
+<p>We <em>strongly</em> recommend using binutils 2.13 or newer.
+</p>
 <p>The following error:
 </p><div class="smallexample">
 <pre class="smallexample">Error: register required
@@ -286,7 +289,7 @@ can also be obtained from:
 See &ldquo;Blackfin Options&rdquo; in the main manual
 </p>
 <p>More information, and a version of binutils with support for this processor,
-is available at <a href="https://blackfin.uclinux.org">https://blackfin.uclinux.org</a>
+is available at <a href="http://blackfin.uclinux.org">http://blackfin.uclinux.org</a>
 </p>
 <hr /><a name="cr16"></a><a name="CR16"></a>
 <h3 class="heading">CR16</h3>
@@ -322,6 +325,9 @@ for a list of CRIS-specific options.
 </p></dd>
 </dl>
 
+<p>For <code>cris-axis-elf</code> you need binutils 2.11
+or newer.  For <code>cris-axis-linux-gnu</code> you need binutils 2.12 or newer.
+</p>
 <p>Pre-packaged tools can be obtained from
 <a href="ftp://ftp.axis.com/pub/axis/tools/cris/compiler-kit/">ftp://ftp.axis.com/pub/axis/tools/cris/compiler-kit/</a>.  More
 information about this platform is available at
@@ -372,9 +378,9 @@ and check with good results on FreeBSD 3.0, 3.4, 4.0, 4.2, 4.3, 4.4,
 with this release of GCC.  Bootstrapping against the latest GNU
 binutils and/or the version found in <samp>/usr/ports/devel/binutils</samp> has
 been known to enable additional features and improve overall testsuite
-results.  However, it is currently known that boehm-gc may not configure
-properly on FreeBSD prior to the FreeBSD 7.0 release with GNU binutils
-after 2.16.1.
+results.  However, it is currently known that boehm-gc (which itself
+is required for java) may not configure properly on FreeBSD prior to
+the FreeBSD 7.0 release with GNU binutils after 2.16.1.
 </p>
 <hr /><a name="ft32_002dx_002delf"></a><a name="ft32_002d_002a_002delf"></a>
 <h3 class="heading">ft32-*-elf</h3>
@@ -457,11 +463,11 @@ with the one implemented under HP-UX 11 using secondary definitions.
 <p>GCC 3.0 and up support HP-UX 11.  GCC 2.95.x is not supported and cannot
 be used to compile GCC 3.0 and up.
 </p>
-<p>The libffi library haven&rsquo;t been ported to 64-bit HP-UX&nbsp;and doesn&rsquo;t build.
+<p>The libffi and libjava libraries haven&rsquo;t been ported to 64-bit HP-UX&nbsp;and don&rsquo;t build.
 </p>
 <p>Refer to <a href="binaries.html">binaries</a> for information about obtaining
 precompiled GCC binaries for HP-UX.  Precompiled binaries must be obtained
-to build the Ada language as it cannot be bootstrapped using C.  Ada is
+to build the Ada language as it can&rsquo;t be bootstrapped using C.  Ada is
 only available for the 32-bit PA-RISC runtime.
 </p>
 <p>Starting with GCC 3.4 an ISO C compiler is required to bootstrap.  The
@@ -470,7 +476,11 @@ unbundled compiler, or a binary distribution of GCC.
 </p>
 <p>It is possible to build GCC 3.3 starting with the bundled HP compiler,
 but the process requires several steps.  GCC 3.3 can then be used to
-build later versions.
+build later versions.  The fastjar program contains ISO C code and
+can&rsquo;t be built with the HP bundled compiler.  This problem can be
+avoided by not building the Java language.  For example, use the
+<samp>--enable-languages=&quot;c,c++,f77,objc&quot;</samp> option in your configure
+command.
 </p>
 <p>There are several possible approaches to building the distribution.
 Binutils can be built first using the HP tools.  Then, the GCC
@@ -541,12 +551,12 @@ the .init and .fini sections for array initializers and finalizers.
 HP linker be used for link editing on this target.
 </p>
 <p>At this time, the GNU linker does not support the creation of long
-branch stubs.  As a result, it cannot successfully link binaries
+branch stubs.  As a result, it can&rsquo;t successfully link binaries
 containing branch offsets larger than 8 megabytes.  In addition,
 there are problems linking shared libraries, linking executables
 with <samp>-static</samp>, and with dwarf2 unwind and exception support.
 It also doesn&rsquo;t provide stubs for internal calls to global functions
-in shared libraries, so these calls cannot be overloaded.
+in shared libraries, so these calls can&rsquo;t be overloaded.
 </p>
 <p>The HP dynamic loader does not support GNU symbol versioning, so symbol
 versioning is not supported.  It may be necessary to disable symbol
@@ -853,6 +863,11 @@ be a <samp>-mcpu</samp> argument or one of the following values:
 It also added improved support for C++ and flat shared libraries,
 both of which were ABI changes.
 </p>
+<hr /><a name="mep_002dx_002delf"></a><a name="mep_002d_002a_002delf"></a>
+<h3 class="heading">mep-*-elf</h3>
+<p>Toshiba Media embedded Processor.
+This configuration is intended for embedded systems.
+</p>
 <hr /><a name="microblaze_002dx_002delf"></a><a name="microblaze_002d_002a_002delf"></a>
 <h3 class="heading">microblaze-*-elf</h3>
 <p>Xilinx MicroBlaze processor.
@@ -897,6 +912,14 @@ prevents trap from generating the proper signal (<code>SIGFPE</code>).  To enabl
 the use of break, use the <samp>--with-divide=breaks</samp>
 <code>configure</code> option when configuring GCC.  The default is to
 use traps on systems that support them.
+</p>
+<p>The assembler from GNU binutils 2.17 and earlier has a bug in the way
+it sorts relocations for REL targets (o32, o64, EABI).  This can cause
+bad code to be generated for simple C++ programs.  Also the linker
+from GNU binutils versions prior to 2.17 has a bug which causes the
+runtime linker stubs in very large programs, like <samp>libgcj.so</samp>, to
+be incorrectly generated.  GNU Binutils 2.18 and later (and snapshots
+made after Nov. 9, 2006) should be free from both of these problems.
 </p>
 <hr /><a name="mips_002dsgi_002dirix5"></a><a name="mips_002dsgi_002dirix5-1"></a>
 <h3 class="heading">mips-sgi-irix5</h3>
@@ -948,7 +971,9 @@ directory containing the GCC sources.
 <p>You can specify a default version for the <samp>-mcpu=<var>cpu_type</var></samp>
 switch by using the configure option <samp>--with-cpu-<var>cpu_type</var></samp>.
 </p>
-<p>You will need GNU binutils 2.15 or newer.
+<p>You will need
+<a href="ftp://ftp.kernel.org/pub/linux/devel/binutils">binutils 2.15</a>
+or newer for a working GCC.
 </p>
 <hr /><a name="powerpc_002dx_002ddarwin"></a><a name="powerpc_002d_002a_002ddarwin_002a"></a>
 <h3 class="heading">powerpc-*-darwin*</h3>
@@ -957,7 +982,7 @@ switch by using the configure option <samp>--with-cpu-<var>cpu_type</var></samp>
 <p>Pre-installed versions of Mac OS X may not include any developer tools,
 meaning that you will not be able to build GCC from source.  Tool
 binaries are available at
-<a href="https://opensource.apple.com">https://opensource.apple.com</a>.
+<a href="http://opensource.apple.com/">http://opensource.apple.com/</a>.
 </p>
 <p>This version of GCC requires at least cctools-590.36.  The
 cctools-590.36 package referenced from
@@ -1003,35 +1028,11 @@ the PSIM simulator.
 <p>The Renesas RL78 processor.
 This configuration is intended for embedded systems.
 </p>
-<hr /><a name="riscv32_002dx_002delf"></a><a name="riscv32_002d_002a_002delf"></a>
-<h3 class="heading">riscv32-*-elf</h3>
-<p>The RISC-V RV32 instruction set.
-This configuration is intended for embedded systems.
-This (and all other RISC-V) targets are supported upstream as of the
-binutils 2.28 release.
-</p>
-<hr /><a name="riscv32_002dx_002dlinux"></a><a name="riscv32_002d_002a_002dlinux"></a>
-<h3 class="heading">riscv32-*-linux</h3>
-<p>The RISC-V RV32 instruction set running GNU/Linux.
-This (and all other RISC-V) targets are supported upstream as of the
-binutils 2.28 release.
-</p>
-<hr /><a name="riscv64_002dx_002delf"></a><a name="riscv64_002d_002a_002delf"></a>
-<h3 class="heading">riscv64-*-elf</h3>
-<p>The RISC-V RV64 instruction set.
-This configuration is intended for embedded systems.
-This (and all other RISC-V) targets are supported upstream as of the
-binutils 2.28 release.
-</p>
-<hr /><a name="riscv64_002dx_002dlinux"></a><a name="riscv64_002d_002a_002dlinux"></a>
-<h3 class="heading">riscv64-*-linux</h3>
-<p>The RISC-V RV64 instruction set running GNU/Linux.
-This (and all other RISC-V) targets are supported upstream as of the
-binutils 2.28 release.
-</p>
 <hr /><a name="rx_002dx_002delf"></a><a name="rx_002d_002a_002delf"></a>
 <h3 class="heading">rx-*-elf</h3>
-<p>The Renesas RX processor.
+<p>The Renesas RX processor.  See
+<a href="http://eu.renesas.com/fmwk.jsp?cnt=rx600_series_landing.jsp&amp;fp=/products/mpumcu/rx_family/rx600_series">http://eu.renesas.com/fmwk.jsp?cnt=rx600_series_landing.jsp&amp;fp=/products/mpumcu/rx_family/rx600_series</a>
+for more information about this processor.
 </p>
 <hr /><a name="s390_002dx_002dlinux"></a><a name="s390_002d_002a_002dlinux_002a"></a>
 <h3 class="heading">s390-*-linux*</h3>
@@ -1061,8 +1062,8 @@ you can install a pre-built GCC to bootstrap and install GCC.  See the
 <a href="binaries.html">binaries page</a> for details.
 </p>
 <p>The Solaris 2 <code>/bin/sh</code> will often fail to configure
-&lsquo;<samp>libstdc++-v3</samp>&rsquo;or &lsquo;<samp>boehm-gc</samp>&rsquo;.  We therefore recommend using the
-following initial sequence of commands
+&lsquo;<samp>libstdc++-v3</samp>&rsquo;, &lsquo;<samp>boehm-gc</samp>&rsquo; or &lsquo;<samp>libjava</samp>&rsquo;.  We therefore
+recommend using the following initial sequence of commands
 </p>
 <div class="smallexample">
 <pre class="smallexample">% CONFIG_SHELL=/bin/ksh
@@ -1124,6 +1125,9 @@ GNU binutils.  &lsquo;<samp>libstdc++</samp>&rsquo; symbol versioning will be di
 appropriate version is found.  Solaris <code>c++filt</code> from the Solaris
 Studio compilers does <em>not</em> work.
 </p>
+<p>GNU <code>make</code> version 3.81 or later is required to build libjava
+with the Solaris linker.
+</p>
 <p>Sun bug 4927647 sometimes causes random spurious testsuite failures
 related to missing diagnostic output.  This bug doesn&rsquo;t affect GCC
 itself, rather it is a kernel bug triggered by the <code>expect</code>
@@ -1182,6 +1186,11 @@ thread-local storage (TLS).  A typical error message is
 </p>
 <hr /><a name="sparc_002dx_002dlinux"></a><a name="sparc_002d_002a_002dlinux_002a"></a>
 <h3 class="heading">sparc-*-linux*</h3>
+
+<p>GCC versions 3.0 and higher require binutils 2.11.2 and glibc 2.2.4
+or newer on this platform.  All earlier binutils and glibc
+releases mishandled unaligned relocations on <code>sparc-*-*</code> targets.
+</p>
 
 <hr /><a name="sparc64_002dx_002dsolaris2"></a><a name="sparc64_002d_002a_002dsolaris2_002a"></a>
 <h3 class="heading">sparc64-*-solaris2*</h3>
@@ -1320,6 +1329,8 @@ and which C libraries are used.
 <ul>
 <li> Cygwin <a href="#x-x-cygwin">*-*-cygwin</a>: Cygwin provides a user-space
 Linux API emulation layer in the Win32 subsystem.
+</li><li> Interix <a href="#x-x-interix">*-*-interix</a>: The Interix subsystem
+provides native support for POSIX.
 </li><li> MinGW <a href="#x-x-mingw32">*-*-mingw32</a>: MinGW is a native GCC port for
 the Win32 subsystem that provides a subset of POSIX.
 </li><li> MKS i386-pc-mks: NuTCracker from MKS.  See
@@ -1329,7 +1340,7 @@ the Win32 subsystem that provides a subset of POSIX.
 <a name="Intel-64_002dbit-versions"></a>
 <h4 class="subheading">Intel 64-bit versions</h4>
 <p>GCC contains support for x86-64 using the mingw-w64
-runtime library, available from <a href="http://mingw-w64.org/doku.php">http://mingw-w64.org/doku.php</a>.
+runtime library, available from <a href="http://mingw-w64.sourceforge.net/">http://mingw-w64.sourceforge.net/</a>.
 This library should be used with the target triple x86_64-pc-mingw32.
 </p>
 <p>Presently Windows for Itanium is not supported.
@@ -1366,6 +1377,13 @@ cpu architecture desired; the default is i686-pc-cygwin.  It should be
 used with as up-to-date a version of binutils as possible; use either
 the latest official GNU binutils release in the Cygwin distribution,
 or version 2.20 or above if building your own.
+</p>
+<hr /><a name="x_002dx_002dinterix"></a><a name="g_t_002a_002d_002a_002dinterix"></a>
+<h3 class="heading">*-*-interix</h3>
+<p>The Interix target is used by OpenNT, Interix, Services For UNIX (SFU),
+and Subsystem for UNIX-based Applications (SUA).  Applications compiled
+with this target run in the Interix subsystem, which is separate from
+the Win32 subsystem.  This target was last known to work in GCC 3.3.
 </p>
 <hr /><a name="x_002dx_002dmingw32"></a><a name="g_t_002a_002d_002a_002dmingw32"></a>
 <h3 class="heading">*-*-mingw32</h3>
@@ -1409,7 +1427,7 @@ modern targets.
 </p>
 <p>For some systems, old versions of GNU binutils may also be useful,
 and are available from <samp>pub/binutils/old-releases</samp> on
-<a href="https://sourceware.org/mirrors.html">sourceware.org mirror sites</a>.
+<a href="http://sourceware.org/mirrors.html">sourceware.org mirror sites</a>.
 </p>
 <p>Some of the information on specific systems above relates to
 such older systems, but much of the information

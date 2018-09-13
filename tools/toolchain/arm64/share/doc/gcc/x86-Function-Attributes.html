@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -202,80 +202,6 @@ assume that the called function pops off the stack space used to
 pass arguments, unless it takes a variable number of arguments.
 </p>
 </dd>
-<dt><code>no_caller_saved_registers</code></dt>
-<dd><a name="index-no_005fcaller_005fsaved_005fregisters-function-attribute_002c-x86"></a>
-<p>Use this attribute to indicate that the specified function has no
-caller-saved registers. That is, all registers are callee-saved. For
-example, this attribute can be used for a function called from an
-interrupt handler. The compiler generates proper function entry and
-exit sequences to save and restore any modified registers, except for
-the EFLAGS register.  Since GCC doesn&rsquo;t preserve MPX, SSE, MMX nor x87
-states, the GCC option <samp>-mgeneral-regs-only</samp> should be used to
-compile functions with <code>no_caller_saved_registers</code> attribute.
-</p>
-</dd>
-<dt><code>interrupt</code></dt>
-<dd><a name="index-interrupt-function-attribute_002c-x86"></a>
-<p>Use this attribute to indicate that the specified function is an
-interrupt handler or an exception handler (depending on parameters passed
-to the function, explained further).  The compiler generates function
-entry and exit sequences suitable for use in an interrupt handler when
-this attribute is present.  The <code>IRET</code> instruction, instead of the
-<code>RET</code> instruction, is used to return from interrupt handlers.  All
-registers, except for the EFLAGS register which is restored by the
-<code>IRET</code> instruction, are preserved by the compiler.  Since GCC
-doesn&rsquo;t preserve MPX, SSE, MMX nor x87 states, the GCC option
-<samp>-mgeneral-regs-only</samp> should be used to compile interrupt and
-exception handlers.
-</p>
-<p>Any interruptible-without-stack-switch code must be compiled with
-<samp>-mno-red-zone</samp> since interrupt handlers can and will, because
-of the hardware design, touch the red zone.
-</p>
-<p>An interrupt handler must be declared with a mandatory pointer
-argument:
-</p>
-<div class="smallexample">
-<pre class="smallexample">struct interrupt_frame;
-
-__attribute__ ((interrupt))
-void
-f (struct interrupt_frame *frame)
-{
-}
-</pre></div>
-
-<p>and you must define <code>struct interrupt_frame</code> as described in the
-processor&rsquo;s manual.
-</p>
-<p>Exception handlers differ from interrupt handlers because the system
-pushes an error code on the stack.  An exception handler declaration is
-similar to that for an interrupt handler, but with a different mandatory
-function signature.  The compiler arranges to pop the error code off the
-stack before the <code>IRET</code> instruction.
-</p>
-<div class="smallexample">
-<pre class="smallexample">#ifdef __x86_64__
-typedef unsigned long long int uword_t;
-#else
-typedef unsigned int uword_t;
-#endif
-
-struct interrupt_frame;
-
-__attribute__ ((interrupt))
-void
-f (struct interrupt_frame *frame, uword_t error_code)
-{
-  ...
-}
-</pre></div>
-
-<p>Exception handlers should only be used for exceptions that push an error
-code; you should use an interrupt handler in other cases.  The system
-will crash if the wrong kind of handler is used.
-</p>
-</dd>
 <dt><code>target (<var>options</var>)</code></dt>
 <dd><a name="index-target-function-attribute-5"></a>
 <p>As discussed in <a href="Common-Function-Attributes.html#Common-Function-Attributes">Common Function Attributes</a>, this attribute 
@@ -399,6 +325,12 @@ and SSE4.2).
 <code>sqrt</code> instructions on the 387 floating-point unit.
 </p>
 </dd>
+<dt>&lsquo;<samp>fused-madd</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fused-madd</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fused_002dmadd_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the fused multiply/add instructions.
+</p>
+</dd>
 <dt>&lsquo;<samp>ieee-fp</samp>&rsquo;</dt>
 <dt>&lsquo;<samp>no-ieee-fp</samp>&rsquo;</dt>
 <dd><a name="index-target_0028_0022ieee_002dfp_0022_0029-function-attribute_002c-x86"></a>
@@ -448,27 +380,6 @@ doing a floating-point division.
 <code>target(&quot;fpmath=sse,387&quot;)</code> option as
 <code>target(&quot;fpmath=sse+387&quot;)</code> because the comma would separate
 different options.
-</p>
-</dd>
-<dt>&lsquo;<samp>indirect_branch(&quot;<var>choice</var>&quot;)</samp>&rsquo;</dt>
-<dd><a name="index-indirect_005fbranch-function-attribute_002c-x86"></a>
-<p>On x86 targets, the <code>indirect_branch</code> attribute causes the compiler
-to convert indirect call and jump with <var>choice</var>.  &lsquo;<samp>keep</samp>&rsquo;
-keeps indirect call and jump unmodified.  &lsquo;<samp>thunk</samp>&rsquo; converts indirect
-call and jump to call and return thunk.  &lsquo;<samp>thunk-inline</samp>&rsquo; converts
-indirect call and jump to inlined call and return thunk.
-&lsquo;<samp>thunk-extern</samp>&rsquo; converts indirect call and jump to external call
-and return thunk provided in a separate object file.
-</p>
-</dd>
-<dt>&lsquo;<samp>function_return(&quot;<var>choice</var>&quot;)</samp>&rsquo;</dt>
-<dd><a name="index-function_005freturn-function-attribute_002c-x86"></a>
-<p>On x86 targets, the <code>function_return</code> attribute causes the compiler
-to convert function return with <var>choice</var>.  &lsquo;<samp>keep</samp>&rsquo; keeps function
-return unmodified.  &lsquo;<samp>thunk</samp>&rsquo; converts function return to call and
-return thunk.  &lsquo;<samp>thunk-inline</samp>&rsquo; converts function return to inlined
-call and return thunk.  &lsquo;<samp>thunk-extern</samp>&rsquo; converts function return to
-external call and return thunk provided in a separate object file.
 </p></dd>
 </dl>
 

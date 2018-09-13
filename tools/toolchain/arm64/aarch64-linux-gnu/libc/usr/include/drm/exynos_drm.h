@@ -17,10 +17,6 @@
 
 #include "drm.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * User-desired buffer creation information structure.
  *
@@ -365,9 +361,5 @@ struct drm_exynos_ipp_event {
 	__u32			reserved;
 	__u32			buf_id[EXYNOS_DRM_OPS_MAX];
 };
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif /* _EXYNOS_DRM_H_ */

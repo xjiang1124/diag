@@ -49,7 +49,8 @@
 #define __NET_IF_PPP_H 1
 
 #include <sys/types.h>
-#include <stdint.h>
+#include <sys/cdefs.h>
+
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <net/ppp_defs.h>
@@ -113,13 +114,11 @@ struct npioctl {
 
 /* Structure describing a CCP configuration option, for PPPIOCSCOMPRESS */
 struct ppp_option_data {
-	uint8_t  *ptr;
-	uint32_t length;
-	int	 transmit;
+	u_int8_t  *ptr;
+	u_int32_t length;
+	int	  transmit;
 };
 
-/* 'struct ifreq' is only available from net/if.h under __USE_MISC.  */
-#ifdef __USE_MISC
 struct ifpppstatsreq {
   struct ifreq	   b;
   struct ppp_stats stats;			/* statistic information */
@@ -132,7 +131,6 @@ struct ifpppcstatsreq {
 
 #define ifr__name       b.ifr_ifrn.ifrn_name
 #define stats_ptr       b.ifr_ifru.ifru_data
-#endif
 
 /*
  * Ioctl definitions.

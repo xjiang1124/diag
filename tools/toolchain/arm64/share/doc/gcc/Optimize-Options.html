@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -146,7 +146,6 @@ compilation time.
 -fmove-loop-invariants 
 -freorder-blocks 
 -fshrink-wrap 
--fshrink-wrap-separate 
 -fsplit-wide-types 
 -fssa-backprop 
 -fssa-phiopt 
@@ -197,8 +196,7 @@ also turns on the following optimization flags:
 -finline-small-functions 
 -findirect-inlining 
 -fipa-cp 
--fipa-bit-cp 
--fipa-vrp 
+-fipa-cp-alignment 
 -fipa-sra 
 -fipa-icf 
 -fisolate-erroneous-paths-dereference 
@@ -212,11 +210,9 @@ also turns on the following optimization flags:
 -frerun-cse-after-loop  
 -fsched-interblock  -fsched-spec 
 -fschedule-insns  -fschedule-insns2 
--fstore-merging 
 -fstrict-aliasing -fstrict-overflow 
 -ftree-builtin-call-dce 
 -ftree-switch-conversion -ftree-tail-merge 
--fcode-hoisting 
 -ftree-pre 
 -ftree-vrp 
 -fipa-ra
@@ -234,8 +230,7 @@ by <samp>-O2</samp> and also turns on the <samp>-finline-functions</samp>,
 <samp>-fgcse-after-reload</samp>, <samp>-ftree-loop-vectorize</samp>,
 <samp>-ftree-loop-distribute-patterns</samp>, <samp>-fsplit-paths</samp>
 <samp>-ftree-slp-vectorize</samp>, <samp>-fvect-cost-model</samp>,
-<samp>-ftree-partial-pre</samp>, <samp>-fpeel-loops</samp>
-and <samp>-fipa-cp-clone</samp> options.
+<samp>-ftree-partial-pre</samp> and <samp>-fipa-cp-clone</samp> options.
 </p>
 </dd>
 <dt><code>-O0</code></dt>
@@ -476,8 +471,8 @@ release to an another.
 <dd><a name="index-fno_002dkeep_002dinline_002ddllexport"></a>
 <p>This is a more fine-grained version of <samp>-fkeep-inline-functions</samp>,
 which applies only to functions that are declared using the <code>dllexport</code>
-attribute or declspec.  See <a href="Function-Attributes.html#Function-Attributes">Declaring Attributes of
-Functions</a>.
+attribute or declspec (See <a href="Function-Attributes.html#Function-Attributes">Declaring Attributes of
+Functions</a>.)
 </p>
 </dd>
 <dt><code>-fkeep-inline-functions</code></dt>
@@ -699,6 +694,16 @@ integer overflows or out-of-bound array accesses.  The bounds for the
 number of iterations of a loop are used to guide loop unrolling and peeling
 and loop exit test optimizations.
 This option is enabled by default.
+</p>
+</dd>
+<dt><code>-funsafe-loop-optimizations</code></dt>
+<dd><a name="index-funsafe_002dloop_002doptimizations"></a>
+<p>This option tells the loop optimizer to assume that loop indices do not
+overflow, and that loops with nontrivial exit condition are not
+infinite.  This enables a wider range of loop optimizations even if
+the loop optimizer itself cannot prove that these assumptions are valid.
+If you use <samp>-Wunsafe-loop-optimizations</samp>, the compiler warns you
+if it finds this kind of loop.
 </p>
 </dd>
 <dt><code>-funconstrained-commons</code></dt>
@@ -1157,14 +1162,6 @@ rather than at the top of the function.  This flag is enabled by default at
 <samp>-O</samp> and higher.
 </p>
 </dd>
-<dt><code>-fshrink-wrap-separate</code></dt>
-<dd><a name="index-fshrink_002dwrap_002dseparate"></a>
-<p>Shrink-wrap separate parts of the prologue and epilogue separately, so that
-those parts are only executed when needed.
-This option is on by default, but has no effect unless <samp>-fshrink-wrap</samp>
-is also turned on and the target supports this.
-</p>
-</dd>
 <dt><code>-fcaller-saves</code></dt>
 <dd><a name="index-fcaller_002dsaves"></a>
 <p>Enable allocation of values to registers that are clobbered by
@@ -1193,11 +1190,7 @@ any called function.  In that case it is not necessary to save and restore
 them around calls.  This is only possible if called functions are part of
 same compilation unit as current function and they are compiled before it.
 </p>
-<p>Enabled at levels <samp>-O2</samp>, <samp>-O3</samp>, <samp>-Os</samp>, however the option
-is disabled if generated code will be instrumented for profiling
-(<samp>-p</samp>, or <samp>-pg</samp>) or if callee&rsquo;s register usage cannot be known
-exactly (this happens on targets that do not expose prologues
-and epilogues in RTL).
+<p>Enabled at levels <samp>-O2</samp>, <samp>-O3</samp>, <samp>-Os</samp>.
 </p>
 </dd>
 <dt><code>-fconserve-stack</code></dt>
@@ -1212,15 +1205,6 @@ and the <samp>large-stack-frame-growth</samp> parameter to 400.
 <dd><a name="index-ftree_002dreassoc"></a>
 <p>Perform reassociation on trees.  This flag is enabled by default
 at <samp>-O</samp> and higher.
-</p>
-</dd>
-<dt><code>-fcode-hoisting</code></dt>
-<dd><a name="index-fcode_002dhoisting"></a>
-<p>Perform code hoisting.  Code hoisting tries to move the
-evaluation of expressions executed on all paths to the function exit
-as early as possible.  This is especially useful as a code size
-optimization, but it often helps for code speed as well.
-This flag is enabled by default at <samp>-O2</samp> and higher.
 </p>
 </dd>
 <dt><code>-ftree-pre</code></dt>
@@ -1323,18 +1307,13 @@ it may significantly increase code size
 This flag is enabled by default at <samp>-O3</samp>.
 </p>
 </dd>
-<dt><code>-fipa-bit-cp</code></dt>
-<dd><a name="index-_002dfipa_002dbit_002dcp"></a>
-<p>When enabled, perform interprocedural bitwise constant
-propagation. This flag is enabled by default at <samp>-O2</samp>. It
-requires that <samp>-fipa-cp</samp> is enabled.
+<dt><code>-fipa-cp-alignment</code></dt>
+<dd><a name="index-_002dfipa_002dcp_002dalignment"></a>
+<p>When enabled, this optimization propagates alignment of function
+parameters to support better vectorization and string operations.
 </p>
-</dd>
-<dt><code>-fipa-vrp</code></dt>
-<dd><a name="index-_002dfipa_002dvrp"></a>
-<p>When enabled, perform interprocedural propagation of value
-ranges. This flag is enabled by default at <samp>-O2</samp>. It requires
-that <samp>-fipa-cp</samp> is enabled.
+<p>This flag is enabled by default at <samp>-O2</samp> and <samp>-Os</samp>.  It
+requires that <samp>-fipa-cp</samp> is enabled.
 </p>
 </dd>
 <dt><code>-fipa-icf</code></dt>
@@ -1342,7 +1321,7 @@ that <samp>-fipa-cp</samp> is enabled.
 <p>Perform Identical Code Folding for functions and read-only variables.
 The optimization reduces code size and may disturb unwind stacks by replacing
 a function by equivalent one with a different name. The optimization works
-more effectively with link-time optimization enabled.
+more effectively with link time optimization enabled.
 </p>
 <p>Nevertheless the behavior is similar to Gold Linker ICF optimization, GCC ICF
 works on different levels and thus the optimizations are not same - there are
@@ -1362,7 +1341,7 @@ This flag is enabled by default at <samp>-O2</samp> and higher and depends on
 </dd>
 <dt><code>-fisolate-erroneous-paths-attribute</code></dt>
 <dd><a name="index-fisolate_002derroneous_002dpaths_002dattribute"></a>
-<p>Detect paths that trigger erroneous or undefined behavior due to a null value
+<p>Detect paths that trigger erroneous or undefined behavior due a null value
 being used in a way forbidden by a <code>returns_nonnull</code> or <code>nonnull</code>
 attribute.  Isolate those paths from the main control flow and turn the
 statement with erroneous or undefined behavior into a trap.  This is not
@@ -1528,6 +1507,25 @@ vectorization pass to handle these loops.  This is enabled by default
 if vectorization is enabled.
 </p>
 </dd>
+<dt><code>-ftree-loop-if-convert-stores</code></dt>
+<dd><a name="index-ftree_002dloop_002dif_002dconvert_002dstores"></a>
+<p>Attempt to also if-convert conditional jumps containing memory writes.
+This transformation can be unsafe for multi-threaded programs as it
+transforms conditional memory writes into unconditional memory writes.
+For example,
+</p><div class="smallexample">
+<pre class="smallexample">for (i = 0; i &lt; N; i++)
+  if (cond)
+    A[i] = expr;
+</pre></div>
+<p>is transformed to
+</p><div class="smallexample">
+<pre class="smallexample">for (i = 0; i &lt; N; i++)
+  A[i] = cond ? expr : A[i];
+</pre></div>
+<p>potentially producing data races.
+</p>
+</dd>
 <dt><code>-ftree-loop-distribution</code></dt>
 <dd><a name="index-ftree_002dloop_002ddistribution"></a>
 <p>Perform loop distribution.  This flag can improve cache performance on
@@ -1621,14 +1619,6 @@ enabled by default at <samp>-O</samp> and higher.
 <p>Perform scalar replacement of aggregates.  This pass replaces structure
 references with scalars to prevent committing structures to memory too
 early.  This flag is enabled by default at <samp>-O</samp> and higher.
-</p>
-</dd>
-<dt><code>-fstore-merging</code></dt>
-<dd><a name="index-fstore_002dmerging"></a>
-<p>Perform merging of narrow stores to consecutive memory addresses.  This pass
-merges contiguous stores of immediate values narrower than a word into fewer
-wider stores to reduce the number of instructions.  This is enabled by default
-at <samp>-O2</samp> and higher as well as <samp>-Os</samp>.
 </p>
 </dd>
 <dt><code>-ftree-ter</code></dt>
@@ -1756,32 +1746,6 @@ memory to improve the performance of loops that access large arrays.
 dependent on the structure of loops within the source code.
 </p>
 <p>Disabled at level <samp>-Os</samp>.
-</p>
-</dd>
-<dt><code>-fno-printf-return-value</code></dt>
-<dd><a name="index-fno_002dprintf_002dreturn_002dvalue"></a>
-<p>Do not substitute constants for known return value of formatted output
-functions such as <code>sprintf</code>, <code>snprintf</code>, <code>vsprintf</code>, and
-<code>vsnprintf</code> (but not <code>printf</code> of <code>fprintf</code>).  This
-transformation allows GCC to optimize or even eliminate branches based
-on the known return value of these functions called with arguments that
-are either constant, or whose values are known to be in a range that
-makes determining the exact return value possible.  For example, when
-<samp>-fprintf-return-value</samp> is in effect, both the branch and the
-body of the <code>if</code> statement (but not the call to <code>snprint</code>)
-can be optimized away when <code>i</code> is a 32-bit or smaller integer
-because the return value is guaranteed to be at most 8.
-</p>
-<div class="smallexample">
-<pre class="smallexample">char buf[9];
-if (snprintf (buf, &quot;%08x&quot;, i) &gt;= sizeof buf)
-  &hellip;
-</pre></div>
-
-<p>The <samp>-fprintf-return-value</samp> option relies on other optimizations
-and yields best results with <samp>-O2</samp>.  It works in tandem with the
-<samp>-Wformat-overflow</samp> and <samp>-Wformat-truncation</samp> options.
-The <samp>-fprintf-return-value</samp> option is enabled by default.
 </p>
 </dd>
 <dt><code>-fno-peephole</code></dt>
@@ -1971,16 +1935,8 @@ equivalent and mean that functions are not aligned.
 in that case, it is rounded up.
 </p>
 <p>If <var>n</var> is not specified or is zero, use a machine-dependent default.
-The maximum allowed <var>n</var> option value is 65536.
 </p>
 <p>Enabled at levels <samp>-O2</samp>, <samp>-O3</samp>.
-</p>
-</dd>
-<dt><code>-flimit-function-alignment</code></dt>
-<dd><p>If this option is enabled, the compiler tries to avoid unnecessarily
-overaligning functions. It attempts to instruct the assembler to align
-by the amount specified by <samp>-falign-functions</samp>, but not to
-skip more bytes than the size of the function.
 </p>
 </dd>
 <dt><code>-falign-labels</code></dt>
@@ -1999,7 +1955,6 @@ are greater than this value, then their values are used instead.
 </p>
 <p>If <var>n</var> is not specified or is zero, use a machine-dependent default
 which is very likely to be &lsquo;<samp>1</samp>&rsquo;, meaning no alignment.
-The maximum allowed <var>n</var> option value is 65536.
 </p>
 <p>Enabled at levels <samp>-O2</samp>, <samp>-O3</samp>.
 </p>
@@ -2014,7 +1969,6 @@ operations.
 </p>
 <p><samp>-fno-align-loops</samp> and <samp>-falign-loops=1</samp> are
 equivalent and mean that loops are not aligned.
-The maximum allowed <var>n</var> option value is 65536.
 </p>
 <p>If <var>n</var> is not specified or is zero, use a machine-dependent default.
 </p>
@@ -2033,7 +1987,6 @@ need be executed.
 equivalent and mean that loops are not aligned.
 </p>
 <p>If <var>n</var> is not specified or is zero, use a machine-dependent default.
-The maximum allowed <var>n</var> option value is 65536.
 </p>
 <p>Enabled at levels <samp>-O2</samp>, <samp>-O3</samp>.
 </p>
@@ -2137,7 +2090,7 @@ should specify the optimization options to be used for link-time
 optimization though GCC tries to be clever at guessing an
 optimization level to use from the options used at compile time
 if you fail to specify one at link time.  You can always override
-the automatic decision to do link-time optimization
+the automatic decision to do link-time optimization at link time
 by passing <samp>-fno-lto</samp> to the link command.
 </p>
 <p>To make whole program optimization effective, it is necessary to make
@@ -2404,8 +2357,8 @@ which are generally profitable only with profile feedback available:
 <samp>-ftree-vectorize</samp>, and <samp>ftree-loop-distribute-patterns</samp>.
 </p>
 <p>Before you can use this option, you must first generate profiling information.
-See <a href="Instrumentation-Options.html#Instrumentation-Options">Instrumentation Options</a>, for information about the
-<samp>-fprofile-generate</samp> option.
+See <a href="#Optimize-Options">Optimize Options</a>, for information about the <samp>-fprofile-generate</samp>
+option.
 </p>
 <p>By default, GCC emits an error message if the feedback profiles do not
 match the source code.  This error can be turned into a warning by using
@@ -2479,24 +2432,25 @@ them to store all pertinent intermediate computations into variables.
 <dt><code>-fexcess-precision=<var>style</var></code></dt>
 <dd><a name="index-fexcess_002dprecision"></a>
 <p>This option allows further control over excess precision on machines
-where floating-point operations occur in a format with more precision or
-range than the IEEE standard and interchange floating-point types.  By
-default, <samp>-fexcess-precision=fast</samp> is in effect; this means that
-operations may be carried out in a wider precision than the types specified
-in the source if that would result in faster code, and it is unpredictable
-when rounding to the types specified in the source code takes place.
-When compiling C, if <samp>-fexcess-precision=standard</samp> is specified then
-excess precision follows the rules specified in ISO C99; in particular,
+where floating-point registers have more precision than the IEEE
+<code>float</code> and <code>double</code> types and the processor does not
+support operations rounding to those types.  By default,
+<samp>-fexcess-precision=fast</samp> is in effect; this means that
+operations are carried out in the precision of the registers and that
+it is unpredictable when rounding to the types specified in the source
+code takes place.  When compiling C, if
+<samp>-fexcess-precision=standard</samp> is specified then excess
+precision follows the rules specified in ISO C99; in particular,
 both casts and assignments cause values to be rounded to their
 semantic types (whereas <samp>-ffloat-store</samp> only affects
 assignments).  This option is enabled by default for C if a strict
 conformance option such as <samp>-std=c99</samp> is used.
-<samp>-ffast-math</samp> enables <samp>-fexcess-precision=fast</samp> by default
-regardless of whether a strict conformance option is used.
 </p>
 <a name="index-mfpmath"></a>
 <p><samp>-fexcess-precision=standard</samp> is not implemented for languages
-other than C.  On the x86, it has no effect if <samp>-mfpmath=sse</samp>
+other than C, and has no effect if
+<samp>-funsafe-math-optimizations</samp> or <samp>-ffast-math</samp> is
+specified.  On the x86, it also has no effect if <samp>-mfpmath=sse</samp>
 or <samp>-mfpmath=sse+387</samp> is specified; in the former case, IEEE
 semantics apply without excess precision, and in the latter, rounding
 is unpredictable.
@@ -2506,8 +2460,7 @@ is unpredictable.
 <dd><a name="index-ffast_002dmath"></a>
 <p>Sets the options <samp>-fno-math-errno</samp>, <samp>-funsafe-math-optimizations</samp>,
 <samp>-ffinite-math-only</samp>, <samp>-fno-rounding-math</samp>,
-<samp>-fno-signaling-nans</samp>, <samp>-fcx-limited-range</samp> and
-<samp>-fexcess-precision=fast</samp>.
+<samp>-fno-signaling-nans</samp> and <samp>-fcx-limited-range</samp>.
 </p>
 <p>This option causes the preprocessor macro <code>__FAST_MATH__</code> to be defined.
 </p>
@@ -2667,25 +2620,6 @@ be defined.
 disable all GCC optimizations that affect signaling NaN behavior.
 </p>
 </dd>
-<dt><code>-fno-fp-int-builtin-inexact</code></dt>
-<dd><a name="index-fno_002dfp_002dint_002dbuiltin_002dinexact"></a>
-<p>Do not allow the built-in functions <code>ceil</code>, <code>floor</code>,
-<code>round</code> and <code>trunc</code>, and their <code>float</code> and <code>long
-double</code> variants, to generate code that raises the &ldquo;inexact&rdquo;
-floating-point exception for noninteger arguments.  ISO C99 and C11
-allow these functions to raise the &ldquo;inexact&rdquo; exception, but ISO/IEC
-TS 18661-1:2014, the C bindings to IEEE 754-2008, does not allow these
-functions to do so.
-</p>
-<p>The default is <samp>-ffp-int-builtin-inexact</samp>, allowing the
-exception to be raised.  This option does nothing unless
-<samp>-ftrapping-math</samp> is in effect.
-</p>
-<p>Even if <samp>-fno-fp-int-builtin-inexact</samp> is used, if the functions
-generate a call to a library function then the &ldquo;inexact&rdquo; exception
-may be raised if the library implementation does not follow TS 18661.
-</p>
-</dd>
 <dt><code>-fsingle-precision-constant</code></dt>
 <dd><a name="index-fsingle_002dprecision_002dconstant"></a>
 <p>Treat floating-point constants as single precision instead of
@@ -2784,7 +2718,7 @@ debug information format adopted by the target, however, it can
 make debugging impossible, since variables no longer stay in
 a &ldquo;home register&rdquo;.
 </p>
-<p>Enabled by default with <samp>-funroll-loops</samp>.
+<p>Enabled by default with <samp>-funroll-loops</samp> and <samp>-fpeel-loops</samp>.
 </p>
 </dd>
 <dt><code>-fschedule-fusion</code></dt>
@@ -2828,23 +2762,16 @@ the loop is entered.  This usually makes programs run more slowly.
 <dt><code>-fpeel-loops</code></dt>
 <dd><a name="index-fpeel_002dloops"></a>
 <p>Peels loops for which there is enough information that they do not
-roll much (from profile feedback or static analysis).  It also turns on
-complete loop peeling (i.e. complete removal of loops with small constant
-number of iterations).
+roll much (from profile feedback).  It also turns on complete loop peeling
+(i.e. complete removal of loops with small constant number of iterations).
 </p>
-<p>Enabled with <samp>-O3</samp> and/or <samp>-fprofile-use</samp>.
+<p>Enabled with <samp>-fprofile-use</samp>.
 </p>
 </dd>
 <dt><code>-fmove-loop-invariants</code></dt>
 <dd><a name="index-fmove_002dloop_002dinvariants"></a>
 <p>Enables the loop invariant motion pass in the RTL loop optimizer.  Enabled
 at level <samp>-O1</samp>
-</p>
-</dd>
-<dt><code>-fsplit-loops</code></dt>
-<dd><a name="index-fsplit_002dloops"></a>
-<p>Split a loop into two if it contains a condition that&rsquo;s always true
-for one side of the iteration space and false for the other.
 </p>
 </dd>
 <dt><code>-funswitch-loops</code></dt>
@@ -2963,18 +2890,6 @@ also use other heuristics to decide whether if-conversion is likely to be
 profitable.
 </p>
 </dd>
-<dt><code>max-rtl-if-conversion-predictable-cost</code></dt>
-<dt><code>max-rtl-if-conversion-unpredictable-cost</code></dt>
-<dd><p>RTL if-conversion will try to remove conditional branches around a block
-and replace them with conditionally executed instructions.  These parameters
-give the maximum permissible cost for the sequence that would be generated
-by if-conversion depending on whether the branch is statically determined
-to be predictable or not.  The units for this parameter are the same as
-those for the GCC internal seq_cost metric.  The compiler will try to
-provide a reasonable default for this parameter using the BRANCH_COST
-target macro.
-</p>
-</dd>
 <dt><code>max-crossjump-edges</code></dt>
 <dd><p>The maximum number of incoming edges to consider for cross-jumping.
 The algorithm used by <samp>-fcrossjumping</samp> is <em>O(N^2)</em> in
@@ -3069,7 +2984,7 @@ The default value is 40.
 </dd>
 <dt><code>inline-min-speedup</code></dt>
 <dd><p>When estimated performance improvement of caller + callee runtime exceeds this
-threshold (in percent), the function can be inlined regardless of the limit on
+threshold (in precent), the function can be inlined regardless the limit on
 <samp>--param max-inline-insns-single</samp> and <samp>--param
 max-inline-insns-auto</samp>.
 </p>
@@ -3158,9 +3073,9 @@ increasing the prologue size or complexity of function body to other
 optimizers.
 </p>
 <p>When profile feedback is available (see <samp>-fprofile-generate</samp>) the actual
-recursion depth can be guessed from the probability that function recurses
-via a given call expression.  This parameter limits inlining only to call
-expressions whose probability exceeds the given threshold (in percents).
+recursion depth can be guessed from probability that function recurses via a
+given call expression.  This parameter limits inlining only to call expressions
+whose probability exceeds the given threshold (in percents).
 The default value is 10.
 </p>
 </dd>
@@ -3232,16 +3147,6 @@ avoid quadratic behavior in tree tail merging.  The default value is 10.
 limit compilation time in tree tail merging.  The default value is 2.
 </p>
 </dd>
-<dt><code>store-merging-allow-unaligned</code></dt>
-<dd><p>Allow the store merging pass to introduce unaligned stores if it is legal to
-do so.  The default value is 1.
-</p>
-</dd>
-<dt><code>max-stores-to-merge</code></dt>
-<dd><p>The maximum number of stores to attempt to merge into wider stores in the store
-merging pass.  The minimum value is 2 and the default is 64.
-</p>
-</dd>
 <dt><code>max-unrolled-insns</code></dt>
 <dd><p>The maximum number of instructions that a loop may have to be unrolled.
 If a loop is unrolled, this parameter also determines how many times
@@ -3292,11 +3197,6 @@ the loop code is peeled.
 <dd><p>The maximum number of branches unswitched in a single loop.
 </p>
 </dd>
-<dt><code>max-loop-headers-insns</code></dt>
-<dd><p>The maximum number of insns in loop header duplicated by the copy loop headers
-pass.
-</p>
-</dd>
 <dt><code>lim-expensive</code></dt>
 <dd><p>The minimum cost of an expensive expression in the loop invariant motion.
 </p>
@@ -3319,15 +3219,6 @@ always try to remove unnecessary ivs from the set
 when adding a new one.
 </p>
 </dd>
-<dt><code>avg-loop-niter</code></dt>
-<dd><p>Average number of iterations of a loop.
-</p>
-</dd>
-<dt><code>dse-max-object-size</code></dt>
-<dd><p>Maximum size (in bytes) of objects tracked bytewise by dead store elimination.
-Larger values may result in larger compilation times.
-</p>
-</dd>
 <dt><code>scev-max-expr-size</code></dt>
 <dd><p>Bound on size of expressions used in the scalar evolutions analyzer.
 Large expressions slow the analyzer.
@@ -3336,11 +3227,6 @@ Large expressions slow the analyzer.
 <dt><code>scev-max-expr-complexity</code></dt>
 <dd><p>Bound on the complexity of the expressions in the scalar evolutions analyzer.
 Complex expressions slow the analyzer.
-</p>
-</dd>
-<dt><code>max-tree-if-conversion-phi-args</code></dt>
-<dd><p>Maximum number of arguments in a PHI supported by TREE if conversion
-unless the loop is marked with simd pragma.
 </p>
 </dd>
 <dt><code>vect-max-version-for-alignment-checks</code></dt>
@@ -3849,7 +3735,7 @@ are evaluated for cloning.
 </p>
 </dd>
 <dt><code>ipa-cp-single-call-penalty</code></dt>
-<dd><p>Percentage penalty functions containing a single call to another
+<dd><p>Percentage penalty functions containg a single call to another
 function will receive when they are evaluated for cloning.
 </p>
 
@@ -3991,12 +3877,9 @@ To disable built-in functions protection use
 </dd>
 <dt><code>asan-use-after-return</code></dt>
 <dd><p>Enable detection of use-after-return.  This kind of protection
-is enabled by default when using the <samp>-fsanitize=address</samp> option.
-To disable it use <samp>--param asan-use-after-return=0</samp>.
-</p>
-<p>Note: By default the check is disabled at run time.  To enable it,
-add <code>detect_stack_use_after_return=1</code> to the environment variable
-<code>ASAN_OPTIONS</code>.
+is enabled by default when using <samp>-fsanitize=address</samp> option.
+To disable use-after-return detection use 
+<samp>--param asan-use-after-return=0</samp>.
 </p>
 </dd>
 <dt><code>asan-instrumentation-with-call-threshold</code></dt>
@@ -4006,16 +3889,10 @@ E.g. to disable inline code use
 <samp>--param asan-instrumentation-with-call-threshold=0</samp>.
 </p>
 </dd>
-<dt><code>use-after-scope-direct-emission-threshold</code></dt>
-<dd><p>If the size of a local variable in bytes is smaller or equal to this
-number, directly poison (or unpoison) shadow memory instead of using
-run-time callbacks.  The default value is 256.
-</p>
-</dd>
 <dt><code>chkp-max-ctor-size</code></dt>
 <dd><p>Static constructors generated by Pointer Bounds Checker may become very
 large and significantly increase compile time at optimization level
-<samp>-O1</samp> and higher.  This parameter is a maximum number of statements
+<samp>-O1</samp> and higher.  This parameter is a maximum nubmer of statements
 in a single generated constructor.  Default value is 5000.
 </p>
 </dd>
@@ -4061,11 +3938,6 @@ enable it.
 <dd><p>The maximum number of may-defs we analyze when looking for a must-def
 specifying the dynamic type of an object that invokes a virtual call
 we may be able to devirtualize speculatively.
-</p>
-</dd>
-<dt><code>max-vrp-switch-assertions</code></dt>
-<dd><p>The maximum number of assertions to add along the default edge of a switch
-statement during VRP.  The default is 10.
 </p></dd>
 </dl>
 </dd>

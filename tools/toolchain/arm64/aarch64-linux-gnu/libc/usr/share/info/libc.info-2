@@ -2,9 +2,9 @@ This is libc.info, produced by makeinfo version 5.2 from libc.texinfo.
 
 This file documents the GNU C Library.
 
-   This is ‘The GNU C Library Reference Manual’, for version 2.25.
+   This is ‘The GNU C Library Reference Manual’, for version 2.23.
 
-   Copyright © 1993–2017 Free Software Foundation, Inc.
+   Copyright © 1993–2016 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -223,14 +223,11 @@ START-INFO-DIR-ENTRY
 * FD_SET: (libc)Waiting for I/O.
 * FD_SETSIZE: (libc)Waiting for I/O.
 * FD_ZERO: (libc)Waiting for I/O.
-* FE_SNANS_ALWAYS_SIGNAL: (libc)Infinity and NaN.
 * FILENAME_MAX: (libc)Limits for Files.
 * FLUSHO: (libc)Local Modes.
 * FOPEN_MAX: (libc)Opening Streams.
 * FP_ILOGB0: (libc)Exponents and Logarithms.
 * FP_ILOGBNAN: (libc)Exponents and Logarithms.
-* FP_LLOGB0: (libc)Exponents and Logarithms.
-* FP_LLOGBNAN: (libc)Exponents and Logarithms.
 * F_DUPFD: (libc)Duplicating Descriptors.
 * F_GETFD: (libc)Descriptor Flags.
 * F_GETFL: (libc)Getting File Status Flags.
@@ -384,9 +381,6 @@ START-INFO-DIR-ENTRY
 * SIGXCPU: (libc)Operation Error Signals.
 * SIGXFSZ: (libc)Operation Error Signals.
 * SIG_ERR: (libc)Basic Signal Handling.
-* SNAN: (libc)Infinity and NaN.
-* SNANF: (libc)Infinity and NaN.
-* SNANL: (libc)Infinity and NaN.
 * SOCK_DGRAM: (libc)Communication Styles.
 * SOCK_RAW: (libc)Communication Styles.
 * SOCK_RDM: (libc)Communication Styles.
@@ -590,10 +584,7 @@ START-INFO-DIR-ENTRY
 * cacoshl: (libc)Hyperbolic Functions.
 * cacosl: (libc)Inverse Trig Functions.
 * calloc: (libc)Allocating Cleared Space.
-* canonicalize: (libc)FP Bit Twiddling.
 * canonicalize_file_name: (libc)Symbolic Links.
-* canonicalizef: (libc)FP Bit Twiddling.
-* canonicalizel: (libc)FP Bit Twiddling.
 * carg: (libc)Operations on Complex.
 * cargf: (libc)Operations on Complex.
 * cargl: (libc)Operations on Complex.
@@ -767,7 +758,6 @@ START-INFO-DIR-ENTRY
 * exp: (libc)Exponents and Logarithms.
 * expf: (libc)Exponents and Logarithms.
 * expl: (libc)Exponents and Logarithms.
-* explicit_bzero: (libc)Erasing Sensitive Data.
 * expm1: (libc)Exponents and Logarithms.
 * expm1f: (libc)Exponents and Logarithms.
 * expm1l: (libc)Exponents and Logarithms.
@@ -794,7 +784,6 @@ START-INFO-DIR-ENTRY
 * fegetenv: (libc)Control Functions.
 * fegetexcept: (libc)Control Functions.
 * fegetexceptflag: (libc)Status bit operations.
-* fegetmode: (libc)Control Functions.
 * fegetround: (libc)Rounding.
 * feholdexcept: (libc)Control Functions.
 * feof: (libc)EOF and Errors.
@@ -803,12 +792,9 @@ START-INFO-DIR-ENTRY
 * ferror: (libc)EOF and Errors.
 * ferror_unlocked: (libc)EOF and Errors.
 * fesetenv: (libc)Control Functions.
-* fesetexcept: (libc)Status bit operations.
 * fesetexceptflag: (libc)Status bit operations.
-* fesetmode: (libc)Control Functions.
 * fesetround: (libc)Rounding.
 * fetestexcept: (libc)Status bit operations.
-* fetestexceptflag: (libc)Status bit operations.
 * feupdateenv: (libc)Control Functions.
 * fflush: (libc)Flushing Buffers.
 * fflush_unlocked: (libc)Flushing Buffers.
@@ -841,16 +827,10 @@ START-INFO-DIR-ENTRY
 * fmax: (libc)Misc FP Arithmetic.
 * fmaxf: (libc)Misc FP Arithmetic.
 * fmaxl: (libc)Misc FP Arithmetic.
-* fmaxmag: (libc)Misc FP Arithmetic.
-* fmaxmagf: (libc)Misc FP Arithmetic.
-* fmaxmagl: (libc)Misc FP Arithmetic.
 * fmemopen: (libc)String Streams.
 * fmin: (libc)Misc FP Arithmetic.
 * fminf: (libc)Misc FP Arithmetic.
 * fminl: (libc)Misc FP Arithmetic.
-* fminmag: (libc)Misc FP Arithmetic.
-* fminmagf: (libc)Misc FP Arithmetic.
-* fminmagl: (libc)Misc FP Arithmetic.
 * fmod: (libc)Remainder Functions.
 * fmodf: (libc)Remainder Functions.
 * fmodl: (libc)Remainder Functions.
@@ -880,12 +860,6 @@ START-INFO-DIR-ENTRY
 * frexp: (libc)Normalization Functions.
 * frexpf: (libc)Normalization Functions.
 * frexpl: (libc)Normalization Functions.
-* fromfp: (libc)Rounding Functions.
-* fromfpf: (libc)Rounding Functions.
-* fromfpl: (libc)Rounding Functions.
-* fromfpx: (libc)Rounding Functions.
-* fromfpxf: (libc)Rounding Functions.
-* fromfpxl: (libc)Rounding Functions.
 * fscanf: (libc)Formatted Input Functions.
 * fseek: (libc)File Positioning.
 * fseeko64: (libc)File Positioning.
@@ -931,7 +905,6 @@ START-INFO-DIR-ENTRY
 * getdelim: (libc)Line Input.
 * getdomainnname: (libc)Host Identification.
 * getegid: (libc)Reading Persona.
-* getentropy: (libc)Unpredictable Bytes.
 * getenv: (libc)Environment Access.
 * geteuid: (libc)Reading Persona.
 * getfsent: (libc)fstab.
@@ -971,9 +944,6 @@ START-INFO-DIR-ENTRY
 * getopt_long_only: (libc)Getopt Long Options.
 * getpagesize: (libc)Query Memory Parameters.
 * getpass: (libc)getpass.
-* getpayload: (libc)FP Bit Twiddling.
-* getpayloadf: (libc)FP Bit Twiddling.
-* getpayloadl: (libc)FP Bit Twiddling.
 * getpeername: (libc)Who is Connected.
 * getpgid: (libc)Process Group Functions.
 * getpgrp: (libc)Process Group Functions.
@@ -990,7 +960,6 @@ START-INFO-DIR-ENTRY
 * getpwnam_r: (libc)Lookup User.
 * getpwuid: (libc)Lookup User.
 * getpwuid_r: (libc)Lookup User.
-* getrandom: (libc)Unpredictable Bytes.
 * getrlimit64: (libc)Limits on Resources.
 * getrlimit: (libc)Limits on Resources.
 * getrusage: (libc)Resource Usage.
@@ -1078,10 +1047,8 @@ START-INFO-DIR-ENTRY
 * isascii: (libc)Classification of Characters.
 * isatty: (libc)Is It a Terminal.
 * isblank: (libc)Classification of Characters.
-* iscanonical: (libc)Floating Point Classes.
 * iscntrl: (libc)Classification of Characters.
 * isdigit: (libc)Classification of Characters.
-* iseqsig: (libc)FP Comparison Functions.
 * isfinite: (libc)Floating Point Classes.
 * isgraph: (libc)Classification of Characters.
 * isgreater: (libc)FP Comparison Functions.
@@ -1102,7 +1069,6 @@ START-INFO-DIR-ENTRY
 * ispunct: (libc)Classification of Characters.
 * issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
-* issubnormal: (libc)Floating Point Classes.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
 * iswalnum: (libc)Classification of Wide Characters.
@@ -1119,7 +1085,6 @@ START-INFO-DIR-ENTRY
 * iswupper: (libc)Classification of Wide Characters.
 * iswxdigit: (libc)Classification of Wide Characters.
 * isxdigit: (libc)Classification of Characters.
-* iszero: (libc)Floating Point Classes.
 * j0: (libc)Special Functions.
 * j0f: (libc)Special Functions.
 * j0l: (libc)Special Functions.
@@ -1154,9 +1119,6 @@ START-INFO-DIR-ENTRY
 * listen: (libc)Listening.
 * llabs: (libc)Absolute Value.
 * lldiv: (libc)Integer Division.
-* llogb: (libc)Exponents and Logarithms.
-* llogbf: (libc)Exponents and Logarithms.
-* llogbl: (libc)Exponents and Logarithms.
 * llrint: (libc)Rounding Functions.
 * llrintf: (libc)Rounding Functions.
 * llrintl: (libc)Rounding Functions.
@@ -1260,15 +1222,9 @@ START-INFO-DIR-ENTRY
 * nextafter: (libc)FP Bit Twiddling.
 * nextafterf: (libc)FP Bit Twiddling.
 * nextafterl: (libc)FP Bit Twiddling.
-* nextdown: (libc)FP Bit Twiddling.
-* nextdownf: (libc)FP Bit Twiddling.
-* nextdownl: (libc)FP Bit Twiddling.
 * nexttoward: (libc)FP Bit Twiddling.
 * nexttowardf: (libc)FP Bit Twiddling.
 * nexttowardl: (libc)FP Bit Twiddling.
-* nextup: (libc)FP Bit Twiddling.
-* nextupf: (libc)FP Bit Twiddling.
-* nextupl: (libc)FP Bit Twiddling.
 * nftw64: (libc)Working with Directory Trees.
 * nftw: (libc)Working with Directory Trees.
 * ngettext: (libc)Advanced gettext functions.
@@ -1401,9 +1357,6 @@ START-INFO-DIR-ENTRY
 * rintl: (libc)Rounding Functions.
 * rmdir: (libc)Deleting Files.
 * round: (libc)Rounding Functions.
-* roundeven: (libc)Rounding Functions.
-* roundevenf: (libc)Rounding Functions.
-* roundevenl: (libc)Rounding Functions.
 * roundf: (libc)Rounding Functions.
 * roundl: (libc)Rounding Functions.
 * rpmatch: (libc)Yes-or-No Questions.
@@ -1476,12 +1429,6 @@ START-INFO-DIR-ENTRY
 * setmntent: (libc)mtab.
 * setnetent: (libc)Networks Database.
 * setnetgrent: (libc)Lookup Netgroup.
-* setpayload: (libc)FP Bit Twiddling.
-* setpayloadf: (libc)FP Bit Twiddling.
-* setpayloadl: (libc)FP Bit Twiddling.
-* setpayloadsig: (libc)FP Bit Twiddling.
-* setpayloadsigf: (libc)FP Bit Twiddling.
-* setpayloadsigl: (libc)FP Bit Twiddling.
 * setpgid: (libc)Process Group Functions.
 * setpgrp: (libc)Process Group Functions.
 * setpriority: (libc)Traditional Scheduling Functions.
@@ -1570,9 +1517,6 @@ START-INFO-DIR-ENTRY
 * strerror: (libc)Error Messages.
 * strerror_r: (libc)Error Messages.
 * strfmon: (libc)Formatting Numbers.
-* strfromd: (libc)Printing of Floats.
-* strfromf: (libc)Printing of Floats.
-* strfroml: (libc)Printing of Floats.
 * strfry: (libc)strfry.
 * strftime: (libc)Formatting Calendar Time.
 * strlen: (libc)String Length.
@@ -1651,12 +1595,6 @@ START-INFO-DIR-ENTRY
 * tmpnam_r: (libc)Temporary Files.
 * toascii: (libc)Case Conversion.
 * tolower: (libc)Case Conversion.
-* totalorder: (libc)FP Comparison Functions.
-* totalorderf: (libc)FP Comparison Functions.
-* totalorderl: (libc)FP Comparison Functions.
-* totalordermag: (libc)FP Comparison Functions.
-* totalordermagf: (libc)FP Comparison Functions.
-* totalordermagl: (libc)FP Comparison Functions.
 * toupper: (libc)Case Conversion.
 * towctrans: (libc)Wide Character Case Conversion.
 * towlower: (libc)Wide Character Case Conversion.
@@ -1671,12 +1609,6 @@ START-INFO-DIR-ENTRY
 * ttyname_r: (libc)Is It a Terminal.
 * twalk: (libc)Tree Search Function.
 * tzset: (libc)Time Zone Functions.
-* ufromfp: (libc)Rounding Functions.
-* ufromfpf: (libc)Rounding Functions.
-* ufromfpl: (libc)Rounding Functions.
-* ufromfpx: (libc)Rounding Functions.
-* ufromfpxf: (libc)Rounding Functions.
-* ufromfpxl: (libc)Rounding Functions.
 * ulimit: (libc)Limits on Resources.
 * umask: (libc)Setting Permissions.
 * umount2: (libc)Mount-Unmount-Remount.
@@ -1795,156 +1727,9 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: libc.info,  Node: Obstacks,  Next: Variable Size Automatic,  Prev: Allocation Debugging,  Up: Memory Allocation
-
-3.2.5 Obstacks
---------------
-
-An "obstack" is a pool of memory containing a stack of objects.  You can
-create any number of separate obstacks, and then allocate objects in
-specified obstacks.  Within each obstack, the last object allocated must
-always be the first one freed, but distinct obstacks are independent of
-each other.
-
-   Aside from this one constraint of order of freeing, obstacks are
-totally general: an obstack can contain any number of objects of any
-size.  They are implemented with macros, so allocation is usually very
-fast as long as the objects are usually small.  And the only space
-overhead per object is the padding needed to start each object on a
-suitable boundary.
-
-* Menu:
-
-* Creating Obstacks::		How to declare an obstack in your program.
-* Preparing for Obstacks::	Preparations needed before you can
-				 use obstacks.
-* Allocation in an Obstack::    Allocating objects in an obstack.
-* Freeing Obstack Objects::     Freeing objects in an obstack.
-* Obstack Functions::		The obstack functions are both
-				 functions and macros.
-* Growing Objects::             Making an object bigger by stages.
-* Extra Fast Growing::		Extra-high-efficiency (though more
-				 complicated) growing objects.
-* Status of an Obstack::        Inquiries about the status of an obstack.
-* Obstacks Data Alignment::     Controlling alignment of objects in obstacks.
-* Obstack Chunks::              How obstacks obtain and release chunks;
-				 efficiency considerations.
-* Summary of Obstacks::
-
-
-File: libc.info,  Node: Creating Obstacks,  Next: Preparing for Obstacks,  Up: Obstacks
-
-3.2.5.1 Creating Obstacks
-.........................
-
-The utilities for manipulating obstacks are declared in the header file
-‘obstack.h’.
-
- -- Data Type: struct obstack
-     An obstack is represented by a data structure of type ‘struct
-     obstack’.  This structure has a small fixed size; it records the
-     status of the obstack and how to find the space in which objects
-     are allocated.  It does not contain any of the objects themselves.
-     You should not try to access the contents of the structure
-     directly; use only the functions described in this chapter.
-
-   You can declare variables of type ‘struct obstack’ and use them as
-obstacks, or you can allocate obstacks dynamically like any other kind
-of object.  Dynamic allocation of obstacks allows your program to have a
-variable number of different stacks.  (You can even allocate an obstack
-structure in another obstack, but this is rarely useful.)
-
-   All the functions that work with obstacks require you to specify
-which obstack to use.  You do this with a pointer of type ‘struct
-obstack *’.  In the following, we often say “an obstack” when strictly
-speaking the object at hand is such a pointer.
-
-   The objects in the obstack are packed into large blocks called
-"chunks".  The ‘struct obstack’ structure points to a chain of the
-chunks currently in use.
-
-   The obstack library obtains a new chunk whenever you allocate an
-object that won’t fit in the previous chunk.  Since the obstack library
-manages chunks automatically, you don’t need to pay much attention to
-them, but you do need to supply a function which the obstack library
-should use to get a chunk.  Usually you supply a function which uses
-‘malloc’ directly or indirectly.  You must also supply a function to
-free a chunk.  These matters are described in the following section.
-
-
-File: libc.info,  Node: Preparing for Obstacks,  Next: Allocation in an Obstack,  Prev: Creating Obstacks,  Up: Obstacks
-
-3.2.5.2 Preparing for Using Obstacks
-....................................
-
-Each source file in which you plan to use the obstack functions must
-include the header file ‘obstack.h’, like this:
-
-     #include <obstack.h>
-
-   Also, if the source file uses the macro ‘obstack_init’, it must
-declare or define two functions or macros that will be called by the
-obstack library.  One, ‘obstack_chunk_alloc’, is used to allocate the
-chunks of memory into which objects are packed.  The other,
-‘obstack_chunk_free’, is used to return chunks when the objects in them
-are freed.  These macros should appear before any use of obstacks in the
-source file.
-
-   Usually these are defined to use ‘malloc’ via the intermediary
-‘xmalloc’ (*note Unconstrained Allocation::).  This is done with the
-following pair of macro definitions:
-
-     #define obstack_chunk_alloc xmalloc
-     #define obstack_chunk_free free
-
-Though the memory you get using obstacks really comes from ‘malloc’,
-using obstacks is faster because ‘malloc’ is called less often, for
-larger blocks of memory.  *Note Obstack Chunks::, for full details.
-
-   At run time, before the program can use a ‘struct obstack’ object as
-an obstack, it must initialize the obstack by calling ‘obstack_init’.
-
- -- Function: int obstack_init (struct obstack *OBSTACK-PTR)
-     Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe mem |
-     *Note POSIX Safety Concepts::.
-
-     Initialize obstack OBSTACK-PTR for allocation of objects.  This
-     function calls the obstack’s ‘obstack_chunk_alloc’ function.  If
-     allocation of memory fails, the function pointed to by
-     ‘obstack_alloc_failed_handler’ is called.  The ‘obstack_init’
-     function always returns 1 (Compatibility notice: Former versions of
-     obstack returned 0 if allocation failed).
-
-   Here are two examples of how to allocate the space for an obstack and
-initialize it.  First, an obstack that is a static variable:
-
-     static struct obstack myobstack;
-     …
-     obstack_init (&myobstack);
-
-Second, an obstack that is itself dynamically allocated:
-
-     struct obstack *myobstack_ptr
-       = (struct obstack *) xmalloc (sizeof (struct obstack));
-
-     obstack_init (myobstack_ptr);
-
- -- Variable: obstack_alloc_failed_handler
-     The value of this variable is a pointer to a function that
-     ‘obstack’ uses when ‘obstack_chunk_alloc’ fails to allocate memory.
-     The default action is to print a message and abort.  You should
-     supply a function that either calls ‘exit’ (*note Program
-     Termination::) or ‘longjmp’ (*note Non-Local Exits::) and doesn’t
-     return.
-
-          void my_obstack_alloc_failed (void)
-          …
-          obstack_alloc_failed_handler = &my_obstack_alloc_failed;
-
-
 File: libc.info,  Node: Allocation in an Obstack,  Next: Freeing Obstack Objects,  Prev: Preparing for Obstacks,  Up: Obstacks
 
-3.2.5.3 Allocation in an Obstack
+3.2.4.3 Allocation in an Obstack
 ................................
 
 The most direct way to allocate an object in an obstack is with
@@ -2016,7 +1801,7 @@ Contrast this with the previous example of ‘savestring’ using ‘malloc’
 
 File: libc.info,  Node: Freeing Obstack Objects,  Next: Obstack Functions,  Prev: Allocation in an Obstack,  Up: Obstacks
 
-3.2.5.4 Freeing Objects in an Obstack
+3.2.4.4 Freeing Objects in an Obstack
 .....................................
 
 To free an object allocated in an obstack, use the function
@@ -2032,7 +1817,7 @@ the same obstack.
      If OBJECT is a null pointer, everything allocated in the obstack is
      freed.  Otherwise, OBJECT must be the address of an object
      allocated in the obstack.  Then OBJECT is freed, along with
-     everything allocated in OBSTACK-PTR since OBJECT.
+     everything allocated in OBSTACK since OBJECT.
 
    Note that if OBJECT is a null pointer, the result is an uninitialized
 obstack.  To free all memory in an obstack but leave it valid for
@@ -2050,7 +1835,7 @@ chunk.
 
 File: libc.info,  Node: Obstack Functions,  Next: Growing Objects,  Prev: Freeing Obstack Objects,  Up: Obstacks
 
-3.2.5.5 Obstack Functions and Macros
+3.2.4.5 Obstack Functions and Macros
 ....................................
 
 The interfaces for using obstacks may be defined either as functions or
@@ -2101,7 +1886,7 @@ so as to compute each argument only once.
 
 File: libc.info,  Node: Growing Objects,  Next: Extra Fast Growing,  Prev: Obstack Functions,  Up: Obstacks
 
-3.2.5.6 Growing Objects
+3.2.4.6 Growing Objects
 .......................
 
 Because memory in obstack chunks is used sequentially, it is possible to
@@ -2218,7 +2003,7 @@ length—there’s no telling what will happen if you do that.
 
 File: libc.info,  Node: Extra Fast Growing,  Next: Status of an Obstack,  Prev: Growing Objects,  Up: Obstacks
 
-3.2.5.7 Extra Fast Growing Objects
+3.2.4.7 Extra Fast Growing Objects
 ..................................
 
 The usual functions for growing objects incur overhead for checking
@@ -2243,7 +2028,7 @@ the current chunk.  It is declared as follows:
 
      This returns the number of bytes that can be added safely to the
      current growing object (or to an object about to be started) in
-     obstack OBSTACK-PTR using the fast growth functions.
+     obstack OBSTACK using the fast growth functions.
 
    While you know there is room, you can use these fast growth functions
 for adding data to a growing object:
@@ -2323,7 +2108,7 @@ start using the fast growth functions again.
 
 File: libc.info,  Node: Status of an Obstack,  Next: Obstacks Data Alignment,  Prev: Extra Fast Growing,  Up: Obstacks
 
-3.2.5.8 Status of an Obstack
+3.2.4.8 Status of an Obstack
 ............................
 
 Here are functions that provide information on the current status of
@@ -2365,7 +2150,7 @@ while still growing it.
 
 File: libc.info,  Node: Obstacks Data Alignment,  Next: Obstack Chunks,  Prev: Status of an Obstack,  Up: Obstacks
 
-3.2.5.9 Alignment of Data in Obstacks
+3.2.4.9 Alignment of Data in Obstacks
 .....................................
 
 Each obstack has an "alignment boundary"; each object allocated in the
@@ -2408,7 +2193,7 @@ zero-length object and then do proper alignment for the next object.
 
 File: libc.info,  Node: Obstack Chunks,  Next: Summary of Obstacks,  Prev: Obstacks Data Alignment,  Up: Obstacks
 
-3.2.5.10 Obstack Chunks
+3.2.4.10 Obstack Chunks
 .......................
 
 Obstacks work by allocating space for themselves in large chunks, and
@@ -2462,7 +2247,7 @@ size.  Here is how to do so cleanly:
 
 File: libc.info,  Node: Summary of Obstacks,  Prev: Obstack Chunks,  Up: Obstacks
 
-3.2.5.11 Summary of Obstack Functions
+3.2.4.11 Summary of Obstack Functions
 .....................................
 
 Here is a summary of all the functions associated with obstacks.  Each
@@ -2545,7 +2330,7 @@ argument.
 
 File: libc.info,  Node: Variable Size Automatic,  Prev: Obstacks,  Up: Memory Allocation
 
-3.2.6 Automatic Storage with Variable Size
+3.2.5 Automatic Storage with Variable Size
 ------------------------------------------
 
 The function ‘alloca’ supports a kind of half-dynamic allocation in
@@ -2585,7 +2370,7 @@ arguments.  An example of what to avoid is ‘foo (x, alloca (4), y)’.
 
 File: libc.info,  Node: Alloca Example,  Next: Advantages of Alloca,  Up: Variable Size Automatic
 
-3.2.6.1 ‘alloca’ Example
+3.2.5.1 ‘alloca’ Example
 ........................
 
 As an example of the use of ‘alloca’, here is a function that opens a
@@ -2621,7 +2406,7 @@ more important advantages, and some disadvantages.
 
 File: libc.info,  Node: Advantages of Alloca,  Next: Disadvantages of Alloca,  Prev: Alloca Example,  Up: Variable Size Automatic
 
-3.2.6.2 Advantages of ‘alloca’
+3.2.5.2 Advantages of ‘alloca’
 ..............................
 
 Here are the reasons why ‘alloca’ may be preferable to ‘malloc’:
@@ -2630,7 +2415,7 @@ Here are the reasons why ‘alloca’ may be preferable to ‘malloc’:
      open-coded by the GNU C compiler.)
 
    • Since ‘alloca’ does not have separate pools for different sizes of
-     blocks, space used for any size block can be reused for any other
+     block, space used for any size block can be reused for any other
      size.  ‘alloca’ does not cause memory fragmentation.
 
    • Nonlocal exits done with ‘longjmp’ (*note Non-Local Exits::)
@@ -2664,7 +2449,7 @@ Here are the reasons why ‘alloca’ may be preferable to ‘malloc’:
 
 File: libc.info,  Node: Disadvantages of Alloca,  Next: GNU C Variable-Size Arrays,  Prev: Advantages of Alloca,  Up: Variable Size Automatic
 
-3.2.6.3 Disadvantages of ‘alloca’
+3.2.5.3 Disadvantages of ‘alloca’
 .................................
 
 These are the disadvantages of ‘alloca’ in comparison with ‘malloc’:
@@ -2681,7 +2466,7 @@ These are the disadvantages of ‘alloca’ in comparison with ‘malloc’:
 
 File: libc.info,  Node: GNU C Variable-Size Arrays,  Prev: Disadvantages of Alloca,  Up: Variable Size Automatic
 
-3.2.6.4 GNU C Variable-Size Arrays
+3.2.5.4 GNU C Variable-Size Arrays
 ..................................
 
 In GNU C, you can replace most uses of ‘alloca’ with an array of
@@ -2735,7 +2520,7 @@ system calls.
      the last byte in the segment plus 1.
 
      The function has no effect if ADDR is lower than the low end of the
-     data segment.  (This is considered success, by the way.)
+     data segment.  (This is considered success, by the way).
 
      The function fails if it would cause the data segment to overlap
      another segment or exceed the process’ data storage limit (*note
@@ -3017,7 +2802,7 @@ conforms to this requirement.
      Concepts::.
 
      ‘munlockall’ unlocks every page in the calling process’ virtual
-     address space and turns off ‘MCL_FUTURE’ future locking mode.
+     address space and turn off ‘MCL_FUTURE’ future locking mode.
 
      The return value is zero if the function succeeds.  Otherwise, it
      is ‘-1’ and ‘errno’ is set accordingly.  The only way this function
@@ -3305,10 +3090,10 @@ objects can be defined.
      Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | *Note POSIX
      Safety Concepts::.
 
-     ‘wctype’ returns a value representing a class of wide characters
-     which is identified by the string PROPERTY.  Besides some standard
-     properties each locale can define its own ones.  In case no
-     property with the given name is known for the current locale
+     The ‘wctype’ returns a value representing a class of wide
+     characters which is identified by the string PROPERTY.  Beside some
+     standard properties each locale can define its own ones.  In case
+     no property with the given name is known for the current locale
      selected for the ‘LC_CTYPE’ category, the function returns zero.
 
      The properties known in every locale are:
@@ -3713,8 +3498,6 @@ typically highly optimized, your program may run faster too.
 * Search Functions::            Searching for a specific element or substring.
 * Finding Tokens in a String::  Splitting a string into tokens by looking
 				 for delimiters.
-* Erasing Sensitive Data::      Clearing memory which contains sensitive
-                                 data, after it’s no longer needed.
 * strfry::                      Function for flash-cooking a string.
 * Trivial Encryption::          Obscuring data.
 * Encode Binary Data::          Encoding and Decoding of Binary Data.
@@ -4137,7 +3920,7 @@ Output Functions::) and ‘scanf’ (*note Formatted Input Functions::).
 
      ‘wmemmove’ copies the SIZE wide characters at WFROM into the SIZE
      wide characters at WTO, even if those two blocks of space overlap.
-     In the case of overlap, ‘wmemmove’ is careful to copy the original
+     In the case of overlap, ‘memmove’ is careful to copy the original
      values of the wide characters in the block at WFROM, including
      those wide characters which also belong to the block at WTO.
 
@@ -4251,9 +4034,9 @@ Output Functions::) and ‘scanf’ (*note Formatted Input Functions::).
             return 0;
           }
 
-     This function is part of POSIX.1-2008 and later editions, but was
-     available in the GNU C Library and other systems as an extension
-     long before it was standardized.
+     This function is not part of the ISO or POSIX standards, and is not
+     customary on Unix systems, but we did not invent it either.
+     Perhaps it comes from MS-DOG.
 
      Its behavior is undefined if the strings overlap.  The function is
      declared in ‘string.h’.
@@ -4446,7 +4229,7 @@ bytes for the end of the string so that we can append the next string.
 For all strings in total the comparisons necessary to find the end of
 the intermediate results sums up to 5500!  If we combine the copying
 with the search for the allocation we can write this function more
-efficiently:
+efficient:
 
      char *
      concat (const char *str, …)
@@ -4502,17 +4285,17 @@ efficiently:
    With a bit more knowledge about the input strings one could fine-tune
 the memory allocation.  The difference we are pointing to here is that
 we don’t use ‘strcat’ anymore.  We always keep track of the length of
-the current intermediate result so we can save ourselves the search for
-the end of the string and use ‘mempcpy’.  Please note that we also don’t
-use ‘stpcpy’ which might seem more natural since we are handling
-strings.  But this is not necessary since we already know the length of
-the string and therefore can use the faster memory copying function.
-The example would work for wide characters the same way.
+the current intermediate result so we can safe us the search for the end
+of the string and use ‘mempcpy’.  Please note that we also don’t use
+‘stpcpy’ which might seem more natural since we handle with strings.
+But this is not necessary since we already know the length of the string
+and therefore can use the faster memory copying function.  The example
+would work for wide characters the same way.
 
    Whenever a programmer feels the need to use ‘strcat’ she or he should
-think twice and look through the program to see whether the code cannot
-be rewritten to take advantage of already calculated results.  Again: it
-is almost always unnecessary to use ‘strcat’.
+think twice and look through the program whether the code cannot be
+rewritten to take advantage of already calculated results.  Again: it is
+almost always unnecessary to use ‘strcat’.
 
 
 File: libc.info,  Node: Truncating Strings,  Next: String/Array Comparison,  Prev: Concatenating Strings,  Up: String and Array Utilities
@@ -4918,10 +4701,10 @@ you are better off writing a specialized comparison function to compare
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
 
-     This function is similar to ‘wcscmp’, except that no more than SIZE
-     wide characters are compared.  In other words, if the two strings
-     are the same in their first SIZE wide characters, the return value
-     is zero.
+     This function is the similar to ‘wcscmp’, except that no more than
+     SIZE wide characters are compared.  In other words, if the two
+     strings are the same in their first SIZE wide characters, the
+     return value is zero.
 
  -- Function: int strncasecmp (const char *S1, const char *S2, size_t N)
      Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | *Note POSIX
@@ -4973,68 +4756,39 @@ values and ordering may differ.)
      considering them as holding indices/version numbers.  The return
      value follows the same conventions as found in the ‘strcmp’
      function.  In fact, if S1 and S2 contain no digits, ‘strverscmp’
-     behaves like ‘strcmp’ (in the sense that the sign of the result is
-     the same).
+     behaves like ‘strcmp’.
 
-     The comparison algorithm which the ‘strverscmp’ function implements
-     differs slightly from other version-comparison algorithms.  The
-     implementation is based on a finite-state machine, whose behavior
-     is approximated below.
+     Basically, we compare strings normally (byte by byte), until we
+     find a digit in each string - then we enter a special comparison
+     mode, where each sequence of digits is taken as a whole.  If we
+     reach the end of these two parts without noticing a difference, we
+     return to the standard comparison mode.  There are two types of
+     numeric parts: "integral" and "fractional" (those begin with a
+     ’0’).  The types of the numeric parts affect the way we sort them:
 
-        • The input strings are each split into sequences of non-digits
-          and digits.  These sequences can be empty at the beginning and
-          end of the string.  Digits are determined by the ‘isdigit’
-          function and are thus subject to the current locale.
+        • integral/integral: we compare values as you would expect.
 
-        • Comparison starts with a (possibly empty) non-digit sequence.
-          The first non-equal sequences of non-digits or digits
-          determines the outcome of the comparison.
+        • fractional/integral: the fractional part is less than the
+          integral one.  Again, no surprise.
 
-        • Corresponding non-digit sequences in both strings are compared
-          lexicographically if their lengths are equal.  If the lengths
-          differ, the shorter non-digit sequence is extended with the
-          input string character immediately following it (which may be
-          the null terminator), the other sequence is truncated to be of
-          the same (extended) length, and these two sequences are
-          compared lexicographically.  In the last case, the sequence
-          comparison determines the result of the function because the
-          extension character (or some character before it) is
-          necessarily different from the character at the same offset in
-          the other input string.
-
-        • For two sequences of digits, the number of leading zeros is
-          counted (which can be zero).  If the count differs, the string
-          with more leading zeros in the digit sequence is considered
-          smaller than the other string.
-
-        • If the two sequences of digits have no leading zeros, they are
-          compared as integers, that is, the string with the longer
-          digit sequence is deemed larger, and if both sequences are of
-          equal length, they are compared lexicographically.
-
-        • If both digit sequences start with a zero and have an equal
-          number of leading zeros, they are compared lexicographically
-          if their lengths are the same.  If the lengths differ, the
-          shorter sequence is extended with the following character in
-          its input string, and the other sequence is truncated to the
-          same length, and both sequences are compared lexicographically
-          (similar to the non-digit sequence case above).
-
-     The treatment of leading zeros and the tie-breaking extension
-     characters (which in effect propagate across non-digit/digit
-     sequence boundaries) differs from other version-comparison
-     algorithms.
+        • fractional/fractional: the things become a bit more complex.
+          If the common prefix contains only leading zeroes, the longest
+          part is less than the other one; else the comparison behaves
+          normally.
 
           strverscmp ("no digit", "no digit")
               ⇒ 0    /* same behavior as strcmp. */
           strverscmp ("item#99", "item#100")
               ⇒ <0   /* same prefix, but 99 < 100. */
           strverscmp ("alpha1", "alpha001")
-              ⇒ >0   /* different number of leading zeros (0 and 2). */
+              ⇒ >0   /* fractional part inferior to integral one. */
           strverscmp ("part1_f012", "part1_f01")
-              ⇒ >0   /* lexicographical comparison with leading zeros. */
+              ⇒ >0   /* two fractional parts. */
           strverscmp ("foo.009", "foo.0")
-              ⇒ <0   /* different number of leading zeros (2 and 1). */
+              ⇒ <0   /* idem, but with leading zeroes only. */
+
+     This function is especially useful when dealing with filename
+     sorting, because filenames frequently hold indices/version numbers.
 
      ‘strverscmp’ is a GNU extension.
 
@@ -5642,7 +5396,7 @@ optimized in a special way so that ‘strchr’ actually is faster.
      derived systems.
 
 
-File: libc.info,  Node: Finding Tokens in a String,  Next: Erasing Sensitive Data,  Prev: Search Functions,  Up: String and Array Utilities
+File: libc.info,  Node: Finding Tokens in a String,  Next: strfry,  Prev: Search Functions,  Up: String and Array Utilities
 
 5.10 Finding Tokens in a String
 ===============================
@@ -5852,7 +5606,7 @@ available for wide strings.
      component of the path in FILENAME.  This function is the preferred
      usage, since it does not modify the argument, FILENAME, and
      respects trailing slashes.  The prototype for ‘basename’ can be
-     found in ‘string.h’.  Note, this function is overridden by the XPG
+     found in ‘string.h’.  Note, this function is overriden by the XPG
      version, if ‘libgen.h’ is included.
 
      Example of using GNU ‘basename’:
@@ -5920,99 +5674,9 @@ available for wide strings.
      be found in ‘libgen.h’.
 
 
-File: libc.info,  Node: Erasing Sensitive Data,  Next: strfry,  Prev: Finding Tokens in a String,  Up: String and Array Utilities
+File: libc.info,  Node: strfry,  Next: Trivial Encryption,  Prev: Finding Tokens in a String,  Up: String and Array Utilities
 
-5.11 Erasing Sensitive Data
-===========================
-
-Sensitive data, such as cryptographic keys, should be erased from memory
-after use, to reduce the risk that a bug will expose it to the outside
-world.  However, compiler optimizations may determine that an erasure
-operation is “unnecessary,” and remove it from the generated code,
-because no _correct_ program could access the variable or heap object
-containing the sensitive data after it’s deallocated.  Since erasure is
-a precaution against bugs, this optimization is inappropriate.
-
-   The function ‘explicit_bzero’ erases a block of memory, and
-guarantees that the compiler will not remove the erasure as
-“unnecessary.”
-
-     #include <string.h>
-
-     extern void encrypt (const char *key, const char *in,
-                          char *out, size_t n);
-     extern void genkey (const char *phrase, char *key);
-
-     void encrypt_with_phrase (const char *phrase, const char *in,
-                               char *out, size_t n)
-     {
-       char key[16];
-       genkey (phrase, key);
-       encrypt (key, in, out, n);
-       explicit_bzero (key, 16);
-     }
-
-In this example, if ‘memset’, ‘bzero’, or a hand-written loop had been
-used, the compiler might remove them as “unnecessary.”
-
-   *Warning:* ‘explicit_bzero’ does not guarantee that sensitive data is
-_completely_ erased from the computer’s memory.  There may be copies in
-temporary storage areas, such as registers and “scratch” stack space;
-since these are invisible to the source code, a library function cannot
-erase them.
-
-   Also, ‘explicit_bzero’ only operates on RAM. If a sensitive data
-object never needs to have its address taken other than to call
-‘explicit_bzero’, it might be stored entirely in CPU registers _until_
-the call to ‘explicit_bzero’.  Then it will be copied into RAM, the copy
-will be erased, and the original will remain intact.  Data in RAM is
-more likely to be exposed by a bug than data in registers, so this
-creates a brief window where the data is at greater risk of exposure
-than it would have been if the program didn’t try to erase it at all.
-
-   Declaring sensitive variables as ‘volatile’ will make both the above
-problems _worse_; a ‘volatile’ variable will be stored in memory for its
-entire lifetime, and the compiler will make _more_ copies of it than it
-would otherwise have.  Attempting to erase a normal variable “by hand”
-through a ‘volatile’-qualified pointer doesn’t work at all—because the
-variable itself is not ‘volatile’, some compilers will ignore the
-qualification on the pointer and remove the erasure anyway.
-
-   Having said all that, in most situations, using ‘explicit_bzero’ is
-better than not using it.  At present, the only way to do a more
-thorough job is to write the entire sensitive operation in assembly
-language.  We anticipate that future compilers will recognize calls to
-‘explicit_bzero’ and take appropriate steps to erase all the copies of
-the affected data, whereever they may be.
-
- -- Function: void explicit_bzero (void *BLOCK, size_t LEN)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     ‘explicit_bzero’ writes zero into LEN bytes of memory beginning at
-     BLOCK, just as ‘bzero’ would.  The zeroes are always written, even
-     if the compiler could determine that this is “unnecessary” because
-     no correct program could read them back.
-
-     *Note:* The _only_ optimization that ‘explicit_bzero’ disables is
-     removal of “unnecessary” writes to memory.  The compiler can
-     perform all the other optimizations that it could for a call to
-     ‘memset’.  For instance, it may replace the function call with
-     inline memory writes, and it may assume that BLOCK cannot be a null
-     pointer.
-
-     *Portability Note:* This function first appeared in OpenBSD 5.5 and
-     has not been standardized.  Other systems may provide the same
-     functionality under a different name, such as ‘explicit_memset’,
-     ‘memset_s’, or ‘SecureZeroMemory’.
-
-     The GNU C Library declares this function in ‘string.h’, but on
-     other systems it may be in ‘strings.h’ instead.
-
-
-File: libc.info,  Node: strfry,  Next: Trivial Encryption,  Prev: Erasing Sensitive Data,  Up: String and Array Utilities
-
-5.12 strfry
+5.11 strfry
 ===========
 
 The function below addresses the perennial programming quandary: “How do
@@ -6040,7 +5704,7 @@ string data.
 
 File: libc.info,  Node: Trivial Encryption,  Next: Encode Binary Data,  Prev: strfry,  Up: String and Array Utilities
 
-5.13 Trivial Encryption
+5.12 Trivial Encryption
 =======================
 
 The ‘memfrob’ function converts an array of data to something
@@ -6077,7 +5741,7 @@ Unlike Rot13, ‘memfrob’ works on arbitrary binary data, not just text.
 
 File: libc.info,  Node: Encode Binary Data,  Next: Argz and Envz Vectors,  Prev: Trivial Encryption,  Up: String and Array Utilities
 
-5.14 Encode Binary Data
+5.13 Encode Binary Data
 =======================
 
 To store or transfer binary data in environments which only support text
@@ -6191,7 +5855,7 @@ Generally, it is better to use one of these encodings.
 
 File: libc.info,  Node: Argz and Envz Vectors,  Prev: Encode Binary Data,  Up: String and Array Utilities
 
-5.15 Argz and Envz Vectors
+5.14 Argz and Envz Vectors
 ==========================
 
 "argz vectors" are vectors of strings in a contiguous block of memory,
@@ -6208,7 +5872,7 @@ a name-value pair, separated by a ‘'='’ byte (as in a Unix environment).
 
 File: libc.info,  Node: Argz Functions,  Next: Envz Functions,  Up: Argz and Envz Vectors
 
-5.15.1 Argz Functions
+5.14.1 Argz Functions
 ---------------------
 
 Each argz vector is represented by a pointer to the first element, of
@@ -6218,7 +5882,7 @@ functions accept either a pointer and a size argument, or pointers to
 them, if they will be modified.
 
    The argz functions use ‘malloc’/‘realloc’ to allocate/grow argz
-vectors, and so any argz vector created using these functions may be
+vectors, and so any argz vector creating using these functions may be
 freed by using ‘free’; conversely, any argz function that may grow a
 string expects that string to have been allocated using ‘malloc’ (those
 argz functions that only examine their arguments or modify them in place
@@ -6249,7 +5913,7 @@ error occurs.
      argz vector (returned in ARGZ and ARGZ_LEN) by splitting it into
      elements at every occurrence of the byte SEP.
 
- -- Function: size_t argz_count (const char *ARGZ, size_t ARGZ_LEN)
+ -- Function: size_t argz_count (const char *ARGZ, size_t ARG_LEN)
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
 
@@ -6373,13 +6037,13 @@ error occurs.
 
      Replace any occurrences of the string STR in ARGZ with WITH,
      reallocating ARGZ as necessary.  If REPLACE_COUNT is non-zero,
-     ‘*REPLACE_COUNT’ will be incremented by the number of replacements
+     ‘*REPLACE_COUNT’ will be incremented by number of replacements
      performed.
 
 
 File: libc.info,  Node: Envz Functions,  Prev: Argz Functions,  Up: Argz and Envz Vectors
 
-5.15.2 Envz Functions
+5.14.2 Envz Functions
 ---------------------
 
 Envz vectors are just argz vectors with additional constraints on the
@@ -6396,7 +6060,7 @@ considered the name of a “null” entry, as distinct from an entry with an
 empty value: ‘envz_get’ will return ‘0’ if given the name of null entry,
 whereas an entry with an empty value would result in a value of ‘""’;
 ‘envz_entry’ will still find such entries, however.  Null entries can be
-removed with the ‘envz_strip’ function.
+removed with ‘envz_strip’ function.
 
    As with argz functions, envz functions that may allocate memory (and
 thus fail) have a return type of ‘error_t’, and return either ‘0’ or
@@ -6432,7 +6096,7 @@ thus fail) have a return type of ‘error_t’, and return either ‘0’ or
      The ‘envz_add’ function adds an entry to ‘*ENVZ’ (updating ‘*ENVZ’
      and ‘*ENVZ_LEN’) with the name NAME, and value VALUE.  If an entry
      with the same name already exists in ENVZ, it is removed first.  If
-     VALUE is ‘0’, then the new entry will be the special null type of
+     VALUE is ‘0’, then the new entry will the special null type of
      entry (mentioned above).
 
  -- Function: error_t envz_merge (char **ENVZ, size_t *ENVZ_LEN, const
@@ -6495,7 +6159,7 @@ File: libc.info,  Node: Extended Char Intro,  Next: Charset Function Overview,  
 6.1 Introduction to Extended Characters
 =======================================
 
-A variety of solutions are available to overcome the differences between
+A variety of solutions is available to overcome the differences between
 character sets with a 1:1 relation between bytes and characters and
 character sets with ratios of 2:1 or 4:1.  The remainder of this section
 gives a few examples to help understand the design decisions made while
@@ -6635,7 +6299,7 @@ type ‘wchar_t’.
      in ‘wchar.h’.
 
    These internal representations present problems when it comes to
-storage and transmittal.  Because each single wide character consists of
+storing and transmittal.  Because each single wide character consists of
 more than one byte, they are affected by byte-ordering.  Thus, machines
 with different endianesses would see different values when accessing the
 same data.  This byte ordering concern also applies for communication
@@ -6816,11 +6480,11 @@ File: libc.info,  Node: Selecting the Conversion,  Next: Keeping the state,  Up:
 -------------------------------------------------
 
 We already said above that the currently selected locale for the
-‘LC_CTYPE’ category decides the conversion that is performed by the
-functions we are about to describe.  Each locale uses its own character
-set (given as an argument to ‘localedef’) and this is the one assumed as
-the external multibyte encoding.  The wide character set is always UCS-4
-in the GNU C Library.
+‘LC_CTYPE’ category decides about the conversion that is performed by
+the functions we are about to describe.  Each locale uses its own
+character set (given as an argument to ‘localedef’) and this is the one
+assumed as the external multibyte encoding.  The wide character set is
+always UCS-4 in the GNU C Library.
 
    A characteristic of each multibyte character set is the maximum
 number of bytes that can be necessary to represent one character.  This
@@ -6947,7 +6611,8 @@ necessary output code (*note Converting Strings::).  Please note that
 with the GNU C Library it is not necessary to perform this extra action
 for the conversion from multibyte text to wide character text since the
 wide character encoding is not stateful.  But there is nothing mentioned
-in any standard that prohibits making ‘wchar_t’ use a stateful encoding.
+in any standard that prohibits making ‘wchar_t’ using a stateful
+encoding.
 
 
 File: libc.info,  Node: Converting a Character,  Next: Converting Strings,  Prev: Keeping the state,  Up: Restartable multibyte conversion
@@ -6959,7 +6624,7 @@ The most fundamental of the conversion functions are those dealing with
 single characters.  Please note that this does not always mean single
 bytes.  But since there is very often a subset of the multibyte
 character set that consists of single byte sequences, there are
-functions to help with converting bytes.  Frequently, ASCII is a subset
+functions to help with converting bytes.  Frequently, ASCII is a subpart
 of the multibyte character set.  In such a scenario, each ASCII
 character stands for itself, and all other characters have at least a
 first byte that is beyond the range 0 to 127.
@@ -6987,7 +6652,7 @@ first byte that is beyond the range 0 to 127.
    Despite the limitation that the single byte value is always
 interpreted in the initial state, this function is actually useful most
 of the time.  Most characters are either entirely single-byte character
-sets or they are extensions to ASCII. But then it is possible to write
+sets or they are extension to ASCII. But then it is possible to write
 code like this (not that this specific example is very useful):
 
      wchar_t *
@@ -7029,7 +6694,7 @@ There is also a function for the conversion in the other direction.
      ‘wctob’ was introduced in Amendment 1 to ISO C90 and is declared in
      ‘wchar.h’.
 
-   There are more general functions to convert single characters from
+   There are more general functions to convert single character from
 multibyte representation to wide characters and vice versa.  These
 functions pose no limit on the length of the multibyte representation
 and they also do not require it to be in the initial state.
@@ -7114,7 +6779,7 @@ the input string and the number of available bytes is adjusted.
 
    The only non-obvious thing about ‘mbrtowc’ might be the way memory is
 allocated for the result.  The above code uses the fact that there can
-never be more wide characters in the converted result than there are
+never be more wide characters in the converted results than there are
 bytes in the multibyte input string.  This method yields a pessimistic
 guess about the size of the result, and if many wide character strings
 have to be constructed this way or if the strings are long, the extra
@@ -7192,7 +6857,7 @@ Therefore, the ‘mbrlen’ function will never read invalid memory.
 
    Now that this function is available (just to make this clear, this
 function is _not_ part of the GNU C Library) we can compute the number
-of wide characters required to store the converted multibyte character
+of wide character required to store the converted multibyte character
 string S using
 
      wcs_bytes = (mbslen (s) + 1) * sizeof (wchar_t);
@@ -7215,8 +6880,8 @@ the work twice.
      corresponding to that wide character.
 
      If S is a null pointer, the function resets the state stored in the
-     object pointed to by PS (or the internal ‘mbstate_t’ object) to the
-     initial state.  This can also be achieved by a call like this:
+     objects pointed to by PS (or the internal ‘mbstate_t’ object) to
+     the initial state.  This can also be achieved by a call like this:
 
           wcrtombs (temp_buf, L'\0', ps)
 
@@ -7328,4 +6993,217 @@ preserve the initial shift state information.
 
    There are certainly many more and even better solutions to this
 problem.  This example is only provided for educational purposes.
+
+
+File: libc.info,  Node: Converting Strings,  Next: Multibyte Conversion Example,  Prev: Converting a Character,  Up: Restartable multibyte conversion
+
+6.3.4 Converting Multibyte and Wide Character Strings
+-----------------------------------------------------
+
+The functions described in the previous section only convert a single
+character at a time.  Most operations to be performed in real-world
+programs include strings and therefore the ISO C standard also defines
+conversions on entire strings.  However, the defined set of functions is
+quite limited; therefore, the GNU C Library contains a few extensions
+that can help in some important situations.
+
+ -- Function: size_t mbsrtowcs (wchar_t *restrict DST, const char
+          **restrict SRC, size_t LEN, mbstate_t *restrict PS)
+     Preliminary: | MT-Unsafe race:mbsrtowcs/!ps | AS-Unsafe corrupt
+     heap lock dlopen | AC-Unsafe corrupt lock mem fd | *Note POSIX
+     Safety Concepts::.
+
+     The ‘mbsrtowcs’ function (“multibyte string restartable to wide
+     character string”) converts a NUL-terminated multibyte character
+     string at ‘*SRC’ into an equivalent wide character string,
+     including the NUL wide character at the end.  The conversion is
+     started using the state information from the object pointed to by
+     PS or from an internal object of ‘mbsrtowcs’ if PS is a null
+     pointer.  Before returning, the state object is updated to match
+     the state after the last converted character.  The state is the
+     initial state if the terminating NUL byte is reached and converted.
+
+     If DST is not a null pointer, the result is stored in the array
+     pointed to by DST; otherwise, the conversion result is not
+     available since it is stored in an internal buffer.
+
+     If LEN wide characters are stored in the array DST before reaching
+     the end of the input string, the conversion stops and LEN is
+     returned.  If DST is a null pointer, LEN is never checked.
+
+     Another reason for a premature return from the function call is if
+     the input string contains an invalid multibyte sequence.  In this
+     case the global variable ‘errno’ is set to ‘EILSEQ’ and the
+     function returns ‘(size_t) -1’.
+
+     In all other cases the function returns the number of wide
+     characters converted during this call.  If DST is not null,
+     ‘mbsrtowcs’ stores in the pointer pointed to by SRC either a null
+     pointer (if the NUL byte in the input string was reached) or the
+     address of the byte following the last converted multibyte
+     character.
+
+     ‘mbsrtowcs’ was introduced in Amendment 1 to ISO C90 and is
+     declared in ‘wchar.h’.
+
+   The definition of the ‘mbsrtowcs’ function has one important
+limitation.  The requirement that DST has to be a NUL-terminated string
+provides problems if one wants to convert buffers with text.  A buffer
+is normally no collection of NUL-terminated strings but instead a
+continuous collection of lines, separated by newline characters.  Now
+assume that a function to convert one line from a buffer is needed.
+Since the line is not NUL-terminated, the source pointer cannot directly
+point into the unmodified text buffer.  This means, either one inserts
+the NUL byte at the appropriate place for the time of the ‘mbsrtowcs’
+function call (which is not doable for a read-only buffer or in a
+multi-threaded application) or one copies the line in an extra buffer
+where it can be terminated by a NUL byte.  Note that it is not in
+general possible to limit the number of characters to convert by setting
+the parameter LEN to any specific value.  Since it is not known how many
+bytes each multibyte character sequence is in length, one can only
+guess.
+
+   There is still a problem with the method of NUL-terminating a line
+right after the newline character, which could lead to very strange
+results.  As said in the description of the ‘mbsrtowcs’ function above
+the conversion state is guaranteed to be in the initial shift state
+after processing the NUL byte at the end of the input string.  But this
+NUL byte is not really part of the text (i.e., the conversion state
+after the newline in the original text could be something different than
+the initial shift state and therefore the first character of the next
+line is encoded using this state).  But the state in question is never
+accessible to the user since the conversion stops after the NUL byte
+(which resets the state).  Most stateful character sets in use today
+require that the shift state after a newline be the initial state–but
+this is not a strict guarantee.  Therefore, simply NUL-terminating a
+piece of a running text is not always an adequate solution and,
+therefore, should never be used in generally used code.
+
+   The generic conversion interface (*note Generic Charset Conversion::)
+does not have this limitation (it simply works on buffers, not strings),
+and the GNU C Library contains a set of functions that take additional
+parameters specifying the maximal number of bytes that are consumed from
+the input string.  This way the problem of ‘mbsrtowcs’’s example above
+could be solved by determining the line length and passing this length
+to the function.
+
+ -- Function: size_t wcsrtombs (char *restrict DST, const wchar_t
+          **restrict SRC, size_t LEN, mbstate_t *restrict PS)
+     Preliminary: | MT-Unsafe race:wcsrtombs/!ps | AS-Unsafe corrupt
+     heap lock dlopen | AC-Unsafe corrupt lock mem fd | *Note POSIX
+     Safety Concepts::.
+
+     The ‘wcsrtombs’ function (“wide character string restartable to
+     multibyte string”) converts the NUL-terminated wide character
+     string at ‘*SRC’ into an equivalent multibyte character string and
+     stores the result in the array pointed to by DST.  The NUL wide
+     character is also converted.  The conversion starts in the state
+     described in the object pointed to by PS or by a state object
+     locally to ‘wcsrtombs’ in case PS is a null pointer.  If DST is a
+     null pointer, the conversion is performed as usual but the result
+     is not available.  If all characters of the input string were
+     successfully converted and if DST is not a null pointer, the
+     pointer pointed to by SRC gets assigned a null pointer.
+
+     If one of the wide characters in the input string has no valid
+     multibyte character equivalent, the conversion stops early, sets
+     the global variable ‘errno’ to ‘EILSEQ’, and returns ‘(size_t) -1’.
+
+     Another reason for a premature stop is if DST is not a null pointer
+     and the next converted character would require more than LEN bytes
+     in total to the array DST.  In this case (and if DEST is not a null
+     pointer) the pointer pointed to by SRC is assigned a value pointing
+     to the wide character right after the last one successfully
+     converted.
+
+     Except in the case of an encoding error the return value of the
+     ‘wcsrtombs’ function is the number of bytes in all the multibyte
+     character sequences stored in DST.  Before returning the state in
+     the object pointed to by PS (or the internal object in case PS is a
+     null pointer) is updated to reflect the state after the last
+     conversion.  The state is the initial shift state in case the
+     terminating NUL wide character was converted.
+
+     The ‘wcsrtombs’ function was introduced in Amendment 1 to ISO C90
+     and is declared in ‘wchar.h’.
+
+   The restriction mentioned above for the ‘mbsrtowcs’ function applies
+here also.  There is no possibility of directly controlling the number
+of input characters.  One has to place the NUL wide character at the
+correct place or control the consumed input indirectly via the available
+output array size (the LEN parameter).
+
+ -- Function: size_t mbsnrtowcs (wchar_t *restrict DST, const char
+          **restrict SRC, size_t NMC, size_t LEN, mbstate_t *restrict
+          PS)
+     Preliminary: | MT-Unsafe race:mbsnrtowcs/!ps | AS-Unsafe corrupt
+     heap lock dlopen | AC-Unsafe corrupt lock mem fd | *Note POSIX
+     Safety Concepts::.
+
+     The ‘mbsnrtowcs’ function is very similar to the ‘mbsrtowcs’
+     function.  All the parameters are the same except for NMC, which is
+     new.  The return value is the same as for ‘mbsrtowcs’.
+
+     This new parameter specifies how many bytes at most can be used
+     from the multibyte character string.  In other words, the multibyte
+     character string ‘*SRC’ need not be NUL-terminated.  But if a NUL
+     byte is found within the NMC first bytes of the string, the
+     conversion stops here.
+
+     This function is a GNU extension.  It is meant to work around the
+     problems mentioned above.  Now it is possible to convert a buffer
+     with multibyte character text piece for piece without having to
+     care about inserting NUL bytes and the effect of NUL bytes on the
+     conversion state.
+
+   A function to convert a multibyte string into a wide character string
+and display it could be written like this (this is not a really useful
+example):
+
+     void
+     showmbs (const char *src, FILE *fp)
+     {
+       mbstate_t state;
+       int cnt = 0;
+       memset (&state, '\0', sizeof (state));
+       while (1)
+         {
+           wchar_t linebuf[100];
+           const char *endp = strchr (src, '\n');
+           size_t n;
+
+           /* Exit if there is no more line.  */
+           if (endp == NULL)
+             break;
+
+           n = mbsnrtowcs (linebuf, &src, endp - src, 99, &state);
+           linebuf[n] = L'\0';
+           fprintf (fp, "line %d: \"%S\"\n", linebuf);
+         }
+     }
+
+   There is no problem with the state after a call to ‘mbsnrtowcs’.
+Since we don’t insert characters in the strings that were not in there
+right from the beginning and we use STATE only for the conversion of the
+given buffer, there is no problem with altering the state.
+
+ -- Function: size_t wcsnrtombs (char *restrict DST, const wchar_t
+          **restrict SRC, size_t NWC, size_t LEN, mbstate_t *restrict
+          PS)
+     Preliminary: | MT-Unsafe race:wcsnrtombs/!ps | AS-Unsafe corrupt
+     heap lock dlopen | AC-Unsafe corrupt lock mem fd | *Note POSIX
+     Safety Concepts::.
+
+     The ‘wcsnrtombs’ function implements the conversion from wide
+     character strings to multibyte character strings.  It is similar to
+     ‘wcsrtombs’ but, just like ‘mbsnrtowcs’, it takes an extra
+     parameter, which specifies the length of the input string.
+
+     No more than NWC wide characters from the input string ‘*SRC’ are
+     converted.  If the input string contains a NUL wide character in
+     the first NWC characters, the conversion stops at this place.
+
+     The ‘wcsnrtombs’ function is a GNU extension and just like
+     ‘mbsnrtowcs’ helps in situations where no NUL-terminated input
+     strings are available.
 

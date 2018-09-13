@@ -1,4 +1,4 @@
-/* Copyright (C) 2002-2017 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -21,7 +21,8 @@
 #include <features.h>
 #include <sys/types.h>
 #ifdef __USE_XOPEN2K
-# include <bits/types/struct_timespec.h>
+# define __need_timespec
+# include <time.h>
 #endif
 
 /* Get the definition for sem_t.  */

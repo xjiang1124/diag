@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="Extended-Asm.html#Extended-Asm" accesskey="n" rel="next">Extended
 </div>
 <hr>
 <a name="Basic-Asm-_002d_002d_002d-Assembler-Instructions-Without-Operands"></a>
-<h4 class="subsection">6.45.1 Basic Asm &mdash; Assembler Instructions Without Operands</h4>
+<h4 class="subsection">6.44.1 Basic Asm &mdash; Assembler Instructions Without Operands</h4>
 <a name="index-basic-asm"></a>
 <a name="index-assembly-language-in-C_002c-basic"></a>
 
@@ -166,7 +166,7 @@ means there is no way to communicate to the compiler what is happening
 inside them.  GCC has no visibility of symbols in the <code>asm</code> and may
 discard them as unreferenced.  It also does not know about side effects of
 the assembler code, such as modifications to memory or registers.  Unlike
-some compilers, GCC assumes that no changes to general purpose registers
+some compilers, GCC assumes that no changes to either memory or registers
 occur.  This assumption may change in a future release.
 </p>
 <p>To avoid complications from future changes to the semantics and the
@@ -189,10 +189,6 @@ all basic <code>asm</code> blocks use the assembler dialect specified by the
 <samp>-masm</samp> command-line option (see <a href="x86-Options.html#x86-Options">x86 Options</a>).  
 Basic <code>asm</code> provides no
 mechanism to provide different assembler strings for different dialects.
-</p>
-<p>For basic <code>asm</code> with non-empty assembler string GCC assumes
-the assembler block does not change any general purpose registers,
-but it may read or write any globally accessible variable.
 </p>
 <p>Here is an example of basic <code>asm</code> for i386:
 </p>

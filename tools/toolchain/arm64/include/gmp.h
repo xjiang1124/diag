@@ -1,6 +1,6 @@
 /* Definitions for GNU multiple precision functions.   -*- mode: c -*-
 
-Copyright 1991, 1993-1997, 1999-2016 Free Software Foundation, Inc.
+Copyright 1991, 1993-1997, 1999-2015 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
@@ -49,8 +49,11 @@ see https://www.gnu.org/licenses/.  */
 #define GMP_NAIL_MASK     (~ GMP_NUMB_MASK)
 
 
+/* The following (everything under ifndef __GNU_MP__) must be identical in
+   gmp.h and mp.h to allow both to be included in an application or during
+   the library build.  */
 #ifndef __GNU_MP__
-#define __GNU_MP__ 6
+#define __GNU_MP__ 5
 
 #include <stddef.h>    /* for size_t */
 #include <limits.h>
@@ -229,6 +232,8 @@ typedef const __mpq_struct *mpq_srcptr;
 typedef __mpq_struct *mpq_ptr;
 
 
+/* This is not wanted in mp.h, so put it outside the __GNU_MP__ common
+   section. */
 #if __GMP_LIBGMP_DLL
 #ifdef __GMP_WITHIN_GMPXX
 /* compiling to go into a DLL libgmpxx */
@@ -263,8 +268,7 @@ typedef __mpq_struct *mpq_ptr;
   || defined (_MSL_STDIO_H)           /* Metrowerks */          \
   || defined (_STDIO_H_INCLUDED)      /* QNX4 */		\
   || defined (_ISO_STDIO_ISO_H)       /* Sun C++ */		\
-  || defined (__STDIO_LOADED)         /* VMS */			\
-  || defined (__DEFINED_FILE)         /* musl */
+  || defined (__STDIO_LOADED)         /* VMS */
 #define _GMP_H_HAVE_FILE 1
 #endif
 
@@ -2319,10 +2323,10 @@ enum
 #define __GMP_CC "gcc -std=gnu99"
 #define __GMP_CFLAGS "-O2 -pedantic -fomit-frame-pointer -m64 -mtune=k8 -march=k8"
 
-/* Major version number is the value of __GNU_MP__ too, above. */
+/* Major version number is the value of __GNU_MP__ too, above and in mp.h. */
 #define __GNU_MP_VERSION            6
 #define __GNU_MP_VERSION_MINOR      1
-#define __GNU_MP_VERSION_PATCHLEVEL 2
+#define __GNU_MP_VERSION_PATCHLEVEL 0
 #define __GNU_MP_RELEASE (__GNU_MP_VERSION * 10000 + __GNU_MP_VERSION_MINOR * 100 + __GNU_MP_VERSION_PATCHLEVEL)
 
 #define __GMP_H__

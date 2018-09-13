@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -198,6 +198,11 @@ Used by various scripts to generate some files included in SVN (mainly
 Unicode-related and rarely changing) from source tables.
 </p>
 </dd>
+<dt><code>jar</code>, or InfoZIP (<code>zip</code> and <code>unzip</code>)</dt>
+<dd>
+<p>Necessary to build libgcj, the GCJ runtime.
+</p>
+</dd>
 </dl>
 
 <p>Several support libraries are necessary to build GCC, some are required,
@@ -218,8 +223,6 @@ together with GCC.  Alternatively, if GMP is already installed but it
 is not in your library search path, you will have to configure with the
 <samp>--with-gmp</samp> configure option.  See also <samp>--with-gmp-lib</samp>
 and <samp>--with-gmp-include</samp>.
-The in-tree build is only supported with the GMP version that
-download_prerequisites installs.
 </p>
 </dd>
 <dt>MPFR Library version 2.4.2 (or later)</dt>
@@ -231,8 +234,6 @@ built together with GCC.  Alternatively, if MPFR is already installed
 but it is not in your default library search path, the
 <samp>--with-mpfr</samp> configure option should be used.  See also
 <samp>--with-mpfr-lib</samp> and <samp>--with-mpfr-include</samp>.
-The in-tree build is only supported with the MPFR version that
-download_prerequisites installs.
 </p>
 </dd>
 <dt>MPC Library version 0.8.1 (or later)</dt>
@@ -244,11 +245,9 @@ will be built together with GCC.  Alternatively, if MPC is already
 installed but it is not in your default library search path, the
 <samp>--with-mpc</samp> configure option should be used.  See also
 <samp>--with-mpc-lib</samp> and <samp>--with-mpc-include</samp>.
-The in-tree build is only supported with the MPC version that
-download_prerequisites installs.
 </p>
 </dd>
-<dt>isl Library version 0.15 or later.</dt>
+<dt>isl Library version 0.16, 0.15, or 0.14.</dt>
 <dd>
 <p>Necessary to build GCC with the Graphite loop optimizations.
 It can be downloaded from <a href="ftp://gcc.gnu.org/pub/gcc/infrastructure/">ftp://gcc.gnu.org/pub/gcc/infrastructure/</a>.
@@ -374,6 +373,30 @@ snapshots of the development sources are also available via FTP.
 <dd>
 <p>Necessary when applying patches, created with <code>diff</code>, to one&rsquo;s
 own sources.
+</p>
+</dd>
+<dt>ecj1</dt>
+<dt>gjavah</dt>
+<dd>
+<p>If you wish to modify <samp>.java</samp> files in libjava, you will need to
+configure with <samp>--enable-java-maintainer-mode</samp>, and you will need
+to have executables named <code>ecj1</code> and <code>gjavah</code> in your path.
+The <code>ecj1</code> executable should run the Eclipse Java compiler via
+the GCC-specific entry point.  You can download a suitable jar from
+<a href="ftp://sourceware.org/pub/java/">ftp://sourceware.org/pub/java/</a>, or by running the script
+<code>contrib/download_ecj</code>.
+</p>
+</dd>
+<dt>antlr.jar version 2.7.1 (or later)</dt>
+<dt>antlr binary</dt>
+<dd>
+<p>If you wish to build the <code>gjdoc</code> binary in libjava, you will
+need to have an <samp>antlr.jar</samp> library available. The library is
+searched for in system locations but can be specified with
+<samp>--with-antlr-jar=</samp> instead.  When configuring with
+<samp>--enable-java-maintainer-mode</samp>, you will need to have one of
+the executables named <code>cantlr</code>, <code>runantlr</code> or
+<code>antlr</code> in your path.
 </p>
 </dd>
 </dl>

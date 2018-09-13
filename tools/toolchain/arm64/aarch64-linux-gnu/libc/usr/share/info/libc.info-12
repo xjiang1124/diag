@@ -2,9 +2,9 @@ This is libc.info, produced by makeinfo version 5.2 from libc.texinfo.
 
 This file documents the GNU C Library.
 
-   This is ‘The GNU C Library Reference Manual’, for version 2.25.
+   This is ‘The GNU C Library Reference Manual’, for version 2.23.
 
-   Copyright © 1993–2017 Free Software Foundation, Inc.
+   Copyright © 1993–2016 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -223,14 +223,11 @@ START-INFO-DIR-ENTRY
 * FD_SET: (libc)Waiting for I/O.
 * FD_SETSIZE: (libc)Waiting for I/O.
 * FD_ZERO: (libc)Waiting for I/O.
-* FE_SNANS_ALWAYS_SIGNAL: (libc)Infinity and NaN.
 * FILENAME_MAX: (libc)Limits for Files.
 * FLUSHO: (libc)Local Modes.
 * FOPEN_MAX: (libc)Opening Streams.
 * FP_ILOGB0: (libc)Exponents and Logarithms.
 * FP_ILOGBNAN: (libc)Exponents and Logarithms.
-* FP_LLOGB0: (libc)Exponents and Logarithms.
-* FP_LLOGBNAN: (libc)Exponents and Logarithms.
 * F_DUPFD: (libc)Duplicating Descriptors.
 * F_GETFD: (libc)Descriptor Flags.
 * F_GETFL: (libc)Getting File Status Flags.
@@ -384,9 +381,6 @@ START-INFO-DIR-ENTRY
 * SIGXCPU: (libc)Operation Error Signals.
 * SIGXFSZ: (libc)Operation Error Signals.
 * SIG_ERR: (libc)Basic Signal Handling.
-* SNAN: (libc)Infinity and NaN.
-* SNANF: (libc)Infinity and NaN.
-* SNANL: (libc)Infinity and NaN.
 * SOCK_DGRAM: (libc)Communication Styles.
 * SOCK_RAW: (libc)Communication Styles.
 * SOCK_RDM: (libc)Communication Styles.
@@ -590,10 +584,7 @@ START-INFO-DIR-ENTRY
 * cacoshl: (libc)Hyperbolic Functions.
 * cacosl: (libc)Inverse Trig Functions.
 * calloc: (libc)Allocating Cleared Space.
-* canonicalize: (libc)FP Bit Twiddling.
 * canonicalize_file_name: (libc)Symbolic Links.
-* canonicalizef: (libc)FP Bit Twiddling.
-* canonicalizel: (libc)FP Bit Twiddling.
 * carg: (libc)Operations on Complex.
 * cargf: (libc)Operations on Complex.
 * cargl: (libc)Operations on Complex.
@@ -767,7 +758,6 @@ START-INFO-DIR-ENTRY
 * exp: (libc)Exponents and Logarithms.
 * expf: (libc)Exponents and Logarithms.
 * expl: (libc)Exponents and Logarithms.
-* explicit_bzero: (libc)Erasing Sensitive Data.
 * expm1: (libc)Exponents and Logarithms.
 * expm1f: (libc)Exponents and Logarithms.
 * expm1l: (libc)Exponents and Logarithms.
@@ -794,7 +784,6 @@ START-INFO-DIR-ENTRY
 * fegetenv: (libc)Control Functions.
 * fegetexcept: (libc)Control Functions.
 * fegetexceptflag: (libc)Status bit operations.
-* fegetmode: (libc)Control Functions.
 * fegetround: (libc)Rounding.
 * feholdexcept: (libc)Control Functions.
 * feof: (libc)EOF and Errors.
@@ -803,12 +792,9 @@ START-INFO-DIR-ENTRY
 * ferror: (libc)EOF and Errors.
 * ferror_unlocked: (libc)EOF and Errors.
 * fesetenv: (libc)Control Functions.
-* fesetexcept: (libc)Status bit operations.
 * fesetexceptflag: (libc)Status bit operations.
-* fesetmode: (libc)Control Functions.
 * fesetround: (libc)Rounding.
 * fetestexcept: (libc)Status bit operations.
-* fetestexceptflag: (libc)Status bit operations.
 * feupdateenv: (libc)Control Functions.
 * fflush: (libc)Flushing Buffers.
 * fflush_unlocked: (libc)Flushing Buffers.
@@ -841,16 +827,10 @@ START-INFO-DIR-ENTRY
 * fmax: (libc)Misc FP Arithmetic.
 * fmaxf: (libc)Misc FP Arithmetic.
 * fmaxl: (libc)Misc FP Arithmetic.
-* fmaxmag: (libc)Misc FP Arithmetic.
-* fmaxmagf: (libc)Misc FP Arithmetic.
-* fmaxmagl: (libc)Misc FP Arithmetic.
 * fmemopen: (libc)String Streams.
 * fmin: (libc)Misc FP Arithmetic.
 * fminf: (libc)Misc FP Arithmetic.
 * fminl: (libc)Misc FP Arithmetic.
-* fminmag: (libc)Misc FP Arithmetic.
-* fminmagf: (libc)Misc FP Arithmetic.
-* fminmagl: (libc)Misc FP Arithmetic.
 * fmod: (libc)Remainder Functions.
 * fmodf: (libc)Remainder Functions.
 * fmodl: (libc)Remainder Functions.
@@ -880,12 +860,6 @@ START-INFO-DIR-ENTRY
 * frexp: (libc)Normalization Functions.
 * frexpf: (libc)Normalization Functions.
 * frexpl: (libc)Normalization Functions.
-* fromfp: (libc)Rounding Functions.
-* fromfpf: (libc)Rounding Functions.
-* fromfpl: (libc)Rounding Functions.
-* fromfpx: (libc)Rounding Functions.
-* fromfpxf: (libc)Rounding Functions.
-* fromfpxl: (libc)Rounding Functions.
 * fscanf: (libc)Formatted Input Functions.
 * fseek: (libc)File Positioning.
 * fseeko64: (libc)File Positioning.
@@ -931,7 +905,6 @@ START-INFO-DIR-ENTRY
 * getdelim: (libc)Line Input.
 * getdomainnname: (libc)Host Identification.
 * getegid: (libc)Reading Persona.
-* getentropy: (libc)Unpredictable Bytes.
 * getenv: (libc)Environment Access.
 * geteuid: (libc)Reading Persona.
 * getfsent: (libc)fstab.
@@ -971,9 +944,6 @@ START-INFO-DIR-ENTRY
 * getopt_long_only: (libc)Getopt Long Options.
 * getpagesize: (libc)Query Memory Parameters.
 * getpass: (libc)getpass.
-* getpayload: (libc)FP Bit Twiddling.
-* getpayloadf: (libc)FP Bit Twiddling.
-* getpayloadl: (libc)FP Bit Twiddling.
 * getpeername: (libc)Who is Connected.
 * getpgid: (libc)Process Group Functions.
 * getpgrp: (libc)Process Group Functions.
@@ -990,7 +960,6 @@ START-INFO-DIR-ENTRY
 * getpwnam_r: (libc)Lookup User.
 * getpwuid: (libc)Lookup User.
 * getpwuid_r: (libc)Lookup User.
-* getrandom: (libc)Unpredictable Bytes.
 * getrlimit64: (libc)Limits on Resources.
 * getrlimit: (libc)Limits on Resources.
 * getrusage: (libc)Resource Usage.
@@ -1078,10 +1047,8 @@ START-INFO-DIR-ENTRY
 * isascii: (libc)Classification of Characters.
 * isatty: (libc)Is It a Terminal.
 * isblank: (libc)Classification of Characters.
-* iscanonical: (libc)Floating Point Classes.
 * iscntrl: (libc)Classification of Characters.
 * isdigit: (libc)Classification of Characters.
-* iseqsig: (libc)FP Comparison Functions.
 * isfinite: (libc)Floating Point Classes.
 * isgraph: (libc)Classification of Characters.
 * isgreater: (libc)FP Comparison Functions.
@@ -1102,7 +1069,6 @@ START-INFO-DIR-ENTRY
 * ispunct: (libc)Classification of Characters.
 * issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
-* issubnormal: (libc)Floating Point Classes.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
 * iswalnum: (libc)Classification of Wide Characters.
@@ -1119,7 +1085,6 @@ START-INFO-DIR-ENTRY
 * iswupper: (libc)Classification of Wide Characters.
 * iswxdigit: (libc)Classification of Wide Characters.
 * isxdigit: (libc)Classification of Characters.
-* iszero: (libc)Floating Point Classes.
 * j0: (libc)Special Functions.
 * j0f: (libc)Special Functions.
 * j0l: (libc)Special Functions.
@@ -1154,9 +1119,6 @@ START-INFO-DIR-ENTRY
 * listen: (libc)Listening.
 * llabs: (libc)Absolute Value.
 * lldiv: (libc)Integer Division.
-* llogb: (libc)Exponents and Logarithms.
-* llogbf: (libc)Exponents and Logarithms.
-* llogbl: (libc)Exponents and Logarithms.
 * llrint: (libc)Rounding Functions.
 * llrintf: (libc)Rounding Functions.
 * llrintl: (libc)Rounding Functions.
@@ -1260,15 +1222,9 @@ START-INFO-DIR-ENTRY
 * nextafter: (libc)FP Bit Twiddling.
 * nextafterf: (libc)FP Bit Twiddling.
 * nextafterl: (libc)FP Bit Twiddling.
-* nextdown: (libc)FP Bit Twiddling.
-* nextdownf: (libc)FP Bit Twiddling.
-* nextdownl: (libc)FP Bit Twiddling.
 * nexttoward: (libc)FP Bit Twiddling.
 * nexttowardf: (libc)FP Bit Twiddling.
 * nexttowardl: (libc)FP Bit Twiddling.
-* nextup: (libc)FP Bit Twiddling.
-* nextupf: (libc)FP Bit Twiddling.
-* nextupl: (libc)FP Bit Twiddling.
 * nftw64: (libc)Working with Directory Trees.
 * nftw: (libc)Working with Directory Trees.
 * ngettext: (libc)Advanced gettext functions.
@@ -1401,9 +1357,6 @@ START-INFO-DIR-ENTRY
 * rintl: (libc)Rounding Functions.
 * rmdir: (libc)Deleting Files.
 * round: (libc)Rounding Functions.
-* roundeven: (libc)Rounding Functions.
-* roundevenf: (libc)Rounding Functions.
-* roundevenl: (libc)Rounding Functions.
 * roundf: (libc)Rounding Functions.
 * roundl: (libc)Rounding Functions.
 * rpmatch: (libc)Yes-or-No Questions.
@@ -1476,12 +1429,6 @@ START-INFO-DIR-ENTRY
 * setmntent: (libc)mtab.
 * setnetent: (libc)Networks Database.
 * setnetgrent: (libc)Lookup Netgroup.
-* setpayload: (libc)FP Bit Twiddling.
-* setpayloadf: (libc)FP Bit Twiddling.
-* setpayloadl: (libc)FP Bit Twiddling.
-* setpayloadsig: (libc)FP Bit Twiddling.
-* setpayloadsigf: (libc)FP Bit Twiddling.
-* setpayloadsigl: (libc)FP Bit Twiddling.
 * setpgid: (libc)Process Group Functions.
 * setpgrp: (libc)Process Group Functions.
 * setpriority: (libc)Traditional Scheduling Functions.
@@ -1570,9 +1517,6 @@ START-INFO-DIR-ENTRY
 * strerror: (libc)Error Messages.
 * strerror_r: (libc)Error Messages.
 * strfmon: (libc)Formatting Numbers.
-* strfromd: (libc)Printing of Floats.
-* strfromf: (libc)Printing of Floats.
-* strfroml: (libc)Printing of Floats.
 * strfry: (libc)strfry.
 * strftime: (libc)Formatting Calendar Time.
 * strlen: (libc)String Length.
@@ -1651,12 +1595,6 @@ START-INFO-DIR-ENTRY
 * tmpnam_r: (libc)Temporary Files.
 * toascii: (libc)Case Conversion.
 * tolower: (libc)Case Conversion.
-* totalorder: (libc)FP Comparison Functions.
-* totalorderf: (libc)FP Comparison Functions.
-* totalorderl: (libc)FP Comparison Functions.
-* totalordermag: (libc)FP Comparison Functions.
-* totalordermagf: (libc)FP Comparison Functions.
-* totalordermagl: (libc)FP Comparison Functions.
 * toupper: (libc)Case Conversion.
 * towctrans: (libc)Wide Character Case Conversion.
 * towlower: (libc)Wide Character Case Conversion.
@@ -1671,12 +1609,6 @@ START-INFO-DIR-ENTRY
 * ttyname_r: (libc)Is It a Terminal.
 * twalk: (libc)Tree Search Function.
 * tzset: (libc)Time Zone Functions.
-* ufromfp: (libc)Rounding Functions.
-* ufromfpf: (libc)Rounding Functions.
-* ufromfpl: (libc)Rounding Functions.
-* ufromfpx: (libc)Rounding Functions.
-* ufromfpxf: (libc)Rounding Functions.
-* ufromfpxl: (libc)Rounding Functions.
 * ulimit: (libc)Limits on Resources.
 * umask: (libc)Setting Permissions.
 * umount2: (libc)Mount-Unmount-Remount.
@@ -1793,1641 +1725,6 @@ START-INFO-DIR-ENTRY
 * ynf: (libc)Special Functions.
 * ynl: (libc)Special Functions.
 END-INFO-DIR-ENTRY
-
-
-File: libc.info,  Node: Examples of Sysconf,  Prev: Constants for Sysconf,  Up: Sysconf
-
-32.4.3 Examples of ‘sysconf’
-----------------------------
-
-We recommend that you first test for a macro definition for the
-parameter you are interested in, and call ‘sysconf’ only if the macro is
-not defined.  For example, here is how to test whether job control is
-supported:
-
-     int
-     have_job_control (void)
-     {
-     #ifdef _POSIX_JOB_CONTROL
-       return 1;
-     #else
-       int value = sysconf (_SC_JOB_CONTROL);
-       if (value < 0)
-         /* If the system is that badly wedged,
-            there’s no use trying to go on.  */
-         fatal (strerror (errno));
-       return value;
-     #endif
-     }
-
-   Here is how to get the value of a numeric limit:
-
-     int
-     get_child_max ()
-     {
-     #ifdef CHILD_MAX
-       return CHILD_MAX;
-     #else
-       int value = sysconf (_SC_CHILD_MAX);
-       if (value < 0)
-         fatal (strerror (errno));
-       return value;
-     #endif
-     }
-
-
-File: libc.info,  Node: Minimums,  Next: Limits for Files,  Prev: Sysconf,  Up: System Configuration
-
-32.5 Minimum Values for General Capacity Limits
-===============================================
-
-Here are the names for the POSIX minimum upper bounds for the system
-limit parameters.  The significance of these values is that you can
-safely push to these limits without checking whether the particular
-system you are using can go that far.
-
-‘_POSIX_AIO_LISTIO_MAX’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of I/O operations that can be specified in a list I/O call.
-     The value of this constant is ‘2’; thus you can add up to two new
-     entries of the list of outstanding operations.
-
-‘_POSIX_AIO_MAX’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of outstanding asynchronous I/O operations.  The value of
-     this constant is ‘1’.  So you cannot expect that you can issue more
-     than one operation and immediately continue with the normal work,
-     receiving the notifications asynchronously.
-
-‘_POSIX_ARG_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum combined length of the ARGV and ENVIRON
-     arguments that can be passed to the ‘exec’ functions.  Its value is
-     ‘4096’.
-
-‘_POSIX_CHILD_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum number of simultaneous processes per real
-     user ID. Its value is ‘6’.
-
-‘_POSIX_NGROUPS_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum number of supplementary group IDs per
-     process.  Its value is ‘0’.
-
-‘_POSIX_OPEN_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum number of files that a single process can
-     have open simultaneously.  Its value is ‘16’.
-
-‘_POSIX_SSIZE_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum value that can be stored in an object of type
-     ‘ssize_t’.  Its value is ‘32767’.
-
-‘_POSIX_STREAM_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum number of streams that a single process can
-     have open simultaneously.  Its value is ‘8’.
-
-‘_POSIX_TZNAME_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the maximum length of a time zone name.  Its value is
-     ‘3’.
-
-‘_POSIX2_RE_DUP_MAX’
-     The value of this macro is the most restrictive limit permitted by
-     POSIX for the numbers used in the ‘\{MIN,MAX\}’ construct in a
-     regular expression.  Its value is ‘255’.
-
-
-File: libc.info,  Node: Limits for Files,  Next: Options for Files,  Prev: Minimums,  Up: System Configuration
-
-32.6 Limits on File System Capacity
-===================================
-
-The POSIX.1 standard specifies a number of parameters that describe the
-limitations of the file system.  It’s possible for the system to have a
-fixed, uniform limit for a parameter, but this isn’t the usual case.  On
-most systems, it’s possible for different file systems (and, for some
-parameters, even different files) to have different maximum limits.  For
-example, this is very likely if you use NFS to mount some of the file
-systems from other machines.
-
-   Each of the following macros is defined in ‘limits.h’ only if the
-system has a fixed, uniform limit for the parameter in question.  If the
-system allows different file systems or files to have different limits,
-then the macro is undefined; use ‘pathconf’ or ‘fpathconf’ to find out
-the limit that applies to a particular file.  *Note Pathconf::.
-
-   Each parameter also has another macro, with a name starting with
-‘_POSIX’, which gives the lowest value that the limit is allowed to have
-on _any_ POSIX system.  *Note File Minimums::.
-
- -- Macro: int LINK_MAX
-     The uniform system limit (if any) for the number of names for a
-     given file.  *Note Hard Links::.
-
- -- Macro: int MAX_CANON
-     The uniform system limit (if any) for the amount of text in a line
-     of input when input editing is enabled.  *Note Canonical or Not::.
-
- -- Macro: int MAX_INPUT
-     The uniform system limit (if any) for the total number of
-     characters typed ahead as input.  *Note I/O Queues::.
-
- -- Macro: int NAME_MAX
-     The uniform system limit (if any) for the length of a file name
-     component, not including the terminating null character.
-
-     *Portability Note:* On some systems, the GNU C Library defines
-     ‘NAME_MAX’, but does not actually enforce this limit.
-
- -- Macro: int PATH_MAX
-     The uniform system limit (if any) for the length of an entire file
-     name (that is, the argument given to system calls such as ‘open’),
-     including the terminating null character.
-
-     *Portability Note:* The GNU C Library does not enforce this limit
-     even if ‘PATH_MAX’ is defined.
-
- -- Macro: int PIPE_BUF
-     The uniform system limit (if any) for the number of bytes that can
-     be written atomically to a pipe.  If multiple processes are writing
-     to the same pipe simultaneously, output from different processes
-     might be interleaved in chunks of this size.  *Note Pipes and
-     FIFOs::.
-
-   These are alternative macro names for some of the same information.
-
- -- Macro: int MAXNAMLEN
-     This is the BSD name for ‘NAME_MAX’.  It is defined in ‘dirent.h’.
-
- -- Macro: int FILENAME_MAX
-     The value of this macro is an integer constant expression that
-     represents the maximum length of a file name string.  It is defined
-     in ‘stdio.h’.
-
-     Unlike ‘PATH_MAX’, this macro is defined even if there is no actual
-     limit imposed.  In such a case, its value is typically a very large
-     number.  *This is always the case on GNU/Hurd systems.*
-
-     *Usage Note:* Don’t use ‘FILENAME_MAX’ as the size of an array in
-     which to store a file name!  You can’t possibly make an array that
-     big!  Use dynamic allocation (*note Memory Allocation::) instead.
-
-
-File: libc.info,  Node: Options for Files,  Next: File Minimums,  Prev: Limits for Files,  Up: System Configuration
-
-32.7 Optional Features in File Support
-======================================
-
-POSIX defines certain system-specific options in the system calls for
-operating on files.  Some systems support these options and others do
-not.  Since these options are provided in the kernel, not in the
-library, simply using the GNU C Library does not guarantee that any of
-these features is supported; it depends on the system you are using.
-They can also vary between file systems on a single machine.
-
-   This section describes the macros you can test to determine whether a
-particular option is supported on your machine.  If a given macro is
-defined in ‘unistd.h’, then its value says whether the corresponding
-feature is supported.  (A value of ‘-1’ indicates no; any other value
-indicates yes.)  If the macro is undefined, it means particular files
-may or may not support the feature.
-
-   Since all the machines that support the GNU C Library also support
-NFS, one can never make a general statement about whether all file
-systems support the ‘_POSIX_CHOWN_RESTRICTED’ and ‘_POSIX_NO_TRUNC’
-features.  So these names are never defined as macros in the GNU C
-Library.
-
- -- Macro: int _POSIX_CHOWN_RESTRICTED
-     If this option is in effect, the ‘chown’ function is restricted so
-     that the only changes permitted to nonprivileged processes is to
-     change the group owner of a file to either be the effective group
-     ID of the process, or one of its supplementary group IDs.  *Note
-     File Owner::.
-
- -- Macro: int _POSIX_NO_TRUNC
-     If this option is in effect, file name components longer than
-     ‘NAME_MAX’ generate an ‘ENAMETOOLONG’ error.  Otherwise, file name
-     components that are too long are silently truncated.
-
- -- Macro: unsigned char _POSIX_VDISABLE
-     This option is only meaningful for files that are terminal devices.
-     If it is enabled, then handling for special control characters can
-     be disabled individually.  *Note Special Characters::.
-
-   If one of these macros is undefined, that means that the option might
-be in effect for some files and not for others.  To inquire about a
-particular file, call ‘pathconf’ or ‘fpathconf’.  *Note Pathconf::.
-
-
-File: libc.info,  Node: File Minimums,  Next: Pathconf,  Prev: Options for Files,  Up: System Configuration
-
-32.8 Minimum Values for File System Limits
-==========================================
-
-Here are the names for the POSIX minimum upper bounds for some of the
-above parameters.  The significance of these values is that you can
-safely push to these limits without checking whether the particular
-system you are using can go that far.  In most cases GNU systems do not
-have these strict limitations.  The actual limit should be requested if
-necessary.
-
-‘_POSIX_LINK_MAX’
-     The most restrictive limit permitted by POSIX for the maximum value
-     of a file’s link count.  The value of this constant is ‘8’; thus,
-     you can always make up to eight names for a file without running
-     into a system limit.
-
-‘_POSIX_MAX_CANON’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of bytes in a canonical input line from a terminal device.
-     The value of this constant is ‘255’.
-
-‘_POSIX_MAX_INPUT’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of bytes in a terminal device input queue (or typeahead
-     buffer).  *Note Input Modes::.  The value of this constant is
-     ‘255’.
-
-‘_POSIX_NAME_MAX’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of bytes in a file name component.  The value of this
-     constant is ‘14’.
-
-‘_POSIX_PATH_MAX’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of bytes in a file name.  The value of this constant is
-     ‘256’.
-
-‘_POSIX_PIPE_BUF’
-     The most restrictive limit permitted by POSIX for the maximum
-     number of bytes that can be written atomically to a pipe.  The
-     value of this constant is ‘512’.
-
-‘SYMLINK_MAX’
-     Maximum number of bytes in a symbolic link.
-
-‘POSIX_REC_INCR_XFER_SIZE’
-     Recommended increment for file transfer sizes between the
-     ‘POSIX_REC_MIN_XFER_SIZE’ and ‘POSIX_REC_MAX_XFER_SIZE’ values.
-
-‘POSIX_REC_MAX_XFER_SIZE’
-     Maximum recommended file transfer size.
-
-‘POSIX_REC_MIN_XFER_SIZE’
-     Minimum recommended file transfer size.
-
-‘POSIX_REC_XFER_ALIGN’
-     Recommended file transfer buffer alignment.
-
-
-File: libc.info,  Node: Pathconf,  Next: Utility Limits,  Prev: File Minimums,  Up: System Configuration
-
-32.9 Using ‘pathconf’
-=====================
-
-When your machine allows different files to have different values for a
-file system parameter, you can use the functions in this section to find
-out the value that applies to any particular file.
-
-   These functions and the associated constants for the PARAMETER
-argument are declared in the header file ‘unistd.h’.
-
- -- Function: long int pathconf (const char *FILENAME, int PARAMETER)
-     Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock fd
-     mem | *Note POSIX Safety Concepts::.
-
-     This function is used to inquire about the limits that apply to the
-     file named FILENAME.
-
-     The PARAMETER argument should be one of the ‘_PC_’ constants listed
-     below.
-
-     The normal return value from ‘pathconf’ is the value you requested.
-     A value of ‘-1’ is returned both if the implementation does not
-     impose a limit, and in case of an error.  In the former case,
-     ‘errno’ is not set, while in the latter case, ‘errno’ is set to
-     indicate the cause of the problem.  So the only way to use this
-     function robustly is to store ‘0’ into ‘errno’ just before calling
-     it.
-
-     Besides the usual file name errors (*note File Name Errors::), the
-     following error condition is defined for this function:
-
-     ‘EINVAL’
-          The value of PARAMETER is invalid, or the implementation
-          doesn’t support the PARAMETER for the specific file.
-
- -- Function: long int fpathconf (int FILEDES, int PARAMETER)
-     Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock fd
-     mem | *Note POSIX Safety Concepts::.
-
-     This is just like ‘pathconf’ except that an open file descriptor is
-     used to specify the file for which information is requested,
-     instead of a file name.
-
-     The following ‘errno’ error conditions are defined for this
-     function:
-
-     ‘EBADF’
-          The FILEDES argument is not a valid file descriptor.
-
-     ‘EINVAL’
-          The value of PARAMETER is invalid, or the implementation
-          doesn’t support the PARAMETER for the specific file.
-
-   Here are the symbolic constants that you can use as the PARAMETER
-argument to ‘pathconf’ and ‘fpathconf’.  The values are all integer
-constants.
-
-‘_PC_LINK_MAX’
-     Inquire about the value of ‘LINK_MAX’.
-
-‘_PC_MAX_CANON’
-     Inquire about the value of ‘MAX_CANON’.
-
-‘_PC_MAX_INPUT’
-     Inquire about the value of ‘MAX_INPUT’.
-
-‘_PC_NAME_MAX’
-     Inquire about the value of ‘NAME_MAX’.
-
-‘_PC_PATH_MAX’
-     Inquire about the value of ‘PATH_MAX’.
-
-‘_PC_PIPE_BUF’
-     Inquire about the value of ‘PIPE_BUF’.
-
-‘_PC_CHOWN_RESTRICTED’
-     Inquire about the value of ‘_POSIX_CHOWN_RESTRICTED’.
-
-‘_PC_NO_TRUNC’
-     Inquire about the value of ‘_POSIX_NO_TRUNC’.
-
-‘_PC_VDISABLE’
-     Inquire about the value of ‘_POSIX_VDISABLE’.
-
-‘_PC_SYNC_IO’
-     Inquire about the value of ‘_POSIX_SYNC_IO’.
-
-‘_PC_ASYNC_IO’
-     Inquire about the value of ‘_POSIX_ASYNC_IO’.
-
-‘_PC_PRIO_IO’
-     Inquire about the value of ‘_POSIX_PRIO_IO’.
-
-‘_PC_FILESIZEBITS’
-     Inquire about the availability of large files on the filesystem.
-
-‘_PC_REC_INCR_XFER_SIZE’
-     Inquire about the value of ‘POSIX_REC_INCR_XFER_SIZE’.
-
-‘_PC_REC_MAX_XFER_SIZE’
-     Inquire about the value of ‘POSIX_REC_MAX_XFER_SIZE’.
-
-‘_PC_REC_MIN_XFER_SIZE’
-     Inquire about the value of ‘POSIX_REC_MIN_XFER_SIZE’.
-
-‘_PC_REC_XFER_ALIGN’
-     Inquire about the value of ‘POSIX_REC_XFER_ALIGN’.
-
-   *Portability Note:* On some systems, the GNU C Library does not
-enforce ‘_PC_NAME_MAX’ or ‘_PC_PATH_MAX’ limits.
-
-
-File: libc.info,  Node: Utility Limits,  Next: Utility Minimums,  Prev: Pathconf,  Up: System Configuration
-
-32.10 Utility Program Capacity Limits
-=====================================
-
-The POSIX.2 standard specifies certain system limits that you can access
-through ‘sysconf’ that apply to utility behavior rather than the
-behavior of the library or the operating system.
-
-   The GNU C Library defines macros for these limits, and ‘sysconf’
-returns values for them if you ask; but these values convey no
-meaningful information.  They are simply the smallest values that
-POSIX.2 permits.
-
- -- Macro: int BC_BASE_MAX
-     The largest value of ‘obase’ that the ‘bc’ utility is guaranteed to
-     support.
-
- -- Macro: int BC_DIM_MAX
-     The largest number of elements in one array that the ‘bc’ utility
-     is guaranteed to support.
-
- -- Macro: int BC_SCALE_MAX
-     The largest value of ‘scale’ that the ‘bc’ utility is guaranteed to
-     support.
-
- -- Macro: int BC_STRING_MAX
-     The largest number of characters in one string constant that the
-     ‘bc’ utility is guaranteed to support.
-
- -- Macro: int COLL_WEIGHTS_MAX
-     The largest number of weights that can necessarily be used in
-     defining the collating sequence for a locale.
-
- -- Macro: int EXPR_NEST_MAX
-     The maximum number of expressions that can be nested within
-     parentheses by the ‘expr’ utility.
-
- -- Macro: int LINE_MAX
-     The largest text line that the text-oriented POSIX.2 utilities can
-     support.  (If you are using the GNU versions of these utilities,
-     then there is no actual limit except that imposed by the available
-     virtual memory, but there is no way that the library can tell you
-     this.)
-
- -- Macro: int EQUIV_CLASS_MAX
-     The maximum number of weights that can be assigned to an entry of
-     the ‘LC_COLLATE’ category ‘order’ keyword in a locale definition.
-     The GNU C Library does not presently support locale definitions.
-
-
-File: libc.info,  Node: Utility Minimums,  Next: String Parameters,  Prev: Utility Limits,  Up: System Configuration
-
-32.11 Minimum Values for Utility Limits
-=======================================
-
-‘_POSIX2_BC_BASE_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     value of ‘obase’ in the ‘bc’ utility.  Its value is ‘99’.
-
-‘_POSIX2_BC_DIM_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     size of an array in the ‘bc’ utility.  Its value is ‘2048’.
-
-‘_POSIX2_BC_SCALE_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     value of ‘scale’ in the ‘bc’ utility.  Its value is ‘99’.
-
-‘_POSIX2_BC_STRING_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     size of a string constant in the ‘bc’ utility.  Its value is
-     ‘1000’.
-
-‘_POSIX2_COLL_WEIGHTS_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     number of weights that can necessarily be used in defining the
-     collating sequence for a locale.  Its value is ‘2’.
-
-‘_POSIX2_EXPR_NEST_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     number of expressions nested within parenthesis when using the
-     ‘expr’ utility.  Its value is ‘32’.
-
-‘_POSIX2_LINE_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     size of a text line that the text utilities can handle.  Its value
-     is ‘2048’.
-
-‘_POSIX2_EQUIV_CLASS_MAX’
-     The most restrictive limit permitted by POSIX.2 for the maximum
-     number of weights that can be assigned to an entry of the
-     ‘LC_COLLATE’ category ‘order’ keyword in a locale definition.  Its
-     value is ‘2’.  The GNU C Library does not presently support locale
-     definitions.
-
-
-File: libc.info,  Node: String Parameters,  Prev: Utility Minimums,  Up: System Configuration
-
-32.12 String-Valued Parameters
-==============================
-
-POSIX.2 defines a way to get string-valued parameters from the operating
-system with the function ‘confstr’:
-
- -- Function: size_t confstr (int PARAMETER, char *BUF, size_t LEN)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This function reads the value of a string-valued system parameter,
-     storing the string into LEN bytes of memory space starting at BUF.
-     The PARAMETER argument should be one of the ‘_CS_’ symbols listed
-     below.
-
-     The normal return value from ‘confstr’ is the length of the string
-     value that you asked for.  If you supply a null pointer for BUF,
-     then ‘confstr’ does not try to store the string; it just returns
-     its length.  A value of ‘0’ indicates an error.
-
-     If the string you asked for is too long for the buffer (that is,
-     longer than ‘LEN - 1’), then ‘confstr’ stores just that much
-     (leaving room for the terminating null character).  You can tell
-     that this has happened because ‘confstr’ returns a value greater
-     than or equal to LEN.
-
-     The following ‘errno’ error conditions are defined for this
-     function:
-
-     ‘EINVAL’
-          The value of the PARAMETER is invalid.
-
-   Currently there is just one parameter you can read with ‘confstr’:
-
-‘_CS_PATH’
-     This parameter’s value is the recommended default path for
-     searching for executable files.  This is the path that a user has
-     by default just after logging in.
-
-‘_CS_LFS_CFLAGS’
-     The returned string specifies which additional flags must be given
-     to the C compiler if a source is compiled using the
-     ‘_LARGEFILE_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-‘_CS_LFS_LDFLAGS’
-     The returned string specifies which additional flags must be given
-     to the linker if a source is compiled using the ‘_LARGEFILE_SOURCE’
-     feature select macro; *note Feature Test Macros::.
-
-‘_CS_LFS_LIBS’
-     The returned string specifies which additional libraries must be
-     linked to the application if a source is compiled using the
-     ‘_LARGEFILE_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-‘_CS_LFS_LINTFLAGS’
-     The returned string specifies which additional flags must be given
-     to the lint tool if a source is compiled using the
-     ‘_LARGEFILE_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-‘_CS_LFS64_CFLAGS’
-     The returned string specifies which additional flags must be given
-     to the C compiler if a source is compiled using the
-     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-‘_CS_LFS64_LDFLAGS’
-     The returned string specifies which additional flags must be given
-     to the linker if a source is compiled using the
-     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-‘_CS_LFS64_LIBS’
-     The returned string specifies which additional libraries must be
-     linked to the application if a source is compiled using the
-     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-‘_CS_LFS64_LINTFLAGS’
-     The returned string specifies which additional flags must be given
-     to the lint tool if a source is compiled using the
-     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
-     Macros::.
-
-   The way to use ‘confstr’ without any arbitrary limit on string size
-is to call it twice: first call it to get the length, allocate the
-buffer accordingly, and then call ‘confstr’ again to fill the buffer,
-like this:
-
-     char *
-     get_default_path (void)
-     {
-       size_t len = confstr (_CS_PATH, NULL, 0);
-       char *buffer = (char *) xmalloc (len);
-
-       if (confstr (_CS_PATH, buf, len + 1) == 0)
-         {
-           free (buffer);
-           return NULL;
-         }
-
-       return buffer;
-     }
-
-
-File: libc.info,  Node: Cryptographic Functions,  Next: Debugging Support,  Prev: System Configuration,  Up: Top
-
-33 DES Encryption and Password Handling
-***************************************
-
-On many systems, it is unnecessary to have any kind of user
-authentication; for instance, a workstation which is not connected to a
-network probably does not need any user authentication, because to use
-the machine an intruder must have physical access.
-
-   Sometimes, however, it is necessary to be sure that a user is
-authorized to use some service a machine provides—for instance, to log
-in as a particular user id (*note Users and Groups::).  One traditional
-way of doing this is for each user to choose a secret "password"; then,
-the system can ask someone claiming to be a user what the user’s
-password is, and if the person gives the correct password then the
-system can grant the appropriate privileges.
-
-   If all the passwords are just stored in a file somewhere, then this
-file has to be very carefully protected.  To avoid this, passwords are
-run through a "one-way function", a function which makes it difficult to
-work out what its input was by looking at its output, before storing in
-the file.
-
-   The GNU C Library provides a one-way function that is compatible with
-the behavior of the ‘crypt’ function introduced in FreeBSD 2.0.  It
-supports two one-way algorithms: one based on the MD5 message-digest
-algorithm that is compatible with modern BSD systems, and the other
-based on the Data Encryption Standard (DES) that is compatible with Unix
-systems.
-
-   It also provides support for Secure RPC, and some library functions
-that can be used to perform normal DES encryption.  The ‘AUTH_DES’
-authentication flavor in Secure RPC, as provided by the GNU C Library,
-uses DES and does not comply with FIPS 140-2 nor does any other use of
-DES within the GNU C Library.  It is recommended that Secure RPC should
-not be used for systems that need to comply with FIPS 140-2 since all
-flavors of encrypted authentication use normal DES.
-
-* Menu:
-
-* Legal Problems::              This software can get you locked up, or worse.
-* getpass::                     Prompting the user for a password.
-* crypt::                       A one-way function for passwords.
-* DES Encryption::              Routines for DES encryption.
-* Unpredictable Bytes::         Randomness for cryptography purposes.
-
-
-File: libc.info,  Node: Legal Problems,  Next: getpass,  Up: Cryptographic Functions
-
-33.1 Legal Problems
-===================
-
-Because of the continuously changing state of the law, it’s not possible
-to provide a definitive survey of the laws affecting cryptography.
-Instead, this section warns you of some of the known trouble spots; this
-may help you when you try to find out what the laws of your country are.
-
-   Some countries require that you have a license to use, possess, or
-import cryptography.  These countries are believed to include
-Byelorussia, Burma, India, Indonesia, Israel, Kazakhstan, Pakistan,
-Russia, and Saudi Arabia.
-
-   Some countries restrict the transmission of encrypted messages by
-radio; some telecommunications carriers restrict the transmission of
-encrypted messages over their network.
-
-   Many countries have some form of export control for encryption
-software.  The Wassenaar Arrangement is a multilateral agreement between
-33 countries (Argentina, Australia, Austria, Belgium, Bulgaria, Canada,
-the Czech Republic, Denmark, Finland, France, Germany, Greece, Hungary,
-Ireland, Italy, Japan, Luxembourg, the Netherlands, New Zealand, Norway,
-Poland, Portugal, the Republic of Korea, Romania, the Russian
-Federation, the Slovak Republic, Spain, Sweden, Switzerland, Turkey,
-Ukraine, the United Kingdom and the United States) which restricts some
-kinds of encryption exports.  Different countries apply the arrangement
-in different ways; some do not allow the exception for certain kinds of
-“public domain” software (which would include this library), some only
-restrict the export of software in tangible form, and others impose
-significant additional restrictions.
-
-   The United States has additional rules.  This software would
-generally be exportable under 15 CFR 740.13(e), which permits exports of
-“encryption source code” which is “publicly available” and which is “not
-subject to an express agreement for the payment of a licensing fee or
-royalty for commercial production or sale of any product developed with
-the source code” to most countries.
-
-   The rules in this area are continuously changing.  If you know of any
-information in this manual that is out-of-date, please report it to the
-bug database.  *Note Reporting Bugs::.
-
-
-File: libc.info,  Node: getpass,  Next: crypt,  Prev: Legal Problems,  Up: Cryptographic Functions
-
-33.2 Reading Passwords
-======================
-
-When reading in a password, it is desirable to avoid displaying it on
-the screen, to help keep it secret.  The following function handles this
-in a convenient way.
-
- -- Function: char * getpass (const char *PROMPT)
-     Preliminary: | MT-Unsafe term | AS-Unsafe heap lock corrupt |
-     AC-Unsafe term lock corrupt | *Note POSIX Safety Concepts::.
-
-     ‘getpass’ outputs PROMPT, then reads a string in from the terminal
-     without echoing it.  It tries to connect to the real terminal,
-     ‘/dev/tty’, if possible, to encourage users not to put plaintext
-     passwords in files; otherwise, it uses ‘stdin’ and ‘stderr’.
-     ‘getpass’ also disables the INTR, QUIT, and SUSP characters on the
-     terminal using the ‘ISIG’ terminal attribute (*note Local Modes::).
-     The terminal is flushed before and after ‘getpass’, so that
-     characters of a mistyped password are not accidentally visible.
-
-     In other C libraries, ‘getpass’ may only return the first
-     ‘PASS_MAX’ bytes of a password.  The GNU C Library has no limit, so
-     ‘PASS_MAX’ is undefined.
-
-     The prototype for this function is in ‘unistd.h’.  ‘PASS_MAX’ would
-     be defined in ‘limits.h’.
-
-   This precise set of operations may not suit all possible situations.
-In this case, it is recommended that users write their own ‘getpass’
-substitute.  For instance, a very simple substitute is as follows:
-
-
-     #include <termios.h>
-     #include <stdio.h>
-
-     ssize_t
-     my_getpass (char **lineptr, size_t *n, FILE *stream)
-     {
-       struct termios old, new;
-       int nread;
-
-       /* Turn echoing off and fail if we can’t. */
-       if (tcgetattr (fileno (stream), &old) != 0)
-         return -1;
-       new = old;
-       new.c_lflag &= ~ECHO;
-       if (tcsetattr (fileno (stream), TCSAFLUSH, &new) != 0)
-         return -1;
-
-       /* Read the password. */
-       nread = getline (lineptr, n, stream);
-
-       /* Restore terminal. */
-       (void) tcsetattr (fileno (stream), TCSAFLUSH, &old);
-
-       return nread;
-     }
-
-   The substitute takes the same parameters as ‘getline’ (*note Line
-Input::); the user must print any prompt desired.
-
-
-File: libc.info,  Node: crypt,  Next: DES Encryption,  Prev: getpass,  Up: Cryptographic Functions
-
-33.3 Encrypting Passwords
-=========================
-
- -- Function: char * crypt (const char *KEY, const char *SALT)
-     Preliminary: | MT-Unsafe race:crypt | AS-Unsafe corrupt lock heap
-     dlopen | AC-Unsafe lock mem | *Note POSIX Safety Concepts::.
-
-     The ‘crypt’ function takes a password, KEY, as a string, and a SALT
-     character array which is described below, and returns a printable
-     ASCII string which starts with another salt.  It is believed that,
-     given the output of the function, the best way to find a KEY that
-     will produce that output is to guess values of KEY until the
-     original value of KEY is found.
-
-     The SALT parameter does two things.  Firstly, it selects which
-     algorithm is used, the MD5-based one or the DES-based one.
-     Secondly, it makes life harder for someone trying to guess
-     passwords against a file containing many passwords; without a SALT,
-     an intruder can make a guess, run ‘crypt’ on it once, and compare
-     the result with all the passwords.  With a SALT, the intruder must
-     run ‘crypt’ once for each different salt.
-
-     For the MD5-based algorithm, the SALT should consist of the string
-     ‘$1$’, followed by up to 8 characters, terminated by either another
-     ‘$’ or the end of the string.  The result of ‘crypt’ will be the
-     SALT, followed by a ‘$’ if the salt didn’t end with one, followed
-     by 22 characters from the alphabet ‘./0-9A-Za-z’, up to 34
-     characters total.  Every character in the KEY is significant.
-
-     For the DES-based algorithm, the SALT should consist of two
-     characters from the alphabet ‘./0-9A-Za-z’, and the result of
-     ‘crypt’ will be those two characters followed by 11 more from the
-     same alphabet, 13 in total.  Only the first 8 characters in the KEY
-     are significant.
-
-     The MD5-based algorithm has no limit on the useful length of the
-     password used, and is slightly more secure.  It is therefore
-     preferred over the DES-based algorithm.
-
-     When the user enters their password for the first time, the SALT
-     should be set to a new string which is reasonably random.  To
-     verify a password against the result of a previous call to ‘crypt’,
-     pass the result of the previous call as the SALT.
-
-   The following short program is an example of how to use ‘crypt’ the
-first time a password is entered.  Note that the SALT generation is just
-barely acceptable; in particular, it is not unique between machines, and
-in many applications it would not be acceptable to let an attacker know
-what time the user’s password was last set.
-
-
-     #include <stdio.h>
-     #include <time.h>
-     #include <unistd.h>
-     #include <crypt.h>
-
-     int
-     main(void)
-     {
-       unsigned long seed[2];
-       char salt[] = "$1$........";
-       const char *const seedchars =
-         "./0123456789ABCDEFGHIJKLMNOPQRST"
-         "UVWXYZabcdefghijklmnopqrstuvwxyz";
-       char *password;
-       int i;
-
-       /* Generate a (not very) random seed.
-          You should do it better than this... */
-       seed[0] = time(NULL);
-       seed[1] = getpid() ^ (seed[0] >> 14 & 0x30000);
-
-       /* Turn it into printable characters from ‘seedchars’. */
-       for (i = 0; i < 8; i++)
-         salt[3+i] = seedchars[(seed[i/5] >> (i%5)*6) & 0x3f];
-
-       /* Read in the user’s password and encrypt it. */
-       password = crypt(getpass("Password:"), salt);
-
-       /* Print the results. */
-       puts(password);
-       return 0;
-     }
-
-   The next program shows how to verify a password.  It prompts the user
-for a password and prints “Access granted.” if the user types ‘GNU libc
-manual’.
-
-
-     #include <stdio.h>
-     #include <string.h>
-     #include <unistd.h>
-     #include <crypt.h>
-
-     int
-     main(void)
-     {
-       /* Hashed form of "GNU libc manual". */
-       const char *const pass = "$1$/iSaq7rB$EoUw5jJPPvAPECNaaWzMK/";
-
-       char *result;
-       int ok;
-
-       /* Read in the user’s password and encrypt it,
-          passing the expected password in as the salt. */
-       result = crypt(getpass("Password:"), pass);
-
-       /* Test the result. */
-       ok = strcmp (result, pass) == 0;
-
-       puts(ok ? "Access granted." : "Access denied.");
-       return ok ? 0 : 1;
-     }
-
- -- Function: char * crypt_r (const char *KEY, const char *SALT, struct
-          crypt_data * DATA)
-     Preliminary: | MT-Safe | AS-Unsafe corrupt lock heap dlopen |
-     AC-Unsafe lock mem | *Note POSIX Safety Concepts::.
-
-     The ‘crypt_r’ function does the same thing as ‘crypt’, but takes an
-     extra parameter which includes space for its result (among other
-     things), so it can be reentrant.  ‘data->initialized’ must be
-     cleared to zero before the first time ‘crypt_r’ is called.
-
-     The ‘crypt_r’ function is a GNU extension.
-
-   The ‘crypt’ and ‘crypt_r’ functions are prototyped in the header
-‘crypt.h’.
-
-
-File: libc.info,  Node: DES Encryption,  Next: Unpredictable Bytes,  Prev: crypt,  Up: Cryptographic Functions
-
-33.4 DES Encryption
-===================
-
-The Data Encryption Standard is described in the US Government Federal
-Information Processing Standards (FIPS) 46-3 published by the National
-Institute of Standards and Technology.  The DES has been very thoroughly
-analyzed since it was developed in the late 1970s, and no new
-significant flaws have been found.
-
-   However, the DES uses only a 56-bit key (plus 8 parity bits), and a
-machine has been built in 1998 which can search through all possible
-keys in about 6 days, which cost about US$200000; faster searches would
-be possible with more money.  This makes simple DES insecure for most
-purposes, and NIST no longer permits new US government systems to use
-simple DES.
-
-   For serious encryption functionality, it is recommended that one of
-the many free encryption libraries be used instead of these routines.
-
-   The DES is a reversible operation which takes a 64-bit block and a
-64-bit key, and produces another 64-bit block.  Usually the bits are
-numbered so that the most-significant bit, the first bit, of each block
-is numbered 1.
-
-   Under that numbering, every 8th bit of the key (the 8th, 16th, and so
-on) is not used by the encryption algorithm itself.  But the key must
-have odd parity; that is, out of bits 1 through 8, and 9 through 16, and
-so on, there must be an odd number of ‘1’ bits, and this completely
-specifies the unused bits.
-
- -- Function: void setkey (const char *KEY)
-     Preliminary: | MT-Unsafe race:crypt | AS-Unsafe corrupt lock |
-     AC-Unsafe lock | *Note POSIX Safety Concepts::.
-
-     The ‘setkey’ function sets an internal data structure to be an
-     expanded form of KEY.  KEY is specified as an array of 64 bits each
-     stored in a ‘char’, the first bit is ‘key[0]’ and the 64th bit is
-     ‘key[63]’.  The KEY should have the correct parity.
-
- -- Function: void encrypt (char *BLOCK, int EDFLAG)
-     Preliminary: | MT-Unsafe race:crypt | AS-Unsafe corrupt lock |
-     AC-Unsafe lock | *Note POSIX Safety Concepts::.
-
-     The ‘encrypt’ function encrypts BLOCK if EDFLAG is 0, otherwise it
-     decrypts BLOCK, using a key previously set by ‘setkey’.  The result
-     is placed in BLOCK.
-
-     Like ‘setkey’, BLOCK is specified as an array of 64 bits each
-     stored in a ‘char’, but there are no parity bits in BLOCK.
-
- -- Function: void setkey_r (const char *KEY, struct crypt_data * DATA)
- -- Function: void encrypt_r (char *BLOCK, int EDFLAG, struct crypt_data
-          * DATA)
-     Preliminary: | MT-Safe | AS-Unsafe corrupt lock | AC-Unsafe lock |
-     *Note POSIX Safety Concepts::.
-
-     These are reentrant versions of ‘setkey’ and ‘encrypt’.  The only
-     difference is the extra parameter, which stores the expanded
-     version of KEY.  Before calling ‘setkey_r’ the first time,
-     ‘data->initialized’ must be cleared to zero.
-
-   The ‘setkey_r’ and ‘encrypt_r’ functions are GNU extensions.
-‘setkey’, ‘encrypt’, ‘setkey_r’, and ‘encrypt_r’ are defined in
-‘crypt.h’.
-
- -- Function: int ecb_crypt (char *KEY, char *BLOCKS, unsigned int LEN,
-          unsigned int MODE)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The function ‘ecb_crypt’ encrypts or decrypts one or more blocks
-     using DES. Each block is encrypted independently.
-
-     The BLOCKS and the KEY are stored packed in 8-bit bytes, so that
-     the first bit of the key is the most-significant bit of ‘key[0]’
-     and the 63rd bit of the key is stored as the least-significant bit
-     of ‘key[7]’.  The KEY should have the correct parity.
-
-     LEN is the number of bytes in BLOCKS.  It should be a multiple of 8
-     (so that there are a whole number of blocks to encrypt).  LEN is
-     limited to a maximum of ‘DES_MAXDATA’ bytes.
-
-     The result of the encryption replaces the input in BLOCKS.
-
-     The MODE parameter is the bitwise OR of two of the following:
-
-     ‘DES_ENCRYPT’
-          This constant, used in the MODE parameter, specifies that
-          BLOCKS is to be encrypted.
-
-     ‘DES_DECRYPT’
-          This constant, used in the MODE parameter, specifies that
-          BLOCKS is to be decrypted.
-
-     ‘DES_HW’
-          This constant, used in the MODE parameter, asks to use a
-          hardware device.  If no hardware device is available,
-          encryption happens anyway, but in software.
-
-     ‘DES_SW’
-          This constant, used in the MODE parameter, specifies that no
-          hardware device is to be used.
-
-     The result of the function will be one of these values:
-
-     ‘DESERR_NONE’
-          The encryption succeeded.
-
-     ‘DESERR_NOHWDEVICE’
-          The encryption succeeded, but there was no hardware device
-          available.
-
-     ‘DESERR_HWERROR’
-          The encryption failed because of a hardware problem.
-
-     ‘DESERR_BADPARAM’
-          The encryption failed because of a bad parameter, for instance
-          LEN is not a multiple of 8 or LEN is larger than
-          ‘DES_MAXDATA’.
-
- -- Function: int DES_FAILED (int ERR)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This macro returns 1 if ERR is a ‘success’ result code from
-     ‘ecb_crypt’ or ‘cbc_crypt’, and 0 otherwise.
-
- -- Function: int cbc_crypt (char *KEY, char *BLOCKS, unsigned int LEN,
-          unsigned int MODE, char *IVEC)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The function ‘cbc_crypt’ encrypts or decrypts one or more blocks
-     using DES in Cipher Block Chaining mode.
-
-     For encryption in CBC mode, each block is exclusive-ored with IVEC
-     before being encrypted, then IVEC is replaced with the result of
-     the encryption, then the next block is processed.  Decryption is
-     the reverse of this process.
-
-     This has the advantage that blocks which are the same before being
-     encrypted are very unlikely to be the same after being encrypted,
-     making it much harder to detect patterns in the data.
-
-     Usually, IVEC is set to 8 random bytes before encryption starts.
-     Then the 8 random bytes are transmitted along with the encrypted
-     data (without themselves being encrypted), and passed back in as
-     IVEC for decryption.  Another possibility is to set IVEC to 8
-     zeroes initially, and have the first block encrypted consist of 8
-     random bytes.
-
-     Otherwise, all the parameters are similar to those for ‘ecb_crypt’.
-
- -- Function: void des_setparity (char *KEY)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The function ‘des_setparity’ changes the 64-bit KEY, stored packed
-     in 8-bit bytes, to have odd parity by altering the low bits of each
-     byte.
-
-   The ‘ecb_crypt’, ‘cbc_crypt’, and ‘des_setparity’ functions and their
-accompanying macros are all defined in the header ‘rpc/des_crypt.h’.
-
-
-File: libc.info,  Node: Unpredictable Bytes,  Prev: DES Encryption,  Up: Cryptographic Functions
-
-33.5 Generating Unpredictable Bytes
-===================================
-
-Some cryptographic applications (such as session key generation) need
-unpredictable bytes.
-
-   In general, application code should use a deterministic random bit
-generator, which could call the ‘getentropy’ function described below
-internally to obtain randomness to seed the generator.  The ‘getrandom’
-function is intended for low-level applications which need additional
-control over the blocking behavior.
-
- -- Function: int getentropy (void *BUFFER, size_t LENGTH)
-     | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety Concepts::.
-
-     This function writes LENGTH bytes of random data to the array
-     starting at BUFFER, which must be at most 256 bytes long.  The
-     function returns zero on success.  On failure, it returns ‘-1’ and
-     ‘errno’ is updated accordingly.
-
-     The ‘getentropy’ function is declared in the header file
-     ‘sys/random.h’.  It is derived from OpenBSD.
-
-     The ‘getentropy’ function is not a cancellation point.  A call to
-     ‘getentropy’ can block if the system has just booted and the kernel
-     entropy pool has not yet been initialized.  In this case, the
-     function will keep blocking even if a signal arrives, and return
-     only after the entropy pool has been initialized.
-
-     The ‘getentropy’ function can fail with several errors, some of
-     which are listed below.
-
-     ‘ENOSYS’
-          The kernel does not implement the required system call.
-
-     ‘EFAULT’
-          The combination of BUFFER and LENGTH arguments specifies an
-          invalid memory range.
-
-     ‘EIO’
-          More than 256 bytes of randomness have been requested, or the
-          buffer could not be overwritten with random data for an
-          unspecified reason.
-
- -- Function: ssize_t getrandom (void *BUFFER, size_t LENGTH, unsigned
-          int FLAGS)
-     | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety Concepts::.
-
-     This function writes LENGTH bytes of random data to the array
-     starting at BUFFER.  On success, this function returns the number
-     of bytes which have been written to the buffer (which can be less
-     than LENGTH).  On error, ‘-1’ is returned, and ‘errno’ is updated
-     accordingly.
-
-     The ‘getrandom’ function is declared in the header file
-     ‘sys/random.h’.  It is a GNU extension.
-
-     The following flags are defined for the FLAGS argument:
-
-     ‘GRND_RANDOM’
-          Use the ‘/dev/random’ (blocking) pool instead of the
-          ‘/dev/urandom’ (non-blocking) pool to obtain randomness.  If
-          the ‘GRND_RANDOM’ flag is specified, the ‘getrandom’ function
-          can block even after the randomness source has been
-          initialized.
-
-     ‘GRND_NONBLOCK’
-          Instead of blocking, return to the caller immediately if no
-          data is available.
-
-     The ‘getrandom’ function is a cancellation point.
-
-     Obtaining randomness from the ‘/dev/urandom’ pool (i.e., a call
-     without the ‘GRND_RANDOM’ flag) can block if the system has just
-     booted and the pool has not yet been initialized.
-
-     The ‘getrandom’ function can fail with several errors, some of
-     which are listed below.  In addition, the function may not fill the
-     buffer completely and return a value less than LENGTH.
-
-     ‘ENOSYS’
-          The kernel does not implement the ‘getrandom’ system call.
-
-     ‘EAGAIN’
-          No random data was available and ‘GRND_NONBLOCK’ was specified
-          in FLAGS.
-
-     ‘EFAULT’
-          The combination of BUFFER and LENGTH arguments specifies an
-          invalid memory range.
-
-     ‘EINTR’
-          The system call was interrupted.  During the system boot
-          process, before the kernel randomness pool is initialized,
-          this can happen even if FLAGS is zero.
-
-     ‘EINVAL’
-          The FLAGS argument contains an invalid combination of flags.
-
-
-File: libc.info,  Node: Debugging Support,  Next: POSIX Threads,  Prev: Cryptographic Functions,  Up: Top
-
-34 Debugging support
-********************
-
-Applications are usually debugged using dedicated debugger programs.
-But sometimes this is not possible and, in any case, it is useful to
-provide the developer with as much information as possible at the time
-the problems are experienced.  For this reason a few functions are
-provided which a program can use to help the developer more easily
-locate the problem.
-
-* Menu:
-
-* Backtraces::                Obtaining and printing a back trace of the
-                               current stack.
-
-
-File: libc.info,  Node: Backtraces,  Up: Debugging Support
-
-34.1 Backtraces
-===============
-
-A "backtrace" is a list of the function calls that are currently active
-in a thread.  The usual way to inspect a backtrace of a program is to
-use an external debugger such as gdb.  However, sometimes it is useful
-to obtain a backtrace programmatically from within a program, e.g., for
-the purposes of logging or diagnostics.
-
-   The header file ‘execinfo.h’ declares three functions that obtain and
-manipulate backtraces of the current thread.
-
- -- Function: int backtrace (void **BUFFER, int SIZE)
-     Preliminary: | MT-Safe | AS-Unsafe init heap dlopen plugin lock |
-     AC-Unsafe init mem lock fd | *Note POSIX Safety Concepts::.
-
-     The ‘backtrace’ function obtains a backtrace for the current
-     thread, as a list of pointers, and places the information into
-     BUFFER.  The argument SIZE should be the number of ‘void *’
-     elements that will fit into BUFFER.  The return value is the actual
-     number of entries of BUFFER that are obtained, and is at most SIZE.
-
-     The pointers placed in BUFFER are actually return addresses
-     obtained by inspecting the stack, one return address per stack
-     frame.
-
-     Note that certain compiler optimizations may interfere with
-     obtaining a valid backtrace.  Function inlining causes the inlined
-     function to not have a stack frame; tail call optimization replaces
-     one stack frame with another; frame pointer elimination will stop
-     ‘backtrace’ from interpreting the stack contents correctly.
-
- -- Function: char ** backtrace_symbols (void *const *BUFFER, int SIZE)
-     Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem lock |
-     *Note POSIX Safety Concepts::.
-
-     The ‘backtrace_symbols’ function translates the information
-     obtained from the ‘backtrace’ function into an array of strings.
-     The argument BUFFER should be a pointer to an array of addresses
-     obtained via the ‘backtrace’ function, and SIZE is the number of
-     entries in that array (the return value of ‘backtrace’).
-
-     The return value is a pointer to an array of strings, which has
-     SIZE entries just like the array BUFFER.  Each string contains a
-     printable representation of the corresponding element of BUFFER.
-     It includes the function name (if this can be determined), an
-     offset into the function, and the actual return address (in
-     hexadecimal).
-
-     Currently, the function name and offset can only be obtained on
-     systems that use the ELF binary format for programs and libraries.
-     On other systems, only the hexadecimal return address will be
-     present.  Also, you may need to pass additional flags to the linker
-     to make the function names available to the program.  (For example,
-     on systems using GNU ld, you must pass ‘-rdynamic’.)
-
-     The return value of ‘backtrace_symbols’ is a pointer obtained via
-     the ‘malloc’ function, and it is the responsibility of the caller
-     to ‘free’ that pointer.  Note that only the return value need be
-     freed, not the individual strings.
-
-     The return value is ‘NULL’ if sufficient memory for the strings
-     cannot be obtained.
-
- -- Function: void backtrace_symbols_fd (void *const *BUFFER, int SIZE,
-          int FD)
-     Preliminary: | MT-Safe | AS-Safe | AC-Unsafe lock | *Note POSIX
-     Safety Concepts::.
-
-     The ‘backtrace_symbols_fd’ function performs the same translation
-     as the function ‘backtrace_symbols’ function.  Instead of returning
-     the strings to the caller, it writes the strings to the file
-     descriptor FD, one per line.  It does not use the ‘malloc’
-     function, and can therefore be used in situations where that
-     function might fail.
-
-   The following program illustrates the use of these functions.  Note
-that the array to contain the return addresses returned by ‘backtrace’
-is allocated on the stack.  Therefore code like this can be used in
-situations where the memory handling via ‘malloc’ does not work anymore
-(in which case the ‘backtrace_symbols’ has to be replaced by a
-‘backtrace_symbols_fd’ call as well).  The number of return addresses is
-normally not very large.  Even complicated programs rather seldom have a
-nesting level of more than, say, 50 and with 200 possible entries
-probably all programs should be covered.
-
-
-     #include <execinfo.h>
-     #include <stdio.h>
-     #include <stdlib.h>
-
-     /* Obtain a backtrace and print it to ‘stdout’. */
-     void
-     print_trace (void)
-     {
-       void *array[10];
-       size_t size;
-       char **strings;
-       size_t i;
-
-       size = backtrace (array, 10);
-       strings = backtrace_symbols (array, size);
-
-       printf ("Obtained %zd stack frames.\n", size);
-
-       for (i = 0; i < size; i++)
-          printf ("%s\n", strings[i]);
-
-       free (strings);
-     }
-
-     /* A dummy function to make the backtrace more interesting. */
-     void
-     dummy_function (void)
-     {
-       print_trace ();
-     }
-
-     int
-     main (void)
-     {
-       dummy_function ();
-       return 0;
-     }
-
-
-File: libc.info,  Node: POSIX Threads,  Next: Internal Probes,  Prev: Debugging Support,  Up: Top
-
-35 POSIX Threads
-****************
-
-This chapter describes the GNU C Library POSIX Threads implementation.
-
-* Menu:
-
-* Thread-specific Data::          Support for creating and
-				  managing thread-specific data
-* Non-POSIX Extensions::          Additional functions to extend
-				  POSIX Thread functionality
-
-
-File: libc.info,  Node: Thread-specific Data,  Next: Non-POSIX Extensions,  Up: POSIX Threads
-
-35.1 Thread-specific Data
-=========================
-
-The GNU C Library implements functions to allow users to create and
-manage data specific to a thread.  Such data may be destroyed at thread
-exit, if a destructor is provided.  The following functions are defined:
-
- -- Function: int pthread_key_create (pthread_key_t *KEY, void
-          (*DESTRUCTOR)(void*))
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     Create a thread-specific data key for the calling thread,
-     referenced by KEY.
-
-     Objects declared with the C++11 ‘thread_local’ keyword are
-     destroyed before thread-specific data, so they should not be used
-     in thread-specific data destructors or even as members of the
-     thread-specific data, since the latter is passed as an argument to
-     the destructor function.
-
- -- Function: int pthread_key_delete (pthread_key_t KEY)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     Destroy the thread-specific data KEY in the calling thread.  The
-     destructor for the thread-specific data is not called during
-     destruction, nor is it called during thread exit.
-
- -- Function: void *pthread_getspecific (pthread_key_t KEY)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     Return the thread-specific data associated with KEY in the calling
-     thread.
-
- -- Function: int pthread_setspecific (pthread_key_t KEY, const void
-          *VALUE)
-     Preliminary: | MT-Safe | AS-Unsafe corrupt heap | AC-Unsafe corrupt
-     mem | *Note POSIX Safety Concepts::.
-
-     Associate the thread-specific VALUE with KEY in the calling thread.
-
-
-File: libc.info,  Node: Non-POSIX Extensions,  Prev: Thread-specific Data,  Up: POSIX Threads
-
-35.2 Non-POSIX Extensions
-=========================
-
-In addition to implementing the POSIX API for threads, the GNU C Library
-provides additional functions and interfaces to provide functionality
-not specified in the standard.
-
-* Menu:
-
-* Default Thread Attributes::             Setting default attributes for
-					  threads in a process.
-
-
-File: libc.info,  Node: Default Thread Attributes,  Up: Non-POSIX Extensions
-
-35.2.1 Setting Process-wide defaults for thread attributes
-----------------------------------------------------------
-
-The GNU C Library provides non-standard API functions to set and get the
-default attributes used in the creation of threads in a process.
-
- -- Function: int pthread_getattr_default_np (pthread_attr_t *ATTR)
-     Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | *Note
-     POSIX Safety Concepts::.
-
-     Get the default attribute values and set ATTR to match.  This
-     function returns 0 on success and a non-zero error code on failure.
-
- -- Function: int pthread_setattr_default_np (pthread_attr_t *ATTR)
-     Preliminary: | MT-Safe | AS-Unsafe heap lock | AC-Unsafe lock mem |
-     *Note POSIX Safety Concepts::.
-
-     Set the default attribute values to match the values in ATTR.  The
-     function returns 0 on success and a non-zero error code on failure.
-     The following error codes are defined for this function:
-
-     ‘EINVAL’
-          At least one of the values in ATTR does not qualify as valid
-          for the attributes or the stack address is set in the
-          attribute.
-     ‘ENOMEM’
-          The system does not have sufficient memory.
-
-
-File: libc.info,  Node: Internal Probes,  Next: Tunables,  Prev: POSIX Threads,  Up: Top
-
-36 Internal probes
-******************
-
-In order to aid in debugging and monitoring internal behavior, the GNU C
-Library exposes nearly-zero-overhead SystemTap probes marked with the
-‘libc’ provider.
-
-   These probes are not part of the GNU C Library stable ABI, and they
-are subject to change or removal across releases.  Our only promise with
-regard to them is that, if we find a need to remove or modify the
-arguments of a probe, the modified probe will have a different name, so
-that program monitors relying on the old probe will not get unexpected
-arguments.
-
-* Menu:
-
-* Memory Allocation Probes::  Probes in the memory allocation subsystem
-* Mathematical Function Probes::  Probes in mathematical functions
-* Non-local Goto Probes::  Probes in setjmp and longjmp
-
-
-File: libc.info,  Node: Memory Allocation Probes,  Next: Mathematical Function Probes,  Up: Internal Probes
-
-36.1 Memory Allocation Probes
-=============================
-
-These probes are designed to signal relatively unusual situations within
-the virtual memory subsystem of the GNU C Library.
-
- -- Probe: memory_sbrk_more (void *$ARG1, size_t $ARG2)
-     This probe is triggered after the main arena is extended by calling
-     ‘sbrk’.  Argument $ARG1 is the additional size requested to ‘sbrk’,
-     and $ARG2 is the pointer that marks the end of the ‘sbrk’ area,
-     returned in response to the request.
-
- -- Probe: memory_sbrk_less (void *$ARG1, size_t $ARG2)
-     This probe is triggered after the size of the main arena is
-     decreased by calling ‘sbrk’.  Argument $ARG1 is the size released
-     by ‘sbrk’ (the positive value, rather than the negative value
-     passed to ‘sbrk’), and $ARG2 is the pointer that marks the end of
-     the ‘sbrk’ area, returned in response to the request.
-
- -- Probe: memory_heap_new (void *$ARG1, size_t $ARG2)
-     This probe is triggered after a new heap is ‘mmap’ed.  Argument
-     $ARG1 is a pointer to the base of the memory area, where the
-     ‘heap_info’ data structure is held, and $ARG2 is the size of the
-     heap.
-
- -- Probe: memory_heap_free (void *$ARG1, size_t $ARG2)
-     This probe is triggered _before_ (unlike the other sbrk and heap
-     probes) a heap is completely removed via ‘munmap’.  Argument $ARG1
-     is a pointer to the heap, and $ARG2 is the size of the heap.
-
- -- Probe: memory_heap_more (void *$ARG1, size_t $ARG2)
-     This probe is triggered after a trailing portion of an ‘mmap’ed
-     heap is extended.  Argument $ARG1 is a pointer to the heap, and
-     $ARG2 is the new size of the heap.
-
- -- Probe: memory_heap_less (void *$ARG1, size_t $ARG2)
-     This probe is triggered after a trailing portion of an ‘mmap’ed
-     heap is released.  Argument $ARG1 is a pointer to the heap, and
-     $ARG2 is the new size of the heap.
-
- -- Probe: memory_malloc_retry (size_t $ARG1)
- -- Probe: memory_realloc_retry (size_t $ARG1, void *$ARG2)
- -- Probe: memory_memalign_retry (size_t $ARG1, size_t $ARG2)
- -- Probe: memory_calloc_retry (size_t $ARG1)
-     These probes are triggered when the corresponding functions fail to
-     obtain the requested amount of memory from the arena in use, before
-     they call ‘arena_get_retry’ to select an alternate arena in which
-     to retry the allocation.  Argument $ARG1 is the amount of memory
-     requested by the user; in the ‘calloc’ case, that is the total size
-     computed from both function arguments.  In the ‘realloc’ case,
-     $ARG2 is the pointer to the memory area being resized.  In the
-     ‘memalign’ case, $ARG2 is the alignment to be used for the request,
-     which may be stricter than the value passed to the ‘memalign’
-     function.  A ‘memalign’ probe is also used by functions
-     ‘posix_memalign, valloc’ and ‘pvalloc’.
-
-     Note that the argument order does _not_ match that of the
-     corresponding two-argument functions, so that in all of these
-     probes the user-requested allocation size is in $ARG1.
-
- -- Probe: memory_arena_retry (size_t $ARG1, void *$ARG2)
-     This probe is triggered within ‘arena_get_retry’ (the function
-     called to select the alternate arena in which to retry an
-     allocation that failed on the first attempt), before the selection
-     of an alternate arena.  This probe is redundant, but much easier to
-     use when it’s not important to determine which of the various
-     memory allocation functions is failing to allocate on the first
-     try.  Argument $ARG1 is the same as in the function-specific
-     probes, except for extra room for padding introduced by functions
-     that have to ensure stricter alignment.  Argument $ARG2 is the
-     arena in which allocation failed.
-
- -- Probe: memory_arena_new (void *$ARG1, size_t $ARG2)
-     This probe is triggered when ‘malloc’ allocates and initializes an
-     additional arena (not the main arena), but before the arena is
-     assigned to the running thread or inserted into the internal linked
-     list of arenas.  The arena’s ‘malloc_state’ internal data structure
-     is located at $ARG1, within a newly-allocated heap big enough to
-     hold at least $ARG2 bytes.
-
- -- Probe: memory_arena_reuse (void *$ARG1, void *$ARG2)
-     This probe is triggered when ‘malloc’ has just selected an existing
-     arena to reuse, and (temporarily) reserved it for exclusive use.
-     Argument $ARG1 is a pointer to the newly-selected arena, and $ARG2
-     is a pointer to the arena previously used by that thread.
-
-     This occurs within ‘reused_arena’, right after the mutex mentioned
-     in probe ‘memory_arena_reuse_wait’ is acquired; argument $ARG1 will
-     point to the same arena.  In this configuration, this will usually
-     only occur once per thread.  The exception is when a thread first
-     selected the main arena, but a subsequent allocation from it fails:
-     then, and only then, may we switch to another arena to retry that
-     allocation, and for further allocations within that thread.
-
- -- Probe: memory_arena_reuse_wait (void *$ARG1, void *$ARG2, void
-          *$ARG3)
-     This probe is triggered when ‘malloc’ is about to wait for an arena
-     to become available for reuse.  Argument $ARG1 holds a pointer to
-     the mutex the thread is going to wait on, $ARG2 is a pointer to a
-     newly-chosen arena to be reused, and $ARG3 is a pointer to the
-     arena previously used by that thread.
-
-     This occurs within ‘reused_arena’, when a thread first tries to
-     allocate memory or needs a retry after a failure to allocate from
-     the main arena, there isn’t any free arena, the maximum number of
-     arenas has been reached, and an existing arena was chosen for
-     reuse, but its mutex could not be immediately acquired.  The mutex
-     in $ARG1 is the mutex of the selected arena.
-
- -- Probe: memory_arena_reuse_free_list (void *$ARG1)
-     This probe is triggered when ‘malloc’ has chosen an arena that is
-     in the free list for use by a thread, within the ‘get_free_list’
-     function.  The argument $ARG1 holds a pointer to the selected
-     arena.
-
- -- Probe: memory_mallopt (int $ARG1, int $ARG2)
-     This probe is triggered when function ‘mallopt’ is called to change
-     ‘malloc’ internal configuration parameters, before any change to
-     the parameters is made.  The arguments $ARG1 and $ARG2 are the ones
-     passed to the ‘mallopt’ function.
-
- -- Probe: memory_mallopt_mxfast (int $ARG1, int $ARG2)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_MXFAST’, and the requested
-     value is in an acceptable range.  Argument $ARG1 is the requested
-     value, and $ARG2 is the previous value of this ‘malloc’ parameter.
-
- -- Probe: memory_mallopt_trim_threshold (int $ARG1, int $ARG2, int
-          $ARG3)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_TRIM_THRESHOLD’.  Argument
-     $ARG1 is the requested value, $ARG2 is the previous value of this
-     ‘malloc’ parameter, and $ARG3 is nonzero if dynamic threshold
-     adjustment was already disabled.
-
- -- Probe: memory_mallopt_top_pad (int $ARG1, int $ARG2, int $ARG3)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_TOP_PAD’.  Argument $ARG1 is
-     the requested value, $ARG2 is the previous value of this ‘malloc’
-     parameter, and $ARG3 is nonzero if dynamic threshold adjustment was
-     already disabled.
-
- -- Probe: memory_mallopt_mmap_threshold (int $ARG1, int $ARG2, int
-          $ARG3)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_MMAP_THRESHOLD’, and the
-     requested value is in an acceptable range.  Argument $ARG1 is the
-     requested value, $ARG2 is the previous value of this ‘malloc’
-     parameter, and $ARG3 is nonzero if dynamic threshold adjustment was
-     already disabled.
-
- -- Probe: memory_mallopt_mmap_max (int $ARG1, int $ARG2, int $ARG3)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_MMAP_MAX’.  Argument $ARG1
-     is the requested value, $ARG2 is the previous value of this
-     ‘malloc’ parameter, and $ARG3 is nonzero if dynamic threshold
-     adjustment was already disabled.
-
- -- Probe: memory_mallopt_check_action (int $ARG1, int $ARG2)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_CHECK_ACTION’.  Argument
-     $ARG1 is the requested value, and $ARG2 is the previous value of
-     this ‘malloc’ parameter.
-
- -- Probe: memory_mallopt_perturb (int $ARG1, int $ARG2)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_PERTURB’.  Argument $ARG1 is
-     the requested value, and $ARG2 is the previous value of this
-     ‘malloc’ parameter.
-
- -- Probe: memory_mallopt_arena_test (int $ARG1, int $ARG2)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_ARENA_TEST’, and the
-     requested value is in an acceptable range.  Argument $ARG1 is the
-     requested value, and $ARG2 is the previous value of this ‘malloc’
-     parameter.
-
- -- Probe: memory_mallopt_arena_max (int $ARG1, int $ARG2)
-     This probe is triggered shortly after the ‘memory_mallopt’ probe,
-     when the parameter to be changed is ‘M_ARENA_MAX’, and the
-     requested value is in an acceptable range.  Argument $ARG1 is the
-     requested value, and $ARG2 is the previous value of this ‘malloc’
-     parameter.
-
- -- Probe: memory_mallopt_free_dyn_thresholds (int $ARG1, int $ARG2)
-     This probe is triggered when function ‘free’ decides to adjust the
-     dynamic brk/mmap thresholds.  Argument $ARG1 and $ARG2 are the
-     adjusted mmap and trim thresholds, respectively.
 
 
 File: libc.info,  Node: Mathematical Function Probes,  Next: Non-local Goto Probes,  Prev: Memory Allocation Probes,  Up: Internal Probes
@@ -3603,195 +1900,7 @@ These probes are used to signal calls to ‘setjmp’, ‘sigsetjmp’,
      or ‘sigsetjmp’.
 
 
-File: libc.info,  Node: Tunables,  Next: Language Features,  Prev: Internal Probes,  Up: Top
-
-37 Tunables
-***********
-
-"Tunables" are a feature in the GNU C Library that allows application
-authors and distribution maintainers to alter the runtime library
-behavior to match their workload.  These are implemented as a set of
-switches that may be modified in different ways.  The current default
-method to do this is via the ‘GLIBC_TUNABLES’ environment variable by
-setting it to a string of colon-separated NAME=VALUE pairs.  For
-example, the following example enables malloc checking and sets the
-malloc trim threshold to 128 bytes:
-
-     GLIBC_TUNABLES=glibc.malloc.trim_threshold=128:glibc.malloc.check=3
-     export GLIBC_TUNABLES
-
-   Tunables are not part of the GNU C Library stable ABI, and they are
-subject to change or removal across releases.  Additionally, the method
-to modify tunable values may change between releases and across
-distributions.  It is possible to implement multiple ‘frontends’ for the
-tunables allowing distributions to choose their preferred method at
-build time.
-
-   Finally, the set of tunables available may vary between distributions
-as the tunables feature allows distributions to add their own tunables
-under their own namespace.
-
-* Menu:
-
-* Tunable names::  The structure of a tunable name
-* Memory Allocation Tunables::  Tunables in the memory allocation subsystem
-
-
-File: libc.info,  Node: Tunable names,  Next: Memory Allocation Tunables,  Up: Tunables
-
-37.1 Tunable names
-==================
-
-A tunable name is split into three components, a top namespace, a
-tunable namespace and the tunable name.  The top namespace for tunables
-implemented in the GNU C Library is ‘glibc’.  Distributions that choose
-to add custom tunables in their maintained versions of the GNU C Library
-may choose to do so under their own top namespace.
-
-   The tunable namespace is a logical grouping of tunables in a single
-module.  This currently holds no special significance, although that may
-change in the future.
-
-   The tunable name is the actual name of the tunable.  It is possible
-that different tunable namespaces may have tunables within them that
-have the same name, likewise for top namespaces.  Hence, we only support
-identification of tunables by their full name, i.e.  with the top
-namespace, tunable namespace and tunable name, separated by periods.
-
-
-File: libc.info,  Node: Memory Allocation Tunables,  Prev: Tunable names,  Up: Tunables
-
-37.2 Memory Allocation Tunables
-===============================
-
- -- Tunable namespace: glibc.malloc
-     Memory allocation behavior can be modified by setting any of the
-     following tunables in the ‘malloc’ namespace:
-
- -- Tunable: glibc.malloc.check
-     This tunable supersedes the ‘MALLOC_CHECK_’ environment variable
-     and is identical in features.
-
-     Setting this tunable enables a special (less efficient) memory
-     allocator for the malloc family of functions that is designed to be
-     tolerant against simple errors such as double calls of free with
-     the same argument, or overruns of a single byte (off-by-one bugs).
-     Not all such errors can be protected against, however, and memory
-     leaks can result.  The following list describes the values that
-     this tunable can take and the effect they have on malloc
-     functionality:
-
-        • ‘0’ Ignore all errors.  The default allocator continues to be
-          in use, but all errors are silently ignored.
-        • ‘1’ Report errors.  The alternate allocator is selected and
-          heap corruption, if detected, is reported as diagnostic
-          messages to ‘stderr’ and the program continues execution.
-        • ‘2’ Abort on errors.  The alternate allocator is selected and
-          if heap corruption is detected, the program is ended
-          immediately by calling ‘abort’.
-        • ‘3’ Fully enabled.  The alternate allocator is selected and is
-          fully functional.  That is, if heap corruption is detected, a
-          verbose diagnostic message is printed to ‘stderr’ and the
-          program is ended by calling ‘abort’.
-
-     Like ‘MALLOC_CHECK_’, ‘glibc.malloc.check’ has a problem in that it
-     diverges from normal program behavior by writing to ‘stderr’, which
-     could by exploited in SUID and SGID binaries.  Therefore,
-     ‘glibc.malloc.check’ is disabled by default for SUID and SGID
-     binaries.  This can be enabled again by the system administrator by
-     adding a file ‘/etc/suid-debug’; the content of the file could be
-     anything or even empty.
-
- -- Tunable: glibc.malloc.top_pad
-     This tunable supersedes the ‘MALLOC_TOP_PAD_’ environment variable
-     and is identical in features.
-
-     This tunable determines the amount of extra memory in bytes to
-     obtain from the system when any of the arenas need to be extended.
-     It also specifies the number of bytes to retain when shrinking any
-     of the arenas.  This provides the necessary hysteresis in heap size
-     such that excessive amounts of system calls can be avoided.
-
-     The default value of this tunable is ‘0’.
-
- -- Tunable: glibc.malloc.perturb
-     This tunable supersedes the ‘MALLOC_PERTURB_’ environment variable
-     and is identical in features.
-
-     If set to a non-zero value, memory blocks are initialized with
-     values depending on some low order bits of this tunable when they
-     are allocated (except when allocated by calloc) and freed.  This
-     can be used to debug the use of uninitialized or freed heap memory.
-     Note that this option does not guarantee that the freed block will
-     have any specific values.  It only guarantees that the content the
-     block had before it was freed will be overwritten.
-
-     The default value of this tunable is ‘0’.
-
- -- Tunable: glibc.malloc.mmap_threshold
-     This tunable supersedes the ‘MALLOC_MMAP_THRESHOLD_’ environment
-     variable and is identical in features.
-
-     When this tunable is set, all chunks larger than this value in
-     bytes are allocated outside the normal heap, using the ‘mmap’
-     system call.  This way it is guaranteed that the memory for these
-     chunks can be returned to the system on ‘free’.  Note that requests
-     smaller than this threshold might still be allocated via ‘mmap’.
-
-     If this tunable is not set, the default value is set to ‘131072’
-     bytes and the threshold is adjusted dynamically to suit the
-     allocation patterns of the program.  If the tunable is set, the
-     dynamic adjustment is disabled and the value is set as static.
-
- -- Tunable: glibc.malloc.trim_threshold
-     This tunable supersedes the ‘MALLOC_TRIM_THRESHOLD_’ environment
-     variable and is identical in features.
-
-     The value of this tunable is the minimum size (in bytes) of the
-     top-most, releasable chunk in an arena that will trigger a system
-     call in order to return memory to the system from that arena.
-
-     If this tunable is not set, the default value is set as 128 KB and
-     the threshold is adjusted dynamically to suit the allocation
-     patterns of the program.  If the tunable is set, the dynamic
-     adjustment is disabled and the value is set as static.
-
- -- Tunable: glibc.malloc.mmap_max
-     This tunable supersedes the ‘MALLOC_MMAP_MAX_’ environment variable
-     and is identical in features.
-
-     The value of this tunable is maximum number of chunks to allocate
-     with ‘mmap’.  Setting this to zero disables all use of ‘mmap’.
-
-     The default value of this tunable is ‘65536’.
-
- -- Tunable: glibc.malloc.arena_test
-     This tunable supersedes the ‘MALLOC_ARENA_TEST’ environment
-     variable and is identical in features.
-
-     The ‘glibc.malloc.arena_test’ tunable specifies the number of
-     arenas that can be created before the test on the limit to the
-     number of arenas is conducted.  The value is ignored if
-     ‘glibc.malloc.arena_max’ is set.
-
-     The default value of this tunable is 2 for 32-bit systems and 8 for
-     64-bit systems.
-
- -- Tunable: glibc.malloc.arena_max
-     This tunable supersedes the ‘MALLOC_ARENA_MAX’ environment variable
-     and is identical in features.
-
-     This tunable sets the number of arenas to use in a process
-     regardless of the number of cores in the system.
-
-     The default value of this tunable is ‘0’, meaning that the limit on
-     the number of arenas is determined by the number of CPU cores
-     online.  For 32-bit systems the limit is twice the number of cores
-     online and on 64-bit systems, it is 8 times the number of cores
-     online.
-
-
-File: libc.info,  Node: Language Features,  Next: Library Summary,  Prev: Tunables,  Up: Top
+File: libc.info,  Node: Language Features,  Next: Library Summary,  Prev: Internal Probes,  Up: Top
 
 Appendix A C Language Facilities in the Library
 ***********************************************
@@ -4334,7 +2443,7 @@ A.4 Important Data Types
 The result of subtracting two pointers in C is always an integer, but
 the precise data type varies from C compiler to C compiler.  Likewise,
 the data type of the result of ‘sizeof’ also varies between compilers.
-ISO C defines standard aliases for these two types, so you can refer to
+ISO defines standard aliases for these two types, so you can refer to
 them in a portable fashion.  They are defined in the header file
 ‘stddef.h’.
 
@@ -4409,46 +2518,6 @@ of bits in an integer data type.  But you can compute it from the macro
      You can compute the number of bits in any data type TYPE like this:
 
           sizeof (TYPE) * CHAR_BIT
-
-   That expression includes padding bits as well as value and sign bits.
-On all systems supported by the GNU C Library, standard integer types
-other than ‘_Bool’ do not have any padding bits.  TS 18661-1:2014
-defines additional macros for the width of integer types (the number of
-value and sign bits); these macros can also be used in ‘#if’
-preprocessor directives, whereas ‘sizeof’ cannot.  The following macros
-are defined in ‘limits.h’.
-
-‘CHAR_WIDTH’
-‘SCHAR_WIDTH’
-‘UCHAR_WIDTH’
-‘SHRT_WIDTH’
-‘USHRT_WIDTH’
-‘INT_WIDTH’
-‘UINT_WIDTH’
-‘LONG_WIDTH’
-‘ULONG_WIDTH’
-‘LLONG_WIDTH’
-‘ULLONG_WIDTH’
-
-     These are the widths of the types ‘char’, ‘signed char’, ‘unsigned
-     char’, ‘short int’, ‘unsigned short int’, ‘int’, ‘unsigned int’,
-     ‘long int’, ‘unsigned long int’, ‘long long int’ and ‘unsigned long
-     long int’, respectively.
-
-   Further such macros are defined in ‘stdint.h’.  Apart from those for
-types specified by width (*note Integers::), the following are defined.
-
-‘INTPTR_WIDTH’
-‘UINTPTR_WIDTH’
-‘PTRDIFF_WIDTH’
-‘SIG_ATOMIC_WIDTH’
-‘SIZE_WIDTH’
-‘WCHAR_WIDTH’
-‘WINT_WIDTH’
-
-     These are the widths of the types ‘intptr_t’, ‘uintptr_t’,
-     ‘ptrdiff_t’, ‘sig_atomic_t’, ‘size_t’, ‘wchar_t’ and ‘wint_t’,
-     respectively.
 
 
 File: libc.info,  Node: Range of Type,  Next: Floating Type Macros,  Prev: Width of Type,  Up: Data Type Measurements
@@ -4770,9 +2839,9 @@ supported are suitable.
 
 ‘FLT_MIN_EXP’
      This is the smallest possible exponent value for type ‘float’.
-     More precisely, it is the minimum negative integer such that the
-     value ‘FLT_RADIX’ raised to this power minus 1 can be represented
-     as a normalized floating point number of type ‘float’.
+     More precisely, is the minimum negative integer such that the value
+     ‘FLT_RADIX’ raised to this power minus 1 can be represented as a
+     normalized floating point number of type ‘float’.
 
 ‘DBL_MIN_EXP’
 ‘LDBL_MIN_EXP’
@@ -5246,7 +3315,7 @@ it.
 
      ‘argz.h’ (GNU): *note Argz Functions::.
 
-‘size_t argz_count (const char *ARGZ, size_t ARGZ_LEN)’
+‘size_t argz_count (const char *ARGZ, size_t ARG_LEN)’
 
      ‘argz.h’ (GNU): *note Argz Functions::.
 
@@ -5598,21 +3667,9 @@ it.
 
      ‘malloc.h’, ‘stdlib.h’ (ISO): *note Allocating Cleared Space::.
 
-‘int canonicalize (double *CX, const double *X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘int canonicalizef (float *CX, const float *X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
 ‘char * canonicalize_file_name (const char *NAME)’
 
      ‘stdlib.h’ (GNU): *note Symbolic Links::.
-
-‘int canonicalizel (long double *CX, const long double *X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
 
 ‘double carg (complex double Z)’
 
@@ -5678,7 +3735,7 @@ it.
 
      ‘nl_types.h’ (X/Open): *note The catgets Functions::.
 
-‘int cbc_crypt (char *KEY, char *BLOCKS, unsigned int LEN, unsigned int MODE, char *IVEC)’
+‘int cbc_crypt (char *KEY, char *BLOCKS, unsigned LEN, unsigned MODE, char *IVEC)’
 
      ‘rpc/des_crypt.h’ (SUNRPC): *note DES Encryption::.
 
@@ -5789,10 +3846,6 @@ it.
 ‘CHAR_MIN’
 
      ‘limits.h’ (ISO): *note Range of Type::.
-
-‘CHAR_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
 
 ‘int chdir (const char *FILENAME)’
 
@@ -6453,7 +4506,7 @@ it.
 
      ‘errno.h’ (POSIX.1: Operation canceled): *note Error Codes::.
 
-‘int ecb_crypt (char *KEY, char *BLOCKS, unsigned int LEN, unsigned int MODE)’
+‘int ecb_crypt (char *KEY, char *BLOCKS, unsigned LEN, unsigned MODE)’
 
      ‘rpc/des_crypt.h’ (SUNRPC): *note DES Encryption::.
 
@@ -7254,15 +5307,15 @@ it.
 
 ‘double exp10 (double X)’
 
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
+     ‘math.h’ (GNU): *note Exponents and Logarithms::.
 
 ‘float exp10f (float X)’
 
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
+     ‘math.h’ (GNU): *note Exponents and Logarithms::.
 
 ‘long double exp10l (long double X)’
 
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
+     ‘math.h’ (GNU): *note Exponents and Logarithms::.
 
 ‘double exp2 (double X)’
 
@@ -7283,10 +5336,6 @@ it.
 ‘long double expl (long double X)’
 
      ‘math.h’ (ISO): *note Exponents and Logarithms::.
-
-‘void explicit_bzero (void *BLOCK, size_t LEN)’
-
-     ‘string.h’ (BSD): *note Erasing Sensitive Data::.
 
 ‘double expm1 (double X)’
 
@@ -7440,10 +5489,6 @@ it.
 
      ‘fenv.h’ (ISO): *note Status bit operations::.
 
-‘int fegetmode (femode_t *MODEP)’
-
-     ‘fenv.h’ (ISO): *note Control Functions::.
-
 ‘int fegetround (void)’
 
      ‘fenv.h’ (ISO): *note Rounding::.
@@ -7488,31 +5533,15 @@ it.
 
      ‘fenv.h’ (ISO): *note Control Functions::.
 
-‘int fesetexcept (int EXCEPTS)’
-
-     ‘fenv.h’ (ISO): *note Status bit operations::.
-
 ‘int fesetexceptflag (const fexcept_t *FLAGP, int EXCEPTS)’
 
      ‘fenv.h’ (ISO): *note Status bit operations::.
-
-‘int fesetmode (const femode_t *MODEP)’
-
-     ‘fenv.h’ (ISO): *note Control Functions::.
 
 ‘int fesetround (int ROUND)’
 
      ‘fenv.h’ (ISO): *note Rounding::.
 
-‘int FE_SNANS_ALWAYS_SIGNAL’
-
-     ‘fenv.h’ (ISO): *note Infinity and NaN::.
-
 ‘int fetestexcept (int EXCEPTS)’
-
-     ‘fenv.h’ (ISO): *note Status bit operations::.
-
-‘int fetestexceptflag (const fexcept_t *FLAGP, int EXCEPTS)’
 
      ‘fenv.h’ (ISO): *note Status bit operations::.
 
@@ -7740,18 +5769,6 @@ it.
 
      ‘math.h’ (ISO): *note Misc FP Arithmetic::.
 
-‘double fmaxmag (double X, double Y)’
-
-     ‘math.h’ (ISO): *note Misc FP Arithmetic::.
-
-‘float fmaxmagf (float X, float Y)’
-
-     ‘math.h’ (ISO): *note Misc FP Arithmetic::.
-
-‘long double fmaxmagl (long double X, long double Y)’
-
-     ‘math.h’ (ISO): *note Misc FP Arithmetic::.
-
 ‘FILE * fmemopen (void *BUF, size_t SIZE, const char *OPENTYPE)’
 
      ‘stdio.h’ (GNU): *note String Streams::.
@@ -7765,18 +5782,6 @@ it.
      ‘math.h’ (ISO): *note Misc FP Arithmetic::.
 
 ‘long double fminl (long double X, long double Y)’
-
-     ‘math.h’ (ISO): *note Misc FP Arithmetic::.
-
-‘double fminmag (double X, double Y)’
-
-     ‘math.h’ (ISO): *note Misc FP Arithmetic::.
-
-‘float fminmagf (float X, float Y)’
-
-     ‘math.h’ (ISO): *note Misc FP Arithmetic::.
-
-‘long double fminmagl (long double X, long double Y)’
 
      ‘math.h’ (ISO): *note Misc FP Arithmetic::.
 
@@ -7924,34 +5929,6 @@ it.
 
      ‘math.h’ (ISO): *note Exponents and Logarithms::.
 
-‘FP_INT_DOWNWARD’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘FP_INT_TONEAREST’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘FP_INT_TONEARESTFROMZERO’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘FP_INT_TOWARDZERO’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘FP_INT_UPWARD’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘long int FP_LLOGB0’
-
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
-
-‘long int FP_LLOGBNAN’
-
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
-
 ‘fpos64_t’
 
      ‘stdio.h’ (Unix98): *note Portable Positioning::.
@@ -8047,30 +6024,6 @@ it.
 ‘long double frexpl (long double VALUE, int *EXPONENT)’
 
      ‘math.h’ (ISO): *note Normalization Functions::.
-
-‘intmax_t fromfp (double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘intmax_t fromfpf (float X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘intmax_t fromfpl (long double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘intmax_t fromfpx (double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘intmax_t fromfpxf (float X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘intmax_t fromfpxl (long double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
 
 ‘int fscanf (FILE *STREAM, const char *TEMPLATE, …)’
 
@@ -8304,10 +6257,6 @@ it.
 
      ‘unistd.h’ (POSIX.1): *note Reading Persona::.
 
-‘int getentropy (void *BUFFER, size_t LENGTH)’
-
-     ‘sys/random.h’ (GNU): *note Unpredictable Bytes::.
-
 ‘char * getenv (const char *NAME)’
 
      ‘stdlib.h’ (ISO): *note Environment Access::.
@@ -8472,18 +6421,6 @@ it.
 
      ‘unistd.h’ (BSD): *note getpass::.
 
-‘double getpayload (const double *X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘float getpayloadf (const float *X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘long double getpayloadl (const long double *X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
 ‘int getpeername (int SOCKET, struct sockaddr *ADDR, socklen_t *LENGTH-PTR)’
 
      ‘sys/socket.h’ (BSD): *note Who is Connected::.
@@ -8552,10 +6489,6 @@ it.
 ‘int getpwuid_r (uid_t UID, struct passwd *RESULT_BUF, char *BUFFER, size_t BUFLEN, struct passwd **RESULT)’
 
      ‘pwd.h’ (POSIX.1c): *note Lookup User::.
-
-‘ssize_t getrandom (void *BUFFER, size_t LENGTH, unsigned int FLAGS)’
-
-     ‘sys/random.h’ (GNU): *note Unpredictable Bytes::.
 
 ‘int getrlimit (int RESOURCE, struct rlimit *RLP)’
 
@@ -9085,14 +7018,6 @@ it.
 
      ‘limits.h’ (ISO): *note Range of Type::.
 
-‘INTPTR_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
-
-‘INT_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
-
 ‘int ioctl (int FILEDES, int COMMAND, …)’
 
      ‘sys/ioctl.h’ (BSD): *note IOCTLs::.
@@ -9137,10 +7062,6 @@ it.
 
      ‘ctype.h’ (ISO): *note Classification of Characters::.
 
-‘int iscanonical (_float-type_ X)’
-
-     ‘math.h’ (ISO): *note Floating Point Classes::.
-
 ‘int iscntrl (int C)’
 
      ‘ctype.h’ (ISO): *note Classification of Characters::.
@@ -9148,10 +7069,6 @@ it.
 ‘int isdigit (int C)’
 
      ‘ctype.h’ (ISO): *note Classification of Characters::.
-
-‘int iseqsig (_real-floating_ X, _real-floating_ Y)’
-
-     ‘math.h’ (ISO): *note FP Comparison Functions::.
 
 ‘int isfinite (_float-type_ X)’
 
@@ -9235,15 +7152,11 @@ it.
 
 ‘int issignaling (_float-type_ X)’
 
-     ‘math.h’ (ISO): *note Floating Point Classes::.
+     ‘math.h’ (GNU): *note Floating Point Classes::.
 
 ‘int isspace (int C)’
 
      ‘ctype.h’ (ISO): *note Classification of Characters::.
-
-‘int issubnormal (_float-type_ X)’
-
-     ‘math.h’ (ISO): *note Floating Point Classes::.
 
 ‘tcflag_t ISTRIP’
 
@@ -9312,10 +7225,6 @@ it.
 ‘int isxdigit (int C)’
 
      ‘ctype.h’ (ISO): *note Classification of Characters::.
-
-‘int iszero (_float-type_ X)’
-
-     ‘math.h’ (ISO): *note Floating Point Classes::.
 
 ‘ITIMER_PROF’
 
@@ -9541,18 +7450,6 @@ it.
 
      ‘stdlib.h’ (ISO): *note Integer Division::.
 
-‘long int llogb (double X)’
-
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
-
-‘long int llogbf (float X)’
-
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
-
-‘long int llogbl (long double X)’
-
-     ‘math.h’ (ISO): *note Exponents and Logarithms::.
-
 ‘LLONG_MAX’
 
      ‘limits.h’ (ISO): *note Range of Type::.
@@ -9560,10 +7457,6 @@ it.
 ‘LLONG_MIN’
 
      ‘limits.h’ (ISO): *note Range of Type::.
-
-‘LLONG_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
 
 ‘long long int llrint (double X)’
 
@@ -9705,10 +7598,6 @@ it.
 
      ‘limits.h’ (ISO): *note Range of Type::.
 
-‘LONG_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
-
 ‘long int lrand48 (void)’
 
      ‘stdlib.h’ (SVID): *note SVID Random::.
@@ -9794,6 +7683,10 @@ it.
      ‘malloc.h’, ‘stdlib.h’ (ISO): *note Basic Allocation::.
 
 ‘__malloc_hook’
+
+     ‘malloc.h’ (GNU): *note Hooks for Malloc::.
+
+‘__malloc_initialize_hook’
 
      ‘malloc.h’ (GNU): *note Hooks for Malloc::.
 
@@ -10086,18 +7979,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘math.h’ (ISO): *note FP Bit Twiddling::.
 
-‘double nextdown (double X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘float nextdownf (float X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘long double nextdownl (long double X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
 ‘double nexttoward (double X, long double Y)’
 
      ‘math.h’ (ISO): *note FP Bit Twiddling::.
@@ -10107,18 +7988,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
      ‘math.h’ (ISO): *note FP Bit Twiddling::.
 
 ‘long double nexttowardl (long double X, long double Y)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘double nextup (double X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘float nextupf (float X)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘long double nextupl (long double X)’
 
      ‘math.h’ (ISO): *note FP Bit Twiddling::.
 
@@ -10994,10 +8863,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘stddef.h’ (ISO): *note Important Data Types::.
 
-‘PTRDIFF_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
-
 ‘char * ptsname (int FILEDES)’
 
      ‘stdlib.h’ (SVID, XPG4.2): *note Allocation::.
@@ -11398,18 +9263,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘math.h’ (ISO): *note Rounding Functions::.
 
-‘double roundeven (double X)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘float roundevenf (float X)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘long double roundevenl (long double X)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
 ‘float roundf (float X)’
 
      ‘math.h’ (ISO): *note Rounding Functions::.
@@ -11629,10 +9482,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘SCHAR_MIN’
 
      ‘limits.h’ (ISO): *note Range of Type::.
-
-‘SCHAR_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
 
 ‘int sched_getaffinity (pid_t PID, size_t CPUSETSIZE, cpu_set_t *CPUSET)’
 
@@ -12182,30 +10031,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘netdb.h’ (BSD): *note Lookup Netgroup::.
 
-‘int setpayload (double *X, double PAYLOAD)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘int setpayloadf (float *X, float PAYLOAD)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘int setpayloadl (long double *X, long double PAYLOAD)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘int setpayloadsig (double *X, double PAYLOAD)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘int setpayloadsigf (float *X, float PAYLOAD)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
-‘int setpayloadsigl (long double *X, long double PAYLOAD)’
-
-     ‘math.h’ (ISO): *note FP Bit Twiddling::.
-
 ‘int setpgid (pid_t PID, pid_t PGID)’
 
      ‘unistd.h’ (POSIX.1): *note Process Group Functions::.
@@ -12295,10 +10120,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘limits.h’ (ISO): *note Range of Type::.
 
-‘SHRT_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
-
 ‘int shutdown (int SOCKET, int HOW)’
 
      ‘sys/socket.h’ (BSD): *note Closing a Socket::.
@@ -12362,10 +10183,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘sig_atomic_t’
 
      ‘signal.h’ (ISO): *note Atomic Types::.
-
-‘SIG_ATOMIC_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
 
 ‘SIG_BLOCK’
 
@@ -12743,17 +10560,9 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘stddef.h’ (ISO): *note Important Data Types::.
 
-‘SIZE_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
-
 ‘unsigned int sleep (unsigned int SECONDS)’
 
      ‘unistd.h’ (POSIX.1): *note Sleeping::.
-
-‘float SNANF’
-
-     ‘math.h’ (ISO): *note Infinity and NaN::.
 
 ‘int snprintf (char *S, size_t SIZE, const char *TEMPLATE, …)’
 
@@ -12907,18 +10716,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘sys/stat.h’ (Unix98): *note Reading Attributes::.
 
-‘__STDC_WANT_IEC_60559_BFP_EXT__’
-
-     (ISO): *note Feature Test Macros::.
-
-‘__STDC_WANT_IEC_60559_FUNCS_EXT__’
-
-     (ISO): *note Feature Test Macros::.
-
-‘__STDC_WANT_LIB_EXT2__’
-
-     (ISO): *note Feature Test Macros::.
-
 ‘FILE * stderr’
 
      ‘stdio.h’ (ISO): *note Standard Streams::.
@@ -13006,10 +10803,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘char * strerror_r (int ERRNUM, char *BUF, size_t N)’
 
      ‘string.h’ (GNU): *note Error Messages::.
-
-‘int strfromd (char *restrict STRING, size_t SIZE, const char *restrict FORMAT, double VALUE)’
-
-     ‘stdlib.h’ (ISO/IEC TS 18661-1): *note Printing of Floats::.
 
 ‘char * strfry (char *STRING)’
 
@@ -13379,7 +11172,7 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘ucontext.h’ (SVID): *note System V contexts::.
 
-‘int swprintf (wchar_t *WS, size_t SIZE, const wchar_t *TEMPLATE, …)’
+‘int swprintf (wchar_t *S, size_t SIZE, const wchar_t *TEMPLATE, …)’
 
      ‘wchar.h’ (GNU): *note Formatted Output Functions::.
 
@@ -13603,14 +11396,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘termios.h’ (POSIX.1): *note Local Modes::.
 
-‘int totalorder (double X, double Y)’
-
-     ‘math.h’ (ISO): *note FP Comparison Functions::.
-
-‘int totalordermag (double X, double Y)’
-
-     ‘math.h’ (ISO): *note FP Comparison Functions::.
-
 ‘int _toupper (int C)’
 
      ‘ctype.h’ (SVID): *note Case Conversion::.
@@ -13687,37 +11472,9 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘limits.h’ (ISO): *note Range of Type::.
 
-‘UCHAR_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
-
 ‘ucontext_t’
 
      ‘ucontext.h’ (SVID): *note System V contexts::.
-
-‘uintmax_t ufromfp (double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘uintmax_t ufromfpf (float X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘uintmax_t ufromfpl (long double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘uintmax_t ufromfpx (double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘uintmax_t ufromfpxf (float X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
-
-‘uintmax_t ufromfpxl (long double X, int ROUND, unsigned int WIDTH)’
-
-     ‘math.h’ (ISO): *note Rounding Functions::.
 
 ‘uid_t’
 
@@ -13727,14 +11484,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘limits.h’ (ISO): *note Range of Type::.
 
-‘UINTPTR_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
-
-‘UINT_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
-
 ‘long int ulimit (int CMD, …)’
 
      ‘ulimit.h’ (BSD): *note Limits on Resources::.
@@ -13743,10 +11492,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘limits.h’ (ISO): *note Range of Type::.
 
-‘ULLONG_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
-
 ‘ULONG_LONG_MAX’
 
      ‘limits.h’ (GNU): *note Range of Type::.
@@ -13754,10 +11499,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘ULONG_MAX’
 
      ‘limits.h’ (ISO): *note Range of Type::.
-
-‘ULONG_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
 
 ‘mode_t umask (mode_t MASK)’
 
@@ -13782,6 +11523,10 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘wint_t ungetwc (wint_t WC, FILE *STREAM)’
 
      ‘wchar.h’ (ISO): *note How Unread::.
+
+‘union wait’
+
+     ‘sys/wait.h’ (BSD): *note BSD Wait Functions::.
 
 ‘int unlink (const char *FILENAME)’
 
@@ -13810,10 +11555,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘USHRT_MAX’
 
      ‘limits.h’ (ISO): *note Range of Type::.
-
-‘USHRT_WIDTH’
-
-     ‘limits.h’ (ISO): *note Width of Type::.
 
 ‘int utime (const char *FILENAME, const struct utimbuf *TIMES)’
 
@@ -13987,7 +11728,7 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘termios.h’ (POSIX.1): *note Signal Characters::.
 
-‘int vswprintf (wchar_t *WS, size_t SIZE, const wchar_t *TEMPLATE, va_list AP)’
+‘int vswprintf (wchar_t *S, size_t SIZE, const wchar_t *TEMPLATE, va_list AP)’
 
      ‘wchar.h’ (GNU): *note Variable Arguments Output::.
 
@@ -14031,7 +11772,7 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 
      ‘sys/wait.h’ (POSIX.1): *note Process Completion::.
 
-‘pid_t wait3 (int *STATUS-PTR, int OPTIONS, struct rusage *USAGE)’
+‘pid_t wait3 (union wait *STATUS-PTR, int OPTIONS, struct rusage *USAGE)’
 
      ‘sys/wait.h’ (BSD): *note BSD Wait Functions::.
 
@@ -14066,10 +11807,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘wchar_t’
 
      ‘stddef.h’ (ISO): *note Extended Char Intro::.
-
-‘WCHAR_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
 
 ‘int WCOREDUMP (int STATUS)’
 
@@ -14286,10 +12023,6 @@ const void *NEEDLE, size_t NEEDLE-LEN)’
 ‘wint_t’
 
      ‘wchar.h’ (ISO): *note Extended Char Intro::.
-
-‘WINT_WIDTH’
-
-     ‘stdint.h’ (ISO): *note Width of Type::.
 
 ‘wchar_t * wmemchr (const wchar_t *BLOCK, wchar_t WC, size_t SIZE)’
 

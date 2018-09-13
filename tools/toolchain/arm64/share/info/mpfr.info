@@ -1,7 +1,7 @@
-This is mpfr.info, produced by makeinfo version 6.3 from mpfr.texi.
+This is mpfr.info, produced by makeinfo version 6.1 from mpfr.texi.
 
 This manual documents how to install and use the Multiple Precision
-Floating-Point Reliable Library, version 3.1.5.
+Floating-Point Reliable Library, version 3.1.4.
 
    Copyright 1991, 1993-2016 Free Software Foundation, Inc.
 
@@ -23,7 +23,7 @@ GNU MPFR
 ********
 
 This manual documents how to install and use the Multiple Precision
-Floating-Point Reliable Library, version 3.1.5.
+Floating-Point Reliable Library, version 3.1.4.
 
    Copyright 1991, 1993-2016 Free Software Foundation, Inc.
 
@@ -276,8 +276,8 @@ MPFR).  Problems are also mentioned in the FAQ
 <http://www.mpfr.org/faq.html>.
 
    Please report problems to the MPFR mailing-list ‘mpfr@inria.fr’.
-*Note Reporting Bugs::.  Some bug fixes are available on the MPFR 3.1.5
-web page <http://www.mpfr.org/mpfr-3.1.5/>.
+*Note Reporting Bugs::.  Some bug fixes are available on the MPFR 3.1.4
+web page <http://www.mpfr.org/mpfr-3.1.4/>.
 
 2.4 Getting the Latest Version of MPFR
 ======================================
@@ -292,7 +292,7 @@ File: mpfr.info,  Node: Reporting Bugs,  Next: MPFR Basics,  Prev: Installing MP
 ****************
 
 If you think you have found a bug in the MPFR library, first have a look
-on the MPFR 3.1.5 web page <http://www.mpfr.org/mpfr-3.1.5/> and the FAQ
+on the MPFR 3.1.4 web page <http://www.mpfr.org/mpfr-3.1.4/> and the FAQ
 <http://www.mpfr.org/faq.html>: perhaps this bug is already known, in
 which case you may find there a workaround for it.  You might also look
 in the archives of the MPFR mailing-list:

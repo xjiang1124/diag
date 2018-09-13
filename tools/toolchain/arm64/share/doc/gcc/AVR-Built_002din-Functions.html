@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functi
 </div>
 <hr>
 <a name="AVR-Built_002din-Functions-1"></a>
-<h4 class="subsection">6.60.10 AVR Built-in Functions</h4>
+<h4 class="subsection">6.59.10 AVR Built-in Functions</h4>
 
 <p>For each built-in function for AVR, there is an equally named,
 uppercase built-in macro defined. That way users can easily query if
@@ -123,9 +123,7 @@ points to.  Counting starts at <code>0</code>.
 If the address does not point to flash memory, return <code>-1</code>.
 </p>
 <div class="smallexample">
-<pre class="smallexample">unsigned char __builtin_avr_insert_bits (unsigned long map,
-                                         unsigned char bits,
-                                         unsigned char val)
+<pre class="smallexample">unsigned char __builtin_avr_insert_bits (unsigned long map, unsigned char bits, unsigned char val)
 </pre></div>
 
 <p>Insert bits from <var>bits</var> into <var>val</var> and return the resulting
@@ -171,13 +169,6 @@ __builtin_avr_insert_bits (0xffff3210, bits, val)
 __builtin_avr_insert_bits (0x01234567, bits, 0)
 </pre></div>
 
-<div class="smallexample">
-<pre class="smallexample">void __builtin_avr_nops (unsigned count)
-</pre></div>
-
-<p>Insert <code>count</code> <code>NOP</code> instructions.
-The number of instructions must be a compile-time integer constant.
-</p>
 <hr>
 <div class="header">
 <p>

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="RX-Options.html#RX-Options" accesskey="n" rel="next">RX Options</
 </div>
 <hr>
 <a name="IBM-RS_002f6000-and-PowerPC-Options"></a>
-<h4 class="subsection">3.18.39 IBM RS/6000 and PowerPC Options</h4>
+<h4 class="subsection">3.18.38 IBM RS/6000 and PowerPC Options</h4>
 <a name="index-RS_002f6000-and-PowerPC-Options"></a>
 <a name="index-IBM-RS_002f6000-and-PowerPC-Options"></a>
 
@@ -219,7 +219,7 @@ environment.
 </p>
 </dd>
 <dt><code>-mtune=<var>cpu_type</var></code></dt>
-<dd><a name="index-mtune-11"></a>
+<dd><a name="index-mtune-10"></a>
 <p>Set the instruction scheduling parameters for machine type
 <var>cpu_type</var>, but do not set the architecture type or register usage,
 as <samp>-mcpu=<var>cpu_type</var></samp> does.  The same
@@ -238,8 +238,7 @@ scheduling parameters set by <samp>-mtune</samp>.
 <dt><code>-mcmodel=medium</code></dt>
 <dd><a name="index-mcmodel_003dmedium"></a>
 <p>Generate PowerPC64 code for the medium model: The TOC and other static
-data may be up to a total of 4G in size.  This is the default for 64-bit
-Linux.
+data may be up to a total of 4G in size.
 </p>
 </dd>
 <dt><code>-mcmodel=large</code></dt>
@@ -344,7 +343,8 @@ This is a PowerPC 32-bit SYSV ABI option.
 </dd>
 <dt><code>-mlra</code></dt>
 <dd><a name="index-mlra-2"></a>
-<p>Enable Local Register Allocation. By default the port uses LRA.
+<p>Enable Local Register Allocation.  This is still experimental for PowerPC,
+so by default the compiler uses standard reload
 (i.e. <samp>-mno-lra</samp>).
 </p>
 </dd>
@@ -442,18 +442,6 @@ instructions.  The <samp>-mquad-memory-atomic</samp> option requires use of
 64-bit mode.
 </p>
 </dd>
-<dt><code>-mupper-regs-di</code></dt>
-<dt><code>-mno-upper-regs-di</code></dt>
-<dd><a name="index-mupper_002dregs_002ddi"></a>
-<a name="index-mno_002dupper_002dregs_002ddi"></a>
-<p>Generate code that uses (does not use) the scalar instructions that
-target all 64 registers in the vector/scalar floating point register
-set that were added in version 2.06 of the PowerPC ISA when processing
-integers.  <samp>-mupper-regs-di</samp> is turned on by default if you use
-any of the <samp>-mcpu=power7</samp>, <samp>-mcpu=power8</samp>,
-<samp>-mcpu=power9</samp>, or <samp>-mvsx</samp> options.
-</p>
-</dd>
 <dt><code>-mupper-regs-df</code></dt>
 <dt><code>-mno-upper-regs-df</code></dt>
 <dd><a name="index-mupper_002dregs_002ddf"></a>
@@ -462,8 +450,8 @@ any of the <samp>-mcpu=power7</samp>, <samp>-mcpu=power8</samp>,
 instructions that target all 64 registers in the vector/scalar
 floating point register set that were added in version 2.06 of the
 PowerPC ISA.  <samp>-mupper-regs-df</samp> is turned on by default if you
-use any of the <samp>-mcpu=power7</samp>, <samp>-mcpu=power8</samp>,
-<samp>-mcpu=power9</samp>, or <samp>-mvsx</samp> options.
+use any of the <samp>-mcpu=power7</samp>, <samp>-mcpu=power8</samp>, or
+<samp>-mvsx</samp> options.
 </p>
 </dd>
 <dt><code>-mupper-regs-sf</code></dt>
@@ -785,7 +773,7 @@ size.
 <dt><code>-mno-strict-align</code></dt>
 <dt><code>-mstrict-align</code></dt>
 <dd><a name="index-mno_002dstrict_002dalign-1"></a>
-<a name="index-mstrict_002dalign-3"></a>
+<a name="index-mstrict_002dalign-2"></a>
 <p>On System V.4 and embedded PowerPC systems do not (do) assume that
 unaligned memory references are handled by the system.
 </p>
@@ -990,7 +978,7 @@ SVR4 ABI).
 </p>
 </dd>
 <dt><code>-mabi=<var>abi-type</var></code></dt>
-<dd><a name="index-mabi-3"></a>
+<dd><a name="index-mabi-2"></a>
 <p>Extend the current ABI with a particular extension, or remove such extension.
 Valid values are &lsquo;<samp>altivec</samp>&rsquo;, &lsquo;<samp>no-altivec</samp>&rsquo;, &lsquo;<samp>spe</samp>&rsquo;,
 &lsquo;<samp>no-spe</samp>&rsquo;, &lsquo;<samp>ibmlongdouble</samp>&rsquo;, &lsquo;<samp>ieeelongdouble</samp>&rsquo;,
@@ -1035,15 +1023,6 @@ likely to fail in spectacular ways.
 This is the default ABI for little-endian PowerPC 64-bit Linux.
 Overriding the default ABI requires special system support and is
 likely to fail in spectacular ways.
-</p>
-</dd>
-<dt><code>-mgnu-attribute</code></dt>
-<dt><code>-mno-gnu-attribute</code></dt>
-<dd><a name="index-mgnu_002dattribute"></a>
-<a name="index-mno_002dgnu_002dattribute"></a>
-<p>Emit .gnu_attribute assembly directives to set tag/value pairs in a
-.gnu.attributes section that specify ABI variations in function
-parameters or return values.
 </p>
 </dd>
 <dt><code>-mprototype</code></dt>
@@ -1169,14 +1148,6 @@ in the <code>.data</code> section, and all uninitialized data in the
 <code>.bss</code> section.
 </p>
 </dd>
-<dt><code>-mreadonly-in-sdata</code></dt>
-<dt><code>-mreadonly-in-sdata</code></dt>
-<dd><a name="index-mreadonly_002din_002dsdata"></a>
-<a name="index-mno_002dreadonly_002din_002dsdata"></a>
-<p>Put read-only objects in the <code>.sdata</code> section as well.  This is the
-default.
-</p>
-</dd>
 <dt><code>-mblock-move-inline-limit=<var>num</var></code></dt>
 <dd><a name="index-mblock_002dmove_002dinline_002dlimit"></a>
 <p>Inline all block moves (such as calls to <code>memcpy</code> or structure
@@ -1249,6 +1220,12 @@ specifying the function argument.  The relocation allows the linker to
 reliably associate function call with argument setup instructions for
 TLS optimization, which in turn allows GCC to better schedule the
 sequence.
+</p>
+</dd>
+<dt><code>-pthread</code></dt>
+<dd><a name="index-pthread"></a>
+<p>Adds support for multithreading with the <em>pthreads</em> library.
+This option sets flags for both the preprocessor and linker.
 </p>
 </dd>
 <dt><code>-mrecip</code></dt>
@@ -1407,24 +1384,6 @@ that is compatible with functions compiled with older versions of
 GCC.
 </p>
 <p>The <samp>-mno-compat-align-parm</samp> option is the default.
-</p>
-</dd>
-<dt><code>-mstack-protector-guard=<var>guard</var></code></dt>
-<dt><code>-mstack-protector-guard-reg=<var>reg</var></code></dt>
-<dt><code>-mstack-protector-guard-offset=<var>offset</var></code></dt>
-<dd><a name="index-mstack_002dprotector_002dguard"></a>
-<a name="index-mstack_002dprotector_002dguard_002dreg"></a>
-<a name="index-mstack_002dprotector_002dguard_002doffset"></a>
-<p>Generate stack protection code using canary at <var>guard</var>.  Supported
-locations are &lsquo;<samp>global</samp>&rsquo; for global canary or &lsquo;<samp>tls</samp>&rsquo; for per-thread
-canary in the TLS block (the default with GNU libc version 2.4 or later).
-</p>
-<p>With the latter choice the options
-<samp>-mstack-protector-guard-reg=<var>reg</var></samp> and
-<samp>-mstack-protector-guard-offset=<var>offset</var></samp> furthermore specify
-which register to use as base register for reading the canary, and from what
-offset from that base register. The default for those is as specified in the
-relevant ABI.
 </p></dd>
 </dl>
 

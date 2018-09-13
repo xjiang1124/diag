@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="Constraints.html#Constraints" accesskey="n" rel="next">Constraint
 </div>
 <hr>
 <a name="Extended-Asm-_002d-Assembler-Instructions-with-C-Expression-Operands"></a>
-<h4 class="subsection">6.45.2 Extended Asm - Assembler Instructions with C Expression Operands</h4>
+<h4 class="subsection">6.44.2 Extended Asm - Assembler Instructions with C Expression Operands</h4>
 <a name="index-extended-asm"></a>
 <a name="index-assembly-language-in-C_002c-extended"></a>
 
@@ -191,7 +191,7 @@ printf(&quot;%d\n&quot;, dst);
 <p>This code copies <code>src</code> to <code>dst</code> and add 1 to <code>dst</code>.
 </p>
 <a name="Volatile"></a><a name="Volatile-1"></a>
-<h4 class="subsubsection">6.45.2.1 Volatile</h4>
+<h4 class="subsubsection">6.44.2.1 Volatile</h4>
 <a name="index-volatile-asm"></a>
 <a name="index-asm-volatile"></a>
 
@@ -313,7 +313,7 @@ Using &lsquo;<samp>%=</samp>&rsquo;
 (see <a href="#AssemblerTemplate">AssemblerTemplate</a>) may help resolve this problem.
 </p>
 <a name="AssemblerTemplate"></a><a name="Assembler-Template"></a>
-<h4 class="subsubsection">6.45.2.2 Assembler Template</h4>
+<h4 class="subsubsection">6.44.2.2 Assembler Template</h4>
 <a name="index-asm-assembler-template"></a>
 
 <p>An assembler template is a literal string containing assembler instructions.
@@ -433,7 +433,7 @@ assembler template such as this:
 <p>There is no support for nesting dialect alternatives.
 </p>
 <a name="OutputOperands"></a><a name="Output-Operands"></a>
-<h4 class="subsubsection">6.45.2.3 Output Operands</h4>
+<h4 class="subsubsection">6.44.2.3 Output Operands</h4>
 <a name="index-asm-output-operands"></a>
 
 <p>An <code>asm</code> statement has zero or more output operands indicating the names
@@ -612,7 +612,7 @@ in a register, you can enable it to choose the best location
 for <code>d</code> by specifying both constraints.
 </p>
 <a name="FlagOutputOperands"></a><a name="Flag-Output-Operands"></a>
-<h4 class="subsubsection">6.45.2.4 Flag Output Operands</h4>
+<h4 class="subsubsection">6.44.2.4 Flag Output Operands</h4>
 <a name="index-asm-flag-output-operands"></a>
 
 <p>Some targets have a special register that holds the &ldquo;flags&rdquo; for the
@@ -705,7 +705,7 @@ conditions defined in the ISA manual for <code>j<var>cc</var></code> or
 </dl>
 
 <a name="InputOperands"></a><a name="Input-Operands"></a>
-<h4 class="subsubsection">6.45.2.5 Input Operands</h4>
+<h4 class="subsubsection">6.44.2.5 Input Operands</h4>
 <a name="index-asm-input-operands"></a>
 <a name="index-asm-expressions"></a>
 
@@ -814,7 +814,7 @@ the generated assembler code.
 </pre></div>
 
 <a name="Clobbers"></a><a name="Clobbers-1"></a>
-<h4 class="subsubsection">6.45.2.6 Clobbers</h4>
+<h4 class="subsubsection">6.44.2.6 Clobbers</h4>
 <a name="index-asm-clobbers"></a>
 
 <p>While the compiler is aware of changes to entries listed in the output 
@@ -888,7 +888,7 @@ ten bytes of a string, use a memory input like:
 </dl>
 
 <a name="GotoLabels"></a><a name="Goto-Labels"></a>
-<h4 class="subsubsection">6.45.2.7 Goto Labels</h4>
+<h4 class="subsubsection">6.44.2.7 Goto Labels</h4>
 <a name="index-asm-goto-labels"></a>
 
 <p><code>asm goto</code> allows assembly code to jump to one or more C labels.  The
@@ -957,7 +957,7 @@ error:
 </pre></div>
 
 <a name="x86Operandmodifiers"></a><a name="x86-Operand-Modifiers"></a>
-<h4 class="subsubsection">6.45.2.8 x86 Operand Modifiers</h4>
+<h4 class="subsubsection">6.44.2.8 x86 Operand Modifiers</h4>
 
 <p>References to input, output, and goto operands in the assembler template
 of extended <code>asm</code> statements can use 
@@ -997,7 +997,7 @@ top:
 &lsquo;<samp>att</samp>&rsquo; and &lsquo;<samp>intel</samp>&rsquo; dialects of assembler:
 </p>
 <table>
-<thead><tr><th>Operand</th><th>&lsquo;<samp>att</samp>&rsquo;</th><th>&lsquo;<samp>intel</samp>&rsquo;</th></tr></thead>
+<thead><tr><th>Operand</th><th>masm=att</th><th>masm=intel</th></tr></thead>
 <tr><td><code>%0</code></td><td><code>%eax</code></td><td><code>eax</code></td></tr>
 <tr><td><code>%1</code></td><td><code>$2</code></td><td><code>2</code></td></tr>
 <tr><td><code>%2</code></td><td><code>$.L2</code></td><td><code>OFFSET FLAT:.L2</code></td></tr>
@@ -1006,7 +1006,7 @@ top:
 <p>The table below shows the list of supported modifiers and their effects.
 </p>
 <table>
-<thead><tr><th>Modifier</th><th>Description</th><th>Operand</th><th>&lsquo;<samp>att</samp>&rsquo;</th><th>&lsquo;<samp>intel</samp>&rsquo;</th></tr></thead>
+<thead><tr><th>Modifier</th><th>Description</th><th>Operand</th><th><samp>masm=att</samp></th><th><samp>masm=intel</samp></th></tr></thead>
 <tr><td><code>z</code></td><td>Print the opcode suffix for the size of the current integer operand (one of <code>b</code>/<code>w</code>/<code>l</code>/<code>q</code>).</td><td><code>%z0</code></td><td><code>l</code></td><td></td></tr>
 <tr><td><code>b</code></td><td>Print the QImode name of the register.</td><td><code>%b0</code></td><td><code>%al</code></td><td><code>al</code></td></tr>
 <tr><td><code>h</code></td><td>Print the QImode name for a &ldquo;high&rdquo; register.</td><td><code>%h0</code></td><td><code>%ah</code></td><td><code>ah</code></td></tr>
@@ -1017,11 +1017,8 @@ top:
 <tr><td><code>c</code></td><td>Require a constant operand and print the constant expression with no punctuation.</td><td><code>%c1</code></td><td><code>2</code></td><td><code>2</code></td></tr>
 </table>
 
-<p><code>V</code> is a special modifier which prints the name of the full integer
-register without <code>%</code>.
-</p>
 <a name="x86floatingpointasmoperands"></a><a name="x86-Floating_002dPoint-asm-Operands"></a>
-<h4 class="subsubsection">6.45.2.9 x86 Floating-Point <code>asm</code> Operands</h4>
+<h4 class="subsubsection">6.44.2.9 x86 Floating-Point <code>asm</code> Operands</h4>
 
 <p>On x86 targets, there are several rules on the usage of stack-like registers
 in the operands of an <code>asm</code>.  These rules apply only to the operands

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -233,7 +233,7 @@ support for the ARMv8.2-A architecture extensions.
 </p>
 <p>The value &lsquo;<samp>armv8.1-a</samp>&rsquo; implies &lsquo;<samp>armv8-a</samp>&rsquo; and enables compiler
 support for the ARMv8.1-A architecture extension.  In particular, it
-enables the &lsquo;<samp>+crc</samp>&rsquo;, &lsquo;<samp>+lse</samp>&rsquo;, and &lsquo;<samp>+rdma</samp>&rsquo; features.
+enables the &lsquo;<samp>+crc</samp>&rsquo; and &lsquo;<samp>+lse</samp>&rsquo; features.
 </p>
 <p>The value &lsquo;<samp>native</samp>&rsquo; is available on native AArch64 GNU/Linux and
 causes the compiler to pick the architecture of the host system.  This
@@ -257,10 +257,8 @@ processors implementing the target architecture.
 <p>Specify the name of the target processor for which GCC should tune the
 performance of the code.  Permissible values for this option are:
 &lsquo;<samp>generic</samp>&rsquo;, &lsquo;<samp>cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a57</samp>&rsquo;,
-&lsquo;<samp>cortex-a72</samp>&rsquo;, &lsquo;<samp>cortex-a73</samp>&rsquo;, &lsquo;<samp>exynos-m1</samp>&rsquo;, &lsquo;<samp>falkor</samp>&rsquo;,
-&lsquo;<samp>qdf24xx</samp>&rsquo;, &lsquo;<samp>xgene1</samp>&rsquo;, &lsquo;<samp>vulcan</samp>&rsquo;, &lsquo;<samp>thunderx</samp>&rsquo;,
-&lsquo;<samp>thunderxt88</samp>&rsquo;, &lsquo;<samp>thunderxt88p1</samp>&rsquo;, &lsquo;<samp>thunderxt81</samp>&rsquo;,
-&lsquo;<samp>thunderxt83</samp>&rsquo;, &lsquo;<samp>thunderx2t99</samp>&rsquo;, &lsquo;<samp>cortex-a57.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a72</samp>&rsquo;, &lsquo;<samp>cortex-a73</samp>&rsquo;, &lsquo;<samp>exynos-m1</samp>&rsquo;, &lsquo;<samp>qdf24xx</samp>&rsquo;,
+&lsquo;<samp>thunderx</samp>&rsquo;, &lsquo;<samp>xgene1</samp>&rsquo;, &lsquo;<samp>vulcan</samp>&rsquo;, &lsquo;<samp>cortex-a57.cortex-a53</samp>&rsquo;,
 &lsquo;<samp>cortex-a72.cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a73.cortex-a35</samp>&rsquo;,
 &lsquo;<samp>cortex-a73.cortex-a53</samp>&rsquo;, &lsquo;<samp>native</samp>&rsquo;.
 </p>
@@ -310,22 +308,11 @@ across releases.
 </p>
 </dd>
 <dt><code>-mpc-relative-literal-loads</code></dt>
-<dt><code>-mno-pc-relative-literal-loads</code></dt>
 <dd><a name="index-mpc_002drelative_002dliteral_002dloads"></a>
-<a name="index-mno_002dpc_002drelative_002dliteral_002dloads"></a>
-<p>Enable or disable PC-relative literal loads.  With this option literal pools are
+<p>Enable PC-relative literal loads.  With this option literal pools are
 accessed using a single instruction and emitted after each function.  This
 limits the maximum size of functions to 1MB.  This is enabled by default for
 <samp>-mcmodel=tiny</samp>.
-</p>
-</dd>
-<dt><code>-msign-return-address=<var>scope</var></code></dt>
-<dd><a name="index-msign_002dreturn_002daddress"></a>
-<p>Select the function scope on which return address signing will be applied.
-Permissible values are &lsquo;<samp>none</samp>&rsquo;, which disables return address signing,
-&lsquo;<samp>non-leaf</samp>&rsquo;, which enables pointer signing for functions which are not leaf
-functions, and &lsquo;<samp>all</samp>&rsquo;, which enables pointer signing for all functions.  The
-default value is &lsquo;<samp>none</samp>&rsquo;.
 </p>
 </dd>
 </dl>
@@ -359,20 +346,8 @@ instructions.  This is on by default for all possible values for options
 <dd><p>Enable Large System Extension instructions.  This is on by default for
 <samp>-march=armv8.1-a</samp>.
 </p></dd>
-<dt>&lsquo;<samp>rdma</samp>&rsquo;</dt>
-<dd><p>Enable Round Double Multiply Accumulate instructions.  This is on by default
-for <samp>-march=armv8.1-a</samp>.
-</p></dd>
 <dt>&lsquo;<samp>fp16</samp>&rsquo;</dt>
 <dd><p>Enable FP16 extension.  This also enables floating-point instructions.
-</p></dd>
-<dt>&lsquo;<samp>rcpc</samp>&rsquo;</dt>
-<dd><p>Enable the RcPc extension.  This does not change code generation from GCC,
-but is passed on to the assembler, enabling inline asm statements to use
-instructions from the RcPc extension.
-</p></dd>
-<dt>&lsquo;<samp>dotprod</samp>&rsquo;</dt>
-<dd><p>Enable the Dot Product extension.  This also enables Advanced SIMD instructions.
 </p>
 </dd>
 </dl>

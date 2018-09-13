@@ -35,10 +35,6 @@
 
 #include "drm.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /* WARNING: If you change any of these defines, make sure to change the
  * defines in the X server file (radeon_sarea.h)
  */
@@ -1070,9 +1066,5 @@ struct drm_radeon_info {
 #define SI_TILE_MODE_DEPTH_STENCIL_2D_8AA	2
 
 #define CIK_TILE_MODE_DEPTH_STENCIL_1D		5
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

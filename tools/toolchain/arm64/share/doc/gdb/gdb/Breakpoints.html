@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2018 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -120,14 +120,12 @@ breakpoint you want to change.  Each breakpoint may be <em>enabled</em> or
 enable it again.
 </p>
 <a name="index-breakpoint-ranges"></a>
-<a name="index-breakpoint-lists"></a>
 <a name="index-ranges-of-breakpoints"></a>
-<a name="index-lists-of-breakpoints"></a>
-<p>Some <small>GDB</small> commands accept a space-separated list of breakpoints
-on which to operate.  A list element can be either a single breakpoint number,
-like &lsquo;<samp>5</samp>&rsquo;, or a range of such numbers, like &lsquo;<samp>5-7</samp>&rsquo;.
-When a breakpoint list is given to a command, all breakpoints in that list
-are operated on.
+<p>Some <small>GDB</small> commands accept a range of breakpoints on which to
+operate.  A breakpoint range is either a single breakpoint number, like
+&lsquo;<samp>5</samp>&rsquo;, or two such numbers, in increasing order, separated by a
+hyphen, like &lsquo;<samp>5-7</samp>&rsquo;.  When a breakpoint range is given to a command,
+all breakpoints in that range are operated on.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Set-Breaks.html#Set-Breaks" accesskey="1">Set Breaks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Setting breakpoints

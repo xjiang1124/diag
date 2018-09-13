@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -97,7 +97,7 @@ seen in the compilation.  As it searches for the included file
 compiler looks for a precompiled header in each directory just before it
 looks for the include file in that directory.  The name searched for is
 the name specified in the <code>#include</code> with &lsquo;<samp>.gch</samp>&rsquo; appended.  If
-the precompiled header file cannot be used, it is ignored.
+the precompiled header file can&rsquo;t be used, it is ignored.
 </p>
 <p>For instance, if you have <code>#include &quot;all.h&quot;</code>, and you have
 <samp>all.h.gch</samp> in the same directory as <samp>all.h</samp>, then the
@@ -136,12 +136,12 @@ good sense, and the constraints of your build system.
 <ul>
 <li> Only one precompiled header can be used in a particular compilation.
 
-</li><li> A precompiled header cannot be used once the first C token is seen.  You
+</li><li> A precompiled header can&rsquo;t be used once the first C token is seen.  You
 can have preprocessor directives before a precompiled header; you cannot
 include a precompiled header from inside another header.
 
 </li><li> The precompiled header file must be produced for the same language as
-the current compilation.  You cannot use a C precompiled header for a C++
+the current compilation.  You can&rsquo;t use a C precompiled header for a C++
 compilation.
 
 </li><li> The precompiled header file must have been produced by the same compiler

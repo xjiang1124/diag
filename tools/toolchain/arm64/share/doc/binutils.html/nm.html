@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1991-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -82,7 +82,7 @@ Next: <a href="objcopy.html#objcopy" accesskey="n" rel="next">objcopy</a>, Previ
    [<samp>-u</samp>|<samp>--undefined-only</samp>] [<samp>-V</samp>|<samp>--version</samp>]
    [<samp>-X 32_64</samp>] [<samp>--defined-only</samp>] [<samp>--no-demangle</samp>]
    [<samp>--plugin</samp> <var>name</var>] [<samp>--size-sort</samp>] [<samp>--special-syms</samp>]
-   [<samp>--synthetic</samp>] [<samp>--with-symbol-versions</samp>] [<samp>--target=</samp><var>bfdname</var>]
+   [<samp>--synthetic</samp>] [<samp>--target=</samp><var>bfdname</var>]
    [<var>objfile</var>&hellip;]
 </pre></div>
 
@@ -400,15 +400,6 @@ used to mark transitions between ARM code, THUMB code and data.
 <dd><p>Include synthetic symbols in the output.  These are special symbols
 created by the linker for various purposes.  They are not shown by
 default since they are not part of the binary&rsquo;s original source code.
-</p>
-</dd>
-<dt><code>--with-symbol-versions</code></dt>
-<dd><p>Enables the display of symbol version information if any exists.  The
-version string is displayed as a suffix to the symbol name, preceeded by
-an @ character.  For example &lsquo;<samp>foo@VER_1</samp>&rsquo;.  If the version is
-the default version to be used when resolving unversioned references
-to the symbol then it is displayed as a suffix preceeded by two @
-characters.  For example &lsquo;<samp>foo@@VER_2</samp>&rsquo;.
 </p>
 </dd>
 <dt><code>--target=<var>bfdname</var></code></dt>

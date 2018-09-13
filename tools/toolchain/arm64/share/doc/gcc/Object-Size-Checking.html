@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="Pointer-Bounds-Checker-builtins.html#Pointer-Bounds-Checker-built
 </div>
 <hr>
 <a name="Object-Size-Checking-Built_002din-Functions"></a>
-<h3 class="section">6.56 Object Size Checking Built-in Functions</h3>
+<h3 class="section">6.55 Object Size Checking Built-in Functions</h3>
 <a name="index-_005f_005fbuiltin_005fobject_005fsize"></a>
 <a name="index-_005f_005fbuiltin_005f_005f_005fmemcpy_005fchk"></a>
 <a name="index-_005f_005fbuiltin_005f_005f_005fmempcpy_005fchk"></a>
@@ -95,18 +95,11 @@ Next: <a href="Pointer-Bounds-Checker-builtins.html#Pointer-Bounds-Checker-built
 <a name="index-_005f_005fbuiltin_005f_005f_005ffprintf_005fchk"></a>
 <a name="index-_005f_005fbuiltin_005f_005f_005fvfprintf_005fchk"></a>
 
-<p>GCC implements a limited buffer overflow protection mechanism that can
-prevent some buffer overflow attacks by determining the sizes of objects
-into which data is about to be written and preventing the writes when
-the size isn&rsquo;t sufficient.  The built-in functions described below yield
-the best results when used together and when optimization is enabled.
-For example, to detect object sizes across function boundaries or to
-follow pointer assignments through non-trivial control flow they rely
-on various optimization passes enabled with <samp>-O2</samp>.  However, to
-a limited extent, they can be used without optimization as well.
+<p>GCC implements a limited buffer overflow protection mechanism
+that can prevent some buffer overflow attacks.
 </p>
 <dl>
-<dt><a name="index-_005f_005fbuiltin_005fobject_005fsize-1"></a>Built-in Function: <em>size_t</em> <strong>__builtin_object_size</strong> <em>(const void * <var>ptr</var>, int <var>type</var>)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fobject_005fsize-1"></a>Built-in Function: <em>size_t</em> <strong>__builtin_object_size</strong> <em>(void * <var>ptr</var>, int <var>type</var>)</em></dt>
 <dd><p>is a built-in construct that returns a constant number of bytes from
 <var>ptr</var> to the end of the object <var>ptr</var> pointer points to
 (if known at compile time).  <code>__builtin_object_size</code> never evaluates

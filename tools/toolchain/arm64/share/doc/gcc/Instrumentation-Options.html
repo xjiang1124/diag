@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -121,12 +121,7 @@ linking.
 <dd><a name="index-fprofile_002darcs"></a>
 <p>Add code so that program flow <em>arcs</em> are instrumented.  During
 execution the program records how many times each branch and call is
-executed and how many times it is taken or returns.  On targets that support
-constructors with priority support, profiling properly handles constructors,
-destructors and C++ constructors (and destructors) of classes which are used
-as a type of a global variable.
-</p>
-<p>When the compiled
+executed and how many times it is taken or returns.  When the compiled
 program exits it saves this data to a file called
 <samp><var>auxname</var>.gcda</samp> for each source file.  The data may be used for
 profile-directed optimizations (<samp>-fbranch-probabilities</samp>), or for
@@ -160,9 +155,9 @@ every source file in a program.
 </li><li> Run the program on a representative workload to generate the arc profile
 information.  This may be repeated any number of times.  You can run
 concurrent instances of your program, and provided that the file system
-supports locking, the data files will be correctly updated.  Unless
-a strict ISO C dialect option is in effect, <code>fork</code> calls are
-detected and correctly handled without double counting.
+supports locking, the data files will be correctly updated.  Also
+<code>fork</code> calls are detected and correctly handled (double counting
+will not happen).
 
 </li><li> For profile-directed optimizations, compile the source files again with
 the same optimization and code generation options plus
@@ -225,45 +220,23 @@ the profile feedback data files. See <samp>-fprofile-dir</samp>.
 <samp>-fprofile-use</samp>.  See <a href="Optimize-Options.html#Optimize-Options">Optimize Options</a>, for more information.
 </p>
 </dd>
-<dt><code>-fprofile-update=<var>method</var></code></dt>
-<dd><a name="index-fprofile_002dupdate"></a>
-
-<p>Alter the update method for an application instrumented for profile
-feedback based optimization.  The <var>method</var> argument should be one of
-&lsquo;<samp>single</samp>&rsquo;, &lsquo;<samp>atomic</samp>&rsquo; or &lsquo;<samp>prefer-atomic</samp>&rsquo;.
-The first one is useful for single-threaded applications,
-while the second one prevents profile corruption by emitting thread-safe code.
-</p>
-<p><strong>Warning:</strong> When an application does not properly join all threads
-(or creates an detached thread), a profile file can be still corrupted.
-</p>
-<p>Using &lsquo;<samp>prefer-atomic</samp>&rsquo; would be transformed either to &lsquo;<samp>atomic</samp>&rsquo;,
-when supported by a target, or to &lsquo;<samp>single</samp>&rsquo; otherwise.  The GCC driver
-automatically selects &lsquo;<samp>prefer-atomic</samp>&rsquo; when <samp>-pthread</samp>
-is present in the command line.
-</p>
-</dd>
 <dt><code>-fsanitize=address</code></dt>
 <dd><a name="index-fsanitize_003daddress"></a>
 <p>Enable AddressSanitizer, a fast memory error detector.
 Memory access instructions are instrumented to detect
 out-of-bounds and use-after-free bugs.
-The option enables <samp>-fsanitize-address-use-after-scope</samp>.
 See <a href="https://github.com/google/sanitizers/wiki/AddressSanitizer">https://github.com/google/sanitizers/wiki/AddressSanitizer</a> for
 more details.  The run-time behavior can be influenced using the
 <code>ASAN_OPTIONS</code> environment variable.  When set to <code>help=1</code>,
 the available options are shown at startup of the instrumented program.  See
 <a href="https://github.com/google/sanitizers/wiki/AddressSanitizerFlags#run-time-flags">https://github.com/google/sanitizers/wiki/AddressSanitizerFlags#run-time-flags</a>
 for a list of supported options.
-The option cannot be combined with <samp>-fsanitize=thread</samp>
-and/or <samp>-fcheck-pointer-bounds</samp>.
 </p>
 </dd>
 <dt><code>-fsanitize=kernel-address</code></dt>
 <dd><a name="index-fsanitize_003dkernel_002daddress"></a>
 <p>Enable AddressSanitizer for Linux kernel.
 See <a href="https://github.com/google/kasan/wiki">https://github.com/google/kasan/wiki</a> for more details.
-The option cannot be combined with <samp>-fcheck-pointer-bounds</samp>.
 </p>
 </dd>
 <dt><code>-fsanitize=thread</code></dt>
@@ -275,24 +248,18 @@ details. The run-time behavior can be influenced using the <code>TSAN_OPTIONS</c
 environment variable; see
 <a href="https://github.com/google/sanitizers/wiki/ThreadSanitizerFlags">https://github.com/google/sanitizers/wiki/ThreadSanitizerFlags</a> for a list of
 supported options.
-The option cannot be combined with <samp>-fsanitize=address</samp>,
-<samp>-fsanitize=leak</samp> and/or <samp>-fcheck-pointer-bounds</samp>.
-</p>
-<p>Note that sanitized atomic builtins cannot throw exceptions when
-operating on invalid memory addresses with non-call exceptions
-(<samp>-fnon-call-exceptions</samp>).
 </p>
 </dd>
 <dt><code>-fsanitize=leak</code></dt>
 <dd><a name="index-fsanitize_003dleak"></a>
 <p>Enable LeakSanitizer, a memory leak detector.
-This option only matters for linking of executables and
-the executable is linked against a library that overrides <code>malloc</code>
+This option only matters for linking of executables and if neither
+<samp>-fsanitize=address</samp> nor <samp>-fsanitize=thread</samp> is used.  In that
+case the executable is linked against a library that overrides <code>malloc</code>
 and other allocator functions.  See
 <a href="https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer">https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer</a> for more
 details.  The run-time behavior can be influenced using the
 <code>LSAN_OPTIONS</code> environment variable.
-The option cannot be combined with <samp>-fsanitize=thread</samp>.
 </p>
 </dd>
 <dt><code>-fsanitize=undefined</code></dt>
@@ -307,23 +274,6 @@ at runtime.  Current suboptions are:
 <p>This option enables checking that the result of a shift operation is
 not undefined.  Note that what exactly is considered undefined differs
 slightly between C and C++, as well as between ISO C90 and C99, etc.
-This option has two suboptions, <samp>-fsanitize=shift-base</samp> and
-<samp>-fsanitize=shift-exponent</samp>.
-</p>
-</dd>
-<dt><code>-fsanitize=shift-exponent</code></dt>
-<dd><a name="index-fsanitize_003dshift_002dexponent"></a>
-<p>This option enables checking that the second argument of a shift operation
-is not negative and is smaller than the precision of the promoted first
-argument.
-</p>
-</dd>
-<dt><code>-fsanitize=shift-base</code></dt>
-<dd><a name="index-fsanitize_003dshift_002dbase"></a>
-<p>If the second argument of a shift operation is within range, check that the
-result of a shift operation is not undefined.  Note that what exactly is
-considered undefined differs slightly between C and C++, as well as between
-ISO C90 and C99, etc.
 </p>
 </dd>
 <dt><code>-fsanitize=integer-divide-by-zero</code></dt>
@@ -379,7 +329,6 @@ a++;
 <p>This option enables instrumentation of array bounds.  Various out of bounds
 accesses are detected.  Flexible array members, flexible array member-like
 arrays, and initializers of variables with static storage are not instrumented.
-The option cannot be combined with <samp>-fcheck-pointer-bounds</samp>.
 </p>
 </dd>
 <dt><code>-fsanitize=bounds-strict</code></dt>
@@ -387,8 +336,7 @@ The option cannot be combined with <samp>-fcheck-pointer-bounds</samp>.
 <p>This option enables strict instrumentation of array bounds.  Most out of bounds
 accesses are detected, including flexible array members and flexible array
 member-like arrays.  Initializers of variables with static storage are not
-instrumented.  The option cannot be combined
-with <samp>-fcheck-pointer-bounds</samp>.
+instrumented.
 </p>
 </dd>
 <dt><code>-fsanitize=alignment</code></dt>
@@ -507,34 +455,22 @@ and program then exits with a non-zero exit code.
 <p>Currently this feature only works for <samp>-fsanitize=undefined</samp> (and its suboptions
 except for <samp>-fsanitize=unreachable</samp> and <samp>-fsanitize=return</samp>),
 <samp>-fsanitize=float-cast-overflow</samp>, <samp>-fsanitize=float-divide-by-zero</samp>,
-<samp>-fsanitize=bounds-strict</samp>,
 <samp>-fsanitize=kernel-address</samp> and <samp>-fsanitize=address</samp>.
-For these sanitizers error recovery is turned on by default,
-except <samp>-fsanitize=address</samp>, for which this feature is experimental.
+For these sanitizers error recovery is turned on by default, except <samp>-fsanitize=address</samp>,
+for which this feature is experimental.
 <samp>-fsanitize-recover=all</samp> and <samp>-fno-sanitize-recover=all</samp> is also
 accepted, the former enables recovery for all sanitizers that support it,
 the latter disables recovery for all sanitizers that support it.
 </p>
-<p>Even if a recovery mode is turned on the compiler side, it needs to be also
-enabled on the runtime library side, otherwise the failures are still fatal.
-The runtime library defaults to <code>halt_on_error=0</code> for
-ThreadSanitizer and UndefinedBehaviorSanitizer, while default value for
-AddressSanitizer is <code>halt_on_error=1</code>. This can be overridden through
-setting the <code>halt_on_error</code> flag in the corresponding environment variable.
-</p>
-<p>Syntax without an explicit <var>opts</var> parameter is deprecated.  It is
-equivalent to specifying an <var>opts</var> list of:
-</p>
-<div class="smallexample">
-<pre class="smallexample">undefined,float-cast-overflow,float-divide-by-zero,bounds-strict
+<p>Syntax without explicit <var>opts</var> parameter is deprecated.  It is equivalent to
+</p><div class="smallexample">
+<pre class="smallexample">-fsanitize-recover=undefined,float-cast-overflow,float-divide-by-zero
+</pre></div>
+<p>Similarly <samp>-fno-sanitize-recover</samp> is equivalent to
+</p><div class="smallexample">
+<pre class="smallexample">-fno-sanitize-recover=undefined,float-cast-overflow,float-divide-by-zero
 </pre></div>
 
-</dd>
-<dt><code>-fsanitize-address-use-after-scope</code></dt>
-<dd><a name="index-fsanitize_002daddress_002duse_002dafter_002dscope"></a>
-<p>Enable sanitization of local variables to detect use-after-scope bugs.
-The option sets <samp>-fstack-reuse</samp> to &lsquo;<samp>none</samp>&rsquo;.
-</p>
 </dd>
 <dt><code>-fsanitize-undefined-trap-on-error</code></dt>
 <dd><a name="index-fsanitize_002dundefined_002dtrap_002don_002derror"></a>
@@ -555,8 +491,8 @@ Inserts a call to <code>__sanitizer_cov_trace_pc</code> into every basic block.
 <dd><a name="index-fbounds_002dcheck"></a>
 <p>For front ends that support it, generate additional code to check that
 indices used to access arrays are within the declared range.  This is
-currently only supported by the Fortran front end, where this option
-defaults to false.
+currently only supported by the Java and Fortran front ends, where
+this option defaults to true and false respectively.
 </p>
 </dd>
 <dt><code>-fcheck-pointer-bounds</code></dt>
@@ -624,14 +560,6 @@ and <samp>-fchkp-first-field-has-own-bounds</samp>.  Enabled by default.
 <p>Forces Pointer Bounds Checker to use narrowed bounds for the address of the
 first field in the structure.  By default a pointer to the first field has
 the same bounds as a pointer to the whole structure.
-</p>
-</dd>
-<dt><code>-fchkp-flexible-struct-trailing-arrays</code></dt>
-<dd><a name="index-fchkp_002dflexible_002dstruct_002dtrailing_002darrays"></a>
-<a name="index-fno_002dchkp_002dflexible_002dstruct_002dtrailing_002darrays"></a>
-<p>Forces Pointer Bounds Checker to treat all trailing arrays in structures as
-possibly flexible.  By default only array fields with zero length or that are
-marked with attribute bnd_variable_size are treated as flexible.
 </p>
 </dd>
 <dt><code>-fchkp-narrow-to-innermost-array</code></dt>

@@ -136,7 +136,7 @@ error about an unterminated macro argument list.
 </p>
 <p>The C standard also specifies that a new line in the middle of the
 arguments to a macro is treated as whitespace.  This white space is
-important in case the macro argument is stringized.  The state variable
+important in case the macro argument is stringified.  The state variable
 <code>parsing_args</code> is nonzero when the preprocessor is collecting the
 arguments to a macro call.  It is set to 1 when looking for the opening
 parenthesis to a function-like macro, and 2 when collecting the actual
@@ -305,7 +305,7 @@ the pointers to the tokens of its expansion that are returned will always
 remain valid.  However, macros are a little trickier than that, since
 they give rise to three sources of fresh tokens.  They are the built-in
 macros like <code>__LINE__</code>, and the &lsquo;<samp>#</samp>&rsquo; and &lsquo;<samp>##</samp>&rsquo; operators
-for stringizing and token pasting.  I handled this by allocating
+for stringification and token pasting.  I handled this by allocating
 space for these tokens from the lexer&rsquo;s token run chain.  This means
 they automatically receive the same lifetime guarantees as lexed tokens,
 and we don&rsquo;t need to concern ourselves with freeing them.

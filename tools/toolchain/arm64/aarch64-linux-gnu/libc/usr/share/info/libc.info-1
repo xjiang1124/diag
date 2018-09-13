@@ -2,9 +2,9 @@ This is libc.info, produced by makeinfo version 5.2 from libc.texinfo.
 
 This file documents the GNU C Library.
 
-   This is ‘The GNU C Library Reference Manual’, for version 2.25.
+   This is ‘The GNU C Library Reference Manual’, for version 2.23.
 
-   Copyright © 1993–2017 Free Software Foundation, Inc.
+   Copyright © 1993–2016 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -223,14 +223,11 @@ START-INFO-DIR-ENTRY
 * FD_SET: (libc)Waiting for I/O.
 * FD_SETSIZE: (libc)Waiting for I/O.
 * FD_ZERO: (libc)Waiting for I/O.
-* FE_SNANS_ALWAYS_SIGNAL: (libc)Infinity and NaN.
 * FILENAME_MAX: (libc)Limits for Files.
 * FLUSHO: (libc)Local Modes.
 * FOPEN_MAX: (libc)Opening Streams.
 * FP_ILOGB0: (libc)Exponents and Logarithms.
 * FP_ILOGBNAN: (libc)Exponents and Logarithms.
-* FP_LLOGB0: (libc)Exponents and Logarithms.
-* FP_LLOGBNAN: (libc)Exponents and Logarithms.
 * F_DUPFD: (libc)Duplicating Descriptors.
 * F_GETFD: (libc)Descriptor Flags.
 * F_GETFL: (libc)Getting File Status Flags.
@@ -384,9 +381,6 @@ START-INFO-DIR-ENTRY
 * SIGXCPU: (libc)Operation Error Signals.
 * SIGXFSZ: (libc)Operation Error Signals.
 * SIG_ERR: (libc)Basic Signal Handling.
-* SNAN: (libc)Infinity and NaN.
-* SNANF: (libc)Infinity and NaN.
-* SNANL: (libc)Infinity and NaN.
 * SOCK_DGRAM: (libc)Communication Styles.
 * SOCK_RAW: (libc)Communication Styles.
 * SOCK_RDM: (libc)Communication Styles.
@@ -590,10 +584,7 @@ START-INFO-DIR-ENTRY
 * cacoshl: (libc)Hyperbolic Functions.
 * cacosl: (libc)Inverse Trig Functions.
 * calloc: (libc)Allocating Cleared Space.
-* canonicalize: (libc)FP Bit Twiddling.
 * canonicalize_file_name: (libc)Symbolic Links.
-* canonicalizef: (libc)FP Bit Twiddling.
-* canonicalizel: (libc)FP Bit Twiddling.
 * carg: (libc)Operations on Complex.
 * cargf: (libc)Operations on Complex.
 * cargl: (libc)Operations on Complex.
@@ -767,7 +758,6 @@ START-INFO-DIR-ENTRY
 * exp: (libc)Exponents and Logarithms.
 * expf: (libc)Exponents and Logarithms.
 * expl: (libc)Exponents and Logarithms.
-* explicit_bzero: (libc)Erasing Sensitive Data.
 * expm1: (libc)Exponents and Logarithms.
 * expm1f: (libc)Exponents and Logarithms.
 * expm1l: (libc)Exponents and Logarithms.
@@ -794,7 +784,6 @@ START-INFO-DIR-ENTRY
 * fegetenv: (libc)Control Functions.
 * fegetexcept: (libc)Control Functions.
 * fegetexceptflag: (libc)Status bit operations.
-* fegetmode: (libc)Control Functions.
 * fegetround: (libc)Rounding.
 * feholdexcept: (libc)Control Functions.
 * feof: (libc)EOF and Errors.
@@ -803,12 +792,9 @@ START-INFO-DIR-ENTRY
 * ferror: (libc)EOF and Errors.
 * ferror_unlocked: (libc)EOF and Errors.
 * fesetenv: (libc)Control Functions.
-* fesetexcept: (libc)Status bit operations.
 * fesetexceptflag: (libc)Status bit operations.
-* fesetmode: (libc)Control Functions.
 * fesetround: (libc)Rounding.
 * fetestexcept: (libc)Status bit operations.
-* fetestexceptflag: (libc)Status bit operations.
 * feupdateenv: (libc)Control Functions.
 * fflush: (libc)Flushing Buffers.
 * fflush_unlocked: (libc)Flushing Buffers.
@@ -841,16 +827,10 @@ START-INFO-DIR-ENTRY
 * fmax: (libc)Misc FP Arithmetic.
 * fmaxf: (libc)Misc FP Arithmetic.
 * fmaxl: (libc)Misc FP Arithmetic.
-* fmaxmag: (libc)Misc FP Arithmetic.
-* fmaxmagf: (libc)Misc FP Arithmetic.
-* fmaxmagl: (libc)Misc FP Arithmetic.
 * fmemopen: (libc)String Streams.
 * fmin: (libc)Misc FP Arithmetic.
 * fminf: (libc)Misc FP Arithmetic.
 * fminl: (libc)Misc FP Arithmetic.
-* fminmag: (libc)Misc FP Arithmetic.
-* fminmagf: (libc)Misc FP Arithmetic.
-* fminmagl: (libc)Misc FP Arithmetic.
 * fmod: (libc)Remainder Functions.
 * fmodf: (libc)Remainder Functions.
 * fmodl: (libc)Remainder Functions.
@@ -880,12 +860,6 @@ START-INFO-DIR-ENTRY
 * frexp: (libc)Normalization Functions.
 * frexpf: (libc)Normalization Functions.
 * frexpl: (libc)Normalization Functions.
-* fromfp: (libc)Rounding Functions.
-* fromfpf: (libc)Rounding Functions.
-* fromfpl: (libc)Rounding Functions.
-* fromfpx: (libc)Rounding Functions.
-* fromfpxf: (libc)Rounding Functions.
-* fromfpxl: (libc)Rounding Functions.
 * fscanf: (libc)Formatted Input Functions.
 * fseek: (libc)File Positioning.
 * fseeko64: (libc)File Positioning.
@@ -931,7 +905,6 @@ START-INFO-DIR-ENTRY
 * getdelim: (libc)Line Input.
 * getdomainnname: (libc)Host Identification.
 * getegid: (libc)Reading Persona.
-* getentropy: (libc)Unpredictable Bytes.
 * getenv: (libc)Environment Access.
 * geteuid: (libc)Reading Persona.
 * getfsent: (libc)fstab.
@@ -971,9 +944,6 @@ START-INFO-DIR-ENTRY
 * getopt_long_only: (libc)Getopt Long Options.
 * getpagesize: (libc)Query Memory Parameters.
 * getpass: (libc)getpass.
-* getpayload: (libc)FP Bit Twiddling.
-* getpayloadf: (libc)FP Bit Twiddling.
-* getpayloadl: (libc)FP Bit Twiddling.
 * getpeername: (libc)Who is Connected.
 * getpgid: (libc)Process Group Functions.
 * getpgrp: (libc)Process Group Functions.
@@ -990,7 +960,6 @@ START-INFO-DIR-ENTRY
 * getpwnam_r: (libc)Lookup User.
 * getpwuid: (libc)Lookup User.
 * getpwuid_r: (libc)Lookup User.
-* getrandom: (libc)Unpredictable Bytes.
 * getrlimit64: (libc)Limits on Resources.
 * getrlimit: (libc)Limits on Resources.
 * getrusage: (libc)Resource Usage.
@@ -1078,10 +1047,8 @@ START-INFO-DIR-ENTRY
 * isascii: (libc)Classification of Characters.
 * isatty: (libc)Is It a Terminal.
 * isblank: (libc)Classification of Characters.
-* iscanonical: (libc)Floating Point Classes.
 * iscntrl: (libc)Classification of Characters.
 * isdigit: (libc)Classification of Characters.
-* iseqsig: (libc)FP Comparison Functions.
 * isfinite: (libc)Floating Point Classes.
 * isgraph: (libc)Classification of Characters.
 * isgreater: (libc)FP Comparison Functions.
@@ -1102,7 +1069,6 @@ START-INFO-DIR-ENTRY
 * ispunct: (libc)Classification of Characters.
 * issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
-* issubnormal: (libc)Floating Point Classes.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
 * iswalnum: (libc)Classification of Wide Characters.
@@ -1119,7 +1085,6 @@ START-INFO-DIR-ENTRY
 * iswupper: (libc)Classification of Wide Characters.
 * iswxdigit: (libc)Classification of Wide Characters.
 * isxdigit: (libc)Classification of Characters.
-* iszero: (libc)Floating Point Classes.
 * j0: (libc)Special Functions.
 * j0f: (libc)Special Functions.
 * j0l: (libc)Special Functions.
@@ -1154,9 +1119,6 @@ START-INFO-DIR-ENTRY
 * listen: (libc)Listening.
 * llabs: (libc)Absolute Value.
 * lldiv: (libc)Integer Division.
-* llogb: (libc)Exponents and Logarithms.
-* llogbf: (libc)Exponents and Logarithms.
-* llogbl: (libc)Exponents and Logarithms.
 * llrint: (libc)Rounding Functions.
 * llrintf: (libc)Rounding Functions.
 * llrintl: (libc)Rounding Functions.
@@ -1260,15 +1222,9 @@ START-INFO-DIR-ENTRY
 * nextafter: (libc)FP Bit Twiddling.
 * nextafterf: (libc)FP Bit Twiddling.
 * nextafterl: (libc)FP Bit Twiddling.
-* nextdown: (libc)FP Bit Twiddling.
-* nextdownf: (libc)FP Bit Twiddling.
-* nextdownl: (libc)FP Bit Twiddling.
 * nexttoward: (libc)FP Bit Twiddling.
 * nexttowardf: (libc)FP Bit Twiddling.
 * nexttowardl: (libc)FP Bit Twiddling.
-* nextup: (libc)FP Bit Twiddling.
-* nextupf: (libc)FP Bit Twiddling.
-* nextupl: (libc)FP Bit Twiddling.
 * nftw64: (libc)Working with Directory Trees.
 * nftw: (libc)Working with Directory Trees.
 * ngettext: (libc)Advanced gettext functions.
@@ -1401,9 +1357,6 @@ START-INFO-DIR-ENTRY
 * rintl: (libc)Rounding Functions.
 * rmdir: (libc)Deleting Files.
 * round: (libc)Rounding Functions.
-* roundeven: (libc)Rounding Functions.
-* roundevenf: (libc)Rounding Functions.
-* roundevenl: (libc)Rounding Functions.
 * roundf: (libc)Rounding Functions.
 * roundl: (libc)Rounding Functions.
 * rpmatch: (libc)Yes-or-No Questions.
@@ -1476,12 +1429,6 @@ START-INFO-DIR-ENTRY
 * setmntent: (libc)mtab.
 * setnetent: (libc)Networks Database.
 * setnetgrent: (libc)Lookup Netgroup.
-* setpayload: (libc)FP Bit Twiddling.
-* setpayloadf: (libc)FP Bit Twiddling.
-* setpayloadl: (libc)FP Bit Twiddling.
-* setpayloadsig: (libc)FP Bit Twiddling.
-* setpayloadsigf: (libc)FP Bit Twiddling.
-* setpayloadsigl: (libc)FP Bit Twiddling.
 * setpgid: (libc)Process Group Functions.
 * setpgrp: (libc)Process Group Functions.
 * setpriority: (libc)Traditional Scheduling Functions.
@@ -1570,9 +1517,6 @@ START-INFO-DIR-ENTRY
 * strerror: (libc)Error Messages.
 * strerror_r: (libc)Error Messages.
 * strfmon: (libc)Formatting Numbers.
-* strfromd: (libc)Printing of Floats.
-* strfromf: (libc)Printing of Floats.
-* strfroml: (libc)Printing of Floats.
 * strfry: (libc)strfry.
 * strftime: (libc)Formatting Calendar Time.
 * strlen: (libc)String Length.
@@ -1651,12 +1595,6 @@ START-INFO-DIR-ENTRY
 * tmpnam_r: (libc)Temporary Files.
 * toascii: (libc)Case Conversion.
 * tolower: (libc)Case Conversion.
-* totalorder: (libc)FP Comparison Functions.
-* totalorderf: (libc)FP Comparison Functions.
-* totalorderl: (libc)FP Comparison Functions.
-* totalordermag: (libc)FP Comparison Functions.
-* totalordermagf: (libc)FP Comparison Functions.
-* totalordermagl: (libc)FP Comparison Functions.
 * toupper: (libc)Case Conversion.
 * towctrans: (libc)Wide Character Case Conversion.
 * towlower: (libc)Wide Character Case Conversion.
@@ -1671,12 +1609,6 @@ START-INFO-DIR-ENTRY
 * ttyname_r: (libc)Is It a Terminal.
 * twalk: (libc)Tree Search Function.
 * tzset: (libc)Time Zone Functions.
-* ufromfp: (libc)Rounding Functions.
-* ufromfpf: (libc)Rounding Functions.
-* ufromfpl: (libc)Rounding Functions.
-* ufromfpx: (libc)Rounding Functions.
-* ufromfpxf: (libc)Rounding Functions.
-* ufromfpxl: (libc)Rounding Functions.
 * ulimit: (libc)Limits on Resources.
 * umask: (libc)Setting Permissions.
 * umount2: (libc)Mount-Unmount-Remount.
@@ -1800,7 +1732,7 @@ File: libc.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
 Main Menu
 *********
 
-This is ‘The GNU C Library Reference Manual’, for Version 2.25 of the
+This is ‘The GNU C Library Reference Manual’, for Version 2.23 of the
 GNU C Library.
 
 * Menu:
@@ -1856,8 +1788,6 @@ GNU C Library.
 * Debugging Support::            Functions to help debugging applications.
 * POSIX Threads::                POSIX Threads.
 * Internal Probes::              Probes to monitor libc internal behavior.
-* Tunables::                     Tunable switches to alter libc internal
-                                   behavior.
 
 Appendices
 
@@ -1940,8 +1870,6 @@ Memory
 Memory Allocation
 
 * Memory Allocation and C::     How to get different kinds of allocation in C.
-* The GNU Allocator::		An overview of the GNU ‘malloc’
-				implementation.
 * Unconstrained Allocation::    The ‘malloc’ facility allows fully general
 		 		 dynamic allocation.
 * Allocation Debugging::        Finding memory leaks and not freed memory.
@@ -1961,6 +1889,8 @@ Unconstrained Allocation
 				 bigger or smaller.
 * Allocating Cleared Space::    Use ‘calloc’ to allocate a
 				 block and clear it.
+* Efficiency and Malloc::       Efficiency considerations in use of
+				 these functions.
 * Aligned Memory Blocks::       Allocating specially aligned memory.
 * Malloc Tunable Parameters::   Use ‘mallopt’ to adjust allocation
                                  parameters.
@@ -2039,8 +1969,6 @@ String and Array Utilities
 * Search Functions::            Searching for a specific element or substring.
 * Finding Tokens in a String::  Splitting a string into tokens by looking
 				 for delimiters.
-* Erasing Sensitive Data::      Clearing memory which contains sensitive
-                                 data, after it’s no longer needed.
 * strfry::                      Function for flash-cooking a string.
 * Trivial Encryption::          Obscuring data.
 * Encode Binary Data::          Encoding and Decoding of Binary Data.
@@ -2620,7 +2548,6 @@ Arithmetic
 * Complex Numbers::             The types.  Writing complex constants.
 * Operations on Complex::       Projection, conjugation, decomposition.
 * Parsing of Numbers::          Converting strings to numbers.
-* Printing of Floats::          Converting floating-point numbers to strings.
 * System V Number Conversion::  An archaic way to convert numbers to strings.
 
 Floating Point Errors
@@ -3037,7 +2964,6 @@ Cryptographic Functions
 * getpass::                     Prompting the user for a password.
 * crypt::                       A one-way function for passwords.
 * DES Encryption::              Routines for DES encryption.
-* Unpredictable Bytes::         Randomness for cryptography purposes.
 
 Debugging Support
 
@@ -3061,11 +2987,6 @@ Internal Probes
 * Memory Allocation Probes::  Probes in the memory allocation subsystem
 * Mathematical Function Probes::  Probes in mathematical functions
 * Non-local Goto Probes::  Probes in setjmp and longjmp
-
-Tunables
-
-* Tunable names::  The structure of a tunable name
-* Memory Allocation Tunables::  Tunables in the memory allocation subsystem
 
 Language Features
 
@@ -3902,12 +3823,12 @@ taken into account in certain classes of programs:
 
      Some safety annotations may be conditional, in that they only apply
      if a boolean expression involving arguments, global variables or
-     even the underlying kernel evaluates to true.  Such conditions as
-     ‘/hurd’ or ‘/!linux!bsd’ indicate the preceding marker only applies
-     when the underlying kernel is the HURD, or when it is neither Linux
-     nor a BSD kernel, respectively.  ‘/!ps’ and ‘/one_per_line’
-     indicate the preceding marker only applies when argument PS is
-     NULL, or global variable ONE_PER_LINE is nonzero.
+     even the underlying kernel evaluates evaluates to true.  Such
+     conditions as ‘/hurd’ or ‘/!linux!bsd’ indicate the preceding
+     marker only applies when the underlying kernel is the HURD, or when
+     it is neither Linux nor a BSD kernel, respectively.  ‘/!ps’ and
+     ‘/one_per_line’ indicate the preceding marker only applies when
+     argument PS is NULL, or global variable ONE_PER_LINE is nonzero.
 
      When all marks that render a function unsafe are adorned with such
      conditions, and none of the named conditions hold, then the
@@ -4383,23 +4304,6 @@ on semantics undefined within the standard.
      a complete implementation of the new standard and to enable the new
      features the macro ‘_ISOC99_SOURCE’ should be defined.
 
- -- Macro: __STDC_WANT_LIB_EXT2__
-     If you define this macro to the value ‘1’, features from ISO/IEC TR
-     24731-2:2010 (Dynamic Allocation Functions) are enabled.  Only some
-     of the features from this TR are supported by the GNU C Library.
-
- -- Macro: __STDC_WANT_IEC_60559_BFP_EXT__
-     If you define this macro, features from ISO/IEC TS 18661-1:2014
-     (Floating-point extensions for C: Binary floating-point arithmetic)
-     are enabled.  Only some of the features from this TS are supported
-     by the GNU C Library.
-
- -- Macro: __STDC_WANT_IEC_60559_FUNCS_EXT__
-     If you define this macro, features from ISO/IEC TS 18661-4:2015
-     (Floating-point extensions for C: Supplementary functions) are
-     enabled.  Only some of the features from this TS are supported by
-     the GNU C Library.
-
  -- Macro: _GNU_SOURCE
      If you define this macro, everything is included: ISO C89, ISO C99,
      POSIX.1, POSIX.2, BSD, SVID, X/Open, LFS, and GNU extensions.  In
@@ -4420,11 +4324,16 @@ on semantics undefined within the standard.
 
  -- Macro: _REENTRANT
  -- Macro: _THREAD_SAFE
-     These macros are obsolete.  They have the same effect as defining
-     ‘_POSIX_C_SOURCE’ with the value ‘199506L’.
+     If you define one of these macros, reentrant versions of several
+     functions get declared.  Some of the functions are specified in
+     POSIX.1c but many others are only available on a few other systems
+     or are unique to the GNU C Library.  The problem is the delay in
+     the standardization of the thread safe C library interface.
 
-     Some very old C libraries required one of these macros to be
-     defined for basic functionality (e.g. ‘getchar’) to be thread-safe.
+     Unlike on some other systems, no special version of the C library
+     must be used for linking.  There is only one version but while
+     compiling this it must have been specified to compile as thread
+     safe.
 
    We recommend you use ‘_GNU_SOURCE’ in new programs.  If you don’t
 specify the ‘-ansi’ option to GCC, or other conformance options such as
@@ -5328,13 +5237,13 @@ to the name of the program that encountered the error.
      length of N bytes.
 
      At most N characters are written (including the NUL byte) so it is
-     up to the user to select a buffer large enough.
+     up to the user to select the buffer large enough.
 
      This function should always be used in multi-threaded programs
      since there is no way to guarantee the string returned by
      ‘strerror’ really belongs to the last call of the current thread.
 
-     The function ‘strerror_r’ is a GNU extension and it is declared in
+     This function ‘strerror_r’ is a GNU extension and it is declared in
      ‘string.h’.
 
  -- Function: void perror (const char *MESSAGE)
@@ -5456,8 +5365,8 @@ declared in ‘error.h’.
      be called immediately after the function causing the error since
      otherwise ‘errno’ might have a different value.
 
-     ‘error’ prints first the program name.  If the application defined
-     a global variable ‘error_print_progname’ and points it to a
+     The ‘error’ prints first the program name.  If the application
+     defined a global variable ‘error_print_progname’ and points it to a
      function this function will be called to print the program name.
      Otherwise the string from the global variable ‘program_name’ is
      used.  The program name is followed by a colon and a space which in
@@ -5474,8 +5383,8 @@ declared in ‘error.h’.
      The function will return unless the STATUS parameter has a non-zero
      value.  In this case the function will call ‘exit’ with the STATUS
      value for its parameter and therefore never return.  If ‘error’
-     returns, the global variable ‘error_message_count’ is incremented
-     by one to keep track of the number of errors reported.
+     returns the global variable ‘error_message_count’ is incremented by
+     one to keep track of the number of errors reported.
 
  -- Function: void error_at_line (int STATUS, int ERRNUM, const char
           *FNAME, unsigned int LINENO, const char *FORMAT, …)
@@ -5484,13 +5393,13 @@ declared in ‘error.h’.
      corrupt/error_one_per_line | *Note POSIX Safety Concepts::.
 
      The ‘error_at_line’ function is very similar to the ‘error’
-     function.  The only differences are the additional parameters FNAME
+     function.  The only difference are the additional parameters FNAME
      and LINENO.  The handling of the other parameters is identical to
      that of ‘error’ except that between the program name and the string
      generated by the format string additional text is inserted.
 
      Directly following the program name a colon, followed by the file
-     name pointed to by FNAME, another colon, and the value of LINENO is
+     name pointer to by FNAME, another colon, and a value of LINENO is
      printed.
 
      This additional output of course is meant to be used to locate an
@@ -5502,12 +5411,12 @@ declared in ‘error.h’.
      the same file and line.  Repetition which are not directly
      following each other are not caught.
 
-     Just like ‘error’ this function only returns if STATUS is zero.
+     Just like ‘error’ this function only returned if STATUS is zero.
      Otherwise ‘exit’ is called with the non-zero value.  If ‘error’
-     returns, the global variable ‘error_message_count’ is incremented
-     by one to keep track of the number of errors reported.
+     returns the global variable ‘error_message_count’ is incremented by
+     one to keep track of the number of errors reported.
 
-   As mentioned above, the ‘error’ and ‘error_at_line’ functions can be
+   As mentioned above the ‘error’ and ‘error_at_line’ functions can be
 customized by defining a variable named ‘error_print_progname’.
 
  -- Variable: void (*error_print_progname) (void)
@@ -5516,8 +5425,8 @@ customized by defining a variable named ‘error_print_progname’.
      ‘error_at_line’.  It is expected to print the program name or do
      something similarly useful.
 
-     The function is expected to print to the ‘stderr’ stream and must
-     be able to handle whatever orientation the stream has.
+     The function is expected to be print to the ‘stderr’ stream and
+     must be able to handle whatever orientation the stream has.
 
      The variable is global and shared by all threads.
 
@@ -5531,7 +5440,7 @@ customized by defining a variable named ‘error_print_progname’.
      Normally the ‘error_at_line’ function creates output for every
      invocation.  If ‘error_one_per_line’ is set to a non-zero value
      ‘error_at_line’ keeps track of the last file name and line number
-     for which an error was reported and avoids directly following
+     for which an error was reported and avoid directly following
      messages for the same file and line.  This variable is global and
      shared by all threads.
 
@@ -5782,13 +5691,11 @@ File: libc.info,  Node: Memory Allocation,  Next: Resizing the Data Segment,  Pr
 
 This section covers how ordinary programs manage storage for their data,
 including the famous ‘malloc’ function and some fancier facilities
-special to the GNU C Library and GNU Compiler.
+special the GNU C Library and GNU Compiler.
 
 * Menu:
 
 * Memory Allocation and C::     How to get different kinds of allocation in C.
-* The GNU Allocator::		An overview of the GNU ‘malloc’
-				implementation.
 * Unconstrained Allocation::    The ‘malloc’ facility allows fully general
 		 		 dynamic allocation.
 * Allocation Debugging::        Finding memory leaks and not freed memory.
@@ -5799,7 +5706,7 @@ special to the GNU C Library and GNU Compiler.
 				 calling function returns.
 
 
-File: libc.info,  Node: Memory Allocation and C,  Next: The GNU Allocator,  Up: Memory Allocation
+File: libc.info,  Node: Memory Allocation and C,  Next: Unconstrained Allocation,  Up: Memory Allocation
 
 3.2.1 Memory Allocation in C Programs
 -------------------------------------
@@ -5877,52 +5784,9 @@ pointer variable to refer to the contents of the space:
      }
 
 
-File: libc.info,  Node: The GNU Allocator,  Next: Unconstrained Allocation,  Prev: Memory Allocation and C,  Up: Memory Allocation
+File: libc.info,  Node: Unconstrained Allocation,  Next: Allocation Debugging,  Prev: Memory Allocation and C,  Up: Memory Allocation
 
-3.2.2 The GNU Allocator
------------------------
-
-The ‘malloc’ implementation in the GNU C Library is derived from
-ptmalloc (pthreads malloc), which in turn is derived from dlmalloc (Doug
-Lea malloc).  This malloc may allocate memory in two different ways
-depending on their size and certain parameters that may be controlled by
-users.  The most common way is to allocate portions of memory (called
-chunks) from a large contiguous area of memory and manage these areas to
-optimize their use and reduce wastage in the form of unusable chunks.
-Traditionally the system heap was set up to be the one large memory area
-but the GNU C Library ‘malloc’ implementation maintains multiple such
-areas to optimize their use in multi-threaded applications.  Each such
-area is internally referred to as an "arena".
-
-   As opposed to other versions, the ‘malloc’ in the GNU C Library does
-not round up chunk sizes to powers of two, neither for large nor for
-small sizes.  Neighboring chunks can be coalesced on a ‘free’ no matter
-what their size is.  This makes the implementation suitable for all
-kinds of allocation patterns without generally incurring high memory
-waste through fragmentation.  The presence of multiple arenas allows
-multiple threads to allocate memory simultaneously in separate arenas,
-thus improving performance.
-
-   The other way of memory allocation is for very large blocks, i.e.
-much larger than a page.  These requests are allocated with ‘mmap’
-(anonymous or via ‘/dev/zero’; *note Memory-mapped I/O::)).  This has
-the great advantage that these chunks are returned to the system
-immediately when they are freed.  Therefore, it cannot happen that a
-large chunk becomes “locked” in between smaller ones and even after
-calling ‘free’ wastes memory.  The size threshold for ‘mmap’ to be used
-is dynamic and gets adjusted according to allocation patterns of the
-program.  ‘mallopt’ can be used to statically adjust the threshold using
-‘M_MMAP_THRESHOLD’ and the use of ‘mmap’ can be disabled completely with
-‘M_MMAP_MAX’; *note Malloc Tunable Parameters::.
-
-   A more detailed technical description of the GNU Allocator is
-maintained in the GNU C Library wiki.  See
-<https://sourceware.org/glibc/wiki/MallocInternals>.
-
-
-File: libc.info,  Node: Unconstrained Allocation,  Next: Allocation Debugging,  Prev: The GNU Allocator,  Up: Memory Allocation
-
-3.2.3 Unconstrained Allocation
+3.2.2 Unconstrained Allocation
 ------------------------------
 
 The most general dynamic allocation facility is ‘malloc’.  It allows you
@@ -5940,6 +5804,8 @@ never).
 				 bigger or smaller.
 * Allocating Cleared Space::    Use ‘calloc’ to allocate a
 				 block and clear it.
+* Efficiency and Malloc::       Efficiency considerations in use of
+				 these functions.
 * Aligned Memory Blocks::       Allocating specially aligned memory.
 * Malloc Tunable Parameters::   Use ‘mallopt’ to adjust allocation
                                  parameters.
@@ -5953,7 +5819,7 @@ never).
 
 File: libc.info,  Node: Basic Allocation,  Next: Malloc Examples,  Up: Unconstrained Allocation
 
-3.2.3.1 Basic Memory Allocation
+3.2.2.1 Basic Memory Allocation
 ...............................
 
 To allocate a block of memory, call ‘malloc’.  The prototype for this
@@ -5999,7 +5865,7 @@ string is terminated with a null character that doesn’t count in the
 
 File: libc.info,  Node: Malloc Examples,  Next: Freeing after Malloc,  Prev: Basic Allocation,  Up: Unconstrained Allocation
 
-3.2.3.2 Examples of ‘malloc’
+3.2.2.2 Examples of ‘malloc’
 ............................
 
 If no more space is available, ‘malloc’ returns a null pointer.  You
@@ -6048,7 +5914,7 @@ Size::).
 
 File: libc.info,  Node: Freeing after Malloc,  Next: Changing Block Size,  Prev: Malloc Examples,  Up: Unconstrained Allocation
 
-3.2.3.3 Freeing Memory Allocated with ‘malloc’
+3.2.2.3 Freeing Memory Allocated with ‘malloc’
 ..............................................
 
 When you no longer need a block that you got with ‘malloc’, use the
@@ -6106,7 +5972,7 @@ terminates.
 
 File: libc.info,  Node: Changing Block Size,  Next: Allocating Cleared Space,  Prev: Freeing after Malloc,  Up: Unconstrained Allocation
 
-3.2.3.4 Changing the Size of a Block
+3.2.2.4 Changing the Size of a Block
 ....................................
 
 Often you do not know for certain how big a block you will ultimately
@@ -6166,9 +6032,9 @@ space is available.
 guaranteed to change nothing and return the same address that you gave.
 
 
-File: libc.info,  Node: Allocating Cleared Space,  Next: Aligned Memory Blocks,  Prev: Changing Block Size,  Up: Unconstrained Allocation
+File: libc.info,  Node: Allocating Cleared Space,  Next: Efficiency and Malloc,  Prev: Changing Block Size,  Up: Unconstrained Allocation
 
-3.2.3.5 Allocating Cleared Space
+3.2.2.5 Allocating Cleared Space
 ................................
 
 The function ‘calloc’ allocates memory and clears it to zero.  It is
@@ -6200,9 +6066,30 @@ internally.  Therefore, if an application provides its own
 ‘calloc’, too.
 
 
-File: libc.info,  Node: Aligned Memory Blocks,  Next: Malloc Tunable Parameters,  Prev: Allocating Cleared Space,  Up: Unconstrained Allocation
+File: libc.info,  Node: Efficiency and Malloc,  Next: Aligned Memory Blocks,  Prev: Allocating Cleared Space,  Up: Unconstrained Allocation
 
-3.2.3.6 Allocating Aligned Memory Blocks
+3.2.2.6 Efficiency Considerations for ‘malloc’
+..............................................
+
+As opposed to other versions, the ‘malloc’ in the GNU C Library does not
+round up block sizes to powers of two, neither for large nor for small
+sizes.  Neighboring chunks can be coalesced on a ‘free’ no matter what
+their size is.  This makes the implementation suitable for all kinds of
+allocation patterns without generally incurring high memory waste
+through fragmentation.
+
+   Very large blocks (much larger than a page) are allocated with ‘mmap’
+(anonymous or via ‘/dev/zero’) by this implementation.  This has the
+great advantage that these chunks are returned to the system immediately
+when they are freed.  Therefore, it cannot happen that a large chunk
+becomes “locked” in between smaller ones and even after calling ‘free’
+wastes memory.  The size threshold for ‘mmap’ to be used can be adjusted
+with ‘mallopt’.  The use of ‘mmap’ can also be disabled completely.
+
+
+File: libc.info,  Node: Aligned Memory Blocks,  Next: Malloc Tunable Parameters,  Prev: Efficiency and Malloc,  Up: Unconstrained Allocation
+
+3.2.2.7 Allocating Aligned Memory Blocks
 ........................................
 
 The address of a block returned by ‘malloc’ or ‘realloc’ in GNU systems
@@ -6251,7 +6138,7 @@ that, use ‘aligned_alloc’ or ‘posix_memalign’.  ‘aligned_alloc’ and
           request.
 
      ‘EINVAL’
-          BOUNDARY is not a power of two.
+          ALIGNMENT is not a power of two.
 
      The ‘memalign’ function is obsolete and ‘aligned_alloc’ or
      ‘posix_memalign’ should be used instead.
@@ -6287,7 +6174,7 @@ that, use ‘aligned_alloc’ or ‘posix_memalign’.  ‘aligned_alloc’ and
      init lock fd mem | *Note POSIX Safety Concepts::.
 
      Using ‘valloc’ is like using ‘memalign’ and passing the page size
-     as the value of the first argument.  It is implemented like this:
+     as the value of the second argument.  It is implemented like this:
 
           void *
           valloc (size_t size)
@@ -6304,7 +6191,7 @@ that, use ‘aligned_alloc’ or ‘posix_memalign’.  ‘aligned_alloc’ and
 
 File: libc.info,  Node: Malloc Tunable Parameters,  Next: Heap Consistency Checking,  Prev: Aligned Memory Blocks,  Up: Unconstrained Allocation
 
-3.2.3.7 Malloc Tunable Parameters
+3.2.2.8 Malloc Tunable Parameters
 .................................
 
 You can adjust some parameters for dynamic memory allocation with the
@@ -6322,30 +6209,12 @@ defined in ‘malloc.h’.
      ‘M_MMAP_MAX’
           The maximum number of chunks to allocate with ‘mmap’.  Setting
           this to zero disables all use of ‘mmap’.
-
-          The default value of this parameter is ‘65536’.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_MMAP_MAX_’ to the
-          desired value.
-
      ‘M_MMAP_THRESHOLD’
           All chunks larger than this value are allocated outside the
           normal heap, using the ‘mmap’ system call.  This way it is
           guaranteed that the memory for these chunks can be returned to
           the system on ‘free’.  Note that requests smaller than this
           threshold might still be allocated via ‘mmap’.
-
-          If this parameter is not set, the default value is set as 128
-          KiB and the threshold is adjusted dynamically to suit the
-          allocation patterns of the program.  If the parameter is set,
-          the dynamic adjustment is disabled and the value is set
-          statically to the input value.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_MMAP_THRESHOLD_’ to
-          the desired value.
-
      ‘M_PERTURB’
           If non-zero, memory blocks are filled with values depending on
           some low order bits of this parameter when they are allocated
@@ -6354,73 +6223,22 @@ defined in ‘malloc.h’.
           Note that this option does not guarantee that the freed block
           will have any specific values.  It only guarantees that the
           content the block had before it was freed will be overwritten.
-
-          The default value of this parameter is ‘0’.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_MMAP_PERTURB_’ to the
-          desired value.
-
      ‘M_TOP_PAD’
           This parameter determines the amount of extra memory to obtain
-          from the system when an arena needs to be extended.  It also
-          specifies the number of bytes to retain when shrinking an
-          arena.  This provides the necessary hysteresis in heap size
-          such that excessive amounts of system calls can be avoided.
-
-          The default value of this parameter is ‘0’.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_TOP_PAD_’ to the
-          desired value.
-
+          from the system when a call to ‘sbrk’ is required.  It also
+          specifies the number of bytes to retain when shrinking the
+          heap by calling ‘sbrk’ with a negative argument.  This
+          provides the necessary hysteresis in heap size such that
+          excessive amounts of system calls can be avoided.
      ‘M_TRIM_THRESHOLD’
           This is the minimum size (in bytes) of the top-most,
-          releasable chunk that will trigger a system call in order to
-          return memory to the system.
-
-          If this parameter is not set, the default value is set as 128
-          KiB and the threshold is adjusted dynamically to suit the
-          allocation patterns of the program.  If the parameter is set,
-          the dynamic adjustment is disabled and the value is set
-          statically to the provided input.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_TRIM_THRESHOLD_’ to
-          the desired value.
-
-     ‘M_ARENA_TEST’
-          This parameter specifies the number of arenas that can be
-          created before the test on the limit to the number of arenas
-          is conducted.  The value is ignored if ‘M_ARENA_MAX’ is set.
-
-          The default value of this parameter is 2 on 32-bit systems and
-          8 on 64-bit systems.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_ARENA_TEST’ to the
-          desired value.
-
-     ‘M_ARENA_MAX’
-          This parameter sets the number of arenas to use regardless of
-          the number of cores in the system.
-
-          The default value of this tunable is ‘0’, meaning that the
-          limit on the number of arenas is determined by the number of
-          CPU cores online.  For 32-bit systems the limit is twice the
-          number of cores online and on 64-bit systems, it is eight
-          times the number of cores online.  Note that the default value
-          is not derived from the default value of M_ARENA_TEST and is
-          computed independently.
-
-          This parameter can also be set for the process at startup by
-          setting the environment variable ‘MALLOC_ARENA_MAX’ to the
-          desired value.
+          releasable chunk that will cause ‘sbrk’ to be called with a
+          negative argument in order to return memory to the system.
 
 
 File: libc.info,  Node: Heap Consistency Checking,  Next: Hooks for Malloc,  Prev: Malloc Tunable Parameters,  Up: Unconstrained Allocation
 
-3.2.3.8 Heap Consistency Checking
+3.2.2.9 Heap Consistency Checking
 .................................
 
 You can ask ‘malloc’ to check the consistency of dynamic memory by using
@@ -6533,8 +6351,8 @@ with ‘-lmcheck’?  ‘MALLOC_CHECK_’ is orthogonal with respect to
 
 File: libc.info,  Node: Hooks for Malloc,  Next: Statistics of Malloc,  Prev: Heap Consistency Checking,  Up: Unconstrained Allocation
 
-3.2.3.9 Memory Allocation Hooks
-...............................
+3.2.2.10 Memory Allocation Hooks
+................................
 
 The GNU C Library lets you modify the behavior of ‘malloc’, ‘realloc’,
 and ‘free’ by specifying appropriate hook functions.  You can use these
@@ -6597,6 +6415,14 @@ recursively, one should make sure to restore all the hooks to their
 previous value.  When coming back from the recursive call, all the hooks
 should be resaved since a hook might modify itself.
 
+ -- Variable: __malloc_initialize_hook
+     The value of this variable is a pointer to a function that is
+     called once when the malloc implementation is initialized.  This is
+     a weak variable, so it can be overridden in the application with a
+     definition like the following:
+
+          void (*__MALLOC_INITIALIZE_HOOK) (void) = my_init_hook;
+
    An issue to look out for is the time at which the malloc hook
 functions can be safely installed.  If the hook functions call the
 malloc-related functions recursively, it is necessary that malloc has
@@ -6606,6 +6432,11 @@ a complete malloc implementation of their own, it is vital that the
 hooks are assigned to _before_ the very first ‘malloc’ call has
 completed, because otherwise a chunk obtained from the ordinary,
 un-hooked malloc may later be handed to ‘__free_hook’, for example.
+
+   In both cases, the problem can be solved by setting up the hooks from
+within a user-defined function pointed to by
+‘__malloc_initialize_hook’—then the hooks will be set up safely at the
+right time.
 
    Here is an example showing how to use ‘__malloc_hook’ and
 ‘__free_hook’ properly.  It installs a function that prints out
@@ -6620,8 +6451,11 @@ here that ‘realloc’ and ‘memalign’ are not used in our program.
      static void *my_malloc_hook (size_t, const void *);
      static void my_free_hook (void*, const void *);
 
+     /* Override initializing hook from the C library. */
+     void (*__malloc_initialize_hook) (void) = my_init_hook;
+
      static void
-     my_init (void)
+     my_init_hook (void)
      {
        old_malloc_hook = __malloc_hook;
        old_free_hook = __free_hook;
@@ -6669,7 +6503,6 @@ here that ‘realloc’ and ‘memalign’ are not used in our program.
 
      main ()
      {
-       my_init ();
        …
      }
 
@@ -6679,7 +6512,7 @@ installing such hooks.
 
 File: libc.info,  Node: Statistics of Malloc,  Next: Summary of Malloc,  Prev: Hooks for Malloc,  Up: Unconstrained Allocation
 
-3.2.3.10 Statistics for Memory Allocation with ‘malloc’
+3.2.2.11 Statistics for Memory Allocation with ‘malloc’
 .......................................................
 
 You can get information about dynamic memory allocation by calling the
@@ -6699,7 +6532,7 @@ version.
           This is the number of chunks not in use.  (The memory
           allocator internally gets chunks of memory from the operating
           system, and then carves them up to satisfy individual ‘malloc’
-          requests; *note The GNU Allocator::.)
+          requests; see *note Efficiency and Malloc::.)
 
      ‘int smblks’
           This field is unused.
@@ -6712,7 +6545,7 @@ version.
           bytes.
 
      ‘int usmblks’
-          This field is unused and always 0.
+          This field is unused.
 
      ‘int fsmblks’
           This field is unused.
@@ -6740,7 +6573,7 @@ version.
 
 File: libc.info,  Node: Summary of Malloc,  Prev: Statistics of Malloc,  Up: Unconstrained Allocation
 
-3.2.3.11 Summary of ‘malloc’-Related Functions
+3.2.2.12 Summary of ‘malloc’-Related Functions
 ..............................................
 
 Here is a summary of the functions that work with ‘malloc’:
@@ -6805,12 +6638,12 @@ Here is a summary of the functions that work with ‘malloc’:
 
 File: libc.info,  Node: Allocation Debugging,  Next: Obstacks,  Prev: Unconstrained Allocation,  Up: Memory Allocation
 
-3.2.4 Allocation Debugging
+3.2.3 Allocation Debugging
 --------------------------
 
 A complicated task when programming with languages which do not use
 garbage collected dynamic memory allocation is to find memory leaks.
-Long running programs must ensure that dynamically allocated objects are
+Long running programs must assure that dynamically allocated objects are
 freed at the end of their lifetime.  If this does not happen the system
 runs out of memory, sooner or later.
 
@@ -6830,7 +6663,7 @@ penalties for the program if the debugging mode is not enabled.
 
 File: libc.info,  Node: Tracing malloc,  Next: Using the Memory Debugger,  Up: Allocation Debugging
 
-3.2.4.1 How to install the tracing functionality
+3.2.3.1 How to install the tracing functionality
 ................................................
 
  -- Function: void mtrace (void)
@@ -6876,7 +6709,7 @@ File: libc.info,  Node: Tracing malloc,  Next: Using the Memory Debugger,  Up: A
 
 File: libc.info,  Node: Using the Memory Debugger,  Next: Tips for the Memory Debugger,  Prev: Tracing malloc,  Up: Allocation Debugging
 
-3.2.4.2 Example program excerpts
+3.2.3.2 Example program excerpts
 ................................
 
 Even though the tracing functionality does not influence the runtime
@@ -6898,7 +6731,7 @@ debugging.  A program could therefore start like this:
        …
      }
 
-   This is all that is needed if you want to trace the calls during the
+   This is all what is needed if you want to trace the calls during the
 whole runtime of the program.  Alternatively you can stop the tracing at
 any time with a call to ‘muntrace’.  It is even possible to restart the
 tracing again with a new call to ‘mtrace’.  But this can cause
@@ -6907,8 +6740,8 @@ not called.  Please note that not only the application uses the traced
 functions, also libraries (including the C library itself) use these
 functions.
 
-   This last point is also why it is not a good idea to call ‘muntrace’
-before the program terminates.  The libraries are informed about the
+   This last point is also why it is no good idea to call ‘muntrace’
+before the program terminated.  The libraries are informed about the
 termination of the program only after the program returns from ‘main’ or
 calls ‘exit’ and so cannot free the memory they use before this time.
 
@@ -6920,7 +6753,7 @@ which are executed by constructors of the program or used libraries).
 
 File: libc.info,  Node: Tips for the Memory Debugger,  Next: Interpreting the traces,  Prev: Using the Memory Debugger,  Up: Allocation Debugging
 
-3.2.4.3 Some more or less clever ideas
+3.2.3.3 Some more or less clever ideas
 ......................................
 
 You know the situation.  The program is prepared for debugging and in
@@ -6967,7 +6800,7 @@ nevertheless.
 
 File: libc.info,  Node: Interpreting the traces,  Prev: Tips for the Memory Debugger,  Up: Allocation Debugging
 
-3.2.4.4 Interpreting the traces
+3.2.3.4 Interpreting the traces
 ...............................
 
 If you take a look at the output it will look similar to this:
@@ -7049,4 +6882,151 @@ information and so can say that the program calls an allocation function
 from line 33 in the source file ‘/home/drepper/tst-mtrace.c’ four times
 without freeing this memory before the program terminates.  Whether this
 is a real problem remains to be investigated.
+
+
+File: libc.info,  Node: Obstacks,  Next: Variable Size Automatic,  Prev: Allocation Debugging,  Up: Memory Allocation
+
+3.2.4 Obstacks
+--------------
+
+An "obstack" is a pool of memory containing a stack of objects.  You can
+create any number of separate obstacks, and then allocate objects in
+specified obstacks.  Within each obstack, the last object allocated must
+always be the first one freed, but distinct obstacks are independent of
+each other.
+
+   Aside from this one constraint of order of freeing, obstacks are
+totally general: an obstack can contain any number of objects of any
+size.  They are implemented with macros, so allocation is usually very
+fast as long as the objects are usually small.  And the only space
+overhead per object is the padding needed to start each object on a
+suitable boundary.
+
+* Menu:
+
+* Creating Obstacks::		How to declare an obstack in your program.
+* Preparing for Obstacks::	Preparations needed before you can
+				 use obstacks.
+* Allocation in an Obstack::    Allocating objects in an obstack.
+* Freeing Obstack Objects::     Freeing objects in an obstack.
+* Obstack Functions::		The obstack functions are both
+				 functions and macros.
+* Growing Objects::             Making an object bigger by stages.
+* Extra Fast Growing::		Extra-high-efficiency (though more
+				 complicated) growing objects.
+* Status of an Obstack::        Inquiries about the status of an obstack.
+* Obstacks Data Alignment::     Controlling alignment of objects in obstacks.
+* Obstack Chunks::              How obstacks obtain and release chunks;
+				 efficiency considerations.
+* Summary of Obstacks::
+
+
+File: libc.info,  Node: Creating Obstacks,  Next: Preparing for Obstacks,  Up: Obstacks
+
+3.2.4.1 Creating Obstacks
+.........................
+
+The utilities for manipulating obstacks are declared in the header file
+‘obstack.h’.
+
+ -- Data Type: struct obstack
+     An obstack is represented by a data structure of type ‘struct
+     obstack’.  This structure has a small fixed size; it records the
+     status of the obstack and how to find the space in which objects
+     are allocated.  It does not contain any of the objects themselves.
+     You should not try to access the contents of the structure
+     directly; use only the functions described in this chapter.
+
+   You can declare variables of type ‘struct obstack’ and use them as
+obstacks, or you can allocate obstacks dynamically like any other kind
+of object.  Dynamic allocation of obstacks allows your program to have a
+variable number of different stacks.  (You can even allocate an obstack
+structure in another obstack, but this is rarely useful.)
+
+   All the functions that work with obstacks require you to specify
+which obstack to use.  You do this with a pointer of type ‘struct
+obstack *’.  In the following, we often say “an obstack” when strictly
+speaking the object at hand is such a pointer.
+
+   The objects in the obstack are packed into large blocks called
+"chunks".  The ‘struct obstack’ structure points to a chain of the
+chunks currently in use.
+
+   The obstack library obtains a new chunk whenever you allocate an
+object that won’t fit in the previous chunk.  Since the obstack library
+manages chunks automatically, you don’t need to pay much attention to
+them, but you do need to supply a function which the obstack library
+should use to get a chunk.  Usually you supply a function which uses
+‘malloc’ directly or indirectly.  You must also supply a function to
+free a chunk.  These matters are described in the following section.
+
+
+File: libc.info,  Node: Preparing for Obstacks,  Next: Allocation in an Obstack,  Prev: Creating Obstacks,  Up: Obstacks
+
+3.2.4.2 Preparing for Using Obstacks
+....................................
+
+Each source file in which you plan to use the obstack functions must
+include the header file ‘obstack.h’, like this:
+
+     #include <obstack.h>
+
+   Also, if the source file uses the macro ‘obstack_init’, it must
+declare or define two functions or macros that will be called by the
+obstack library.  One, ‘obstack_chunk_alloc’, is used to allocate the
+chunks of memory into which objects are packed.  The other,
+‘obstack_chunk_free’, is used to return chunks when the objects in them
+are freed.  These macros should appear before any use of obstacks in the
+source file.
+
+   Usually these are defined to use ‘malloc’ via the intermediary
+‘xmalloc’ (*note Unconstrained Allocation::).  This is done with the
+following pair of macro definitions:
+
+     #define obstack_chunk_alloc xmalloc
+     #define obstack_chunk_free free
+
+Though the memory you get using obstacks really comes from ‘malloc’,
+using obstacks is faster because ‘malloc’ is called less often, for
+larger blocks of memory.  *Note Obstack Chunks::, for full details.
+
+   At run time, before the program can use a ‘struct obstack’ object as
+an obstack, it must initialize the obstack by calling ‘obstack_init’.
+
+ -- Function: int obstack_init (struct obstack *OBSTACK-PTR)
+     Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe mem |
+     *Note POSIX Safety Concepts::.
+
+     Initialize obstack OBSTACK-PTR for allocation of objects.  This
+     function calls the obstack’s ‘obstack_chunk_alloc’ function.  If
+     allocation of memory fails, the function pointed to by
+     ‘obstack_alloc_failed_handler’ is called.  The ‘obstack_init’
+     function always returns 1 (Compatibility notice: Former versions of
+     obstack returned 0 if allocation failed).
+
+   Here are two examples of how to allocate the space for an obstack and
+initialize it.  First, an obstack that is a static variable:
+
+     static struct obstack myobstack;
+     …
+     obstack_init (&myobstack);
+
+Second, an obstack that is itself dynamically allocated:
+
+     struct obstack *myobstack_ptr
+       = (struct obstack *) xmalloc (sizeof (struct obstack));
+
+     obstack_init (myobstack_ptr);
+
+ -- Variable: obstack_alloc_failed_handler
+     The value of this variable is a pointer to a function that
+     ‘obstack’ uses when ‘obstack_chunk_alloc’ fails to allocate memory.
+     The default action is to print a message and abort.  You should
+     supply a function that either calls ‘exit’ (*note Program
+     Termination::) or ‘longjmp’ (*note Non-Local Exits::) and doesn’t
+     return.
+
+          void my_obstack_alloc_failed (void)
+          …
+          obstack_alloc_failed_handler = &my_obstack_alloc_failed;
 

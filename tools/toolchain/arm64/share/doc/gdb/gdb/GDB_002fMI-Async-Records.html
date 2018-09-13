@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2018 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -229,8 +229,8 @@ that thread.
 </dd>
 <dt><code>=library-loaded,...</code></dt>
 <dd><p>Reports that a new library file was loaded by the program.  This
-notification has 5 fields&mdash;<var>id</var>, <var>target-name</var>,
-<var>host-name</var>, <var>symbols-loaded</var> and <var>ranges</var>.  The <var>id</var> field is an
+notification has 4 fields&mdash;<var>id</var>, <var>target-name</var>,
+<var>host-name</var>, and <var>symbols-loaded</var>.  The <var>id</var> field is an
 opaque identifier of the library.  For remote debugging case,
 <var>target-name</var> and <var>host-name</var> fields give the name of the
 library file on the target, and on the host respectively.  For native
@@ -240,8 +240,7 @@ and should not be relied on to convey any useful information.  The
 <var>thread-group</var> field, if present, specifies the id of the thread
 group in whose context the library was loaded.  If the field is
 absent, it means the library was loaded in the context of all present
-thread groups.  The <var>ranges</var> field specifies the ranges of addresses belonging
-to this library.
+thread groups.
 </p>
 </dd>
 <dt><code>=library-unloaded,...</code></dt>
@@ -302,7 +301,7 @@ group corresponding to the affected inferior.
 </p>
 <p>The <var>method</var> field indicates the method used to record execution.  If the
 method in use supports multiple recording formats, <var>format</var> will be present
-and contain the currently used format.  See <a href="Process-Record-and-Replay.html#Process-Record-and-Replay">Process Record and Replay</a>,
+and contain the currently used format.  See <a href="Process-Record-and-Replay.html#Process-Record-and-Replay">Process Record and Replay</a>
 for existing method and format values.
 </p>
 </dd>

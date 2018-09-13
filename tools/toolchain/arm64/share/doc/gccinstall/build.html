@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -323,6 +323,13 @@ native compiler.  You can then use the native GCC compiler to build the
 cross compiler.  The installed native compiler needs to be GCC version
 2.95 or later.
 </p>
+<p>If the cross compiler is to be built with support for the Java
+programming language and the ability to compile .java source files is
+desired, the installed native compiler used to build the cross
+compiler needs to be the same GCC version as the cross compiler.  In
+addition the cross compiler needs to be configured with
+<samp>--with-ecj-jar=&hellip;</samp>.
+</p>
 <p>Assuming you have already installed a native copy of GCC and configured
 your cross compiler, issue the command <code>make</code>, which performs the
 following steps:
@@ -441,17 +448,6 @@ Finally a <code>stagefeedback</code> compiler is built using the information col
 <p>Unlike standard bootstrap, several additional restrictions apply.  The
 compiler used to build <code>stage1</code> needs to support a 64-bit integral type.
 It is recommended to only use GCC for this.
-</p>
-<p>On Linux/x86_64 hosts with some restrictions (no virtualization) it is
-also possible to do autofdo build with &lsquo;<samp>make
-autoprofiledback</samp>&rsquo;. This uses Linux perf to sample branches in the
-binary and then rebuild it with feedback derived from the profile.
-Linux perf and the <code>autofdo</code> toolkit needs to be installed for
-this.
-</p>
-<p>Only the profile from the current build is used, so when an error
-occurs it is recommended to clean before restarting. Otherwise
-the code quality may be much worse.
 </p>
 <hr />
 <p><p><a href="./index.html">Return to the GCC Installation page</a>

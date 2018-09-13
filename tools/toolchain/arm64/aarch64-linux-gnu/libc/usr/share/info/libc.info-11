@@ -2,9 +2,9 @@ This is libc.info, produced by makeinfo version 5.2 from libc.texinfo.
 
 This file documents the GNU C Library.
 
-   This is ‘The GNU C Library Reference Manual’, for version 2.25.
+   This is ‘The GNU C Library Reference Manual’, for version 2.23.
 
-   Copyright © 1993–2017 Free Software Foundation, Inc.
+   Copyright © 1993–2016 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -223,14 +223,11 @@ START-INFO-DIR-ENTRY
 * FD_SET: (libc)Waiting for I/O.
 * FD_SETSIZE: (libc)Waiting for I/O.
 * FD_ZERO: (libc)Waiting for I/O.
-* FE_SNANS_ALWAYS_SIGNAL: (libc)Infinity and NaN.
 * FILENAME_MAX: (libc)Limits for Files.
 * FLUSHO: (libc)Local Modes.
 * FOPEN_MAX: (libc)Opening Streams.
 * FP_ILOGB0: (libc)Exponents and Logarithms.
 * FP_ILOGBNAN: (libc)Exponents and Logarithms.
-* FP_LLOGB0: (libc)Exponents and Logarithms.
-* FP_LLOGBNAN: (libc)Exponents and Logarithms.
 * F_DUPFD: (libc)Duplicating Descriptors.
 * F_GETFD: (libc)Descriptor Flags.
 * F_GETFL: (libc)Getting File Status Flags.
@@ -384,9 +381,6 @@ START-INFO-DIR-ENTRY
 * SIGXCPU: (libc)Operation Error Signals.
 * SIGXFSZ: (libc)Operation Error Signals.
 * SIG_ERR: (libc)Basic Signal Handling.
-* SNAN: (libc)Infinity and NaN.
-* SNANF: (libc)Infinity and NaN.
-* SNANL: (libc)Infinity and NaN.
 * SOCK_DGRAM: (libc)Communication Styles.
 * SOCK_RAW: (libc)Communication Styles.
 * SOCK_RDM: (libc)Communication Styles.
@@ -590,10 +584,7 @@ START-INFO-DIR-ENTRY
 * cacoshl: (libc)Hyperbolic Functions.
 * cacosl: (libc)Inverse Trig Functions.
 * calloc: (libc)Allocating Cleared Space.
-* canonicalize: (libc)FP Bit Twiddling.
 * canonicalize_file_name: (libc)Symbolic Links.
-* canonicalizef: (libc)FP Bit Twiddling.
-* canonicalizel: (libc)FP Bit Twiddling.
 * carg: (libc)Operations on Complex.
 * cargf: (libc)Operations on Complex.
 * cargl: (libc)Operations on Complex.
@@ -767,7 +758,6 @@ START-INFO-DIR-ENTRY
 * exp: (libc)Exponents and Logarithms.
 * expf: (libc)Exponents and Logarithms.
 * expl: (libc)Exponents and Logarithms.
-* explicit_bzero: (libc)Erasing Sensitive Data.
 * expm1: (libc)Exponents and Logarithms.
 * expm1f: (libc)Exponents and Logarithms.
 * expm1l: (libc)Exponents and Logarithms.
@@ -794,7 +784,6 @@ START-INFO-DIR-ENTRY
 * fegetenv: (libc)Control Functions.
 * fegetexcept: (libc)Control Functions.
 * fegetexceptflag: (libc)Status bit operations.
-* fegetmode: (libc)Control Functions.
 * fegetround: (libc)Rounding.
 * feholdexcept: (libc)Control Functions.
 * feof: (libc)EOF and Errors.
@@ -803,12 +792,9 @@ START-INFO-DIR-ENTRY
 * ferror: (libc)EOF and Errors.
 * ferror_unlocked: (libc)EOF and Errors.
 * fesetenv: (libc)Control Functions.
-* fesetexcept: (libc)Status bit operations.
 * fesetexceptflag: (libc)Status bit operations.
-* fesetmode: (libc)Control Functions.
 * fesetround: (libc)Rounding.
 * fetestexcept: (libc)Status bit operations.
-* fetestexceptflag: (libc)Status bit operations.
 * feupdateenv: (libc)Control Functions.
 * fflush: (libc)Flushing Buffers.
 * fflush_unlocked: (libc)Flushing Buffers.
@@ -841,16 +827,10 @@ START-INFO-DIR-ENTRY
 * fmax: (libc)Misc FP Arithmetic.
 * fmaxf: (libc)Misc FP Arithmetic.
 * fmaxl: (libc)Misc FP Arithmetic.
-* fmaxmag: (libc)Misc FP Arithmetic.
-* fmaxmagf: (libc)Misc FP Arithmetic.
-* fmaxmagl: (libc)Misc FP Arithmetic.
 * fmemopen: (libc)String Streams.
 * fmin: (libc)Misc FP Arithmetic.
 * fminf: (libc)Misc FP Arithmetic.
 * fminl: (libc)Misc FP Arithmetic.
-* fminmag: (libc)Misc FP Arithmetic.
-* fminmagf: (libc)Misc FP Arithmetic.
-* fminmagl: (libc)Misc FP Arithmetic.
 * fmod: (libc)Remainder Functions.
 * fmodf: (libc)Remainder Functions.
 * fmodl: (libc)Remainder Functions.
@@ -880,12 +860,6 @@ START-INFO-DIR-ENTRY
 * frexp: (libc)Normalization Functions.
 * frexpf: (libc)Normalization Functions.
 * frexpl: (libc)Normalization Functions.
-* fromfp: (libc)Rounding Functions.
-* fromfpf: (libc)Rounding Functions.
-* fromfpl: (libc)Rounding Functions.
-* fromfpx: (libc)Rounding Functions.
-* fromfpxf: (libc)Rounding Functions.
-* fromfpxl: (libc)Rounding Functions.
 * fscanf: (libc)Formatted Input Functions.
 * fseek: (libc)File Positioning.
 * fseeko64: (libc)File Positioning.
@@ -931,7 +905,6 @@ START-INFO-DIR-ENTRY
 * getdelim: (libc)Line Input.
 * getdomainnname: (libc)Host Identification.
 * getegid: (libc)Reading Persona.
-* getentropy: (libc)Unpredictable Bytes.
 * getenv: (libc)Environment Access.
 * geteuid: (libc)Reading Persona.
 * getfsent: (libc)fstab.
@@ -971,9 +944,6 @@ START-INFO-DIR-ENTRY
 * getopt_long_only: (libc)Getopt Long Options.
 * getpagesize: (libc)Query Memory Parameters.
 * getpass: (libc)getpass.
-* getpayload: (libc)FP Bit Twiddling.
-* getpayloadf: (libc)FP Bit Twiddling.
-* getpayloadl: (libc)FP Bit Twiddling.
 * getpeername: (libc)Who is Connected.
 * getpgid: (libc)Process Group Functions.
 * getpgrp: (libc)Process Group Functions.
@@ -990,7 +960,6 @@ START-INFO-DIR-ENTRY
 * getpwnam_r: (libc)Lookup User.
 * getpwuid: (libc)Lookup User.
 * getpwuid_r: (libc)Lookup User.
-* getrandom: (libc)Unpredictable Bytes.
 * getrlimit64: (libc)Limits on Resources.
 * getrlimit: (libc)Limits on Resources.
 * getrusage: (libc)Resource Usage.
@@ -1078,10 +1047,8 @@ START-INFO-DIR-ENTRY
 * isascii: (libc)Classification of Characters.
 * isatty: (libc)Is It a Terminal.
 * isblank: (libc)Classification of Characters.
-* iscanonical: (libc)Floating Point Classes.
 * iscntrl: (libc)Classification of Characters.
 * isdigit: (libc)Classification of Characters.
-* iseqsig: (libc)FP Comparison Functions.
 * isfinite: (libc)Floating Point Classes.
 * isgraph: (libc)Classification of Characters.
 * isgreater: (libc)FP Comparison Functions.
@@ -1102,7 +1069,6 @@ START-INFO-DIR-ENTRY
 * ispunct: (libc)Classification of Characters.
 * issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
-* issubnormal: (libc)Floating Point Classes.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
 * iswalnum: (libc)Classification of Wide Characters.
@@ -1119,7 +1085,6 @@ START-INFO-DIR-ENTRY
 * iswupper: (libc)Classification of Wide Characters.
 * iswxdigit: (libc)Classification of Wide Characters.
 * isxdigit: (libc)Classification of Characters.
-* iszero: (libc)Floating Point Classes.
 * j0: (libc)Special Functions.
 * j0f: (libc)Special Functions.
 * j0l: (libc)Special Functions.
@@ -1154,9 +1119,6 @@ START-INFO-DIR-ENTRY
 * listen: (libc)Listening.
 * llabs: (libc)Absolute Value.
 * lldiv: (libc)Integer Division.
-* llogb: (libc)Exponents and Logarithms.
-* llogbf: (libc)Exponents and Logarithms.
-* llogbl: (libc)Exponents and Logarithms.
 * llrint: (libc)Rounding Functions.
 * llrintf: (libc)Rounding Functions.
 * llrintl: (libc)Rounding Functions.
@@ -1260,15 +1222,9 @@ START-INFO-DIR-ENTRY
 * nextafter: (libc)FP Bit Twiddling.
 * nextafterf: (libc)FP Bit Twiddling.
 * nextafterl: (libc)FP Bit Twiddling.
-* nextdown: (libc)FP Bit Twiddling.
-* nextdownf: (libc)FP Bit Twiddling.
-* nextdownl: (libc)FP Bit Twiddling.
 * nexttoward: (libc)FP Bit Twiddling.
 * nexttowardf: (libc)FP Bit Twiddling.
 * nexttowardl: (libc)FP Bit Twiddling.
-* nextup: (libc)FP Bit Twiddling.
-* nextupf: (libc)FP Bit Twiddling.
-* nextupl: (libc)FP Bit Twiddling.
 * nftw64: (libc)Working with Directory Trees.
 * nftw: (libc)Working with Directory Trees.
 * ngettext: (libc)Advanced gettext functions.
@@ -1401,9 +1357,6 @@ START-INFO-DIR-ENTRY
 * rintl: (libc)Rounding Functions.
 * rmdir: (libc)Deleting Files.
 * round: (libc)Rounding Functions.
-* roundeven: (libc)Rounding Functions.
-* roundevenf: (libc)Rounding Functions.
-* roundevenl: (libc)Rounding Functions.
 * roundf: (libc)Rounding Functions.
 * roundl: (libc)Rounding Functions.
 * rpmatch: (libc)Yes-or-No Questions.
@@ -1476,12 +1429,6 @@ START-INFO-DIR-ENTRY
 * setmntent: (libc)mtab.
 * setnetent: (libc)Networks Database.
 * setnetgrent: (libc)Lookup Netgroup.
-* setpayload: (libc)FP Bit Twiddling.
-* setpayloadf: (libc)FP Bit Twiddling.
-* setpayloadl: (libc)FP Bit Twiddling.
-* setpayloadsig: (libc)FP Bit Twiddling.
-* setpayloadsigf: (libc)FP Bit Twiddling.
-* setpayloadsigl: (libc)FP Bit Twiddling.
 * setpgid: (libc)Process Group Functions.
 * setpgrp: (libc)Process Group Functions.
 * setpriority: (libc)Traditional Scheduling Functions.
@@ -1570,9 +1517,6 @@ START-INFO-DIR-ENTRY
 * strerror: (libc)Error Messages.
 * strerror_r: (libc)Error Messages.
 * strfmon: (libc)Formatting Numbers.
-* strfromd: (libc)Printing of Floats.
-* strfromf: (libc)Printing of Floats.
-* strfroml: (libc)Printing of Floats.
 * strfry: (libc)strfry.
 * strftime: (libc)Formatting Calendar Time.
 * strlen: (libc)String Length.
@@ -1651,12 +1595,6 @@ START-INFO-DIR-ENTRY
 * tmpnam_r: (libc)Temporary Files.
 * toascii: (libc)Case Conversion.
 * tolower: (libc)Case Conversion.
-* totalorder: (libc)FP Comparison Functions.
-* totalorderf: (libc)FP Comparison Functions.
-* totalorderl: (libc)FP Comparison Functions.
-* totalordermag: (libc)FP Comparison Functions.
-* totalordermagf: (libc)FP Comparison Functions.
-* totalordermagl: (libc)FP Comparison Functions.
 * toupper: (libc)Case Conversion.
 * towctrans: (libc)Wide Character Case Conversion.
 * towlower: (libc)Wide Character Case Conversion.
@@ -1671,12 +1609,6 @@ START-INFO-DIR-ENTRY
 * ttyname_r: (libc)Is It a Terminal.
 * twalk: (libc)Tree Search Function.
 * tzset: (libc)Time Zone Functions.
-* ufromfp: (libc)Rounding Functions.
-* ufromfpf: (libc)Rounding Functions.
-* ufromfpl: (libc)Rounding Functions.
-* ufromfpx: (libc)Rounding Functions.
-* ufromfpxf: (libc)Rounding Functions.
-* ufromfpxl: (libc)Rounding Functions.
 * ulimit: (libc)Limits on Resources.
 * umask: (libc)Setting Permissions.
 * umount2: (libc)Mount-Unmount-Remount.
@@ -1794,1790 +1726,6 @@ START-INFO-DIR-ENTRY
 * ynl: (libc)Special Functions.
 END-INFO-DIR-ENTRY
 
-
-
-File: libc.info,  Node: Inter-Process Communication,  Next: Job Control,  Prev: Processes,  Up: Top
-
-27 Inter-Process Communication
-******************************
-
-This chapter describes the GNU C Library inter-process communication
-primitives.
-
-* Menu:
-
-* Semaphores::	Support for creating and managing semaphores
-
-
-File: libc.info,  Node: Semaphores,  Up: Inter-Process Communication
-
-27.1 Semaphores
-===============
-
-The GNU C Library implements the semaphore APIs as defined in POSIX and
-System V. Semaphores can be used by multiple processes to coordinate
-shared resources.  The following is a complete list of the semaphore
-functions provided by the GNU C Library.
-
-27.1.1 System V Semaphores
---------------------------
-
- -- Function: int semctl (int SEMID, int SEMNUM, int CMD);
-     Preliminary: | MT-Safe | AS-Safe | AC-Unsafe corrupt/linux | *Note
-     POSIX Safety Concepts::.
-
- -- Function: int semget (key_t KEY, int NSEMS, int SEMFLG);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
- -- Function: int semop (int SEMID, struct sembuf *SOPS, size_t NSOPS);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
- -- Function: int semtimedop (int SEMID, struct sembuf *SOPS, size_t
-          NSOPS, const struct timespec *TIMEOUT);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-27.1.2 POSIX Semaphores
------------------------
-
- -- Function: int sem_init (sem_t *SEM, int PSHARED, unsigned int
-          VALUE);
-     Preliminary: | MT-Safe | AS-Safe | AC-Unsafe corrupt | *Note POSIX
-     Safety Concepts::.
-
- -- Function: int sem_destroy (sem_t *SEM);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
- -- Function: sem_t *sem_open (const char *NAME, int OFLAG, ...);
-     Preliminary: | MT-Safe | AS-Unsafe init | AC-Unsafe init | *Note
-     POSIX Safety Concepts::.
-
- -- Function: int sem_close (sem_t *SEM);
-     Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | *Note
-     POSIX Safety Concepts::.
-
- -- Function: int sem_unlink (const char *NAME);
-     Preliminary: | MT-Safe | AS-Unsafe init | AC-Unsafe corrupt | *Note
-     POSIX Safety Concepts::.
-
- -- Function: int sem_wait (sem_t *SEM);
-     Preliminary: | MT-Safe | AS-Safe | AC-Unsafe corrupt | *Note POSIX
-     Safety Concepts::.
-
- -- Function: int sem_timedwait (sem_t *SEM, const struct timespec
-          *ABSTIME);
-     Preliminary: | MT-Safe | AS-Safe | AC-Unsafe corrupt | *Note POSIX
-     Safety Concepts::.
-
- -- Function: int sem_trywait (sem_t *SEM);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
- -- Function: int sem_post (sem_t *SEM);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
- -- Function: int sem_getvalue (sem_t *SEM, int *SVAL);
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-
-File: libc.info,  Node: Job Control,  Next: Name Service Switch,  Prev: Inter-Process Communication,  Up: Top
-
-28 Job Control
-**************
-
-"Job control" refers to the protocol for allowing a user to move between
-multiple "process groups" (or "jobs") within a single "login session".
-The job control facilities are set up so that appropriate behavior for
-most programs happens automatically and they need not do anything
-special about job control.  So you can probably ignore the material in
-this chapter unless you are writing a shell or login program.
-
-   You need to be familiar with concepts relating to process creation
-(*note Process Creation Concepts::) and signal handling (*note Signal
-Handling::) in order to understand this material presented in this
-chapter.
-
-* Menu:
-
-* Concepts of Job Control::     Jobs can be controlled by a shell.
-* Job Control is Optional::     Not all POSIX systems support job control.
-* Controlling Terminal::        How a process gets its controlling terminal.
-* Access to the Terminal::      How processes share the controlling terminal.
-* Orphaned Process Groups::     Jobs left after the user logs out.
-* Implementing a Shell::        What a shell must do to implement job control.
-* Functions for Job Control::   Functions to control process groups.
-
-
-File: libc.info,  Node: Concepts of Job Control,  Next: Job Control is Optional,  Up: Job Control
-
-28.1 Concepts of Job Control
-============================
-
-The fundamental purpose of an interactive shell is to read commands from
-the user’s terminal and create processes to execute the programs
-specified by those commands.  It can do this using the ‘fork’ (*note
-Creating a Process::) and ‘exec’ (*note Executing a File::) functions.
-
-   A single command may run just one process—but often one command uses
-several processes.  If you use the ‘|’ operator in a shell command, you
-explicitly request several programs in their own processes.  But even if
-you run just one program, it can use multiple processes internally.  For
-example, a single compilation command such as ‘cc -c foo.c’ typically
-uses four processes (though normally only two at any given time).  If
-you run ‘make’, its job is to run other programs in separate processes.
-
-   The processes belonging to a single command are called a "process
-group" or "job".  This is so that you can operate on all of them at
-once.  For example, typing ‘C-c’ sends the signal ‘SIGINT’ to terminate
-all the processes in the foreground process group.
-
-   A "session" is a larger group of processes.  Normally all the
-processes that stem from a single login belong to the same session.
-
-   Every process belongs to a process group.  When a process is created,
-it becomes a member of the same process group and session as its parent
-process.  You can put it in another process group using the ‘setpgid’
-function, provided the process group belongs to the same session.
-
-   The only way to put a process in a different session is to make it
-the initial process of a new session, or a "session leader", using the
-‘setsid’ function.  This also puts the session leader into a new process
-group, and you can’t move it out of that process group again.
-
-   Usually, new sessions are created by the system login program, and
-the session leader is the process running the user’s login shell.
-
-   A shell that supports job control must arrange to control which job
-can use the terminal at any time.  Otherwise there might be multiple
-jobs trying to read from the terminal at once, and confusion about which
-process should receive the input typed by the user.  To prevent this,
-the shell must cooperate with the terminal driver using the protocol
-described in this chapter.
-
-   The shell can give unlimited access to the controlling terminal to
-only one process group at a time.  This is called the "foreground job"
-on that controlling terminal.  Other process groups managed by the shell
-that are executing without such access to the terminal are called
-"background jobs".
-
-   If a background job needs to read from its controlling terminal, it
-is "stopped" by the terminal driver; if the ‘TOSTOP’ mode is set,
-likewise for writing.  The user can stop a foreground job by typing the
-SUSP character (*note Special Characters::) and a program can stop any
-job by sending it a ‘SIGSTOP’ signal.  It’s the responsibility of the
-shell to notice when jobs stop, to notify the user about them, and to
-provide mechanisms for allowing the user to interactively continue
-stopped jobs and switch jobs between foreground and background.
-
-   *Note Access to the Terminal::, for more information about I/O to the
-controlling terminal.
-
-
-File: libc.info,  Node: Job Control is Optional,  Next: Controlling Terminal,  Prev: Concepts of Job Control,  Up: Job Control
-
-28.2 Job Control is Optional
-============================
-
-Not all operating systems support job control.  GNU systems do support
-job control, but if you are using the GNU C Library on some other
-system, that system may not support job control itself.
-
-   You can use the ‘_POSIX_JOB_CONTROL’ macro to test at compile-time
-whether the system supports job control.  *Note System Options::.
-
-   If job control is not supported, then there can be only one process
-group per session, which behaves as if it were always in the foreground.
-The functions for creating additional process groups simply fail with
-the error code ‘ENOSYS’.
-
-   The macros naming the various job control signals (*note Job Control
-Signals::) are defined even if job control is not supported.  However,
-the system never generates these signals, and attempts to send a job
-control signal or examine or specify their actions report errors or do
-nothing.
-
-
-File: libc.info,  Node: Controlling Terminal,  Next: Access to the Terminal,  Prev: Job Control is Optional,  Up: Job Control
-
-28.3 Controlling Terminal of a Process
-======================================
-
-One of the attributes of a process is its controlling terminal.  Child
-processes created with ‘fork’ inherit the controlling terminal from
-their parent process.  In this way, all the processes in a session
-inherit the controlling terminal from the session leader.  A session
-leader that has control of a terminal is called the "controlling
-process" of that terminal.
-
-   You generally do not need to worry about the exact mechanism used to
-allocate a controlling terminal to a session, since it is done for you
-by the system when you log in.
-
-   An individual process disconnects from its controlling terminal when
-it calls ‘setsid’ to become the leader of a new session.  *Note Process
-Group Functions::.
-
-
-File: libc.info,  Node: Access to the Terminal,  Next: Orphaned Process Groups,  Prev: Controlling Terminal,  Up: Job Control
-
-28.4 Access to the Controlling Terminal
-=======================================
-
-Processes in the foreground job of a controlling terminal have
-unrestricted access to that terminal; background processes do not.  This
-section describes in more detail what happens when a process in a
-background job tries to access its controlling terminal.
-
-   When a process in a background job tries to read from its controlling
-terminal, the process group is usually sent a ‘SIGTTIN’ signal.  This
-normally causes all of the processes in that group to stop (unless they
-handle the signal and don’t stop themselves).  However, if the reading
-process is ignoring or blocking this signal, then ‘read’ fails with an
-‘EIO’ error instead.
-
-   Similarly, when a process in a background job tries to write to its
-controlling terminal, the default behavior is to send a ‘SIGTTOU’ signal
-to the process group.  However, the behavior is modified by the ‘TOSTOP’
-bit of the local modes flags (*note Local Modes::).  If this bit is not
-set (which is the default), then writing to the controlling terminal is
-always permitted without sending a signal.  Writing is also permitted if
-the ‘SIGTTOU’ signal is being ignored or blocked by the writing process.
-
-   Most other terminal operations that a program can do are treated as
-reading or as writing.  (The description of each operation should say
-which.)
-
-   For more information about the primitive ‘read’ and ‘write’
-functions, see *note I/O Primitives::.
-
-
-File: libc.info,  Node: Orphaned Process Groups,  Next: Implementing a Shell,  Prev: Access to the Terminal,  Up: Job Control
-
-28.5 Orphaned Process Groups
-============================
-
-When a controlling process terminates, its terminal becomes free and a
-new session can be established on it.  (In fact, another user could log
-in on the terminal.)  This could cause a problem if any processes from
-the old session are still trying to use that terminal.
-
-   To prevent problems, process groups that continue running even after
-the session leader has terminated are marked as "orphaned process
-groups".
-
-   When a process group becomes an orphan, its processes are sent a
-‘SIGHUP’ signal.  Ordinarily, this causes the processes to terminate.
-However, if a program ignores this signal or establishes a handler for
-it (*note Signal Handling::), it can continue running as in the orphan
-process group even after its controlling process terminates; but it
-still cannot access the terminal any more.
-
-
-File: libc.info,  Node: Implementing a Shell,  Next: Functions for Job Control,  Prev: Orphaned Process Groups,  Up: Job Control
-
-28.6 Implementing a Job Control Shell
-=====================================
-
-This section describes what a shell must do to implement job control, by
-presenting an extensive sample program to illustrate the concepts
-involved.
-
-* Menu:
-
-* Data Structures::             Introduction to the sample shell.
-* Initializing the Shell::      What the shell must do to take
-				 responsibility for job control.
-* Launching Jobs::              Creating jobs to execute commands.
-* Foreground and Background::   Putting a job in foreground of background.
-* Stopped and Terminated Jobs::  Reporting job status.
-* Continuing Stopped Jobs::     How to continue a stopped job in
-				 the foreground or background.
-* Missing Pieces::              Other parts of the shell.
-
-
-File: libc.info,  Node: Data Structures,  Next: Initializing the Shell,  Up: Implementing a Shell
-
-28.6.1 Data Structures for the Shell
-------------------------------------
-
-All of the program examples included in this chapter are part of a
-simple shell program.  This section presents data structures and utility
-functions which are used throughout the example.
-
-   The sample shell deals mainly with two data structures.  The ‘job’
-type contains information about a job, which is a set of subprocesses
-linked together with pipes.  The ‘process’ type holds information about
-a single subprocess.  Here are the relevant data structure declarations:
-
-     /* A process is a single process.  */
-     typedef struct process
-     {
-       struct process *next;       /* next process in pipeline */
-       char **argv;                /* for exec */
-       pid_t pid;                  /* process ID */
-       char completed;             /* true if process has completed */
-       char stopped;               /* true if process has stopped */
-       int status;                 /* reported status value */
-     } process;
-
-     /* A job is a pipeline of processes.  */
-     typedef struct job
-     {
-       struct job *next;           /* next active job */
-       char *command;              /* command line, used for messages */
-       process *first_process;     /* list of processes in this job */
-       pid_t pgid;                 /* process group ID */
-       char notified;              /* true if user told about stopped job */
-       struct termios tmodes;      /* saved terminal modes */
-       int stdin, stdout, stderr;  /* standard i/o channels */
-     } job;
-
-     /* The active jobs are linked into a list.  This is its head.   */
-     job *first_job = NULL;
-
-   Here are some utility functions that are used for operating on ‘job’
-objects.
-
-     /* Find the active job with the indicated PGID.  */
-     job *
-     find_job (pid_t pgid)
-     {
-       job *j;
-
-       for (j = first_job; j; j = j->next)
-         if (j->pgid == pgid)
-           return j;
-       return NULL;
-     }
-
-     /* Return true if all processes in the job have stopped or completed.  */
-     int
-     job_is_stopped (job *j)
-     {
-       process *p;
-
-       for (p = j->first_process; p; p = p->next)
-         if (!p->completed && !p->stopped)
-           return 0;
-       return 1;
-     }
-
-     /* Return true if all processes in the job have completed.  */
-     int
-     job_is_completed (job *j)
-     {
-       process *p;
-
-       for (p = j->first_process; p; p = p->next)
-         if (!p->completed)
-           return 0;
-       return 1;
-     }
-
-
-File: libc.info,  Node: Initializing the Shell,  Next: Launching Jobs,  Prev: Data Structures,  Up: Implementing a Shell
-
-28.6.2 Initializing the Shell
------------------------------
-
-When a shell program that normally performs job control is started, it
-has to be careful in case it has been invoked from another shell that is
-already doing its own job control.
-
-   A subshell that runs interactively has to ensure that it has been
-placed in the foreground by its parent shell before it can enable job
-control itself.  It does this by getting its initial process group ID
-with the ‘getpgrp’ function, and comparing it to the process group ID of
-the current foreground job associated with its controlling terminal
-(which can be retrieved using the ‘tcgetpgrp’ function).
-
-   If the subshell is not running as a foreground job, it must stop
-itself by sending a ‘SIGTTIN’ signal to its own process group.  It may
-not arbitrarily put itself into the foreground; it must wait for the
-user to tell the parent shell to do this.  If the subshell is continued
-again, it should repeat the check and stop itself again if it is still
-not in the foreground.
-
-   Once the subshell has been placed into the foreground by its parent
-shell, it can enable its own job control.  It does this by calling
-‘setpgid’ to put itself into its own process group, and then calling
-‘tcsetpgrp’ to place this process group into the foreground.
-
-   When a shell enables job control, it should set itself to ignore all
-the job control stop signals so that it doesn’t accidentally stop
-itself.  You can do this by setting the action for all the stop signals
-to ‘SIG_IGN’.
-
-   A subshell that runs non-interactively cannot and should not support
-job control.  It must leave all processes it creates in the same process
-group as the shell itself; this allows the non-interactive shell and its
-child processes to be treated as a single job by the parent shell.  This
-is easy to do—just don’t use any of the job control primitives—but you
-must remember to make the shell do it.
-
-   Here is the initialization code for the sample shell that shows how
-to do all of this.
-
-     /* Keep track of attributes of the shell.  */
-
-     #include <sys/types.h>
-     #include <termios.h>
-     #include <unistd.h>
-
-     pid_t shell_pgid;
-     struct termios shell_tmodes;
-     int shell_terminal;
-     int shell_is_interactive;
-
-
-     /* Make sure the shell is running interactively as the foreground job
-        before proceeding. */
-
-     void
-     init_shell ()
-     {
-
-       /* See if we are running interactively.  */
-       shell_terminal = STDIN_FILENO;
-       shell_is_interactive = isatty (shell_terminal);
-
-       if (shell_is_interactive)
-         {
-           /* Loop until we are in the foreground.  */
-           while (tcgetpgrp (shell_terminal) != (shell_pgid = getpgrp ()))
-             kill (- shell_pgid, SIGTTIN);
-
-           /* Ignore interactive and job-control signals.  */
-           signal (SIGINT, SIG_IGN);
-           signal (SIGQUIT, SIG_IGN);
-           signal (SIGTSTP, SIG_IGN);
-           signal (SIGTTIN, SIG_IGN);
-           signal (SIGTTOU, SIG_IGN);
-           signal (SIGCHLD, SIG_IGN);
-
-           /* Put ourselves in our own process group.  */
-           shell_pgid = getpid ();
-           if (setpgid (shell_pgid, shell_pgid) < 0)
-             {
-               perror ("Couldn't put the shell in its own process group");
-               exit (1);
-             }
-
-           /* Grab control of the terminal.  */
-           tcsetpgrp (shell_terminal, shell_pgid);
-
-           /* Save default terminal attributes for shell.  */
-           tcgetattr (shell_terminal, &shell_tmodes);
-         }
-     }
-
-
-File: libc.info,  Node: Launching Jobs,  Next: Foreground and Background,  Prev: Initializing the Shell,  Up: Implementing a Shell
-
-28.6.3 Launching Jobs
----------------------
-
-Once the shell has taken responsibility for performing job control on
-its controlling terminal, it can launch jobs in response to commands
-typed by the user.
-
-   To create the processes in a process group, you use the same ‘fork’
-and ‘exec’ functions described in *note Process Creation Concepts::.
-Since there are multiple child processes involved, though, things are a
-little more complicated and you must be careful to do things in the
-right order.  Otherwise, nasty race conditions can result.
-
-   You have two choices for how to structure the tree of parent-child
-relationships among the processes.  You can either make all the
-processes in the process group be children of the shell process, or you
-can make one process in group be the ancestor of all the other processes
-in that group.  The sample shell program presented in this chapter uses
-the first approach because it makes bookkeeping somewhat simpler.
-
-   As each process is forked, it should put itself in the new process
-group by calling ‘setpgid’; see *note Process Group Functions::.  The
-first process in the new group becomes its "process group leader", and
-its process ID becomes the "process group ID" for the group.
-
-   The shell should also call ‘setpgid’ to put each of its child
-processes into the new process group.  This is because there is a
-potential timing problem: each child process must be put in the process
-group before it begins executing a new program, and the shell depends on
-having all the child processes in the group before it continues
-executing.  If both the child processes and the shell call ‘setpgid’,
-this ensures that the right things happen no matter which process gets
-to it first.
-
-   If the job is being launched as a foreground job, the new process
-group also needs to be put into the foreground on the controlling
-terminal using ‘tcsetpgrp’.  Again, this should be done by the shell as
-well as by each of its child processes, to avoid race conditions.
-
-   The next thing each child process should do is to reset its signal
-actions.
-
-   During initialization, the shell process set itself to ignore job
-control signals; see *note Initializing the Shell::.  As a result, any
-child processes it creates also ignore these signals by inheritance.
-This is definitely undesirable, so each child process should explicitly
-set the actions for these signals back to ‘SIG_DFL’ just after it is
-forked.
-
-   Since shells follow this convention, applications can assume that
-they inherit the correct handling of these signals from the parent
-process.  But every application has a responsibility not to mess up the
-handling of stop signals.  Applications that disable the normal
-interpretation of the SUSP character should provide some other mechanism
-for the user to stop the job.  When the user invokes this mechanism, the
-program should send a ‘SIGTSTP’ signal to the process group of the
-process, not just to the process itself.  *Note Signaling Another
-Process::.
-
-   Finally, each child process should call ‘exec’ in the normal way.
-This is also the point at which redirection of the standard input and
-output channels should be handled.  *Note Duplicating Descriptors::, for
-an explanation of how to do this.
-
-   Here is the function from the sample shell program that is
-responsible for launching a program.  The function is executed by each
-child process immediately after it has been forked by the shell, and
-never returns.
-
-     void
-     launch_process (process *p, pid_t pgid,
-                     int infile, int outfile, int errfile,
-                     int foreground)
-     {
-       pid_t pid;
-
-       if (shell_is_interactive)
-         {
-           /* Put the process into the process group and give the process group
-              the terminal, if appropriate.
-              This has to be done both by the shell and in the individual
-              child processes because of potential race conditions.  */
-           pid = getpid ();
-           if (pgid == 0) pgid = pid;
-           setpgid (pid, pgid);
-           if (foreground)
-             tcsetpgrp (shell_terminal, pgid);
-
-           /* Set the handling for job control signals back to the default.  */
-           signal (SIGINT, SIG_DFL);
-           signal (SIGQUIT, SIG_DFL);
-           signal (SIGTSTP, SIG_DFL);
-           signal (SIGTTIN, SIG_DFL);
-           signal (SIGTTOU, SIG_DFL);
-           signal (SIGCHLD, SIG_DFL);
-         }
-
-       /* Set the standard input/output channels of the new process.  */
-       if (infile != STDIN_FILENO)
-         {
-           dup2 (infile, STDIN_FILENO);
-           close (infile);
-         }
-       if (outfile != STDOUT_FILENO)
-         {
-           dup2 (outfile, STDOUT_FILENO);
-           close (outfile);
-         }
-       if (errfile != STDERR_FILENO)
-         {
-           dup2 (errfile, STDERR_FILENO);
-           close (errfile);
-         }
-
-       /* Exec the new process.  Make sure we exit.  */
-       execvp (p->argv[0], p->argv);
-       perror ("execvp");
-       exit (1);
-     }
-
-   If the shell is not running interactively, this function does not do
-anything with process groups or signals.  Remember that a shell not
-performing job control must keep all of its subprocesses in the same
-process group as the shell itself.
-
-   Next, here is the function that actually launches a complete job.
-After creating the child processes, this function calls some other
-functions to put the newly created job into the foreground or
-background; these are discussed in *note Foreground and Background::.
-
-     void
-     launch_job (job *j, int foreground)
-     {
-       process *p;
-       pid_t pid;
-       int mypipe[2], infile, outfile;
-
-       infile = j->stdin;
-       for (p = j->first_process; p; p = p->next)
-         {
-           /* Set up pipes, if necessary.  */
-           if (p->next)
-             {
-               if (pipe (mypipe) < 0)
-                 {
-                   perror ("pipe");
-                   exit (1);
-                 }
-               outfile = mypipe[1];
-             }
-           else
-             outfile = j->stdout;
-
-           /* Fork the child processes.  */
-           pid = fork ();
-           if (pid == 0)
-             /* This is the child process.  */
-             launch_process (p, j->pgid, infile,
-                             outfile, j->stderr, foreground);
-           else if (pid < 0)
-             {
-               /* The fork failed.  */
-               perror ("fork");
-               exit (1);
-             }
-           else
-             {
-               /* This is the parent process.  */
-               p->pid = pid;
-               if (shell_is_interactive)
-                 {
-                   if (!j->pgid)
-                     j->pgid = pid;
-                   setpgid (pid, j->pgid);
-                 }
-             }
-
-           /* Clean up after pipes.  */
-           if (infile != j->stdin)
-             close (infile);
-           if (outfile != j->stdout)
-             close (outfile);
-           infile = mypipe[0];
-         }
-
-       format_job_info (j, "launched");
-
-       if (!shell_is_interactive)
-         wait_for_job (j);
-       else if (foreground)
-         put_job_in_foreground (j, 0);
-       else
-         put_job_in_background (j, 0);
-     }
-
-
-File: libc.info,  Node: Foreground and Background,  Next: Stopped and Terminated Jobs,  Prev: Launching Jobs,  Up: Implementing a Shell
-
-28.6.4 Foreground and Background
---------------------------------
-
-Now let’s consider what actions must be taken by the shell when it
-launches a job into the foreground, and how this differs from what must
-be done when a background job is launched.
-
-   When a foreground job is launched, the shell must first give it
-access to the controlling terminal by calling ‘tcsetpgrp’.  Then, the
-shell should wait for processes in that process group to terminate or
-stop.  This is discussed in more detail in *note Stopped and Terminated
-Jobs::.
-
-   When all of the processes in the group have either completed or
-stopped, the shell should regain control of the terminal for its own
-process group by calling ‘tcsetpgrp’ again.  Since stop signals caused
-by I/O from a background process or a SUSP character typed by the user
-are sent to the process group, normally all the processes in the job
-stop together.
-
-   The foreground job may have left the terminal in a strange state, so
-the shell should restore its own saved terminal modes before continuing.
-In case the job is merely stopped, the shell should first save the
-current terminal modes so that it can restore them later if the job is
-continued.  The functions for dealing with terminal modes are
-‘tcgetattr’ and ‘tcsetattr’; these are described in *note Terminal
-Modes::.
-
-   Here is the sample shell’s function for doing all of this.
-
-     /* Put job J in the foreground.  If CONT is nonzero,
-        restore the saved terminal modes and send the process group a
-        ‘SIGCONT’ signal to wake it up before we block.  */
-
-     void
-     put_job_in_foreground (job *j, int cont)
-     {
-       /* Put the job into the foreground.  */
-       tcsetpgrp (shell_terminal, j->pgid);
-
-       /* Send the job a continue signal, if necessary.  */
-       if (cont)
-         {
-           tcsetattr (shell_terminal, TCSADRAIN, &j->tmodes);
-           if (kill (- j->pgid, SIGCONT) < 0)
-             perror ("kill (SIGCONT)");
-         }
-
-       /* Wait for it to report.  */
-       wait_for_job (j);
-
-       /* Put the shell back in the foreground.  */
-       tcsetpgrp (shell_terminal, shell_pgid);
-
-       /* Restore the shell’s terminal modes.  */
-       tcgetattr (shell_terminal, &j->tmodes);
-       tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
-     }
-
-   If the process group is launched as a background job, the shell
-should remain in the foreground itself and continue to read commands
-from the terminal.
-
-   In the sample shell, there is not much that needs to be done to put a
-job into the background.  Here is the function it uses:
-
-     /* Put a job in the background.  If the cont argument is true, send
-        the process group a ‘SIGCONT’ signal to wake it up.  */
-
-     void
-     put_job_in_background (job *j, int cont)
-     {
-       /* Send the job a continue signal, if necessary.  */
-       if (cont)
-         if (kill (-j->pgid, SIGCONT) < 0)
-           perror ("kill (SIGCONT)");
-     }
-
-
-File: libc.info,  Node: Stopped and Terminated Jobs,  Next: Continuing Stopped Jobs,  Prev: Foreground and Background,  Up: Implementing a Shell
-
-28.6.5 Stopped and Terminated Jobs
-----------------------------------
-
-When a foreground process is launched, the shell must block until all of
-the processes in that job have either terminated or stopped.  It can do
-this by calling the ‘waitpid’ function; see *note Process Completion::.
-Use the ‘WUNTRACED’ option so that status is reported for processes that
-stop as well as processes that terminate.
-
-   The shell must also check on the status of background jobs so that it
-can report terminated and stopped jobs to the user; this can be done by
-calling ‘waitpid’ with the ‘WNOHANG’ option.  A good place to put a such
-a check for terminated and stopped jobs is just before prompting for a
-new command.
-
-   The shell can also receive asynchronous notification that there is
-status information available for a child process by establishing a
-handler for ‘SIGCHLD’ signals.  *Note Signal Handling::.
-
-   In the sample shell program, the ‘SIGCHLD’ signal is normally
-ignored.  This is to avoid reentrancy problems involving the global data
-structures the shell manipulates.  But at specific times when the shell
-is not using these data structures—such as when it is waiting for input
-on the terminal—it makes sense to enable a handler for ‘SIGCHLD’.  The
-same function that is used to do the synchronous status checks
-(‘do_job_notification’, in this case) can also be called from within
-this handler.
-
-   Here are the parts of the sample shell program that deal with
-checking the status of jobs and reporting the information to the user.
-
-     /* Store the status of the process PID that was returned by waitpid.
-        Return 0 if all went well, nonzero otherwise.  */
-
-     int
-     mark_process_status (pid_t pid, int status)
-     {
-       job *j;
-       process *p;
-
-       if (pid > 0)
-         {
-           /* Update the record for the process.  */
-           for (j = first_job; j; j = j->next)
-             for (p = j->first_process; p; p = p->next)
-               if (p->pid == pid)
-                 {
-                   p->status = status;
-                   if (WIFSTOPPED (status))
-                     p->stopped = 1;
-                   else
-                     {
-                       p->completed = 1;
-                       if (WIFSIGNALED (status))
-                         fprintf (stderr, "%d: Terminated by signal %d.\n",
-                                  (int) pid, WTERMSIG (p->status));
-                     }
-                   return 0;
-                  }
-           fprintf (stderr, "No child process %d.\n", pid);
-           return -1;
-         }
-       else if (pid == 0 || errno == ECHILD)
-         /* No processes ready to report.  */
-         return -1;
-       else {
-         /* Other weird errors.  */
-         perror ("waitpid");
-         return -1;
-       }
-     }
-
-     /* Check for processes that have status information available,
-        without blocking.  */
-
-     void
-     update_status (void)
-     {
-       int status;
-       pid_t pid;
-
-       do
-         pid = waitpid (WAIT_ANY, &status, WUNTRACED|WNOHANG);
-       while (!mark_process_status (pid, status));
-     }
-
-     /* Check for processes that have status information available,
-        blocking until all processes in the given job have reported.  */
-
-     void
-     wait_for_job (job *j)
-     {
-       int status;
-       pid_t pid;
-
-       do
-         pid = waitpid (WAIT_ANY, &status, WUNTRACED);
-       while (!mark_process_status (pid, status)
-              && !job_is_stopped (j)
-              && !job_is_completed (j));
-     }
-
-     /* Format information about job status for the user to look at.  */
-
-     void
-     format_job_info (job *j, const char *status)
-     {
-       fprintf (stderr, "%ld (%s): %s\n", (long)j->pgid, status, j->command);
-     }
-
-     /* Notify the user about stopped or terminated jobs.
-        Delete terminated jobs from the active job list.  */
-
-     void
-     do_job_notification (void)
-     {
-       job *j, *jlast, *jnext;
-       process *p;
-
-       /* Update status information for child processes.  */
-       update_status ();
-
-       jlast = NULL;
-       for (j = first_job; j; j = jnext)
-         {
-           jnext = j->next;
-
-           /* If all processes have completed, tell the user the job has
-              completed and delete it from the list of active jobs.  */
-           if (job_is_completed (j)) {
-             format_job_info (j, "completed");
-             if (jlast)
-               jlast->next = jnext;
-             else
-               first_job = jnext;
-             free_job (j);
-           }
-
-           /* Notify the user about stopped jobs,
-              marking them so that we won’t do this more than once.  */
-           else if (job_is_stopped (j) && !j->notified) {
-             format_job_info (j, "stopped");
-             j->notified = 1;
-             jlast = j;
-           }
-
-           /* Don’t say anything about jobs that are still running.  */
-           else
-             jlast = j;
-         }
-     }
-
-
-File: libc.info,  Node: Continuing Stopped Jobs,  Next: Missing Pieces,  Prev: Stopped and Terminated Jobs,  Up: Implementing a Shell
-
-28.6.6 Continuing Stopped Jobs
-------------------------------
-
-The shell can continue a stopped job by sending a ‘SIGCONT’ signal to
-its process group.  If the job is being continued in the foreground, the
-shell should first invoke ‘tcsetpgrp’ to give the job access to the
-terminal, and restore the saved terminal settings.  After continuing a
-job in the foreground, the shell should wait for the job to stop or
-complete, as if the job had just been launched in the foreground.
-
-   The sample shell program handles both newly created and continued
-jobs with the same pair of functions, ‘put_job_in_foreground’ and
-‘put_job_in_background’.  The definitions of these functions were given
-in *note Foreground and Background::.  When continuing a stopped job, a
-nonzero value is passed as the CONT argument to ensure that the
-‘SIGCONT’ signal is sent and the terminal modes reset, as appropriate.
-
-   This leaves only a function for updating the shell’s internal
-bookkeeping about the job being continued:
-
-     /* Mark a stopped job J as being running again.  */
-
-     void
-     mark_job_as_running (job *j)
-     {
-       Process *p;
-
-       for (p = j->first_process; p; p = p->next)
-         p->stopped = 0;
-       j->notified = 0;
-     }
-
-     /* Continue the job J.  */
-
-     void
-     continue_job (job *j, int foreground)
-     {
-       mark_job_as_running (j);
-       if (foreground)
-         put_job_in_foreground (j, 1);
-       else
-         put_job_in_background (j, 1);
-     }
-
-
-File: libc.info,  Node: Missing Pieces,  Prev: Continuing Stopped Jobs,  Up: Implementing a Shell
-
-28.6.7 The Missing Pieces
--------------------------
-
-The code extracts for the sample shell included in this chapter are only
-a part of the entire shell program.  In particular, nothing at all has
-been said about how ‘job’ and ‘program’ data structures are allocated
-and initialized.
-
-   Most real shells provide a complex user interface that has support
-for a command language; variables; abbreviations, substitutions, and
-pattern matching on file names; and the like.  All of this is far too
-complicated to explain here!  Instead, we have concentrated on showing
-how to implement the core process creation and job control functions
-that can be called from such a shell.
-
-   Here is a table summarizing the major entry points we have presented:
-
-‘void init_shell (void)’
-     Initialize the shell’s internal state.  *Note Initializing the
-     Shell::.
-
-‘void launch_job (job *J, int FOREGROUND)’
-     Launch the job J as either a foreground or background job.  *Note
-     Launching Jobs::.
-
-‘void do_job_notification (void)’
-     Check for and report any jobs that have terminated or stopped.  Can
-     be called synchronously or within a handler for ‘SIGCHLD’ signals.
-     *Note Stopped and Terminated Jobs::.
-
-‘void continue_job (job *J, int FOREGROUND)’
-     Continue the job J.  *Note Continuing Stopped Jobs::.
-
-   Of course, a real shell would also want to provide other functions
-for managing jobs.  For example, it would be useful to have commands to
-list all active jobs or to send a signal (such as ‘SIGKILL’) to a job.
-
-
-File: libc.info,  Node: Functions for Job Control,  Prev: Implementing a Shell,  Up: Job Control
-
-28.7 Functions for Job Control
-==============================
-
-This section contains detailed descriptions of the functions relating to
-job control.
-
-* Menu:
-
-* Identifying the Terminal::    Determining the controlling terminal’s name.
-* Process Group Functions::     Functions for manipulating process groups.
-* Terminal Access Functions::   Functions for controlling terminal access.
-
-
-File: libc.info,  Node: Identifying the Terminal,  Next: Process Group Functions,  Up: Functions for Job Control
-
-28.7.1 Identifying the Controlling Terminal
--------------------------------------------
-
-You can use the ‘ctermid’ function to get a file name that you can use
-to open the controlling terminal.  In the GNU C Library, it returns the
-same string all the time: ‘"/dev/tty"’.  That is a special “magic” file
-name that refers to the controlling terminal of the current process (if
-it has one).  To find the name of the specific terminal device, use
-‘ttyname’; *note Is It a Terminal::.
-
-   The function ‘ctermid’ is declared in the header file ‘stdio.h’.
-
- -- Function: char * ctermid (char *STRING)
-     Preliminary: | MT-Safe !posix/!string | AS-Safe | AC-Safe | *Note
-     POSIX Safety Concepts::.
-
-     The ‘ctermid’ function returns a string containing the file name of
-     the controlling terminal for the current process.  If STRING is not
-     a null pointer, it should be an array that can hold at least
-     ‘L_ctermid’ characters; the string is returned in this array.
-     Otherwise, a pointer to a string in a static area is returned,
-     which might get overwritten on subsequent calls to this function.
-
-     An empty string is returned if the file name cannot be determined
-     for any reason.  Even if a file name is returned, access to the
-     file it represents is not guaranteed.
-
- -- Macro: int L_ctermid
-     The value of this macro is an integer constant expression that
-     represents the size of a string large enough to hold the file name
-     returned by ‘ctermid’.
-
-   See also the ‘isatty’ and ‘ttyname’ functions, in *note Is It a
-Terminal::.
-
-
-File: libc.info,  Node: Process Group Functions,  Next: Terminal Access Functions,  Prev: Identifying the Terminal,  Up: Functions for Job Control
-
-28.7.2 Process Group Functions
-------------------------------
-
-Here are descriptions of the functions for manipulating process groups.
-Your program should include the header files ‘sys/types.h’ and
-‘unistd.h’ to use these functions.
-
- -- Function: pid_t setsid (void)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘setsid’ function creates a new session.  The calling process
-     becomes the session leader, and is put in a new process group whose
-     process group ID is the same as the process ID of that process.
-     There are initially no other processes in the new process group,
-     and no other process groups in the new session.
-
-     This function also makes the calling process have no controlling
-     terminal.
-
-     The ‘setsid’ function returns the new process group ID of the
-     calling process if successful.  A return value of ‘-1’ indicates an
-     error.  The following ‘errno’ error conditions are defined for this
-     function:
-
-     ‘EPERM’
-          The calling process is already a process group leader, or
-          there is already another process group around that has the
-          same process group ID.
-
- -- Function: pid_t getsid (pid_t PID)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘getsid’ function returns the process group ID of the session
-     leader of the specified process.  If a PID is ‘0’, the process
-     group ID of the session leader of the current process is returned.
-
-     In case of error ‘-1’ is returned and ‘errno’ is set.  The
-     following ‘errno’ error conditions are defined for this function:
-
-     ‘ESRCH’
-          There is no process with the given process ID PID.
-     ‘EPERM’
-          The calling process and the process specified by PID are in
-          different sessions, and the implementation doesn’t allow to
-          access the process group ID of the session leader of the
-          process with ID PID from the calling process.
-
- -- Function: pid_t getpgrp (void)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘getpgrp’ function returns the process group ID of the calling
-     process.
-
- -- Function: int getpgid (pid_t PID)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘getpgid’ function returns the process group ID of the process
-     PID.  You can supply a value of ‘0’ for the PID argument to get
-     information about the calling process.
-
-     In case of error ‘-1’ is returned and ‘errno’ is set.  The
-     following ‘errno’ error conditions are defined for this function:
-
-     ‘ESRCH’
-          There is no process with the given process ID PID.  The
-          calling process and the process specified by PID are in
-          different sessions, and the implementation doesn’t allow to
-          access the process group ID of the process with ID PID from
-          the calling process.
-
- -- Function: int setpgid (pid_t PID, pid_t PGID)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘setpgid’ function puts the process PID into the process group
-     PGID.  As a special case, either PID or PGID can be zero to
-     indicate the process ID of the calling process.
-
-     This function fails on a system that does not support job control.
-     *Note Job Control is Optional::, for more information.
-
-     If the operation is successful, ‘setpgid’ returns zero.  Otherwise
-     it returns ‘-1’.  The following ‘errno’ error conditions are
-     defined for this function:
-
-     ‘EACCES’
-          The child process named by PID has executed an ‘exec’ function
-          since it was forked.
-
-     ‘EINVAL’
-          The value of the PGID is not valid.
-
-     ‘ENOSYS’
-          The system doesn’t support job control.
-
-     ‘EPERM’
-          The process indicated by the PID argument is a session leader,
-          or is not in the same session as the calling process, or the
-          value of the PGID argument doesn’t match a process group ID in
-          the same session as the calling process.
-
-     ‘ESRCH’
-          The process indicated by the PID argument is not the calling
-          process or a child of the calling process.
-
- -- Function: int setpgrp (pid_t PID, pid_t PGID)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This is the BSD Unix name for ‘setpgid’.  Both functions do exactly
-     the same thing.
-
-
-File: libc.info,  Node: Terminal Access Functions,  Prev: Process Group Functions,  Up: Functions for Job Control
-
-28.7.3 Functions for Controlling Terminal Access
-------------------------------------------------
-
-These are the functions for reading or setting the foreground process
-group of a terminal.  You should include the header files ‘sys/types.h’
-and ‘unistd.h’ in your application to use these functions.
-
-   Although these functions take a file descriptor argument to specify
-the terminal device, the foreground job is associated with the terminal
-file itself and not a particular open file descriptor.
-
- -- Function: pid_t tcgetpgrp (int FILEDES)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This function returns the process group ID of the foreground
-     process group associated with the terminal open on descriptor
-     FILEDES.
-
-     If there is no foreground process group, the return value is a
-     number greater than ‘1’ that does not match the process group ID of
-     any existing process group.  This can happen if all of the
-     processes in the job that was formerly the foreground job have
-     terminated, and no other job has yet been moved into the
-     foreground.
-
-     In case of an error, a value of ‘-1’ is returned.  The following
-     ‘errno’ error conditions are defined for this function:
-
-     ‘EBADF’
-          The FILEDES argument is not a valid file descriptor.
-
-     ‘ENOSYS’
-          The system doesn’t support job control.
-
-     ‘ENOTTY’
-          The terminal file associated with the FILEDES argument isn’t
-          the controlling terminal of the calling process.
-
- -- Function: int tcsetpgrp (int FILEDES, pid_t PGID)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This function is used to set a terminal’s foreground process group
-     ID. The argument FILEDES is a descriptor which specifies the
-     terminal; PGID specifies the process group.  The calling process
-     must be a member of the same session as PGID and must have the same
-     controlling terminal.
-
-     For terminal access purposes, this function is treated as output.
-     If it is called from a background process on its controlling
-     terminal, normally all processes in the process group are sent a
-     ‘SIGTTOU’ signal.  The exception is if the calling process itself
-     is ignoring or blocking ‘SIGTTOU’ signals, in which case the
-     operation is performed and no signal is sent.
-
-     If successful, ‘tcsetpgrp’ returns ‘0’.  A return value of ‘-1’
-     indicates an error.  The following ‘errno’ error conditions are
-     defined for this function:
-
-     ‘EBADF’
-          The FILEDES argument is not a valid file descriptor.
-
-     ‘EINVAL’
-          The PGID argument is not valid.
-
-     ‘ENOSYS’
-          The system doesn’t support job control.
-
-     ‘ENOTTY’
-          The FILEDES isn’t the controlling terminal of the calling
-          process.
-
-     ‘EPERM’
-          The PGID isn’t a process group in the same session as the
-          calling process.
-
- -- Function: pid_t tcgetsid (int FILDES)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This function is used to obtain the process group ID of the session
-     for which the terminal specified by FILDES is the controlling
-     terminal.  If the call is successful the group ID is returned.
-     Otherwise the return value is ‘(pid_t) -1’ and the global variable
-     ERRNO is set to the following value:
-     ‘EBADF’
-          The FILEDES argument is not a valid file descriptor.
-
-     ‘ENOTTY’
-          The calling process does not have a controlling terminal, or
-          the file is not the controlling terminal.
-
-
-File: libc.info,  Node: Name Service Switch,  Next: Users and Groups,  Prev: Job Control,  Up: Top
-
-29 System Databases and Name Service Switch
-*******************************************
-
-Various functions in the C Library need to be configured to work
-correctly in the local environment.  Traditionally, this was done by
-using files (e.g., ‘/etc/passwd’), but other nameservices (like the
-Network Information Service (NIS) and the Domain Name Service (DNS))
-became popular, and were hacked into the C library, usually with a fixed
-search order.
-
-   The GNU C Library contains a cleaner solution to this problem.  It is
-designed after a method used by Sun Microsystems in the C library of
-Solaris 2.  The GNU C Library follows their name and calls this scheme
-"Name Service Switch" (NSS).
-
-   Though the interface might be similar to Sun’s version there is no
-common code.  We never saw any source code of Sun’s implementation and
-so the internal interface is incompatible.  This also manifests in the
-file names we use as we will see later.
-
-* Menu:
-
-* NSS Basics::                  What is this NSS good for.
-* NSS Configuration File::      Configuring NSS.
-* NSS Module Internals::        How does it work internally.
-* Extending NSS::               What to do to add services or databases.
-
-
-File: libc.info,  Node: NSS Basics,  Next: NSS Configuration File,  Prev: Name Service Switch,  Up: Name Service Switch
-
-29.1 NSS Basics
-===============
-
-The basic idea is to put the implementation of the different services
-offered to access the databases in separate modules.  This has some
-advantages:
-
-  1. Contributors can add new services without adding them to the GNU C
-     Library.
-  2. The modules can be updated separately.
-  3. The C library image is smaller.
-
-   To fulfill the first goal above, the ABI of the modules will be
-described below.  For getting the implementation of a new service right
-it is important to understand how the functions in the modules get
-called.  They are in no way designed to be used by the programmer
-directly.  Instead the programmer should only use the documented and
-standardized functions to access the databases.
-
-The databases available in the NSS are
-
-‘aliases’
-     Mail aliases
-‘ethers’
-     Ethernet numbers,
-‘group’
-     Groups of users, *note Group Database::.
-‘hosts’
-     Host names and numbers, *note Host Names::.
-‘netgroup’
-     Network wide list of host and users, *note Netgroup Database::.
-‘networks’
-     Network names and numbers, *note Networks Database::.
-‘protocols’
-     Network protocols, *note Protocols Database::.
-‘passwd’
-     User passwords, *note User Database::.
-‘rpc’
-     Remote procedure call names and numbers,
-‘services’
-     Network services, *note Services Database::.
-‘shadow’
-     Shadow user passwords,
-
-There will be some more added later (‘automount’, ‘bootparams’,
-‘netmasks’, and ‘publickey’).
-
-
-File: libc.info,  Node: NSS Configuration File,  Next: NSS Module Internals,  Prev: NSS Basics,  Up: Name Service Switch
-
-29.2 The NSS Configuration File
-===============================
-
-Somehow the NSS code must be told about the wishes of the user.  For
-this reason there is the file ‘/etc/nsswitch.conf’.  For each database,
-this file contains a specification of how the lookup process should
-work.  The file could look like this:
-
-     # /etc/nsswitch.conf
-     #
-     # Name Service Switch configuration file.
-     #
-
-     passwd:     db files nis
-     shadow:     files
-     group:      db files nis
-
-     hosts:      files nisplus nis dns
-     networks:   nisplus [NOTFOUND=return] files
-
-     ethers:     nisplus [NOTFOUND=return] db files
-     protocols:  nisplus [NOTFOUND=return] db files
-     rpc:        nisplus [NOTFOUND=return] db files
-     services:   nisplus [NOTFOUND=return] db files
-
-   The first column is the database as you can guess from the table
-above.  The rest of the line specifies how the lookup process works.
-Please note that you specify the way it works for each database
-individually.  This cannot be done with the old way of a monolithic
-implementation.
-
-   The configuration specification for each database can contain two
-different items:
-
-   • the service specification like ‘files’, ‘db’, or ‘nis’.
-   • the reaction on lookup result like ‘[NOTFOUND=return]’.
-
-* Menu:
-
-* Services in the NSS configuration::  Service names in the NSS configuration.
-* Actions in the NSS configuration::  React appropriately to the lookup result.
-* Notes on NSS Configuration File::  Things to take care about while
-                                     configuring NSS.
-
-
-File: libc.info,  Node: Services in the NSS configuration,  Next: Actions in the NSS configuration,  Prev: NSS Configuration File,  Up: NSS Configuration File
-
-29.2.1 Services in the NSS configuration File
----------------------------------------------
-
-The above example file mentions five different services: ‘files’, ‘db’,
-‘dns’, ‘nis’, and ‘nisplus’.  This does not mean these services are
-available on all sites and neither does it mean these are all the
-services which will ever be available.
-
-   In fact, these names are simply strings which the NSS code uses to
-find the implicitly addressed functions.  The internal interface will be
-described later.  Visible to the user are the modules which implement an
-individual service.
-
-   Assume the service NAME shall be used for a lookup.  The code for
-this service is implemented in a module called ‘libnss_NAME’.  On a
-system supporting shared libraries this is in fact a shared library with
-the name (for example) ‘libnss_NAME.so.2’.  The number at the end is the
-currently used version of the interface which will not change
-frequently.  Normally the user should not have to be cognizant of these
-files since they should be placed in a directory where they are found
-automatically.  Only the names of all available services are important.
-
-
-File: libc.info,  Node: Actions in the NSS configuration,  Next: Notes on NSS Configuration File,  Prev: Services in the NSS configuration,  Up: NSS Configuration File
-
-29.2.2 Actions in the NSS configuration
----------------------------------------
-
-The second item in the specification gives the user much finer control
-on the lookup process.  Action items are placed between two service
-names and are written within brackets.  The general form is
-
-     ‘[’ ( ‘!’? STATUS ‘=’ ACTION )+ ‘]’
-
-where
-
-     STATUS ⇒ success | notfound | unavail | tryagain
-     ACTION ⇒ return | continue
-
-   The case of the keywords is insignificant.  The STATUS values are the
-results of a call to a lookup function of a specific service.  They
-mean:
-
-‘success’
-     No error occurred and the wanted entry is returned.  The default
-     action for this is ‘return’.
-
-‘notfound’
-     The lookup process works ok but the needed value was not found.
-     The default action is ‘continue’.
-
-‘unavail’
-     The service is permanently unavailable.  This can either mean the
-     needed file is not available, or, for DNS, the server is not
-     available or does not allow queries.  The default action is
-     ‘continue’.
-
-‘tryagain’
-     The service is temporarily unavailable.  This could mean a file is
-     locked or a server currently cannot accept more connections.  The
-     default action is ‘continue’.
-
-The ACTION values mean:
-
-‘return’
-
-     If the status matches, stop the lookup process at this service
-     specification.  If an entry is available, provide it to the
-     application.  If an error occurred, report it to the application.
-     In case of a prior ‘merge’ action, the data is combined with
-     previous lookup results, as explained below.
-
-‘continue’
-
-     If the status matches, proceed with the lookup process at the next
-     entry, discarding the result of the current lookup (and any merged
-     data).  An exception is the ‘initgroups’ database and the ‘success’
-     status, where ‘continue’ acts like ‘merge’ below.
-
-‘merge’
-
-     Proceed with the lookup process, retaining the current lookup
-     result.  This action is useful only with the ‘success’ status.  If
-     a subsequent service lookup succeeds and has a matching ‘return’
-     specification, the results are merged, the lookup process ends, and
-     the merged results are returned to the application.  If the
-     following service has a matching ‘merge’ action, the lookup process
-     continues, retaining the combined data from this and any previous
-     lookups.
-
-     After a ‘merge’ action, errors from subsequent lookups are ignored,
-     and the data gathered so far will be returned.
-
-     The ‘merge’ only applies to the ‘success’ status.  It is currently
-     implemented for the ‘group’ database and its group members field,
-     ‘gr_mem’.  If specified for other databases, it causes the lookup
-     to fail (if the STATUS matches).
-
-     When processing ‘merge’ for ‘group’ membership, the group GID and
-     name must be identical for both entries.  If only one or the other
-     is a match, the behavior is undefined.
-
-If we have a line like
-
-     ethers: nisplus [NOTFOUND=return] db files
-
-this is equivalent to
-
-     ethers: nisplus [SUCCESS=return NOTFOUND=return UNAVAIL=continue
-                      TRYAGAIN=continue]
-             db      [SUCCESS=return NOTFOUND=continue UNAVAIL=continue
-                      TRYAGAIN=continue]
-             files
-
-(except that it would have to be written on one line).  The default
-value for the actions are normally what you want, and only need to be
-changed in exceptional cases.
-
-   If the optional ‘!’ is placed before the STATUS this means the
-following action is used for all statuses but STATUS itself.  I.e., ‘!’
-is negation as in the C language (and others).
-
-   Before we explain the exception which makes this action item
-necessary one more remark: obviously it makes no sense to add another
-action item after the ‘files’ service.  Since there is no other service
-following the action _always_ is ‘return’.
-
-   Now, why is this ‘[NOTFOUND=return]’ action useful?  To understand
-this we should know that the ‘nisplus’ service is often complete; i.e.,
-if an entry is not available in the NIS+ tables it is not available
-anywhere else.  This is what is expressed by this action item: it is
-useless to examine further services since they will not give us a
-result.
-
-   The situation would be different if the NIS+ service is not available
-because the machine is booting.  In this case the return value of the
-lookup function is not ‘notfound’ but instead ‘unavail’.  And as you can
-see in the complete form above: in this situation the ‘db’ and ‘files’
-services are used.  Neat, isn’t it?  The system administrator need not
-pay special care for the time the system is not completely ready to work
-(while booting or shutdown or network problems).
-
-
-File: libc.info,  Node: Notes on NSS Configuration File,  Prev: Actions in the NSS configuration,  Up: NSS Configuration File
-
-29.2.3 Notes on the NSS Configuration File
-------------------------------------------
-
-Finally a few more hints.  The NSS implementation is not completely
-helpless if ‘/etc/nsswitch.conf’ does not exist.  For all supported
-databases there is a default value so it should normally be possible to
-get the system running even if the file is corrupted or missing.
-
-   For the ‘hosts’ and ‘networks’ databases the default value is ‘dns
-[!UNAVAIL=return] files’.  I.e., the system is prepared for the DNS
-service not to be available but if it is available the answer it returns
-is definitive.
-
-   The ‘passwd’, ‘group’, and ‘shadow’ databases are traditionally
-handled in a special way.  The appropriate files in the ‘/etc’ directory
-are read but if an entry with a name starting with a ‘+’ character is
-found NIS is used.  This kind of lookup remains possible by using the
-special lookup service ‘compat’ and the default value for the three
-databases above is ‘compat [NOTFOUND=return] files’.
-
-   For all other databases the default value is ‘nis [NOTFOUND=return]
-files’.  This solution gives the best chance to be correct since NIS and
-file based lookups are used.
-
-   A second point is that the user should try to optimize the lookup
-process.  The different service have different response times.  A simple
-file look up on a local file could be fast, but if the file is long and
-the needed entry is near the end of the file this may take quite some
-time.  In this case it might be better to use the ‘db’ service which
-allows fast local access to large data sets.
-
-   Often the situation is that some global information like NIS must be
-used.  So it is unavoidable to use service entries like ‘nis’ etc.  But
-one should avoid slow services like this if possible.
-
-
-File: libc.info,  Node: NSS Module Internals,  Next: Extending NSS,  Prev: NSS Configuration File,  Up: Name Service Switch
-
-29.3 NSS Module Internals
-=========================
-
-Now it is time to describe what the modules look like.  The functions
-contained in a module are identified by their names.  I.e., there is no
-jump table or the like.  How this is done is of no interest here; those
-interested in this topic should read about Dynamic Linking.
-
-* Menu:
-
-* NSS Module Names::            Construction of the interface function of
-                                the NSS modules.
-* NSS Modules Interface::       Programming interface in the NSS module
-                                functions.
-
-
-File: libc.info,  Node: NSS Module Names,  Next: NSS Modules Interface,  Prev: NSS Module Internals,  Up: NSS Module Internals
-
-29.3.1 The Naming Scheme of the NSS Modules
--------------------------------------------
-
-The name of each function consists of various parts:
-
-     _nss_SERVICE_FUNCTION
-
-   SERVICE of course corresponds to the name of the module this function
-is found in.(1)  The FUNCTION part is derived from the interface
-function in the C library itself.  If the user calls the function
-‘gethostbyname’ and the service used is ‘files’ the function
-
-            _nss_files_gethostbyname_r
-
-in the module
-
-            libnss_files.so.2
-
-is used.  You see, what is explained above in not the whole truth.  In
-fact the NSS modules only contain reentrant versions of the lookup
-functions.  I.e., if the user would call the ‘gethostbyname_r’ function
-this also would end in the above function.  For all user interface
-functions the C library maps this call to a call to the reentrant
-function.  For reentrant functions this is trivial since the interface
-is (nearly) the same.  For the non-reentrant version the library keeps
-internal buffers which are used to replace the user supplied buffer.
-
-   I.e., the reentrant functions _can_ have counterparts.  No service
-module is forced to have functions for all databases and all kinds to
-access them.  If a function is not available it is simply treated as if
-the function would return ‘unavail’ (*note Actions in the NSS
-configuration::).
-
-   The file name ‘libnss_files.so.2’ would be on a Solaris 2 system
-‘nss_files.so.2’.  This is the difference mentioned above.  Sun’s NSS
-modules are usable as modules which get indirectly loaded only.
-
-   The NSS modules in the GNU C Library are prepared to be used as
-normal libraries themselves.  This is _not_ true at the moment, though.
-However, the organization of the name space in the modules does not make
-it impossible like it is for Solaris.  Now you can see why the modules
-are still libraries.(2)
-
-   ---------- Footnotes ----------
-
-   (1) Now you might ask why this information is duplicated.  The answer
-is that we want to make it possible to link directly with these shared
-objects.
-
-   (2) There is a second explanation: we were too lazy to change the
-Makefiles to allow the generation of shared objects not starting with
-‘lib’ but don’t tell this to anybody.
-
-
-File: libc.info,  Node: NSS Modules Interface,  Prev: NSS Module Names,  Up: NSS Module Internals
-
-29.3.2 The Interface of the Function in NSS Modules
----------------------------------------------------
-
-Now we know about the functions contained in the modules.  It is now
-time to describe the types.  When we mentioned the reentrant versions of
-the functions above, this means there are some additional arguments
-(compared with the standard, non-reentrant versions).  The prototypes
-for the non-reentrant and reentrant versions of our function above are:
-
-     struct hostent *gethostbyname (const char *name)
-
-     int gethostbyname_r (const char *name, struct hostent *result_buf,
-                          char *buf, size_t buflen, struct hostent **result,
-                          int *h_errnop)
-
-The actual prototype of the function in the NSS modules in this case is
-
-     enum nss_status _nss_files_gethostbyname_r (const char *name,
-                                                 struct hostent *result_buf,
-                                                 char *buf, size_t buflen,
-                                                 int *errnop, int *h_errnop)
-
-   I.e., the interface function is in fact the reentrant function with
-the change of the return value, the omission of the RESULT parameter,
-and the addition of the ERRNOP parameter.  While the user-level function
-returns a pointer to the result the reentrant function return an ‘enum
-nss_status’ value:
-
-‘NSS_STATUS_TRYAGAIN’
-     numeric value ‘-2’
-
-‘NSS_STATUS_UNAVAIL’
-     numeric value ‘-1’
-
-‘NSS_STATUS_NOTFOUND’
-     numeric value ‘0’
-
-‘NSS_STATUS_SUCCESS’
-     numeric value ‘1’
-
-Now you see where the action items of the ‘/etc/nsswitch.conf’ file are
-used.
-
-   If you study the source code you will find there is a fifth value:
-‘NSS_STATUS_RETURN’.  This is an internal use only value, used by a few
-functions in places where none of the above value can be used.  If
-necessary the source code should be examined to learn about the details.
-
-   In case the interface function has to return an error it is important
-that the correct error code is stored in ‘*ERRNOP’.  Some return status
-values have only one associated error code, others have more.
-
-‘NSS_STATUS_TRYAGAIN’  ‘EAGAIN’       One of the functions used ran
-                                      temporarily out of resources or a
-                                      service is currently not
-                                      available.
-                       ‘ERANGE’       The provided buffer is not large
-                                      enough.  The function should be
-                                      called again with a larger buffer.
-‘NSS_STATUS_UNAVAIL’   ‘ENOENT’       A necessary input file cannot be
-                                      found.
-‘NSS_STATUS_NOTFOUND’  ‘ENOENT’       The requested entry is not
-                                      available.
-                                      
-‘NSS_STATUS_NOTFOUND’  ‘SUCCESS’      There are no entries.  Use this to
-                                      avoid returning errors for
-                                      inactive services which may be
-                                      enabled at a later time.  This is
-                                      not the same as the service being
-                                      temporarily unavailable.
-
-   These are proposed values.  There can be other error codes and the
-described error codes can have different meaning.  *With one exception:*
-when returning ‘NSS_STATUS_TRYAGAIN’ the error code ‘ERANGE’ _must_ mean
-that the user provided buffer is too small.  Everything else is
-non-critical.
-
-   In statically linked programs, the main application and NSS modules
-do not share the same thread-local variable ‘errno’, which is the reason
-why there is an explicit ERRNOP function argument.
-
-   The above function has something special which is missing for almost
-all the other module functions.  There is an argument H_ERRNOP.  This
-points to a variable which will be filled with the error code in case
-the execution of the function fails for some reason.  (In statically
-linked programs, the thread-local variable ‘h_errno’ is not shared with
-the main application.)
-
-   The ‘getXXXbyYYY’ functions are the most important functions in the
-NSS modules.  But there are others which implement the other ways to
-access system databases (say for the password database, there are
-‘setpwent’, ‘getpwent’, and ‘endpwent’).  These will be described in
-more detail later.  Here we give a general way to determine the
-signature of the module function:
-
-   • the return value is ‘enum nss_status’;
-   • the name (*note NSS Module Names::);
-   • the first arguments are identical to the arguments of the
-     non-reentrant function;
-   • the next four arguments are:
-
-     ‘STRUCT_TYPE *result_buf’
-          pointer to buffer where the result is stored.  ‘STRUCT_TYPE’
-          is normally a struct which corresponds to the database.
-     ‘char *buffer’
-          pointer to a buffer where the function can store additional
-          data for the result etc.
-     ‘size_t buflen’
-          length of the buffer pointed to by BUFFER.
-     ‘int *errnop’
-          the low-level error code to return to the application.  If the
-          return value is not ‘NSS_STATUS_SUCCESS’, ‘*ERRNOP’ needs to
-          be set to a non-zero value.  An NSS module should never set
-          ‘*ERRNOP’ to zero.  The value ‘ERANGE’ is special, as
-          described above.
-
-   • possibly a last argument H_ERRNOP, for the host name and network
-     name lookup functions.  If the return value is not
-     ‘NSS_STATUS_SUCCESS’, ‘*H_ERRNOP’ needs to be set to a non-zero
-     value.  A generic error code is ‘NETDB_INTERNAL’, which instructs
-     the caller to examine ‘*ERRNOP’ for further details.  (This
-     includes the ‘ERANGE’ special case.)
-
-This table is correct for all functions but the ‘set…ent’ and ‘end…ent’
-functions.
-
 
 File: libc.info,  Node: Extending NSS,  Prev: NSS Module Internals,  Up: Name Service Switch
 
@@ -3592,7 +1740,7 @@ important to remember that adding another database is independent from
 adding another service because a service need not support all databases
 or lookup functions.
 
-   A designer/implementer of a new service is therefore free to choose
+   A designer/implementor of a new service is therefore free to choose
 the databases s/he is interested in and leave the rest for later (or
 completely aside).
 
@@ -3681,7 +1829,7 @@ the database (e.g., it is ‘pw’ for the password database).
      removes buffer caches.  If there are no files or buffers to remove
      this is again a simple noop.
 
-     There normally is no return value other than NSS_STATUS_SUCCESS.
+     There normally is no return value different to NSS_STATUS_SUCCESS.
 
 ‘enum nss_status _nss_DATABASE_getDBent_r (STRUCTURE *result, char *buffer, size_t buflen, int *errnop)’
      Since this function will be called several times in a row to
@@ -3700,11 +1848,10 @@ the database (e.g., it is ‘pw’ for the password database).
      this function.  Therefore one must not misuse this buffer to save
      some state information from one call to another.
 
-     Before the function returns with a failure code, the implementation
-     should store the value of the local ERRNO variable in the variable
-     pointed to be ERRNOP.  This is important to guarantee the module
-     working in statically linked programs.  The stored value must not
-     be zero.
+     Before the function returns the implementation should store the
+     value of the local ERRNO variable in the variable pointed to be
+     ERRNOP.  This is important to guarantee the module working in
+     statically linked programs.
 
      As explained above this function could also have an additional last
      argument.  This depends on the database used; it happens only for
@@ -3715,7 +1862,7 @@ the database (e.g., it is ‘pw’ for the password database).
      ‘NSS_STATUS_NOTFOUND’.  When the buffer given as an argument is too
      small for the data to be returned ‘NSS_STATUS_TRYAGAIN’ should be
      returned.  When the service was not formerly initialized by a call
-     to ‘_nss_DATABASE_setDBent’ all return values allowed for this
+     to ‘_nss_DATABASE_setDBent’ all return value allowed for this
      function can also be returned here.
 
 ‘enum nss_status _nss_DATABASE_getDBbyXX_r (PARAMS, STRUCTURE *result, char *buffer, size_t buflen, int *errnop)’
@@ -3726,17 +1873,17 @@ the database (e.g., it is ‘pw’ for the password database).
      non-reentrant version are here described by PARAMS.
 
      The result must be stored in the structure pointed to by RESULT.
-     If there are additional data to return (say strings, where the
+     If there is additional data to return (say strings, where the
      RESULT structure only contains pointers) the function must use the
-     BUFFER of length BUFLEN.  There must not be any references to
+     BUFFER or length BUFLEN.  There must not be any references to
      non-constant global data.
 
      The implementation of this function should honor the STAYOPEN flag
      set by the ‘setDBent’ function whenever this makes sense.
 
-     Before the function returns, the implementation should store the
-     value of the local ERRNO variable in the variable pointed to by
-     ERRNOP.  This is important to guarantee the module works in
+     Before the function returns the implementation should store the
+     value of the local ERRNO variable in the variable pointed to be
+     ERRNOP.  This is important to guarantee the module working in
      statically linked programs.
 
      Again, this function takes an additional last argument for the
@@ -3893,7 +2040,7 @@ by creating a new user ID and login name (say, ‘games’) to own the
 scores file, and make the file writable only by this user.  Then, when
 the game program wants to update this file, it can change its effective
 user ID to be that for ‘games’.  In effect, the program must adopt the
-persona of ‘games’ so it can write to the scores file.
+persona of ‘games’ so it can write the scores file.
 
 
 File: libc.info,  Node: How Change Persona,  Next: Reading Persona,  Prev: Why Change Persona,  Up: Users and Groups
@@ -4054,7 +2201,7 @@ include the header files ‘sys/types.h’ and ‘unistd.h’.
      POSIX Safety Concepts::.
 
      If the calling process is privileged, this function sets both the
-     real and effective user IDs of the process to NEWUID.  It also
+     real and effective user ID of the process to NEWUID.  It also
      deletes the file user ID of the process, if any.  NEWUID may be any
      legal value.  (Once this has been done, there is no way to recover
      the old effective user ID.)
@@ -4621,7 +2768,7 @@ the header file ‘utmp.h’.
 
    The ‘ut_type’, ‘ut_pid’, ‘ut_id’, ‘ut_tv’, and ‘ut_host’ fields are
 not available on all systems.  Portable applications therefore should be
-prepared for these situations.  To help do this the ‘utmp.h’ header
+prepared for these situations.  To help doing this the ‘utmp.h’ header
 provides macros ‘_HAVE_UT_TYPE’, ‘_HAVE_UT_PID’, ‘_HAVE_UT_ID’,
 ‘_HAVE_UT_TV’, and ‘_HAVE_UT_HOST’ if the respective field is available.
 The programmer can handle the situations by using ‘#ifdef’ in the
@@ -4635,7 +2782,7 @@ member of the ‘utmp’ structure.  The values are integer constants.
      user accounting information.
 
 ‘RUN_LVL’
-     This macro is used to identify the system’s runlevel.
+     This macro is used to identify the systems runlevel.
 
 ‘BOOT_TIME’
      This macro is used to identify the time of system boot.
@@ -4645,8 +2792,7 @@ member of the ‘utmp’ structure.  The values are integer constants.
      changed.
 
 ‘NEW_TIME’
-     This macro is used to identify the time after the system clock
-     changed.
+     This macro is used to identify the time after the system changed.
 
 ‘INIT_PROCESS’
      This macro is used to identify a process spawned by the init
@@ -4930,7 +3076,7 @@ are, in the GNU C Library, identical to the definitions in ‘utmp.h’.
      user accounting information.
 
 ‘RUN_LVL’
-     This macro is used to identify the system’s runlevel.
+     This macro is used to identify the systems runlevel.
 
 ‘BOOT_TIME’
      This macro is used to identify the time of system boot.
@@ -4940,8 +3086,7 @@ are, in the GNU C Library, identical to the definitions in ‘utmp.h’.
      changed.
 
 ‘NEW_TIME’
-     This macro is used to identify the time after the system clock
-     changed.
+     This macro is used to identify the time after the system changed.
 
 ‘INIT_PROCESS’
      This macro is used to identify a process spawned by the init
@@ -5216,7 +3361,7 @@ user using ‘getpwuid’ or ‘getpwnam’.  These functions are declared in
      Preliminary: | MT-Safe locale | AS-Unsafe dlopen plugin heap lock |
      AC-Unsafe corrupt lock fd mem | *Note POSIX Safety Concepts::.
 
-     This function is similar to ‘getpwnam’ in that it returns
+     This function is similar to ‘getpwnam’ in that is returns
      information about the user whose user name is NAME.  However, like
      ‘getpwuid_r’, it fills the user supplied buffers in RESULT_BUF and
      BUFFER with the information instead of using a static buffer.
@@ -5441,12 +3586,12 @@ using ‘getgrgid’ or ‘getgrnam’.  These functions are declared in
      Preliminary: | MT-Safe locale | AS-Unsafe dlopen plugin heap lock |
      AC-Unsafe corrupt lock fd mem | *Note POSIX Safety Concepts::.
 
-     This function is similar to ‘getgrnam’ in that it returns
+     This function is similar to ‘getgrnam’ in that is returns
      information about the group whose group name is NAME.  Like
      ‘getgrgid_r’, it uses the user supplied buffers in RESULT_BUF and
      BUFFER, not a static buffer.
 
-     The return values are the same as for ‘getgrgid_r’.
+     The return values are the same as for ‘getgrgid_r’ ‘ERANGE’.
 
 
 File: libc.info,  Node: Scanning All Groups,  Prev: Lookup Group,  Up: Group Database
@@ -5525,7 +3670,7 @@ particular file.
      This function is similar to ‘getgrent’ in that it returns the next
      entry from the stream initialized by ‘setgrent’.  Like
      ‘fgetgrent_r’, it places the result in user-supplied buffers
-     pointed to by RESULT_BUF and BUFFER.
+     pointed to RESULT_BUF and BUFFER.
 
      If the function returns zero RESULT contains a pointer to the data
      (normally equal to RESULT_BUF).  If errors occurred the return
@@ -5639,7 +3784,7 @@ Group Database::).  E.g., it is useful to associate a certain group of
 users with a certain machine.  On the other hand grouping of host names
 is not supported so far.
 
-   In Sun Microsystems’ SunOS appeared a new kind of database, the
+   In Sun Microsystems SunOS appeared a new kind of database, the
 netgroup database.  It allows grouping hosts, users, and domains freely,
 giving them individual names.  To be more concrete, a netgroup is a list
 of triples consisting of a host name, a user name, and a domain name
@@ -5667,7 +3812,7 @@ File: libc.info,  Node: Lookup Netgroup,  Next: Netgroup Membership,  Prev: Netg
 30.16.2 Looking up one Netgroup
 -------------------------------
 
-The lookup functions for netgroups are a bit different than all other
+The lookup functions for netgroups are a bit different to all other
 system database handling functions.  Since a single netgroup can contain
 many entries a two-step process is needed.  First a single netgroup is
 selected and then one can iterate over all entries in this netgroup.
@@ -5679,8 +3824,8 @@ These functions are declared in ‘netdb.h’.
      Safety Concepts::.
 
      A call to this function initializes the internal state of the
-     library to allow following calls of ‘getnetgrent’ to iterate over
-     all entries in the netgroup with name NETGROUP.
+     library to allow following calls of the ‘getnetgrent’ to iterate
+     over all entries in the netgroup with name NETGROUP.
 
      When the call is successful (i.e., when a netgroup with this name
      exists) the return value is ‘1’.  When the return value is ‘0’ no
@@ -5763,7 +3908,7 @@ selected netgroup.
      Safety Concepts::.
 
      This function tests whether the triple specified by the parameters
-     HOST, USER, and DOMAIN is part of the netgroup NETGROUP.  Using
+     HOSTP, USERP, and DOMAINP is part of the netgroup NETGROUP.  Using
      this function has the advantage that
 
        1. no other netgroup function can use the global netgroup state
@@ -5771,9 +3916,9 @@ selected netgroup.
        2. the function is implemented more efficiently than successive
           calls to the other ‘set’/‘get’/‘endnetgrent’ functions.
 
-     Any of the pointers HOST, USER, or DOMAIN can be ‘NULL’ which means
-     any value is accepted in this position.  This is also true for the
-     name ‘-’ which should not match any other string otherwise.
+     Any of the pointers HOSTP, USERP, and DOMAINP can be ‘NULL’ which
+     means any value is accepted in this position.  This is also true
+     for the name ‘-’ which should not match any other string otherwise.
 
      The return value is ‘1’ if an entry matching the given triple is
      found in the netgroup.  The return value is ‘0’ if the netgroup
@@ -5821,7 +3966,7 @@ before computer networks were an issue, it’s just a word like ‘chicken’.
 
    But any system attached to the Internet or any network like it
 conforms to a more rigorous naming convention as part of the Domain Name
-System (DNS). In the DNS, every host name is composed of two parts:
+System (DNS). In DNS, every host name is composed of two parts:
 
   1. hostname
   2. domain name
@@ -5830,23 +3975,23 @@ System (DNS). In the DNS, every host name is composed of two parts:
 not the same thing, and that people often incorrectly refer to entire
 host names as “domain names.”
 
-   In the DNS, the full host name is properly called the FQDN (Fully
+   In DNS, the full host name is properly called the FQDN (Fully
 Qualified Domain Name) and consists of the hostname, then a period, then
 the domain name.  The domain name itself usually has multiple components
 separated by periods.  So for example, a system’s hostname may be
 ‘chicken’ and its domain name might be ‘ai.mit.edu’, so its FQDN (which
 is its host name) is ‘chicken.ai.mit.edu’.
 
-   Adding to the confusion, though, is that the DNS is not the only name
+   Adding to the confusion, though, is that DNS is not the only name
 space in which a computer needs to be known.  Another name space is the
 NIS (aka YP) name space.  For NIS purposes, there is another domain
 name, which is called the NIS domain name or the YP domain name.  It
 need not have anything to do with the DNS domain name.
 
-   Confusing things even more is the fact that in the DNS, it is
-possible for multiple FQDNs to refer to the same system.  However, there
-is always exactly one of them that is the true host name, and it is
-called the canonical FQDN.
+   Confusing things even more is the fact that in DNS, it is possible
+for multiple FQDNs to refer to the same system.  However, there is
+always exactly one of them that is the true host name, and it is called
+the canonical FQDN.
 
    In some contexts, the host name is called a “node name.”
 
@@ -5864,8 +4009,7 @@ these functions.
      This function returns the host name of the system on which it is
      called, in the array NAME.  The SIZE argument specifies the size of
      this array, in bytes.  Note that this is _not_ the DNS hostname.
-     If the system participates in the DNS, this is the FQDN (see
-     above).
+     If the system participates in DNS, this is the FQDN (see above).
 
      The return value is ‘0’ on success and ‘-1’ on failure.  In the GNU
      C Library, ‘gethostname’ fails if SIZE is not large enough; then
@@ -5922,7 +4066,7 @@ these functions.
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
 
-     ‘setdomainname’ sets the NIS (aka YP) domain name of the system on
+     ‘getdomainname’ sets the NIS (aka YP) domain name of the system on
      which it is called.  Note that this is not the more popular DNS
      domain name.  Set that with ‘sethostname’.
 
@@ -6034,7 +4178,7 @@ described in *note Host Identification::.
           C Library, the value is the same as that returned by
           ‘gethostname’; see *note Host Identification::.
 
-          ‘gethostname’ is implemented with a call to ‘uname’.
+           gethostname() is implemented with a call to uname().
 
      ‘char domainname[]’
           This is the NIS or YP domain name.  It is the same value
@@ -6048,12 +4192,11 @@ described in *note Host Identification::.
 
      The ‘uname’ function fills in the structure pointed to by INFO with
      information about the operating system and host machine.  A
-     non-negative return value indicates that the data was successfully
-     stored.
+     non-negative value indicates that the data was successfully stored.
 
-     ‘-1’ as the return value indicates an error.  The only error
-     possible is ‘EFAULT’, which we normally don’t mention as it is
-     always a possibility.
+     ‘-1’ as the value indicates an error.  The only error possible is
+     ‘EFAULT’, which we normally don’t mention as it is always a
+     possibility.
 
 
 File: libc.info,  Node: Filesystem Handling,  Next: System Parameters,  Prev: Platform Type,  Up: System Management
@@ -6106,8 +4249,8 @@ this file to mount at startup time of the system all the necessary
 filesystems.  The information about all the filesystems actually mounted
 is normally kept in a file named either ‘/var/run/mtab’ or ‘/etc/mtab’.
 Both files share the same syntax and it is crucial that this syntax is
-followed all the time.  Therefore it is best to never directly write to
-the files.  The functions described in this section can do this and they
+followed all the time.  Therefore it is best to never directly write the
+files.  The functions described in this section can do this and they
 also provide the functionality to convert the external textual
 representation to the internal representation.
 
@@ -6119,7 +4262,7 @@ unmount filesystems typically maintain and use these files as described
 herein.
 
    The filenames given above should never be used directly.  The
-portable way to handle these files is to use the macros ‘_PATH_FSTAB’,
+portable way to handle these file is to use the macro ‘_PATH_FSTAB’,
 defined in ‘fstab.h’, or ‘_PATH_MNTTAB’, defined in ‘mntent.h’ and
 ‘paths.h’, for ‘fstab’; and the macro ‘_PATH_MOUNTED’, also defined in
 ‘mntent.h’ and ‘paths.h’, for ‘mtab’.  There are also two alternate
@@ -6185,9 +4328,9 @@ defined in ‘fstab.h’.
           macros to describe the possible values:
 
           ‘FSTAB_RW’
-               The filesystem gets mounted with read and write enabled.
+               The filesystems gets mounted with read and write enabled.
           ‘FSTAB_RQ’
-               The filesystem gets mounted with read and write enabled.
+               The filesystems gets mounted with read and write enabled.
                Write access is restricted by quotas.
           ‘FSTAB_RO’
                The filesystem gets mounted read-only.
@@ -6196,7 +4339,7 @@ defined in ‘fstab.h’.
           ‘FSTAB_XX’
                This entry from the ‘fstab’ file is totally ignored.
 
-          Testing for equality with these values must happen using
+          Testing for equality with these value must happen using
           ‘strcmp’ since these are all strings.  Comparing the pointer
           will probably always fail.
 
@@ -6291,7 +4434,7 @@ File: libc.info,  Node: mtab,  Next: Other Mount Information,  Prev: fstab,  Up:
 The following functions and data structure access the ‘mtab’ file.
 
  -- Data Type: struct mntent
-     This structure is used with the ‘getmntent’, ‘getmntent_r’,
+     This structure is used with the ‘getmntent’, ‘getmntent_t’,
      ‘addmntent’, and ‘hasmntopt’ functions.
 
      ‘char *mnt_fsname’
@@ -6316,9 +4459,9 @@ The following functions and data structure access the ‘mtab’ file.
           symbols provided in ‘mntent.h’.
 
           ‘MNTTYPE_IGNORE’
-               This symbol expands to ‘"ignore"’.  The value is
-               sometimes used in ‘fstab’ files to make sure entries are
-               not used without removing them.
+               This symbol expands to ‘"ignore"’.  The value is sometime
+               used in ‘fstab’ files to make sure entries are not used
+               without removing them.
           ‘MNTTYPE_NFS’
                Expands to ‘"nfs"’.  Using this macro sometimes could
                make sense since it names the default NFS implementation,
@@ -6349,9 +4492,8 @@ The following functions and data structure access the ‘mtab’ file.
                Expands to ‘"ro"’.  See the ‘FSTAB_RO’ value, it means
                the filesystem is mounted read-only.
           ‘MNTOPT_RW’
-               Expands to ‘"rw"’.  See the ‘FSTAB_RW’ value, it means
-               the filesystem is mounted with read and write
-               permissions.
+               Expand to ‘"rw"’.  See the ‘FSTAB_RW’ value, it means the
+               filesystem is mounted with read and write permissions.
           ‘MNTOPT_SUID’
                Expands to ‘"suid"’.  This means that the SUID bit (*note
                How Change Persona::) is respected when a program from
@@ -6380,7 +4522,7 @@ The following functions and data structure access the ‘mtab’ file.
    For accessing the ‘mtab’ file there is again a set of three functions
 to access all entries in a row.  Unlike the functions to handle ‘fstab’
 these functions do not access a fixed file and there is even a thread
-safe variant of the get function.  Besides this the GNU C Library
+safe variant of the get function.  Beside this the GNU C Library
 contains functions to alter the file and test for specific options.
 
  -- Function: FILE * setmntent (const char *FILE, const char *MODE)
@@ -6395,8 +4537,8 @@ contains functions to alter the file and test for specific options.
      opened for writing the file is also allowed to be empty.
 
      If the file was successfully opened ‘setmntent’ returns a file
-     handle for future use.  Otherwise the return value is ‘NULL’ and
-     ‘errno’ is set accordingly.
+     descriptor for future use.  Otherwise the return value is ‘NULL’
+     and ‘errno’ is set accordingly.
 
  -- Function: int endmntent (FILE *STREAM)
      Preliminary: | MT-Safe | AS-Unsafe heap lock | AC-Unsafe lock mem
@@ -6415,13 +4557,13 @@ contains functions to alter the file and test for specific options.
      Concepts::.
 
      The ‘getmntent’ function takes as the parameter a file handle
-     previously returned by a successful call to ‘setmntent’.  It
-     returns a pointer to a static variable of type ‘struct mntent’
-     which is filled with the information from the next entry from the
-     file currently read.
+     previously returned by successful call to ‘setmntent’.  It returns
+     a pointer to a static variable of type ‘struct mntent’ which is
+     filled with the information from the next entry from the file
+     currently read.
 
      The file format used prescribes the use of spaces or tab characters
-     to separate the fields.  This makes it harder to use names
+     to separate the fields.  This makes it harder to use name
      containing one of these characters (e.g., mount points using
      spaces).  Therefore these characters are encoded in the files and
      the ‘getmntent’ function takes care of the decoding while reading
@@ -6475,7 +4617,7 @@ contains functions to alter the file and test for specific options.
 
      This function takes care of spaces and tab characters in the names
      to be written to the file.  It converts them and the backslash
-     character into the format described in the ‘getmntent’ description
+     character into the format describe in the ‘getmntent’ description
      above.
 
      This function returns 0 in case the operation was successful.
@@ -6552,7 +4694,7 @@ should maintain and use these separately.  *Note Mount Information::.
      control operations on the filesystem while it is mounted.  It does
      not mean unmounting and mounting again.
 
-     For a mount, you must identify the type of the filesystem with
+     For a mount, you must identify the type of the filesystem as
      FSTYPE.  This type tells the kernel how to access the filesystem
      and can be thought of as the name of a filesystem driver.  The
      acceptable values are system dependent.  On a system with a Linux
@@ -6590,6 +4732,21 @@ should maintain and use these separately.  *Note Mount Information::.
           This bit on specifies that no writing to the filesystem shall
           be allowed while it is mounted.  This cannot be overridden by
           ‘ioctl’.  This option is available on nearly all filesystems.
+
+     ‘S_IMMUTABLE’
+          This bit on specifies that no writing to the files in the
+          filesystem shall be allowed while it is mounted.  This can be
+          overridden for a particular file access by a properly
+          privileged call to ‘ioctl’.  This option is a relatively new
+          invention and is not available on many filesystems.
+
+     ‘S_APPEND’
+          This bit on specifies that the only file writing that shall be
+          allowed while the filesystem is mounted is appending.  Some
+          filesystems allow this to be overridden for a particular
+          process by a properly privileged call to ‘ioctl’.  This is a
+          relatively new invention and is not available on many
+          filesystems.
 
      ‘MS_NOSUID’
           This bit on specifies that Setuid and Setgid permissions on
@@ -6661,7 +4818,7 @@ should maintain and use these separately.  *Note Mount Information::.
                already).
 
              • The request is to remount read-only, but there are files
-               open for writing.
+               open for write.
 
      ‘EINVAL’
 
@@ -6784,7 +4941,7 @@ variety of system parameters.
      and can change while the system is running, particularly when you
      load and unload loadable kernel modules.
 
-     The system parameters with which ‘sysctl’ is concerned are arranged
+     The system parameters with which ‘syslog’ is concerned are arranged
      in a hierarchical structure like a hierarchical filesystem.  To
      identify a particular parameter, you specify a path through the
      structure in a way analogous to specifying the pathname of a file.
@@ -6999,7 +5156,7 @@ File: libc.info,  Node: System Options,  Next: Version Supported,  Prev: General
 POSIX defines certain system-specific options that not all POSIX systems
 support.  Since these options are provided in the kernel, not in the
 library, simply using the GNU C Library does not guarantee any of these
-features are supported; it depends on the system you are using.
+features is supported; it depends on the system you are using.
 
    You can test for the availability of a given option using the macros
 in this section, together with the function ‘sysconf’.  The macros are
@@ -7245,10 +5402,9 @@ enumeration type values).
      Inquire about the parameter corresponding to ‘_POSIX_AIO_MAX’.
 
 ‘_SC_AIO_PRIO_DELTA_MAX’
-     Inquire about the value by which a process can decrease its
-     asynchronous I/O priority level from its own scheduling priority.
-     This corresponds to the run-time invariant value
-     ‘AIO_PRIO_DELTA_MAX’.
+     Inquire the value by which a process can decrease its asynchronous
+     I/O priority level from its own scheduling priority.  This
+     corresponds to the run-time invariant value ‘AIO_PRIO_DELTA_MAX’.
 
 ‘_SC_DELAYTIMER_MAX’
      Inquire about the parameter corresponding to
@@ -7316,7 +5472,8 @@ enumeration type values).
      Inquire about the parameter corresponding to ‘_POSIX_PII_OSI_M’.
 
 ‘_SC_T_IOV_MAX’
-     Inquire about the value associated with the ‘T_IOV_MAX’ variable.
+     Inquire the value of the value associated with the ‘T_IOV_MAX’
+     variable.
 
 ‘_SC_THREADS’
      Inquire about the parameter corresponding to ‘_POSIX_THREADS’.
@@ -7523,8 +5680,8 @@ enumeration type values).
      Inquire about the number of bits in a variable of a register word.
 
 ‘_SC_MB_LEN_MAX’
-     Inquire about the maximum length of a multi-byte representation of
-     a wide character value.
+     Inquire the maximum length of a multi-byte representation of a wide
+     character value.
 
 ‘_SC_NZERO’
      Inquire about the value used to internally represent the zero
@@ -7583,4 +5740,1536 @@ enumeration type values).
 
 ‘_SC_NL_TEXTMAX’
      Inquire about the parameter corresponding to ‘NL_TEXTMAX’.
+
+
+File: libc.info,  Node: Examples of Sysconf,  Prev: Constants for Sysconf,  Up: Sysconf
+
+32.4.3 Examples of ‘sysconf’
+----------------------------
+
+We recommend that you first test for a macro definition for the
+parameter you are interested in, and call ‘sysconf’ only if the macro is
+not defined.  For example, here is how to test whether job control is
+supported:
+
+     int
+     have_job_control (void)
+     {
+     #ifdef _POSIX_JOB_CONTROL
+       return 1;
+     #else
+       int value = sysconf (_SC_JOB_CONTROL);
+       if (value < 0)
+         /* If the system is that badly wedged,
+            there’s no use trying to go on.  */
+         fatal (strerror (errno));
+       return value;
+     #endif
+     }
+
+   Here is how to get the value of a numeric limit:
+
+     int
+     get_child_max ()
+     {
+     #ifdef CHILD_MAX
+       return CHILD_MAX;
+     #else
+       int value = sysconf (_SC_CHILD_MAX);
+       if (value < 0)
+         fatal (strerror (errno));
+       return value;
+     #endif
+     }
+
+
+File: libc.info,  Node: Minimums,  Next: Limits for Files,  Prev: Sysconf,  Up: System Configuration
+
+32.5 Minimum Values for General Capacity Limits
+===============================================
+
+Here are the names for the POSIX minimum upper bounds for the system
+limit parameters.  The significance of these values is that you can
+safely push to these limits without checking whether the particular
+system you are using can go that far.
+
+‘_POSIX_AIO_LISTIO_MAX’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of I/O operations that can be specified in a list I/O call.
+     The value of this constant is ‘2’; thus you can add up to two new
+     entries of the list of outstanding operations.
+
+‘_POSIX_AIO_MAX’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of outstanding asynchronous I/O operations.  The value of
+     this constant is ‘1’.  So you cannot expect that you can issue more
+     than one operation and immediately continue with the normal work,
+     receiving the notifications asynchronously.
+
+‘_POSIX_ARG_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum combined length of the ARGV and ENVIRON
+     arguments that can be passed to the ‘exec’ functions.  Its value is
+     ‘4096’.
+
+‘_POSIX_CHILD_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum number of simultaneous processes per real
+     user ID. Its value is ‘6’.
+
+‘_POSIX_NGROUPS_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum number of supplementary group IDs per
+     process.  Its value is ‘0’.
+
+‘_POSIX_OPEN_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum number of files that a single process can
+     have open simultaneously.  Its value is ‘16’.
+
+‘_POSIX_SSIZE_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum value that can be stored in an object of type
+     ‘ssize_t’.  Its value is ‘32767’.
+
+‘_POSIX_STREAM_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum number of streams that a single process can
+     have open simultaneously.  Its value is ‘8’.
+
+‘_POSIX_TZNAME_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the maximum length of a time zone name.  Its value is
+     ‘3’.
+
+‘_POSIX2_RE_DUP_MAX’
+     The value of this macro is the most restrictive limit permitted by
+     POSIX for the numbers used in the ‘\{MIN,MAX\}’ construct in a
+     regular expression.  Its value is ‘255’.
+
+
+File: libc.info,  Node: Limits for Files,  Next: Options for Files,  Prev: Minimums,  Up: System Configuration
+
+32.6 Limits on File System Capacity
+===================================
+
+The POSIX.1 standard specifies a number of parameters that describe the
+limitations of the file system.  It’s possible for the system to have a
+fixed, uniform limit for a parameter, but this isn’t the usual case.  On
+most systems, it’s possible for different file systems (and, for some
+parameters, even different files) to have different maximum limits.  For
+example, this is very likely if you use NFS to mount some of the file
+systems from other machines.
+
+   Each of the following macros is defined in ‘limits.h’ only if the
+system has a fixed, uniform limit for the parameter in question.  If the
+system allows different file systems or files to have different limits,
+then the macro is undefined; use ‘pathconf’ or ‘fpathconf’ to find out
+the limit that applies to a particular file.  *Note Pathconf::.
+
+   Each parameter also has another macro, with a name starting with
+‘_POSIX’, which gives the lowest value that the limit is allowed to have
+on _any_ POSIX system.  *Note File Minimums::.
+
+ -- Macro: int LINK_MAX
+     The uniform system limit (if any) for the number of names for a
+     given file.  *Note Hard Links::.
+
+ -- Macro: int MAX_CANON
+     The uniform system limit (if any) for the amount of text in a line
+     of input when input editing is enabled.  *Note Canonical or Not::.
+
+ -- Macro: int MAX_INPUT
+     The uniform system limit (if any) for the total number of
+     characters typed ahead as input.  *Note I/O Queues::.
+
+ -- Macro: int NAME_MAX
+     The uniform system limit (if any) for the length of a file name
+     component, not including the terminating null character.
+
+     *Portability Note:* On some systems, the GNU C Library defines
+     ‘NAME_MAX’, but does not actually enforce this limit.
+
+ -- Macro: int PATH_MAX
+     The uniform system limit (if any) for the length of an entire file
+     name (that is, the argument given to system calls such as ‘open’),
+     including the terminating null character.
+
+     *Portability Note:* The GNU C Library does not enforce this limit
+     even if ‘PATH_MAX’ is defined.
+
+ -- Macro: int PIPE_BUF
+     The uniform system limit (if any) for the number of bytes that can
+     be written atomically to a pipe.  If multiple processes are writing
+     to the same pipe simultaneously, output from different processes
+     might be interleaved in chunks of this size.  *Note Pipes and
+     FIFOs::.
+
+   These are alternative macro names for some of the same information.
+
+ -- Macro: int MAXNAMLEN
+     This is the BSD name for ‘NAME_MAX’.  It is defined in ‘dirent.h’.
+
+ -- Macro: int FILENAME_MAX
+     The value of this macro is an integer constant expression that
+     represents the maximum length of a file name string.  It is defined
+     in ‘stdio.h’.
+
+     Unlike ‘PATH_MAX’, this macro is defined even if there is no actual
+     limit imposed.  In such a case, its value is typically a very large
+     number.  *This is always the case on GNU/Hurd systems.*
+
+     *Usage Note:* Don’t use ‘FILENAME_MAX’ as the size of an array in
+     which to store a file name!  You can’t possibly make an array that
+     big!  Use dynamic allocation (*note Memory Allocation::) instead.
+
+
+File: libc.info,  Node: Options for Files,  Next: File Minimums,  Prev: Limits for Files,  Up: System Configuration
+
+32.7 Optional Features in File Support
+======================================
+
+POSIX defines certain system-specific options in the system calls for
+operating on files.  Some systems support these options and others do
+not.  Since these options are provided in the kernel, not in the
+library, simply using the GNU C Library does not guarantee that any of
+these features is supported; it depends on the system you are using.
+They can also vary between file systems on a single machine.
+
+   This section describes the macros you can test to determine whether a
+particular option is supported on your machine.  If a given macro is
+defined in ‘unistd.h’, then its value says whether the corresponding
+feature is supported.  (A value of ‘-1’ indicates no; any other value
+indicates yes.)  If the macro is undefined, it means particular files
+may or may not support the feature.
+
+   Since all the machines that support the GNU C Library also support
+NFS, one can never make a general statement about whether all file
+systems support the ‘_POSIX_CHOWN_RESTRICTED’ and ‘_POSIX_NO_TRUNC’
+features.  So these names are never defined as macros in the GNU C
+Library.
+
+ -- Macro: int _POSIX_CHOWN_RESTRICTED
+     If this option is in effect, the ‘chown’ function is restricted so
+     that the only changes permitted to nonprivileged processes is to
+     change the group owner of a file to either be the effective group
+     ID of the process, or one of its supplementary group IDs.  *Note
+     File Owner::.
+
+ -- Macro: int _POSIX_NO_TRUNC
+     If this option is in effect, file name components longer than
+     ‘NAME_MAX’ generate an ‘ENAMETOOLONG’ error.  Otherwise, file name
+     components that are too long are silently truncated.
+
+ -- Macro: unsigned char _POSIX_VDISABLE
+     This option is only meaningful for files that are terminal devices.
+     If it is enabled, then handling for special control characters can
+     be disabled individually.  *Note Special Characters::.
+
+   If one of these macros is undefined, that means that the option might
+be in effect for some files and not for others.  To inquire about a
+particular file, call ‘pathconf’ or ‘fpathconf’.  *Note Pathconf::.
+
+
+File: libc.info,  Node: File Minimums,  Next: Pathconf,  Prev: Options for Files,  Up: System Configuration
+
+32.8 Minimum Values for File System Limits
+==========================================
+
+Here are the names for the POSIX minimum upper bounds for some of the
+above parameters.  The significance of these values is that you can
+safely push to these limits without checking whether the particular
+system you are using can go that far.  In most cases GNU systems do not
+have these strict limitations.  The actual limit should be requested if
+necessary.
+
+‘_POSIX_LINK_MAX’
+     The most restrictive limit permitted by POSIX for the maximum value
+     of a file’s link count.  The value of this constant is ‘8’; thus,
+     you can always make up to eight names for a file without running
+     into a system limit.
+
+‘_POSIX_MAX_CANON’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of bytes in a canonical input line from a terminal device.
+     The value of this constant is ‘255’.
+
+‘_POSIX_MAX_INPUT’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of bytes in a terminal device input queue (or typeahead
+     buffer).  *Note Input Modes::.  The value of this constant is
+     ‘255’.
+
+‘_POSIX_NAME_MAX’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of bytes in a file name component.  The value of this
+     constant is ‘14’.
+
+‘_POSIX_PATH_MAX’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of bytes in a file name.  The value of this constant is
+     ‘256’.
+
+‘_POSIX_PIPE_BUF’
+     The most restrictive limit permitted by POSIX for the maximum
+     number of bytes that can be written atomically to a pipe.  The
+     value of this constant is ‘512’.
+
+‘SYMLINK_MAX’
+     Maximum number of bytes in a symbolic link.
+
+‘POSIX_REC_INCR_XFER_SIZE’
+     Recommended increment for file transfer sizes between the
+     ‘POSIX_REC_MIN_XFER_SIZE’ and ‘POSIX_REC_MAX_XFER_SIZE’ values.
+
+‘POSIX_REC_MAX_XFER_SIZE’
+     Maximum recommended file transfer size.
+
+‘POSIX_REC_MIN_XFER_SIZE’
+     Minimum recommended file transfer size.
+
+‘POSIX_REC_XFER_ALIGN’
+     Recommended file transfer buffer alignment.
+
+
+File: libc.info,  Node: Pathconf,  Next: Utility Limits,  Prev: File Minimums,  Up: System Configuration
+
+32.9 Using ‘pathconf’
+=====================
+
+When your machine allows different files to have different values for a
+file system parameter, you can use the functions in this section to find
+out the value that applies to any particular file.
+
+   These functions and the associated constants for the PARAMETER
+argument are declared in the header file ‘unistd.h’.
+
+ -- Function: long int pathconf (const char *FILENAME, int PARAMETER)
+     Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock fd
+     mem | *Note POSIX Safety Concepts::.
+
+     This function is used to inquire about the limits that apply to the
+     file named FILENAME.
+
+     The PARAMETER argument should be one of the ‘_PC_’ constants listed
+     below.
+
+     The normal return value from ‘pathconf’ is the value you requested.
+     A value of ‘-1’ is returned both if the implementation does not
+     impose a limit, and in case of an error.  In the former case,
+     ‘errno’ is not set, while in the latter case, ‘errno’ is set to
+     indicate the cause of the problem.  So the only way to use this
+     function robustly is to store ‘0’ into ‘errno’ just before calling
+     it.
+
+     Besides the usual file name errors (*note File Name Errors::), the
+     following error condition is defined for this function:
+
+     ‘EINVAL’
+          The value of PARAMETER is invalid, or the implementation
+          doesn’t support the PARAMETER for the specific file.
+
+ -- Function: long int fpathconf (int FILEDES, int PARAMETER)
+     Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock fd
+     mem | *Note POSIX Safety Concepts::.
+
+     This is just like ‘pathconf’ except that an open file descriptor is
+     used to specify the file for which information is requested,
+     instead of a file name.
+
+     The following ‘errno’ error conditions are defined for this
+     function:
+
+     ‘EBADF’
+          The FILEDES argument is not a valid file descriptor.
+
+     ‘EINVAL’
+          The value of PARAMETER is invalid, or the implementation
+          doesn’t support the PARAMETER for the specific file.
+
+   Here are the symbolic constants that you can use as the PARAMETER
+argument to ‘pathconf’ and ‘fpathconf’.  The values are all integer
+constants.
+
+‘_PC_LINK_MAX’
+     Inquire about the value of ‘LINK_MAX’.
+
+‘_PC_MAX_CANON’
+     Inquire about the value of ‘MAX_CANON’.
+
+‘_PC_MAX_INPUT’
+     Inquire about the value of ‘MAX_INPUT’.
+
+‘_PC_NAME_MAX’
+     Inquire about the value of ‘NAME_MAX’.
+
+‘_PC_PATH_MAX’
+     Inquire about the value of ‘PATH_MAX’.
+
+‘_PC_PIPE_BUF’
+     Inquire about the value of ‘PIPE_BUF’.
+
+‘_PC_CHOWN_RESTRICTED’
+     Inquire about the value of ‘_POSIX_CHOWN_RESTRICTED’.
+
+‘_PC_NO_TRUNC’
+     Inquire about the value of ‘_POSIX_NO_TRUNC’.
+
+‘_PC_VDISABLE’
+     Inquire about the value of ‘_POSIX_VDISABLE’.
+
+‘_PC_SYNC_IO’
+     Inquire about the value of ‘_POSIX_SYNC_IO’.
+
+‘_PC_ASYNC_IO’
+     Inquire about the value of ‘_POSIX_ASYNC_IO’.
+
+‘_PC_PRIO_IO’
+     Inquire about the value of ‘_POSIX_PRIO_IO’.
+
+‘_PC_FILESIZEBITS’
+     Inquire about the availability of large files on the filesystem.
+
+‘_PC_REC_INCR_XFER_SIZE’
+     Inquire about the value of ‘POSIX_REC_INCR_XFER_SIZE’.
+
+‘_PC_REC_MAX_XFER_SIZE’
+     Inquire about the value of ‘POSIX_REC_MAX_XFER_SIZE’.
+
+‘_PC_REC_MIN_XFER_SIZE’
+     Inquire about the value of ‘POSIX_REC_MIN_XFER_SIZE’.
+
+‘_PC_REC_XFER_ALIGN’
+     Inquire about the value of ‘POSIX_REC_XFER_ALIGN’.
+
+   *Portability Note:* On some systems, the GNU C Library does not
+enforce ‘_PC_NAME_MAX’ or ‘_PC_PATH_MAX’ limits.
+
+
+File: libc.info,  Node: Utility Limits,  Next: Utility Minimums,  Prev: Pathconf,  Up: System Configuration
+
+32.10 Utility Program Capacity Limits
+=====================================
+
+The POSIX.2 standard specifies certain system limits that you can access
+through ‘sysconf’ that apply to utility behavior rather than the
+behavior of the library or the operating system.
+
+   The GNU C Library defines macros for these limits, and ‘sysconf’
+returns values for them if you ask; but these values convey no
+meaningful information.  They are simply the smallest values that
+POSIX.2 permits.
+
+ -- Macro: int BC_BASE_MAX
+     The largest value of ‘obase’ that the ‘bc’ utility is guaranteed to
+     support.
+
+ -- Macro: int BC_DIM_MAX
+     The largest number of elements in one array that the ‘bc’ utility
+     is guaranteed to support.
+
+ -- Macro: int BC_SCALE_MAX
+     The largest value of ‘scale’ that the ‘bc’ utility is guaranteed to
+     support.
+
+ -- Macro: int BC_STRING_MAX
+     The largest number of characters in one string constant that the
+     ‘bc’ utility is guaranteed to support.
+
+ -- Macro: int COLL_WEIGHTS_MAX
+     The largest number of weights that can necessarily be used in
+     defining the collating sequence for a locale.
+
+ -- Macro: int EXPR_NEST_MAX
+     The maximum number of expressions that can be nested within
+     parenthesis by the ‘expr’ utility.
+
+ -- Macro: int LINE_MAX
+     The largest text line that the text-oriented POSIX.2 utilities can
+     support.  (If you are using the GNU versions of these utilities,
+     then there is no actual limit except that imposed by the available
+     virtual memory, but there is no way that the library can tell you
+     this.)
+
+ -- Macro: int EQUIV_CLASS_MAX
+     The maximum number of weights that can be assigned to an entry of
+     the ‘LC_COLLATE’ category ‘order’ keyword in a locale definition.
+     The GNU C Library does not presently support locale definitions.
+
+
+File: libc.info,  Node: Utility Minimums,  Next: String Parameters,  Prev: Utility Limits,  Up: System Configuration
+
+32.11 Minimum Values for Utility Limits
+=======================================
+
+‘_POSIX2_BC_BASE_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     value of ‘obase’ in the ‘bc’ utility.  Its value is ‘99’.
+
+‘_POSIX2_BC_DIM_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     size of an array in the ‘bc’ utility.  Its value is ‘2048’.
+
+‘_POSIX2_BC_SCALE_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     value of ‘scale’ in the ‘bc’ utility.  Its value is ‘99’.
+
+‘_POSIX2_BC_STRING_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     size of a string constant in the ‘bc’ utility.  Its value is
+     ‘1000’.
+
+‘_POSIX2_COLL_WEIGHTS_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     number of weights that can necessarily be used in defining the
+     collating sequence for a locale.  Its value is ‘2’.
+
+‘_POSIX2_EXPR_NEST_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     number of expressions nested within parenthesis when using the
+     ‘expr’ utility.  Its value is ‘32’.
+
+‘_POSIX2_LINE_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     size of a text line that the text utilities can handle.  Its value
+     is ‘2048’.
+
+‘_POSIX2_EQUIV_CLASS_MAX’
+     The most restrictive limit permitted by POSIX.2 for the maximum
+     number of weights that can be assigned to an entry of the
+     ‘LC_COLLATE’ category ‘order’ keyword in a locale definition.  Its
+     value is ‘2’.  The GNU C Library does not presently support locale
+     definitions.
+
+
+File: libc.info,  Node: String Parameters,  Prev: Utility Minimums,  Up: System Configuration
+
+32.12 String-Valued Parameters
+==============================
+
+POSIX.2 defines a way to get string-valued parameters from the operating
+system with the function ‘confstr’:
+
+ -- Function: size_t confstr (int PARAMETER, char *BUF, size_t LEN)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     This function reads the value of a string-valued system parameter,
+     storing the string into LEN bytes of memory space starting at BUF.
+     The PARAMETER argument should be one of the ‘_CS_’ symbols listed
+     below.
+
+     The normal return value from ‘confstr’ is the length of the string
+     value that you asked for.  If you supply a null pointer for BUF,
+     then ‘confstr’ does not try to store the string; it just returns
+     its length.  A value of ‘0’ indicates an error.
+
+     If the string you asked for is too long for the buffer (that is,
+     longer than ‘LEN - 1’), then ‘confstr’ stores just that much
+     (leaving room for the terminating null character).  You can tell
+     that this has happened because ‘confstr’ returns a value greater
+     than or equal to LEN.
+
+     The following ‘errno’ error conditions are defined for this
+     function:
+
+     ‘EINVAL’
+          The value of the PARAMETER is invalid.
+
+   Currently there is just one parameter you can read with ‘confstr’:
+
+‘_CS_PATH’
+     This parameter’s value is the recommended default path for
+     searching for executable files.  This is the path that a user has
+     by default just after logging in.
+
+‘_CS_LFS_CFLAGS’
+     The returned string specifies which additional flags must be given
+     to the C compiler if a source is compiled using the
+     ‘_LARGEFILE_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+‘_CS_LFS_LDFLAGS’
+     The returned string specifies which additional flags must be given
+     to the linker if a source is compiled using the ‘_LARGEFILE_SOURCE’
+     feature select macro; *note Feature Test Macros::.
+
+‘_CS_LFS_LIBS’
+     The returned string specifies which additional libraries must be
+     linked to the application if a source is compiled using the
+     ‘_LARGEFILE_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+‘_CS_LFS_LINTFLAGS’
+     The returned string specifies which additional flags must be given
+     to the lint tool if a source is compiled using the
+     ‘_LARGEFILE_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+‘_CS_LFS64_CFLAGS’
+     The returned string specifies which additional flags must be given
+     to the C compiler if a source is compiled using the
+     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+‘_CS_LFS64_LDFLAGS’
+     The returned string specifies which additional flags must be given
+     to the linker if a source is compiled using the
+     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+‘_CS_LFS64_LIBS’
+     The returned string specifies which additional libraries must be
+     linked to the application if a source is compiled using the
+     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+‘_CS_LFS64_LINTFLAGS’
+     The returned string specifies which additional flags must be given
+     to the lint tool if a source is compiled using the
+     ‘_LARGEFILE64_SOURCE’ feature select macro; *note Feature Test
+     Macros::.
+
+   The way to use ‘confstr’ without any arbitrary limit on string size
+is to call it twice: first call it to get the length, allocate the
+buffer accordingly, and then call ‘confstr’ again to fill the buffer,
+like this:
+
+     char *
+     get_default_path (void)
+     {
+       size_t len = confstr (_CS_PATH, NULL, 0);
+       char *buffer = (char *) xmalloc (len);
+
+       if (confstr (_CS_PATH, buf, len + 1) == 0)
+         {
+           free (buffer);
+           return NULL;
+         }
+
+       return buffer;
+     }
+
+
+File: libc.info,  Node: Cryptographic Functions,  Next: Debugging Support,  Prev: System Configuration,  Up: Top
+
+33 DES Encryption and Password Handling
+***************************************
+
+On many systems, it is unnecessary to have any kind of user
+authentication; for instance, a workstation which is not connected to a
+network probably does not need any user authentication, because to use
+the machine an intruder must have physical access.
+
+   Sometimes, however, it is necessary to be sure that a user is
+authorized to use some service a machine provides—for instance, to log
+in as a particular user id (*note Users and Groups::).  One traditional
+way of doing this is for each user to choose a secret "password"; then,
+the system can ask someone claiming to be a user what the user’s
+password is, and if the person gives the correct password then the
+system can grant the appropriate privileges.
+
+   If all the passwords are just stored in a file somewhere, then this
+file has to be very carefully protected.  To avoid this, passwords are
+run through a "one-way function", a function which makes it difficult to
+work out what its input was by looking at its output, before storing in
+the file.
+
+   The GNU C Library provides a one-way function that is compatible with
+the behavior of the ‘crypt’ function introduced in FreeBSD 2.0.  It
+supports two one-way algorithms: one based on the MD5 message-digest
+algorithm that is compatible with modern BSD systems, and the other
+based on the Data Encryption Standard (DES) that is compatible with Unix
+systems.
+
+   It also provides support for Secure RPC, and some library functions
+that can be used to perform normal DES encryption.  The ‘AUTH_DES’
+authentication flavor in Secure RPC, as provided by the GNU C Library,
+uses DES and does not comply with FIPS 140-2 nor does any other use of
+DES within the GNU C Library.  It is recommended that Secure RPC should
+not be used for systems that need to comply with FIPS 140-2 since all
+flavors of encrypted authentication use normal DES.
+
+* Menu:
+
+* Legal Problems::              This software can get you locked up, or worse.
+* getpass::                     Prompting the user for a password.
+* crypt::                       A one-way function for passwords.
+* DES Encryption::              Routines for DES encryption.
+
+
+File: libc.info,  Node: Legal Problems,  Next: getpass,  Up: Cryptographic Functions
+
+33.1 Legal Problems
+===================
+
+Because of the continuously changing state of the law, it’s not possible
+to provide a definitive survey of the laws affecting cryptography.
+Instead, this section warns you of some of the known trouble spots; this
+may help you when you try to find out what the laws of your country are.
+
+   Some countries require that you have a licence to use, possess, or
+import cryptography.  These countries are believed to include
+Byelorussia, Burma, India, Indonesia, Israel, Kazakhstan, Pakistan,
+Russia, and Saudi Arabia.
+
+   Some countries restrict the transmission of encrypted messages by
+radio; some telecommunications carriers restrict the transmission of
+encrypted messages over their network.
+
+   Many countries have some form of export control for encryption
+software.  The Wassenaar Arrangement is a multilateral agreement between
+33 countries (Argentina, Australia, Austria, Belgium, Bulgaria, Canada,
+the Czech Republic, Denmark, Finland, France, Germany, Greece, Hungary,
+Ireland, Italy, Japan, Luxembourg, the Netherlands, New Zealand, Norway,
+Poland, Portugal, the Republic of Korea, Romania, the Russian
+Federation, the Slovak Republic, Spain, Sweden, Switzerland, Turkey,
+Ukraine, the United Kingdom and the United States) which restricts some
+kinds of encryption exports.  Different countries apply the arrangement
+in different ways; some do not allow the exception for certain kinds of
+“public domain” software (which would include this library), some only
+restrict the export of software in tangible form, and others impose
+significant additional restrictions.
+
+   The United States has additional rules.  This software would
+generally be exportable under 15 CFR 740.13(e), which permits exports of
+“encryption source code” which is “publicly available” and which is “not
+subject to an express agreement for the payment of a licensing fee or
+royalty for commercial production or sale of any product developed with
+the source code” to most countries.
+
+   The rules in this area are continuously changing.  If you know of any
+information in this manual that is out-of-date, please report it to the
+bug database.  *Note Reporting Bugs::.
+
+
+File: libc.info,  Node: getpass,  Next: crypt,  Prev: Legal Problems,  Up: Cryptographic Functions
+
+33.2 Reading Passwords
+======================
+
+When reading in a password, it is desirable to avoid displaying it on
+the screen, to help keep it secret.  The following function handles this
+in a convenient way.
+
+ -- Function: char * getpass (const char *PROMPT)
+     Preliminary: | MT-Unsafe term | AS-Unsafe heap lock corrupt |
+     AC-Unsafe term lock corrupt | *Note POSIX Safety Concepts::.
+
+     ‘getpass’ outputs PROMPT, then reads a string in from the terminal
+     without echoing it.  It tries to connect to the real terminal,
+     ‘/dev/tty’, if possible, to encourage users not to put plaintext
+     passwords in files; otherwise, it uses ‘stdin’ and ‘stderr’.
+     ‘getpass’ also disables the INTR, QUIT, and SUSP characters on the
+     terminal using the ‘ISIG’ terminal attribute (*note Local Modes::).
+     The terminal is flushed before and after ‘getpass’, so that
+     characters of a mistyped password are not accidentally visible.
+
+     In other C libraries, ‘getpass’ may only return the first
+     ‘PASS_MAX’ bytes of a password.  The GNU C Library has no limit, so
+     ‘PASS_MAX’ is undefined.
+
+     The prototype for this function is in ‘unistd.h’.  ‘PASS_MAX’ would
+     be defined in ‘limits.h’.
+
+   This precise set of operations may not suit all possible situations.
+In this case, it is recommended that users write their own ‘getpass’
+substitute.  For instance, a very simple substitute is as follows:
+
+
+     #include <termios.h>
+     #include <stdio.h>
+
+     ssize_t
+     my_getpass (char **lineptr, size_t *n, FILE *stream)
+     {
+       struct termios old, new;
+       int nread;
+
+       /* Turn echoing off and fail if we can’t. */
+       if (tcgetattr (fileno (stream), &old) != 0)
+         return -1;
+       new = old;
+       new.c_lflag &= ~ECHO;
+       if (tcsetattr (fileno (stream), TCSAFLUSH, &new) != 0)
+         return -1;
+
+       /* Read the password. */
+       nread = getline (lineptr, n, stream);
+
+       /* Restore terminal. */
+       (void) tcsetattr (fileno (stream), TCSAFLUSH, &old);
+
+       return nread;
+     }
+
+   The substitute takes the same parameters as ‘getline’ (*note Line
+Input::); the user must print any prompt desired.
+
+
+File: libc.info,  Node: crypt,  Next: DES Encryption,  Prev: getpass,  Up: Cryptographic Functions
+
+33.3 Encrypting Passwords
+=========================
+
+ -- Function: char * crypt (const char *KEY, const char *SALT)
+     Preliminary: | MT-Unsafe race:crypt | AS-Unsafe corrupt lock heap
+     dlopen | AC-Unsafe lock mem | *Note POSIX Safety Concepts::.
+
+     The ‘crypt’ function takes a password, KEY, as a string, and a SALT
+     character array which is described below, and returns a printable
+     ASCII string which starts with another salt.  It is believed that,
+     given the output of the function, the best way to find a KEY that
+     will produce that output is to guess values of KEY until the
+     original value of KEY is found.
+
+     The SALT parameter does two things.  Firstly, it selects which
+     algorithm is used, the MD5-based one or the DES-based one.
+     Secondly, it makes life harder for someone trying to guess
+     passwords against a file containing many passwords; without a SALT,
+     an intruder can make a guess, run ‘crypt’ on it once, and compare
+     the result with all the passwords.  With a SALT, the intruder must
+     run ‘crypt’ once for each different salt.
+
+     For the MD5-based algorithm, the SALT should consist of the string
+     ‘$1$’, followed by up to 8 characters, terminated by either another
+     ‘$’ or the end of the string.  The result of ‘crypt’ will be the
+     SALT, followed by a ‘$’ if the salt didn’t end with one, followed
+     by 22 characters from the alphabet ‘./0-9A-Za-z’, up to 34
+     characters total.  Every character in the KEY is significant.
+
+     For the DES-based algorithm, the SALT should consist of two
+     characters from the alphabet ‘./0-9A-Za-z’, and the result of
+     ‘crypt’ will be those two characters followed by 11 more from the
+     same alphabet, 13 in total.  Only the first 8 characters in the KEY
+     are significant.
+
+     The MD5-based algorithm has no limit on the useful length of the
+     password used, and is slightly more secure.  It is therefore
+     preferred over the DES-based algorithm.
+
+     When the user enters their password for the first time, the SALT
+     should be set to a new string which is reasonably random.  To
+     verify a password against the result of a previous call to ‘crypt’,
+     pass the result of the previous call as the SALT.
+
+   The following short program is an example of how to use ‘crypt’ the
+first time a password is entered.  Note that the SALT generation is just
+barely acceptable; in particular, it is not unique between machines, and
+in many applications it would not be acceptable to let an attacker know
+what time the user’s password was last set.
+
+
+     #include <stdio.h>
+     #include <time.h>
+     #include <unistd.h>
+     #include <crypt.h>
+
+     int
+     main(void)
+     {
+       unsigned long seed[2];
+       char salt[] = "$1$........";
+       const char *const seedchars =
+         "./0123456789ABCDEFGHIJKLMNOPQRST"
+         "UVWXYZabcdefghijklmnopqrstuvwxyz";
+       char *password;
+       int i;
+
+       /* Generate a (not very) random seed.
+          You should do it better than this... */
+       seed[0] = time(NULL);
+       seed[1] = getpid() ^ (seed[0] >> 14 & 0x30000);
+
+       /* Turn it into printable characters from ‘seedchars’. */
+       for (i = 0; i < 8; i++)
+         salt[3+i] = seedchars[(seed[i/5] >> (i%5)*6) & 0x3f];
+
+       /* Read in the user’s password and encrypt it. */
+       password = crypt(getpass("Password:"), salt);
+
+       /* Print the results. */
+       puts(password);
+       return 0;
+     }
+
+   The next program shows how to verify a password.  It prompts the user
+for a password and prints “Access granted.” if the user types ‘GNU libc
+manual’.
+
+
+     #include <stdio.h>
+     #include <string.h>
+     #include <unistd.h>
+     #include <crypt.h>
+
+     int
+     main(void)
+     {
+       /* Hashed form of "GNU libc manual". */
+       const char *const pass = "$1$/iSaq7rB$EoUw5jJPPvAPECNaaWzMK/";
+
+       char *result;
+       int ok;
+
+       /* Read in the user’s password and encrypt it,
+          passing the expected password in as the salt. */
+       result = crypt(getpass("Password:"), pass);
+
+       /* Test the result. */
+       ok = strcmp (result, pass) == 0;
+
+       puts(ok ? "Access granted." : "Access denied.");
+       return ok ? 0 : 1;
+     }
+
+ -- Function: char * crypt_r (const char *KEY, const char *SALT, struct
+          crypt_data * DATA)
+     Preliminary: | MT-Safe | AS-Unsafe corrupt lock heap dlopen |
+     AC-Unsafe lock mem | *Note POSIX Safety Concepts::.
+
+     The ‘crypt_r’ function does the same thing as ‘crypt’, but takes an
+     extra parameter which includes space for its result (among other
+     things), so it can be reentrant.  ‘data->initialized’ must be
+     cleared to zero before the first time ‘crypt_r’ is called.
+
+     The ‘crypt_r’ function is a GNU extension.
+
+   The ‘crypt’ and ‘crypt_r’ functions are prototyped in the header
+‘crypt.h’.
+
+
+File: libc.info,  Node: DES Encryption,  Prev: crypt,  Up: Cryptographic Functions
+
+33.4 DES Encryption
+===================
+
+The Data Encryption Standard is described in the US Government Federal
+Information Processing Standards (FIPS) 46-3 published by the National
+Institute of Standards and Technology.  The DES has been very thoroughly
+analyzed since it was developed in the late 1970s, and no new
+significant flaws have been found.
+
+   However, the DES uses only a 56-bit key (plus 8 parity bits), and a
+machine has been built in 1998 which can search through all possible
+keys in about 6 days, which cost about US$200000; faster searches would
+be possible with more money.  This makes simple DES insecure for most
+purposes, and NIST no longer permits new US government systems to use
+simple DES.
+
+   For serious encryption functionality, it is recommended that one of
+the many free encryption libraries be used instead of these routines.
+
+   The DES is a reversible operation which takes a 64-bit block and a
+64-bit key, and produces another 64-bit block.  Usually the bits are
+numbered so that the most-significant bit, the first bit, of each block
+is numbered 1.
+
+   Under that numbering, every 8th bit of the key (the 8th, 16th, and so
+on) is not used by the encryption algorithm itself.  But the key must
+have odd parity; that is, out of bits 1 through 8, and 9 through 16, and
+so on, there must be an odd number of ‘1’ bits, and this completely
+specifies the unused bits.
+
+ -- Function: void setkey (const char *KEY)
+     Preliminary: | MT-Unsafe race:crypt | AS-Unsafe corrupt lock |
+     AC-Unsafe lock | *Note POSIX Safety Concepts::.
+
+     The ‘setkey’ function sets an internal data structure to be an
+     expanded form of KEY.  KEY is specified as an array of 64 bits each
+     stored in a ‘char’, the first bit is ‘key[0]’ and the 64th bit is
+     ‘key[63]’.  The KEY should have the correct parity.
+
+ -- Function: void encrypt (char *BLOCK, int EDFLAG)
+     Preliminary: | MT-Unsafe race:crypt | AS-Unsafe corrupt lock |
+     AC-Unsafe lock | *Note POSIX Safety Concepts::.
+
+     The ‘encrypt’ function encrypts BLOCK if EDFLAG is 0, otherwise it
+     decrypts BLOCK, using a key previously set by ‘setkey’.  The result
+     is placed in BLOCK.
+
+     Like ‘setkey’, BLOCK is specified as an array of 64 bits each
+     stored in a ‘char’, but there are no parity bits in BLOCK.
+
+ -- Function: void setkey_r (const char *KEY, struct crypt_data * DATA)
+ -- Function: void encrypt_r (char *BLOCK, int EDFLAG, struct crypt_data
+          * DATA)
+     Preliminary: | MT-Safe | AS-Unsafe corrupt lock | AC-Unsafe lock |
+     *Note POSIX Safety Concepts::.
+
+     These are reentrant versions of ‘setkey’ and ‘encrypt’.  The only
+     difference is the extra parameter, which stores the expanded
+     version of KEY.  Before calling ‘setkey_r’ the first time,
+     ‘data->initialized’ must be cleared to zero.
+
+   The ‘setkey_r’ and ‘encrypt_r’ functions are GNU extensions.
+‘setkey’, ‘encrypt’, ‘setkey_r’, and ‘encrypt_r’ are defined in
+‘crypt.h’.
+
+ -- Function: int ecb_crypt (char *KEY, char *BLOCKS, unsigned LEN,
+          unsigned MODE)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The function ‘ecb_crypt’ encrypts or decrypts one or more blocks
+     using DES. Each block is encrypted independently.
+
+     The BLOCKS and the KEY are stored packed in 8-bit bytes, so that
+     the first bit of the key is the most-significant bit of ‘key[0]’
+     and the 63rd bit of the key is stored as the least-significant bit
+     of ‘key[7]’.  The KEY should have the correct parity.
+
+     LEN is the number of bytes in BLOCKS.  It should be a multiple of 8
+     (so that there is a whole number of blocks to encrypt).  LEN is
+     limited to a maximum of ‘DES_MAXDATA’ bytes.
+
+     The result of the encryption replaces the input in BLOCKS.
+
+     The MODE parameter is the bitwise OR of two of the following:
+
+     ‘DES_ENCRYPT’
+          This constant, used in the MODE parameter, specifies that
+          BLOCKS is to be encrypted.
+
+     ‘DES_DECRYPT’
+          This constant, used in the MODE parameter, specifies that
+          BLOCKS is to be decrypted.
+
+     ‘DES_HW’
+          This constant, used in the MODE parameter, asks to use a
+          hardware device.  If no hardware device is available,
+          encryption happens anyway, but in software.
+
+     ‘DES_SW’
+          This constant, used in the MODE parameter, specifies that no
+          hardware device is to be used.
+
+     The result of the function will be one of these values:
+
+     ‘DESERR_NONE’
+          The encryption succeeded.
+
+     ‘DESERR_NOHWDEVICE’
+          The encryption succeeded, but there was no hardware device
+          available.
+
+     ‘DESERR_HWERROR’
+          The encryption failed because of a hardware problem.
+
+     ‘DESERR_BADPARAM’
+          The encryption failed because of a bad parameter, for instance
+          LEN is not a multiple of 8 or LEN is larger than
+          ‘DES_MAXDATA’.
+
+ -- Function: int DES_FAILED (int ERR)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     This macro returns 1 if ERR is a ‘success’ result code from
+     ‘ecb_crypt’ or ‘cbc_crypt’, and 0 otherwise.
+
+ -- Function: int cbc_crypt (char *KEY, char *BLOCKS, unsigned LEN,
+          unsigned MODE, char *IVEC)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The function ‘cbc_crypt’ encrypts or decrypts one or more blocks
+     using DES in Cipher Block Chaining mode.
+
+     For encryption in CBC mode, each block is exclusive-ored with IVEC
+     before being encrypted, then IVEC is replaced with the result of
+     the encryption, then the next block is processed.  Decryption is
+     the reverse of this process.
+
+     This has the advantage that blocks which are the same before being
+     encrypted are very unlikely to be the same after being encrypted,
+     making it much harder to detect patterns in the data.
+
+     Usually, IVEC is set to 8 random bytes before encryption starts.
+     Then the 8 random bytes are transmitted along with the encrypted
+     data (without themselves being encrypted), and passed back in as
+     IVEC for decryption.  Another possibility is to set IVEC to 8
+     zeroes initially, and have the first the block encrypted consist of
+     8 random bytes.
+
+     Otherwise, all the parameters are similar to those for ‘ecb_crypt’.
+
+ -- Function: void des_setparity (char *KEY)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The function ‘des_setparity’ changes the 64-bit KEY, stored packed
+     in 8-bit bytes, to have odd parity by altering the low bits of each
+     byte.
+
+   The ‘ecb_crypt’, ‘cbc_crypt’, and ‘des_setparity’ functions and their
+accompanying macros are all defined in the header ‘rpc/des_crypt.h’.
+
+
+File: libc.info,  Node: Debugging Support,  Next: POSIX Threads,  Prev: Cryptographic Functions,  Up: Top
+
+34 Debugging support
+********************
+
+Applications are usually debugged using dedicated debugger programs.
+But sometimes this is not possible and, in any case, it is useful to
+provide the developer with as much information as possible at the time
+the problems are experienced.  For this reason a few functions are
+provided which a program can use to help the developer more easily
+locate the problem.
+
+* Menu:
+
+* Backtraces::                Obtaining and printing a back trace of the
+                               current stack.
+
+
+File: libc.info,  Node: Backtraces,  Up: Debugging Support
+
+34.1 Backtraces
+===============
+
+A "backtrace" is a list of the function calls that are currently active
+in a thread.  The usual way to inspect a backtrace of a program is to
+use an external debugger such as gdb.  However, sometimes it is useful
+to obtain a backtrace programmatically from within a program, e.g., for
+the purposes of logging or diagnostics.
+
+   The header file ‘execinfo.h’ declares three functions that obtain and
+manipulate backtraces of the current thread.
+
+ -- Function: int backtrace (void **BUFFER, int SIZE)
+     Preliminary: | MT-Safe | AS-Unsafe init heap dlopen plugin lock |
+     AC-Unsafe init mem lock fd | *Note POSIX Safety Concepts::.
+
+     The ‘backtrace’ function obtains a backtrace for the current
+     thread, as a list of pointers, and places the information into
+     BUFFER.  The argument SIZE should be the number of ‘void *’
+     elements that will fit into BUFFER.  The return value is the actual
+     number of entries of BUFFER that are obtained, and is at most SIZE.
+
+     The pointers placed in BUFFER are actually return addresses
+     obtained by inspecting the stack, one return address per stack
+     frame.
+
+     Note that certain compiler optimizations may interfere with
+     obtaining a valid backtrace.  Function inlining causes the inlined
+     function to not have a stack frame; tail call optimization replaces
+     one stack frame with another; frame pointer elimination will stop
+     ‘backtrace’ from interpreting the stack contents correctly.
+
+ -- Function: char ** backtrace_symbols (void *const *BUFFER, int SIZE)
+     Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem lock |
+     *Note POSIX Safety Concepts::.
+
+     The ‘backtrace_symbols’ function translates the information
+     obtained from the ‘backtrace’ function into an array of strings.
+     The argument BUFFER should be a pointer to an array of addresses
+     obtained via the ‘backtrace’ function, and SIZE is the number of
+     entries in that array (the return value of ‘backtrace’).
+
+     The return value is a pointer to an array of strings, which has
+     SIZE entries just like the array BUFFER.  Each string contains a
+     printable representation of the corresponding element of BUFFER.
+     It includes the function name (if this can be determined), an
+     offset into the function, and the actual return address (in
+     hexadecimal).
+
+     Currently, the function name and offset only be obtained on systems
+     that use the ELF binary format for programs and libraries.  On
+     other systems, only the hexadecimal return address will be present.
+     Also, you may need to pass additional flags to the linker to make
+     the function names available to the program.  (For example, on
+     systems using GNU ld, you must pass (‘-rdynamic’.)
+
+     The return value of ‘backtrace_symbols’ is a pointer obtained via
+     the ‘malloc’ function, and it is the responsibility of the caller
+     to ‘free’ that pointer.  Note that only the return value need be
+     freed, not the individual strings.
+
+     The return value is ‘NULL’ if sufficient memory for the strings
+     cannot be obtained.
+
+ -- Function: void backtrace_symbols_fd (void *const *BUFFER, int SIZE,
+          int FD)
+     Preliminary: | MT-Safe | AS-Safe | AC-Unsafe lock | *Note POSIX
+     Safety Concepts::.
+
+     The ‘backtrace_symbols_fd’ function performs the same translation
+     as the function ‘backtrace_symbols’ function.  Instead of returning
+     the strings to the caller, it writes the strings to the file
+     descriptor FD, one per line.  It does not use the ‘malloc’
+     function, and can therefore be used in situations where that
+     function might fail.
+
+   The following program illustrates the use of these functions.  Note
+that the array to contain the return addresses returned by ‘backtrace’
+is allocated on the stack.  Therefore code like this can be used in
+situations where the memory handling via ‘malloc’ does not work anymore
+(in which case the ‘backtrace_symbols’ has to be replaced by a
+‘backtrace_symbols_fd’ call as well).  The number of return addresses is
+normally not very large.  Even complicated programs rather seldom have a
+nesting level of more than, say, 50 and with 200 possible entries
+probably all programs should be covered.
+
+
+     #include <execinfo.h>
+     #include <stdio.h>
+     #include <stdlib.h>
+
+     /* Obtain a backtrace and print it to ‘stdout’. */
+     void
+     print_trace (void)
+     {
+       void *array[10];
+       size_t size;
+       char **strings;
+       size_t i;
+
+       size = backtrace (array, 10);
+       strings = backtrace_symbols (array, size);
+
+       printf ("Obtained %zd stack frames.\n", size);
+
+       for (i = 0; i < size; i++)
+          printf ("%s\n", strings[i]);
+
+       free (strings);
+     }
+
+     /* A dummy function to make the backtrace more interesting. */
+     void
+     dummy_function (void)
+     {
+       print_trace ();
+     }
+
+     int
+     main (void)
+     {
+       dummy_function ();
+       return 0;
+     }
+
+
+File: libc.info,  Node: POSIX Threads,  Next: Internal Probes,  Prev: Debugging Support,  Up: Top
+
+35 POSIX Threads
+****************
+
+This chapter describes the GNU C Library POSIX Thread implementation.
+
+* Menu:
+
+* Thread-specific Data::          Support for creating and
+				  managing thread-specific data
+* Non-POSIX Extensions::          Additional functions to extend
+				  POSIX Thread functionality
+
+
+File: libc.info,  Node: Thread-specific Data,  Next: Non-POSIX Extensions,  Up: POSIX Threads
+
+35.1 Thread-specific Data
+=========================
+
+The GNU C Library implements functions to allow users to create and
+manage data specific to a thread.  Such data may be destroyed at thread
+exit, if a destructor is provided.  The following functions are defined:
+
+ -- Function: int pthread_key_create (pthread_key_t *KEY, void
+          (*DESTRUCTOR)(void*))
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     Create a thread-specific data key for the calling thread,
+     referenced by KEY.
+
+     Objects declared with the C++11 ‘thread_local’ keyword are
+     destroyed before thread-specific data, so they should not be used
+     in thread-specific data destructors or even as members of the
+     thread-specific data, since the latter is passed as an argument to
+     the destructor function.
+
+ -- Function: int pthread_key_delete (pthread_key_t KEY)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     Destroy the thread-specific data KEY in the calling thread.  The
+     destructor for the thread-specific data is not called during
+     destruction, nor is it called during thread exit.
+
+ -- Function: void *pthread_getspecific (pthread_key_t KEY)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     Return the thread-specific data associated with KEY in the calling
+     thread.
+
+ -- Function: int pthread_setspecific (pthread_key_t KEY, const void
+          *VALUE)
+     Preliminary: | MT-Safe | AS-Unsafe corrupt heap | AC-Unsafe corrupt
+     mem | *Note POSIX Safety Concepts::.
+
+     Associate the thread-specific VALUE with KEY in the calling thread.
+
+
+File: libc.info,  Node: Non-POSIX Extensions,  Prev: Thread-specific Data,  Up: POSIX Threads
+
+35.2 Non-POSIX Extensions
+=========================
+
+In addition to implementing the POSIX API for threads, the GNU C Library
+provides additional functions and interfaces to provide functionality
+not specified in the standard.
+
+* Menu:
+
+* Default Thread Attributes::             Setting default attributes for
+					  threads in a process.
+
+
+File: libc.info,  Node: Default Thread Attributes,  Up: Non-POSIX Extensions
+
+35.2.1 Setting Process-wide defaults for thread attributes
+----------------------------------------------------------
+
+The GNU C Library provides non-standard API functions to set and get the
+default attributes used in the creation of threads in a process.
+
+ -- Function: int pthread_getattr_default_np (pthread_attr_t *ATTR)
+     Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | *Note
+     POSIX Safety Concepts::.
+
+     Get the default attribute values and set ATTR to match.  This
+     function returns 0 on success and a non-zero error code on failure.
+
+ -- Function: int pthread_setattr_default_np (pthread_attr_t *ATTR)
+     Preliminary: | MT-Safe | AS-Unsafe heap lock | AC-Unsafe lock mem |
+     *Note POSIX Safety Concepts::.
+
+     Set the default attribute values to match the values in ATTR.  The
+     function returns 0 on success and a non-zero error code on failure.
+     The following error codes are defined for this function:
+
+     ‘EINVAL’
+          At least one of the values in ATTR does not qualify as valid
+          for the attributes or the stack address is set in the
+          attribute.
+     ‘ENOMEM’
+          The system does not have sufficient memory.
+
+
+File: libc.info,  Node: Internal Probes,  Next: Language Features,  Prev: POSIX Threads,  Up: Top
+
+36 Internal probes
+******************
+
+In order to aid in debugging and monitoring internal behavior, the GNU C
+Library exposes nearly-zero-overhead SystemTap probes marked with the
+‘libc’ provider.
+
+   These probes are not part of the GNU C Library stable ABI, and they
+are subject to change or removal across releases.  Our only promise with
+regard to them is that, if we find a need to remove or modify the
+arguments of a probe, the modified probe will have a different name, so
+that program monitors relying on the old probe will not get unexpected
+arguments.
+
+* Menu:
+
+* Memory Allocation Probes::  Probes in the memory allocation subsystem
+* Mathematical Function Probes::  Probes in mathematical functions
+* Non-local Goto Probes::  Probes in setjmp and longjmp
+
+
+File: libc.info,  Node: Memory Allocation Probes,  Next: Mathematical Function Probes,  Up: Internal Probes
+
+36.1 Memory Allocation Probes
+=============================
+
+These probes are designed to signal relatively unusual situations within
+the virtual memory subsystem of the GNU C Library.
+
+ -- Probe: memory_sbrk_more (void *$ARG1, size_t $ARG2)
+     This probe is triggered after the main arena is extended by calling
+     ‘sbrk’.  Argument $ARG1 is the additional size requested to ‘sbrk’,
+     and $ARG2 is the pointer that marks the end of the ‘sbrk’ area,
+     returned in response to the request.
+
+ -- Probe: memory_sbrk_less (void *$ARG1, size_t $ARG2)
+     This probe is triggered after the size of the main arena is
+     decreased by calling ‘sbrk’.  Argument $ARG1 is the size released
+     by ‘sbrk’ (the positive value, rather than the negative value
+     passed to ‘sbrk’), and $ARG2 is the pointer that marks the end of
+     the ‘sbrk’ area, returned in response to the request.
+
+ -- Probe: memory_heap_new (void *$ARG1, size_t $ARG2)
+     This probe is triggered after a new heap is ‘mmap’ed.  Argument
+     $ARG1 is a pointer to the base of the memory area, where the
+     ‘heap_info’ data structure is held, and $ARG2 is the size of the
+     heap.
+
+ -- Probe: memory_heap_free (void *$ARG1, size_t $ARG2)
+     This probe is triggered _before_ (unlike the other sbrk and heap
+     probes) a heap is completely removed via ‘munmap’.  Argument $ARG1
+     is a pointer to the heap, and $ARG2 is the size of the heap.
+
+ -- Probe: memory_heap_more (void *$ARG1, size_t $ARG2)
+     This probe is triggered after a trailing portion of an ‘mmap’ed
+     heap is extended.  Argument $ARG1 is a pointer to the heap, and
+     $ARG2 is the new size of the heap.
+
+ -- Probe: memory_heap_less (void *$ARG1, size_t $ARG2)
+     This probe is triggered after a trailing portion of an ‘mmap’ed
+     heap is released.  Argument $ARG1 is a pointer to the heap, and
+     $ARG2 is the new size of the heap.
+
+ -- Probe: memory_malloc_retry (size_t $ARG1)
+ -- Probe: memory_realloc_retry (size_t $ARG1, void *$ARG2)
+ -- Probe: memory_memalign_retry (size_t $ARG1, size_t $ARG2)
+ -- Probe: memory_calloc_retry (size_t $ARG1)
+     These probes are triggered when the corresponding functions fail to
+     obtain the requested amount of memory from the arena in use, before
+     they call ‘arena_get_retry’ to select an alternate arena in which
+     to retry the allocation.  Argument $ARG1 is the amount of memory
+     requested by the user; in the ‘calloc’ case, that is the total size
+     computed from both function arguments.  In the ‘realloc’ case,
+     $ARG2 is the pointer to the memory area being resized.  In the
+     ‘memalign’ case, $ARG2 is the alignment to be used for the request,
+     which may be stricter than the value passed to the ‘memalign’
+     function.  A ‘memalign’ probe is also used by functions
+     ‘posix_memalign, valloc’ and ‘pvalloc’.
+
+     Note that the argument order does _not_ match that of the
+     corresponding two-argument functions, so that in all of these
+     probes the user-requested allocation size is in $ARG1.
+
+ -- Probe: memory_arena_retry (size_t $ARG1, void *$ARG2)
+     This probe is triggered within ‘arena_get_retry’ (the function
+     called to select the alternate arena in which to retry an
+     allocation that failed on the first attempt), before the selection
+     of an alternate arena.  This probe is redundant, but much easier to
+     use when it’s not important to determine which of the various
+     memory allocation functions is failing to allocate on the first
+     try.  Argument $ARG1 is the same as in the function-specific
+     probes, except for extra room for padding introduced by functions
+     that have to ensure stricter alignment.  Argument $ARG2 is the
+     arena in which allocation failed.
+
+ -- Probe: memory_arena_new (void *$ARG1, size_t $ARG2)
+     This probe is triggered when ‘malloc’ allocates and initializes an
+     additional arena (not the main arena), but before the arena is
+     assigned to the running thread or inserted into the internal linked
+     list of arenas.  The arena’s ‘malloc_state’ internal data structure
+     is located at $ARG1, within a newly-allocated heap big enough to
+     hold at least $ARG2 bytes.
+
+ -- Probe: memory_arena_reuse (void *$ARG1, void *$ARG2)
+     This probe is triggered when ‘malloc’ has just selected an existing
+     arena to reuse, and (temporarily) reserved it for exclusive use.
+     Argument $ARG1 is a pointer to the newly-selected arena, and $ARG2
+     is a pointer to the arena previously used by that thread.
+
+     This occurs within ‘reused_arena’, right after the mutex mentioned
+     in probe ‘memory_arena_reuse_wait’ is acquired; argument $ARG1 will
+     point to the same arena.  In this configuration, this will usually
+     only occur once per thread.  The exception is when a thread first
+     selected the main arena, but a subsequent allocation from it fails:
+     then, and only then, may we switch to another arena to retry that
+     allocations, and for further allocations within that thread.
+
+ -- Probe: memory_arena_reuse_wait (void *$ARG1, void *$ARG2, void
+          *$ARG3)
+     This probe is triggered when ‘malloc’ is about to wait for an arena
+     to become available for reuse.  Argument $ARG1 holds a pointer to
+     the mutex the thread is going to wait on, $ARG2 is a pointer to a
+     newly-chosen arena to be reused, and $ARG3 is a pointer to the
+     arena previously used by that thread.
+
+     This occurs within ‘reused_arena’, when a thread first tries to
+     allocate memory or needs a retry after a failure to allocate from
+     the main arena, there isn’t any free arena, the maximum number of
+     arenas has been reached, and an existing arena was chosen for
+     reuse, but its mutex could not be immediately acquired.  The mutex
+     in $ARG1 is the mutex of the selected arena.
+
+ -- Probe: memory_arena_reuse_free_list (void *$ARG1)
+     This probe is triggered when ‘malloc’ has chosen an arena that is
+     in the free list for use by a thread, within the ‘get_free_list’
+     function.  The argument $ARG1 holds a pointer to the selected
+     arena.
+
+ -- Probe: memory_mallopt (int $ARG1, int $ARG2)
+     This probe is triggered when function ‘mallopt’ is called to change
+     ‘malloc’ internal configuration parameters, before any change to
+     the parameters is made.  The arguments $ARG1 and $ARG2 are the ones
+     passed to the ‘mallopt’ function.
+
+ -- Probe: memory_mallopt_mxfast (int $ARG1, int $ARG2)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_MXFAST’, and the requested
+     value is in an acceptable range.  Argument $ARG1 is the requested
+     value, and $ARG2 is the previous value of this ‘malloc’ parameter.
+
+ -- Probe: memory_mallopt_trim_threshold (int $ARG1, int $ARG2, int
+          $ARG3)
+     This probe is triggere shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_TRIM_THRESHOLD’.  Argument
+     $ARG1 is the requested value, $ARG2 is the previous value of this
+     ‘malloc’ parameter, and $ARG3 is nonzero if dynamic threshold
+     adjustment was already disabled.
+
+ -- Probe: memory_mallopt_top_pad (int $ARG1, int $ARG2, int $ARG3)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_TOP_PAD’.  Argument $ARG1 is
+     the requested value, $ARG2 is the previous value of this ‘malloc’
+     parameter, and $ARG3 is nonzero if dynamic threshold adjustment was
+     already disabled.
+
+ -- Probe: memory_mallopt_mmap_threshold (int $ARG1, int $ARG2, int
+          $ARG3)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_MMAP_THRESHOLD’, and the
+     requested value is in an acceptable range.  Argument $ARG1 is the
+     requested value, $ARG2 is the previous value of this ‘malloc’
+     parameter, and $ARG3 is nonzero if dynamic threshold adjustment was
+     already disabled.
+
+ -- Probe: memory_mallopt_mmap_max (int $ARG1, int $ARG2, int $ARG3)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_MMAP_MAX’.  Argument $ARG1
+     is the requested value, $ARG2 is the previous value of this
+     ‘malloc’ parameter, and $ARG3 is nonzero if dynamic threshold
+     adjustment was already disabled.
+
+ -- Probe: memory_mallopt_check_action (int $ARG1, int $ARG2)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_CHECK_ACTION’.  Argument
+     $ARG1 is the requested value, and $ARG2 is the previous value of
+     this ‘malloc’ parameter.
+
+ -- Probe: memory_mallopt_perturb (int $ARG1, int $ARG2)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_PERTURB’.  Argument $ARG1 is
+     the requested value, and $ARG2 is the previous value of this
+     ‘malloc’ parameter.
+
+ -- Probe: memory_mallopt_arena_test (int $ARG1, int $ARG2)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_ARENA_TEST’, and the
+     requested value is in an acceptable range.  Argument $ARG1 is the
+     requested value, and $ARG2 is the previous value of this ‘malloc’
+     parameter.
+
+ -- Probe: memory_mallopt_arena_max (int $ARG1, int $ARG2)
+     This probe is triggered shortly after the ‘memory_mallopt’ probe,
+     when the parameter to be changed is ‘M_ARENA_MAX’, and the
+     requested value is in an acceptable range.  Argument $ARG1 is the
+     requested value, and $ARG2 is the previous value of this ‘malloc’
+     parameter.
+
+ -- Probe: memory_mallopt_free_dyn_thresholds (int $ARG1, int $ARG2)
+     This probe is triggered when function ‘free’ decides to adjust the
+     dynamic brk/mmap thresholds.  Argument $ARG1 and $ARG2 are the
+     adjusted mmap and trim thresholds, respectively.
 

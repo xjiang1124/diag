@@ -2,9 +2,9 @@ This is libc.info, produced by makeinfo version 5.2 from libc.texinfo.
 
 This file documents the GNU C Library.
 
-   This is ‘The GNU C Library Reference Manual’, for version 2.25.
+   This is ‘The GNU C Library Reference Manual’, for version 2.23.
 
-   Copyright © 1993–2017 Free Software Foundation, Inc.
+   Copyright © 1993–2016 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -223,14 +223,11 @@ START-INFO-DIR-ENTRY
 * FD_SET: (libc)Waiting for I/O.
 * FD_SETSIZE: (libc)Waiting for I/O.
 * FD_ZERO: (libc)Waiting for I/O.
-* FE_SNANS_ALWAYS_SIGNAL: (libc)Infinity and NaN.
 * FILENAME_MAX: (libc)Limits for Files.
 * FLUSHO: (libc)Local Modes.
 * FOPEN_MAX: (libc)Opening Streams.
 * FP_ILOGB0: (libc)Exponents and Logarithms.
 * FP_ILOGBNAN: (libc)Exponents and Logarithms.
-* FP_LLOGB0: (libc)Exponents and Logarithms.
-* FP_LLOGBNAN: (libc)Exponents and Logarithms.
 * F_DUPFD: (libc)Duplicating Descriptors.
 * F_GETFD: (libc)Descriptor Flags.
 * F_GETFL: (libc)Getting File Status Flags.
@@ -384,9 +381,6 @@ START-INFO-DIR-ENTRY
 * SIGXCPU: (libc)Operation Error Signals.
 * SIGXFSZ: (libc)Operation Error Signals.
 * SIG_ERR: (libc)Basic Signal Handling.
-* SNAN: (libc)Infinity and NaN.
-* SNANF: (libc)Infinity and NaN.
-* SNANL: (libc)Infinity and NaN.
 * SOCK_DGRAM: (libc)Communication Styles.
 * SOCK_RAW: (libc)Communication Styles.
 * SOCK_RDM: (libc)Communication Styles.
@@ -590,10 +584,7 @@ START-INFO-DIR-ENTRY
 * cacoshl: (libc)Hyperbolic Functions.
 * cacosl: (libc)Inverse Trig Functions.
 * calloc: (libc)Allocating Cleared Space.
-* canonicalize: (libc)FP Bit Twiddling.
 * canonicalize_file_name: (libc)Symbolic Links.
-* canonicalizef: (libc)FP Bit Twiddling.
-* canonicalizel: (libc)FP Bit Twiddling.
 * carg: (libc)Operations on Complex.
 * cargf: (libc)Operations on Complex.
 * cargl: (libc)Operations on Complex.
@@ -767,7 +758,6 @@ START-INFO-DIR-ENTRY
 * exp: (libc)Exponents and Logarithms.
 * expf: (libc)Exponents and Logarithms.
 * expl: (libc)Exponents and Logarithms.
-* explicit_bzero: (libc)Erasing Sensitive Data.
 * expm1: (libc)Exponents and Logarithms.
 * expm1f: (libc)Exponents and Logarithms.
 * expm1l: (libc)Exponents and Logarithms.
@@ -794,7 +784,6 @@ START-INFO-DIR-ENTRY
 * fegetenv: (libc)Control Functions.
 * fegetexcept: (libc)Control Functions.
 * fegetexceptflag: (libc)Status bit operations.
-* fegetmode: (libc)Control Functions.
 * fegetround: (libc)Rounding.
 * feholdexcept: (libc)Control Functions.
 * feof: (libc)EOF and Errors.
@@ -803,12 +792,9 @@ START-INFO-DIR-ENTRY
 * ferror: (libc)EOF and Errors.
 * ferror_unlocked: (libc)EOF and Errors.
 * fesetenv: (libc)Control Functions.
-* fesetexcept: (libc)Status bit operations.
 * fesetexceptflag: (libc)Status bit operations.
-* fesetmode: (libc)Control Functions.
 * fesetround: (libc)Rounding.
 * fetestexcept: (libc)Status bit operations.
-* fetestexceptflag: (libc)Status bit operations.
 * feupdateenv: (libc)Control Functions.
 * fflush: (libc)Flushing Buffers.
 * fflush_unlocked: (libc)Flushing Buffers.
@@ -841,16 +827,10 @@ START-INFO-DIR-ENTRY
 * fmax: (libc)Misc FP Arithmetic.
 * fmaxf: (libc)Misc FP Arithmetic.
 * fmaxl: (libc)Misc FP Arithmetic.
-* fmaxmag: (libc)Misc FP Arithmetic.
-* fmaxmagf: (libc)Misc FP Arithmetic.
-* fmaxmagl: (libc)Misc FP Arithmetic.
 * fmemopen: (libc)String Streams.
 * fmin: (libc)Misc FP Arithmetic.
 * fminf: (libc)Misc FP Arithmetic.
 * fminl: (libc)Misc FP Arithmetic.
-* fminmag: (libc)Misc FP Arithmetic.
-* fminmagf: (libc)Misc FP Arithmetic.
-* fminmagl: (libc)Misc FP Arithmetic.
 * fmod: (libc)Remainder Functions.
 * fmodf: (libc)Remainder Functions.
 * fmodl: (libc)Remainder Functions.
@@ -880,12 +860,6 @@ START-INFO-DIR-ENTRY
 * frexp: (libc)Normalization Functions.
 * frexpf: (libc)Normalization Functions.
 * frexpl: (libc)Normalization Functions.
-* fromfp: (libc)Rounding Functions.
-* fromfpf: (libc)Rounding Functions.
-* fromfpl: (libc)Rounding Functions.
-* fromfpx: (libc)Rounding Functions.
-* fromfpxf: (libc)Rounding Functions.
-* fromfpxl: (libc)Rounding Functions.
 * fscanf: (libc)Formatted Input Functions.
 * fseek: (libc)File Positioning.
 * fseeko64: (libc)File Positioning.
@@ -931,7 +905,6 @@ START-INFO-DIR-ENTRY
 * getdelim: (libc)Line Input.
 * getdomainnname: (libc)Host Identification.
 * getegid: (libc)Reading Persona.
-* getentropy: (libc)Unpredictable Bytes.
 * getenv: (libc)Environment Access.
 * geteuid: (libc)Reading Persona.
 * getfsent: (libc)fstab.
@@ -971,9 +944,6 @@ START-INFO-DIR-ENTRY
 * getopt_long_only: (libc)Getopt Long Options.
 * getpagesize: (libc)Query Memory Parameters.
 * getpass: (libc)getpass.
-* getpayload: (libc)FP Bit Twiddling.
-* getpayloadf: (libc)FP Bit Twiddling.
-* getpayloadl: (libc)FP Bit Twiddling.
 * getpeername: (libc)Who is Connected.
 * getpgid: (libc)Process Group Functions.
 * getpgrp: (libc)Process Group Functions.
@@ -990,7 +960,6 @@ START-INFO-DIR-ENTRY
 * getpwnam_r: (libc)Lookup User.
 * getpwuid: (libc)Lookup User.
 * getpwuid_r: (libc)Lookup User.
-* getrandom: (libc)Unpredictable Bytes.
 * getrlimit64: (libc)Limits on Resources.
 * getrlimit: (libc)Limits on Resources.
 * getrusage: (libc)Resource Usage.
@@ -1078,10 +1047,8 @@ START-INFO-DIR-ENTRY
 * isascii: (libc)Classification of Characters.
 * isatty: (libc)Is It a Terminal.
 * isblank: (libc)Classification of Characters.
-* iscanonical: (libc)Floating Point Classes.
 * iscntrl: (libc)Classification of Characters.
 * isdigit: (libc)Classification of Characters.
-* iseqsig: (libc)FP Comparison Functions.
 * isfinite: (libc)Floating Point Classes.
 * isgraph: (libc)Classification of Characters.
 * isgreater: (libc)FP Comparison Functions.
@@ -1102,7 +1069,6 @@ START-INFO-DIR-ENTRY
 * ispunct: (libc)Classification of Characters.
 * issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
-* issubnormal: (libc)Floating Point Classes.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
 * iswalnum: (libc)Classification of Wide Characters.
@@ -1119,7 +1085,6 @@ START-INFO-DIR-ENTRY
 * iswupper: (libc)Classification of Wide Characters.
 * iswxdigit: (libc)Classification of Wide Characters.
 * isxdigit: (libc)Classification of Characters.
-* iszero: (libc)Floating Point Classes.
 * j0: (libc)Special Functions.
 * j0f: (libc)Special Functions.
 * j0l: (libc)Special Functions.
@@ -1154,9 +1119,6 @@ START-INFO-DIR-ENTRY
 * listen: (libc)Listening.
 * llabs: (libc)Absolute Value.
 * lldiv: (libc)Integer Division.
-* llogb: (libc)Exponents and Logarithms.
-* llogbf: (libc)Exponents and Logarithms.
-* llogbl: (libc)Exponents and Logarithms.
 * llrint: (libc)Rounding Functions.
 * llrintf: (libc)Rounding Functions.
 * llrintl: (libc)Rounding Functions.
@@ -1260,15 +1222,9 @@ START-INFO-DIR-ENTRY
 * nextafter: (libc)FP Bit Twiddling.
 * nextafterf: (libc)FP Bit Twiddling.
 * nextafterl: (libc)FP Bit Twiddling.
-* nextdown: (libc)FP Bit Twiddling.
-* nextdownf: (libc)FP Bit Twiddling.
-* nextdownl: (libc)FP Bit Twiddling.
 * nexttoward: (libc)FP Bit Twiddling.
 * nexttowardf: (libc)FP Bit Twiddling.
 * nexttowardl: (libc)FP Bit Twiddling.
-* nextup: (libc)FP Bit Twiddling.
-* nextupf: (libc)FP Bit Twiddling.
-* nextupl: (libc)FP Bit Twiddling.
 * nftw64: (libc)Working with Directory Trees.
 * nftw: (libc)Working with Directory Trees.
 * ngettext: (libc)Advanced gettext functions.
@@ -1401,9 +1357,6 @@ START-INFO-DIR-ENTRY
 * rintl: (libc)Rounding Functions.
 * rmdir: (libc)Deleting Files.
 * round: (libc)Rounding Functions.
-* roundeven: (libc)Rounding Functions.
-* roundevenf: (libc)Rounding Functions.
-* roundevenl: (libc)Rounding Functions.
 * roundf: (libc)Rounding Functions.
 * roundl: (libc)Rounding Functions.
 * rpmatch: (libc)Yes-or-No Questions.
@@ -1476,12 +1429,6 @@ START-INFO-DIR-ENTRY
 * setmntent: (libc)mtab.
 * setnetent: (libc)Networks Database.
 * setnetgrent: (libc)Lookup Netgroup.
-* setpayload: (libc)FP Bit Twiddling.
-* setpayloadf: (libc)FP Bit Twiddling.
-* setpayloadl: (libc)FP Bit Twiddling.
-* setpayloadsig: (libc)FP Bit Twiddling.
-* setpayloadsigf: (libc)FP Bit Twiddling.
-* setpayloadsigl: (libc)FP Bit Twiddling.
 * setpgid: (libc)Process Group Functions.
 * setpgrp: (libc)Process Group Functions.
 * setpriority: (libc)Traditional Scheduling Functions.
@@ -1570,9 +1517,6 @@ START-INFO-DIR-ENTRY
 * strerror: (libc)Error Messages.
 * strerror_r: (libc)Error Messages.
 * strfmon: (libc)Formatting Numbers.
-* strfromd: (libc)Printing of Floats.
-* strfromf: (libc)Printing of Floats.
-* strfroml: (libc)Printing of Floats.
 * strfry: (libc)strfry.
 * strftime: (libc)Formatting Calendar Time.
 * strlen: (libc)String Length.
@@ -1651,12 +1595,6 @@ START-INFO-DIR-ENTRY
 * tmpnam_r: (libc)Temporary Files.
 * toascii: (libc)Case Conversion.
 * tolower: (libc)Case Conversion.
-* totalorder: (libc)FP Comparison Functions.
-* totalorderf: (libc)FP Comparison Functions.
-* totalorderl: (libc)FP Comparison Functions.
-* totalordermag: (libc)FP Comparison Functions.
-* totalordermagf: (libc)FP Comparison Functions.
-* totalordermagl: (libc)FP Comparison Functions.
 * toupper: (libc)Case Conversion.
 * towctrans: (libc)Wide Character Case Conversion.
 * towlower: (libc)Wide Character Case Conversion.
@@ -1671,12 +1609,6 @@ START-INFO-DIR-ENTRY
 * ttyname_r: (libc)Is It a Terminal.
 * twalk: (libc)Tree Search Function.
 * tzset: (libc)Time Zone Functions.
-* ufromfp: (libc)Rounding Functions.
-* ufromfpf: (libc)Rounding Functions.
-* ufromfpl: (libc)Rounding Functions.
-* ufromfpx: (libc)Rounding Functions.
-* ufromfpxf: (libc)Rounding Functions.
-* ufromfpxl: (libc)Rounding Functions.
 * ulimit: (libc)Limits on Resources.
 * umask: (libc)Setting Permissions.
 * umount2: (libc)Mount-Unmount-Remount.
@@ -1814,8 +1746,7 @@ convenient when you are debugging a program, but it is unhelpful if you
 want the program to behave unpredictably.  If you want a different
 pseudo-random series each time your program runs, you must specify a
 different seed each time.  For ordinary purposes, basing the seed on the
-current time works well.  For random numbers in cryptography, *note
-Unpredictable Bytes::.
+current time works well.
 
    You can obtain repeatable sequences of numbers on a particular
 machine type by specifying the same initial seed value for the random
@@ -1969,7 +1900,7 @@ its own pseudo-random number generator.
 
    The GNU C Library contains four additional functions which contain
 the state as an explicit parameter and therefore make it possible to
-handle thread-local PRNGs.  Besides this there is no difference.  In
+handle thread-local PRNGs.  Beside this there is no difference.  In
 fact, the four functions already discussed are implemented internally
 using the following interfaces.
 
@@ -2150,7 +2081,7 @@ information provided.
 
      The ‘seed48’ function initializes all 48 bits of the state of the
      internal random number generator from the contents of the parameter
-     SEED16V.  Here the lower 16 bits of the first element of SEED16V
+     SEED16V.  Here the lower 16 bits of the first element of SEE16V
      initialize the least significant 16 bits of the internal state, the
      lower 16 bits of ‘SEED16V[1]’ initialize the mid-order 16 bits of
      the state and the 16 lower bits of ‘SEED16V[2]’ initialize the most
@@ -2391,7 +2322,7 @@ and can increase the speed of generated code significantly.  The
 drawback is that code size will increase, and the increase is not always
 negligible.
 
-   There are two kinds of inline functions: those that give the same
+   There are two kind of inline functions: Those that give the same
 result as the library functions and others that might not set ‘errno’
 and might have a reduced precision and/or argument range in comparison
 with the library functions.  The latter inline functions are only
@@ -2433,7 +2364,6 @@ These functions are declared in the header files ‘math.h’ and
 * Complex Numbers::             The types.  Writing complex constants.
 * Operations on Complex::       Projection, conjugation, decomposition.
 * Parsing of Numbers::          Converting strings to numbers.
-* Printing of Floats::          Converting floating-point numbers to strings.
 * System V Number Conversion::  An archaic way to convert numbers to strings.
 
 
@@ -2516,9 +2446,6 @@ minimum possible values for each integer data type.  The macro names
 follow these examples: ‘INT32_MAX’, ‘UINT8_MAX’, ‘INT_FAST32_MIN’,
 ‘INT_LEAST64_MIN’, ‘UINTMAX_MAX’, ‘INTMAX_MAX’, ‘INTMAX_MIN’.  Note that
 there are no macros for unsigned integer minima.  These are always zero.
-Similiarly, there are macros such as ‘INTMAX_WIDTH’ for the width of
-these types.  Those macros for integer type widths come from TS
-18661-1:2014.
 
    There are similar macros for use with C’s built in integer types
 which should come with your C compiler.  These are described in *note
@@ -2560,7 +2487,7 @@ value ‘R.quot*DENOMINATOR + R.rem’ equals NUMERATOR.
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
 
-     The function ‘div’ computes the quotient and remainder from the
+     This function ‘div’ computes the quotient and remainder from the
      division of NUMERATOR by DENOMINATOR, returning the result in a
      structure of type ‘div_t’.
 
@@ -2723,23 +2650,6 @@ property at a time.  Generally these macros execute faster than
 ‘fpclassify’, since there is special hardware support for them.  You
 should therefore use the specific macros whenever possible.
 
- -- Macro: int iscanonical (_float-type_ X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     In some floating-point formats, some values have canonical
-     (preferred) and noncanonical encodings (for IEEE interchange binary
-     formats, all encodings are canonical).  This macro returns a
-     nonzero value if X has a canonical encoding.  It is from TS
-     18661-1:2014.
-
-     Note that some formats have multiple encodings of a value which are
-     all equally canonical; ‘iscanonical’ returns a nonzero value for
-     all such encodings.  Also, formats may have encodings that do not
-     correspond to any valid value of the type.  In ISO C terms these
-     are "trap representations"; in the GNU C Library, ‘iscanonical’
-     returns zero for such encodings.
-
  -- Macro: int isfinite (_float-type_ X)
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
@@ -2774,21 +2684,8 @@ should therefore use the specific macros whenever possible.
      Concepts::.
 
      This macro returns a nonzero value if X is a signaling NaN (sNaN).
-     It is from TS 18661-1:2014.
-
- -- Macro: int issubnormal (_float-type_ X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This macro returns a nonzero value if X is subnormal.  It is from
-     TS 18661-1:2014.
-
- -- Macro: int iszero (_float-type_ X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This macro returns a nonzero value if X is zero.  It is from TS
-     18661-1:2014.
+     It is based on draft TS 18661 and currently enabled as a GNU
+     extension.
 
    Another set of floating-point classification functions was provided
 by BSD. The GNU C Library also supports these functions; however, we
@@ -2886,7 +2783,7 @@ The exceptions defined in IEEE 754 are:
        2. Multiplication: 0 * oo.
        3. Division: 0/0 or oo/oo.
        4. Remainder: x REM y, where y is zero or x is infinite.
-       5. Square root if the operand is less than zero.  More generally,
+       5. Square root if the operand is less then zero.  More generally,
           any mathematical function evaluated outside its domain
           produces this exception.
        6. Conversion of a floating-point number to an integer or decimal
@@ -3002,23 +2899,6 @@ to infinity or NaN.
      (Of course, you must arrange for GNU extensions to be visible, such
      as by defining ‘_GNU_SOURCE’, and then you must include ‘math.h’.)
 
- -- Macro: float SNANF
- -- Macro: double SNAN
- -- Macro: long double SNANL
-     These macros, defined by TS 18661-1:2014, are constant expressions
-     for signaling NaNs.
-
- -- Macro: int FE_SNANS_ALWAYS_SIGNAL
-     This macro, defined by TS 18661-1:2014, is defined to ‘1’ in
-     ‘fenv.h’ to indicate that functions and operations with signaling
-     NaN inputs and floating-point results always raise the invalid
-     exception and return a quiet NaN, even in cases (such as ‘fmax’,
-     ‘hypot’ and ‘pow’) where a quiet NaN input can produce a non-NaN
-     result.  Because some compiler optimizations may not handle
-     signaling NaNs correctly, this macro is only defined if compiler
-     support for signaling NaNs is enabled.  That support can be enabled
-     with the GCC option ‘-fsignaling-nans’.
-
    IEEE 754 also allows for another unusual value: negative zero.  This
 value is produced when you divide a positive number by negative
 infinity, or when a negative result is smaller than the limits of
@@ -3082,17 +2962,6 @@ exceptions, and save and restore the set of exceptions flagged.
      The function returns zero in case the operation was successful, a
      non-zero value otherwise.
 
- -- Function: int fesetexcept (int EXCEPTS)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This function sets the supported exception flags indicated by
-     EXCEPTS, like ‘feraiseexcept’, but without causing enabled traps to
-     be taken.  ‘fesetexcept’ is from TS 18661-1:2014.
-
-     The function returns zero in case the operation was successful, a
-     non-zero value otherwise.
-
  -- Function: int fetestexcept (int EXCEPTS)
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
@@ -3152,16 +3021,6 @@ following functions:
 bit mask returned by ‘fetestexcept’.  The type may not even be an
 integer.  Do not attempt to modify an ‘fexcept_t’ variable.
 
- -- Function: int fetestexceptflag (const fexcept_t *FLAGP, int EXCEPTS)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     Test whether the exception flags indicated by the parameter EXCEPTS
-     are set in the variable pointed to by FLAGP.  If any of them are, a
-     nonzero value is returned which specifies which exceptions are set.
-     Otherwise the result is zero.  ‘fetestexceptflag’ is from TS
-     18661-1:2014.
-
 
 File: libc.info,  Node: Math Error Reporting,  Prev: Status bit operations,  Up: Floating Point Errors
 
@@ -3192,11 +3051,6 @@ mathematical result of the function and the rounding mode, is returned.
 ERRNO may be set to ‘ERANGE’, but this is not guaranteed; it is intended
 that the GNU C Library should set it when the underflow is to an
 appropriately signed zero, but not necessarily for other underflows.
-
-   When a math function has an argument that is a signaling NaN, the GNU
-C Library does not consider this a domain error, so ‘errno’ is
-unchanged, but the invalid exception is still raised (except for a few
-functions that are specified to handle signaling NaNs differently).
 
    Some of the math functions are defined mathematically to result in a
 complex value over parts of their domains.  The most familiar example of
@@ -3287,7 +3141,7 @@ it is rounded to zero.  However, the sign of the result is preserved; if
 the calculation was negative, the result is "negative zero".  Negative
 zero can also result from some operations on infinity, such as 4/-oo.
 
-   At any time, one of the above four rounding modes is selected.  You
+   At any time one of the above four rounding modes is selected.  You
 can find out which one with this function:
 
  -- Function: int fegetround (void)
@@ -3306,7 +3160,7 @@ To change the rounding mode, use this function:
      Changes the currently selected rounding mode to ROUND.  If ROUND
      does not correspond to one of the supported rounding modes nothing
      is changed.  ‘fesetround’ returns zero if it changed the rounding
-     mode, or a nonzero value if the mode is not supported.
+     mode, a nonzero value if the mode is not supported.
 
    You should avoid changing the rounding mode if possible.  It can be
 an expensive operation; also, some hardware requires you to compile your
@@ -3405,33 +3259,6 @@ functions:
      The function returns zero in case the operation was successful, a
      non-zero value otherwise.
 
-TS 18661-1:2014 defines additional functions to save and restore
-floating-point control modes (such as the rounding mode and whether
-traps are enabled) while leaving other status (such as raised flags)
-unchanged.
-
-   The special macro ‘FE_DFL_MODE’ may be passed to ‘fesetmode’.  It
-represents the floating-point control modes at program start.
-
- -- Function: int fegetmode (femode_t *MODEP)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     Store the floating-point control modes in the variable pointed to
-     by MODEP.
-
-     The function returns zero in case the operation was successful, a
-     non-zero value otherwise.
-
- -- Function: int fesetmode (const femode_t *MODEP)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     Set the floating-point control modes to those described by MODEP.
-
-     The function returns zero in case the operation was successful, a
-     non-zero value otherwise.
-
 To control for individual exceptions if raising them causes a trap to
 occur, you can use the following two functions.
 
@@ -3441,10 +3268,11 @@ occur, you can use the following two functions.
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
 
-     This function enables traps for each of the exceptions as indicated
-     by the parameter EXCEPTS.  The individual exceptions are described
-     in *note Status bit operations::.  Only the specified exceptions
-     are enabled, the status of the other exceptions is not changed.
+     This functions enables traps for each of the exceptions as
+     indicated by the parameter EXCEPT.  The individual exceptions are
+     described in *note Status bit operations::.  Only the specified
+     exceptions are enabled, the status of the other exceptions is not
+     changed.
 
      The function returns the previous enabled exceptions in case the
      operation was successful, ‘-1’ otherwise.
@@ -3453,8 +3281,8 @@ occur, you can use the following two functions.
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
      Concepts::.
 
-     This function disables traps for each of the exceptions as
-     indicated by the parameter EXCEPTS.  The individual exceptions are
+     This functions disables traps for each of the exceptions as
+     indicated by the parameter EXCEPT.  The individual exceptions are
      described in *note Status bit operations::.  Only the specified
      exceptions are disabled, the status of the other exceptions is not
      changed.
@@ -3659,25 +3487,6 @@ actually be represented as an ‘int’—for very large numbers, this is
 impossible.  The functions listed here return the result as a ‘double’
 instead to get around this problem.
 
-   The ‘fromfp’ functions use the following macros, from TS
-18661-1:2014, to specify the direction of rounding.  These correspond to
-the rounding directions defined in IEEE 754-2008.
-
-‘FP_INT_UPWARD’
-     Round toward +oo.
-
-‘FP_INT_DOWNWARD’
-     Round toward -oo.
-
-‘FP_INT_TOWARDZERO’
-     Round toward zero.
-
-‘FP_INT_TONEARESTFROMZERO’
-     Round to nearest, ties round away from zero.
-
-‘FP_INT_TONEAREST’
-     Round to nearest, ties round to even.
-
  -- Function: double ceil (double X)
  -- Function: float ceilf (float X)
  -- Function: long double ceill (long double X)
@@ -3742,15 +3551,6 @@ the rounding directions defined in IEEE 754-2008.
      away from zero instead of to the nearest integer (or other current
      rounding mode).
 
- -- Function: double roundeven (double X)
- -- Function: float roundevenf (float X)
- -- Function: long double roundevenl (long double X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions, from TS 18661-1:2014, are similar to ‘round’, but
-     they round halfway cases to even instead of away from zero.
-
  -- Function: long int lrint (double X)
  -- Function: long int lrintf (float X)
  -- Function: long int lrintl (long double X)
@@ -3786,41 +3586,6 @@ the rounding directions defined in IEEE 754-2008.
 
      These functions are just like ‘round’, but they return a ‘long long
      int’ instead of a floating-point number.
-
- -- Function: intmax_t fromfp (double X, int ROUND, unsigned int WIDTH)
- -- Function: intmax_t fromfpf (float X, int ROUND, unsigned int WIDTH)
- -- Function: intmax_t fromfpl (long double X, int ROUND, unsigned int
-          WIDTH)
- -- Function: uintmax_t ufromfp (double X, int ROUND, unsigned int
-          WIDTH)
- -- Function: uintmax_t ufromfpf (float X, int ROUND, unsigned int
-          WIDTH)
- -- Function: uintmax_t ufromfpl (long double X, int ROUND, unsigned int
-          WIDTH)
- -- Function: intmax_t fromfpx (double X, int ROUND, unsigned int WIDTH)
- -- Function: intmax_t fromfpxf (float X, int ROUND, unsigned int WIDTH)
- -- Function: intmax_t fromfpxl (long double X, int ROUND, unsigned int
-          WIDTH)
- -- Function: uintmax_t ufromfpx (double X, int ROUND, unsigned int
-          WIDTH)
- -- Function: uintmax_t ufromfpxf (float X, int ROUND, unsigned int
-          WIDTH)
- -- Function: uintmax_t ufromfpxl (long double X, int ROUND, unsigned
-          int WIDTH)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions, from TS 18661-1:2014, convert a floating-point
-     number to an integer according to the rounding direction ROUND (one
-     of the ‘FP_INT_*’ macros).  If the integer is outside the range of
-     a signed or unsigned (depending on the return type of the function)
-     type of width WIDTH bits (or outside the range of the return type,
-     if WIDTH is larger), or if X is infinite or NaN, or if WIDTH is
-     zero, a domain error occurs and an unspecified value is returned.
-     The functions with an ‘x’ in their names raise the inexact
-     exception when a domain error does not occur and the argument is
-     not an integer; the other functions do not raise the inexact
-     exception.
 
  -- Function: double modf (double VALUE, double *INTEGER-PART)
  -- Function: float modff (float VALUE, float *INTEGER-PART)
@@ -3960,34 +3725,6 @@ do these operations, which mostly involve changing single bits.
      These functions are identical to the corresponding versions of
      ‘nextafter’ except that their second argument is a ‘long double’.
 
- -- Function: double nextup (double X)
- -- Function: float nextupf (float X)
- -- Function: long double nextupl (long double X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘nextup’ function returns the next representable neighbor of X
-     in the direction of positive infinity.  If X is the smallest
-     negative subnormal number in the type of X the function returns
-     ‘-0’.  If X = ‘0’ the function returns the smallest positive
-     subnormal number in the type of X.  If X is NaN, NaN is returned.
-     If X is +oo, +oo is returned.  ‘nextup’ is from TS 18661-1:2014.
-     ‘nextup’ never raises an exception except for signaling NaNs.
-
- -- Function: double nextdown (double X)
- -- Function: float nextdownf (float X)
- -- Function: long double nextdownl (long double X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     The ‘nextdown’ function returns the next representable neighbor of
-     X in the direction of negative infinity.  If X is the smallest
-     positive subnormal number in the type of X the function returns
-     ‘+0’.  If X = ‘0’ the function returns the smallest negative
-     subnormal number in the type of X.  If X is NaN, NaN is returned.
-     If X is -oo, -oo is returned.  ‘nextdown’ is from TS 18661-1:2014.
-     ‘nextdown’ never raises an exception except for signaling NaNs.
-
  -- Function: double nan (const char *TAGP)
  -- Function: float nanf (const char *TAGP)
  -- Function: long double nanl (const char *TAGP)
@@ -4001,71 +3738,6 @@ do these operations, which mostly involve changing single bits.
      The argument TAGP is used in an unspecified manner.  On IEEE 754
      systems, there are many representations of NaN, and TAGP selects
      one.  On other systems it may do nothing.
-
- -- Function: int canonicalize (double *CX, const double *X)
- -- Function: int canonicalizef (float *CX, const float *X)
- -- Function: int canonicalizel (long double *CX, const long double *X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     In some floating-point formats, some values have canonical
-     (preferred) and noncanonical encodings (for IEEE interchange binary
-     formats, all encodings are canonical).  These functions, defined by
-     TS 18661-1:2014, attempt to produce a canonical version of the
-     floating-point value pointed to by X; if that value is a signaling
-     NaN, they raise the invalid exception and produce a quiet NaN. If a
-     canonical value is produced, it is stored in the object pointed to
-     by CX, and these functions return zero.  Otherwise (if a canonical
-     value could not be produced because the object pointed to by X is
-     not a valid representation of any floating-point value), the object
-     pointed to by CX is unchanged and a nonzero value is returned.
-
-     Note that some formats have multiple encodings of a value which are
-     all equally canonical; when such an encoding is used as an input to
-     this function, any such encoding of the same value (or of the
-     corresponding quiet NaN, if that value is a signaling NaN) may be
-     produced as output.
-
- -- Function: double getpayload (const double *X)
- -- Function: float getpayloadf (const float *X)
- -- Function: long double getpayloadl (const long double *X)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     IEEE 754 defines the "payload" of a NaN to be an integer value
-     encoded in the representation of the NaN. Payloads are typically
-     propagated from NaN inputs to the result of a floating-point
-     operation.  These functions, defined by TS 18661-1:2014, return the
-     payload of the NaN pointed to by X (returned as a positive integer,
-     or positive zero, represented as a floating-point number); if X is
-     not a NaN, they return an unspecified value.  They raise no
-     floating-point exceptions even for signaling NaNs.
-
- -- Function: int setpayload (double *X, double PAYLOAD)
- -- Function: int setpayloadf (float *X, float PAYLOAD)
- -- Function: int setpayloadl (long double *X, long double PAYLOAD)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions, defined by TS 18661-1:2014, set the object pointed
-     to by X to a quiet NaN with payload PAYLOAD and a zero sign bit and
-     return zero.  If PAYLOAD is not a positive-signed integer that is a
-     valid payload for a quiet NaN of the given type, the object pointed
-     to by X is set to positive zero and a nonzero value is returned.
-     They raise no floating-point exceptions.
-
- -- Function: int setpayloadsig (double *X, double PAYLOAD)
- -- Function: int setpayloadsigf (float *X, float PAYLOAD)
- -- Function: int setpayloadsigl (long double *X, long double PAYLOAD)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions, defined by TS 18661-1:2014, set the object pointed
-     to by X to a signaling NaN with payload PAYLOAD and a zero sign bit
-     and return zero.  If PAYLOAD is not a positive-signed integer that
-     is a valid payload for a signaling NaN of the given type, the
-     object pointed to by X is set to positive zero and a nonzero value
-     is returned.  They raise no floating-point exceptions.
 
 
 File: libc.info,  Node: FP Comparison Functions,  Next: Misc FP Arithmetic,  Prev: FP Bit Twiddling,  Up: Arithmetic Functions
@@ -4084,11 +3756,7 @@ examined.)  Frequently this exception is undesirable.  ISO C99 therefore
 defines comparison functions that do not raise exceptions when NaN is
 examined.  All of the functions are implemented as macros which allow
 their arguments to be of any floating-point type.  The macros are
-guaranteed to evaluate their arguments only once.  TS 18661-1:2014 adds
-such a macro for an equality comparison that _does_ raise an exception
-for a NaN argument; it also adds functions that provide a total ordering
-on all floating-point values, including NaNs, without raising any
-exceptions even for signaling NaNs.
+guaranteed to evaluate their arguments only once.
 
  -- Macro: int isgreater (_real-floating_ X, _real-floating_ Y)
      Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
@@ -4141,44 +3809,6 @@ exceptions even for signaling NaNs.
      This macro determines whether its arguments are unordered.  In
      other words, it is true if X or Y are NaN, and false otherwise.
 
- -- Macro: int iseqsig (_real-floating_ X, _real-floating_ Y)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     This macro determines whether its arguments are equal.  It is
-     equivalent to ‘(X) == (Y)’, but it raises the invalid exception and
-     sets ‘errno’ to ‘EDOM’ if either argument is a NaN.
-
- -- Function: int totalorder (double X, double Y)
- -- Function: int totalorderf (float X, float Y)
- -- Function: int totalorderl (long double X, long double Y)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions determine whether the total order relationship,
-     defined in IEEE 754-2008, is true for X and Y, returning nonzero if
-     it is true and zero if it is false.  No exceptions are raised even
-     for signaling NaNs.  The relationship is true if they are the same
-     floating-point value (including sign for zero and NaNs, and payload
-     for NaNs), or if X comes before Y in the following order: negative
-     quiet NaNs, in order of decreasing payload; negative signaling
-     NaNs, in order of decreasing payload; negative infinity; finite
-     numbers, in ascending order, with negative zero before positive
-     zero; positive infinity; positive signaling NaNs, in order of
-     increasing payload; positive quiet NaNs, in order of increasing
-     payload.
-
- -- Function: int totalordermag (double X, double Y)
- -- Function: int totalordermagf (float X, float Y)
- -- Function: int totalordermagl (long double X, long double Y)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions determine whether the total order relationship,
-     defined in IEEE 754-2008, is true for the absolute values of X and
-     Y, returning nonzero if it is true and zero if it is false.  No
-     exceptions are raised even for signaling NaNs.
-
    Not all machines provide hardware support for these operations.  On
 machines that don’t, the macros can be very slow.  Therefore, you should
 not use these functions when NaN is not a concern.
@@ -4222,28 +3852,6 @@ perform these operations faster than the equivalent C code.
 
      If an argument is NaN, the other argument is returned.  If both
      arguments are NaN, NaN is returned.
-
- -- Function: double fminmag (double X, double Y)
- -- Function: float fminmagf (float X, float Y)
- -- Function: long double fminmagl (long double X, long double Y)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions, from TS 18661-1:2014, return whichever of the two
-     values X and Y has the smaller absolute value.  If both have the
-     same absolute value, or either is NaN, they behave the same as the
-     ‘fmin’ functions.
-
- -- Function: double fmaxmag (double X, double Y)
- -- Function: float fmaxmagf (float X, float Y)
- -- Function: long double fmaxmagl (long double X, long double Y)
-     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
-     Concepts::.
-
-     These functions, from TS 18661-1:2014, return whichever of the two
-     values X and Y has the greater absolute value.  If both have the
-     same absolute value, or either is NaN, they behave the same as the
-     ‘fmax’ functions.
 
  -- Function: double fdim (double X, double Y)
  -- Function: float fdimf (float X, float Y)
@@ -4391,7 +3999,7 @@ three variants, one for each of the three complex types.
           INFINITY + I * copysign (0.0, cimag (z))
 
 
-File: libc.info,  Node: Parsing of Numbers,  Next: Printing of Floats,  Prev: Operations on Complex,  Up: Arithmetic
+File: libc.info,  Node: Parsing of Numbers,  Next: System V Number Conversion,  Prev: Operations on Complex,  Up: Arithmetic
 
 20.11 Parsing of Numbers
 ========================
@@ -4839,51 +4447,9 @@ which take an additional argument, the locale to use in conversion.
    See also *note Parsing of Integers::.
 
 
-File: libc.info,  Node: Printing of Floats,  Next: System V Number Conversion,  Prev: Parsing of Numbers,  Up: Arithmetic
+File: libc.info,  Node: System V Number Conversion,  Prev: Parsing of Numbers,  Up: Arithmetic
 
-20.12 Printing of Floats
-========================
-
-The ‘strfrom’ functions are declared in ‘stdlib.h’.
-
- -- Function: int strfromd (char *restrict STRING, size_t SIZE, const
-          char *restrict FORMAT, double VALUE)
- -- Function: int strfromf (char *restrict STRING, size_t SIZE, const
-          char *restrict FORMAT, float VALUE)
- -- Function: int strfroml (char *restrict STRING, size_t SIZE, const
-          char *restrict FORMAT, long double VALUE)
-     Preliminary: | MT-Safe locale | AS-Unsafe heap | AC-Unsafe mem |
-     *Note POSIX Safety Concepts::.
-
-     The functions ‘strfromd’ (“string-from-double”), ‘strfromf’
-     (“string-from-float”), and ‘strfroml’ (“string-from-long-double”)
-     convert the floating-point number VALUE to a string of characters
-     and stores them into the area pointed to by STRING.  The conversion
-     writes at most SIZE characters and respects the format specified by
-     FORMAT.
-
-     The format string must start with the character ‘%’.  An optional
-     precision follows, which starts with a period, ‘.’, and may be
-     followed by a decimal integer, representing the precision.  If a
-     decimal integer is not specified after the period, the precision is
-     taken to be zero.  The character ‘*’ is not allowed.  Finally, the
-     format string ends with one of the following conversion specifiers:
-     ‘a’, ‘A’, ‘e’, ‘E’, ‘f’, ‘F’, ‘g’ or ‘G’ (*note Table of Output
-     Conversions::).  Invalid format strings result in undefined
-     behavior.
-
-     These functions return the number of characters that would have
-     been written to STRING had SIZE been sufficiently large, not
-     counting the terminating null character.  Thus, the null-terminated
-     output has been completely written if and only if the returned
-     value is less than SIZE.
-
-     These functions were introduced by ISO/IEC TS 18661-1.
-
-
-File: libc.info,  Node: System V Number Conversion,  Prev: Printing of Floats,  Up: Arithmetic
-
-20.13 Old-fashioned System V number-to-string functions
+20.12 Old-fashioned System V number-to-string functions
 =======================================================
 
 The old System V C library provided three functions to convert numbers
@@ -5069,7 +4635,7 @@ we use a rigorous terminology to avoid confusion, and the only thing we
 use the simple word “time” for is to talk about the abstract concept.
 
    A "calendar time" is a point in the time continuum, for example
-November 4, 1990, at 18:02.5 UTC. Sometimes this is called “absolute
+November 4, 1990 at 18:02.5 UTC. Sometimes this is called “absolute
 time”.
 
    We don’t speak of a “date”, because that is inherent in a calendar
@@ -5237,4 +4803,1605 @@ and to control it, see *note Resource Usage And Limitation::.
 
 * CPU Time::                    The ‘clock’ function.
 * Processor Time::              The ‘times’ function.
+
+
+File: libc.info,  Node: CPU Time,  Next: Processor Time,  Up: Processor And CPU Time
+
+21.3.1 CPU Time Inquiry
+-----------------------
+
+To get a process’ CPU time, you can use the ‘clock’ function.  This
+facility is declared in the header file ‘time.h’.
+
+   In typical usage, you call the ‘clock’ function at the beginning and
+end of the interval you want to time, subtract the values, and then
+divide by ‘CLOCKS_PER_SEC’ (the number of clock ticks per second) to get
+processor time, like this:
+
+     #include <time.h>
+
+     clock_t start, end;
+     double cpu_time_used;
+
+     start = clock();
+     … /* Do the work. */
+     end = clock();
+     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+   Do not use a single CPU time as an amount of time; it doesn’t work
+that way.  Either do a subtraction as shown above or query processor
+time directly.  *Note Processor Time::.
+
+   Different computers and operating systems vary wildly in how they
+keep track of CPU time.  It’s common for the internal processor clock to
+have a resolution somewhere between a hundredth and millionth of a
+second.
+
+ -- Macro: int CLOCKS_PER_SEC
+     The value of this macro is the number of clock ticks per second
+     measured by the ‘clock’ function.  POSIX requires that this value
+     be one million independent of the actual resolution.
+
+ -- Data Type: clock_t
+     This is the type of the value returned by the ‘clock’ function.
+     Values of type ‘clock_t’ are numbers of clock ticks.
+
+ -- Function: clock_t clock (void)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     This function returns the calling process’ current CPU time.  If
+     the CPU time is not available or cannot be represented, ‘clock’
+     returns the value ‘(clock_t)(-1)’.
+
+
+File: libc.info,  Node: Processor Time,  Prev: CPU Time,  Up: Processor And CPU Time
+
+21.3.2 Processor Time Inquiry
+-----------------------------
+
+The ‘times’ function returns information about a process’ consumption of
+processor time in a ‘struct tms’ object, in addition to the process’ CPU
+time.  *Note Time Basics::.  You should include the header file
+‘sys/times.h’ to use this facility.
+
+ -- Data Type: struct tms
+     The ‘tms’ structure is used to return information about process
+     times.  It contains at least the following members:
+
+     ‘clock_t tms_utime’
+          This is the total processor time the calling process has used
+          in executing the instructions of its program.
+
+     ‘clock_t tms_stime’
+          This is the processor time the system has used on behalf of
+          the calling process.
+
+     ‘clock_t tms_cutime’
+          This is the sum of the ‘tms_utime’ values and the ‘tms_cutime’
+          values of all terminated child processes of the calling
+          process, whose status has been reported to the parent process
+          by ‘wait’ or ‘waitpid’; see *note Process Completion::.  In
+          other words, it represents the total processor time used in
+          executing the instructions of all the terminated child
+          processes of the calling process, excluding child processes
+          which have not yet been reported by ‘wait’ or ‘waitpid’.
+
+     ‘clock_t tms_cstime’
+          This is similar to ‘tms_cutime’, but represents the total
+          processor time system has used on behalf of all the terminated
+          child processes of the calling process.
+
+     All of the times are given in numbers of clock ticks.  Unlike CPU
+     time, these are the actual amounts of time; not relative to any
+     event.  *Note Creating a Process::.
+
+ -- Macro: int CLK_TCK
+     This is an obsolete name for the number of clock ticks per second.
+     Use ‘sysconf (_SC_CLK_TCK)’ instead.
+
+ -- Function: clock_t times (struct tms *BUFFER)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The ‘times’ function stores the processor time information for the
+     calling process in BUFFER.
+
+     The return value is the number of clock ticks since an arbitrary
+     point in the past, e.g.  since system start-up.  ‘times’ returns
+     ‘(clock_t)(-1)’ to indicate failure.
+
+   *Portability Note:* The ‘clock’ function described in *note CPU
+Time:: is specified by the ISO C standard.  The ‘times’ function is a
+feature of POSIX.1.  On GNU systems, the CPU time is defined to be
+equivalent to the sum of the ‘tms_utime’ and ‘tms_stime’ fields returned
+by ‘times’.
+
+
+File: libc.info,  Node: Calendar Time,  Next: Setting an Alarm,  Prev: Processor And CPU Time,  Up: Date and Time
+
+21.4 Calendar Time
+==================
+
+This section describes facilities for keeping track of calendar time.
+*Note Time Basics::.
+
+   The GNU C Library represents calendar time three ways:
+
+   • "Simple time" (the ‘time_t’ data type) is a compact representation,
+     typically giving the number of seconds of elapsed time since some
+     implementation-specific base time.
+
+   • There is also a "high-resolution time" representation.  Like simple
+     time, this represents a calendar time as an elapsed time since a
+     base time, but instead of measuring in whole seconds, it uses a
+     ‘struct timeval’ data type, which includes fractions of a second.
+     Use this time representation instead of simple time when you need
+     greater precision.
+
+   • "Local time" or "broken-down time" (the ‘struct tm’ data type)
+     represents a calendar time as a set of components specifying the
+     year, month, and so on in the Gregorian calendar, for a specific
+     time zone.  This calendar time representation is usually used only
+     to communicate with people.
+
+* Menu:
+
+* Simple Calendar Time::        Facilities for manipulating calendar time.
+* High-Resolution Calendar::    A time representation with greater precision.
+* Broken-down Time::            Facilities for manipulating local time.
+* High Accuracy Clock::         Maintaining a high accuracy system clock.
+* Formatting Calendar Time::    Converting times to strings.
+* Parsing Date and Time::       Convert textual time and date information back
+                                 into broken-down time values.
+* TZ Variable::                 How users specify the time zone.
+* Time Zone Functions::         Functions to examine or specify the time zone.
+* Time Functions Example::      An example program showing use of some of
+				 the time functions.
+
+
+File: libc.info,  Node: Simple Calendar Time,  Next: High-Resolution Calendar,  Up: Calendar Time
+
+21.4.1 Simple Calendar Time
+---------------------------
+
+This section describes the ‘time_t’ data type for representing calendar
+time as simple time, and the functions which operate on simple time
+objects.  These facilities are declared in the header file ‘time.h’.
+
+ -- Data Type: time_t
+     This is the data type used to represent simple time.  Sometimes, it
+     also represents an elapsed time.  When interpreted as a calendar
+     time value, it represents the number of seconds elapsed since
+     00:00:00 on January 1, 1970, Coordinated Universal Time.  (This
+     calendar time is sometimes referred to as the "epoch".)  POSIX
+     requires that this count not include leap seconds, but on some
+     systems this count includes leap seconds if you set ‘TZ’ to certain
+     values (*note TZ Variable::).
+
+     Note that a simple time has no concept of local time zone.
+     Calendar Time T is the same instant in time regardless of where on
+     the globe the computer is.
+
+     In the GNU C Library, ‘time_t’ is equivalent to ‘long int’.  In
+     other systems, ‘time_t’ might be either an integer or
+     floating-point type.
+
+   The function ‘difftime’ tells you the elapsed time between two simple
+calendar times, which is not always as easy to compute as just
+subtracting.  *Note Elapsed Time::.
+
+ -- Function: time_t time (time_t *RESULT)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The ‘time’ function returns the current calendar time as a value of
+     type ‘time_t’.  If the argument RESULT is not a null pointer, the
+     calendar time value is also stored in ‘*RESULT’.  If the current
+     calendar time is not available, the value ‘(time_t)(-1)’ is
+     returned.
+
+ -- Function: int stime (const time_t *NEWTIME)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     ‘stime’ sets the system clock, i.e., it tells the system that the
+     current calendar time is NEWTIME, where ‘newtime’ is interpreted as
+     described in the above definition of ‘time_t’.
+
+     ‘settimeofday’ is a newer function which sets the system clock to
+     better than one second precision.  ‘settimeofday’ is generally a
+     better choice than ‘stime’.  *Note High-Resolution Calendar::.
+
+     Only the superuser can set the system clock.
+
+     If the function succeeds, the return value is zero.  Otherwise, it
+     is ‘-1’ and ‘errno’ is set accordingly:
+
+     ‘EPERM’
+          The process is not superuser.
+
+
+File: libc.info,  Node: High-Resolution Calendar,  Next: Broken-down Time,  Prev: Simple Calendar Time,  Up: Calendar Time
+
+21.4.2 High-Resolution Calendar
+-------------------------------
+
+The ‘time_t’ data type used to represent simple times has a resolution
+of only one second.  Some applications need more precision.
+
+   So, the GNU C Library also contains functions which are capable of
+representing calendar times to a higher resolution than one second.  The
+functions and the associated data types described in this section are
+declared in ‘sys/time.h’.
+
+ -- Data Type: struct timezone
+     The ‘struct timezone’ structure is used to hold minimal information
+     about the local time zone.  It has the following members:
+
+     ‘int tz_minuteswest’
+          This is the number of minutes west of UTC.
+
+     ‘int tz_dsttime’
+          If nonzero, Daylight Saving Time applies during some part of
+          the year.
+
+     The ‘struct timezone’ type is obsolete and should never be used.
+     Instead, use the facilities described in *note Time Zone
+     Functions::.
+
+ -- Function: int gettimeofday (struct timeval *TP, struct timezone
+          *TZP)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The ‘gettimeofday’ function returns the current calendar time as
+     the elapsed time since the epoch in the ‘struct timeval’ structure
+     indicated by TP.  (*note Elapsed Time:: for a description of
+     ‘struct timeval’).  Information about the time zone is returned in
+     the structure pointed at TZP.  If the TZP argument is a null
+     pointer, time zone information is ignored.
+
+     The return value is ‘0’ on success and ‘-1’ on failure.  The
+     following ‘errno’ error condition is defined for this function:
+
+     ‘ENOSYS’
+          The operating system does not support getting time zone
+          information, and TZP is not a null pointer.  GNU systems do
+          not support using ‘struct timezone’ to represent time zone
+          information; that is an obsolete feature of 4.3 BSD. Instead,
+          use the facilities described in *note Time Zone Functions::.
+
+ -- Function: int settimeofday (const struct timeval *TP, const struct
+          timezone *TZP)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The ‘settimeofday’ function sets the current calendar time in the
+     system clock according to the arguments.  As for ‘gettimeofday’,
+     the calendar time is represented as the elapsed time since the
+     epoch.  As for ‘gettimeofday’, time zone information is ignored if
+     TZP is a null pointer.
+
+     You must be a privileged user in order to use ‘settimeofday’.
+
+     Some kernels automatically set the system clock from some source
+     such as a hardware clock when they start up.  Others, including
+     Linux, place the system clock in an “invalid” state (in which
+     attempts to read the clock fail).  A call of ‘stime’ removes the
+     system clock from an invalid state, and system startup scripts
+     typically run a program that calls ‘stime’.
+
+     ‘settimeofday’ causes a sudden jump forwards or backwards, which
+     can cause a variety of problems in a system.  Use ‘adjtime’ (below)
+     to make a smooth transition from one time to another by temporarily
+     speeding up or slowing down the clock.
+
+     With a Linux kernel, ‘adjtimex’ does the same thing and can also
+     make permanent changes to the speed of the system clock so it
+     doesn’t need to be corrected as often.
+
+     The return value is ‘0’ on success and ‘-1’ on failure.  The
+     following ‘errno’ error conditions are defined for this function:
+
+     ‘EPERM’
+          This process cannot set the clock because it is not
+          privileged.
+
+     ‘ENOSYS’
+          The operating system does not support setting time zone
+          information, and TZP is not a null pointer.
+
+ -- Function: int adjtime (const struct timeval *DELTA, struct timeval
+          *OLDDELTA)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     This function speeds up or slows down the system clock in order to
+     make a gradual adjustment.  This ensures that the calendar time
+     reported by the system clock is always monotonically increasing,
+     which might not happen if you simply set the clock.
+
+     The DELTA argument specifies a relative adjustment to be made to
+     the clock time.  If negative, the system clock is slowed down for a
+     while until it has lost this much elapsed time.  If positive, the
+     system clock is speeded up for a while.
+
+     If the OLDDELTA argument is not a null pointer, the ‘adjtime’
+     function returns information about any previous time adjustment
+     that has not yet completed.
+
+     This function is typically used to synchronize the clocks of
+     computers in a local network.  You must be a privileged user to use
+     it.
+
+     With a Linux kernel, you can use the ‘adjtimex’ function to
+     permanently change the clock speed.
+
+     The return value is ‘0’ on success and ‘-1’ on failure.  The
+     following ‘errno’ error condition is defined for this function:
+
+     ‘EPERM’
+          You do not have privilege to set the time.
+
+   *Portability Note:* The ‘gettimeofday’, ‘settimeofday’, and ‘adjtime’
+functions are derived from BSD.
+
+   Symbols for the following function are declared in ‘sys/timex.h’.
+
+ -- Function: int adjtimex (struct timex *TIMEX)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     ‘adjtimex’ is functionally identical to ‘ntp_adjtime’.  *Note High
+     Accuracy Clock::.
+
+     This function is present only with a Linux kernel.
+
+
+File: libc.info,  Node: Broken-down Time,  Next: High Accuracy Clock,  Prev: High-Resolution Calendar,  Up: Calendar Time
+
+21.4.3 Broken-down Time
+-----------------------
+
+Calendar time is represented by the usual GNU C Library functions as an
+elapsed time since a fixed base calendar time.  This is convenient for
+computation, but has no relation to the way people normally think of
+calendar time.  By contrast, "broken-down time" is a binary
+representation of calendar time separated into year, month, day, and so
+on.  Broken-down time values are not useful for calculations, but they
+are useful for printing human readable time information.
+
+   A broken-down time value is always relative to a choice of time zone,
+and it also indicates which time zone that is.
+
+   The symbols in this section are declared in the header file ‘time.h’.
+
+ -- Data Type: struct tm
+     This is the data type used to represent a broken-down time.  The
+     structure contains at least the following members, which can appear
+     in any order.
+
+     ‘int tm_sec’
+          This is the number of full seconds since the top of the minute
+          (normally in the range ‘0’ through ‘59’, but the actual upper
+          limit is ‘60’, to allow for leap seconds if leap second
+          support is available).
+
+     ‘int tm_min’
+          This is the number of full minutes since the top of the hour
+          (in the range ‘0’ through ‘59’).
+
+     ‘int tm_hour’
+          This is the number of full hours past midnight (in the range
+          ‘0’ through ‘23’).
+
+     ‘int tm_mday’
+          This is the ordinal day of the month (in the range ‘1’ through
+          ‘31’).  Watch out for this one!  As the only ordinal number in
+          the structure, it is inconsistent with the rest of the
+          structure.
+
+     ‘int tm_mon’
+          This is the number of full calendar months since the beginning
+          of the year (in the range ‘0’ through ‘11’).  Watch out for
+          this one!  People usually use ordinal numbers for
+          month-of-year (where January = 1).
+
+     ‘int tm_year’
+          This is the number of full calendar years since 1900.
+
+     ‘int tm_wday’
+          This is the number of full days since Sunday (in the range ‘0’
+          through ‘6’).
+
+     ‘int tm_yday’
+          This is the number of full days since the beginning of the
+          year (in the range ‘0’ through ‘365’).
+
+     ‘int tm_isdst’
+          This is a flag that indicates whether Daylight Saving Time is
+          (or was, or will be) in effect at the time described.  The
+          value is positive if Daylight Saving Time is in effect, zero
+          if it is not, and negative if the information is not
+          available.
+
+     ‘long int tm_gmtoff’
+          This field describes the time zone that was used to compute
+          this broken-down time value, including any adjustment for
+          daylight saving; it is the number of seconds that you must add
+          to UTC to get local time.  You can also think of this as the
+          number of seconds east of UTC. For example, for U.S. Eastern
+          Standard Time, the value is ‘-5*60*60’.  The ‘tm_gmtoff’ field
+          is derived from BSD and is a GNU library extension; it is not
+          visible in a strict ISO C environment.
+
+     ‘const char *tm_zone’
+          This field is the name for the time zone that was used to
+          compute this broken-down time value.  Like ‘tm_gmtoff’, this
+          field is a BSD and GNU extension, and is not visible in a
+          strict ISO C environment.
+
+ -- Function: struct tm * localtime (const time_t *TIME)
+     Preliminary: | MT-Unsafe race:tmbuf env locale | AS-Unsafe heap
+     lock | AC-Unsafe lock mem fd | *Note POSIX Safety Concepts::.
+
+     The ‘localtime’ function converts the simple time pointed to by
+     TIME to broken-down time representation, expressed relative to the
+     user’s specified time zone.
+
+     The return value is a pointer to a static broken-down time
+     structure, which might be overwritten by subsequent calls to
+     ‘ctime’, ‘gmtime’, or ‘localtime’.  (But no other library function
+     overwrites the contents of this object.)
+
+     The return value is the null pointer if TIME cannot be represented
+     as a broken-down time; typically this is because the year cannot
+     fit into an ‘int’.
+
+     Calling ‘localtime’ also sets the current time zone as if ‘tzset’
+     were called.  *Note Time Zone Functions::.
+
+   Using the ‘localtime’ function is a big problem in multi-threaded
+programs.  The result is returned in a static buffer and this is used in
+all threads.  POSIX.1c introduced a variant of this function.
+
+ -- Function: struct tm * localtime_r (const time_t *TIME, struct tm
+          *RESULTP)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     The ‘localtime_r’ function works just like the ‘localtime’
+     function.  It takes a pointer to a variable containing a simple
+     time and converts it to the broken-down time format.
+
+     But the result is not placed in a static buffer.  Instead it is
+     placed in the object of type ‘struct tm’ to which the parameter
+     RESULTP points.
+
+     If the conversion is successful the function returns a pointer to
+     the object the result was written into, i.e., it returns RESULTP.
+
+ -- Function: struct tm * gmtime (const time_t *TIME)
+     Preliminary: | MT-Unsafe race:tmbuf env locale | AS-Unsafe heap
+     lock | AC-Unsafe lock mem fd | *Note POSIX Safety Concepts::.
+
+     This function is similar to ‘localtime’, except that the
+     broken-down time is expressed as Coordinated Universal Time (UTC)
+     (formerly called Greenwich Mean Time (GMT)) rather than relative to
+     a local time zone.
+
+   As for the ‘localtime’ function we have the problem that the result
+is placed in a static variable.  POSIX.1c also provides a replacement
+for ‘gmtime’.
+
+ -- Function: struct tm * gmtime_r (const time_t *TIME, struct tm
+          *RESULTP)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     This function is similar to ‘localtime_r’, except that it converts
+     just like ‘gmtime’ the given time as Coordinated Universal Time.
+
+     If the conversion is successful the function returns a pointer to
+     the object the result was written into, i.e., it returns RESULTP.
+
+ -- Function: time_t mktime (struct tm *BROKENTIME)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     The ‘mktime’ function converts a broken-down time structure to a
+     simple time representation.  It also normalizes the contents of the
+     broken-down time structure, and fills in some components based on
+     the values of the others.
+
+     The ‘mktime’ function ignores the specified contents of the
+     ‘tm_wday’, ‘tm_yday’, ‘tm_gmtoff’, and ‘tm_zone’ members of the
+     broken-down time structure.  It uses the values of the other
+     components to determine the calendar time; it’s permissible for
+     these components to have unnormalized values outside their normal
+     ranges.  The last thing that ‘mktime’ does is adjust the components
+     of the BROKENTIME structure, including the members that were
+     initially ignored.
+
+     If the specified broken-down time cannot be represented as a simple
+     time, ‘mktime’ returns a value of ‘(time_t)(-1)’ and does not
+     modify the contents of BROKENTIME.
+
+     Calling ‘mktime’ also sets the current time zone as if ‘tzset’ were
+     called; ‘mktime’ uses this information instead of BROKENTIME’s
+     initial ‘tm_gmtoff’ and ‘tm_zone’ members.  *Note Time Zone
+     Functions::.
+
+ -- Function: time_t timelocal (struct tm *BROKENTIME)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     ‘timelocal’ is functionally identical to ‘mktime’, but more
+     mnemonically named.  Note that it is the inverse of the ‘localtime’
+     function.
+
+     *Portability note:* ‘mktime’ is essentially universally available.
+     ‘timelocal’ is rather rare.
+
+ -- Function: time_t timegm (struct tm *BROKENTIME)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     ‘timegm’ is functionally identical to ‘mktime’ except it always
+     takes the input values to be Coordinated Universal Time (UTC)
+     regardless of any local time zone setting.
+
+     Note that ‘timegm’ is the inverse of ‘gmtime’.
+
+     *Portability note:* ‘mktime’ is essentially universally available.
+     ‘timegm’ is rather rare.  For the most portable conversion from a
+     UTC broken-down time to a simple time, set the ‘TZ’ environment
+     variable to UTC, call ‘mktime’, then set ‘TZ’ back.
+
+
+File: libc.info,  Node: High Accuracy Clock,  Next: Formatting Calendar Time,  Prev: Broken-down Time,  Up: Calendar Time
+
+21.4.4 High Accuracy Clock
+--------------------------
+
+The ‘ntp_gettime’ and ‘ntp_adjtime’ functions provide an interface to
+monitor and manipulate the system clock to maintain high accuracy time.
+For example, you can fine tune the speed of the clock or synchronize it
+with another time source.
+
+   A typical use of these functions is by a server implementing the
+Network Time Protocol to synchronize the clocks of multiple systems and
+high precision clocks.
+
+   These functions are declared in ‘sys/timex.h’.
+
+ -- Data Type: struct ntptimeval
+     This structure is used for information about the system clock.  It
+     contains the following members:
+     ‘struct timeval time’
+          This is the current calendar time, expressed as the elapsed
+          time since the epoch.  The ‘struct timeval’ data type is
+          described in *note Elapsed Time::.
+
+     ‘long int maxerror’
+          This is the maximum error, measured in microseconds.  Unless
+          updated via ‘ntp_adjtime’ periodically, this value will reach
+          some platform-specific maximum value.
+
+     ‘long int esterror’
+          This is the estimated error, measured in microseconds.  This
+          value can be set by ‘ntp_adjtime’ to indicate the estimated
+          offset of the system clock from the true calendar time.
+
+ -- Function: int ntp_gettime (struct ntptimeval *TPTR)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The ‘ntp_gettime’ function sets the structure pointed to by TPTR to
+     current values.  The elements of the structure afterwards contain
+     the values the timer implementation in the kernel assumes.  They
+     might or might not be correct.  If they are not a ‘ntp_adjtime’
+     call is necessary.
+
+     The return value is ‘0’ on success and other values on failure.
+     The following ‘errno’ error conditions are defined for this
+     function:
+
+     ‘TIME_ERROR’
+          The precision clock model is not properly set up at the
+          moment, thus the clock must be considered unsynchronized, and
+          the values should be treated with care.
+
+ -- Data Type: struct timex
+     This structure is used to control and monitor the system clock.  It
+     contains the following members:
+     ‘unsigned int modes’
+          This variable controls whether and which values are set.
+          Several symbolic constants have to be combined with _binary
+          or_ to specify the effective mode.  These constants start with
+          ‘MOD_’.
+
+     ‘long int offset’
+          This value indicates the current offset of the system clock
+          from the true calendar time.  The value is given in
+          microseconds.  If bit ‘MOD_OFFSET’ is set in ‘modes’, the
+          offset (and possibly other dependent values) can be set.  The
+          offset’s absolute value must not exceed ‘MAXPHASE’.
+
+     ‘long int frequency’
+          This value indicates the difference in frequency between the
+          true calendar time and the system clock.  The value is
+          expressed as scaled PPM (parts per million, 0.0001%).  The
+          scaling is ‘1 << SHIFT_USEC’.  The value can be set with bit
+          ‘MOD_FREQUENCY’, but the absolute value must not exceed
+          ‘MAXFREQ’.
+
+     ‘long int maxerror’
+          This is the maximum error, measured in microseconds.  A new
+          value can be set using bit ‘MOD_MAXERROR’.  Unless updated via
+          ‘ntp_adjtime’ periodically, this value will increase steadily
+          and reach some platform-specific maximum value.
+
+     ‘long int esterror’
+          This is the estimated error, measured in microseconds.  This
+          value can be set using bit ‘MOD_ESTERROR’.
+
+     ‘int status’
+          This variable reflects the various states of the clock
+          machinery.  There are symbolic constants for the significant
+          bits, starting with ‘STA_’.  Some of these flags can be
+          updated using the ‘MOD_STATUS’ bit.
+
+     ‘long int constant’
+          This value represents the bandwidth or stiffness of the PLL
+          (phase locked loop) implemented in the kernel.  The value can
+          be changed using bit ‘MOD_TIMECONST’.
+
+     ‘long int precision’
+          This value represents the accuracy or the maximum error when
+          reading the system clock.  The value is expressed in
+          microseconds.
+
+     ‘long int tolerance’
+          This value represents the maximum frequency error of the
+          system clock in scaled PPM. This value is used to increase the
+          ‘maxerror’ every second.
+
+     ‘struct timeval time’
+          The current calendar time.
+
+     ‘long int tick’
+          The elapsed time between clock ticks in microseconds.  A clock
+          tick is a periodic timer interrupt on which the system clock
+          is based.
+
+     ‘long int ppsfreq’
+          This is the first of a few optional variables that are present
+          only if the system clock can use a PPS (pulse per second)
+          signal to discipline the system clock.  The value is expressed
+          in scaled PPM and it denotes the difference in frequency
+          between the system clock and the PPS signal.
+
+     ‘long int jitter’
+          This value expresses a median filtered average of the PPS
+          signal’s dispersion in microseconds.
+
+     ‘int shift’
+          This value is a binary exponent for the duration of the PPS
+          calibration interval, ranging from ‘PPS_SHIFT’ to
+          ‘PPS_SHIFTMAX’.
+
+     ‘long int stabil’
+          This value represents the median filtered dispersion of the
+          PPS frequency in scaled PPM.
+
+     ‘long int jitcnt’
+          This counter represents the number of pulses where the jitter
+          exceeded the allowed maximum ‘MAXTIME’.
+
+     ‘long int calcnt’
+          This counter reflects the number of successful calibration
+          intervals.
+
+     ‘long int errcnt’
+          This counter represents the number of calibration errors
+          (caused by large offsets or jitter).
+
+     ‘long int stbcnt’
+          This counter denotes the number of calibrations where the
+          stability exceeded the threshold.
+
+ -- Function: int ntp_adjtime (struct timex *TPTR)
+     Preliminary: | MT-Safe | AS-Safe | AC-Safe | *Note POSIX Safety
+     Concepts::.
+
+     The ‘ntp_adjtime’ function sets the structure specified by TPTR to
+     current values.
+
+     In addition, ‘ntp_adjtime’ updates some settings to match what you
+     pass to it in *TPTR.  Use the ‘modes’ element of *TPTR to select
+     what settings to update.  You can set ‘offset’, ‘freq’, ‘maxerror’,
+     ‘esterror’, ‘status’, ‘constant’, and ‘tick’.
+
+     ‘modes’ = zero means set nothing.
+
+     Only the superuser can update settings.
+
+     The return value is ‘0’ on success and other values on failure.
+     The following ‘errno’ error conditions are defined for this
+     function:
+
+     ‘TIME_ERROR’
+          The high accuracy clock model is not properly set up at the
+          moment, thus the clock must be considered unsynchronized, and
+          the values should be treated with care.  Another reason could
+          be that the specified new values are not allowed.
+
+     ‘EPERM’
+          The process specified a settings update, but is not superuser.
+
+     For more details see RFC1305 (Network Time Protocol, Version 3) and
+     related documents.
+
+     *Portability note:* Early versions of the GNU C Library did not
+     have this function but did have the synonymous ‘adjtimex’.
+
+
+File: libc.info,  Node: Formatting Calendar Time,  Next: Parsing Date and Time,  Prev: High Accuracy Clock,  Up: Calendar Time
+
+21.4.5 Formatting Calendar Time
+-------------------------------
+
+The functions described in this section format calendar time values as
+strings.  These functions are declared in the header file ‘time.h’.
+
+ -- Function: char * asctime (const struct tm *BROKENTIME)
+     Preliminary: | MT-Unsafe race:asctime locale | AS-Unsafe | AC-Safe
+     | *Note POSIX Safety Concepts::.
+
+     The ‘asctime’ function converts the broken-down time value that
+     BROKENTIME points to into a string in a standard format:
+
+          "Tue May 21 13:46:22 1991\n"
+
+     The abbreviations for the days of week are: ‘Sun’, ‘Mon’, ‘Tue’,
+     ‘Wed’, ‘Thu’, ‘Fri’, and ‘Sat’.
+
+     The abbreviations for the months are: ‘Jan’, ‘Feb’, ‘Mar’, ‘Apr’,
+     ‘May’, ‘Jun’, ‘Jul’, ‘Aug’, ‘Sep’, ‘Oct’, ‘Nov’, and ‘Dec’.
+
+     The return value points to a statically allocated string, which
+     might be overwritten by subsequent calls to ‘asctime’ or ‘ctime’.
+     (But no other library function overwrites the contents of this
+     string.)
+
+ -- Function: char * asctime_r (const struct tm *BROKENTIME, char
+          *BUFFER)
+     Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | *Note POSIX
+     Safety Concepts::.
+
+     This function is similar to ‘asctime’ but instead of placing the
+     result in a static buffer it writes the string in the buffer
+     pointed to by the parameter BUFFER.  This buffer should have room
+     for at least 26 bytes, including the terminating null.
+
+     If no error occurred the function returns a pointer to the string
+     the result was written into, i.e., it returns BUFFER.  Otherwise
+     return ‘NULL’.
+
+ -- Function: char * ctime (const time_t *TIME)
+     Preliminary: | MT-Unsafe race:tmbuf race:asctime env locale |
+     AS-Unsafe heap lock | AC-Unsafe lock mem fd | *Note POSIX Safety
+     Concepts::.
+
+     The ‘ctime’ function is similar to ‘asctime’, except that you
+     specify the calendar time argument as a ‘time_t’ simple time value
+     rather than in broken-down local time format.  It is equivalent to
+
+          asctime (localtime (TIME))
+
+     Calling ‘ctime’ also sets the current time zone as if ‘tzset’ were
+     called.  *Note Time Zone Functions::.
+
+ -- Function: char * ctime_r (const time_t *TIME, char *BUFFER)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     This function is similar to ‘ctime’, but places the result in the
+     string pointed to by BUFFER.  It is equivalent to (written using
+     gcc extensions, *note (gcc)Statement Exprs::):
+
+          ({ struct tm tm; asctime_r (localtime_r (time, &tm), buf); })
+
+     If no error occurred the function returns a pointer to the string
+     the result was written into, i.e., it returns BUFFER.  Otherwise
+     return ‘NULL’.
+
+ -- Function: size_t strftime (char *S, size_t SIZE, const char
+          *TEMPLATE, const struct tm *BROKENTIME)
+     Preliminary: | MT-Safe env locale | AS-Unsafe corrupt heap lock
+     dlopen | AC-Unsafe corrupt lock mem fd | *Note POSIX Safety
+     Concepts::.
+
+     This function is similar to the ‘sprintf’ function (*note Formatted
+     Input::), but the conversion specifications that can appear in the
+     format template TEMPLATE are specialized for printing components of
+     the date and time BROKENTIME according to the locale currently
+     specified for time conversion (*note Locales::) and the current
+     time zone (*note Time Zone Functions::).
+
+     Ordinary characters appearing in the TEMPLATE are copied to the
+     output string S; this can include multibyte character sequences.
+     Conversion specifiers are introduced by a ‘%’ character, followed
+     by an optional flag which can be one of the following.  These flags
+     are all GNU extensions.  The first three affect only the output of
+     numbers:
+
+     ‘_’
+          The number is padded with spaces.
+
+     ‘-’
+          The number is not padded at all.
+
+     ‘0’
+          The number is padded with zeros even if the format specifies
+          padding with spaces.
+
+     ‘^’
+          The output uses uppercase characters, but only if this is
+          possible (*note Case Conversion::).
+
+     The default action is to pad the number with zeros to keep it a
+     constant width.  Numbers that do not have a range indicated below
+     are never padded, since there is no natural width for them.
+
+     Following the flag an optional specification of the width is
+     possible.  This is specified in decimal notation.  If the natural
+     size of the output is of the field has less than the specified
+     number of characters, the result is written right adjusted and
+     space padded to the given size.
+
+     An optional modifier can follow the optional flag and width
+     specification.  The modifiers, which were first standardized by
+     POSIX.2-1992 and by ISO C99, are:
+
+     ‘E’
+          Use the locale’s alternate representation for date and time.
+          This modifier applies to the ‘%c’, ‘%C’, ‘%x’, ‘%X’, ‘%y’ and
+          ‘%Y’ format specifiers.  In a Japanese locale, for example,
+          ‘%Ex’ might yield a date format based on the Japanese
+          Emperors’ reigns.
+
+     ‘O’
+          Use the locale’s alternate numeric symbols for numbers.  This
+          modifier applies only to numeric format specifiers.
+
+     If the format supports the modifier but no alternate representation
+     is available, it is ignored.
+
+     The conversion specifier ends with a format specifier taken from
+     the following list.  The whole ‘%’ sequence is replaced in the
+     output string as follows:
+
+     ‘%a’
+          The abbreviated weekday name according to the current locale.
+
+     ‘%A’
+          The full weekday name according to the current locale.
+
+     ‘%b’
+          The abbreviated month name according to the current locale.
+
+     ‘%B’
+          The full month name according to the current locale.
+
+          Using ‘%B’ together with ‘%d’ produces grammatically incorrect
+          results for some locales.
+
+     ‘%c’
+          The preferred calendar time representation for the current
+          locale.
+
+     ‘%C’
+          The century of the year.  This is equivalent to the greatest
+          integer not greater than the year divided by 100.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%d’
+          The day of the month as a decimal number (range ‘01’ through
+          ‘31’).
+
+     ‘%D’
+          The date using the format ‘%m/%d/%y’.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%e’
+          The day of the month like with ‘%d’, but padded with blank
+          (range ‘ 1’ through ‘31’).
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%F’
+          The date using the format ‘%Y-%m-%d’.  This is the form
+          specified in the ISO 8601 standard and is the preferred form
+          for all uses.
+
+          This format was first standardized by ISO C99 and by
+          POSIX.1-2001.
+
+     ‘%g’
+          The year corresponding to the ISO week number, but without the
+          century (range ‘00’ through ‘99’).  This has the same format
+          and value as ‘%y’, except that if the ISO week number (see
+          ‘%V’) belongs to the previous or next year, that year is used
+          instead.
+
+          This format was first standardized by ISO C99 and by
+          POSIX.1-2001.
+
+     ‘%G’
+          The year corresponding to the ISO week number.  This has the
+          same format and value as ‘%Y’, except that if the ISO week
+          number (see ‘%V’) belongs to the previous or next year, that
+          year is used instead.
+
+          This format was first standardized by ISO C99 and by
+          POSIX.1-2001 but was previously available as a GNU extension.
+
+     ‘%h’
+          The abbreviated month name according to the current locale.
+          The action is the same as for ‘%b’.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%H’
+          The hour as a decimal number, using a 24-hour clock (range
+          ‘00’ through ‘23’).
+
+     ‘%I’
+          The hour as a decimal number, using a 12-hour clock (range
+          ‘01’ through ‘12’).
+
+     ‘%j’
+          The day of the year as a decimal number (range ‘001’ through
+          ‘366’).
+
+     ‘%k’
+          The hour as a decimal number, using a 24-hour clock like ‘%H’,
+          but padded with blank (range ‘ 0’ through ‘23’).
+
+          This format is a GNU extension.
+
+     ‘%l’
+          The hour as a decimal number, using a 12-hour clock like ‘%I’,
+          but padded with blank (range ‘ 1’ through ‘12’).
+
+          This format is a GNU extension.
+
+     ‘%m’
+          The month as a decimal number (range ‘01’ through ‘12’).
+
+     ‘%M’
+          The minute as a decimal number (range ‘00’ through ‘59’).
+
+     ‘%n’
+          A single ‘\n’ (newline) character.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%p’
+          Either ‘AM’ or ‘PM’, according to the given time value; or the
+          corresponding strings for the current locale.  Noon is treated
+          as ‘PM’ and midnight as ‘AM’.  In most locales ‘AM’/‘PM’
+          format is not supported, in such cases ‘"%p"’ yields an empty
+          string.
+
+     ‘%P’
+          Either ‘am’ or ‘pm’, according to the given time value; or the
+          corresponding strings for the current locale, printed in
+          lowercase characters.  Noon is treated as ‘pm’ and midnight as
+          ‘am’.  In most locales ‘AM’/‘PM’ format is not supported, in
+          such cases ‘"%P"’ yields an empty string.
+
+          This format is a GNU extension.
+
+     ‘%r’
+          The complete calendar time using the AM/PM format of the
+          current locale.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.  In the POSIX locale, this format is equivalent to
+          ‘%I:%M:%S %p’.
+
+     ‘%R’
+          The hour and minute in decimal numbers using the format
+          ‘%H:%M’.
+
+          This format was first standardized by ISO C99 and by
+          POSIX.1-2001 but was previously available as a GNU extension.
+
+     ‘%s’
+          The number of seconds since the epoch, i.e., since 1970-01-01
+          00:00:00 UTC. Leap seconds are not counted unless leap second
+          support is available.
+
+          This format is a GNU extension.
+
+     ‘%S’
+          The seconds as a decimal number (range ‘00’ through ‘60’).
+
+     ‘%t’
+          A single ‘\t’ (tabulator) character.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%T’
+          The time of day using decimal numbers using the format
+          ‘%H:%M:%S’.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%u’
+          The day of the week as a decimal number (range ‘1’ through
+          ‘7’), Monday being ‘1’.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%U’
+          The week number of the current year as a decimal number (range
+          ‘00’ through ‘53’), starting with the first Sunday as the
+          first day of the first week.  Days preceding the first Sunday
+          in the year are considered to be in week ‘00’.
+
+     ‘%V’
+          The ISO 8601:1988 week number as a decimal number (range ‘01’
+          through ‘53’).  ISO weeks start with Monday and end with
+          Sunday.  Week ‘01’ of a year is the first week which has the
+          majority of its days in that year; this is equivalent to the
+          week containing the year’s first Thursday, and it is also
+          equivalent to the week containing January 4.  Week ‘01’ of a
+          year can contain days from the previous year.  The week before
+          week ‘01’ of a year is the last week (‘52’ or ‘53’) of the
+          previous year even if it contains days from the new year.
+
+          This format was first standardized by POSIX.2-1992 and by
+          ISO C99.
+
+     ‘%w’
+          The day of the week as a decimal number (range ‘0’ through
+          ‘6’), Sunday being ‘0’.
+
+     ‘%W’
+          The week number of the current year as a decimal number (range
+          ‘00’ through ‘53’), starting with the first Monday as the
+          first day of the first week.  All days preceding the first
+          Monday in the year are considered to be in week ‘00’.
+
+     ‘%x’
+          The preferred date representation for the current locale.
+
+     ‘%X’
+          The preferred time of day representation for the current
+          locale.
+
+     ‘%y’
+          The year without a century as a decimal number (range ‘00’
+          through ‘99’).  This is equivalent to the year modulo 100.
+
+     ‘%Y’
+          The year as a decimal number, using the Gregorian calendar.
+          Years before the year ‘1’ are numbered ‘0’, ‘-1’, and so on.
+
+     ‘%z’
+          RFC 822/ISO 8601:1988 style numeric time zone (e.g., ‘-0600’
+          or ‘+0100’), or nothing if no time zone is determinable.
+
+          This format was first standardized by ISO C99 and by
+          POSIX.1-2001 but was previously available as a GNU extension.
+
+          In the POSIX locale, a full RFC 822 timestamp is generated by
+          the format ‘"%a, %d %b %Y %H:%M:%S %z"’ (or the equivalent
+          ‘"%a, %d %b %Y %T %z"’).
+
+     ‘%Z’
+          The time zone abbreviation (empty if the time zone can’t be
+          determined).
+
+     ‘%%’
+          A literal ‘%’ character.
+
+     The SIZE parameter can be used to specify the maximum number of
+     characters to be stored in the array S, including the terminating
+     null character.  If the formatted time requires more than SIZE
+     characters, ‘strftime’ returns zero and the contents of the array S
+     are undefined.  Otherwise the return value indicates the number of
+     characters placed in the array S, not including the terminating
+     null character.
+
+     _Warning:_ This convention for the return value which is prescribed
+     in ISO C can lead to problems in some situations.  For certain
+     format strings and certain locales the output really can be the
+     empty string and this cannot be discovered by testing the return
+     value only.  E.g., in most locales the AM/PM time format is not
+     supported (most of the world uses the 24 hour time representation).
+     In such locales ‘"%p"’ will return the empty string, i.e., the
+     return value is zero.  To detect situations like this something
+     similar to the following code should be used:
+
+          buf[0] = '\1';
+          len = strftime (buf, bufsize, format, tp);
+          if (len == 0 && buf[0] != '\0')
+            {
+              /* Something went wrong in the strftime call.  */
+              …
+            }
+
+     If S is a null pointer, ‘strftime’ does not actually write
+     anything, but instead returns the number of characters it would
+     have written.
+
+     Calling ‘strftime’ also sets the current time zone as if ‘tzset’
+     were called; ‘strftime’ uses this information instead of
+     BROKENTIME’s ‘tm_gmtoff’ and ‘tm_zone’ members.  *Note Time Zone
+     Functions::.
+
+     For an example of ‘strftime’, see *note Time Functions Example::.
+
+ -- Function: size_t wcsftime (wchar_t *S, size_t SIZE, const wchar_t
+          *TEMPLATE, const struct tm *BROKENTIME)
+     Preliminary: | MT-Safe env locale | AS-Unsafe corrupt heap lock
+     dlopen | AC-Unsafe corrupt lock mem fd | *Note POSIX Safety
+     Concepts::.
+
+     The ‘wcsftime’ function is equivalent to the ‘strftime’ function
+     with the difference that it operates on wide character strings.
+     The buffer where the result is stored, pointed to by S, must be an
+     array of wide characters.  The parameter SIZE which specifies the
+     size of the output buffer gives the number of wide character, not
+     the number of bytes.
+
+     Also the format string TEMPLATE is a wide character string.  Since
+     all characters needed to specify the format string are in the basic
+     character set it is portably possible to write format strings in
+     the C source code using the ‘L"…"’ notation.  The parameter
+     BROKENTIME has the same meaning as in the ‘strftime’ call.
+
+     The ‘wcsftime’ function supports the same flags, modifiers, and
+     format specifiers as the ‘strftime’ function.
+
+     The return value of ‘wcsftime’ is the number of wide characters
+     stored in ‘s’.  When more characters would have to be written than
+     can be placed in the buffer S the return value is zero, with the
+     same problems indicated in the ‘strftime’ documentation.
+
+
+File: libc.info,  Node: Parsing Date and Time,  Next: TZ Variable,  Prev: Formatting Calendar Time,  Up: Calendar Time
+
+21.4.6 Convert textual time and date information back
+-----------------------------------------------------
+
+The ISO C standard does not specify any functions which can convert the
+output of the ‘strftime’ function back into a binary format.  This led
+to a variety of more-or-less successful implementations with different
+interfaces over the years.  Then the Unix standard was extended by the
+addition of two functions: ‘strptime’ and ‘getdate’.  Both have strange
+interfaces but at least they are widely available.
+
+* Menu:
+
+* Low-Level Time String Parsing::  Interpret string according to given format.
+* General Time String Parsing::    User-friendly function to parse data and
+                                    time strings.
+
+
+File: libc.info,  Node: Low-Level Time String Parsing,  Next: General Time String Parsing,  Up: Parsing Date and Time
+
+21.4.6.1 Interpret string according to given format
+...................................................
+
+The first function is rather low-level.  It is nevertheless frequently
+used in software since it is better known.  Its interface and
+implementation are heavily influenced by the ‘getdate’ function, which
+is defined and implemented in terms of calls to ‘strptime’.
+
+ -- Function: char * strptime (const char *S, const char *FMT, struct tm
+          *TP)
+     Preliminary: | MT-Safe env locale | AS-Unsafe heap lock | AC-Unsafe
+     lock mem fd | *Note POSIX Safety Concepts::.
+
+     The ‘strptime’ function parses the input string S according to the
+     format string FMT and stores its results in the structure TP.
+
+     The input string could be generated by a ‘strftime’ call or
+     obtained any other way.  It does not need to be in a
+     human-recognizable format; e.g.  a date passed as ‘"02:1999:9"’ is
+     acceptable, even though it is ambiguous without context.  As long
+     as the format string FMT matches the input string the function will
+     succeed.
+
+     The user has to make sure, though, that the input can be parsed in
+     a unambiguous way.  The string ‘"1999112"’ can be parsed using the
+     format ‘"%Y%m%d"’ as 1999-1-12, 1999-11-2, or even 19991-1-2.  It
+     is necessary to add appropriate separators to reliably get results.
+
+     The format string consists of the same components as the format
+     string of the ‘strftime’ function.  The only difference is that the
+     flags ‘_’, ‘-’, ‘0’, and ‘^’ are not allowed.  Several of the
+     distinct formats of ‘strftime’ do the same work in ‘strptime’ since
+     differences like case of the input do not matter.  For reasons of
+     symmetry all formats are supported, though.
+
+     The modifiers ‘E’ and ‘O’ are also allowed everywhere the
+     ‘strftime’ function allows them.
+
+     The formats are:
+
+     ‘%a’
+     ‘%A’
+          The weekday name according to the current locale, in
+          abbreviated form or the full name.
+
+     ‘%b’
+     ‘%B’
+     ‘%h’
+          The month name according to the current locale, in abbreviated
+          form or the full name.
+
+     ‘%c’
+          The date and time representation for the current locale.
+
+     ‘%Ec’
+          Like ‘%c’ but the locale’s alternative date and time format is
+          used.
+
+     ‘%C’
+          The century of the year.
+
+          It makes sense to use this format only if the format string
+          also contains the ‘%y’ format.
+
+     ‘%EC’
+          The locale’s representation of the period.
+
+          Unlike ‘%C’ it sometimes makes sense to use this format since
+          some cultures represent years relative to the beginning of
+          eras instead of using the Gregorian years.
+
+     ‘%d’
+     ‘%e’
+          The day of the month as a decimal number (range ‘1’ through
+          ‘31’).  Leading zeroes are permitted but not required.
+
+     ‘%Od’
+     ‘%Oe’
+          Same as ‘%d’ but using the locale’s alternative numeric
+          symbols.
+
+          Leading zeroes are permitted but not required.
+
+     ‘%D’
+          Equivalent to ‘%m/%d/%y’.
+
+     ‘%F’
+          Equivalent to ‘%Y-%m-%d’, which is the ISO 8601 date format.
+
+          This is a GNU extension following an ISO C99 extension to
+          ‘strftime’.
+
+     ‘%g’
+          The year corresponding to the ISO week number, but without the
+          century (range ‘00’ through ‘99’).
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+          This format is a GNU extension following a GNU extension of
+          ‘strftime’.
+
+     ‘%G’
+          The year corresponding to the ISO week number.
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+          This format is a GNU extension following a GNU extension of
+          ‘strftime’.
+
+     ‘%H’
+     ‘%k’
+          The hour as a decimal number, using a 24-hour clock (range
+          ‘00’ through ‘23’).
+
+          ‘%k’ is a GNU extension following a GNU extension of
+          ‘strftime’.
+
+     ‘%OH’
+          Same as ‘%H’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%I’
+     ‘%l’
+          The hour as a decimal number, using a 12-hour clock (range
+          ‘01’ through ‘12’).
+
+          ‘%l’ is a GNU extension following a GNU extension of
+          ‘strftime’.
+
+     ‘%OI’
+          Same as ‘%I’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%j’
+          The day of the year as a decimal number (range ‘1’ through
+          ‘366’).
+
+          Leading zeroes are permitted but not required.
+
+     ‘%m’
+          The month as a decimal number (range ‘1’ through ‘12’).
+
+          Leading zeroes are permitted but not required.
+
+     ‘%Om’
+          Same as ‘%m’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%M’
+          The minute as a decimal number (range ‘0’ through ‘59’).
+
+          Leading zeroes are permitted but not required.
+
+     ‘%OM’
+          Same as ‘%M’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%n’
+     ‘%t’
+          Matches any white space.
+
+     ‘%p’
+     ‘%P’
+          The locale-dependent equivalent to ‘AM’ or ‘PM’.
+
+          This format is not useful unless ‘%I’ or ‘%l’ is also used.
+          Another complication is that the locale might not define these
+          values at all and therefore the conversion fails.
+
+          ‘%P’ is a GNU extension following a GNU extension to
+          ‘strftime’.
+
+     ‘%r’
+          The complete time using the AM/PM format of the current
+          locale.
+
+          A complication is that the locale might not define this format
+          at all and therefore the conversion fails.
+
+     ‘%R’
+          The hour and minute in decimal numbers using the format
+          ‘%H:%M’.
+
+          ‘%R’ is a GNU extension following a GNU extension to
+          ‘strftime’.
+
+     ‘%s’
+          The number of seconds since the epoch, i.e., since 1970-01-01
+          00:00:00 UTC. Leap seconds are not counted unless leap second
+          support is available.
+
+          ‘%s’ is a GNU extension following a GNU extension to
+          ‘strftime’.
+
+     ‘%S’
+          The seconds as a decimal number (range ‘0’ through ‘60’).
+
+          Leading zeroes are permitted but not required.
+
+          *NB:* The Unix specification says the upper bound on this
+          value is ‘61’, a result of a decision to allow double leap
+          seconds.  You will not see the value ‘61’ because no minute
+          has more than one leap second, but the myth persists.
+
+     ‘%OS’
+          Same as ‘%S’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%T’
+          Equivalent to the use of ‘%H:%M:%S’ in this place.
+
+     ‘%u’
+          The day of the week as a decimal number (range ‘1’ through
+          ‘7’), Monday being ‘1’.
+
+          Leading zeroes are permitted but not required.
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+     ‘%U’
+          The week number of the current year as a decimal number (range
+          ‘0’ through ‘53’).
+
+          Leading zeroes are permitted but not required.
+
+     ‘%OU’
+          Same as ‘%U’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%V’
+          The ISO 8601:1988 week number as a decimal number (range ‘1’
+          through ‘53’).
+
+          Leading zeroes are permitted but not required.
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+     ‘%w’
+          The day of the week as a decimal number (range ‘0’ through
+          ‘6’), Sunday being ‘0’.
+
+          Leading zeroes are permitted but not required.
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+     ‘%Ow’
+          Same as ‘%w’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%W’
+          The week number of the current year as a decimal number (range
+          ‘0’ through ‘53’).
+
+          Leading zeroes are permitted but not required.
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+     ‘%OW’
+          Same as ‘%W’ but using the locale’s alternative numeric
+          symbols.
+
+     ‘%x’
+          The date using the locale’s date format.
+
+     ‘%Ex’
+          Like ‘%x’ but the locale’s alternative data representation is
+          used.
+
+     ‘%X’
+          The time using the locale’s time format.
+
+     ‘%EX’
+          Like ‘%X’ but the locale’s alternative time representation is
+          used.
+
+     ‘%y’
+          The year without a century as a decimal number (range ‘0’
+          through ‘99’).
+
+          Leading zeroes are permitted but not required.
+
+          Note that it is questionable to use this format without the
+          ‘%C’ format.  The ‘strptime’ function does regard input values
+          in the range 68 to 99 as the years 1969 to 1999 and the values
+          0 to 68 as the years 2000 to 2068.  But maybe this heuristic
+          fails for some input data.
+
+          Therefore it is best to avoid ‘%y’ completely and use ‘%Y’
+          instead.
+
+     ‘%Ey’
+          The offset from ‘%EC’ in the locale’s alternative
+          representation.
+
+     ‘%Oy’
+          The offset of the year (from ‘%C’) using the locale’s
+          alternative numeric symbols.
+
+     ‘%Y’
+          The year as a decimal number, using the Gregorian calendar.
+
+     ‘%EY’
+          The full alternative year representation.
+
+     ‘%z’
+          The offset from GMT in ISO 8601/RFC822 format.
+
+     ‘%Z’
+          The timezone name.
+
+          _Note:_ Currently, this is not fully implemented.  The format
+          is recognized, input is consumed but no field in TM is set.
+
+     ‘%%’
+          A literal ‘%’ character.
+
+     All other characters in the format string must have a matching
+     character in the input string.  Exceptions are white spaces in the
+     input string which can match zero or more whitespace characters in
+     the format string.
+
+     *Portability Note:* The XPG standard advises applications to use at
+     least one whitespace character (as specified by ‘isspace’) or other
+     non-alphanumeric characters between any two conversion
+     specifications.  The GNU C Library does not have this limitation
+     but other libraries might have trouble parsing formats like
+     ‘"%d%m%Y%H%M%S"’.
+
+     The ‘strptime’ function processes the input string from right to
+     left.  Each of the three possible input elements (white space,
+     literal, or format) are handled one after the other.  If the input
+     cannot be matched to the format string the function stops.  The
+     remainder of the format and input strings are not processed.
+
+     The function returns a pointer to the first character it was unable
+     to process.  If the input string contains more characters than
+     required by the format string the return value points right after
+     the last consumed input character.  If the whole input string is
+     consumed the return value points to the ‘NULL’ byte at the end of
+     the string.  If an error occurs, i.e., ‘strptime’ fails to match
+     all of the format string, the function returns ‘NULL’.
+
+   The specification of the function in the XPG standard is rather
+vague, leaving out a few important pieces of information.  Most
+importantly, it does not specify what happens to those elements of TM
+which are not directly initialized by the different formats.  The
+implementations on different Unix systems vary here.
+
+   The GNU C Library implementation does not touch those fields which
+are not directly initialized.  Exceptions are the ‘tm_wday’ and
+‘tm_yday’ elements, which are recomputed if any of the year, month, or
+date elements changed.  This has two implications:
+
+   • Before calling the ‘strptime’ function for a new input string, you
+     should prepare the TM structure you pass.  Normally this will mean
+     initializing all values are to zero.  Alternatively, you can set
+     all fields to values like ‘INT_MAX’, allowing you to determine
+     which elements were set by the function call.  Zero does not work
+     here since it is a valid value for many of the fields.
+
+     Careful initialization is necessary if you want to find out whether
+     a certain field in TM was initialized by the function call.
+
+   • You can construct a ‘struct tm’ value with several consecutive
+     ‘strptime’ calls.  A useful application of this is e.g.  the
+     parsing of two separate strings, one containing date information
+     and the other time information.  By parsing one after the other
+     without clearing the structure in-between, you can construct a
+     complete broken-down time.
+
+   The following example shows a function which parses a string which is
+contains the date information in either US style or ISO 8601 form:
+
+     const char *
+     parse_date (const char *input, struct tm *tm)
+     {
+       const char *cp;
+
+       /* First clear the result structure.  */
+       memset (tm, '\0', sizeof (*tm));
+
+       /* Try the ISO format first.  */
+       cp = strptime (input, "%F", tm);
+       if (cp == NULL)
+         {
+           /* Does not match.  Try the US form.  */
+           cp = strptime (input, "%D", tm);
+         }
+
+       return cp;
+     }
 

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1987-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1987-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -96,9 +96,9 @@ be controlled using the <samp>-fexec-charset</samp> and
 </li><li> Identifier characters.
 <a name="Identifier-characters"></a>
 <p>The C and C++ standards allow identifiers to be composed of &lsquo;<samp>_</samp>&rsquo;
-and the alphanumeric characters.  C++ also allows universal character
-names.  C99 and later C standards permit both universal character
-names and implementation-defined characters.
+and the alphanumeric characters.  C++ and C99 also allow universal
+character names, and C99 further permits implementation-defined
+characters.
 </p>
 <p>GCC allows the &lsquo;<samp>$</samp>&rsquo; character in identifiers as an extension for
 most targets.  This is true regardless of the <samp>std=</samp> switch,
@@ -131,8 +131,8 @@ at a time, shifting the previous value left by the number of bits per
 target character, and then or-ing in the bit-pattern of the new
 character truncated to the width of a target character.  The final
 bit-pattern is given type <code>int</code>, and is therefore signed,
-regardless of whether single characters are signed or not.
-If there are more
+regardless of whether single characters are signed or not (a slight
+change from versions 3.1 and earlier of GCC).  If there are more
 characters in the constant than would fit in the target <code>int</code> the
 compiler issues a warning, and the excess leading characters are
 ignored.

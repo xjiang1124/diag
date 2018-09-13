@@ -1,10 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <!-- This file documents the GNU linker LD
-(GNU Binutils)
-version 2.28.
+(Linaro_Binutils-2017.05)
+version 2.27.0.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -1105,12 +1105,14 @@ overflow at run-time.  Supported for x86_64.
 </p>
 </dd>
 <dt>&lsquo;<samp>call-nop=prefix-addr</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>call-nop=prefix-nop</samp>&rsquo;</dt>
 <dt>&lsquo;<samp>call-nop=suffix-nop</samp>&rsquo;</dt>
 <dt>&lsquo;<samp>call-nop=prefix-<var>byte</var></samp>&rsquo;</dt>
 <dt>&lsquo;<samp>call-nop=suffix-<var>byte</var></samp>&rsquo;</dt>
 <dd><p>Specify the 1-byte <code>NOP</code> padding when transforming indirect call
 to a locally defined function, foo, via its GOT slot.
 <samp>call-nop=prefix-addr</samp> generates <code>0x67 call foo</code>.
+<samp>call-nop=prefix-nop</samp> generates <code>0x90 call foo</code>.
 <samp>call-nop=suffix-nop</samp> generates <code>call foo 0x90</code>.
 <samp>call-nop=prefix-<var>byte</var></samp> generates <code><var>byte</var> call foo</code>.
 <samp>call-nop=suffix-<var>byte</var></samp> generates <code>call foo <var>byte</var></code>.
@@ -1469,19 +1471,6 @@ default behaviour (of not listing the sections that are removed) can
 be restored by specifying &lsquo;<samp>--no-print-gc-sections</samp>&rsquo; on the command
 line.
 </p>
-<a name="index-_002d_002dgc_002dkeep_002dexported"></a>
-<a name="index-garbage-collection-2"></a>
-</dd>
-<dt><code>--gc-keep-exported</code></dt>
-<dd><p>When &lsquo;<samp>--gc-sections</samp>&rsquo; is enabled, this option prevents garbage
-collection of unused input sections that contain global symbols having
-default or protected visibility.  This option is intended to be used for
-executables where unreferenced sections would otherwise be garbage
-collected regardless of the external visibility of contained symbols.
-Note that this option has no effect when linking shared objects since
-it is already the default behaviour.  This option is only supported for
-ELF format targets.
-</p>
 <a name="index-_002d_002dprint_002doutput_002dformat"></a>
 <a name="index-output-format"></a>
 </dd>
@@ -1659,17 +1648,6 @@ list the available binary formats with &lsquo;<samp>objdump -i</samp>&rsquo;.)  
 command <code>OUTPUT_FORMAT</code> can also specify the output format, but
 this option overrides it.  See <a href="BFD.html#BFD">BFD</a>.
 </p>
-<a name="index-_002d_002dout_002dimplib"></a>
-</dd>
-<dt><code>--out-implib <var>file</var></code></dt>
-<dd><p>Create an import library in <var>file</var> corresponding to the executable
-the linker is generating (eg. a DLL or ELF program).  This import
-library (which should be called <code>*.dll.a</code> or <code>*.a</code> for DLLs)
-may be used to link clients against the generated executable; this
-behaviour makes it possible to skip a separate import library creation
-step (eg. <code>dlltool</code> for DLLs).  This option is only available for
-the i386 PE and ELF targetted ports of the linker.
-</p>
 <a name="index-_002dpie"></a>
 <a name="index-_002d_002dpic_002dexecutable"></a>
 </dd>
@@ -1787,16 +1765,6 @@ specifies the first set of directories to search.  The
 <samp>-rpath-link</samp> option may specify a sequence of directory names
 either by specifying a list of names separated by colons, or by
 appearing multiple times.
-</p>
-<p>The tokens <var>$ORIGIN</var> and <var>$LIB</var> can appear in these search
-directories.  They will be replaced by the full path to the directory
-containing the program or shared object in the case of <var>$ORIGIN</var>
-and either &lsquo;<samp>lib</samp>&rsquo; - for 32-bit binaries - or &lsquo;<samp>lib64</samp>&rsquo; - for
-64-bit binaries - in the case of <var>$LIB</var>.
-</p>
-<p>The alternative form of these tokens - <var>${ORIGIN}</var> and
-<var>${LIB}</var> can also be used.  The token <var>$PLATFORM</var> is not
-supported.
 </p>
 <p>This option should be used with caution as it overrides the search path
 that may have been hard compiled into a shared library. In such a case it
@@ -2224,13 +2192,10 @@ file as <code>__wrap_malloc</code>; if you do, the assembler may resolve the
 call before the linker has a chance to wrap it to <code>malloc</code>.
 </p>
 <a name="index-_002d_002deh_002dframe_002dhdr"></a>
-<a name="index-_002d_002dno_002deh_002dframe_002dhdr"></a>
 </dd>
 <dt><code>--eh-frame-hdr</code></dt>
-<dt><code>--no-eh-frame-hdr</code></dt>
-<dd><p>Request (<samp>--eh-frame-hdr</samp>) or suppress
-(<samp>--no-eh-frame-hdr</samp>) the creation of <code>.eh_frame_hdr</code>
-section and ELF <code>PT_GNU_EH_FRAME</code> segment header.
+<dd><p>Request creation of <code>.eh_frame_hdr</code> section and ELF
+<code>PT_GNU_EH_FRAME</code> segment header.
 </p>
 <a name="index-_002d_002dld_002dgenerated_002dunwind_002dinfo"></a>
 </dd>
@@ -2279,28 +2244,17 @@ hash tables.  The default is <code>sysv</code>.
 <dt><code>--compress-debug-sections=zlib</code></dt>
 <dt><code>--compress-debug-sections=zlib-gnu</code></dt>
 <dt><code>--compress-debug-sections=zlib-gabi</code></dt>
-<dd><p>On ELF platforms, these options control how DWARF debug sections are
-compressed using zlib.
-</p>
-<p><samp>--compress-debug-sections=none</samp> doesn&rsquo;t compress DWARF debug
-sections.  <samp>--compress-debug-sections=zlib-gnu</samp> compresses
-DWARF debug sections and renames them to begin with &lsquo;<samp>.zdebug</samp>&rsquo;
-instead of &lsquo;<samp>.debug</samp>&rsquo;.  <samp>--compress-debug-sections=zlib-gabi</samp>
-also compresses DWARF debug sections, but rather than renaming them it
-sets the SHF_COMPRESSED flag in the sections&rsquo; headers.
-</p>
-<p>The <samp>--compress-debug-sections=zlib</samp> option is an alias for
-<samp>--compress-debug-sections=zlib-gabi</samp>.
-</p>
-<p>Note that this option overrides any compression in input debug
-sections, so if a binary is linked with <samp>--compress-debug-sections=none</samp>
-for example, then any compressed debug sections in input files will be
-uncompressed before they are copied into the output binary.
-</p>
-<p>The default compression behaviour varies depending upon the target
-involved and the configure options used to build the toolchain.  The
-default can be determined by examining the output from the linker&rsquo;s
-<samp>--help</samp> option.
+<dd><p>On ELF platforms , these options control how DWARF debug sections are
+compressed using zlib.  <samp>--compress-debug-sections=none</samp> doesn&rsquo;t
+compress DWARF debug sections.
+<samp>--compress-debug-sections=zlib-gnu</samp> compresses DWARF debug
+sections and rename debug section names to begin with &lsquo;<samp>.zdebug</samp>&rsquo;
+instead of &lsquo;<samp>.debug</samp>&rsquo;.  <samp>--compress-debug-sections=zlib</samp>
+and <samp>--compress-debug-sections=zlib-gabi</samp>
+compress DWARF debug sections with SHF_COMPRESSED from the ELF ABI.
+The default behaviour varies depending upon the target involved and
+the configure options used to build the toolchain.  The default can be
+determined by examing the output from the linker&rsquo;s <samp>--help</samp> option.
 </p>
 <a name="index-_002d_002dreduce_002dmemory_002doverheads"></a>
 </dd>
@@ -2588,6 +2542,17 @@ automatically or implicitly exported symbols.
 [This option is specific to the i386 PE targeted port of the linker]
 </p>
 <a name="index-DLLs_002c-creating-2"></a>
+<a name="index-_002d_002dout_002dimplib"></a>
+</dd>
+<dt><code>--out-implib <var>file</var></code></dt>
+<dd><p>The linker will create the file <var>file</var> which will contain an
+import lib corresponding to the DLL the linker is generating. This
+import lib (which should be called <code>*.dll.a</code> or <code>*.a</code>
+may be used to link clients against the generated DLL; this behaviour
+makes it possible to skip a separate <code>dlltool</code> import library
+creation step.
+[This option is specific to the i386 PE targeted port of the linker]
+</p>
 <a name="index-_002d_002denable_002dauto_002dimage_002dbase"></a>
 </dd>
 <dt><code>--enable-auto-image-base</code></dt>
@@ -2966,8 +2931,7 @@ Info entry for <samp>ld</samp>.
 
 
 <p>The following options are supported to control microMIPS instruction
-generation and branch relocation checks for ISA mode transitions when
-linking for MIPS targets.
+generation when linking for MIPS targets.
 </p>
 <dl compact="compact">
 <dd>
@@ -2983,22 +2947,6 @@ or in relaxation.  If &lsquo;<samp>--insn32</samp>&rsquo; is used, then the link
 32-bit instruction encodings.  By default or if &lsquo;<samp>--no-insn32</samp>&rsquo; is
 used, all instruction encodings are used, including 16-bit ones where
 possible.
-</p>
-<a name="index-_002d_002dignore_002dbranch_002disa"></a>
-</dd>
-<dt><code>--ignore-branch-isa</code></dt>
-<dd><a name="index-_002d_002dno_002dignore_002dbranch_002disa"></a>
-</dd>
-<dt><code>--no-ignore-branch-isa</code></dt>
-<dd><p>These options control branch relocation checks for invalid ISA mode
-transitions.  If &lsquo;<samp>--ignore-branch-isa</samp>&rsquo; is used, then the linker
-accepts any branch relocations and any ISA mode transition required
-is lost in relocation calculation, except for some cases of <code>BAL</code>
-instructions which meet relaxation conditions and are converted to
-equivalent <code>JALX</code> instructions as the associated relocation is
-calculated.  By default or if &lsquo;<samp>--no-ignore-branch-isa</samp>&rsquo; is used
-a check is made causing the loss of an ISA mode transition to produce
-an error.
 </p>
 </dd>
 </dl>

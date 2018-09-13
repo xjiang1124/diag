@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="_005fgfortran_005fcaf_005fsync_005fmemory.html#g_t_005fgfortran_0
 </div>
 <hr>
 <a name="g_t_005fgfortran_005fcaf_005fsync_005fimages-_002d_002d_002d-Barrier-for-selected-images"></a>
-<h4 class="subsection">8.2.23 <code>_gfortran_caf_sync_images</code> &mdash; Barrier for selected images</h4>
+<h4 class="subsection">8.2.16 <code>_gfortran_caf_sync_images</code> &mdash; Barrier for selected images</h4>
 <a name="index-Coarray_002c-_005fgfortran_005fcaf_005fsync_005fimages"></a>
 
 <dl compact="compact">
@@ -84,8 +84,8 @@ Next: <a href="_005fgfortran_005fcaf_005fsync_005fmemory.html#g_t_005fgfortran_0
 given image after this function has been called on all images specified for
 that image. Note that one image can wait for all other images in the current
 team (e.g. via <code>sync images(*)</code>) while those only wait for that specific
-image.  Additionally, <code>sync images</code> ensures that all pending data
-transfers of previous segments have completed.
+image.  Additionally, <code>sync images</code> it ensures that all pending data
+transfers of previous segment have completed.
 </p>
 </dd>
 <dt><em>Syntax</em>:</dt>
@@ -95,15 +95,15 @@ char *errmsg, int errmsg_len)</code>
 </dd>
 <dt><em>Arguments</em>:</dt>
 <dd><table>
-<tr><td width="15%"><var>count</var></td><td width="70%">intent(in)  The number of images which are provided in
-the next argument.  For a zero-sized array, the value is zero.  For
-<code>sync images (*)</code>, the value is <em>-1</em>.</td></tr>
-<tr><td width="15%"><var>images</var></td><td width="70%">intent(in)  An array with the images provided by the
-user.  If <var>count</var> is zero, a NULL pointer is passed.</td></tr>
-<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out)  Stores the status STAT= and may be NULL.</td></tr>
-<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out)  When an error occurs, this will be set to
-an error message; may be NULL.</td></tr>
-<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">intent(in)  the buffer size of errmsg</td></tr>
+<tr><td width="15%"><var>count</var></td><td width="70%">the number of images which are provided in the next
+argument.  For a zero-sized array, the value is zero.  For <code>sync
+images (*)</code>, the value is <em>-1</em>.</td></tr>
+<tr><td width="15%"><var>images</var></td><td width="70%">intent(in) an array with the images provided by the
+user. If <var>count</var> is zero, a NULL pointer is passed.</td></tr>
+<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out) Stores the status STAT= and may be NULL.</td></tr>
+<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out) When an error occurs, this will be set to
+an error message; may be NULL</td></tr>
+<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">the buffer size of errmsg.</td></tr>
 </table>
 </dd>
 </dl>

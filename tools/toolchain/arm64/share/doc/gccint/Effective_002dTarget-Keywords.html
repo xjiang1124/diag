@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -151,30 +151,6 @@ and pointers.
 </dd>
 <dt><code>4byte_wchar_t</code></dt>
 <dd><p>Target has <code>wchar_t</code> that is at least 4 bytes.
-</p>
-</dd>
-<dt><code>float<var>n</var></code></dt>
-<dd><p>Target has the <code>_Float<var>n</var></code> type.
-</p>
-</dd>
-<dt><code>float<var>n</var>x</code></dt>
-<dd><p>Target has the <code>_Float<var>n</var>x</code> type.
-</p>
-</dd>
-<dt><code>float<var>n</var>_runtime</code></dt>
-<dd><p>Target has the <code>_Float<var>n</var></code> type, including runtime support
-for any options added with <code>dg-add-options</code>.
-</p>
-</dd>
-<dt><code>float<var>n</var>x_runtime</code></dt>
-<dd><p>Target has the <code>_Float<var>n</var>x</code> type, including runtime support
-for any options added with <code>dg-add-options</code>.
-</p>
-</dd>
-<dt><code>floatn_nx_runtime</code></dt>
-<dd><p>Target has runtime support for any options added with
-<code>dg-add-options</code> for any <code>_Float<var>n</var></code> or
-<code>_Float<var>n</var>x</code> type.
 </p></dd>
 </dl>
 
@@ -201,11 +177,6 @@ for any options added with <code>dg-add-options</code>.
 <dl compact="compact">
 <dt><code>vect_condition</code></dt>
 <dd><p>Target supports vector conditional operations.
-</p>
-</dd>
-<dt><code>vect_cond_mixed</code></dt>
-<dd><p>Target supports vector conditional operations where comparison operands
-have different type from the value operands.
 </p>
 </dd>
 <dt><code>vect_double</code></dt>
@@ -474,12 +445,6 @@ Some multilibs may be incompatible with this option.
 options.  Some multilibs may be incompatible with these options.
 </p>
 </dd>
-<dt><code>arm_neon_ok_no_float_abi</code></dt>
-<dd><a name="arm_005fneon_005fok_005fno_005ffloat_005fabi"></a><p>ARM Target supports NEON with <code>-mfpu=neon</code>, but without any
--mfloat-abi= option.  Some multilibs may be incompatible with this
-option.
-</p>
-</dd>
 <dt><code>arm_neonv2_ok</code></dt>
 <dd><a name="arm_005fneonv2_005fok"></a><p>ARM Target supports <code>-mfpu=neon-vfpv4 -mfloat-abi=softfp</code> or compatible
 options.  Some multilibs may be incompatible with these options.
@@ -583,18 +548,6 @@ extension.  Some multilibs may be incompatible with these options.
 Implies arm_v8_2a_fp16_neon_ok and arm_v8_2a_fp16_scalar_hw.
 </p>
 </dd>
-<dt><code>arm_v8_2a_dotprod_neon_ok</code></dt>
-<dd><a name="arm_005fv8_005f2a_005fdotprod_005fneon_005fok"></a><p>ARM target supports options to generate instructions from ARMv8.2 with
-the Dot Product extension. Some multilibs may be incompatible with these
-options.
-</p>
-</dd>
-<dt><code>arm_v8_2a_dotprod_neon_hw</code></dt>
-<dd><p>ARM target supports executing instructions from ARMv8.2 with the Dot
-Product extension. Some multilibs may be incompatible with these options.
-Implies arm_v8_2a_dotprod_neon_ok.
-</p>
-</dd>
 <dt><code>arm_prefer_ldrd_strd</code></dt>
 <dd><p>ARM target prefers <code>LDRD</code> and <code>STRD</code> instructions over
 <code>LDM</code> and <code>STM</code> instructions.
@@ -610,36 +563,11 @@ and <code>MOVT</code> instructions available.
 <code>CBZ</code> and <code>CBNZ</code> instructions available.
 </p>
 </dd>
-<dt><code>arm_divmod_simode</code></dt>
-<dd><p>ARM target for which divmod transform is disabled, if it supports hardware
-div instruction.
-</p>
-</dd>
 <dt><code>arm_cmse_ok</code></dt>
 <dd><p>ARM target supports ARMv8-M Security Extensions, enabled by the <code>-mcmse</code>
 option.
 </p>
 </dd>
-<dt><code>arm_coproc1_ok</code></dt>
-<dd><a name="arm_005fcoproc1_005fok"></a><p>ARM target supports the following coprocessor instructions: <code>CDP</code>,
-<code>LDC</code>, <code>STC</code>, <code>MCR</code> and <code>MRC</code>.
-</p>
-</dd>
-<dt><code>arm_coproc2_ok</code></dt>
-<dd><a name="arm_005fcoproc2_005fok"></a><p>ARM target supports all the coprocessor instructions also listed as supported
-in <a href="#arm_005fcoproc1_005fok">arm_coproc1_ok</a> in addition to the following: <code>CDP2</code>, <code>LDC2</code>,
-<code>LDC2l</code>, <code>STC2</code>, <code>STC2l</code>, <code>MCR2</code> and <code>MRC2</code>.
-</p>
-</dd>
-<dt><code>arm_coproc3_ok</code></dt>
-<dd><a name="arm_005fcoproc3_005fok"></a><p>ARM target supports all the coprocessor instructions also listed as supported
-in <a href="#arm_005fcoproc2_005fok">arm_coproc2_ok</a> in addition the following: <code>MCRR</code> and <code>MRRC</code>.
-</p>
-</dd>
-<dt><code>arm_coproc4_ok</code></dt>
-<dd><p>ARM target supports all the coprocessor instructions also listed as supported
-in <a href="#arm_005fcoproc3_005fok">arm_coproc3_ok</a> in addition the following: <code>MCRR2</code> and <code>MRRC2</code>.
-</p></dd>
 </dl>
 
 <a name="AArch64_002dspecific-attributes"></a>
@@ -691,10 +619,6 @@ for AArch64 small memory model.
 <dt><code>mips_loongson</code></dt>
 <dd><p>MIPS target is a Loongson-2E or -2F target using an ABI that supports
 the Loongson vector modes.
-</p>
-</dd>
-<dt><code>mips_msa</code></dt>
-<dd><p>MIPS target supports <code>-mmsa</code>, MIPS SIMD Architecture (MSA).
 </p>
 </dd>
 <dt><code>mips_newabi_large_long_double</code></dt>
@@ -753,11 +677,6 @@ when using the new ABI.
 </dd>
 <dt><code>powerpc_p8vector_ok</code></dt>
 <dd><p>PowerPC target supports <code>-mpower8-vector</code>
-</p>
-</dd>
-<dt><code>powerpc_popcntb_ok</code></dt>
-<dd><p>PowerPC target supports the <code>popcntb</code> instruction, indicating
-that this target supports <code>-mcpu=power5</code>.
 </p>
 </dd>
 <dt><code>powerpc_ppu_ok</code></dt>
@@ -871,16 +790,7 @@ or <code>EM_SPARCV9</code> executables.
 </dd>
 <dt><code>pie_copyreloc</code></dt>
 <dd><p>The x86-64 target linker supports PIE with copy reloc.
-</p>
-</dd>
-<dt><code>divmod</code></dt>
-<dd><p>Target supporting hardware divmod insn or divmod libcall.
-</p>
-</dd>
-<dt><code>divmod_simode</code></dt>
-<dd><p>Target supporting hardware divmod insn or divmod libcall for SImode.
-</p>
-</dd>
+</p></dd>
 </dl>
 
 <a name="Environment-attributes"></a>
@@ -918,10 +828,6 @@ overloads for <code>strchr</code> etc. functions.
 <dd><p>Target is &lsquo;<samp>freestanding</samp>&rsquo; as defined in section 4 of the C99 standard.
 Effectively, it is a target which supports no extra headers or libraries
 other than what is considered essential.
-</p>
-</dd>
-<dt><code>gettimeofday</code></dt>
-<dd><p>Target supports <code>gettimeofday</code>.
 </p>
 </dd>
 <dt><code>init_priority</code></dt>
@@ -1022,10 +928,6 @@ all targets.
 <dd><p>Target supports automatic stack alignment.
 </p>
 </dd>
-<dt><code>cilkplus_runtime</code></dt>
-<dd><p>Target supports the Cilk Plus runtime library.
-</p>
-</dd>
 <dt><code>cxa_atexit</code></dt>
 <dd><p>Target uses <code>__cxa_atexit</code>.
 </p>
@@ -1119,10 +1021,6 @@ all targets.
 </dd>
 <dt><code>pie</code></dt>
 <dd><p>Target supports <samp>-pie</samp>, <samp>-fpie</samp> and <samp>-fPIE</samp>.
-</p>
-</dd>
-<dt><code>rdynamic</code></dt>
-<dd><p>Target supports <samp>-rdynamic</samp>.
 </p>
 </dd>
 <dt><code>section_anchors</code></dt>

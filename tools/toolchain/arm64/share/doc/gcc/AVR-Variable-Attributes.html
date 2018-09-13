@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -86,13 +86,11 @@ attribute accomplishes this by putting respective variables into a
 section whose name starts with <code>.progmem</code>.
 </p>
 <p>This attribute works similar to the <code>section</code> attribute
-but adds additional checking.
-</p>
-<dl compact="compact">
-<dt>&bull;&nbsp; Ordinary AVR cores with 32 general purpose registers:</dt>
-<dd><p><code>progmem</code> affects the location
+but adds additional checking. Notice that just like the
+<code>section</code> attribute, <code>progmem</code> affects the location
 of the data but not how this data is accessed.
-In order to read data located with the <code>progmem</code> attribute
+</p>
+<p>In order to read data located with the <code>progmem</code> attribute
 (inline) assembler must be used.
 </p><div class="smallexample">
 <pre class="smallexample">/* Use custom macros from <a href="http://nongnu.org/avr-libc/user-manual/">AVR-LibC</a><!-- /@w --> */
@@ -114,54 +112,6 @@ normally resides in the data memory (RAM).
 <p>See also the <a href="Named-Address-Spaces.html#AVR-Named-Address-Spaces">AVR Named Address Spaces</a> section for
 an alternate way to locate and access data in flash memory.
 </p>
-</dd>
-<dt>&bull;&nbsp;Reduced AVR Tiny cores like ATtiny40:</dt>
-<dd><p>The compiler adds <code>0x4000</code>
-to the addresses of objects and declarations in <code>progmem</code> and locates
-the objects in flash memory, namely in section <code>.progmem.data</code>.
-The offset is needed because the flash memory is visible in the RAM
-address space starting at address <code>0x4000</code>.
-</p>
-<p>Data in <code>progmem</code> can be accessed by means of ordinary C&nbsp;code,
-no special functions or macros are needed.
-</p>
-<div class="smallexample">
-<pre class="smallexample">/* var is located in flash memory */
-extern const int var[2] __attribute__((progmem));
-
-int read_var (int i)
-{
-    return var[i];
-}
-</pre></div>
-
-<p>Please notice that on these devices, there is no need for <code>progmem</code>
-at all.  Just use an appropriate linker description file like outlined below.
-</p>
-<div class="smallexample">
-<pre class="smallexample">  .text :
-  { ...
-  } &gt; text
-  /* Leave .rodata in flash and add an offset of 0x4000 to all
-     addresses so that respective objects can be accessed by
-     LD instructions and open coded C/C++.  This means there
-     is no need for progmem in the source and no overhead by
-     read-only data in RAM.  */
-  .rodata ADDR(.text) + SIZEOF (.text) + 0x4000 :
-  {
-    *(.rodata)
-    *(.rodata*)
-    *(.gnu.linkonce.r*)
-  } AT&gt; text
-  /* No more need to put .rodata into .data:
-     Removed all .rodata entries from .data.  */
-  .data :
-  { ...
-</pre></div>
-
-</dd>
-</dl>
-
 </dd>
 <dt><code>io</code></dt>
 <dt><code>io (<var>addr</var>)</code></dt>
@@ -208,33 +158,6 @@ memory-mapped peripherals that may lie outside the io address range.
 <pre class="smallexample">volatile int porta __attribute__((address (0x600)));
 </pre></div>
 
-</dd>
-<dt><code>absdata</code></dt>
-<dd><a name="index-absdata-variable-attribute_002c-AVR"></a>
-<p>Variables in static storage and with the <code>absdata</code> attribute can
-be accessed by the <code>LDS</code> and <code>STS</code> instructions which take
-absolute addresses.
-</p>
-<ul>
-<li> This attribute is only supported for the reduced AVR Tiny core
-like ATtiny40.
-
-</li><li> You must make sure that respective data is located in the
-address range <code>0x40</code>&hellip;<code>0xbf</code> accessible by
-<code>LDS</code> and <code>STS</code>.  One way to achieve this as an
-appropriate linker description file.
-
-</li><li> If the location does not fit the address range of <code>LDS</code>
-and <code>STS</code>, there is currently (Binutils 2.26) just an unspecific
-warning like
-<blockquote>
-<p><code>module.c:(.text+0x1c): warning: internal error: out of range error</code>
-</p></blockquote>
-
-</li></ul>
-
-<p>See also the <samp>-mabsdata</samp> <a href="AVR-Options.html#AVR-Options">command-line option</a>.
-</p>
 </dd>
 </dl>
 
