@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -185,7 +185,8 @@ results in <samp>-ftrapv</samp> being effective.
 <p>This option instructs the compiler to assume that signed arithmetic
 overflow of addition, subtraction and multiplication wraps around
 using twos-complement representation.  This flag enables some optimizations
-and disables others.
+and disables others.  This option is enabled by default for the Java
+front end, as required by the Java language specification.
 The options <samp>-ftrapv</samp> and <samp>-fwrapv</samp> override each other, so using
 <samp>-ftrapv</samp> <samp>-fwrapv</samp> on the command-line results in
 <samp>-fwrapv</samp> being effective.  Note that only active options override, so
@@ -320,32 +321,25 @@ Use it to conform to a non-default application binary interface.
 </dd>
 <dt><code>-fno-common</code></dt>
 <dd><a name="index-fno_002dcommon"></a>
-<a name="index-tentative-definitions"></a>
-<p>In C code, this option controls the placement of global variables 
-defined without an initializer, known as <em>tentative definitions</em> 
-in the C standard.  Tentative definitions are distinct from declarations 
-of a variable with the <code>extern</code> keyword, which do not allocate storage.
-</p>
-<p>Unix C compilers have traditionally allocated storage for
-uninitialized global variables in a common block.  This allows the
-linker to resolve all tentative definitions of the same variable
-in different compilation units to the same object, or to a non-tentative
-definition.  
-This is the behavior specified by <samp>-fcommon</samp>, and is the default for 
-GCC on most targets.  
-On the other hand, this behavior is not required by ISO
-C, and on some targets may carry a speed or code size penalty on
-variable references.
-</p>
-<p>The <samp>-fno-common</samp> option specifies that the compiler should instead
-place uninitialized global variables in the data section of the object file.
-This inhibits the merging of tentative definitions by the linker so
-you get a multiple-definition error if the same 
-variable is defined in more than one compilation unit.
+<p>In C code, controls the placement of uninitialized global variables.
+Unix C compilers have traditionally permitted multiple definitions of
+such variables in different compilation units by placing the variables
+in a common block.
+This is the behavior specified by <samp>-fcommon</samp>, and is the default
+for GCC on most targets.
+On the other hand, this behavior is not required by ISO C, and on some
+targets may carry a speed or code size penalty on variable references.
+The <samp>-fno-common</samp> option specifies that the compiler should place
+uninitialized global variables in the data section of the object file,
+rather than generating them as common blocks.
+This has the effect that if the same variable is declared
+(without <code>extern</code>) in two different compilations,
+you get a multiple-definition error when you link them.
+In this case, you must compile with <samp>-fcommon</samp> instead.
 Compiling with <samp>-fno-common</samp> is useful on targets for which
 it provides better performance, or if you wish to verify that the
 program will work on other systems that always treat uninitialized
-variable definitions this way.
+variable declarations this way.
 </p>
 </dd>
 <dt><code>-fno-ident</code></dt>
@@ -372,85 +366,6 @@ debugging the compiler itself).
 <p><samp>-fno-verbose-asm</samp>, the default, causes the
 extra information to be omitted and is useful when comparing two assembler
 files.
-</p>
-<p>The added comments include:
-</p>
-<ul>
-<li> information on the compiler version and command-line options,
-
-</li><li> the source code lines associated with the assembly instructions,
-in the form FILENAME:LINENUMBER:CONTENT OF LINE,
-
-</li><li> hints on which high-level expressions correspond to
-the various assembly instruction operands.
-
-</li></ul>
-
-<p>For example, given this C source file:
-</p>
-<div class="smallexample">
-<pre class="smallexample">int test (int n)
-{
-  int i;
-  int total = 0;
-
-  for (i = 0; i &lt; n; i++)
-    total += i * i;
-
-  return total;
-}
-</pre></div>
-
-<p>compiling to (x86_64) assembly via <samp>-S</samp> and emitting the result
-direct to stdout via <samp>-o</samp> <samp>-</samp>
-</p>
-<div class="smallexample">
-<pre class="smallexample">gcc -S test.c -fverbose-asm -Os -o -
-</pre></div>
-
-<p>gives output similar to this:
-</p>
-<div class="smallexample">
-<pre class="smallexample">	.file	&quot;test.c&quot;
-# GNU C11 (GCC) version 7.0.0 20160809 (experimental) (x86_64-pc-linux-gnu)
-  [...snip...]
-# options passed:
-  [...snip...]
-
-	.text
-	.globl	test
-	.type	test, @function
-test:
-.LFB0:
-	.cfi_startproc
-# test.c:4:   int total = 0;
-	xorl	%eax, %eax	# &lt;retval&gt;
-# test.c:6:   for (i = 0; i &lt; n; i++)
-	xorl	%edx, %edx	# i
-.L2:
-# test.c:6:   for (i = 0; i &lt; n; i++)
-	cmpl	%edi, %edx	# n, i
-	jge	.L5	#,
-# test.c:7:     total += i * i;
-	movl	%edx, %ecx	# i, tmp92
-	imull	%edx, %ecx	# i, tmp92
-# test.c:6:   for (i = 0; i &lt; n; i++)
-	incl	%edx	# i
-# test.c:7:     total += i * i;
-	addl	%ecx, %eax	# tmp92, &lt;retval&gt;
-	jmp	.L2	#
-.L5:
-# test.c:10: }
-	ret
-	.cfi_endproc
-.LFE0:
-	.size	test, .-test
-	.ident	&quot;GCC: (GNU) 7.0.0 20160809 (experimental)&quot;
-	.section	.note.GNU-stack,&quot;&quot;,@progbits
-</pre></div>
-
-<p>The comments are intended for humans rather than machines and hence the
-precise format of the comments is subject to change.
 </p>
 </dd>
 <dt><code>-frecord-gcc-switches</code></dt>
@@ -633,29 +548,6 @@ unit, or if <samp>-fpic</samp> is not given on the command line.
 <samp>-fpic</samp> the default is &lsquo;<samp>global-dynamic</samp>&rsquo;.
 </p>
 </dd>
-<dt><code>-ftrampolines</code></dt>
-<dd><a name="index-ftrampolines"></a>
-<p>For targets that normally need trampolines for nested functions, always
-generate them instead of using descriptors.  Otherwise, for targets that
-do not need them, like for example HP-PA or IA-64, do nothing.
-</p>
-<p>A trampoline is a small piece of code that is created at run time on the
-stack when the address of a nested function is taken, and is used to call
-the nested function indirectly.  Therefore, it requires the stack to be
-made executable in order for the program to work properly.
-</p>
-<p><samp>-fno-trampolines</samp> is enabled by default on a language by language
-basis to let the compiler avoid generating them, if it computes that this
-is safe, and replace them with descriptors.  Descriptors are made up of data
-only, but the generated code must be prepared to deal with them.  As of this
-writing, <samp>-fno-trampolines</samp> is enabled by default only for Ada.
-</p>
-<p>Moreover, code compiled with <samp>-ftrampolines</samp> and code compiled with
-<samp>-fno-trampolines</samp> are not binary compatible if nested functions are
-present.  This option must therefore be used on a program-wide basis and be
-manipulated with extreme care.
-</p>
-</dd>
 <dt><code>-fvisibility=<span class="roman">[</span>default<span class="roman">|</span>internal<span class="roman">|</span>hidden<span class="roman">|</span>protected<span class="roman">]</span></code></dt>
 <dd><a name="index-fvisibility"></a>
 <p>Set the default ELF image symbol visibility to the specified option&mdash;all
@@ -676,7 +568,7 @@ The default if <samp>-fvisibility</samp> isn&rsquo;t specified is
 <p>A good explanation of the benefits offered by ensuring ELF
 symbols have the correct visibility is given by &ldquo;How To Write
 Shared Libraries&rdquo; by Ulrich Drepper (which can be found at
-<a href="https://www.akkadia.org/drepper/">https://www.akkadia.org/drepper/</a><!-- /@w -->)&mdash;however a superior
+<a href="http://www.akkadia.org/drepper/">http://www.akkadia.org/drepper/</a><!-- /@w -->)&mdash;however a superior
 solution made possible by this option to marking things hidden when
 the default is public is to make the default hidden and mark things
 public.  This is the norm with DLLs on Windows and with <samp>-fvisibility=hidden</samp>

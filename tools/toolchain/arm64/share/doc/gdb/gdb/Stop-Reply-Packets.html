@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2018 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -79,10 +79,6 @@ when the target halts.  In the below the exact meaning of <em>signal
 number</em> is defined by the header <samp>include/gdb/signals.h</samp> in the
 <small>GDB</small> source code.
 </p>
-<p>In non-stop mode, the server will simply reply &lsquo;<samp>OK</samp>&rsquo; to commands
-such as &lsquo;<samp>vCont</samp>&rsquo;; any stop will be the subject of a future
-notification.  See <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>.
-</p>
 <p>As in the description of request packets, we include spaces in the
 reply templates for clarity; these are not part of the reply packet&rsquo;s
 syntax.  No <small>GDB</small> stop reply packet uses spaces to separate its
@@ -159,7 +155,7 @@ for more information.
 </p>
 </dd>
 <dt>&lsquo;<samp>swbreak</samp>&rsquo;</dt>
-<dd><a name="swbreak-stop-reason"></a><p>The packet indicates a software breakpoint instruction was executed,
+<dd><a name="swbreak-stop-reason"></a><p>The packet indicates a memory breakpoint instruction was executed,
 irrespective of whether it was <small>GDB</small> that planted the
 breakpoint or the breakpoint is hardcoded in the program.  The <var>r</var>
 part must be left empty.
@@ -251,8 +247,7 @@ indicating support.
 is stopped until <small>GDB</small> sets it running with a resumption packet
 (see <a href="Packets.html#vCont-packet">vCont packet</a>).  This packet should not be sent by default;
 <small>GDB</small> requests it with the <a href="General-Query-Packets.html#QThreadEvents">QThreadEvents</a> packet.  See
-also the &lsquo;<samp>w</samp>&rsquo; (see <a href="#thread-exit-event">thread exit event</a>) remote reply below.  The
-<var>r</var> part is ignored.
+also the &lsquo;<samp>w</samp>&rsquo; (<a href="#thread-exit-event">thread exit event</a>) remote reply below.
 </p>
 </dd>
 </dl>
@@ -263,10 +258,10 @@ also the &lsquo;<samp>w</samp>&rsquo; (see <a href="#thread-exit-event">thread e
 <dd><p>The process exited, and <var>AA</var> is the exit status.  This is only
 applicable to certain targets.
 </p>
-<p>The second form of the response, including the process ID of the
-exited process, can be used only when <small>GDB</small> has reported
-support for multiprocess protocol extensions; see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>.  Both <var>AA</var> and <var>pid</var> are formatted as big-endian
-hex strings.
+<p>The second form of the response, including the process ID of the exited
+process, can be used only when <small>GDB</small> has reported support for
+multiprocess protocol extensions; see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>.
+The <var>pid</var> is formatted as a big-endian hex string.
 </p>
 </dd>
 <dt>&lsquo;<samp>X <var>AA</var></samp>&rsquo;</dt>
@@ -275,8 +270,7 @@ hex strings.
 </p>
 <p>The second form of the response, including the process ID of the
 terminated process, can be used only when <small>GDB</small> has reported
-support for multiprocess protocol extensions; see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>.  Both <var>AA</var> and <var>pid</var> are formatted as big-endian
-hex strings.
+support for multiprocess protocol extensions; see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>.  The <var>pid</var> is formatted as a big-endian hex string.
 </p>
 <a name="thread-exit-event"></a><a name="index-thread-exit-event_002c-remote-reply"></a>
 </dd>
@@ -285,7 +279,6 @@ hex strings.
 <p>The thread exited, and <var>AA</var> is the exit status.  This response
 should not be sent by default; <small>GDB</small> requests it with the
 <a href="General-Query-Packets.html#QThreadEvents">QThreadEvents</a> packet.  See also <a href="#thread-create-event">thread create event</a> above.
-<var>AA</var> is formatted as a big-endian hex string.
 </p>
 </dd>
 <dt>&lsquo;<samp>N</samp>&rsquo;</dt>

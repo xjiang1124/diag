@@ -155,9 +155,6 @@
 #define SYS_personality __NR_personality
 #define SYS_pipe2 __NR_pipe2
 #define SYS_pivot_root __NR_pivot_root
-#define SYS_pkey_alloc __NR_pkey_alloc
-#define SYS_pkey_free __NR_pkey_free
-#define SYS_pkey_mprotect __NR_pkey_mprotect
 #define SYS_ppoll __NR_ppoll
 #define SYS_prctl __NR_prctl
 #define SYS_pread64 __NR_pread64
@@ -434,9 +431,6 @@
 #define SYS_personality __NR_personality
 #define SYS_pipe2 __NR_pipe2
 #define SYS_pivot_root __NR_pivot_root
-#define SYS_pkey_alloc __NR_pkey_alloc
-#define SYS_pkey_free __NR_pkey_free
-#define SYS_pkey_mprotect __NR_pkey_mprotect
 #define SYS_ppoll __NR_ppoll
 #define SYS_prctl __NR_prctl
 #define SYS_pread64 __NR_pread64

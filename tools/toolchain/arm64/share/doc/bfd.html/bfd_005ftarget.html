@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the BFD library.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -284,7 +284,7 @@ BFD_JUMP_TABLE macros.
   bfd_boolean (*_bfd_copy_private_bfd_data) (bfd *, bfd *);
   /* Called to merge BFD general private data from one object file
      to a common output file when linking.  */
-  bfd_boolean (*_bfd_merge_private_bfd_data) (bfd *, struct bfd_link_info *);
+  bfd_boolean (*_bfd_merge_private_bfd_data) (bfd *, bfd *);
   /* Called to initialize BFD private section data from one object file
      to another.  */
 #define bfd_init_private_section_data(ibfd, isec, obfd, osec, link_info) \
@@ -631,20 +631,21 @@ Return a freshly malloced NULL-terminated
 vector of the names of all the valid BFD targets. Do not
 modify the names.
 </p>
-<a name="index-bfd_005fiterate_005fover_005ftargets"></a>
-<a name="bfd_005fiterate_005fover_005ftargets"></a>
-<h4 class="subsubsection">2.12.1.5 <code>bfd_iterate_over_targets</code></h4>
+<a name="index-bfd_005fseach_005ffor_005ftarget"></a>
+<a name="bfd_005fseach_005ffor_005ftarget"></a>
+<h4 class="subsubsection">2.12.1.5 <code>bfd_seach_for_target</code></h4>
 <p><strong>Synopsis</strong>
 </p><div class="example">
-<pre class="example">const bfd_target *bfd_iterate_over_targets
-   (int (*func) (const bfd_target *, void *),
-    void *data);
+<pre class="example">const bfd_target *bfd_search_for_target
+   (int (*search_func) (const bfd_target *, void *),
+    void *);
 </pre></div>
 <p><strong>Description</strong><br>
-Call <var>func</var> for each target in the list of BFD target
-vectors, passing <var>data</var> to <var>func</var>.  Stop iterating if
-<var>func</var> returns a non-zero result, and return that target
-vector.  Return NULL if <var>func</var> always returns zero.
+Return a pointer to the first transfer vector in the list of
+transfer vectors maintained by BFD that produces a non-zero
+result when passed to the function <var>search_func</var>.  The
+parameter <var>data</var> is passed, unexamined, to the search
+function.
 </p>
 <a name="index-bfd_005fflavour_005fname"></a>
 <a name="bfd_005fflavour_005fname"></a>

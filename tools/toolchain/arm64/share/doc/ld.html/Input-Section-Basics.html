@@ -1,10 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <!-- This file documents the GNU linker LD
-(GNU Binutils)
-version 2.28.
+(Linaro_Binutils-2017.05)
+version 2.27.0.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -83,22 +83,14 @@ include all input &lsquo;<samp>.text</samp>&rsquo; sections, you would write:
 <pre class="smallexample">*(.text)
 </pre></div>
 <p>Here the &lsquo;<samp>*</samp>&rsquo; is a wildcard which matches any file name.  To exclude a list
-<a name="index-EXCLUDE_005fFILE"></a>
 of files from matching the file name wildcard, EXCLUDE_FILE may be used to
 match all files except the ones specified in the EXCLUDE_FILE list.  For
 example:
 </p><div class="smallexample">
-<pre class="smallexample">EXCLUDE_FILE (*crtend.o *otherfile.o) *(.ctors)
-</pre></div>
-<p>will cause all .ctors sections from all files except <samp>crtend.o</samp>
-and <samp>otherfile.o</samp> to be included.  The EXCLUDE_FILE can also be
-placed inside the section list, for example:
-</p><div class="smallexample">
 <pre class="smallexample">*(EXCLUDE_FILE (*crtend.o *otherfile.o) .ctors)
 </pre></div>
-<p>The result of this is identically to the previous example.  Supporting
-two syntaxes for EXCLUDE_FILE is useful if the section list contains
-more than one section, as described below.
+<p>will cause all .ctors sections from all files except <samp>crtend.o</samp> and
+<samp>otherfile.o</samp> to be included.
 </p>
 <p>There are two ways to include more than one section:
 </p><div class="smallexample">
@@ -112,27 +104,6 @@ they are found in the linker input.  In the second example, all
 &lsquo;<samp>.text</samp>&rsquo; input sections will appear first, followed by all
 &lsquo;<samp>.rdata</samp>&rsquo; input sections.
 </p>
-<p>When using EXCLUDE_FILE with more than one section, if the exclusion
-is within the section list then the exclusion only applies to the
-immediately following section, for example:
-</p><div class="smallexample">
-<pre class="smallexample">*(EXCLUDE_FILE (*somefile.o) .text .rdata)
-</pre></div>
-<p>will cause all &lsquo;<samp>.text</samp>&rsquo; sections from all files except
-<samp>somefile.o</samp> to be included, while all &lsquo;<samp>.rdata</samp>&rsquo; sections
-from all files, including <samp>somefile.o</samp>, will be included.  To
-exclude the &lsquo;<samp>.rdata</samp>&rsquo; sections from <samp>somefile.o</samp> the example
-could be modified to:
-</p><div class="smallexample">
-<pre class="smallexample">*(EXCLUDE_FILE (*somefile.o) .text EXCLUDE_FILE (*somefile.o) .rdata)
-</pre></div>
-<p>Alternatively, placing the EXCLUDE_FILE outside of the section list,
-before the input file selection, will cause the exclusion to apply for
-all sections.  Thus the previous example can be rewritten as:
-</p><div class="smallexample">
-<pre class="smallexample">EXCLUDE_FILE (*somefile.o) *(.text .rdata)
-</pre></div>
-
 <p>You can specify a file name to include sections from a particular file.
 You would do this if one or more of your files contain special data that
 needs to be at a particular location in memory.  For example:

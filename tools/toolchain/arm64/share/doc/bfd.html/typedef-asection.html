@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the BFD library.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -296,8 +296,8 @@ typedef struct bfd_section
      when memory read flag isn't set. */
 #define SEC_COFF_NOREAD 0x40000000
 
-  /* Indicate that section has the purecode flag set.  */
-#define SEC_ELF_PURECODE 0x80000000
+  /* Indicate that section has the no read flag set.  */
+#define SEC_ELF_NOREAD 0x80000000
 
   /*  End of section flags.  */
 
@@ -635,9 +635,9 @@ extern asection _bfd_std_section[4];
 #define bfd_section_removed_from_list(ABFD, S) \
   ((S)-&gt;next == NULL ? (ABFD)-&gt;section_last != (S) : (S)-&gt;next-&gt;prev != (S))
 
-#define BFD_FAKE_SECTION(SEC, SYM, NAME, IDX, FLAGS)                   \
+#define BFD_FAKE_SECTION(SEC, FLAGS, SYM, NAME, IDX)                   \
   /* name, id,  index, next, prev, flags, user_set_vma,            */  \
-  {  NAME, IDX, 0,     NULL, NULL, FLAGS, 0,                           \
+  { NAME,  IDX, 0,     NULL, NULL, FLAGS, 0,                           \
                                                                        \
   /* linker_mark, linker_has_input, gc_mark, decompress_status,    */  \
      0,           0,                1,       0,                        \

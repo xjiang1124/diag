@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -137,30 +137,8 @@ five otherwise.  This is best for most machines.
 <dl>
 <dt><a name="index-WORD_005fREGISTER_005fOPERATIONS"></a>Macro: <strong>WORD_REGISTER_OPERATIONS</strong></dt>
 <dd><p>Define this macro to 1 if operations between registers with integral mode
-smaller than a word are always performed on the entire register.  To be
-more explicit, if you start with a pair of <code>word_mode</code> registers with
-known values and you do a subword, for example <code>QImode</code>, addition on
-the low part of the registers, then the compiler may consider that the
-result has a known value in <code>word_mode</code> too if the macro is defined
-to 1.  Most RISC machines have this property and most CISC machines do not.
-</p></dd></dl>
-
-<dl>
-<dt><a name="index-TARGET_005fMIN_005fARITHMETIC_005fPRECISION"></a>Target Hook: <em>unsigned int</em> <strong>TARGET_MIN_ARITHMETIC_PRECISION</strong> <em>(void)</em></dt>
-<dd><p>On some RISC architectures with 64-bit registers, the processor also
-maintains 32-bit condition codes that make it possible to do real 32-bit
-arithmetic, although the operations are performed on the full registers.
-</p>
-<p>On such architectures, defining this hook to 32 tells the compiler to try
-using 32-bit arithmetical operations setting the condition codes instead
-of doing full 64-bit arithmetic.
-</p>
-<p>More generally, define this hook on RISC architectures if you want the
-compiler to try using arithmetical operations setting the condition codes
-with a precision lower than the word precision.
-</p>
-<p>You need not define this hook if <code>WORD_REGISTER_OPERATIONS</code> is not
-defined to 1.
+smaller than a word are always performed on the entire register.
+Most RISC machines have this property and most CISC machines do not.
 </p></dd></dl>
 
 <dl>
@@ -1145,7 +1123,7 @@ modes and they have different conditional execution capability, such as ARM.
 </p></dd></dl>
 
 <dl>
-<dt><a name="index-TARGET_005fGEN_005fCCMP_005fFIRST"></a>Target Hook: <em>rtx</em> <strong>TARGET_GEN_CCMP_FIRST</strong> <em>(rtx_insn **<var>prep_seq</var>, rtx_insn **<var>gen_seq</var>, int <var>code</var>, tree <var>op0</var>, tree <var>op1</var>)</em></dt>
+<dt><a name="index-TARGET_005fGEN_005fCCMP_005fFIRST"></a>Target Hook: <em>rtx</em> <strong>TARGET_GEN_CCMP_FIRST</strong> <em>(rtx *<var>prep_seq</var>, rtx *<var>gen_seq</var>, int <var>code</var>, tree <var>op0</var>, tree <var>op1</var>)</em></dt>
 <dd><p>This function prepares to emit a comparison insn for the first compare in a
  sequence of conditional comparisions.  It returns an appropriate comparison
  with <code>CC</code> for passing to <code>gen_ccmp_next</code> or <code>cbranch_optab</code>.
@@ -1156,7 +1134,7 @@ modes and they have different conditional execution capability, such as ARM.
 </p></dd></dl>
 
 <dl>
-<dt><a name="index-TARGET_005fGEN_005fCCMP_005fNEXT"></a>Target Hook: <em>rtx</em> <strong>TARGET_GEN_CCMP_NEXT</strong> <em>(rtx_insn **<var>prep_seq</var>, rtx_insn **<var>gen_seq</var>, rtx <var>prev</var>, int <var>cmp_code</var>, tree <var>op0</var>, tree <var>op1</var>, int <var>bit_code</var>)</em></dt>
+<dt><a name="index-TARGET_005fGEN_005fCCMP_005fNEXT"></a>Target Hook: <em>rtx</em> <strong>TARGET_GEN_CCMP_NEXT</strong> <em>(rtx *<var>prep_seq</var>, rtx *<var>gen_seq</var>, rtx <var>prev</var>, int <var>cmp_code</var>, tree <var>op0</var>, tree <var>op1</var>, int <var>bit_code</var>)</em></dt>
 <dd><p>This function prepares to emit a conditional comparison within a sequence
  of conditional comparisons.  It returns an appropriate comparison with
  <code>CC</code> for passing to <code>gen_ccmp_next</code> or <code>cbranch_optab</code>.
@@ -1291,6 +1269,22 @@ the front end.
 </p></dd></dl>
 
 <dl>
+<dt><a name="index-TARGET_005fINVALID_005fPARAMETER_005fTYPE"></a>Target Hook: <em>const char *</em> <strong>TARGET_INVALID_PARAMETER_TYPE</strong> <em>(const_tree <var>type</var>)</em></dt>
+<dd><p>If defined, this macro returns the diagnostic message when it is
+invalid for functions to include parameters of type <var>type</var>,
+or <code>NULL</code> if validity should be determined by
+the front end.  This is currently used only by the C and C++ front ends.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fINVALID_005fRETURN_005fTYPE"></a>Target Hook: <em>const char *</em> <strong>TARGET_INVALID_RETURN_TYPE</strong> <em>(const_tree <var>type</var>)</em></dt>
+<dd><p>If defined, this macro returns the diagnostic message when it is
+invalid for functions to have return type <var>type</var>,
+or <code>NULL</code> if validity should be determined by
+the front end.  This is currently used only by the C and C++ front ends.
+</p></dd></dl>
+
+<dl>
 <dt><a name="index-TARGET_005fPROMOTED_005fTYPE"></a>Target Hook: <em>tree</em> <strong>TARGET_PROMOTED_TYPE</strong> <em>(const_tree <var>type</var>)</em></dt>
 <dd><p>If defined, this target hook returns the type to which values of
 <var>type</var> should be promoted when they appear in expressions,
@@ -1308,6 +1302,13 @@ or <code>NULL_TREE</code> to apply the front end&rsquo;s normal conversion rules
 This hook is useful when there are target-specific types with special
 conversion rules.
 This is currently used only by the C and C++ front ends.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fUSE_005fJCR_005fSECTION"></a>Macro: <strong>TARGET_USE_JCR_SECTION</strong></dt>
+<dd><p>This macro determines whether to use the JCR section to register Java
+classes. By default, TARGET_USE_JCR_SECTION is defined to 1 if both
+SUPPORTS_WEAK and TARGET_HAVE_NAMED_SECTIONS are true, else 0.
 </p></dd></dl>
 
 <dl>
@@ -1464,11 +1465,6 @@ constants that are represented as <code>CONST_WIDE_INT</code>.
 maintainer is familiar with.
 </p>
 </dd></dl>
-
-<dl>
-<dt><a name="index-TARGET_005fRUN_005fTARGET_005fSELFTESTS"></a>Target Hook: <em>void</em> <strong>TARGET_RUN_TARGET_SELFTESTS</strong> <em>(void)</em></dt>
-<dd><p>If selftests are enabled, run any selftests for this target.
-</p></dd></dl>
 
 <hr>
 <div class="header">

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,15 +75,15 @@ Next: <a href="_005fgfortran_005fcaf_005fco_005freduce.html#g_t_005fgfortran_005
 </div>
 <hr>
 <a name="g_t_005fgfortran_005fcaf_005fco_005fsum-_002d_002d_002d-Collective-summing-reduction"></a>
-<h4 class="subsection">8.2.35 <code>_gfortran_caf_co_sum</code> &mdash; Collective summing reduction</h4>
+<h4 class="subsection">8.2.27 <code>_gfortran_caf_co_sum</code> &mdash; Collective summing reduction</h4>
 <a name="index-Coarray_002c-_005fgfortran_005fcaf_005fco_005fsum"></a>
 
 <dl compact="compact">
 <dt><em>Description</em>:</dt>
-<dd><p>Calculates for each array element of the variable <var>a</var> the sum of all
-values for that element in the current team; if <var>result_image</var> has the
+<dd><p>Calculates the for the each array element of the variable <var>a</var> the sum
+value for that element in the current team; if <var>result_image</var> has the
 value 0, the result shall be stored on all images, otherwise, only on the
-specified image.  This function operates on numeric values only.
+specified image. This function operates on numeric values.
 </p>
 </dd>
 <dt><em>Syntax</em>:</dt>
@@ -93,21 +93,20 @@ int *stat, char *errmsg, int errmsg_len)</code>
 </dd>
 <dt><em>Arguments</em>:</dt>
 <dd><table>
-<tr><td width="15%"><var>a</var></td><td width="70%">intent(inout)  An array descriptor with the data to be
-processed.  On the destination image(s) the result overwrites the old content.</td></tr>
-<tr><td width="15%"><var>result_image</var></td><td width="70%">intent(in)  The ID of the image to which the
-reduced value should be copied to; if zero, it has to be copied to all images.</td></tr>
-<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out)  Stores the status STAT= and may be NULL.</td></tr>
-<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out)  When an error occurs, this will be set to
-an error message; may be NULL.</td></tr>
-<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">intent(in)  the buffer size of errmsg</td></tr>
+<tr><td width="15%"><var>a</var></td><td width="70%">intent(inout) And array descriptor with the data to be
+breoadcasted (on <var>source_image</var>) or to be received (other images).</td></tr>
+<tr><td width="15%"><var>result_image</var></td><td width="70%">The ID of the image to which the reduced
+value should be copied to; if zero, it has to be copied to all images.</td></tr>
+<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out) Stores the status STAT= and may be NULL.</td></tr>
+<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out) When an error occurs, this will be set to
+an error message; may be NULL</td></tr>
+<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">the buffer size of errmsg.</td></tr>
 </table>
 
 </dd>
 <dt><em>NOTES</em></dt>
-<dd><p>If <var>result_image</var> is nonzero, the data in the array descriptor <var>a</var> on
-all images except of the specified one become undefined; hence, the library may
-make use of this.
+<dd><p>If <var>result_image</var> is nonzero, the value on all images except of the
+specified one become undefined; hence, the library may make use of this.
 </p></dd>
 </dl>
 

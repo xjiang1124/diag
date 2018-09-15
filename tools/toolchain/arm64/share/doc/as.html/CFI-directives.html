@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the GNU Assembler "as".
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -193,12 +193,8 @@ value that is added/substracted from the previous offset.
 <p>Previous value of <var>register</var> is saved at offset <var>offset</var> from
 CFA.
 </p>
-<a name="g_t_002ecfi_005fval_005foffset-register_002c-offset"></a>
-<h4 class="subsection">7.10.14 <code>.cfi_val_offset <var>register</var>, <var>offset</var></code></h4>
-<p>Previous value of <var>register</var> is CFA + <var>offset</var>.
-</p>
 <a name="g_t_002ecfi_005frel_005foffset-register_002c-offset"></a>
-<h4 class="subsection">7.10.15 <code>.cfi_rel_offset <var>register</var>, <var>offset</var></code></h4>
+<h4 class="subsection">7.10.14 <code>.cfi_rel_offset <var>register</var>, <var>offset</var></code></h4>
 <p>Previous value of <var>register</var> is saved at offset <var>offset</var> from
 the current CFA register.  This is transformed to <code>.cfi_offset</code>
 using the known displacement of the CFA register from the CFA.
@@ -206,26 +202,26 @@ This is often easier to use, because the number will match the
 code it&rsquo;s annotating.
 </p>
 <a name="g_t_002ecfi_005fregister-register1_002c-register2"></a>
-<h4 class="subsection">7.10.16 <code>.cfi_register <var>register1</var>, <var>register2</var></code></h4>
+<h4 class="subsection">7.10.15 <code>.cfi_register <var>register1</var>, <var>register2</var></code></h4>
 <p>Previous value of <var>register1</var> is saved in register <var>register2</var>.
 </p>
 <a name="g_t_002ecfi_005frestore-register"></a>
-<h4 class="subsection">7.10.17 <code>.cfi_restore <var>register</var></code></h4>
+<h4 class="subsection">7.10.16 <code>.cfi_restore <var>register</var></code></h4>
 <p><code>.cfi_restore</code> says that the rule for <var>register</var> is now the
 same as it was at the beginning of the function, after all initial
 instruction added by <code>.cfi_startproc</code> were executed.
 </p>
 <a name="g_t_002ecfi_005fundefined-register"></a>
-<h4 class="subsection">7.10.18 <code>.cfi_undefined <var>register</var></code></h4>
+<h4 class="subsection">7.10.17 <code>.cfi_undefined <var>register</var></code></h4>
 <p>From now on the previous value of <var>register</var> can&rsquo;t be restored anymore.
 </p>
 <a name="g_t_002ecfi_005fsame_005fvalue-register"></a>
-<h4 class="subsection">7.10.19 <code>.cfi_same_value <var>register</var></code></h4>
+<h4 class="subsection">7.10.18 <code>.cfi_same_value <var>register</var></code></h4>
 <p>Current value of <var>register</var> is the same like in the previous frame,
 i.e. no restoration needed.
 </p>
 <a name="g_t_002ecfi_005fremember_005fstate-and-_002ecfi_005frestore_005fstate"></a>
-<h4 class="subsection">7.10.20 <code>.cfi_remember_state</code> and <code>.cfi_restore_state</code></h4>
+<h4 class="subsection">7.10.19 <code>.cfi_remember_state</code> and <code>.cfi_restore_state</code></h4>
 <p><code>.cfi_remember_state</code> pushes the set of rules for every register onto an
 implicit stack, while <code>.cfi_restore_state</code> pops them off the stack and
 places them in the current row.  This is useful for situations where you have
@@ -275,26 +271,26 @@ as before the first <code>.cfi_restore</code> without having to use multiple
 <code>.cfi</code> directives.
 </p>
 <a name="g_t_002ecfi_005freturn_005fcolumn-register"></a>
-<h4 class="subsection">7.10.21 <code>.cfi_return_column <var>register</var></code></h4>
+<h4 class="subsection">7.10.20 <code>.cfi_return_column <var>register</var></code></h4>
 <p>Change return column <var>register</var>, i.e. the return address is either
 directly in <var>register</var> or can be accessed by rules for <var>register</var>.
 </p>
 <a name="g_t_002ecfi_005fsignal_005fframe"></a>
-<h4 class="subsection">7.10.22 <code>.cfi_signal_frame</code></h4>
+<h4 class="subsection">7.10.21 <code>.cfi_signal_frame</code></h4>
 <p>Mark current function as signal trampoline.
 </p>
 <a name="g_t_002ecfi_005fwindow_005fsave"></a>
-<h4 class="subsection">7.10.23 <code>.cfi_window_save</code></h4>
+<h4 class="subsection">7.10.22 <code>.cfi_window_save</code></h4>
 <p>SPARC register window has been saved.
 </p>
 <a name="g_t_002ecfi_005fescape-expression_005b_002c-_2026_005d"></a>
-<h4 class="subsection">7.10.24 <code>.cfi_escape</code> <var>expression</var>[, &hellip;]</h4>
+<h4 class="subsection">7.10.23 <code>.cfi_escape</code> <var>expression</var>[, &hellip;]</h4>
 <p>Allows the user to add arbitrary bytes to the unwind info.  One
 might use this to add OS-specific CFI opcodes, or generic CFI
 opcodes that GAS does not yet support.
 </p>
 <a name="g_t_002ecfi_005fval_005fencoded_005faddr-register_002c-encoding_002c-label"></a>
-<h4 class="subsection">7.10.25 <code>.cfi_val_encoded_addr <var>register</var>, <var>encoding</var>, <var>label</var></code></h4>
+<h4 class="subsection">7.10.24 <code>.cfi_val_encoded_addr <var>register</var>, <var>encoding</var>, <var>label</var></code></h4>
 <p>The current value of <var>register</var> is <var>label</var>.  The value of <var>label</var>
 will be encoded in the output file according to <var>encoding</var>; see the
 description of <code>.cfi_personality</code> for details on this encoding.

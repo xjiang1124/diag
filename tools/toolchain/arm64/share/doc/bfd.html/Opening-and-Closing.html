@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the BFD library.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -454,7 +454,7 @@ match <var>crc32</var>.
 <p><strong>Synopsis</strong>
 </p><div class="example">
 <pre class="example">bfd_boolean separate_alt_debug_file_exists
-   (char *name, unsigned long buildid);
+   (char *name, unsigned long crc32);
 </pre></div>
 <p><strong>Description</strong><br>
 Checks to see if <var>name</var> is a file and if its BuildID
@@ -465,21 +465,17 @@ matches <var>buildid</var>.
 <h4 class="subsubsection">2.14.1.21 <code>find_separate_debug_file</code></h4>
 <p><strong>Synopsis</strong>
 </p><div class="example">
-<pre class="example">char *find_separate_debug_file
-   (bfd *abfd, const char *dir, bfd_boolean include_dirs,
-    get_func_type get, check_func_type check);
+<pre class="example">char *find_separate_debug_file (bfd *abfd);
 </pre></div>
 <p><strong>Description</strong><br>
-Searches for a debug information file corresponding to <var>abfd</var>.
-The name of the separate debug info file is returned by the <var>get</var>
-function.  This function scans various fixed locations in the
-filesystem, including the file tree rooted at <var>dir</var>.  If the
-<var>include_dirs</var> parameter is true then the directory components of
-<var>abfd</var>&rsquo;s filename will be included in the searched locations.
-</p>
-<p>Returns the filename of the first file to be found which receives a
-TRUE result from the <var>check</var> function.  Returns NULL if no valid
-file could be found.
+Searches <var>abfd</var> for a section called <var>section_name</var> which
+is expected to contain a reference to a file containing separate
+debugging information.  The function scans various locations in
+the filesystem, including the file tree rooted at
+<var>debug_file_directory</var>, and returns the first matching
+filename that it finds.  If <var>check_crc</var> is TRUE then the
+contents of the file must also match the CRC value contained in
+<var>section_name</var>.  Returns NULL if no valid file could be found.
 </p>
 <a name="index-bfd_005ffollow_005fgnu_005fdebuglink"></a>
 <a name="bfd_005ffollow_005fgnu_005fdebuglink"></a>
@@ -496,8 +492,9 @@ then searches the filesystem for this .debug file in some standard
 locations, including the directory tree rooted at <var>dir</var>, and if
 found returns the full filename.
 </p>
-<p>If <var>dir</var> is NULL, the search will take place starting at
-the current directory.
+<p>If <var>dir</var> is NULL, it will search a default path configured into
+libbfd at build time.  [XXX this feature is not currently
+implemented].
 </p>
 <p><strong>Returns</strong><br>
 <code>NULL</code> on any errors or failure to locate the .debug file,
@@ -519,8 +516,9 @@ filesystem for this file in a set of standard locations, including
 the directory tree rooted at <var>dir</var>, and if found returns the
 full filename.
 </p>
-<p>If <var>dir</var> is NULL, the search will take place starting at
-the current directory.
+<p>If <var>dir</var> is NULL, it will search a default path configured into
+libbfd at build time.  [FIXME: This feature is not currently
+implemented].
 </p>
 <p><strong>Returns</strong><br>
 <code>NULL</code> on any errors or failure to locate the debug file,
@@ -560,85 +558,6 @@ current directory.
 <p><strong>Returns</strong><br>
 <code>TRUE</code> is returned if all is ok.  Otherwise <code>FALSE</code> is returned
 and bfd_error is set.
-</p>
-<a name="index-get_005fbuild_005fid"></a>
-<a name="get_005fbuild_005fid"></a>
-<h4 class="subsubsection">2.14.1.26 <code>get_build_id</code></h4>
-<p><strong>Synopsis</strong>
-</p><div class="example">
-<pre class="example">struct bfd_build_id * get_build_id
-   (bfd *abfd);
-</pre></div>
-<p><strong>Description</strong><br>
-Finds the build-id associated with <var>abfd</var>.  If the build-id is
-extracted from the note section then a build-id structure is built
-for it, using memory allocated to <var>abfd</var>, and this is then
-attached to the <var>abfd</var>.
-</p>
-<p>Returns a pointer to the build-id structure if a build-id could be
-found.  If no build-id is found NULL is returned and error code is
-set.
-</p>
-<a name="index-get_005fbuild_005fid_005fname"></a>
-<a name="get_005fbuild_005fid_005fname"></a>
-<h4 class="subsubsection">2.14.1.27 <code>get_build_id_name</code></h4>
-<p><strong>Synopsis</strong>
-</p><div class="example">
-<pre class="example">char * get_build_id_name
-   (bfd *abfd, unsigned long *build_id_out)
-</pre></div>
-<p><strong>Description</strong><br>
-Searches <var>abfd</var> for a build-id, and then constructs a pathname
-from it.  The path is computed as .build-id/NN/NN+NN.debug where
-NNNN+NN is the build-id value as a hexadecimal string.
-</p>
-<p>Returns the constructed filename or NULL upon error.
-It is the caller&rsquo;s responsibility to free the memory used to hold the
-filename.
-If a filename is returned then the <var>build_id_out</var> parameter is
-set to a pointer to the build_id structure.
-</p>
-<a name="index-check_005fbuild_005fid_005ffile"></a>
-<a name="check_005fbuild_005fid_005ffile"></a>
-<h4 class="subsubsection">2.14.1.28 <code>check_build_id_file</code></h4>
-<p><strong>Synopsis</strong>
-</p><div class="example">
-<pre class="example">bfd_boolean check_build_id_file
-   (char *name, unsigned long buildid);
-</pre></div>
-<p><strong>Description</strong><br>
-Checks to see if <var>name</var> is a readable file and if its build-id
-matches <var>buildid</var>.
-</p>
-<p>Returns TRUE if the file exists, is readable, and contains a build-id
-which matches <var>build-id</var>.
-</p>
-<a name="index-bfd_005ffollow_005fbuild_005fid_005fdebuglink"></a>
-<a name="bfd_005ffollow_005fbuild_005fid_005fdebuglink"></a>
-<h4 class="subsubsection">2.14.1.29 <code>bfd_follow_build_id_debuglink</code></h4>
-<p><strong>Synopsis</strong>
-</p><div class="example">
-<pre class="example">char *bfd_follow_build_id_debuglink (bfd *abfd, const char *dir);
-</pre></div>
-<p><strong>Description</strong><br>
-Takes <var>abfd</var> and searches it for a .note.gnu.build-id section.
-If this section is found, it extracts the value of the NT_GNU_BUILD_ID
-note, which should be a hexadecimal value <var>NNNN+NN</var> (for
-32+ hex digits).  It then searches the filesystem for a file named
-<var>.build-id/NN/NN+NN.debug</var> in a set of standard locations,
-including the directory tree rooted at <var>dir</var>.  The filename
-of the first matching file to be found is returned.  A matching
-file should contain a .note.gnu.build-id section with the same
-<var>NNNN+NN</var> note as <var>abfd</var>, although this check is currently
-not implemented.
-</p>
-<p>If <var>dir</var> is NULL, the search will take place starting at
-the current directory.
-</p>
-<p><strong>Returns</strong><br>
-<code>NULL</code> on any errors or failure to locate the debug file,
-otherwise a pointer to a heap-allocated string containing the
-filename.  The caller is responsible for freeing this string.
 </p>
 
 <hr>

@@ -1,4 +1,4 @@
-/* Copyright (C) 2002-2017 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2016 Free Software Foundation, Inc.
 
    This file is part of the GNU C Library.
 
@@ -21,11 +21,7 @@
 #endif
 
 
-#ifdef __ILP32__
-# define __SIZEOF_SEM_T	16
-#else
-# define __SIZEOF_SEM_T	32
-#endif
+#define __SIZEOF_SEM_T	32
 
 
 /* Value returned if `sem_open' failed.  */
@@ -35,5 +31,5 @@
 typedef union
 {
   char __size[__SIZEOF_SEM_T];
-  long long int __align;
+  long int __align;
 } sem_t;

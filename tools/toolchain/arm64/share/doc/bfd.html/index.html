@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the BFD library.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -102,10 +102,12 @@ ul.no-bullet {list-style: none}
     <ul class="no-bullet">
       <li><a name="toc-bfd_005fset_005ferror_005fhandler" href="Error-reporting.html#bfd_005fset_005ferror_005fhandler">2.2.2.1 <code>bfd_set_error_handler</code></a></li>
       <li><a name="toc-bfd_005fset_005ferror_005fprogram_005fname" href="Error-reporting.html#bfd_005fset_005ferror_005fprogram_005fname">2.2.2.2 <code>bfd_set_error_program_name</code></a></li>
+      <li><a name="toc-bfd_005fget_005ferror_005fhandler" href="Error-reporting.html#bfd_005fget_005ferror_005fhandler">2.2.2.3 <code>bfd_get_error_handler</code></a></li>
     </ul></li>
     <li><a name="toc-BFD-assert-handler" href="Error-reporting.html#BFD-assert-handler">2.2.3 BFD assert handler</a>
     <ul class="no-bullet">
       <li><a name="toc-bfd_005fset_005fassert_005fhandler" href="Error-reporting.html#bfd_005fset_005fassert_005fhandler">2.2.3.1 <code>bfd_set_assert_handler</code></a></li>
+      <li><a name="toc-bfd_005fget_005fassert_005fhandler" href="Error-reporting.html#bfd_005fget_005fassert_005fhandler">2.2.3.2 <code>bfd_get_assert_handler</code></a></li>
     </ul></li>
   </ul></li>
   <li><a name="toc-Miscellaneous-1" href="Miscellaneous.html#Miscellaneous">2.3 Miscellaneous</a>
@@ -124,23 +126,24 @@ ul.no-bullet {list-style: none}
       <li><a name="toc-bfd_005fscan_005fvma" href="Miscellaneous.html#bfd_005fscan_005fvma">2.3.1.10 <code>bfd_scan_vma</code></a></li>
       <li><a name="toc-bfd_005fcopy_005fprivate_005fheader_005fdata" href="Miscellaneous.html#bfd_005fcopy_005fprivate_005fheader_005fdata">2.3.1.11 <code>bfd_copy_private_header_data</code></a></li>
       <li><a name="toc-bfd_005fcopy_005fprivate_005fbfd_005fdata" href="Miscellaneous.html#bfd_005fcopy_005fprivate_005fbfd_005fdata">2.3.1.12 <code>bfd_copy_private_bfd_data</code></a></li>
-      <li><a name="toc-bfd_005fset_005fprivate_005fflags" href="Miscellaneous.html#bfd_005fset_005fprivate_005fflags">2.3.1.13 <code>bfd_set_private_flags</code></a></li>
-      <li><a name="toc-Other-functions" href="Miscellaneous.html#Other-functions">2.3.1.14 <code>Other functions</code></a></li>
-      <li><a name="toc-bfd_005falt_005fmach_005fcode" href="Miscellaneous.html#bfd_005falt_005fmach_005fcode">2.3.1.15 <code>bfd_alt_mach_code</code></a></li>
-      <li><a name="toc-bfd_005femul_005fget_005fmaxpagesize" href="Miscellaneous.html#bfd_005femul_005fget_005fmaxpagesize">2.3.1.16 <code>bfd_emul_get_maxpagesize</code></a></li>
-      <li><a name="toc-bfd_005femul_005fset_005fmaxpagesize" href="Miscellaneous.html#bfd_005femul_005fset_005fmaxpagesize">2.3.1.17 <code>bfd_emul_set_maxpagesize</code></a></li>
-      <li><a name="toc-bfd_005femul_005fget_005fcommonpagesize" href="Miscellaneous.html#bfd_005femul_005fget_005fcommonpagesize">2.3.1.18 <code>bfd_emul_get_commonpagesize</code></a></li>
-      <li><a name="toc-bfd_005femul_005fset_005fcommonpagesize" href="Miscellaneous.html#bfd_005femul_005fset_005fcommonpagesize">2.3.1.19 <code>bfd_emul_set_commonpagesize</code></a></li>
-      <li><a name="toc-bfd_005fdemangle" href="Miscellaneous.html#bfd_005fdemangle">2.3.1.20 <code>bfd_demangle</code></a></li>
-      <li><a name="toc-bfd_005fupdate_005fcompression_005fheader" href="Miscellaneous.html#bfd_005fupdate_005fcompression_005fheader">2.3.1.21 <code>bfd_update_compression_header</code></a></li>
-      <li><a name="toc-bfd_005fcheck_005fcompression_005fheader" href="Miscellaneous.html#bfd_005fcheck_005fcompression_005fheader">2.3.1.22 <code>bfd_check_compression_header</code></a></li>
-      <li><a name="toc-bfd_005fget_005fcompression_005fheader_005fsize" href="Miscellaneous.html#bfd_005fget_005fcompression_005fheader_005fsize">2.3.1.23 <code>bfd_get_compression_header_size</code></a></li>
-      <li><a name="toc-bfd_005fconvert_005fsection_005fsize" href="Miscellaneous.html#bfd_005fconvert_005fsection_005fsize">2.3.1.24 <code>bfd_convert_section_size</code></a></li>
-      <li><a name="toc-bfd_005fconvert_005fsection_005fcontents" href="Miscellaneous.html#bfd_005fconvert_005fsection_005fcontents">2.3.1.25 <code>bfd_convert_section_contents</code></a></li>
-      <li><a name="toc-struct-bfd_005fiovec" href="Miscellaneous.html#struct-bfd_005fiovec">2.3.1.26 <code>struct bfd_iovec</code></a></li>
-      <li><a name="toc-bfd_005fget_005fmtime" href="Miscellaneous.html#bfd_005fget_005fmtime">2.3.1.27 <code>bfd_get_mtime</code></a></li>
-      <li><a name="toc-bfd_005fget_005fsize" href="Miscellaneous.html#bfd_005fget_005fsize">2.3.1.28 <code>bfd_get_size</code></a></li>
-      <li><a name="toc-bfd_005fmmap" href="Miscellaneous.html#bfd_005fmmap">2.3.1.29 <code>bfd_mmap</code></a></li>
+      <li><a name="toc-bfd_005fmerge_005fprivate_005fbfd_005fdata" href="Miscellaneous.html#bfd_005fmerge_005fprivate_005fbfd_005fdata">2.3.1.13 <code>bfd_merge_private_bfd_data</code></a></li>
+      <li><a name="toc-bfd_005fset_005fprivate_005fflags" href="Miscellaneous.html#bfd_005fset_005fprivate_005fflags">2.3.1.14 <code>bfd_set_private_flags</code></a></li>
+      <li><a name="toc-Other-functions" href="Miscellaneous.html#Other-functions">2.3.1.15 <code>Other functions</code></a></li>
+      <li><a name="toc-bfd_005falt_005fmach_005fcode" href="Miscellaneous.html#bfd_005falt_005fmach_005fcode">2.3.1.16 <code>bfd_alt_mach_code</code></a></li>
+      <li><a name="toc-bfd_005femul_005fget_005fmaxpagesize" href="Miscellaneous.html#bfd_005femul_005fget_005fmaxpagesize">2.3.1.17 <code>bfd_emul_get_maxpagesize</code></a></li>
+      <li><a name="toc-bfd_005femul_005fset_005fmaxpagesize" href="Miscellaneous.html#bfd_005femul_005fset_005fmaxpagesize">2.3.1.18 <code>bfd_emul_set_maxpagesize</code></a></li>
+      <li><a name="toc-bfd_005femul_005fget_005fcommonpagesize" href="Miscellaneous.html#bfd_005femul_005fget_005fcommonpagesize">2.3.1.19 <code>bfd_emul_get_commonpagesize</code></a></li>
+      <li><a name="toc-bfd_005femul_005fset_005fcommonpagesize" href="Miscellaneous.html#bfd_005femul_005fset_005fcommonpagesize">2.3.1.20 <code>bfd_emul_set_commonpagesize</code></a></li>
+      <li><a name="toc-bfd_005fdemangle" href="Miscellaneous.html#bfd_005fdemangle">2.3.1.21 <code>bfd_demangle</code></a></li>
+      <li><a name="toc-bfd_005fupdate_005fcompression_005fheader" href="Miscellaneous.html#bfd_005fupdate_005fcompression_005fheader">2.3.1.22 <code>bfd_update_compression_header</code></a></li>
+      <li><a name="toc-bfd_005fcheck_005fcompression_005fheader" href="Miscellaneous.html#bfd_005fcheck_005fcompression_005fheader">2.3.1.23 <code>bfd_check_compression_header</code></a></li>
+      <li><a name="toc-bfd_005fget_005fcompression_005fheader_005fsize" href="Miscellaneous.html#bfd_005fget_005fcompression_005fheader_005fsize">2.3.1.24 <code>bfd_get_compression_header_size</code></a></li>
+      <li><a name="toc-bfd_005fconvert_005fsection_005fsize" href="Miscellaneous.html#bfd_005fconvert_005fsection_005fsize">2.3.1.25 <code>bfd_convert_section_size</code></a></li>
+      <li><a name="toc-bfd_005fconvert_005fsection_005fcontents" href="Miscellaneous.html#bfd_005fconvert_005fsection_005fcontents">2.3.1.26 <code>bfd_convert_section_contents</code></a></li>
+      <li><a name="toc-struct-bfd_005fiovec" href="Miscellaneous.html#struct-bfd_005fiovec">2.3.1.27 <code>struct bfd_iovec</code></a></li>
+      <li><a name="toc-bfd_005fget_005fmtime" href="Miscellaneous.html#bfd_005fget_005fmtime">2.3.1.28 <code>bfd_get_mtime</code></a></li>
+      <li><a name="toc-bfd_005fget_005fsize" href="Miscellaneous.html#bfd_005fget_005fsize">2.3.1.29 <code>bfd_get_size</code></a></li>
+      <li><a name="toc-bfd_005fmmap" href="Miscellaneous.html#bfd_005fmmap">2.3.1.30 <code>bfd_mmap</code></a></li>
     </ul></li>
   </ul></li>
   <li><a name="toc-Memory-Usage-1" href="Memory-Usage.html#Memory-Usage">2.4 Memory Usage</a></li>
@@ -272,7 +275,7 @@ ul.no-bullet {list-style: none}
       <li><a name="toc-bfd_005ffind_005ftarget" href="bfd_005ftarget.html#bfd_005ffind_005ftarget">2.12.1.2 <code>bfd_find_target</code></a></li>
       <li><a name="toc-bfd_005fget_005ftarget_005finfo" href="bfd_005ftarget.html#bfd_005fget_005ftarget_005finfo">2.12.1.3 <code>bfd_get_target_info</code></a></li>
       <li><a name="toc-bfd_005ftarget_005flist" href="bfd_005ftarget.html#bfd_005ftarget_005flist">2.12.1.4 <code>bfd_target_list</code></a></li>
-      <li><a name="toc-bfd_005fiterate_005fover_005ftargets" href="bfd_005ftarget.html#bfd_005fiterate_005fover_005ftargets">2.12.1.5 <code>bfd_iterate_over_targets</code></a></li>
+      <li><a name="toc-bfd_005fseach_005ffor_005ftarget" href="bfd_005ftarget.html#bfd_005fseach_005ffor_005ftarget">2.12.1.5 <code>bfd_seach_for_target</code></a></li>
       <li><a name="toc-bfd_005fflavour_005fname" href="bfd_005ftarget.html#bfd_005fflavour_005fname">2.12.1.6 <code>bfd_flavour_name</code></a></li>
     </ul></li>
   </ul></li>
@@ -331,10 +334,6 @@ ul.no-bullet {list-style: none}
       <li><a name="toc-bfd_005ffollow_005fgnu_005fdebugaltlink" href="Opening-and-Closing.html#bfd_005ffollow_005fgnu_005fdebugaltlink">2.14.1.23 <code>bfd_follow_gnu_debugaltlink</code></a></li>
       <li><a name="toc-bfd_005fcreate_005fgnu_005fdebuglink_005fsection" href="Opening-and-Closing.html#bfd_005fcreate_005fgnu_005fdebuglink_005fsection">2.14.1.24 <code>bfd_create_gnu_debuglink_section</code></a></li>
       <li><a name="toc-bfd_005ffill_005fin_005fgnu_005fdebuglink_005fsection" href="Opening-and-Closing.html#bfd_005ffill_005fin_005fgnu_005fdebuglink_005fsection">2.14.1.25 <code>bfd_fill_in_gnu_debuglink_section</code></a></li>
-      <li><a name="toc-get_005fbuild_005fid" href="Opening-and-Closing.html#get_005fbuild_005fid">2.14.1.26 <code>get_build_id</code></a></li>
-      <li><a name="toc-get_005fbuild_005fid_005fname" href="Opening-and-Closing.html#get_005fbuild_005fid_005fname">2.14.1.27 <code>get_build_id_name</code></a></li>
-      <li><a name="toc-check_005fbuild_005fid_005ffile" href="Opening-and-Closing.html#check_005fbuild_005fid_005ffile">2.14.1.28 <code>check_build_id_file</code></a></li>
-      <li><a name="toc-bfd_005ffollow_005fbuild_005fid_005fdebuglink" href="Opening-and-Closing.html#bfd_005ffollow_005fbuild_005fid_005fdebuglink">2.14.1.29 <code>bfd_follow_build_id_debuglink</code></a></li>
     </ul></li>
   </ul></li>
   <li><a name="toc-Implementation-details" href="Internal.html#Internal">2.15 Implementation details</a>
@@ -379,8 +378,6 @@ ul.no-bullet {list-style: none}
       <li><a name="toc-bfd_005fhide_005fsym_005fby_005fversion" href="Writing-the-symbol-table.html#bfd_005fhide_005fsym_005fby_005fversion">2.17.3.8 <code>bfd_hide_sym_by_version</code></a></li>
       <li><a name="toc-bfd_005flink_005fcheck_005frelocs" href="Writing-the-symbol-table.html#bfd_005flink_005fcheck_005frelocs">2.17.3.9 <code>bfd_link_check_relocs</code></a></li>
       <li><a name="toc-_005fbfd_005fgeneric_005flink_005fcheck_005frelocs" href="Writing-the-symbol-table.html#g_t_005fbfd_005fgeneric_005flink_005fcheck_005frelocs">2.17.3.10 <code>_bfd_generic_link_check_relocs</code></a></li>
-      <li><a name="toc-bfd_005fmerge_005fprivate_005fbfd_005fdata" href="Writing-the-symbol-table.html#bfd_005fmerge_005fprivate_005fbfd_005fdata">2.17.3.11 <code>bfd_merge_private_bfd_data</code></a></li>
-      <li><a name="toc-_005fbfd_005fgeneric_005fverify_005fendian_005fmatch" href="Writing-the-symbol-table.html#g_t_005fbfd_005fgeneric_005fverify_005fendian_005fmatch">2.17.3.12 <code>_bfd_generic_verify_endian_match</code></a></li>
     </ul></li>
   </ul></li>
   <li><a name="toc-Hash-Tables-1" href="Hash-Tables.html#Hash-Tables">2.18 Hash Tables</a>

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,21 +75,21 @@ Previous: <a href="_005fgfortran_005fcaf_005fco_005fsum.html#g_t_005fgfortran_00
 </div>
 <hr>
 <a name="g_t_005fgfortran_005fcaf_005fco_005freduce-_002d_002d_002d-Generic-collective-reduction"></a>
-<h4 class="subsection">8.2.36 <code>_gfortran_caf_co_reduce</code> &mdash; Generic collective reduction</h4>
+<h4 class="subsection">8.2.28 <code>_gfortran_caf_co_reduce</code> &mdash; Generic collective reduction</h4>
 <a name="index-Coarray_002c-_005fgfortran_005fcaf_005fco_005freduce"></a>
 
 <dl compact="compact">
 <dt><em>Description</em>:</dt>
-<dd><p>Calculates for each array element of the variable <var>a</var> the reduction
+<dd><p>Calculates the for the each array element of the variable <var>a</var> the reduction
 value for that element in the current team; if <var>result_image</var> has the
 value 0, the result shall be stored on all images, otherwise, only on the
-specified image.  The <var>opr</var> is a pure function doing a mathematically
+specified image. The <var>opr</var> is a pure function doing a mathematically
 commutative and associative operation.
 </p>
 <p>The <var>opr_flags</var> denote the following; the values are bitwise ored.
 <code>GFC_CAF_BYREF</code> (1) if the result should be returned
-by reference; <code>GFC_CAF_HIDDENLEN</code> (2) whether the result and argument
-string lengths shall be specified as hidden arguments;
+by value; <code>GFC_CAF_HIDDENLEN</code> (2) whether the result and argument
+string lengths shall be specified as hidden argument;
 <code>GFC_CAF_ARG_VALUE</code> (4) whether the arguments shall be passed by value,
 <code>GFC_CAF_ARG_DESC</code> (8) whether the arguments shall be passed by descriptor.
 </p>
@@ -103,30 +103,28 @@ int *stat, char *errmsg, int a_len, int errmsg_len)</code>
 </dd>
 <dt><em>Arguments</em>:</dt>
 <dd><table>
-<tr><td width="15%"><var>a</var></td><td width="70%">intent(inout)  An array descriptor with the data to be
-processed.  On the destination image(s) the result overwrites the old content.</td></tr>
-<tr><td width="15%"><var>opr</var></td><td width="70%">intent(in)  Function pointer to the reduction function</td></tr>
-<tr><td width="15%"><var>opr_flags</var></td><td width="70%">intent(in)  Flags regarding the reduction function</td></tr>
-<tr><td width="15%"><var>result_image</var></td><td width="70%">intent(in)  The ID of the image to which the
-reduced value should be copied to; if zero, it has to be copied to all images.</td></tr>
-<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out)  Stores the status STAT= and may be NULL.</td></tr>
-<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out)  When an error occurs, this will be set to
-an error message; may be NULL.</td></tr>
-<tr><td width="15%"><var>a_len</var></td><td width="70%">intent(in)  the string length of argument <var>a</var></td></tr>
-<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">intent(in)  the buffer size of errmsg</td></tr>
+<tr><td width="15%"><var>opr</var></td><td width="70%">Function pointer to the reduction function.</td></tr>
+<tr><td width="15%"><var>opr_flags</var></td><td width="70%">Flags regarding the reduction function</td></tr>
+<tr><td width="15%"><var>a</var></td><td width="70%">intent(inout) And array descriptor with the data to be
+breoadcasted (on <var>source_image</var>) or to be received (other images).</td></tr>
+<tr><td width="15%"><var>result_image</var></td><td width="70%">The ID of the image to which the reduced
+value should be copied to; if zero, it has to be copied to all images.</td></tr>
+<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out) Stores the status STAT= and may be NULL.</td></tr>
+<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out) When an error occurs, this will be set to
+an error message; may be NULL</td></tr>
+<tr><td width="15%"><var>a_len</var></td><td width="70%">The string length of argument <var>a</var>.</td></tr>
+<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">the buffer size of errmsg.</td></tr>
 </table>
 
 </dd>
 <dt><em>NOTES</em></dt>
-<dd><p>If <var>result_image</var> is nonzero, the data in the array descriptor <var>a</var> on
-all images except of the specified one become undefined; hence, the library may
-make use of this.
-</p>
-<p>For character arguments, the result is passed as first argument, followed
+<dd><p>If <var>result_image</var> is nonzero, the value on all images except of the
+specified one become undefined; hence, the library may make use of this.
+For character arguments, the result is passed as first argument, followed
 by the result string length, next come the two string arguments, followed
-by the two hidden string length arguments.  With C binding, there are no hidden
-arguments and by-reference passing and either only a single character is passed
-or an array descriptor.
+by the two hidden arguments. With C binding, there are no hidden arguments
+and by-reference passing and either only a single character is passed or
+an array descriptor.
 </p></dd>
 </dl>
 

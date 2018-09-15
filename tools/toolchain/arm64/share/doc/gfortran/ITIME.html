@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,22 +75,17 @@ Next: <a href="KILL.html#KILL" accesskey="n" rel="next">KILL</a>, Previous: <a h
 </div>
 <hr>
 <a name="ITIME-_002d_002d_002d-Get-current-local-time-subroutine-_0028hour_002fminutes_002fseconds_0029"></a>
-<h3 class="section">9.160 <code>ITIME</code> &mdash; Get current local time subroutine (hour/minutes/seconds)</h3>
+<h3 class="section">9.153 <code>ITIME</code> &mdash; Get current local time subroutine (hour/minutes/seconds)</h3>
 <a name="index-ITIME"></a>
 <a name="index-time_002c-current-2"></a>
 <a name="index-current-time-2"></a>
 
 <dl compact="compact">
 <dt><em>Description</em>:</dt>
-<dd><p><code>ITIME(VALUES)</code> Fills <var>VALUES</var> with the numerical values at the  
+<dd><p><code>IDATE(VALUES)</code> Fills <var>VALUES</var> with the numerical values at the  
 current local time. The hour (in the range 1-24), minute (in the range 1-60), 
 and seconds (in the range 1-60) appear in elements 1, 2, and 3 of <var>VALUES</var>, 
 respectively.
-</p>
-<p>This intrinsic routine is provided for backwards compatibility with 
-GNU Fortran 77.  In new code, programmers should consider the use of 
-the <a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a> intrinsic defined by the Fortran 95
-standard.
 </p>
 </dd>
 <dt><em>Standard</em>:</dt>
@@ -127,11 +122,7 @@ and the kind shall be the default integer kind.</td></tr>
   print *, tarray(3)
 end program test_itime
 </pre></div>
-
 </dd>
-<dt><em>See also</em>:</dt>
-<dd><p><a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a>
-</p></dd>
 </dl>
 
 

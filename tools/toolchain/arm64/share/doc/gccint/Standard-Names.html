@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -331,15 +331,6 @@ value of all-zeros.
 <dt>&lsquo;<samp>vec_cmpu<var>m</var><var>n</var></samp>&rsquo;</dt>
 <dd><p>Similar to <code>vec_cmp<var>m</var><var>n</var></code> but perform unsigned vector comparison.
 </p>
-<a name="index-vec_005fcmpeqmn-instruction-pattern"></a>
-</dd>
-<dt>&lsquo;<samp>vec_cmpeq<var>m</var><var>n</var></samp>&rsquo;</dt>
-<dd><p>Similar to <code>vec_cmp<var>m</var><var>n</var></code> but perform equality or non-equality
-vector comparison only.  If <code>vec_cmp<var>m</var><var>n</var></code>
-or <code>vec_cmpu<var>m</var><var>n</var></code> instruction pattern is supported,
-it will be preferred over <code>vec_cmpeq<var>m</var><var>n</var></code>, so there is
-no need to define this instruction pattern if the others are supported.
-</p>
 <a name="index-vcondmn-instruction-pattern"></a>
 </dd>
 <dt>&lsquo;<samp>vcond<var>m</var><var>n</var></samp>&rsquo;</dt>
@@ -357,15 +348,6 @@ comparison with a truth value of all-ones and a false value of all-zeros.
 <dt>&lsquo;<samp>vcondu<var>m</var><var>n</var></samp>&rsquo;</dt>
 <dd><p>Similar to <code>vcond<var>m</var><var>n</var></code> but performs unsigned vector
 comparison.
-</p>
-<a name="index-vcondeqmn-instruction-pattern"></a>
-</dd>
-<dt>&lsquo;<samp>vcondeq<var>m</var><var>n</var></samp>&rsquo;</dt>
-<dd><p>Similar to <code>vcond<var>m</var><var>n</var></code> but performs equality or
-non-equality vector comparison only.  If <code>vcond<var>m</var><var>n</var></code>
-or <code>vcondu<var>m</var><var>n</var></code> instruction pattern is supported,
-it will be preferred over <code>vcondeq<var>m</var><var>n</var></code>, so there is
-no need to define this instruction pattern if the others are supported.
 </p>
 <a name="index-vcond_005fmask_005fmn-instruction-pattern"></a>
 </dd>
@@ -1162,9 +1144,7 @@ determine the quadrant of the result.  All operands have mode
 <dt>&lsquo;<samp>floor<var>m</var>2</samp>&rsquo;</dt>
 <dd><p>Store the largest integral value not greater than operand 1 in operand 0.
 Both operands have mode <var>m</var>, which is a scalar or vector
-floating-point mode.  If <samp>-ffp-int-builtin-inexact</samp> is in
-effect, the &ldquo;inexact&rdquo; exception may be raised for noninteger
-operands; otherwise, it may not.
+floating-point mode.
 </p>
 <p>This pattern is not allowed to <code>FAIL</code>.
 </p>
@@ -1173,9 +1153,7 @@ operands; otherwise, it may not.
 <dt>&lsquo;<samp>btrunc<var>m</var>2</samp>&rsquo;</dt>
 <dd><p>Round operand 1 to an integer, towards zero, and store the result in
 operand 0.  Both operands have mode <var>m</var>, which is a scalar or
-vector floating-point mode.  If <samp>-ffp-int-builtin-inexact</samp> is
-in effect, the &ldquo;inexact&rdquo; exception may be raised for noninteger
-operands; otherwise, it may not.
+vector floating-point mode.
 </p>
 <p>This pattern is not allowed to <code>FAIL</code>.
 </p>
@@ -1184,10 +1162,7 @@ operands; otherwise, it may not.
 <dt>&lsquo;<samp>round<var>m</var>2</samp>&rsquo;</dt>
 <dd><p>Round operand 1 to the nearest integer, rounding away from zero in the
 event of a tie, and store the result in operand 0.  Both operands have
-mode <var>m</var>, which is a scalar or vector floating-point mode.  If
-<samp>-ffp-int-builtin-inexact</samp> is in effect, the &ldquo;inexact&rdquo;
-exception may be raised for noninteger operands; otherwise, it may
-not.
+mode <var>m</var>, which is a scalar or vector floating-point mode.
 </p>
 <p>This pattern is not allowed to <code>FAIL</code>.
 </p>
@@ -1196,9 +1171,7 @@ not.
 <dt>&lsquo;<samp>ceil<var>m</var>2</samp>&rsquo;</dt>
 <dd><p>Store the smallest integral value not less than operand 1 in operand 0.
 Both operands have mode <var>m</var>, which is a scalar or vector
-floating-point mode.  If <samp>-ffp-int-builtin-inexact</samp> is in
-effect, the &ldquo;inexact&rdquo; exception may be raised for noninteger
-operands; otherwise, it may not.
+floating-point mode.
 </p>
 <p>This pattern is not allowed to <code>FAIL</code>.
 </p>
@@ -2286,7 +2259,8 @@ function.
 </dd>
 <dt>&lsquo;<samp>trap</samp>&rsquo;</dt>
 <dd><p>This pattern, if defined, signals an error, typically by causing some
-kind of signal to be raised.
+kind of signal to be raised.  Among other places, it is used by the Java
+front end to signal &lsquo;invalid array index&rsquo; exceptions.
 </p>
 <a name="index-ctrapMM4-instruction-pattern"></a>
 </dd>
@@ -2628,34 +2602,6 @@ model to be used.
 <p>The specific value that defines &quot;set&quot; is implementation defined, and
 is normally based on what is performed by the native atomic test and set
 instruction.
-</p>
-<a name="index-atomic_005fbit_005ftest_005fand_005fsetmode-instruction-pattern"></a>
-<a name="index-atomic_005fbit_005ftest_005fand_005fcomplementmode-instruction-pattern"></a>
-<a name="index-atomic_005fbit_005ftest_005fand_005fresetmode-instruction-pattern"></a>
-</dd>
-<dt>&lsquo;<samp>atomic_bit_test_and_set<var>mode</var></samp>&rsquo;</dt>
-<dt>&lsquo;<samp>atomic_bit_test_and_complement<var>mode</var></samp>&rsquo;</dt>
-<dt>&lsquo;<samp>atomic_bit_test_and_reset<var>mode</var></samp>&rsquo;</dt>
-<dd><p>These patterns emit code for an atomic bitwise operation on memory with memory
-model semantics, and return the original value of the specified bit.
-Operand 0 is an output operand which contains the value of the specified bit
-from the memory location before the operation was performed.  Operand 1 is the
-memory on which the atomic operation is performed.  Operand 2 is the bit within
-the operand, starting with least significant bit.  Operand 3 is the memory model
-to be used by the operation.  Operand 4 is a flag - it is <code>const1_rtx</code>
-if operand 0 should contain the original value of the specified bit in the
-least significant bit of the operand, and <code>const0_rtx</code> if the bit should
-be in its original position in the operand.
-<code>atomic_bit_test_and_set<var>mode</var></code> atomically sets the specified bit after
-remembering its original value, <code>atomic_bit_test_and_complement<var>mode</var></code>
-inverts the specified bit and <code>atomic_bit_test_and_reset<var>mode</var></code> clears
-the specified bit.
-</p>
-<p>If these patterns are not defined, attempts will be made to use
-<code>atomic_fetch_or<var>mode</var></code>, <code>atomic_fetch_xor<var>mode</var></code> or
-<code>atomic_fetch_and<var>mode</var></code> instruction patterns, or their <code>sync</code>
-counterparts.  If none of these are available a compare-and-swap
-loop will be used.
 </p>
 <a name="index-mem_005fthread_005ffencemode-instruction-pattern"></a>
 </dd>

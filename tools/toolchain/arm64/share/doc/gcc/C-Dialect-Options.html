@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -274,31 +274,6 @@ in effect for <code>inline</code> functions.  See <a href="http://gcc.gnu.org/on
 Macros</a> in <cite>The C Preprocessor</cite>.
 </p>
 </dd>
-<dt><code>-fpermitted-flt-eval-methods=<var>style</var></code></dt>
-<dd><a name="index-fpermitted_002dflt_002deval_002dmethods"></a>
-<a name="index-fpermitted_002dflt_002deval_002dmethods_003dc11"></a>
-<a name="index-fpermitted_002dflt_002deval_002dmethods_003dts_002d18661_002d3"></a>
-<p>ISO/IEC TS 18661-3 defines new permissible values for
-<code>FLT_EVAL_METHOD</code> that indicate that operations and constants with
-a semantic type that is an interchange or extended format should be
-evaluated to the precision and range of that type.  These new values are
-a superset of those permitted under C99/C11, which does not specify the
-meaning of other positive values of <code>FLT_EVAL_METHOD</code>.  As such, code
-conforming to C11 may not have been written expecting the possibility of
-the new values.
-</p>
-<p><samp>-fpermitted-flt-eval-methods</samp> specifies whether the compiler
-should allow only the values of <code>FLT_EVAL_METHOD</code> specified in C99/C11,
-or the extended set of values specified in ISO/IEC TS 18661-3.
-</p>
-<p><var>style</var> is either <code>c11</code> or <code>ts-18661-3</code> as appropriate.
-</p>
-<p>The default when in a standards compliant mode (<samp>-std=c11</samp> or similar)
-is <samp>-fpermitted-flt-eval-methods=c11</samp>.  The default when in a GNU
-dialect (<samp>-std=gnu11</samp> or similar) is
-<samp>-fpermitted-flt-eval-methods=ts-18661-3</samp>.
-</p>
-</dd>
 <dt><code>-aux-info <var>filename</var></code></dt>
 <dd><a name="index-aux_002dinfo"></a>
 <p>Output to the given filename prototyped declarations for all functions
@@ -381,14 +356,6 @@ built-in functions selectively when using <samp>-fno-builtin</samp> or
 </pre></div>
 
 </dd>
-<dt><code>-fgimple</code></dt>
-<dd><a name="index-fgimple"></a>
-
-<p>Enable parsing of function definitions marked with <code>__GIMPLE</code>.
-This is an experimental feature that allows unit testing of GIMPLE
-passes.
-</p>
-</dd>
 <dt><code>-fhosted</code></dt>
 <dd><a name="index-fhosted"></a>
 <a name="index-hosted-environment-1"></a>
@@ -440,7 +407,7 @@ can be omitted, to use a target-specific default value.
 <p>Enable handling of OpenMP directives <code>#pragma omp</code> in C/C++ and
 <code>!$omp</code> in Fortran.  When <samp>-fopenmp</samp> is specified, the
 compiler generates parallel code according to the OpenMP Application
-Program Interface v4.5 <a href="http://www.openmp.org/">http://www.openmp.org/</a><!-- /@w -->.  This option
+Program Interface v4.0 <a href="http://www.openmp.org/">http://www.openmp.org/</a><!-- /@w -->.  This option
 implies <samp>-pthread</samp>, and thus is only supported on targets that
 have support for <samp>-pthread</samp>. <samp>-fopenmp</samp> implies
 <samp>-fopenmp-simd</samp>.
@@ -519,6 +486,24 @@ struct/union fields within structs/unions</a>, for details.  This is only
 supported for C, not C++.
 </p>
 </dd>
+<dt><code>-trigraphs</code></dt>
+<dd><a name="index-trigraphs"></a>
+<p>Support ISO C trigraphs.  The <samp>-ansi</samp> option (and <samp>-std</samp>
+options for strict ISO C conformance) implies <samp>-trigraphs</samp>.
+</p>
+<a name="index-traditional-C-language"></a>
+<a name="index-C-language_002c-traditional"></a>
+</dd>
+<dt><code>-traditional</code></dt>
+<dt><code>-traditional-cpp</code></dt>
+<dd><a name="index-traditional_002dcpp"></a>
+<a name="index-traditional"></a>
+<p>Formerly, these options caused GCC to attempt to emulate a pre-standard
+C compiler.  They are now only supported with the <samp>-E</samp> switch.
+The preprocessor continues to support a pre-standard mode.  See the GNU
+CPP manual for details.
+</p>
+</dd>
 <dt><code>-fcond-mismatch</code></dt>
 <dd><a name="index-fcond_002dmismatch"></a>
 <p>Allow conditional expressions with mismatched types in the second and
@@ -579,9 +564,9 @@ basic integer types such as <code>int</code> are signed types.
 <dt><code>-fsso-struct=<var>endianness</var></code></dt>
 <dd><a name="index-fsso_002dstruct"></a>
 <p>Set the default scalar storage order of structures and unions to the
-specified endianness.  The accepted values are &lsquo;<samp>big-endian</samp>&rsquo;,
-&lsquo;<samp>little-endian</samp>&rsquo; and &lsquo;<samp>native</samp>&rsquo; for the native endianness of
-the target (the default).  This option is not supported for C++.
+specified endianness.  The accepted values are &lsquo;<samp>big-endian</samp>&rsquo; and
+&lsquo;<samp>little-endian</samp>&rsquo;.  If the option is not passed, the compiler uses
+the native endianness of the target.  This option is not supported for C++.
 </p>
 <p><strong>Warning:</strong> the <samp>-fsso-struct</samp> switch causes GCC to generate
 code that is not binary compatible with code generated without it if the

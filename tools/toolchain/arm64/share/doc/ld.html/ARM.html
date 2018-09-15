@@ -1,10 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <!-- This file documents the GNU linker LD
-(GNU Binutils)
-version 2.28.
+(Linaro_Binutils-2017.05)
+version 2.27.0.
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -340,31 +340,6 @@ entries which only support 512Mb of code.
 <a name="index-AArch64-rela-addend"></a>
 <p>The &lsquo;<samp>--no-apply-dynamic-relocs</samp>&rsquo; option makes AArch64 linker do not apply
 link-time values for dynamic relocations.
-</p>
-<a name="index-Placement-of-SG-veneers"></a>
-<p>All SG veneers are placed in the special output section <code>.gnu.sgstubs</code>.
-Its start address must be set, either with the command line option
-&lsquo;<samp>--section-start</samp>&rsquo; or in a linker script, to indicate where to place these
-veneers in memory.
-</p>
-<a name="index-_002d_002dcmse_002dimplib"></a>
-<a name="index-Secure-gateway-import-library"></a>
-<p>The &lsquo;<samp>--cmse-implib</samp>&rsquo; option requests that the import libraries
-specified by the &lsquo;<samp>--out-implib</samp>&rsquo; and &lsquo;<samp>--in-implib</samp>&rsquo; options are
-secure gateway import libraries, suitable for linking a non-secure
-executable against secure code as per ARMv8-M Security Extensions.
-</p>
-<a name="index-_002d_002din_002dimplib_003dfile"></a>
-<a name="index-Input-import-library"></a>
-<p>The &lsquo;<samp>--in-implib=file</samp>&rsquo; specifies an input import library whose symbols
-must keep the same address in the executable being produced.  A warning is
-given if no &lsquo;<samp>--out-implib</samp>&rsquo; is given but new symbols have been introduced
-in the executable that should be listed in its import library.  Otherwise, if
-&lsquo;<samp>--out-implib</samp>&rsquo; is specified, the symbols are added to the output import
-library.  A warning is also given if some symbols present in the input import
-library have disappeared from the executable.  This option is only effective
-for Secure Gateway import libraries, ie. when &lsquo;<samp>--cmse-implib</samp>&rsquo; is
-specified.
 </p>
 
 

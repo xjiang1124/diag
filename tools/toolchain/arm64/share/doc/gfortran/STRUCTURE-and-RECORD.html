@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -80,10 +80,9 @@ Next: <a href="UNION-and-MAP.html#UNION-and-MAP" accesskey="n" rel="next">UNION 
 <a name="index-RECORD"></a>
 
 <p>Record structures are a pre-Fortran-90 vendor extension to create
-user-defined aggregate data types.  Support for record structures in GNU
-Fortran can be enabled with the <samp>-fdec-structure</samp> compile flag.
-If you have a choice, you should instead use Fortran 90&rsquo;s &ldquo;derived types&rdquo;,
-which have a different syntax.
+user-defined aggregate data types.  GNU Fortran does not support
+record structures, only Fortran 90&rsquo;s &ldquo;derived types&rdquo;, which have
+a different syntax.
 </p>
 <p>In many cases, record structures can easily be converted to derived types.
 To convert, replace <code>STRUCTURE /</code><var>structure-name</var><code>/</code>

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="Offsetof.html#Offsetof" accesskey="n" rel="next">Offsetof</a>, Pr
 </div>
 <hr>
 <a name="Using-Vector-Instructions-through-Built_002din-Functions"></a>
-<h3 class="section">6.50 Using Vector Instructions through Built-in Functions</h3>
+<h3 class="section">6.49 Using Vector Instructions through Built-in Functions</h3>
 
 <p>On some targets, the instruction set contains SIMD vector instructions which
 operate on multiple values contained in one large register at the same time.
@@ -210,7 +210,6 @@ For mixed operations between a scalar <code>s</code> and a vector <code>v</code>
 <code>s &amp;&amp; v</code> is equivalent to <code>s?v!=0:0</code> (the evaluation is
 short-circuit) and <code>v &amp;&amp; s</code> is equivalent to <code>v!=0 &amp; (s?-1:0)</code>.
 </p>
-<a name="index-_005f_005fbuiltin_005fshuffle"></a>
 <p>Vector shuffling is available using functions
 <code>__builtin_shuffle (vec, mask)</code> and
 <code>__builtin_shuffle (vec0, vec1, mask)</code>.

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -84,8 +84,8 @@ subdirectories that contain parts of GCC and its runtime libraries:
 </p>
 <dl compact="compact">
 <dt><samp>boehm-gc</samp></dt>
-<dd><p>The Boehm conservative garbage collector, optionally used as part of
-the ObjC runtime library when configured with <samp>--enable-objc-gc</samp>.
+<dd><p>The Boehm conservative garbage collector, used as part of the Java
+runtime library.
 </p>
 </dd>
 <dt><samp>config</samp></dt>
@@ -144,7 +144,7 @@ and <code>__atomic</code>).
 </p>
 </dd>
 <dt><samp>libffi</samp></dt>
-<dd><p>The <code>libffi</code> library, used as part of the Go runtime library.
+<dd><p>The <code>libffi</code> library, used as part of the Java runtime library.
 </p>
 </dd>
 <dt><samp>libgcc</samp></dt>
@@ -157,7 +157,7 @@ and <code>__atomic</code>).
 </dd>
 <dt><samp>libgo</samp></dt>
 <dd><p>The Go runtime library.  The bulk of this library is mirrored from the
-<a href="https://github.com/golang/go">master Go repository</a>.
+<a href="http://code.google.com/p/go/">master Go repository</a>.
 </p>
 </dd>
 <dt><samp>libgomp</samp></dt>
@@ -172,6 +172,10 @@ about this library.
 </dd>
 <dt><samp>libitm</samp></dt>
 <dd><p>The runtime support library for transactional memory.
+</p>
+</dd>
+<dt><samp>libjava</samp></dt>
+<dd><p>The Java runtime library.
 </p>
 </dd>
 <dt><samp>libobjc</samp></dt>
@@ -199,8 +203,9 @@ about this library.
 </p>
 </dd>
 <dt><samp>zlib</samp></dt>
-<dd><p>The <code>zlib</code> compression library, used for compressing and
-uncompressing GCC&rsquo;s intermediate language in LTO object files.
+<dd><p>The <code>zlib</code> compression library, used by the Java front end, as
+part of the Java runtime library, and for compressing and uncompressing
+GCC&rsquo;s intermediate language in LTO object files.
 </p></dd>
 </dl>
 

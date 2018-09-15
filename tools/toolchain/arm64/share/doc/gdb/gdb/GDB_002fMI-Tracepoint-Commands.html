@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2018 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -371,17 +371,13 @@ body=[variable={name=&quot;$trace_timestamp&quot;,initial=&quot;0&quot;}
 <h4 class="subsubheading">Synopsis</h4>
 
 <div class="smallexample">
-<pre class="smallexample"> -trace-save [ -r ] [ -ctf ] <var>filename</var>
+<pre class="smallexample"> -trace-save [-r ] <var>filename</var>
 </pre></div>
 
 <p>Saves the collected trace data to <var>filename</var>.  Without the
 &lsquo;<samp>-r</samp>&rsquo; option, the data is downloaded from the target and saved
 in a local file.  With the &lsquo;<samp>-r</samp>&rsquo; option the target is asked
 to perform the save.
-</p>
-<p>By default, this command will save the trace in the tfile format.  You can
-supply the optional &lsquo;<samp>-ctf</samp>&rsquo; argument to save it the CTF format. See
-<a href="Trace-Files.html#Trace-Files">Trace Files</a> for more information about CTF.
 </p>
 <a name="GDB-Command-54"></a>
 <h4 class="subsubheading"><small>GDB</small> Command</h4>
@@ -400,7 +396,7 @@ supply the optional &lsquo;<samp>-ctf</samp>&rsquo; argument to save it the CTF 
 <pre class="smallexample"> -trace-start
 </pre></div>
 
-<p>Starts a tracing experiment.  The result of this command does not
+<p>Starts a tracing experiments.  The result of this command does not
 have any fields.
 </p>
 <a name="GDB-Command-55"></a>

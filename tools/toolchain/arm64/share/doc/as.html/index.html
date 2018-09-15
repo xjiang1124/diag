@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the GNU Assembler "as".
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -205,18 +205,17 @@ ul.no-bullet {list-style: none}
       <li><a name="toc-_002ecfi_005fdef_005fcfa_005foffset-offset" href="CFI-directives.html#g_t_002ecfi_005fdef_005fcfa_005foffset-offset">7.10.11 <code>.cfi_def_cfa_offset <var>offset</var></code></a></li>
       <li><a name="toc-_002ecfi_005fadjust_005fcfa_005foffset-offset" href="CFI-directives.html#g_t_002ecfi_005fadjust_005fcfa_005foffset-offset">7.10.12 <code>.cfi_adjust_cfa_offset <var>offset</var></code></a></li>
       <li><a name="toc-_002ecfi_005foffset-register_002c-offset" href="CFI-directives.html#g_t_002ecfi_005foffset-register_002c-offset">7.10.13 <code>.cfi_offset <var>register</var>, <var>offset</var></code></a></li>
-      <li><a name="toc-_002ecfi_005fval_005foffset-register_002c-offset" href="CFI-directives.html#g_t_002ecfi_005fval_005foffset-register_002c-offset">7.10.14 <code>.cfi_val_offset <var>register</var>, <var>offset</var></code></a></li>
-      <li><a name="toc-_002ecfi_005frel_005foffset-register_002c-offset" href="CFI-directives.html#g_t_002ecfi_005frel_005foffset-register_002c-offset">7.10.15 <code>.cfi_rel_offset <var>register</var>, <var>offset</var></code></a></li>
-      <li><a name="toc-_002ecfi_005fregister-register1_002c-register2" href="CFI-directives.html#g_t_002ecfi_005fregister-register1_002c-register2">7.10.16 <code>.cfi_register <var>register1</var>, <var>register2</var></code></a></li>
-      <li><a name="toc-_002ecfi_005frestore-register" href="CFI-directives.html#g_t_002ecfi_005frestore-register">7.10.17 <code>.cfi_restore <var>register</var></code></a></li>
-      <li><a name="toc-_002ecfi_005fundefined-register" href="CFI-directives.html#g_t_002ecfi_005fundefined-register">7.10.18 <code>.cfi_undefined <var>register</var></code></a></li>
-      <li><a name="toc-_002ecfi_005fsame_005fvalue-register" href="CFI-directives.html#g_t_002ecfi_005fsame_005fvalue-register">7.10.19 <code>.cfi_same_value <var>register</var></code></a></li>
-      <li><a name="toc-_002ecfi_005fremember_005fstate-and-_002ecfi_005frestore_005fstate" href="CFI-directives.html#g_t_002ecfi_005fremember_005fstate-and-_002ecfi_005frestore_005fstate">7.10.20 <code>.cfi_remember_state</code> and <code>.cfi_restore_state</code></a></li>
-      <li><a name="toc-_002ecfi_005freturn_005fcolumn-register" href="CFI-directives.html#g_t_002ecfi_005freturn_005fcolumn-register">7.10.21 <code>.cfi_return_column <var>register</var></code></a></li>
-      <li><a name="toc-_002ecfi_005fsignal_005fframe" href="CFI-directives.html#g_t_002ecfi_005fsignal_005fframe">7.10.22 <code>.cfi_signal_frame</code></a></li>
-      <li><a name="toc-_002ecfi_005fwindow_005fsave" href="CFI-directives.html#g_t_002ecfi_005fwindow_005fsave">7.10.23 <code>.cfi_window_save</code></a></li>
-      <li><a name="toc-_002ecfi_005fescape-expression_005b_002c-_2026_005d" href="CFI-directives.html#g_t_002ecfi_005fescape-expression_005b_002c-_2026_005d">7.10.24 <code>.cfi_escape</code> <var>expression</var>[, &hellip;]</a></li>
-      <li><a name="toc-_002ecfi_005fval_005fencoded_005faddr-register_002c-encoding_002c-label" href="CFI-directives.html#g_t_002ecfi_005fval_005fencoded_005faddr-register_002c-encoding_002c-label">7.10.25 <code>.cfi_val_encoded_addr <var>register</var>, <var>encoding</var>, <var>label</var></code></a></li>
+      <li><a name="toc-_002ecfi_005frel_005foffset-register_002c-offset" href="CFI-directives.html#g_t_002ecfi_005frel_005foffset-register_002c-offset">7.10.14 <code>.cfi_rel_offset <var>register</var>, <var>offset</var></code></a></li>
+      <li><a name="toc-_002ecfi_005fregister-register1_002c-register2" href="CFI-directives.html#g_t_002ecfi_005fregister-register1_002c-register2">7.10.15 <code>.cfi_register <var>register1</var>, <var>register2</var></code></a></li>
+      <li><a name="toc-_002ecfi_005frestore-register" href="CFI-directives.html#g_t_002ecfi_005frestore-register">7.10.16 <code>.cfi_restore <var>register</var></code></a></li>
+      <li><a name="toc-_002ecfi_005fundefined-register" href="CFI-directives.html#g_t_002ecfi_005fundefined-register">7.10.17 <code>.cfi_undefined <var>register</var></code></a></li>
+      <li><a name="toc-_002ecfi_005fsame_005fvalue-register" href="CFI-directives.html#g_t_002ecfi_005fsame_005fvalue-register">7.10.18 <code>.cfi_same_value <var>register</var></code></a></li>
+      <li><a name="toc-_002ecfi_005fremember_005fstate-and-_002ecfi_005frestore_005fstate" href="CFI-directives.html#g_t_002ecfi_005fremember_005fstate-and-_002ecfi_005frestore_005fstate">7.10.19 <code>.cfi_remember_state</code> and <code>.cfi_restore_state</code></a></li>
+      <li><a name="toc-_002ecfi_005freturn_005fcolumn-register" href="CFI-directives.html#g_t_002ecfi_005freturn_005fcolumn-register">7.10.20 <code>.cfi_return_column <var>register</var></code></a></li>
+      <li><a name="toc-_002ecfi_005fsignal_005fframe" href="CFI-directives.html#g_t_002ecfi_005fsignal_005fframe">7.10.21 <code>.cfi_signal_frame</code></a></li>
+      <li><a name="toc-_002ecfi_005fwindow_005fsave" href="CFI-directives.html#g_t_002ecfi_005fwindow_005fsave">7.10.22 <code>.cfi_window_save</code></a></li>
+      <li><a name="toc-_002ecfi_005fescape-expression_005b_002c-_2026_005d" href="CFI-directives.html#g_t_002ecfi_005fescape-expression_005b_002c-_2026_005d">7.10.23 <code>.cfi_escape</code> <var>expression</var>[, &hellip;]</a></li>
+      <li><a name="toc-_002ecfi_005fval_005fencoded_005faddr-register_002c-encoding_002c-label" href="CFI-directives.html#g_t_002ecfi_005fval_005fencoded_005faddr-register_002c-encoding_002c-label">7.10.24 <code>.cfi_val_encoded_addr <var>register</var>, <var>encoding</var>, <var>label</var></code></a></li>
     </ul></li>
     <li><a name="toc-_002ecomm-symbol-_002c-length-" href="Comm.html#Comm">7.11 <code>.comm <var>symbol</var> , <var>length</var> </code></a></li>
     <li><a name="toc-_002edata-subsection" href="Data.html#Data">7.12 <code>.data <var>subsection</var></code></a></li>
@@ -765,242 +764,238 @@ ul.no-bullet {list-style: none}
         <li><a name="toc-Special-Characters-29" href="RL78_002dChars.html#RL78_002dChars">9.36.4.1 Special Characters</a></li>
       </ul></li>
     </ul></li>
-    <li><a name="toc-RISC_002dV-Dependent-Features" href="RISC_002dV_002dDependent.html#RISC_002dV_002dDependent">9.37 RISC-V Dependent Features</a>
+    <li><a name="toc-RX-Dependent-Features" href="RX_002dDependent.html#RX_002dDependent">9.37 RX Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-19" href="RISC_002dV_002dOpts.html#RISC_002dV_002dOpts">9.37.1 Options</a></li>
-    </ul></li>
-    <li><a name="toc-RX-Dependent-Features" href="RX_002dDependent.html#RX_002dDependent">9.38 RX Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-RX-Options" href="RX_002dOpts.html#RX_002dOpts">9.38.1 RX Options</a></li>
-      <li><a name="toc-Symbolic-Operand-Modifiers-3" href="RX_002dModifiers.html#RX_002dModifiers">9.38.2 Symbolic Operand Modifiers</a></li>
-      <li><a name="toc-Assembler-Directives-6" href="RX_002dDirectives.html#RX_002dDirectives">9.38.3 Assembler Directives</a></li>
-      <li><a name="toc-Floating-Point-13" href="RX_002dFloat.html#RX_002dFloat">9.38.4 Floating Point</a></li>
-      <li><a name="toc-Syntax-for-the-RX" href="RX_002dSyntax.html#RX_002dSyntax">9.38.5 Syntax for the RX</a>
+      <li><a name="toc-RX-Options" href="RX_002dOpts.html#RX_002dOpts">9.37.1 RX Options</a></li>
+      <li><a name="toc-Symbolic-Operand-Modifiers-3" href="RX_002dModifiers.html#RX_002dModifiers">9.37.2 Symbolic Operand Modifiers</a></li>
+      <li><a name="toc-Assembler-Directives-6" href="RX_002dDirectives.html#RX_002dDirectives">9.37.3 Assembler Directives</a></li>
+      <li><a name="toc-Floating-Point-13" href="RX_002dFloat.html#RX_002dFloat">9.37.4 Floating Point</a></li>
+      <li><a name="toc-Syntax-for-the-RX" href="RX_002dSyntax.html#RX_002dSyntax">9.37.5 Syntax for the RX</a>
       <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-30" href="RX_002dChars.html#RX_002dChars">9.38.5.1 Special Characters</a></li>
+        <li><a name="toc-Special-Characters-30" href="RX_002dChars.html#RX_002dChars">9.37.5.1 Special Characters</a></li>
       </ul></li>
     </ul></li>
-    <li><a name="toc-IBM-S_002f390-Dependent-Features" href="S_002f390_002dDependent.html#S_002f390_002dDependent">9.39 IBM S/390 Dependent Features</a>
+    <li><a name="toc-IBM-S_002f390-Dependent-Features" href="S_002f390_002dDependent.html#S_002f390_002dDependent">9.38 IBM S/390 Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-20" href="s390-Options.html#s390-Options">9.39.1 Options</a></li>
-      <li><a name="toc-Special-Characters-31" href="s390-Characters.html#s390-Characters">9.39.2 Special Characters</a></li>
-      <li><a name="toc-Instruction-syntax" href="s390-Syntax.html#s390-Syntax">9.39.3 Instruction syntax</a>
+      <li><a name="toc-Options-19" href="s390-Options.html#s390-Options">9.38.1 Options</a></li>
+      <li><a name="toc-Special-Characters-31" href="s390-Characters.html#s390-Characters">9.38.2 Special Characters</a></li>
+      <li><a name="toc-Instruction-syntax" href="s390-Syntax.html#s390-Syntax">9.38.3 Instruction syntax</a>
       <ul class="no-bullet">
-        <li><a name="toc-Register-naming" href="s390-Register.html#s390-Register">9.39.3.1 Register naming</a></li>
-        <li><a name="toc-Instruction-Mnemonics" href="s390-Mnemonics.html#s390-Mnemonics">9.39.3.2 Instruction Mnemonics</a></li>
-        <li><a name="toc-Instruction-Operands" href="s390-Operands.html#s390-Operands">9.39.3.3 Instruction Operands</a></li>
-        <li><a name="toc-Instruction-Formats" href="s390-Formats.html#s390-Formats">9.39.3.4 Instruction Formats</a></li>
-        <li><a name="toc-Instruction-Aliases" href="s390-Aliases.html#s390-Aliases">9.39.3.5 Instruction Aliases</a></li>
-        <li><a name="toc-Instruction-Operand-Modifier" href="s390-Operand-Modifier.html#s390-Operand-Modifier">9.39.3.6 Instruction Operand Modifier</a></li>
-        <li><a name="toc-Instruction-Marker" href="s390-Instruction-Marker.html#s390-Instruction-Marker">9.39.3.7 Instruction Marker</a></li>
-        <li><a name="toc-Literal-Pool-Entries" href="s390-Literal-Pool-Entries.html#s390-Literal-Pool-Entries">9.39.3.8 Literal Pool Entries</a></li>
+        <li><a name="toc-Register-naming" href="s390-Register.html#s390-Register">9.38.3.1 Register naming</a></li>
+        <li><a name="toc-Instruction-Mnemonics" href="s390-Mnemonics.html#s390-Mnemonics">9.38.3.2 Instruction Mnemonics</a></li>
+        <li><a name="toc-Instruction-Operands" href="s390-Operands.html#s390-Operands">9.38.3.3 Instruction Operands</a></li>
+        <li><a name="toc-Instruction-Formats" href="s390-Formats.html#s390-Formats">9.38.3.4 Instruction Formats</a></li>
+        <li><a name="toc-Instruction-Aliases" href="s390-Aliases.html#s390-Aliases">9.38.3.5 Instruction Aliases</a></li>
+        <li><a name="toc-Instruction-Operand-Modifier" href="s390-Operand-Modifier.html#s390-Operand-Modifier">9.38.3.6 Instruction Operand Modifier</a></li>
+        <li><a name="toc-Instruction-Marker" href="s390-Instruction-Marker.html#s390-Instruction-Marker">9.38.3.7 Instruction Marker</a></li>
+        <li><a name="toc-Literal-Pool-Entries" href="s390-Literal-Pool-Entries.html#s390-Literal-Pool-Entries">9.38.3.8 Literal Pool Entries</a></li>
       </ul></li>
-      <li><a name="toc-Assembler-Directives-7" href="s390-Directives.html#s390-Directives">9.39.4 Assembler Directives</a></li>
-      <li><a name="toc-Floating-Point-14" href="s390-Floating-Point.html#s390-Floating-Point">9.39.5 Floating Point</a></li>
+      <li><a name="toc-Assembler-Directives-7" href="s390-Directives.html#s390-Directives">9.38.4 Assembler Directives</a></li>
+      <li><a name="toc-Floating-Point-14" href="s390-Floating-Point.html#s390-Floating-Point">9.38.5 Floating Point</a></li>
     </ul></li>
-    <li><a name="toc-SCORE-Dependent-Features" href="SCORE_002dDependent.html#SCORE_002dDependent">9.40 SCORE Dependent Features</a>
+    <li><a name="toc-SCORE-Dependent-Features" href="SCORE_002dDependent.html#SCORE_002dDependent">9.39 SCORE Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-21" href="SCORE_002dOpts.html#SCORE_002dOpts">9.40.1 Options</a></li>
-      <li><a name="toc-SCORE-Assembler-Directives" href="SCORE_002dPseudo.html#SCORE_002dPseudo">9.40.2 SCORE Assembler Directives</a></li>
-      <li><a name="toc-SCORE-Syntax" href="SCORE_002dSyntax.html#SCORE_002dSyntax">9.40.3 SCORE Syntax</a>
+      <li><a name="toc-Options-20" href="SCORE_002dOpts.html#SCORE_002dOpts">9.39.1 Options</a></li>
+      <li><a name="toc-SCORE-Assembler-Directives" href="SCORE_002dPseudo.html#SCORE_002dPseudo">9.39.2 SCORE Assembler Directives</a></li>
+      <li><a name="toc-SCORE-Syntax" href="SCORE_002dSyntax.html#SCORE_002dSyntax">9.39.3 SCORE Syntax</a>
       <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-32" href="SCORE_002dChars.html#SCORE_002dChars">9.40.3.1 Special Characters</a></li>
-      </ul></li>
-    </ul></li>
-    <li><a name="toc-Renesas-_002f-SuperH-SH-Dependent-Features" href="SH_002dDependent.html#SH_002dDependent">9.41 Renesas / SuperH SH Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Options-22" href="SH-Options.html#SH-Options">9.41.1 Options</a></li>
-      <li><a name="toc-Syntax-24" href="SH-Syntax.html#SH-Syntax">9.41.2 Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-33" href="SH_002dChars.html#SH_002dChars">9.41.2.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-13" href="SH_002dRegs.html#SH_002dRegs">9.41.2.2 Register Names</a></li>
-        <li><a name="toc-Addressing-Modes-3" href="SH_002dAddressing.html#SH_002dAddressing">9.41.2.3 Addressing Modes</a></li>
-      </ul></li>
-      <li><a name="toc-Floating-Point-15" href="SH-Floating-Point.html#SH-Floating-Point">9.41.3 Floating Point</a></li>
-      <li><a name="toc-SH-Machine-Directives" href="SH-Directives.html#SH-Directives">9.41.4 SH Machine Directives</a></li>
-      <li><a name="toc-Opcodes-16" href="SH-Opcodes.html#SH-Opcodes">9.41.5 Opcodes</a></li>
-    </ul></li>
-    <li><a name="toc-SuperH-SH64-Dependent-Features" href="SH64_002dDependent.html#SH64_002dDependent">9.42 SuperH SH64 Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Options-23" href="SH64-Options.html#SH64-Options">9.42.1 Options</a></li>
-      <li><a name="toc-Syntax-25" href="SH64-Syntax.html#SH64-Syntax">9.42.2 Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-34" href="SH64_002dChars.html#SH64_002dChars">9.42.2.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-14" href="SH64_002dRegs.html#SH64_002dRegs">9.42.2.2 Register Names</a></li>
-        <li><a name="toc-Addressing-Modes-4" href="SH64_002dAddressing.html#SH64_002dAddressing">9.42.2.3 Addressing Modes</a></li>
-      </ul></li>
-      <li><a name="toc-SH64-Machine-Directives" href="SH64-Directives.html#SH64-Directives">9.42.3 SH64 Machine Directives</a></li>
-      <li><a name="toc-Opcodes-17" href="SH64-Opcodes.html#SH64-Opcodes">9.42.4 Opcodes</a></li>
-    </ul></li>
-    <li><a name="toc-SPARC-Dependent-Features" href="Sparc_002dDependent.html#Sparc_002dDependent">9.43 SPARC Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Options-24" href="Sparc_002dOpts.html#Sparc_002dOpts">9.43.1 Options</a></li>
-      <li><a name="toc-Enforcing-aligned-data" href="Sparc_002dAligned_002dData.html#Sparc_002dAligned_002dData">9.43.2 Enforcing aligned data</a></li>
-      <li><a name="toc-Sparc-Syntax" href="Sparc_002dSyntax.html#Sparc_002dSyntax">9.43.3 Sparc Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-35" href="Sparc_002dChars.html#Sparc_002dChars">9.43.3.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-15" href="Sparc_002dRegs.html#Sparc_002dRegs">9.43.3.2 Register Names</a></li>
-        <li><a name="toc-Constants-2" href="Sparc_002dConstants.html#Sparc_002dConstants">9.43.3.3 Constants</a></li>
-        <li><a name="toc-Relocations-3" href="Sparc_002dRelocs.html#Sparc_002dRelocs">9.43.3.4 Relocations</a></li>
-        <li><a name="toc-Size-Translations" href="Sparc_002dSize_002dTranslations.html#Sparc_002dSize_002dTranslations">9.43.3.5 Size Translations</a></li>
-      </ul></li>
-      <li><a name="toc-Floating-Point-16" href="Sparc_002dFloat.html#Sparc_002dFloat">9.43.4 Floating Point</a></li>
-      <li><a name="toc-Sparc-Machine-Directives" href="Sparc_002dDirectives.html#Sparc_002dDirectives">9.43.5 Sparc Machine Directives</a></li>
-    </ul></li>
-    <li><a name="toc-TIC54X-Dependent-Features" href="TIC54X_002dDependent.html#TIC54X_002dDependent">9.44 TIC54X Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Options-25" href="TIC54X_002dOpts.html#TIC54X_002dOpts">9.44.1 Options</a></li>
-      <li><a name="toc-Blocking" href="TIC54X_002dBlock.html#TIC54X_002dBlock">9.44.2 Blocking</a></li>
-      <li><a name="toc-Environment-Settings" href="TIC54X_002dEnv.html#TIC54X_002dEnv">9.44.3 Environment Settings</a></li>
-      <li><a name="toc-Constants-Syntax" href="TIC54X_002dConstants.html#TIC54X_002dConstants">9.44.4 Constants Syntax</a></li>
-      <li><a name="toc-String-Substitution" href="TIC54X_002dSubsyms.html#TIC54X_002dSubsyms">9.44.5 String Substitution</a></li>
-      <li><a name="toc-Local-Labels" href="TIC54X_002dLocals.html#TIC54X_002dLocals">9.44.6 Local Labels</a></li>
-      <li><a name="toc-Math-Builtins" href="TIC54X_002dBuiltins.html#TIC54X_002dBuiltins">9.44.7 Math Builtins</a></li>
-      <li><a name="toc-Extended-Addressing" href="TIC54X_002dExt.html#TIC54X_002dExt">9.44.8 Extended Addressing</a></li>
-      <li><a name="toc-Directives-2" href="TIC54X_002dDirectives.html#TIC54X_002dDirectives">9.44.9 Directives</a></li>
-      <li><a name="toc-Macros-1" href="TIC54X_002dMacros.html#TIC54X_002dMacros">9.44.10 Macros</a></li>
-      <li><a name="toc-Memory_002dmapped-Registers" href="TIC54X_002dMMRegs.html#TIC54X_002dMMRegs">9.44.11 Memory-mapped Registers</a></li>
-      <li><a name="toc-TIC54X-Syntax" href="TIC54X_002dSyntax.html#TIC54X_002dSyntax">9.44.12 TIC54X Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-36" href="TIC54X_002dChars.html#TIC54X_002dChars">9.44.12.1 Special Characters</a></li>
+        <li><a name="toc-Special-Characters-32" href="SCORE_002dChars.html#SCORE_002dChars">9.39.3.1 Special Characters</a></li>
       </ul></li>
     </ul></li>
-    <li><a name="toc-TIC6X-Dependent-Features" href="TIC6X_002dDependent.html#TIC6X_002dDependent">9.45 TIC6X Dependent Features</a>
+    <li><a name="toc-Renesas-_002f-SuperH-SH-Dependent-Features" href="SH_002dDependent.html#SH_002dDependent">9.40 Renesas / SuperH SH Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-TIC6X-Options-1" href="TIC6X-Options.html#TIC6X-Options">9.45.1 TIC6X Options</a></li>
-      <li><a name="toc-TIC6X-Syntax-1" href="TIC6X-Syntax.html#TIC6X-Syntax">9.45.2 TIC6X Syntax</a></li>
-      <li><a name="toc-TIC6X-Directives-1" href="TIC6X-Directives.html#TIC6X-Directives">9.45.3 TIC6X Directives</a></li>
+      <li><a name="toc-Options-21" href="SH-Options.html#SH-Options">9.40.1 Options</a></li>
+      <li><a name="toc-Syntax-24" href="SH-Syntax.html#SH-Syntax">9.40.2 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-33" href="SH_002dChars.html#SH_002dChars">9.40.2.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-13" href="SH_002dRegs.html#SH_002dRegs">9.40.2.2 Register Names</a></li>
+        <li><a name="toc-Addressing-Modes-3" href="SH_002dAddressing.html#SH_002dAddressing">9.40.2.3 Addressing Modes</a></li>
+      </ul></li>
+      <li><a name="toc-Floating-Point-15" href="SH-Floating-Point.html#SH-Floating-Point">9.40.3 Floating Point</a></li>
+      <li><a name="toc-SH-Machine-Directives" href="SH-Directives.html#SH-Directives">9.40.4 SH Machine Directives</a></li>
+      <li><a name="toc-Opcodes-16" href="SH-Opcodes.html#SH-Opcodes">9.40.5 Opcodes</a></li>
     </ul></li>
-    <li><a name="toc-TILE_002dGx-Dependent-Features" href="TILE_002dGx_002dDependent.html#TILE_002dGx_002dDependent">9.46 TILE-Gx Dependent Features</a>
+    <li><a name="toc-SuperH-SH64-Dependent-Features" href="SH64_002dDependent.html#SH64_002dDependent">9.41 SuperH SH64 Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-26" href="TILE_002dGx-Options.html#TILE_002dGx-Options">9.46.1 Options</a></li>
-      <li><a name="toc-Syntax-26" href="TILE_002dGx-Syntax.html#TILE_002dGx-Syntax">9.46.2 Syntax</a>
+      <li><a name="toc-Options-22" href="SH64-Options.html#SH64-Options">9.41.1 Options</a></li>
+      <li><a name="toc-Syntax-25" href="SH64-Syntax.html#SH64-Syntax">9.41.2 Syntax</a>
       <ul class="no-bullet">
-        <li><a name="toc-Opcode-Names" href="TILE_002dGx-Opcodes.html#TILE_002dGx-Opcodes">9.46.2.1 Opcode Names</a></li>
-        <li><a name="toc-Register-Names-16" href="TILE_002dGx-Registers.html#TILE_002dGx-Registers">9.46.2.2 Register Names</a></li>
-        <li><a name="toc-Symbolic-Operand-Modifiers-4" href="TILE_002dGx-Modifiers.html#TILE_002dGx-Modifiers">9.46.2.3 Symbolic Operand Modifiers</a></li>
+        <li><a name="toc-Special-Characters-34" href="SH64_002dChars.html#SH64_002dChars">9.41.2.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-14" href="SH64_002dRegs.html#SH64_002dRegs">9.41.2.2 Register Names</a></li>
+        <li><a name="toc-Addressing-Modes-4" href="SH64_002dAddressing.html#SH64_002dAddressing">9.41.2.3 Addressing Modes</a></li>
       </ul></li>
-      <li><a name="toc-TILE_002dGx-Directives-1" href="TILE_002dGx-Directives.html#TILE_002dGx-Directives">9.46.3 TILE-Gx Directives</a></li>
+      <li><a name="toc-SH64-Machine-Directives" href="SH64-Directives.html#SH64-Directives">9.41.3 SH64 Machine Directives</a></li>
+      <li><a name="toc-Opcodes-17" href="SH64-Opcodes.html#SH64-Opcodes">9.41.4 Opcodes</a></li>
     </ul></li>
-    <li><a name="toc-TILEPro-Dependent-Features" href="TILEPro_002dDependent.html#TILEPro_002dDependent">9.47 TILEPro Dependent Features</a>
+    <li><a name="toc-SPARC-Dependent-Features" href="Sparc_002dDependent.html#Sparc_002dDependent">9.42 SPARC Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-27" href="TILEPro-Options.html#TILEPro-Options">9.47.1 Options</a></li>
-      <li><a name="toc-Syntax-27" href="TILEPro-Syntax.html#TILEPro-Syntax">9.47.2 Syntax</a>
+      <li><a name="toc-Options-23" href="Sparc_002dOpts.html#Sparc_002dOpts">9.42.1 Options</a></li>
+      <li><a name="toc-Enforcing-aligned-data" href="Sparc_002dAligned_002dData.html#Sparc_002dAligned_002dData">9.42.2 Enforcing aligned data</a></li>
+      <li><a name="toc-Sparc-Syntax" href="Sparc_002dSyntax.html#Sparc_002dSyntax">9.42.3 Sparc Syntax</a>
       <ul class="no-bullet">
-        <li><a name="toc-Opcode-Names-1" href="TILEPro-Opcodes.html#TILEPro-Opcodes">9.47.2.1 Opcode Names</a></li>
-        <li><a name="toc-Register-Names-17" href="TILEPro-Registers.html#TILEPro-Registers">9.47.2.2 Register Names</a></li>
-        <li><a name="toc-Symbolic-Operand-Modifiers-5" href="TILEPro-Modifiers.html#TILEPro-Modifiers">9.47.2.3 Symbolic Operand Modifiers</a></li>
+        <li><a name="toc-Special-Characters-35" href="Sparc_002dChars.html#Sparc_002dChars">9.42.3.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-15" href="Sparc_002dRegs.html#Sparc_002dRegs">9.42.3.2 Register Names</a></li>
+        <li><a name="toc-Constants-2" href="Sparc_002dConstants.html#Sparc_002dConstants">9.42.3.3 Constants</a></li>
+        <li><a name="toc-Relocations-3" href="Sparc_002dRelocs.html#Sparc_002dRelocs">9.42.3.4 Relocations</a></li>
+        <li><a name="toc-Size-Translations" href="Sparc_002dSize_002dTranslations.html#Sparc_002dSize_002dTranslations">9.42.3.5 Size Translations</a></li>
       </ul></li>
-      <li><a name="toc-TILEPro-Directives-1" href="TILEPro-Directives.html#TILEPro-Directives">9.47.3 TILEPro Directives</a></li>
+      <li><a name="toc-Floating-Point-16" href="Sparc_002dFloat.html#Sparc_002dFloat">9.42.4 Floating Point</a></li>
+      <li><a name="toc-Sparc-Machine-Directives" href="Sparc_002dDirectives.html#Sparc_002dDirectives">9.42.5 Sparc Machine Directives</a></li>
     </ul></li>
-    <li><a name="toc-v850-Dependent-Features" href="V850_002dDependent.html#V850_002dDependent">9.48 v850 Dependent Features</a>
+    <li><a name="toc-TIC54X-Dependent-Features" href="TIC54X_002dDependent.html#TIC54X_002dDependent">9.43 TIC54X Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-28" href="V850-Options.html#V850-Options">9.48.1 Options</a></li>
-      <li><a name="toc-Syntax-28" href="V850-Syntax.html#V850-Syntax">9.48.2 Syntax</a>
+      <li><a name="toc-Options-24" href="TIC54X_002dOpts.html#TIC54X_002dOpts">9.43.1 Options</a></li>
+      <li><a name="toc-Blocking" href="TIC54X_002dBlock.html#TIC54X_002dBlock">9.43.2 Blocking</a></li>
+      <li><a name="toc-Environment-Settings" href="TIC54X_002dEnv.html#TIC54X_002dEnv">9.43.3 Environment Settings</a></li>
+      <li><a name="toc-Constants-Syntax" href="TIC54X_002dConstants.html#TIC54X_002dConstants">9.43.4 Constants Syntax</a></li>
+      <li><a name="toc-String-Substitution" href="TIC54X_002dSubsyms.html#TIC54X_002dSubsyms">9.43.5 String Substitution</a></li>
+      <li><a name="toc-Local-Labels" href="TIC54X_002dLocals.html#TIC54X_002dLocals">9.43.6 Local Labels</a></li>
+      <li><a name="toc-Math-Builtins" href="TIC54X_002dBuiltins.html#TIC54X_002dBuiltins">9.43.7 Math Builtins</a></li>
+      <li><a name="toc-Extended-Addressing" href="TIC54X_002dExt.html#TIC54X_002dExt">9.43.8 Extended Addressing</a></li>
+      <li><a name="toc-Directives-2" href="TIC54X_002dDirectives.html#TIC54X_002dDirectives">9.43.9 Directives</a></li>
+      <li><a name="toc-Macros-1" href="TIC54X_002dMacros.html#TIC54X_002dMacros">9.43.10 Macros</a></li>
+      <li><a name="toc-Memory_002dmapped-Registers" href="TIC54X_002dMMRegs.html#TIC54X_002dMMRegs">9.43.11 Memory-mapped Registers</a></li>
+      <li><a name="toc-TIC54X-Syntax" href="TIC54X_002dSyntax.html#TIC54X_002dSyntax">9.43.12 TIC54X Syntax</a>
       <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-37" href="V850_002dChars.html#V850_002dChars">9.48.2.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-18" href="V850_002dRegs.html#V850_002dRegs">9.48.2.2 Register Names</a></li>
-      </ul></li>
-      <li><a name="toc-Floating-Point-17" href="V850-Floating-Point.html#V850-Floating-Point">9.48.3 Floating Point</a></li>
-      <li><a name="toc-V850-Machine-Directives" href="V850-Directives.html#V850-Directives">9.48.4 V850 Machine Directives</a></li>
-      <li><a name="toc-Opcodes-18" href="V850-Opcodes.html#V850-Opcodes">9.48.5 Opcodes</a></li>
-    </ul></li>
-    <li><a name="toc-VAX-Dependent-Features" href="Vax_002dDependent.html#Vax_002dDependent">9.49 VAX Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-VAX-Command_002dLine-Options" href="VAX_002dOpts.html#VAX_002dOpts">9.49.1 VAX Command-Line Options</a></li>
-      <li><a name="toc-VAX-Floating-Point" href="VAX_002dfloat.html#VAX_002dfloat">9.49.2 VAX Floating Point</a></li>
-      <li><a name="toc-Vax-Machine-Directives" href="VAX_002ddirectives.html#VAX_002ddirectives">9.49.3 Vax Machine Directives</a></li>
-      <li><a name="toc-VAX-Opcodes" href="VAX_002dopcodes.html#VAX_002dopcodes">9.49.4 VAX Opcodes</a></li>
-      <li><a name="toc-VAX-Branch-Improvement" href="VAX_002dbranch.html#VAX_002dbranch">9.49.5 VAX Branch Improvement</a></li>
-      <li><a name="toc-VAX-Operands" href="VAX_002doperands.html#VAX_002doperands">9.49.6 VAX Operands</a></li>
-      <li><a name="toc-Not-Supported-on-VAX" href="VAX_002dno.html#VAX_002dno">9.49.7 Not Supported on VAX</a></li>
-      <li><a name="toc-VAX-Syntax" href="VAX_002dSyntax.html#VAX_002dSyntax">9.49.8 VAX Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-38" href="VAX_002dChars.html#VAX_002dChars">9.49.8.1 Special Characters</a></li>
-      </ul></li>
-    </ul></li>
-    <li><a name="toc-Visium-Dependent-Features" href="Visium_002dDependent.html#Visium_002dDependent">9.50 Visium Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Options-29" href="Visium-Options.html#Visium-Options">9.50.1 Options</a></li>
-      <li><a name="toc-Syntax-29" href="Visium-Syntax.html#Visium-Syntax">9.50.2 Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-39" href="Visium-Characters.html#Visium-Characters">9.50.2.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-19" href="Visium-Registers.html#Visium-Registers">9.50.2.2 Register Names</a></li>
-      </ul></li>
-      <li><a name="toc-Opcodes-19" href="Visium-Opcodes.html#Visium-Opcodes">9.50.3 Opcodes</a></li>
-    </ul></li>
-    <li><a name="toc-XGATE-Dependent-Features" href="XGATE_002dDependent.html#XGATE_002dDependent">9.51 XGATE Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-XGATE-Options" href="XGATE_002dOpts.html#XGATE_002dOpts">9.51.1 XGATE Options</a></li>
-      <li><a name="toc-Syntax-30" href="XGATE_002dSyntax.html#XGATE_002dSyntax">9.51.2 Syntax</a></li>
-      <li><a name="toc-Assembler-Directives-8" href="XGATE_002dDirectives.html#XGATE_002dDirectives">9.51.3 Assembler Directives</a></li>
-      <li><a name="toc-Floating-Point-18" href="XGATE_002dFloat.html#XGATE_002dFloat">9.51.4 Floating Point</a></li>
-      <li><a name="toc-Opcodes-20" href="XGATE_002dopcodes.html#XGATE_002dopcodes">9.51.5 Opcodes</a></li>
-    </ul></li>
-    <li><a name="toc-XStormy16-Dependent-Features" href="XSTORMY16_002dDependent.html#XSTORMY16_002dDependent">9.52 XStormy16 Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Syntax-31" href="XStormy16-Syntax.html#XStormy16-Syntax">9.52.1 Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-40" href="XStormy16_002dChars.html#XStormy16_002dChars">9.52.1.1 Special Characters</a></li>
-      </ul></li>
-      <li><a name="toc-XStormy16-Machine-Directives" href="XStormy16-Directives.html#XStormy16-Directives">9.52.2 XStormy16 Machine Directives</a></li>
-      <li><a name="toc-XStormy16-Pseudo_002dOpcodes" href="XStormy16-Opcodes.html#XStormy16-Opcodes">9.52.3 XStormy16 Pseudo-Opcodes</a></li>
-    </ul></li>
-    <li><a name="toc-Xtensa-Dependent-Features" href="Xtensa_002dDependent.html#Xtensa_002dDependent">9.53 Xtensa Dependent Features</a>
-    <ul class="no-bullet">
-      <li><a name="toc-Command-Line-Options" href="Xtensa-Options.html#Xtensa-Options">9.53.1 Command Line Options</a></li>
-      <li><a name="toc-Assembler-Syntax" href="Xtensa-Syntax.html#Xtensa-Syntax">9.53.2 Assembler Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Opcode-Names-2" href="Xtensa-Opcodes.html#Xtensa-Opcodes">9.53.2.1 Opcode Names</a></li>
-        <li><a name="toc-Register-Names-20" href="Xtensa-Registers.html#Xtensa-Registers">9.53.2.2 Register Names</a></li>
-      </ul></li>
-      <li><a name="toc-Xtensa-Optimizations-1" href="Xtensa-Optimizations.html#Xtensa-Optimizations">9.53.3 Xtensa Optimizations</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Using-Density-Instructions" href="Density-Instructions.html#Density-Instructions">9.53.3.1 Using Density Instructions</a></li>
-        <li><a name="toc-Automatic-Instruction-Alignment" href="Xtensa-Automatic-Alignment.html#Xtensa-Automatic-Alignment">9.53.3.2 Automatic Instruction Alignment</a></li>
-      </ul></li>
-      <li><a name="toc-Xtensa-Relaxation-1" href="Xtensa-Relaxation.html#Xtensa-Relaxation">9.53.4 Xtensa Relaxation</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Conditional-Branch-Relaxation" href="Xtensa-Branch-Relaxation.html#Xtensa-Branch-Relaxation">9.53.4.1 Conditional Branch Relaxation</a></li>
-        <li><a name="toc-Function-Call-Relaxation" href="Xtensa-Call-Relaxation.html#Xtensa-Call-Relaxation">9.53.4.2 Function Call Relaxation</a></li>
-        <li><a name="toc-Jump-Relaxation" href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation">9.53.4.3 Jump Relaxation</a></li>
-        <li><a name="toc-Other-Immediate-Field-Relaxation" href="Xtensa-Immediate-Relaxation.html#Xtensa-Immediate-Relaxation">9.53.4.4 Other Immediate Field Relaxation</a></li>
-      </ul></li>
-      <li><a name="toc-Directives-3" href="Xtensa-Directives.html#Xtensa-Directives">9.53.5 Directives</a>
-      <ul class="no-bullet">
-        <li><a name="toc-schedule" href="Schedule-Directive.html#Schedule-Directive">9.53.5.1 schedule</a></li>
-        <li><a name="toc-longcalls" href="Longcalls-Directive.html#Longcalls-Directive">9.53.5.2 longcalls</a></li>
-        <li><a name="toc-transform" href="Transform-Directive.html#Transform-Directive">9.53.5.3 transform</a></li>
-        <li><a name="toc-literal" href="Literal-Directive.html#Literal-Directive">9.53.5.4 literal</a></li>
-        <li><a name="toc-literal_005fposition" href="Literal-Position-Directive.html#Literal-Position-Directive">9.53.5.5 literal_position</a></li>
-        <li><a name="toc-literal_005fprefix" href="Literal-Prefix-Directive.html#Literal-Prefix-Directive">9.53.5.6 literal_prefix</a></li>
-        <li><a name="toc-absolute_002dliterals" href="Absolute-Literals-Directive.html#Absolute-Literals-Directive">9.53.5.7 absolute-literals</a></li>
+        <li><a name="toc-Special-Characters-36" href="TIC54X_002dChars.html#TIC54X_002dChars">9.43.12.1 Special Characters</a></li>
       </ul></li>
     </ul></li>
-    <li><a name="toc-Z80-Dependent-Features" href="Z80_002dDependent.html#Z80_002dDependent">9.54 Z80 Dependent Features</a>
+    <li><a name="toc-TIC6X-Dependent-Features" href="TIC6X_002dDependent.html#TIC6X_002dDependent">9.44 TIC6X Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-30" href="Z80-Options.html#Z80-Options">9.54.1 Options</a></li>
-      <li><a name="toc-Syntax-32" href="Z80-Syntax.html#Z80-Syntax">9.54.2 Syntax</a>
-      <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-41" href="Z80_002dChars.html#Z80_002dChars">9.54.2.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-21" href="Z80_002dRegs.html#Z80_002dRegs">9.54.2.2 Register Names</a></li>
-        <li><a name="toc-Case-Sensitivity" href="Z80_002dCase.html#Z80_002dCase">9.54.2.3 Case Sensitivity</a></li>
-      </ul></li>
-      <li><a name="toc-Floating-Point-19" href="Z80-Floating-Point.html#Z80-Floating-Point">9.54.3 Floating Point</a></li>
-      <li><a name="toc-Z80-Assembler-Directives" href="Z80-Directives.html#Z80-Directives">9.54.4 Z80 Assembler Directives</a></li>
-      <li><a name="toc-Opcodes-21" href="Z80-Opcodes.html#Z80-Opcodes">9.54.5 Opcodes</a></li>
+      <li><a name="toc-TIC6X-Options-1" href="TIC6X-Options.html#TIC6X-Options">9.44.1 TIC6X Options</a></li>
+      <li><a name="toc-TIC6X-Syntax-1" href="TIC6X-Syntax.html#TIC6X-Syntax">9.44.2 TIC6X Syntax</a></li>
+      <li><a name="toc-TIC6X-Directives-1" href="TIC6X-Directives.html#TIC6X-Directives">9.44.3 TIC6X Directives</a></li>
     </ul></li>
-    <li><a name="toc-Z8000-Dependent-Features" href="Z8000_002dDependent.html#Z8000_002dDependent">9.55 Z8000 Dependent Features</a>
+    <li><a name="toc-TILE_002dGx-Dependent-Features" href="TILE_002dGx_002dDependent.html#TILE_002dGx_002dDependent">9.45 TILE-Gx Dependent Features</a>
     <ul class="no-bullet">
-      <li><a name="toc-Options-31" href="Z8000-Options.html#Z8000-Options">9.55.1 Options</a></li>
-      <li><a name="toc-Syntax-33" href="Z8000-Syntax.html#Z8000-Syntax">9.55.2 Syntax</a>
+      <li><a name="toc-Options-25" href="TILE_002dGx-Options.html#TILE_002dGx-Options">9.45.1 Options</a></li>
+      <li><a name="toc-Syntax-26" href="TILE_002dGx-Syntax.html#TILE_002dGx-Syntax">9.45.2 Syntax</a>
       <ul class="no-bullet">
-        <li><a name="toc-Special-Characters-42" href="Z8000_002dChars.html#Z8000_002dChars">9.55.2.1 Special Characters</a></li>
-        <li><a name="toc-Register-Names-22" href="Z8000_002dRegs.html#Z8000_002dRegs">9.55.2.2 Register Names</a></li>
-        <li><a name="toc-Addressing-Modes-5" href="Z8000_002dAddressing.html#Z8000_002dAddressing">9.55.2.3 Addressing Modes</a></li>
+        <li><a name="toc-Opcode-Names" href="TILE_002dGx-Opcodes.html#TILE_002dGx-Opcodes">9.45.2.1 Opcode Names</a></li>
+        <li><a name="toc-Register-Names-16" href="TILE_002dGx-Registers.html#TILE_002dGx-Registers">9.45.2.2 Register Names</a></li>
+        <li><a name="toc-Symbolic-Operand-Modifiers-4" href="TILE_002dGx-Modifiers.html#TILE_002dGx-Modifiers">9.45.2.3 Symbolic Operand Modifiers</a></li>
       </ul></li>
-      <li><a name="toc-Assembler-Directives-for-the-Z8000" href="Z8000-Directives.html#Z8000-Directives">9.55.3 Assembler Directives for the Z8000</a></li>
-      <li><a name="toc-Opcodes-22" href="Z8000-Opcodes.html#Z8000-Opcodes">9.55.4 Opcodes</a></li>
+      <li><a name="toc-TILE_002dGx-Directives-1" href="TILE_002dGx-Directives.html#TILE_002dGx-Directives">9.45.3 TILE-Gx Directives</a></li>
+    </ul></li>
+    <li><a name="toc-TILEPro-Dependent-Features" href="TILEPro_002dDependent.html#TILEPro_002dDependent">9.46 TILEPro Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Options-26" href="TILEPro-Options.html#TILEPro-Options">9.46.1 Options</a></li>
+      <li><a name="toc-Syntax-27" href="TILEPro-Syntax.html#TILEPro-Syntax">9.46.2 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Opcode-Names-1" href="TILEPro-Opcodes.html#TILEPro-Opcodes">9.46.2.1 Opcode Names</a></li>
+        <li><a name="toc-Register-Names-17" href="TILEPro-Registers.html#TILEPro-Registers">9.46.2.2 Register Names</a></li>
+        <li><a name="toc-Symbolic-Operand-Modifiers-5" href="TILEPro-Modifiers.html#TILEPro-Modifiers">9.46.2.3 Symbolic Operand Modifiers</a></li>
+      </ul></li>
+      <li><a name="toc-TILEPro-Directives-1" href="TILEPro-Directives.html#TILEPro-Directives">9.46.3 TILEPro Directives</a></li>
+    </ul></li>
+    <li><a name="toc-v850-Dependent-Features" href="V850_002dDependent.html#V850_002dDependent">9.47 v850 Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Options-27" href="V850-Options.html#V850-Options">9.47.1 Options</a></li>
+      <li><a name="toc-Syntax-28" href="V850-Syntax.html#V850-Syntax">9.47.2 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-37" href="V850_002dChars.html#V850_002dChars">9.47.2.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-18" href="V850_002dRegs.html#V850_002dRegs">9.47.2.2 Register Names</a></li>
+      </ul></li>
+      <li><a name="toc-Floating-Point-17" href="V850-Floating-Point.html#V850-Floating-Point">9.47.3 Floating Point</a></li>
+      <li><a name="toc-V850-Machine-Directives" href="V850-Directives.html#V850-Directives">9.47.4 V850 Machine Directives</a></li>
+      <li><a name="toc-Opcodes-18" href="V850-Opcodes.html#V850-Opcodes">9.47.5 Opcodes</a></li>
+    </ul></li>
+    <li><a name="toc-VAX-Dependent-Features" href="Vax_002dDependent.html#Vax_002dDependent">9.48 VAX Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-VAX-Command_002dLine-Options" href="VAX_002dOpts.html#VAX_002dOpts">9.48.1 VAX Command-Line Options</a></li>
+      <li><a name="toc-VAX-Floating-Point" href="VAX_002dfloat.html#VAX_002dfloat">9.48.2 VAX Floating Point</a></li>
+      <li><a name="toc-Vax-Machine-Directives" href="VAX_002ddirectives.html#VAX_002ddirectives">9.48.3 Vax Machine Directives</a></li>
+      <li><a name="toc-VAX-Opcodes" href="VAX_002dopcodes.html#VAX_002dopcodes">9.48.4 VAX Opcodes</a></li>
+      <li><a name="toc-VAX-Branch-Improvement" href="VAX_002dbranch.html#VAX_002dbranch">9.48.5 VAX Branch Improvement</a></li>
+      <li><a name="toc-VAX-Operands" href="VAX_002doperands.html#VAX_002doperands">9.48.6 VAX Operands</a></li>
+      <li><a name="toc-Not-Supported-on-VAX" href="VAX_002dno.html#VAX_002dno">9.48.7 Not Supported on VAX</a></li>
+      <li><a name="toc-VAX-Syntax" href="VAX_002dSyntax.html#VAX_002dSyntax">9.48.8 VAX Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-38" href="VAX_002dChars.html#VAX_002dChars">9.48.8.1 Special Characters</a></li>
+      </ul></li>
+    </ul></li>
+    <li><a name="toc-Visium-Dependent-Features" href="Visium_002dDependent.html#Visium_002dDependent">9.49 Visium Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Options-28" href="Visium-Options.html#Visium-Options">9.49.1 Options</a></li>
+      <li><a name="toc-Syntax-29" href="Visium-Syntax.html#Visium-Syntax">9.49.2 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-39" href="Visium-Characters.html#Visium-Characters">9.49.2.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-19" href="Visium-Registers.html#Visium-Registers">9.49.2.2 Register Names</a></li>
+      </ul></li>
+      <li><a name="toc-Opcodes-19" href="Visium-Opcodes.html#Visium-Opcodes">9.49.3 Opcodes</a></li>
+    </ul></li>
+    <li><a name="toc-XGATE-Dependent-Features" href="XGATE_002dDependent.html#XGATE_002dDependent">9.50 XGATE Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-XGATE-Options" href="XGATE_002dOpts.html#XGATE_002dOpts">9.50.1 XGATE Options</a></li>
+      <li><a name="toc-Syntax-30" href="XGATE_002dSyntax.html#XGATE_002dSyntax">9.50.2 Syntax</a></li>
+      <li><a name="toc-Assembler-Directives-8" href="XGATE_002dDirectives.html#XGATE_002dDirectives">9.50.3 Assembler Directives</a></li>
+      <li><a name="toc-Floating-Point-18" href="XGATE_002dFloat.html#XGATE_002dFloat">9.50.4 Floating Point</a></li>
+      <li><a name="toc-Opcodes-20" href="XGATE_002dopcodes.html#XGATE_002dopcodes">9.50.5 Opcodes</a></li>
+    </ul></li>
+    <li><a name="toc-XStormy16-Dependent-Features" href="XSTORMY16_002dDependent.html#XSTORMY16_002dDependent">9.51 XStormy16 Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Syntax-31" href="XStormy16-Syntax.html#XStormy16-Syntax">9.51.1 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-40" href="XStormy16_002dChars.html#XStormy16_002dChars">9.51.1.1 Special Characters</a></li>
+      </ul></li>
+      <li><a name="toc-XStormy16-Machine-Directives" href="XStormy16-Directives.html#XStormy16-Directives">9.51.2 XStormy16 Machine Directives</a></li>
+      <li><a name="toc-XStormy16-Pseudo_002dOpcodes" href="XStormy16-Opcodes.html#XStormy16-Opcodes">9.51.3 XStormy16 Pseudo-Opcodes</a></li>
+    </ul></li>
+    <li><a name="toc-Xtensa-Dependent-Features" href="Xtensa_002dDependent.html#Xtensa_002dDependent">9.52 Xtensa Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Command-Line-Options" href="Xtensa-Options.html#Xtensa-Options">9.52.1 Command Line Options</a></li>
+      <li><a name="toc-Assembler-Syntax" href="Xtensa-Syntax.html#Xtensa-Syntax">9.52.2 Assembler Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Opcode-Names-2" href="Xtensa-Opcodes.html#Xtensa-Opcodes">9.52.2.1 Opcode Names</a></li>
+        <li><a name="toc-Register-Names-20" href="Xtensa-Registers.html#Xtensa-Registers">9.52.2.2 Register Names</a></li>
+      </ul></li>
+      <li><a name="toc-Xtensa-Optimizations-1" href="Xtensa-Optimizations.html#Xtensa-Optimizations">9.52.3 Xtensa Optimizations</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Using-Density-Instructions" href="Density-Instructions.html#Density-Instructions">9.52.3.1 Using Density Instructions</a></li>
+        <li><a name="toc-Automatic-Instruction-Alignment" href="Xtensa-Automatic-Alignment.html#Xtensa-Automatic-Alignment">9.52.3.2 Automatic Instruction Alignment</a></li>
+      </ul></li>
+      <li><a name="toc-Xtensa-Relaxation-1" href="Xtensa-Relaxation.html#Xtensa-Relaxation">9.52.4 Xtensa Relaxation</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Conditional-Branch-Relaxation" href="Xtensa-Branch-Relaxation.html#Xtensa-Branch-Relaxation">9.52.4.1 Conditional Branch Relaxation</a></li>
+        <li><a name="toc-Function-Call-Relaxation" href="Xtensa-Call-Relaxation.html#Xtensa-Call-Relaxation">9.52.4.2 Function Call Relaxation</a></li>
+        <li><a name="toc-Jump-Relaxation" href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation">9.52.4.3 Jump Relaxation</a></li>
+        <li><a name="toc-Other-Immediate-Field-Relaxation" href="Xtensa-Immediate-Relaxation.html#Xtensa-Immediate-Relaxation">9.52.4.4 Other Immediate Field Relaxation</a></li>
+      </ul></li>
+      <li><a name="toc-Directives-3" href="Xtensa-Directives.html#Xtensa-Directives">9.52.5 Directives</a>
+      <ul class="no-bullet">
+        <li><a name="toc-schedule" href="Schedule-Directive.html#Schedule-Directive">9.52.5.1 schedule</a></li>
+        <li><a name="toc-longcalls" href="Longcalls-Directive.html#Longcalls-Directive">9.52.5.2 longcalls</a></li>
+        <li><a name="toc-transform" href="Transform-Directive.html#Transform-Directive">9.52.5.3 transform</a></li>
+        <li><a name="toc-literal" href="Literal-Directive.html#Literal-Directive">9.52.5.4 literal</a></li>
+        <li><a name="toc-literal_005fposition" href="Literal-Position-Directive.html#Literal-Position-Directive">9.52.5.5 literal_position</a></li>
+        <li><a name="toc-literal_005fprefix" href="Literal-Prefix-Directive.html#Literal-Prefix-Directive">9.52.5.6 literal_prefix</a></li>
+        <li><a name="toc-absolute_002dliterals" href="Absolute-Literals-Directive.html#Absolute-Literals-Directive">9.52.5.7 absolute-literals</a></li>
+      </ul></li>
+    </ul></li>
+    <li><a name="toc-Z80-Dependent-Features" href="Z80_002dDependent.html#Z80_002dDependent">9.53 Z80 Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Options-29" href="Z80-Options.html#Z80-Options">9.53.1 Options</a></li>
+      <li><a name="toc-Syntax-32" href="Z80-Syntax.html#Z80-Syntax">9.53.2 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-41" href="Z80_002dChars.html#Z80_002dChars">9.53.2.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-21" href="Z80_002dRegs.html#Z80_002dRegs">9.53.2.2 Register Names</a></li>
+        <li><a name="toc-Case-Sensitivity" href="Z80_002dCase.html#Z80_002dCase">9.53.2.3 Case Sensitivity</a></li>
+      </ul></li>
+      <li><a name="toc-Floating-Point-19" href="Z80-Floating-Point.html#Z80-Floating-Point">9.53.3 Floating Point</a></li>
+      <li><a name="toc-Z80-Assembler-Directives" href="Z80-Directives.html#Z80-Directives">9.53.4 Z80 Assembler Directives</a></li>
+      <li><a name="toc-Opcodes-21" href="Z80-Opcodes.html#Z80-Opcodes">9.53.5 Opcodes</a></li>
+    </ul></li>
+    <li><a name="toc-Z8000-Dependent-Features" href="Z8000_002dDependent.html#Z8000_002dDependent">9.54 Z8000 Dependent Features</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Options-30" href="Z8000-Options.html#Z8000-Options">9.54.1 Options</a></li>
+      <li><a name="toc-Syntax-33" href="Z8000-Syntax.html#Z8000-Syntax">9.54.2 Syntax</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Special-Characters-42" href="Z8000_002dChars.html#Z8000_002dChars">9.54.2.1 Special Characters</a></li>
+        <li><a name="toc-Register-Names-22" href="Z8000_002dRegs.html#Z8000_002dRegs">9.54.2.2 Register Names</a></li>
+        <li><a name="toc-Addressing-Modes-5" href="Z8000_002dAddressing.html#Z8000_002dAddressing">9.54.2.3 Addressing Modes</a></li>
+      </ul></li>
+      <li><a name="toc-Assembler-Directives-for-the-Z8000" href="Z8000-Directives.html#Z8000-Directives">9.54.3 Assembler Directives for the Z8000</a></li>
+      <li><a name="toc-Opcodes-22" href="Z8000-Opcodes.html#Z8000-Opcodes">9.54.4 Opcodes</a></li>
     </ul></li>
   </ul></li>
   <li><a name="toc-Reporting-Bugs-1" href="Reporting-Bugs.html#Reporting-Bugs">10 Reporting Bugs</a>
@@ -1025,8 +1020,8 @@ Next: <a href="Overview.html#Overview" accesskey="n" rel="next">Overview</a>, Up
 <h1 class="top">Using as</h1>
 
 <p>This file is a user guide to the <small>GNU</small> assembler <code>as</code>
-(GNU Binutils)
-version 2.28.
+(Linaro_Binutils-2017.05)
+version 2.27.0.
 </p>
 <p>This document is distributed under the terms of the GNU Free
 Documentation License.  A copy of the license is included in the

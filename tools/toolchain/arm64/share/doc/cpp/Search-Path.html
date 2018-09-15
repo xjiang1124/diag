@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1987-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1987-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -78,49 +78,74 @@ Next: <a href="Once_002dOnly-Headers.html#Once_002dOnly-Headers" accesskey="n" r
 <a name="Search-Path-1"></a>
 <h3 class="section">2.3 Search Path</h3>
 
-<p>By default, the preprocessor looks for header files included by the quote
-form of the directive <code>#include&nbsp;&quot;<var>file</var>&quot;<!-- /@w --></code> first relative to
-the directory of the current file, and then in a preconfigured list 
-of standard system directories.  
-For example, if <samp>/usr/include/sys/stat.h</samp> contains
+<p>GCC looks in several different places for headers.  On a normal Unix
+system, if you do not instruct it otherwise, it will look for headers
+requested with <code>#include&nbsp;&lt;<var>file</var>&gt;<!-- /@w --></code> in:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/usr/local/include
+<var>libdir</var>/gcc/<var>target</var>/<var>version</var>/include
+/usr/<var>target</var>/include
+/usr/include
+</pre></div>
+
+<p>For C++ programs, it will also look in
+<samp><var>libdir</var>/../include/c++/<var>version</var></samp>,
+first.  In the above, <var>target</var> is the canonical name of the system
+GCC was configured to compile code for; often but not always the same as
+the canonical name of the system it runs on.  <var>version</var> is the
+version of GCC in use.
+</p>
+<p>You can add to this list with the <samp>-I<var>dir</var></samp> command-line
+option.  All the directories named by <samp>-I</samp> are searched, in
+left-to-right order, <em>before</em> the default directories.  The only
+exception is when <samp>dir</samp> is already searched by default.  In
+this case, the option is ignored and the search order for system
+directories remains unchanged.
+</p>
+<p>Duplicate directories are removed from the quote and bracket search
+chains before the two chains are merged to make the final search chain.
+Thus, it is possible for a directory to occur twice in the final search
+chain if it was specified in both the quote and bracket chains.
+</p>
+<p>You can prevent GCC from searching any of the default directories with
+the <samp>-nostdinc</samp> option.  This is useful when you are compiling an
+operating system kernel or some other program that does not use the
+standard C library facilities, or the standard C library itself.
+<samp>-I</samp> options are not ignored as described above when
+<samp>-nostdinc</samp> is in effect.
+</p>
+<p>GCC looks for headers requested with <code>#include&nbsp;&quot;<var>file</var>&quot;<!-- /@w --></code>
+first in the directory containing the current file, then in the
+directories as specified by <samp>-iquote</samp> options, then in the same
+places it would have looked for a header requested with angle
+brackets.  For example, if <samp>/usr/include/sys/stat.h</samp> contains
 <code>#include&nbsp;&quot;types.h&quot;<!-- /@w --></code>, GCC looks for <samp>types.h</samp> first in
 <samp>/usr/include/sys</samp>, then in its usual search path.
 </p>
-<p>For the angle-bracket form <code>#include&nbsp;&lt;<var>file</var>&gt;<!-- /@w --></code>, the
-preprocessor&rsquo;s default behavior is to look only in the standard system
-directories.  The exact search directory list depends on the target
-system, how GCC is configured, and where it is installed.  You can
-find the default search directory list for your version of CPP by
-invoking it with the <samp>-v</samp> option.  For example,
+<p>&lsquo;<samp>#line</samp>&rsquo; (see <a href="Line-Control.html#Line-Control">Line Control</a>) does not change GCC&rsquo;s idea of the
+directory containing the current file.
 </p>
-<div class="smallexample">
-<pre class="smallexample">cpp -v /dev/null -o /dev/null
-</pre></div>
-
-<p>There are a number of command-line options you can use to add
-additional directories to the search path.  
-The most commonly-used option is <samp>-I<var>dir</var></samp>, which causes 
-<var>dir</var> to be searched after the current directory (for the quote 
-form of the directive) and ahead of the standard system directories.
-You can specify multiple <samp>-I</samp> options on the command line, 
-in which case the directories are searched in left-to-right order.
+<p>You may put <samp>-I-</samp> at any point in your list of <samp>-I</samp> options.
+This has two effects.  First, directories appearing before the
+<samp>-I-</samp> in the list are searched only for headers requested with
+quote marks.  Directories after <samp>-I-</samp> are searched for all
+headers.  Second, the directory containing the current file is not
+searched for anything, unless it happens to be one of the directories
+named by an <samp>-I</samp> switch.  <samp>-I-</samp> is deprecated, <samp>-iquote</samp>
+should be used instead.
 </p>
-<p>If you need separate control over the search paths for the quote and 
-angle-bracket forms of the &lsquo;<samp>#include</samp>&rsquo; directive, you can use the
-<samp>-iquote</samp> and/or <samp>-isystem</samp> options instead of <samp>-I</samp>.
-See <a href="Invocation.html#Invocation">Invocation</a>, for a detailed description of these options, as 
-well as others that are less generally useful.
+<p><samp>-I. -I-</samp> is not the same as no <samp>-I</samp> options at all, and does
+not cause the same behavior for &lsquo;<samp>&lt;&gt;</samp>&rsquo; includes that &lsquo;<samp>&quot;&quot;</samp>&rsquo;
+includes get with no special options.  <samp>-I.</samp> searches the
+compiler&rsquo;s current working directory for header files.  That may or may
+not be the same as the directory containing the current file.
 </p>
-<p>If you specify other options on the command line, such as <samp>-I</samp>,
-that affect where the preprocessor searches for header files, the
-directory list printed by the <samp>-v</samp> option reflects the actual
-search path used by the preprocessor.
+<p>If you need to look for headers in a directory named <samp>-</samp>, write
+<samp>-I./-</samp>.
 </p>
-<p>Note that you can also prevent the preprocessor from searching any of
-the default system header directories with the <samp>-nostdinc</samp>
-option.  This is useful when you are compiling an operating system
-kernel or some other program that does not use the standard C library
-facilities, or the standard C library itself.
+<p>There are several more ways to adjust the header search path.  They are
+generally less useful.  See <a href="Invocation.html#Invocation">Invocation</a>.
 </p>
 <hr>
 <div class="header">

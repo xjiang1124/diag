@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -34,7 +34,7 @@ You have freedom to copy and modify this GNU Manual, like GNU
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
 <link href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" rel="next" title="RS/6000 and PowerPC Options">
-<link href="RISC_002dV-Options.html#RISC_002dV-Options" rel="prev" title="RISC-V Options">
+<link href="PowerPC-Options.html#PowerPC-Options" rel="prev" title="PowerPC Options">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -71,11 +71,11 @@ ul.no-bullet {list-style: none}
 <a name="RL78-Options"></a>
 <div class="header">
 <p>
-Next: <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" accesskey="n" rel="next">RS/6000 and PowerPC Options</a>, Previous: <a href="RISC_002dV-Options.html#RISC_002dV-Options" accesskey="p" rel="prev">RISC-V Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" accesskey="n" rel="next">RS/6000 and PowerPC Options</a>, Previous: <a href="PowerPC-Options.html#PowerPC-Options" accesskey="p" rel="prev">PowerPC Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <a name="RL78-Options-1"></a>
-<h4 class="subsection">3.18.38 RL78 Options</h4>
+<h4 class="subsection">3.18.37 RL78 Options</h4>
 <a name="index-RL78-Options"></a>
 
 <dl compact="compact">
@@ -166,27 +166,12 @@ or 32 bits (<samp>-m32bit-doubles</samp>) in size.  The default is
 <samp>-m32bit-doubles</samp>.
 </p>
 </dd>
-<dt><code>-msave-mduc-in-interrupts</code></dt>
-<dt><code>-mno-save-mduc-in-interrupts</code></dt>
-<dd><a name="index-msave_002dmduc_002din_002dinterrupts"></a>
-<a name="index-mno_002dsave_002dmduc_002din_002dinterrupts"></a>
-<p>Specifies that interrupt handler functions should preserve the
-MDUC registers.  This is only necessary if normal code might use
-the MDUC registers, for example because it performs multiplication
-and division operations.  The default is to ignore the MDUC registers
-as this makes the interrupt handlers faster.  The target option -mg13
-needs to be passed for this to work as this feature is only available
-on the G13 target (S2 core).  The MDUC registers will only be saved
-if the interrupt handler performs a multiplication or division
-operation or it calls another function.
-</p>
-</dd>
 </dl>
 
 <hr>
 <div class="header">
 <p>
-Next: <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" accesskey="n" rel="next">RS/6000 and PowerPC Options</a>, Previous: <a href="RISC_002dV-Options.html#RISC_002dV-Options" accesskey="p" rel="prev">RISC-V Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" accesskey="n" rel="next">RS/6000 and PowerPC Options</a>, Previous: <a href="PowerPC-Options.html#PowerPC-Options" accesskey="p" rel="prev">PowerPC Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

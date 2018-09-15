@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1996-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -18,10 +18,12 @@
 #ifndef _SYS_ACCT_H
 #define _SYS_ACCT_H	1
 
-#include <sys/types.h>
-#include <stdint.h>
+#include <features.h>
+
 #include <endian.h>
-#include <bits/types/time_t.h>
+#define	__need_time_t
+#include <time.h>
+#include <sys/types.h>
 
 __BEGIN_DECLS
 
@@ -33,15 +35,15 @@ __BEGIN_DECLS
   specific encoding system used.
 */
 
-typedef uint16_t comp_t;
+typedef u_int16_t comp_t;
 
 struct acct
 {
   char ac_flag;			/* Flags.  */
-  uint16_t ac_uid;		/* Real user ID.  */
-  uint16_t ac_gid;		/* Real group ID.  */
-  uint16_t ac_tty;		/* Controlling terminal.  */
-  uint32_t ac_btime;		/* Beginning time.  */
+  u_int16_t ac_uid;		/* Real user ID.  */
+  u_int16_t ac_gid;		/* Real group ID.  */
+  u_int16_t ac_tty;		/* Controlling terminal.  */
+  u_int32_t ac_btime;		/* Beginning time.  */
   comp_t ac_utime;		/* User time.  */
   comp_t ac_stime;		/* System time.  */
   comp_t ac_etime;		/* Elapsed time.  */
@@ -51,7 +53,7 @@ struct acct
   comp_t ac_minflt;		/* Minor pagefaults.  */
   comp_t ac_majflt;		/* Major pagefaults.  */
   comp_t ac_swaps;		/* Number of swaps.  */
-  uint32_t ac_exitcode;		/* Process exitcode.  */
+  u_int32_t ac_exitcode;	/* Process exitcode.  */
   char ac_comm[ACCT_COMM+1];	/* Command name.  */
   char ac_pad[10];		/* Padding bytes.  */
 };
@@ -61,13 +63,13 @@ struct acct_v3
 {
   char ac_flag;			/* Flags */
   char ac_version;		/* Always set to ACCT_VERSION */
-  uint16_t ac_tty;		/* Control Terminal */
-  uint32_t ac_exitcode;		/* Exitcode */
-  uint32_t ac_uid;		/* Real User ID */
-  uint32_t ac_gid;		/* Real Group ID */
-  uint32_t ac_pid;		/* Process ID */
-  uint32_t ac_ppid;		/* Parent Process ID */
-  uint32_t ac_btime;		/* Process Creation Time */
+  u_int16_t ac_tty;		/* Control Terminal */
+  u_int32_t ac_exitcode;	/* Exitcode */
+  u_int32_t ac_uid;		/* Real User ID */
+  u_int32_t ac_gid;		/* Real Group ID */
+  u_int32_t ac_pid;		/* Process ID */
+  u_int32_t ac_ppid;		/* Parent Process ID */
+  u_int32_t ac_btime;		/* Process Creation Time */
   float ac_etime;		/* Elapsed Time */
   comp_t ac_utime;		/* User Time */
   comp_t ac_stime;		/* System Time */

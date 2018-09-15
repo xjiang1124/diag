@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1987-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1987-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -103,10 +103,13 @@ which use it.  Otherwise, the precompiled headers will not be used.
 <dd><p>These macros are defined by all GNU compilers that use the C
 preprocessor: C, C++, Objective-C and Fortran.  Their values are the major
 version, minor version, and patch level of the compiler, as integer
-constants.  For example, GCC version <var>x</var>.<var>y</var>.<var>z</var>
-defines <code>__GNUC__</code> to <var>x</var>, <code>__GNUC_MINOR__</code> to <var>y</var>,
-and <code>__GNUC_PATCHLEVEL__</code> to <var>z</var>.  These
+constants.  For example, GCC 3.2.1 will define <code>__GNUC__</code> to 3,
+<code>__GNUC_MINOR__</code> to 2, and <code>__GNUC_PATCHLEVEL__</code> to 1.  These
 macros are also defined if you invoke the preprocessor directly.
+</p>
+<p><code>__GNUC_PATCHLEVEL__</code> is new to GCC 3.0; it is also present in the
+widely-used development snapshots leading up to 3.0 (which identify
+themselves as GCC 2.96 or 2.97, depending on which snapshot you have).
 </p>
 <p>If all you need to know is whether or not your program is being compiled
 by GCC, or a non-GCC compiler that claims to accept the GNU C dialects,
@@ -150,8 +153,9 @@ testing <code><span class="nolinebreak">(__GNUC__</span>&nbsp;&amp;&amp;&nbsp;<s
 <dd><p>GCC defines this macro if and only if the <samp>-ansi</samp> switch, or a
 <samp>-std</samp> switch specifying strict conformance to some version of ISO C
 or ISO C++, was specified when GCC was invoked.  It is defined to &lsquo;<samp>1</samp>&rsquo;.
-This macro exists primarily to direct GNU libc&rsquo;s header files to use only
-definitions found in standard C.
+This macro exists primarily to direct GNU libc&rsquo;s header files to
+restrict their definitions to the minimal set found in the 1989 C
+standard.
 </p>
 </dd>
 <dt><code>__BASE_FILE__</code></dt>
@@ -206,13 +210,17 @@ definitions of any functions declared <code>extern inline</code>.
 </dd>
 <dt><code>__GNUC_STDC_INLINE__</code></dt>
 <dd><p>GCC defines this macro if functions declared <code>inline</code> will be
-handled according to the ISO C99 or later standards.  Object files will contain
+handled according to the ISO C99 standard.  Object files will contain
 externally visible definitions of all functions declared <code>extern
 inline</code>.  They will not contain definitions of any functions declared
 <code>inline</code> without <code>extern</code>.
 </p>
 <p>If this macro is defined, GCC supports the <code>gnu_inline</code> function
-attribute as a way to always get the gnu90 behavior.
+attribute as a way to always get the gnu90 behavior.  Support for
+this and <code>__GNUC_GNU_INLINE__</code> was added in GCC 4.1.3.  If
+neither macro is defined, an older version of GCC is being used:
+<code>inline</code> functions will be compiled in gnu90 mode, and the
+<code>gnu_inline</code> function attribute will not be recognized.
 </p>
 </dd>
 <dt><code>__CHAR_UNSIGNED__</code></dt>
@@ -387,34 +395,6 @@ of these macros may not be defined on particular systems if GCC does
 not provide a <samp>stdint.h</samp> header on those systems.
 </p>
 </dd>
-<dt><code>__SCHAR_WIDTH__</code></dt>
-<dt><code>__SHRT_WIDTH__</code></dt>
-<dt><code>__INT_WIDTH__</code></dt>
-<dt><code>__LONG_WIDTH__</code></dt>
-<dt><code>__LONG_LONG_WIDTH__</code></dt>
-<dt><code>__PTRDIFF_WIDTH__</code></dt>
-<dt><code>__SIG_ATOMIC_WIDTH__</code></dt>
-<dt><code>__SIZE_WIDTH__</code></dt>
-<dt><code>__WCHAR_WIDTH__</code></dt>
-<dt><code>__WINT_WIDTH__</code></dt>
-<dt><code>__INT_LEAST8_WIDTH__</code></dt>
-<dt><code>__INT_LEAST16_WIDTH__</code></dt>
-<dt><code>__INT_LEAST32_WIDTH__</code></dt>
-<dt><code>__INT_LEAST64_WIDTH__</code></dt>
-<dt><code>__INT_FAST8_WIDTH__</code></dt>
-<dt><code>__INT_FAST16_WIDTH__</code></dt>
-<dt><code>__INT_FAST32_WIDTH__</code></dt>
-<dt><code>__INT_FAST64_WIDTH__</code></dt>
-<dt><code>__INTPTR_WIDTH__</code></dt>
-<dt><code>__INTMAX_WIDTH__</code></dt>
-<dd><p>Defined to the bit widths of the corresponding types.  They exist to
-make the implementations of <samp>limits.h</samp> and <samp>stdint.h</samp> behave
-correctly.  You should not use these macros directly; instead, include
-the appropriate headers.  Some of these macros may not be defined on
-particular systems if GCC does not provide a <samp>stdint.h</samp> header on
-those systems.
-</p>
-</dd>
 <dt><code>__SIZEOF_INT__</code></dt>
 <dt><code>__SIZEOF_LONG__</code></dt>
 <dt><code>__SIZEOF_LONG_LONG__</code></dt>
@@ -544,10 +524,6 @@ in use.
 <dt><code>__SANITIZE_ADDRESS__</code></dt>
 <dd><p>This macro is defined, with value 1, when <samp>-fsanitize=address</samp>
 or <samp>-fsanitize=kernel-address</samp> are in use.
-</p>
-</dd>
-<dt><code>__SANITIZE_THREAD__</code></dt>
-<dd><p>This macro is defined, with value 1, when <samp>-fsanitize=thread</samp> is in use.
 </p>
 </dd>
 <dt><code>__TIMESTAMP__</code></dt>

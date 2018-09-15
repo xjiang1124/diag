@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -140,6 +140,11 @@ tables, and hence is desirable if it works.
 </p></dd></dl>
 
 <dl>
+<dt><a name="index-TARGET_005fFORCE_005fAT_005fCOMP_005fDIR"></a>Target Hook: <em>bool</em> <strong>TARGET_FORCE_AT_COMP_DIR</strong></dt>
+<dd><p>True if the <code>DW_AT_comp_dir</code> attribute should be emitted for each  compilation unit.  This attribute is required for the darwin linker  to emit debug information.
+</p></dd></dl>
+
+<dl>
 <dt><a name="index-TARGET_005fDELAY_005fSCHED2"></a>Target Hook: <em>bool</em> <strong>TARGET_DELAY_SCHED2</strong></dt>
 <dd><p>True if sched2 is not to be run at its normal place.
 This usually means it will be run as part of machine-specific reorg.
@@ -172,11 +177,10 @@ slots on IA64 VMS, using an integer of the given size.
 </p></dd></dl>
 
 <dl>
-<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fOFFSET"></a>Macro: <strong>ASM_OUTPUT_DWARF_OFFSET</strong> <em>(<var>stream</var>, <var>size</var>, <var>label</var>, <var>offset</var>, <var>section</var>)</em></dt>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fOFFSET"></a>Macro: <strong>ASM_OUTPUT_DWARF_OFFSET</strong> <em>(<var>stream</var>, <var>size</var>, <var>label</var>, <var>section</var>)</em></dt>
 <dd><p>A C statement to issue assembly directives that create a
-section-relative reference to the given <var>label</var> plus <var>offset</var>, using
-an integer of the given <var>size</var>.  The label is known to be defined in the
-given <var>section</var>.
+section-relative reference to the given <var>label</var>, using an integer of the
+given <var>size</var>.  The label is known to be defined in the given <var>section</var>.
 </p></dd></dl>
 
 <dl>

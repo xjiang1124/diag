@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,7 +75,7 @@ Next: <a href="RANGE.html#RANGE" accesskey="n" rel="next">RANGE</a>, Previous: <
 </div>
 <hr>
 <a name="RANDOM_005fSEED-_002d_002d_002d-Initialize-a-pseudo_002drandom-number-sequence"></a>
-<h3 class="section">9.223 <code>RANDOM_SEED</code> &mdash; Initialize a pseudo-random number sequence</h3>
+<h3 class="section">9.216 <code>RANDOM_SEED</code> &mdash; Initialize a pseudo-random number sequence</h3>
 <a name="index-RANDOM_005fSEED"></a>
 <a name="index-random-number-generation_002c-seeding"></a>
 <a name="index-seeding-a-random-number-generator"></a>
@@ -85,20 +85,12 @@ Next: <a href="RANGE.html#RANGE" accesskey="n" rel="next">RANGE</a>, Previous: <
 <dd><p>Restarts or queries the state of the pseudorandom number generator used by 
 <code>RANDOM_NUMBER</code>.
 </p>
-<p>If <code>RANDOM_SEED</code> is called without arguments, it is seeded with
-random data retrieved from the operating system.
-</p>
-<p>As an extension to the Fortran standard, the GFortran
-<code>RANDOM_NUMBER</code> supports multiple threads. Each thread in a
-multi-threaded program has its own seed.  When <code>RANDOM_SEED</code> is
-called either without arguments or with the <var>PUT</var> argument, the
-given seed is copied into a master seed as well as the seed of the
-current thread. When a new thread uses <code>RANDOM_NUMBER</code> for the
-first time, the seed is copied from the master seed, and forwarded
-<em>N * 2^{512}</em> steps to guarantee that the random stream does not
-alias any other stream in the system, where <var>N</var> is the number of
-threads that have used <code>RANDOM_NUMBER</code> so far during the program
-execution.
+<p>If <code>RANDOM_SEED</code> is called without arguments, it is initialized
+to a default state. The example below shows how to initialize the
+random seed with a varying seed in order to ensure a different random
+number sequence for each invocation of the program. Note that setting
+any of the seed values to zero should be avoided as it can result in
+poor quality random numbers being generated.
 </p>
 </dd>
 <dt><em>Standard</em>:</dt>
@@ -131,16 +123,57 @@ the <var>SIZE</var> argument.</td></tr>
 </dd>
 <dt><em>Example</em>:</dt>
 <dd><div class="smallexample">
-<pre class="smallexample">program test_random_seed
+<pre class="smallexample">subroutine init_random_seed()
+  use iso_fortran_env, only: int64
   implicit none
   integer, allocatable :: seed(:)
-  integer :: n
+  integer :: i, n, un, istat, dt(8), pid
+  integer(int64) :: t
 
   call random_seed(size = n)
   allocate(seed(n))
-  call random_seed(get=seed)
-  write (*, *) seed
-end program test_random_seed
+  ! First try if the OS provides a random number generator
+  open(newunit=un, file=&quot;/dev/urandom&quot;, access=&quot;stream&quot;, &amp;
+       form=&quot;unformatted&quot;, action=&quot;read&quot;, status=&quot;old&quot;, iostat=istat)
+  if (istat == 0) then
+     read(un) seed
+     close(un)
+  else
+     ! Fallback to XOR:ing the current time and pid. The PID is
+     ! useful in case one launches multiple instances of the same
+     ! program in parallel.
+     call system_clock(t)
+     if (t == 0) then
+        call date_and_time(values=dt)
+        t = (dt(1) - 1970) * 365_int64 * 24 * 60 * 60 * 1000 &amp;
+             + dt(2) * 31_int64 * 24 * 60 * 60 * 1000 &amp;
+             + dt(3) * 24_int64 * 60 * 60 * 1000 &amp;
+             + dt(5) * 60 * 60 * 1000 &amp;
+             + dt(6) * 60 * 1000 + dt(7) * 1000 &amp;
+             + dt(8)
+     end if
+     pid = getpid()
+     t = ieor(t, int(pid, kind(t)))
+     do i = 1, n
+        seed(i) = lcg(t)
+     end do
+  end if
+  call random_seed(put=seed)
+contains
+  ! This simple PRNG might not be good enough for real work, but is
+  ! sufficient for seeding a better PRNG.
+  function lcg(s)
+    integer :: lcg
+    integer(int64) :: s
+    if (s == 0) then
+       s = 104729
+    else
+       s = mod(s, 4294967296_int64)
+    end if
+    s = mod(s * 279470273_int64, 4294967291_int64)
+    lcg = int(mod(s, int(huge(0), int64)), kind(0))
+  end function lcg
+end subroutine init_random_seed
 </pre></div>
 
 </dd>

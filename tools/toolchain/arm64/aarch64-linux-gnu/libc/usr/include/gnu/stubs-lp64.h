@@ -12,6 +12,7 @@
 #define __stub___compat_get_kernel_syms
 #define __stub___compat_query_module
 #define __stub___compat_uselib
+#define __stub___kernel_rem_pio2l
 #define __stub_chflags
 #define __stub_fattach
 #define __stub_fchflags

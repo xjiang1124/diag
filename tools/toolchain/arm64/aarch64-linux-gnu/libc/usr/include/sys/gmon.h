@@ -117,7 +117,7 @@ extern struct __bb *__bb_head;
 /*
  * The type used to represent indices into gmonparam.tos[].
  */
-#define	ARCINDEX	unsigned long
+#define	ARCINDEX	u_long
 
 /*
  * Maximum number of arcs we want to allow.
@@ -130,7 +130,7 @@ extern struct __bb *__bb_head;
 #define MAXARCS		(1 << 20)
 
 struct tostruct {
-	unsigned long	selfpc;
+	u_long		selfpc;
 	long		count;
 	ARCINDEX	link;
 };
@@ -140,9 +140,9 @@ struct tostruct {
  * the called site and a count.
  */
 struct rawarc {
-	unsigned long	raw_frompc;
-	unsigned long	raw_selfpc;
-	long		raw_count;
+	u_long	raw_frompc;
+	u_long	raw_selfpc;
+	long	raw_count;
 };
 
 /*
@@ -156,17 +156,17 @@ struct rawarc {
  */
 struct gmonparam {
 	long int	state;
-	unsigned short	*kcount;
-	unsigned long	kcountsize;
+	u_short		*kcount;
+	u_long		kcountsize;
 	ARCINDEX	*froms;
-	unsigned long	fromssize;
+	u_long		fromssize;
 	struct tostruct	*tos;
-	unsigned long	tossize;
+	u_long		tossize;
 	long		tolimit;
-	unsigned long	lowpc;
-	unsigned long	highpc;
-	unsigned long	textsize;
-	unsigned long	hashfraction;
+	u_long		lowpc;
+	u_long		highpc;
+	u_long		textsize;
+	u_long		hashfraction;
 	long		log_hashfraction;
 };
 
@@ -190,8 +190,8 @@ struct gmonparam {
 __BEGIN_DECLS
 
 /* Set up data structures and start profiling.  */
-extern void __monstartup (unsigned long __lowpc, unsigned long __highpc) __THROW;
-extern void monstartup (unsigned long __lowpc, unsigned long __highpc) __THROW;
+extern void __monstartup (u_long __lowpc, u_long __highpc) __THROW;
+extern void monstartup (u_long __lowpc, u_long __highpc) __THROW;
 
 /* Clean up profiling and write out gmon.out.  */
 extern void _mcleanup (void) __THROW;

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -121,10 +121,8 @@ will generate module files for each module present in the code, but no
 other output file.
 </p>
 </dd>
-<dt><code>-Wpedantic</code></dt>
 <dt><code>-pedantic</code></dt>
 <dd><a name="index-pedantic"></a>
-<a name="index-Wpedantic"></a>
 <p>Issue warnings for uses of extensions to Fortran 95.
 <samp>-pedantic</samp> also applies to C-language constructs where they
 occur in GNU Fortran source files, such as use of &lsquo;<samp>\e</samp>&rsquo; in a
@@ -161,8 +159,7 @@ This currently includes <samp>-Waliasing</samp>, <samp>-Wampersand</samp>,
 <samp>-Wconversion</samp>, <samp>-Wsurprising</samp>, <samp>-Wc-binding-type</samp>,
 <samp>-Wintrinsics-std</samp>, <samp>-Wtabs</samp>, <samp>-Wintrinsic-shadow</samp>,
 <samp>-Wline-truncation</samp>, <samp>-Wtarget-lifetime</samp>,
-<samp>-Winteger-division</samp>, <samp>-Wreal-q-constant</samp>, <samp>-Wunused</samp>
-and <samp>-Wundefined-do-loop</samp>.
+<samp>-Winteger-division</samp>, <samp>-Wreal-q-constant</samp> and <samp>-Wunused</samp>.
 </p>
 </dd>
 <dt><code>-Waliasing</code></dt>
@@ -198,16 +195,6 @@ given with <samp>-Wampersand</samp>, <samp>-pedantic</samp>, <samp>-std=f95</sam
 given in a continued character constant, GNU Fortran assumes continuation
 at the first non-comment, non-whitespace character after the ampersand
 that initiated the continuation.
-</p>
-</dd>
-<dt><code>-Wargument-mismatch</code></dt>
-<dd><a name="index-Wargument_002dmismatch"></a>
-<a name="index-warnings_002c-argument-mismatch"></a>
-<a name="index-warnings_002c-parameter-mismatch"></a>
-<a name="index-warnings_002c-interface-mismatch"></a>
-<p>Warn about type, rank, and other mismatches between formal parameters and actual
-arguments to functions and subroutines.  These warnings are recommended and
-thus enabled by default.
 </p>
 </dd>
 <dt><code>-Warray-temporaries</code></dt>
@@ -342,14 +329,6 @@ by a digit between 1 and 9 is supported.  <samp>-Wtabs</samp> will cause
 a warning to be issued if a tab is encountered. Note, <samp>-Wtabs</samp>
 is active for <samp>-pedantic</samp>, <samp>-std=f95</samp>, <samp>-std=f2003</samp>,
 <samp>-std=f2008</samp>, <samp>-std=f2008ts</samp> and <samp>-Wall</samp>.
-</p>
-</dd>
-<dt><code>-Wundefined-do-loop</code></dt>
-<dd><a name="index-Wundefined_002ddo_002dloop"></a>
-<a name="index-warnings_002c-undefined-do-loop"></a>
-<p>Warn if a DO loop with step either 1 or -1 yields an underflow or an overflow
-during iteration of an induction variable of the loop.
-This option is implied by <samp>-Wall</samp>.
 </p>
 </dd>
 <dt><code>-Wunderflow</code></dt>

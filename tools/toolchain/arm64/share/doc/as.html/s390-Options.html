@@ -2,7 +2,7 @@
 <html>
 <!-- This file documents the GNU Assembler "as".
 
-Copyright (C) 1991-2017 Free Software Foundation, Inc.
+Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -66,8 +66,8 @@ ul.no-bullet {list-style: none}
 Next: <a href="s390-Characters.html#s390-Characters" accesskey="n" rel="next">s390 Characters</a>, Up: <a href="S_002f390_002dDependent.html#S_002f390_002dDependent" accesskey="u" rel="up">S/390-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<a name="Options-20"></a>
-<h4 class="subsection">9.39.1 Options</h4>
+<a name="Options-19"></a>
+<h4 class="subsection">9.38.1 Options</h4>
 <a name="index-options-for-s390"></a>
 <a name="index-s390-options"></a>
 
@@ -101,31 +101,19 @@ message.
 <dt><code>-march=<var>CPU</var></code></dt>
 <dd><p>This option specifies the target processor. The following processor names
 are recognized:
-<code>g5</code> (or <code>arch3</code>),
+<code>g5</code>,
 <code>g6</code>,
-<code>z900</code> (or <code>arch5</code>),
-<code>z990</code> (or <code>arch6</code>),
+<code>z900</code>,
+<code>z990</code>,
 <code>z9-109</code>,
-<code>z9-ec</code> (or <code>arch7</code>),
-<code>z10</code> (or <code>arch8</code>),
-<code>z196</code> (or <code>arch9</code>),
-<code>zEC12</code> (or <code>arch10</code>) and
-<code>z13</code> (or <code>arch11</code>).
-</p>
-<p>Assembling an instruction that is not supported on the target
-processor results in an error message.
-</p>
-<p>The processor names starting with <code>arch</code> refer to the edition
-number in the Principle of Operations manual.  They can be used as
-alternate processor names and have been added for compatibility with
-the IBM XL compiler.
-</p>
-<p><code>arch3</code>, <code>g5</code> and <code>g6</code> cannot be used with the
-&lsquo;<samp>-mzarch</samp>&rsquo; option since the z/Architecture mode is not supported
-on these processor levels.
-</p>
-<p>There is no <code>arch4</code> option supported. <code>arch4</code> matches
-<code>-march=arch5 -mesa</code>.
+<code>z9-ec</code>,
+<code>z10</code>,
+<code>z196</code>,
+<code>zEC12</code>, and
+<code>z13</code>.
+Assembling an instruction that is not supported on the target processor
+results in an error message. Do not specify <code>g5</code> or <code>g6</code>
+with &lsquo;<samp>-mzarch</samp>&rsquo;.
 </p>
 <a name="index-_002dmregnames-option_002c-s390"></a>
 </dd>
@@ -147,11 +135,6 @@ register 0 as an address register.
 </dd>
 </dl>
 
-<hr>
-<div class="header">
-<p>
-Next: <a href="s390-Characters.html#s390-Characters" accesskey="n" rel="next">s390 Characters</a>, Up: <a href="S_002f390_002dDependent.html#S_002f390_002dDependent" accesskey="u" rel="up">S/390-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
-</div>
 
 
 

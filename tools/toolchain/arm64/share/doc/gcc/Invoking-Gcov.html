@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -85,6 +85,18 @@ Next: <a href="Gcov-and-Optimization.html#Gcov-and-Optimization" accesskey="n" r
 </p>
 
 <dl compact="compact">
+<dt><code>-h</code></dt>
+<dt><code>--help</code></dt>
+<dd><p>Display help about using <code>gcov</code> (on the standard output), and
+exit without doing any further processing.
+</p>
+</dd>
+<dt><code>-v</code></dt>
+<dt><code>--version</code></dt>
+<dd><p>Display the <code>gcov</code> version number (on the standard output),
+and exit without doing any further processing.
+</p>
+</dd>
 <dt><code>-a</code></dt>
 <dt><code>--all-blocks</code></dt>
 <dd><p>Write individual execution counts for every basic block.  Normally gcov
@@ -107,9 +119,40 @@ be shown, unless the <samp>-u</samp> option is given.
 the percentage of branches taken.
 </p>
 </dd>
-<dt><code>-d</code></dt>
-<dt><code>--display-progress</code></dt>
-<dd><p>Display the progress on the standard output.
+<dt><code>-n</code></dt>
+<dt><code>--no-output</code></dt>
+<dd><p>Do not create the <code>gcov</code> output file.
+</p>
+</dd>
+<dt><code>-l</code></dt>
+<dt><code>--long-file-names</code></dt>
+<dd><p>Create long file names for included source files.  For example, if the
+header file <samp>x.h</samp> contains code, and was included in the file
+<samp>a.c</samp>, then running <code>gcov</code> on the file <samp>a.c</samp> will
+produce an output file called <samp>a.c##x.h.gcov</samp> instead of
+<samp>x.h.gcov</samp>.  This can be useful if <samp>x.h</samp> is included in
+multiple source files and you want to see the individual
+contributions.  If you use the &lsquo;<samp>-p</samp>&rsquo; option, both the including
+and included file names will be complete path names.
+</p>
+</dd>
+<dt><code>-p</code></dt>
+<dt><code>--preserve-paths</code></dt>
+<dd><p>Preserve complete path information in the names of generated
+<samp>.gcov</samp> files.  Without this option, just the filename component is
+used.  With this option, all directories are used, with &lsquo;<samp>/</samp>&rsquo; characters
+translated to &lsquo;<samp>#</samp>&rsquo; characters, <samp>.</samp> directory components
+removed and unremoveable <samp>..</samp>
+components renamed to &lsquo;<samp>^</samp>&rsquo;.  This is useful if sourcefiles are in several
+different directories.
+</p>
+</dd>
+<dt><code>-r</code></dt>
+<dt><code>--relative-only</code></dt>
+<dd><p>Only output information about source files with a relative pathname
+(after source prefix elision).  Absolute paths are usually system
+header files and coverage of any inline functions therein is normally
+uninteresting.
 </p>
 </dd>
 <dt><code>-f</code></dt>
@@ -117,10 +160,35 @@ the percentage of branches taken.
 <dd><p>Output summaries for each function in addition to the file level summary.
 </p>
 </dd>
-<dt><code>-h</code></dt>
-<dt><code>--help</code></dt>
-<dd><p>Display help about using <code>gcov</code> (on the standard output), and
-exit without doing any further processing.
+<dt><code>-o <var>directory|file</var></code></dt>
+<dt><code>--object-directory <var>directory</var></code></dt>
+<dt><code>--object-file <var>file</var></code></dt>
+<dd><p>Specify either the directory containing the gcov data files, or the
+object path name.  The <samp>.gcno</samp>, and
+<samp>.gcda</samp> data files are searched for using this option.  If a directory
+is specified, the data files are in that directory and named after the
+input file name, without its extension.  If a file is specified here,
+the data files are named after that file, without its extension.
+</p>
+</dd>
+<dt><code>-s <var>directory</var></code></dt>
+<dt><code>--source-prefix <var>directory</var></code></dt>
+<dd><p>A prefix for source file names to remove when generating the output
+coverage files.  This option is useful when building in a separate
+directory, and the pathname to the source directory is not wanted when
+determining the output file names.  Note that this prefix detection is
+applied before determining whether the source file is absolute.
+</p>
+</dd>
+<dt><code>-u</code></dt>
+<dt><code>--unconditional-branches</code></dt>
+<dd><p>When branch probabilities are given, include those of unconditional branches.
+Unconditional branches are normally not interesting.
+</p>
+</dd>
+<dt><code>-d</code></dt>
+<dt><code>--display-progress</code></dt>
+<dd><p>Display the progress on the standard output.
 </p>
 </dd>
 <dt><code>-i</code></dt>
@@ -163,94 +231,10 @@ branch:28,nottaken
 </pre></div>
 
 </dd>
-<dt><code>-l</code></dt>
-<dt><code>--long-file-names</code></dt>
-<dd><p>Create long file names for included source files.  For example, if the
-header file <samp>x.h</samp> contains code, and was included in the file
-<samp>a.c</samp>, then running <code>gcov</code> on the file <samp>a.c</samp> will
-produce an output file called <samp>a.c##x.h.gcov</samp> instead of
-<samp>x.h.gcov</samp>.  This can be useful if <samp>x.h</samp> is included in
-multiple source files and you want to see the individual
-contributions.  If you use the &lsquo;<samp>-p</samp>&rsquo; option, both the including
-and included file names will be complete path names.
-</p>
-</dd>
 <dt><code>-m</code></dt>
 <dt><code>--demangled-names</code></dt>
 <dd><p>Display demangled function names in output. The default is to show
 mangled function names.
-</p>
-</dd>
-<dt><code>-n</code></dt>
-<dt><code>--no-output</code></dt>
-<dd><p>Do not create the <code>gcov</code> output file.
-</p>
-</dd>
-<dt><code>-o <var>directory|file</var></code></dt>
-<dt><code>--object-directory <var>directory</var></code></dt>
-<dt><code>--object-file <var>file</var></code></dt>
-<dd><p>Specify either the directory containing the gcov data files, or the
-object path name.  The <samp>.gcno</samp>, and
-<samp>.gcda</samp> data files are searched for using this option.  If a directory
-is specified, the data files are in that directory and named after the
-input file name, without its extension.  If a file is specified here,
-the data files are named after that file, without its extension.
-</p>
-</dd>
-<dt><code>-p</code></dt>
-<dt><code>--preserve-paths</code></dt>
-<dd><p>Preserve complete path information in the names of generated
-<samp>.gcov</samp> files.  Without this option, just the filename component is
-used.  With this option, all directories are used, with &lsquo;<samp>/</samp>&rsquo; characters
-translated to &lsquo;<samp>#</samp>&rsquo; characters, <samp>.</samp> directory components
-removed and unremoveable <samp>..</samp>
-components renamed to &lsquo;<samp>^</samp>&rsquo;.  This is useful if sourcefiles are in several
-different directories.
-</p>
-</dd>
-<dt><code>-r</code></dt>
-<dt><code>--relative-only</code></dt>
-<dd><p>Only output information about source files with a relative pathname
-(after source prefix elision).  Absolute paths are usually system
-header files and coverage of any inline functions therein is normally
-uninteresting.
-</p>
-</dd>
-<dt><code>-s <var>directory</var></code></dt>
-<dt><code>--source-prefix <var>directory</var></code></dt>
-<dd><p>A prefix for source file names to remove when generating the output
-coverage files.  This option is useful when building in a separate
-directory, and the pathname to the source directory is not wanted when
-determining the output file names.  Note that this prefix detection is
-applied before determining whether the source file is absolute.
-</p>
-</dd>
-<dt><code>-u</code></dt>
-<dt><code>--unconditional-branches</code></dt>
-<dd><p>When branch probabilities are given, include those of unconditional branches.
-Unconditional branches are normally not interesting.
-</p>
-</dd>
-<dt><code>-v</code></dt>
-<dt><code>--version</code></dt>
-<dd><p>Display the <code>gcov</code> version number (on the standard output),
-and exit without doing any further processing.
-</p>
-</dd>
-<dt><code>-w</code></dt>
-<dt><code>--verbose</code></dt>
-<dd><p>Print verbose informations related to basic blocks and arcs.
-</p>
-</dd>
-<dt><code>-x</code></dt>
-<dt><code>--hash-filenames</code></dt>
-<dd><p>By default, gcov uses the full pathname of the source files to to create
-an output filename.  This can lead to long filenames that can overflow
-filesystem limits.  This option creates names of the form
-<samp><var>source-file</var>##<var>md5</var>.gcov</samp>,
-where the <var>source-file</var> component is the final filename part and
-the <var>md5</var> component is calculated from the full mangled name that
-would have been used otherwise.
 </p>
 </dd>
 </dl>
@@ -281,18 +265,9 @@ program source code.  The format is
 <p>Additional block information may succeed each line, when requested by
 command line option.  The <var>execution_count</var> is &lsquo;<samp>-</samp>&rsquo; for lines
 containing no code.  Unexecuted lines are marked &lsquo;<samp>#####</samp>&rsquo; or
-&lsquo;<samp>=====</samp>&rsquo;, depending on whether they are reachable by
+&lsquo;<samp>====</samp>&rsquo;, depending on whether they are reachable by
 non-exceptional paths or only exceptional paths such as C++ exception
-handlers, respectively. Given &lsquo;<samp>-a</samp>&rsquo; option, unexecuted blocks are
-marked &lsquo;<samp>$$$$$</samp>&rsquo; or &lsquo;<samp>%%%%%</samp>&rsquo;, depending on whether a basic block
-is reachable via non-exceptional or exceptional paths.
-</p>
-<p>Note that GCC can completely remove the bodies of functions that are
-not needed &ndash; for instance if they are inlined everywhere.  Such functions
-are marked with &lsquo;<samp>-</samp>&rsquo;, which can be confusing.
-Use the <samp>-fkeep-inline-functions</samp> and <samp>-fkeep-static-functions</samp>
-options to retain these functions and
-allow gcov to properly show their <var>execution_count</var>.
+handlers, respectively.
 </p>
 <p>Some lines of information at the start have <var>line_number</var> of zero.
 These preamble lines are of the form
@@ -340,9 +315,8 @@ is what you see when you use the basic <code>gcov</code> facility:
 <pre class="smallexample">$ gcc -fprofile-arcs -ftest-coverage tmp.c
 $ a.out
 $ gcov tmp.c
-File 'tmp.c'
-Lines executed:90.00% of 10
-Creating 'tmp.c.gcov'
+90.00% of 10 source lines executed in file tmp.c
+Creating tmp.c.gcov.
 </pre></div>
 
 <p>The file <samp>tmp.c.gcov</samp> contains output from <code>gcov</code>.
@@ -425,12 +399,11 @@ As you can see, line 13 contains a basic block that was not executed.
 </p>
 <div class="smallexample">
 <pre class="smallexample">$ gcov -b tmp.c
-File 'tmp.c'
-Lines executed:90.00% of 10
-Branches executed:80.00% of 5
-Taken at least once:80.00% of 5
-Calls executed:50.00% of 2
-Creating 'tmp.c.gcov'
+90.00% of 10 source lines executed in file tmp.c
+80.00% of 5 branches executed in file tmp.c
+80.00% of 5 branches taken at least once in file tmp.c
+50.00% of 2 calls executed in file tmp.c
+Creating tmp.c.gcov.
 </pre></div>
 
 <p>Here is a sample of a resulting <samp>tmp.c.gcov</samp> file:

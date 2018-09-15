@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1999-2017 Free Software Foundation, Inc.
+<!-- Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -75,20 +75,15 @@ Next: <a href="MALLOC.html#MALLOC" accesskey="n" rel="next">MALLOC</a>, Previous
 </div>
 <hr>
 <a name="LTIME-_002d_002d_002d-Convert-time-to-local-time-info"></a>
-<h3 class="section">9.182 <code>LTIME</code> &mdash; Convert time to local time info</h3>
+<h3 class="section">9.175 <code>LTIME</code> &mdash; Convert time to local time info</h3>
 <a name="index-LTIME"></a>
 <a name="index-time_002c-conversion-to-local-time-info"></a>
 
 <dl compact="compact">
 <dt><em>Description</em>:</dt>
-<dd><p>Given a system time value <var>TIME</var> (as provided by the <a href="TIME.html#TIME">TIME</a>
+<dd><p>Given a system time value <var>TIME</var> (as provided by the <code>TIME8</code>
 intrinsic), fills <var>VALUES</var> with values extracted from it appropriate
 to the local time zone using <code>localtime(3)</code>.
-</p>
-<p>This intrinsic routine is provided for backwards compatibility with 
-GNU Fortran 77.  In new code, programmers should consider the use of 
-the <a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a> intrinsic defined by the Fortran 95
-standard.
 </p>
 </dd>
 <dt><em>Standard</em>:</dt>
@@ -119,18 +114,18 @@ with <code>INTENT(OUT)</code>.</td></tr>
 seconds
 </li><li> Minutes after the hour, range 0&ndash;59
 </li><li> Hours past midnight, range 0&ndash;23
-</li><li> Day of month, range 1&ndash;31
-</li><li> Number of months since January, range 0&ndash;11
+</li><li> Day of month, range 0&ndash;31
+</li><li> Number of months since January, range 0&ndash;12
 </li><li> Years since 1900
 </li><li> Number of days since Sunday, range 0&ndash;6
-</li><li> Days since January 1, range 0&ndash;365
+</li><li> Days since January 1
 </li><li> Daylight savings indicator: positive if daylight savings is in
 effect, zero if not, and negative if the information is not available.
 </li></ol>
 
 </dd>
 <dt><em>See also</em>:</dt>
-<dd><p><a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a>, <a href="CTIME.html#CTIME">CTIME</a>, <a href="GMTIME.html#GMTIME">GMTIME</a>, <a href="TIME.html#TIME">TIME</a>, <a href="TIME8.html#TIME8">TIME8</a>
+<dd><p><a href="CTIME.html#CTIME">CTIME</a>, <a href="GMTIME.html#GMTIME">GMTIME</a>, <a href="TIME.html#TIME">TIME</a>, <a href="TIME8.html#TIME8">TIME8</a>
 </p>
 </dd>
 </dl>

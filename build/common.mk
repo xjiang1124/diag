@@ -25,7 +25,9 @@ CC_X86=gcc
 
 ifeq (${ARCH}, amd64)
     CMPL=$(CC_X86)
+    PREFIX=
 else
     CMPL=$(CC_ARM_64)
+    PREFIX=aarch64-linux-gnu-
 endif
 											
