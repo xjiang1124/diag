@@ -1,0 +1,10 @@
+NAPLES100:
+    CPLD_FILE: "/home/diag/diag/prog_images/cpld/naples100-cpld.0.1.bin" 
+    VRM_FILE:  "/home/diag/diag/prog_images/vrm/naples100-vrm.0.1.bin"
+    VRM_CKSUM: 0x55AA
+
+NAPLES25:
+    CPLD_FILE: "/home/diag/diag/prog_images/cpld/naples25-cpld.0.1.bin" 
+    VRM_FILE:  "/home/diag/diag/prog_images/vrm/naples25-vrm.0.1.bin"
+    VRM_CKSUM: 0x55AA
+

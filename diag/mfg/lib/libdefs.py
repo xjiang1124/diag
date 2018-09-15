@@ -1,0 +1,65 @@
+from enum import Enum
+
+class NIC_Type:
+    NAPLES100 = "NAPLES100"
+    NAPLES25 = "NAPLES25"
+    UNKNOWN = "Unknown"
+
+
+class Env_Cond(Enum):
+    LTLV = "LTLV"
+    LTNV = "LTNV"
+    LTHV = "LTHV"
+    NTLV = "NTLV"
+    NTNV = "NTNV"
+    NTHV = "NTHV"
+    HTLV = "HTLV"
+    HTNV = "HTNV"
+    HTHV = "HTHV"
+    
+    def __str__(self):
+        return self.value
+
+
+class NIC_Status:
+    NIC_STA_POWEROFF = 0
+    NIC_STA_POWERUP = 1
+    NIC_STA_NO_SN = 2
+    NIC_STA_NO_MAC = 3
+    NIC_STA_NO_XCVR = 4
+    NIC_STA_HW_READY = 5
+    NIC_STA_DIAG_NOT_RUN = 6
+    NIC_STA_DIAG_FAIL = 7
+    NIC_STA_DIAG_PASS = 8
+    NIC_STA_MAX = 11
+
+
+class MTP_Status:
+    MTP_STA_POWEROFF = 0
+    MTP_STA_POWERUP = 1
+    MTP_STA_ENV_FAIL = 2
+    MTP_STA_MGMT_FAIL = 3
+    MTP_STA_READY = 10
+    MTP_STA_MAX = 11
+    
+
+class NIC_Port_Mask:
+    NIC_PORT1_MASK = (0x1 << 0)
+    NIC_PORT2_MASK = (0x1 << 1)
+    NIC_MGMT_MASK =  (0x1 << 31)
+    NIC_ALL_PORT_MASK = NIC_PORT1_MASK | \
+                        NIC_PORT2_MASK | \
+                        NIC_MGMT_MASK
+
+
+class MTP_Const:
+    MTP_SLOT_NUM = 10
+    MTP_SLOT_INVALID = 10
+
+    MTP_POWER_ON_DELAY = 120
+    MTP_POWER_ON_TIMEOUT = 480
+    MTP_OS_SHUTDOWN_DELAY = 60
+
+    LOW_TEMP_FAN_SPD = 40
+    NORMAL_TEMP_FAN_SPD = 40
+    HIGH_TEMP_FAN_SPD = 70
