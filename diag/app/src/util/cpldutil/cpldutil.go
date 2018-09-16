@@ -3,6 +3,7 @@ package main
 import (
     //"fmt"
     "flag"
+    "os"
 
     "common/cli"
     "device/cpld/mtpCpld"
@@ -75,8 +76,9 @@ func main() {
 
     if *cpldRdPtr == true {
         cli.Println("i", "inst:", inst)
-        mtpCpld.CpldRead(uint8(addr))
-        return
+        data, _ := mtpCpld.CpldRead(uint8(addr))
+        os.Exit(int(data))
+        //return
     }
 
     if *cpldFlashRdPtr == true {

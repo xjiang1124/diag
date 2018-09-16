@@ -26,7 +26,7 @@ MTP002:
     TS: pen-hwlab-tel-02
     TS_PORT: 2004
     APC_1_NAME: pen-hwlab-apc-02
-    APC_1_PORT: 2
+    APC_1_PORT: 4
     APC_2_NAME: pen-hwlab-apc-02
     APC_2_PORT: 9
     IP: 192.168.75.202
@@ -82,6 +82,48 @@ MTP004:
     SLOT_8: 
     SLOT_9: 
     SLOT_10: 
+
+MTP009:
+    SKIP:
+    MODE: MTP_QK
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2006
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 20
+    APC_2_NAME: pen-hwlab-apc-02
+    APC_2_PORT: 21
+    IP: 192.168.74.17
+    SLOT_1:
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6:
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10:
+
+MTP010:
+    SKIP:
+    MODE: MTP_QK
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2003
+    APC_1_NAME: pen-hwlab-apc-02
+    APC_1_PORT: 22
+    APC_2_NAME: pen-hwlab-apc-02
+    APC_2_PORT: 23
+    IP: 192.168.74.35
+    SLOT_1:
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6:
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10:
 
 MTP024:
     SKIP:
