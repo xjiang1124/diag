@@ -34,6 +34,7 @@ echo "PATH=\$PATH:$DIAG_DIR/python/regression" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/python/infra" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/python/qa_suite" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
+echo "PATH=\$PATH:$DIAG_DIR/scripts/asic" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
 if [[ $arch == "arm64" ]]
@@ -44,8 +45,17 @@ else
     echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
 fi
 
+#==================================
+echo "Set up ASIC environment"
+echo "export ASIC_LIB_BUNDLE=/home/diag/diag/asic/" >> temp_profile
+echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
+echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
+echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
+echo "source \$ASIC_LIB/source_env_path" >> temp_profile
+
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
+hack_asic.sh
 
 if [[ $arch == "amd64" ]]
 then

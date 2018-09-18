@@ -77,12 +77,15 @@ source .tclrc.diag
 # Copy to Diag repo
 # For amd64
 export DIAG_REPO=/vol/hw/diag/diag_repo/asic/amd64
-export ASIC_REPO=/home/xguo2/workspace/asic_amd64/
+export ASIC_REPO=/home/xguo2/workspace/asic/
+export ASIC_GEN=/vol/dump/xguo2/workspace/asic
 cd $DIAG_REPO
-cp -r /vol/dump/xguo2/workspace/asic_amd64/ip/cosim/diag/nic/* .
+rm -rf *
+#cp -r /vol/dump/xguo2/workspace/asic/ip/cosim/diag/nic/* .
+cp -r $ASIC_GEN/ip/cosim/diag/nic/* .
 # Get ASIC version
 cd $ASIC_REPO
-git log --name-status HEAD^..HEAD > /vol/hw/diag/diag_repo/asic/amd64/asic_version.txt
+git log --name-status HEAD^..HEAD > $DIAG_REPO/asic_version.txt
 
 # For arm64
 
