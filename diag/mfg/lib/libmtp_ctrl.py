@@ -41,13 +41,19 @@ class mtp_ctrl():
     def cli_log_inf(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        libmfg_utils.cli_log_inf(self._filep, cli_id_str + indent + msg)
+        if self._filep:
+            libmfg_utils.cli_log_inf(self._filep, cli_id_str + indent + msg)
+        else:
+            libmfg_utils.cli_inf(cli_id_str + indent + msg)
 
 
     def cli_log_err(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        libmfg_utils.cli_log_err(self._filep, cli_id_str + indent + msg)
+        if self._filep:
+            libmfg_utils.cli_log_err(self._filep, cli_id_str + indent + msg)
+        else:
+            libmfg_utils.cli_err(cli_id_str + indent + msg)
 
 
     def cli_log_slot_inf(self, slot, msg, level = 1):
@@ -358,6 +364,13 @@ class mtp_ctrl():
             self.cli_log_err("Unknown linux prompt", level = 0)
             return None
         
+
+    def mtp_enter_user_ctrl(self):
+        if self._mgmt_handle:
+            self._mgmt_handle.sendline("\n")
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
+            self._mgmt_handle.interact()
+
 
     def mtp_mgmt_exec_sudo_cmd(self, cmd):
         userid = self._mgmt_cfg[1]
