@@ -9,13 +9,13 @@ hub_ctrl() {
 
 # Turn on all 12v
 echo "Turn on all 12v"
-cpldutil -inst=1 -cpld-wr -addr=0x10 -data=0x0
-cpldutil -inst=1 -cpld-wr -addr=0x11 -data=0x0
+cpldutil -type=IO -cpld-wr -addr=0x10 -data=0x0
+cpldutil -type=IO -cpld-wr -addr=0x11 -data=0x0
 sleep 3
 # Disable all PERST
 echo "Disable all PERST"
-cpldutil -inst=1 -cpld-wr -addr=0x16 -data=0x0
-cpldutil -inst=1 -cpld-wr -addr=0x17 -data=0x0
+cpldutil -type=IO -cpld-wr -addr=0x16 -data=0x0
+cpldutil -type=IO -cpld-wr -addr=0x17 -data=0x0
 sleep 3
 
 case $1 in

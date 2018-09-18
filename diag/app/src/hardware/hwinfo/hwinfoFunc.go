@@ -84,6 +84,9 @@ func EnableHubChannel(devName string) (err int) {
  */
 func EnableHubChannelExclusive(devName string) (err int) {
     for _, hubName := range I2cHubList {
+        if hubName == "HUB_NONE" {
+            continue
+        }
         err = tca9546a.DisableAllChan(hubName)
         if err != errType.SUCCESS {
             cli.Println("d", "Failed: ", err)
