@@ -10,7 +10,7 @@ set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
 
 cd $ASIC_SRC/ip/cosim/tclsh
-source .tclrc.diag
+source .tclrc.diag.new
 
 puts "brd_num: $brd_num; slot_id: $slot_id"
 diag_open_j2c_if 10 $slot_id
