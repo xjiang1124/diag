@@ -354,6 +354,8 @@ class mtp_ctrl():
             self._mgmt_handle.expect_exact(userid)
             self._mgmt_handle.expect_exact(self._prompt_list[idx])
             self._mgmt_prompt = self._prompt_list[idx]
+            self._mgmt_handle.sendline("stty rows 50 cols 160")
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
             # set logfile
             if self._debug_mode:
                 self._mgmt_handle.logfile = sys.stdout
@@ -416,16 +418,12 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_exec_cmd(self, cmd):
-
-        if not self._mgmt_handle:
-            self.cli_log_err("management port is not connected")
-            return False
-
         self._mgmt_handle.sendline(cmd)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        self.cli_log_file(self._mgmt_handle.before)
+        return "PASS"
+        #return "FAIL"
+        #return "TIMEOUT"
 
-        return True
 
 
     def mtp_program_nic_fru(self, slot, sn, mac):
@@ -678,7 +676,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_hw_init(self):
+    def mtp_hw_init(self, psu_check):
         rc = True
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # start the mtp diag
@@ -689,8 +687,11 @@ class mtp_ctrl():
         # fan init
         rc &= self.mtp_fan_init()
         
-        # psu init
-        rc &= self.mtp_psu_init()
+        if psu_check:
+            # psu init
+            rc &= self.mtp_psu_init()
+        else:
+            self.cli_log_inf("-- MTP PSU Check bypassed")
 
         # other platform init
         rc &= self.mtp_misc_init()
@@ -821,25 +822,35 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_get_NIC_Status(self, slot):
+    def mtp_get_nic_status(self, slot):
         if self._nic_sta_list[slot] == NIC_Status.NIC_STA_HW_READY:
             return True
         else:
             False
 
 
-    def mtp_run_diag_test_seq(self, slot, cmd, count):
-        if self.mtp_get_NIC_Status(slot):
-            self.mtp_mgmt_exec_cmd(cmd)
-            time.sleep(random.randint(1, 5))
-            return "PASS"
+    def mtp_run_diag_test_seq(self, slot, diag_cmd, init_cmd=None, post_cmd=None):
+        ret = "PASS"
+        # init command
+        if init_cmd:
+            ret = self.mtp_mgmt_exec_cmd(init_cmd)
+
+        if ret == "PASS":
+            ret = self.mtp_mgmt_exec_cmd(diag_cmd)
+        else:
+            return ret
+
+        # post command
+        if post_cmd:
+            ret = self.mtp_mgmt_exec_cmd(post_cmd)
+        return ret
 
 
     def mtp_run_diag_test_para(self, slot_list, cmd, count):
         rslt_list = list()
 
         for slot in range(self._slots):
-            if self.mtp_get_NIC_Status(slot) and slot in slot_list:
+            if self.mtp_get_nic_status(slot) and slot in slot_list:
                 rslt_list.append([slot, "PASS"])
 
         time.sleep(random.randint(1, 10))

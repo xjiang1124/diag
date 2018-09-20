@@ -1,8 +1,9 @@
 import getpass
+import smtplib
 import sys
 import datetime
 import re
-import yaml
+import oyaml as yaml
 import os
 import time
 
@@ -56,6 +57,41 @@ def cli_log_rslt(title, pass_list, fail_list, fp):
         for item in fail_list:
             cli_log_err(fp, item)
     print("\033[0m")
+
+
+def diag_skip_cmd(dsp, test=None):
+    cmd = " -d " + dsp
+    if test:
+        cmd += " -t " + test
+    return cmd
+
+
+def diag_param_cmd(dsp, param, test=None):
+    cmd = " -d " + dsp
+    if test:
+        cmd += " -t " + test
+    return cmd
+
+    cmd += " -p " + param
+    return cmd
+
+
+def diag_seq_run_cmd(slot, dsp, test=None):
+    nic_str  = "nic{:d}".format(slot+1)
+    cmd = "diag -r -c " + nic_str
+    cmd += " -d " + dsp
+    if test:
+        cmd += " -t " + test
+    return cmd
+
+
+def diag_seq_errcode_cmd(slot, dsp, test=None):
+    nic_str  = "nic{:d}".format(slot+1)
+    cmd = "diag -shist -c " + nic_str
+    cmd += " -d " + dsp
+    if test:
+        cmd += " -t " + test
+    return cmd
 
 
 def count_down(seconds):
@@ -220,3 +256,18 @@ def load_cfg_from_yaml(yaml_file):
         sys_exit("No content in yaml config file: " + yaml_file)
 
     return cfg
+
+
+def email_report(title, body = None):
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login("psdiag.qa@gmail.com", "psdiag!234")
+
+    msg = "Subject: {:s}".format(title)
+    if body:
+        msg += "\n\n{:s}".format(body)
+
+    server.sendmail("psdiag.qa@gmail.com", ["xingchang@pensando.io"], msg)
+    server.quit()
+

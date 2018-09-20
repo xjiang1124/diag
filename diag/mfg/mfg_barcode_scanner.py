@@ -157,7 +157,6 @@ def main():
     # load the product server config
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
     pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    pro_srv_list.sort()
     if len(pro_srv_list) > 1:
         pro_srv_id = libmfg_utils.single_select_menu("Choose Product Server", pro_srv_list)
         if not pro_srv_id:
@@ -165,29 +164,11 @@ def main():
     else:
         pro_srv_id = pro_srv_list[0]
 
-    # find the product server management config based on the product server id
-    pro_srv_mgmt_cfg = pro_srv_cfg_db.get_pro_srv_mgmt(pro_srv_id)
-    if not pro_srv_mgmt_cfg:
-        libmfg_utils.cli_err("Unable to find " + pro_srv_id + " management config")
-        return
-
-    # [ip, userid, password]
-    # check if the password is empty
-    if pro_srv_mgmt_cfg[2] == "":
-        pro_srv_mgmt_cfg[2] = libmfg_utils.get_password(pro_srv_id, pro_srv_mgmt_cfg[0], pro_srv_mgmt_cfg[1])
-
-    # init the product server control engine with the access info
-    product_server_ctrl = pro_srv_ctrl(mgmt_cfg = pro_srv_mgmt_cfg)
-    if not product_server_ctrl.pro_srv_mgmt_connect_test():
-        libmfg_utils.cli_err("Product server " + pro_srv_id + " connect failed")
-        return
-
     # find the mtp config files controlled by the chosen product server
     filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
     mtp_chassis_cfg_file = os.path.abspath("config/" + filename)
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    mtpid_list.sort()
     mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
     # find the mtp management config based on the mtpid
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
@@ -226,7 +207,7 @@ def main():
     libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "MTP SW version: {:s}".format(sw_ver))
 
     # PSU/FAN absent, powerdown MTP
-    ret = mtp_mgmt_ctrl.mtp_hw_init()
+    ret = mtp_mgmt_ctrl.mtp_hw_init(True)
     if not ret:
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
@@ -379,7 +360,7 @@ def main():
         dl_log_path = pro_srv_cfg_db.get_pro_srv_dl_logpath(pro_srv_id, NIC_Type.NAPLES100)
         for sn in naples100_sn_list:
             logdir = dl_log_path + sn + "/"
-            os.system("mkdir -p " + log_dir)
+            os.system("mkdir -p " + logdir)
             logfile = sn + "_" + test_log_file
             os.system("cp " + test_log_file + " " + logdir + logfile)
             logfile = sn + "_" + diag_log_file
@@ -396,7 +377,7 @@ def main():
         dl_log_path = pro_srv_cfg_db.get_pro_srv_dl_logpath(pro_srv_id, NIC_Type.NAPLES25)
         for sn in naples25_sn_list:
             logdir = dl_log_path + sn + "/"
-            os.system("mkdir -p " + log_dir)
+            os.system("mkdir -p " + logdir)
             logfile = sn + "_" + test_log_file
             os.system("cp " + test_log_file + " " + logdir + logfile)
             logfile = sn + "_" + diag_log_file
