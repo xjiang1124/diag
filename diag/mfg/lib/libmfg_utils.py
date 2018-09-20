@@ -6,6 +6,10 @@ import re
 import oyaml as yaml
 import os
 import time
+import pexpect
+
+def get_linux_prompt_list():
+    return ["#", "$", ">"]
 
 
 def cli_out(info):
@@ -256,6 +260,48 @@ def load_cfg_from_yaml(yaml_file):
         sys_exit("No content in yaml config file: " + yaml_file)
 
     return cfg
+
+
+def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
+    cmd = "md5sum " + local_file
+    session = pexpect.spawn(cmd)
+    session.expect_exact(pexpect.EOF)
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    if match:
+        local_md5sum = match.group(1)
+    else:
+        cli_err("Execute command {:s} failed".format(cmd))
+        return False
+
+    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s}".format(local_file, userid, ip_addr, remote_dir))
+    session.expect_exact("ssword:")
+    session.sendline(passwd)
+    session.expect_exact(pexpect.EOF)
+
+    # verify the file md5sum
+    cmd = " ".join(["ssh -l", userid, ip_addr])
+    session = pexpect.spawn(cmd)
+    session.setecho(False)
+    session.expect_exact("assword:")
+    session.sendline(passwd)
+    session.expect_exact(get_linux_prompt_list())
+
+    cmd = "md5sum " + remote_dir + os.path.basename(local_file)
+    session.sendline(cmd)
+    session.expect_exact(get_linux_prompt_list())
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    # md5sum match
+    if match:
+        if match.group(1) == local_md5sum:
+            return True
+        else:
+            cli_err("File md5sum mismatch")
+            return False
+    else:
+        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
+        return False
 
 
 def email_report(title, body = None):

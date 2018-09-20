@@ -21,11 +21,15 @@ from libpro_srv_ctrl import pro_srv_ctrl
 def main():
     parser = argparse.ArgumentParser(description="Diag connect to MTP", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser.add_argument("--mtp", help="MTP ID")
 
     apc = False
+    mtp_id = None
     args = parser.parse_args()
     if args.apc:
         apc = True
+    if args.mtp:
+        mtp_id = args.mtp
 
     # get the absolute file path
     product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
@@ -45,7 +49,11 @@ def main():
     mtp_chassis_cfg_file = os.path.abspath("../config/" + filename)
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
+
+    if not mtp_id:
+        mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
+    elif mtp_id not in mtpid_list:
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid MTP ID: {:s}".format(mtp_id))
 
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
