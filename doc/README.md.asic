@@ -82,10 +82,11 @@ export ASIC_GEN=/vol/dump/xguo2/workspace/asic
 cd $DIAG_REPO
 rm -rf *
 #cp -r /vol/dump/xguo2/workspace/asic/ip/cosim/diag/nic/* .
-cp -r $ASIC_GEN/ip/cosim/diag/nic/* .
+cp -rf $ASIC_GEN/ip/cosim/diag/nic/* .
 # Get ASIC version
 cd $ASIC_REPO
-git log --name-status HEAD^..HEAD > $DIAG_REPO/asic_version.txt
+#git log --name-status HEAD^..HEAD > $DIAG_REPO/asic_version.txt
+git rev-parse --verify HEAD
 
 # For arm64
 

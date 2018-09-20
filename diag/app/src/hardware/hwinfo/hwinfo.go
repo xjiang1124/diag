@@ -170,7 +170,7 @@ func init() {
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
     mtpsI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4", "HUB_5"}
     naplesMtpI2cHubList := []string{"NIC_HUB"}
-    naples100I2cHubList := []string{"NIC_NONE"}
+    naples100I2cHubList := []string{"HUB_NONE"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
     naples100PsuList := []string{"PSU_NONE"}

@@ -83,6 +83,17 @@ func EnableHubChannel(devName string) (err int) {
  * All other Channels will be disabled
  */
 func EnableHubChannelExclusive(devName string) (err int) {
+    i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed: ", err)
+        return
+    }
+
+    if i2cInfo.HubName == "HUB_NONE" {
+        // Device is not under any hub
+        return
+    }
+
     for _, hubName := range I2cHubList {
         if hubName == "HUB_NONE" {
             continue
@@ -94,15 +105,7 @@ func EnableHubChannelExclusive(devName string) (err int) {
         }
     }
 
-    i2cInfo, err := i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        cli.Println("e", "Failed: ", err)
-        return
-    }
-
-    if i2cInfo.HubName != "HUB_NONE" {
-        err = tca9546a.EnableChan(i2cInfo.HubName, i2cInfo.HubPort)
-    }
+    err = tca9546a.EnableChan(i2cInfo.HubName, i2cInfo.HubPort)
     return
 }
 

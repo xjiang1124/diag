@@ -40,6 +40,8 @@ var initStatus int = INIT_NONE
 
 var OutputMode int
 
+var verbose int = misc.ENABLE
+
 func Init(fileName string, mode int) {
     OutputMode = mode
 
@@ -110,6 +112,14 @@ func FmtJsonOut(outStr string) string {
     return jsonOut
 }
 
+func EnableVerbose() {
+    verbose = misc.ENABLE
+}
+
+func DisableVerbose() {
+    verbose = misc.DISABLE
+}
+
 func formatOutput(lvl string, pOutStr string) string {
     var outStr string
     // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
@@ -145,6 +155,9 @@ func formatOutput(lvl string, pOutStr string) string {
 
 // Println outputs per desired log level
 func Println(lvl string, a...interface{}) (err error) {
+    if verbose == misc.DISABLE {
+        return
+    }
 
     outStr := fmt.Sprintln(a)
     outStr = formatOutput(lvl, outStr)
@@ -208,6 +221,9 @@ func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
 }
 
 func Printf(lvl string, format string, a ...interface{}) error {
+    if verbose == misc.DISABLE {
+        return nil
+    }
 
     outStr := formatOutput1(lvl, format, a)
     if initStatus == INIT_DONE {
@@ -239,5 +255,4 @@ func Printf(lvl string, format string, a ...interface{}) error {
     }
 
     return nil
-
 }
