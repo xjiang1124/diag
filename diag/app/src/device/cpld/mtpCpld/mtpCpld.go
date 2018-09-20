@@ -95,7 +95,7 @@ func CpldRead(addr uint8) (data uint8, err int) {
         cli.Println("e", "CPLD read failed!")
     } else {
         data = uint8(cData)
-        cli.Printf("i", "CPLD read data 0x%x\n", cData)
+        cli.Printf("i", "CPLD read data 0x%x at addr 0x%x\n", cData, addr)
     }
     return
 }
