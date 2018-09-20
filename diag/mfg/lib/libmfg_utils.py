@@ -304,16 +304,19 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
         return False
 
 
-def email_report(title, body = None):
+def email_report(email_to, title, body = None):
+    if not email_to:
+        return
+
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
     server.login("psdiag.qa@gmail.com", "psdiag!234")
 
-    msg = "Subject: {:s}".format(title)
+    msg = "Subject: {:s}\n\n".format(title)
     if body:
-        msg += "\n\n{:s}".format(body)
+        msg += "{:s}".format(body)
 
-    server.sendmail("psdiag.qa@gmail.com", ["xingchang@pensando.io"], msg)
+    server.sendmail("psdiag.qa@gmail.com", email_to, msg)
     server.quit()
 
