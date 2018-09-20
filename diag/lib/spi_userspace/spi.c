@@ -53,10 +53,10 @@ int ReadId(unsigned char* bp)
 
 	xfer[1].rx_buf = (unsigned long)bp;
 	xfer[1].len = ID_SIZE;
-	xfer[0].delay_usecs = DELAY_USECS;
+	xfer[1].delay_usecs = DELAY_USECS;
 	//fixme
-	xfer[0].speed_hz = CPLD_SPEED;
-	xfer[0].bits_per_word = BITS;
+	xfer[1].speed_hz = CPLD_SPEED;
+	xfer[1].bits_per_word = BITS;
 
 	status = ioctl(fd, SPI_IOC_MESSAGE(2), xfer);
 	if (status < 0) {
@@ -79,7 +79,7 @@ int CpldRd(unsigned char addr, unsigned char* value)
 	struct spi_ioc_transfer xfer;
 	unsigned char buf[32], *tmp;
 	int len, status;
-	unsigned char rx[4];
+	unsigned char rx[2];
 
 	fd = open(CPLD_DEV_NAME, O_RDWR);
 	if (fd < 0) {
@@ -92,11 +92,11 @@ int CpldRd(unsigned char addr, unsigned char* value)
 
 	buf[0] = CPLD_RD;
 	buf[1] = addr;
-	buf[2] = 0;
-	buf[3] = 0;
+//	buf[2] = 0;
+//	buf[3] = 0;
 
 	xfer.tx_buf = (unsigned long)buf;
-	xfer.len = 4;
+	xfer.len = 2;
 	xfer.delay_usecs = DELAY_USECS;
 	xfer.speed_hz = CPLD_SPEED;
 	xfer.bits_per_word = BITS;
@@ -108,8 +108,9 @@ int CpldRd(unsigned char addr, unsigned char* value)
 		return -1;
 	}
 
+	*value = rx[1];
 	printf("response(%d): ", status);
-	for (tmp = value, len = 0; len < 4; len++)
+	for (tmp = rx, len = 0; len < 2; len++)
 		printf("%02x ", *tmp++);
 	printf("\n");
 
@@ -152,3 +153,19 @@ int CpldWr(unsigned char addr, unsigned char value)
 	close(fd);
 	return 0;
 }
+#if 0
+int main(int argc, char** argv) {
+	unsigned char addr = (unsigned char)atoi(argv[2]);
+	unsigned char data;
+	if(strcmp("r", argv[1]) == 0) {
+		CpldRd(addr, &data);
+		printf("cpld read 0x%x 0x%x\n", addr, data);
+	} else if(strcmp("w", argv[1]) == 0) {
+		data = (unsigned char)atoi(argv[3]);
+		CpldWr(addr, data);
+		printf("cpld write 0x%x 0x%x\n", addr, data);
+	}
+
+	return 0;
+}
+#endif
