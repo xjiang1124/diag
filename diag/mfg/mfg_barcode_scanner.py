@@ -18,96 +18,6 @@ from libpro_srv_db import pro_srv_db
 from libpro_srv_ctrl import pro_srv_ctrl
 
 
-def mtp_barcode_scan(mtp_id, nic_prsnt_list, logfile_p):
-    mtp_scan_rslt = dict()
-    mtp_ts_snapshot = libmfg_utils.get_timestamp()
-    mtp_scan_rslt["MTP_ID"] = mtp_id
-    mtp_scan_rslt["MTP_TS"] = mtp_ts_snapshot
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
-    valid_nic_key_list = list()
-    unscanned_nic_key_list = list()
-
-    scan_nic_key_list = list()
-    scan_sn_list = list()
-    scan_mac_list = list()
-
-    # build all valid nic key list
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        valid_nic_key_list.append(key)
-        if nic_prsnt_list[slot]:
-            unscanned_nic_key_list.append(key)
-
-    while True:
-        unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
-        nic_scan_rslt = dict()
-        usr_prompt = "\nUnscanned NIC list [{:s}]\nPlease Scan NIC ID Barcode:".format(unscanned_nic_list_cli_str)
-        raw_scan = raw_input(usr_prompt)
-
-        if raw_scan == "STOP":
-            # basic sanity check, make sure all nic in the system get scanned
-            if len(unscanned_nic_key_list) != 0:
-                libmfg_utils.cli_log_err(logfile_p, mtp_cli_id_str + "Diag detect {:s}, but not scanned yet".format(unscanned_nic_list_cli_str))
-                continue
-            else:
-                break
-        elif raw_scan in scan_nic_key_list:
-            libmfg_utils.cli_log_err(logfile_p, "Duplicate NIC ID Barcode: {:s} detected, please restart the scan process\n".format(raw_scan))
-            return None
-        else:
-            key = raw_scan
-            # basic sanity check
-            if key not in unscanned_nic_key_list:
-                libmfg_utils.cli_log_err(logfile_p, mtp_cli_id_str + "Invalid NIC ID: {:s}".format(key))
-                continue
-            else:
-                scan_nic_key_list.append(key)
-                unscanned_nic_key_list.remove(key)
-
-        usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
-        raw_scan = raw_input(usr_prompt)
-        sn = libmfg_utils.serial_number_validate(raw_scan)
-        if not sn:
-            libmfg_utils.cli_log_err(logfile_p, "Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan))
-            return None
-
-        if sn in scan_sn_list:
-            libmfg_utils.cli_log_err(logfile_p, "Duplicate NIC Serial Number: {:s} detected, please restart the scan process\n".format(sn))
-            return None
-        else:
-            scan_sn_list.append(sn)
-
-
-        usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
-        raw_scan = raw_input(usr_prompt)
-        mac = libmfg_utils.mac_address_validate(raw_scan)
-        if not mac:
-            libmfg_utils.cli_log_err(logfile_p, "Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan))
-            return None
-
-        mac_ui = libmfg_utils.mac_address_format(mac)
-        if mac in scan_mac_list:
-            libmfg_utils.cli_log_err(logfile_p, "Duplicate NIC MAC Address: {:s} detected, please restart the scan process\n".format(mac_ui))
-            return None
-        else:
-            scan_mac_list.append(mac)
-
-        ts_snapshot = libmfg_utils.get_timestamp()
-        nic_scan_rslt["NIC_VALID"] = True
-        nic_scan_rslt["NIC_SN"] = sn
-        nic_scan_rslt["NIC_MAC"] = mac
-        nic_scan_rslt["NIC_TS"] = ts_snapshot
-        mtp_scan_rslt[key] = nic_scan_rslt
-
-    nic_empty_list = list(set(valid_nic_key_list).difference(set(scan_nic_key_list)))
-    for key in nic_empty_list:
-        nic_scan_rslt = dict()
-        nic_scan_rslt["NIC_VALID"] = False
-        mtp_scan_rslt[key] = nic_scan_rslt
-
-    return mtp_scan_rslt
-
-
 # generate the local barcode config file
 def gen_barcode_config_file(pro_srv_id, file_p, scan_rslt):
     config_lines = [str(scan_rslt["MTP_ID"]) + ":"]
@@ -230,7 +140,7 @@ def main():
 
     libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Start the Barcode Scan Process")
     while True:
-        scan_rslt = mtp_barcode_scan(mtp_id, nic_prsnt_list, test_log_filep)
+        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan()
         if scan_rslt:
             break;
         libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Restart the Barcode Scan Process")
