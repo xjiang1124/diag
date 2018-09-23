@@ -15,8 +15,6 @@ from libdefs import MTP_Const
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
-from libpro_srv_ctrl import pro_srv_ctrl
-
 
 # generate the local barcode config file
 def gen_barcode_config_file(pro_srv_id, file_p, scan_rslt):
@@ -115,6 +113,9 @@ def main():
     # get the sw version info
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
     libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "MTP SW version: {:s}".format(sw_ver))
+
+    # diag environment pre init
+    mtp_mgmt_ctrl.mtp_diag_pre_init()
 
     # PSU/FAN absent, powerdown MTP
     ret = mtp_mgmt_ctrl.mtp_hw_init(True)

@@ -8,7 +8,7 @@ import argparse
 import re
 import random
 
-sys.path.append(os.path.relpath("../lib"))
+sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
@@ -18,10 +18,12 @@ from libpro_srv_db import pro_srv_db
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diag MTP Reload", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="Diag MTP Reload Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--iteration", help="Iterations of the reload test", type=int, required=True)
     parser.add_argument("--image", help="New MTP image file")
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--mtp", help="MTP ID")
+    parser.add_argument("--email", help="email address the report will send to")
 
     skip_image_update = True
     apc = False
@@ -35,9 +37,12 @@ def main():
     if args.image:
         mtp_image_file = args.image
         skip_image_update = False
+    if args.email:
+        email_to = args.email
+    iteration = args.iteration
 
     # get the absolute file path
-    product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
+    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
 
     # load the product server config
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
@@ -51,7 +56,7 @@ def main():
 
     # find the mtp config files controlled by the chosen product server
     filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
-    mtp_chassis_cfg_file = os.path.abspath("../config/" + filename)
+    mtp_chassis_cfg_file = os.path.abspath("config/" + filename)
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
 
@@ -101,23 +106,30 @@ def main():
         post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         libmfg_utils.cli_inf(mtp_cli_id_str + "Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver))
 
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+    for count in range(iteration):
+        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Started".format(count))
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-    time.sleep(1)
+        time.sleep(1)
 
-    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        mtp_mgmt_ctrl.mtp_apc_pwr_on()
+        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY))
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP Chassis")
-    version = mtp_mgmt_ctrl.mtp_get_sw_version()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Chassis Reload Complete, diag version = {:s}".format(version))
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+            libmfg_utils.cli_err(mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Failed\n".format(count))
+            libmfg_utils.email_report(email_to, mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Failed".format(count))
+            return
+        version = mtp_mgmt_ctrl.mtp_get_sw_version()
+        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis is up and running, diag version = {:s}".format(version))
+        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Complete\n".format(count))
+        libmfg_utils.email_report(email_to, mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Complete".format(count))
 
+    libmfg_utils.email_report(email_to, mtp_cli_id_str + "MTP Reload Test Passed")
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
 

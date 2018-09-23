@@ -21,7 +21,7 @@ class mtp_ctrl():
         self._ts_cfg = ts_cfg
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
-        self._prompt_list = ["#", "$", ">"]
+        self._prompt_list = libmfg_utils.get_linux_prompt_list()
         self._slots = 10
         self._fans = 3
         self._psus = 2
@@ -324,17 +324,12 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        os.system("ssh-keygen -R " + ip + " > /dev/null")
-
-        self._mgmt_handle = pexpect.spawn("ssh -l " + userid + " " + ip)
+        ssh_cmd = 'ssh -l {:s} {:s} -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null"'.format(userid, ip)
+        self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
-            idx = self._mgmt_handle.expect_exact(["continue connecting (yes/no)?",
-                                                  "assword:",
+            idx = self._mgmt_handle.expect_exact(["assword:",
                                                   pexpect.TIMEOUT], timeout = 5)
             if idx == 0:
-               self._mgmt_handle.sendline("yes")
-               continue
-            elif idx == 1:
                 self._mgmt_handle.sendline(passwd)
                 break
             else:
@@ -342,7 +337,7 @@ class mtp_ctrl():
                     self.cli_log_inf("Connect to mtp timeout, wait 30s and retry...", level = 0)
                     time.sleep(30)
                     retries -= 1
-                    self._mgmt_handle = pexpect.spawn("ssh -l " + userid + " " + ip)
+                    self._mgmt_handle = pexpect.spawn(ssh_cmd)
                     continue
                 else:
                     self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
@@ -417,13 +412,10 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_exec_cmd(self, cmd):
+    def mtp_mgmt_exec_cmd(self, cmd, timeout=30):
         self._mgmt_handle.sendline(cmd)
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        return "PASS"
-        #return "FAIL"
-        #return "TIMEOUT"
-
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout)
+        return True
 
 
     def mtp_program_nic_fru(self, slot, sn, mac):
@@ -676,14 +668,17 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_hw_init(self, psu_check):
-        rc = True
-        self.cli_log_inf("Start MTP chassis sanity check", level = 0)
+    def mtp_diag_pre_init(self):
         # start the mtp diag
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
         self._mgmt_handle.expect_exact("Set up diag amd64 -- Done")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
+
+    def mtp_hw_init(self, psu_check):
+        rc = True
+
+        self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # fan init
         rc &= self.mtp_fan_init()
         
@@ -765,44 +760,103 @@ class mtp_ctrl():
         return 95
 
 
+    def mtp_nic_init(self, load_sn=False, load_mac=False):
+        # init nic present list
+        self.cli_log_inf("Init NIC Present")
+        self.mtp_init_nic_prsnt()
+
+        # init nic type list
+        self.cli_log_inf("Init NIC Type")
+        self.mtp_init_nic_type()
+
+        # power on nic
+        self.cli_log_inf("Power on NICs")
+        self.mtp_power_on_nic()
+
+        # load sn from fru
+        if load_sn:
+            self.cli_log_inf("Load NIC SN from Fru")
+            self.mtp_init_nic_sn()
+        else:
+            self.cli_log_inf("Bypass load NIC SN from Fru")
+
+        # load mac from fru
+        if load_mac:
+            self.cli_log_inf("Load NIC MAC from Fru")
+            self.mtp_init_nic_mac()
+        else:
+            self.cli_log_inf("Bypass load NIC MAC from Fru")
+
+        return True
+
+
     def mtp_power_on_nic(self):
-        # how to poweron the nic, and get the present status?
-        self._nic_prsnt_list = [True] * self._slots
+        self._mgmt_handle.sendline("turn_on_slot.sh on all")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
+
+    def mtp_init_nic_prsnt(self):
+        self._mgmt_handle.sendline("inventory -present")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
+        match = re.findall(r"UUT_(\d) +NAPLES", self._mgmt_handle.before)
+        if match: 
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
+
+
+    def mtp_get_nic_prsnt_list(self):
+        return self._nic_prsnt_list
+
+
+    def mtp_init_nic_type(self):
+        self._mgmt_handle.sendline("inventory -present")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
+        match = re.findall(r"UUT_(\d) +NAPLES100", self._mgmt_handle.before)
+        if match: 
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_type_list[slot] = NIC_Type.NAPLES100
+
+        match = re.findall(r"UUT_(\d) +NAPLES25", self._mgmt_handle.before)
+        if match: 
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_type_list[slot] = NIC_Type.NAPLES25
 
 
     def mtp_get_nic_type(self, slot):
-        # TODO, how to get nic type?
-        return random.choice([NIC_Type.NAPLES100, NIC_Type.NAPLES25])
+        return self._nic_type_list[slot]
 
 
-    def mtp_get_nic_serial_number(self, slot):
-        # TODO, how to get sn?
-        sn = "FLX0000000" + str(slot) 
-        if not libmfg_utils.serial_number_validate(sn):
-            self._nic_sta_list[slot] = NIC_Status.NIC_STA_NO_SN
-            return None
-        else:
-            return sn
+    def mtp_init_nic_sn(self):
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                # TODO how to read sn from nic fru
+                self._nic_sn_list[slot] = "FLM0000000" + str(slot)
 
 
-    def mtp_get_nic_mac_address(self, slot):
-        # TODO, how to get mac?
-        mac = "00AECD00000" + str(slot) 
-        if not libmfg_utils.mac_address_validate(mac):
-            self._nic_sta_list[slot] = NIC_Status.NIC_STA_NO_MAC
-            return None
-        else:
-            return mac
+    def mtp_get_nic_sn(self, slot):
+        return self._nic_sn_list[slot]
+
+
+    def mtp_init_nic_mac(self):
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                # TODO how to read mac from nic fru
+                self._nic_mac_list[slot] = "00AECD00000" + str(slot)
+
+
+    def mtp_get_nic_mac(self, slot):
+        return self._nic_mac_list[slot]
 
 
     def mtp_get_nic_xcvr_prsnt(self, slot):
         # TODO: how to get xcvr present status?
         mask = NIC_Port_Mask.NIC_ALL_PORT_MASK
         return mask
-
-
-    def mtp_get_prsnt_nic_list(self):
-        return self._nic_prsnt_list
 
 
     def mtp_set_nic_vmarg(self, slot, vmarg):
@@ -833,17 +887,18 @@ class mtp_ctrl():
         ret = "PASS"
         # init command
         if init_cmd:
-            ret = self.mtp_mgmt_exec_cmd(init_cmd)
+            if not self.mtp_mgmt_exec_cmd(init_cmd):
+                return "FAIL"
 
-        if ret == "PASS":
-            ret = self.mtp_mgmt_exec_cmd(diag_cmd)
-        else:
-            return ret
+        if not self.mtp_mgmt_exec_cmd(diag_cmd):
+            return "FAIL"
 
         # post command
         if post_cmd:
-            ret = self.mtp_mgmt_exec_cmd(post_cmd)
-        return ret
+            if not self.mtp_mgmt_exec_cmd(post_cmd):
+                return "FAIL"
+
+        return "PASS"
 
 
     def mtp_run_diag_test_para(self, slot_list, cmd, count):

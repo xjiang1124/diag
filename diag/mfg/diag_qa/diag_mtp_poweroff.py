@@ -18,15 +18,12 @@ from libpro_srv_db import pro_srv_db
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diag connect to MTP", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser = argparse.ArgumentParser(description="Diag MTP Poweroff", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtp", help="MTP ID")
 
-    apc = False
     mtp_id = None
+
     args = parser.parse_args()
-    if args.apc:
-        apc = True
     if args.mtp:
         mtp_id = args.mtp
 
@@ -62,28 +59,23 @@ def main():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
 
     # find the apc config based on the mtpid
-    if apc:
-        mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
-        if not mtp_apc_cfg:
-            libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    else:
-        mtp_apc_cfg = None
+    mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
+    if not mtp_apc_cfg:
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
 
-    if apc:
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-
     libmfg_utils.cli_inf(mtp_cli_id_str + "Try to connect MTP chassis")
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        libmfg_utils.cli_err(mtp_cli_id_str + "Unable to connect MTP chassis")
-        return
-    version = mtp_mgmt_ctrl.mtp_get_sw_version()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP is connected, diag version = {:s}".format(version))
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
+    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis connected")
 
-    mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
+    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
 
 if __name__ == "__main__":
     main()
