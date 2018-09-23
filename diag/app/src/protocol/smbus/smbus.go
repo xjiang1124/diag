@@ -69,7 +69,6 @@ func Close() (err int) {
 }
 
 func ReadByte(devName string, regAddr uint64) (data byte, err int) {
-    cli.Println("d", devName, regAddr)
     if smbInfo.devName != devName {
         err = errType.SMB_INF_INVALID
         return

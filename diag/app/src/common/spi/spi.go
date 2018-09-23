@@ -3,31 +3,31 @@ package spi
 
 import (
     //"fmt"
-    "config"
+    //"config"
     "common/errType"
 )
 
 func SpiRead(offset uint32, data uint32) int {
 
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func SpiWrite(offset uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func CpldRead(offset uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func CpldWrite(offset uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func MvlRegRead(offset uint32, data* uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }
 
 func MvlRegWrite(offset uint32, data uint32) int {
-    return errType.Success
+    return errType.SUCCESS
 }

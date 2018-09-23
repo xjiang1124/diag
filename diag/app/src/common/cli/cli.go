@@ -42,6 +42,8 @@ var OutputMode int
 
 var verbose int = misc.ENABLE
 
+var timeStampEnable int = misc.ENABLE
+
 func Init(fileName string, mode int) {
     OutputMode = mode
 
@@ -88,6 +90,15 @@ func unixMilli(t time.Time) int64 {
 func makeTimestampMilli() int64 {
         return unixMilli(time.Now())
 }
+
+func TimeStampEnable (enable int) {
+    if enable == misc.DISABLE {
+        timeStampEnable = misc.DISABLE
+    } else {
+        timeStampEnable = misc.ENABLE
+    }
+}
+
 
 func TStamp() string {
 	m := makeTimestampMilli()
@@ -192,7 +203,7 @@ func Println(lvl string, a...interface{}) (err error) {
     return nil
 }
 
-func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
+func FormatOutput1(lvl string, format string, a []interface{}) (outStr string) {
     outStr = fmt.Sprintf(format, a...)
     switch lvl {
     case "debug", "d", "error", "e":
@@ -215,7 +226,9 @@ func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
     if (OutputMode == 1) {
         outStr = FmtJsonOut(outStr)
     } else {
-        outStr = "["+timeStr+"]"+" "+outStr
+        if timeStampEnable == misc.ENABLE {
+            outStr = "["+timeStr+"]"+" "+outStr
+        }
     }
     return
 }
@@ -225,7 +238,7 @@ func Printf(lvl string, format string, a ...interface{}) error {
         return nil
     }
 
-    outStr := formatOutput1(lvl, format, a)
+    outStr := FormatOutput1(lvl, format, a)
     if initStatus == INIT_DONE {
         switch lvl {
         case "debug", "d":

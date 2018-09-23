@@ -130,6 +130,17 @@ usage() {
     echo "========================="
 }
 
+if [[ $1 == "show" ]]
+then
+    cpldutil -cpld-rd -addr=0x10
+    cpldutil -cpld-rd -addr=0x11
+    cpldutil -cpld-rd -addr=0x12
+    cpldutil -cpld-rd -addr=0x13
+    cpldutil -cpld-rd -addr=0x16
+    cpldutil -cpld-rd -addr=0x17
+    exit
+fi
+
 if [[ $# -ne 2 ]] 
 then
     usage

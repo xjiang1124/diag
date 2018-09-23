@@ -1,6 +1,7 @@
 COMMON_SRC_DIR=			\
 	diagmgr 			\
-	dsp/pcieh   		\
+	dsp/asic			\
+	dsp/pcie_h   		\
 	util/devmgr			\
 	util/i2cutil 		\
 	util/rtcutil 		\
@@ -30,13 +31,12 @@ AMD64_C_SRC_DIR=		\
 
 ARM64_SRC_DIR=			\
 	util/ledutil 		\
-	dsp/asic		\
-	dsp/i2c 		\
+	dsp/cpld     		\
+	dsp/i2c 			\
+	dsp/intr    		\
 	dsp/qsfp    		\
 	dsp/rtc     		\
-	dsp/cpld     		\
-	dsp/spi    		\
-	dsp/intr    		\
+	dsp/spi    			\
 	dsp/tempsensor
 
 ARM64_C_SRC_DIR=		\

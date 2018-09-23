@@ -31,6 +31,12 @@ var r *redis.Client
 // Output mode
 var outputMode int
 
+var cardPre string
+
+func TimeStampEnable (enaDis int) {
+    cli.TimeStampEnable(enaDis)
+}
+
 func Init(fileName string, mode int) {
     cli.Init(fileName, mode)
 
@@ -42,6 +48,10 @@ func Init(fileName string, mode int) {
     })
     outputMode = mode
     initStatus = INIT_DONE
+
+    cardInfo := diagEngine.GetCardInfo()
+    cardPre = cardInfo.CardType+"#"+cardInfo.CardName
+
 }
 
 func Println(lvl string, a...interface{}) (err error) {
@@ -67,8 +77,6 @@ func Println(lvl string, a...interface{}) (err error) {
     default:
     }
 
-    cardInfo := diagEngine.GetCardInfo()
-    cardPre := cardInfo.CardType+"#"+cardInfo.CardName
     // Structural output
     if (outputMode == 1) {
         var dat map[string]interface{}
@@ -76,6 +84,7 @@ func Println(lvl string, a...interface{}) (err error) {
         outStrByte := []byte(outStr)
         json.Unmarshal(outStrByte, &dat)
         //dat["CARD"] = diagEngine.CardInfo.CardType+"#"+diagEngine.CardInfo.CardName
+        cardInfo := diagEngine.GetCardInfo()
         dat["CARD"] = cardInfo.CardType+"#"+cardInfo.CardName
         b, _ := json.Marshal(dat)
         outStr = fmt.Sprintln(string(b))
@@ -83,6 +92,29 @@ func Println(lvl string, a...interface{}) (err error) {
         outStr = "["+cardPre+"]"+" ["+cli.TStamp()+"] " + outStr
     }
 
+    r.LPush("dshbuf:"+strconv.Itoa(diagEngine.DshID), outStr)
+
+    return nil
+}
+
+func Printf(lvl string, format string, a ...interface{}) error {
+    cli.Printf(lvl, format, a)
+
+    outStr := cli.FormatOutput1(lvl, format, a)
+
+    switch lvl {
+    case "debug", "d":
+        outStr = fmt.Sprintf("[DEBUG]   %s", outStr)
+    case "info", "i":
+        outStr = fmt.Sprintf("[INFO]    %s", outStr)
+    case "warn", "w":
+        outStr = fmt.Sprintf("[WARNING] %s", outStr)
+    case "error", "e", "f":
+        outStr = fmt.Sprintf("[ERROR]   %s", outStr)
+    //default:
+        // Do nothing
+	}
+    outStr = "["+cardPre+"]" + outStr
     r.LPush("dshbuf:"+strconv.Itoa(diagEngine.DshID), outStr)
 
     return nil

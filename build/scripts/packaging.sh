@@ -83,7 +83,7 @@ then
     rsync -r $ASIC_PATH/* $DIAG_ASIC_PATH/
     
     mkdir -p $DIAG_ASIC_IMG_PATH
-    cp -r $DIAG_ASIC_PATH/* $DIAG_ASIC_IMG_PATH/
+    rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
 
 fi
 echo "ASIC file -- Done"

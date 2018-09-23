@@ -74,6 +74,9 @@ then
         echo "Diag engine turned on"
     fi
     
+    # Flush all previous residues
+    $DIAG_DIR/tools/redis-cli -h $REDIS_IP FLUSHALL
+
     # Load all the redis keys
     cat $DIAG_DIR/python/infra/config/OUTPUT/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
     echo "Redis keys loaded"
