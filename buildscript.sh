@@ -12,3 +12,6 @@ cd build
 make amd64
 make arm64
 
+cp images/* /vol/hw/diag/diag_images/jenkins/
+
+
