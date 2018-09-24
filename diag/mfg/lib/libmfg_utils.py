@@ -80,21 +80,25 @@ def diag_param_cmd(dsp, param, test=None):
     return cmd
 
 
-def diag_seq_run_cmd(slot, dsp, test=None):
-    nic_str  = "nic{:d}".format(slot+1)
-    cmd = "diag -r -c " + nic_str
-    cmd += " -d " + dsp
+def diag_seq_run_cmd(card_name, dsp, test, param):
+    cmd = "./diag -r -c {:s}".format(card_name)
+    cmd += " -d {:s}".format(dsp)
     if test:
-        cmd += " -t " + test
+        cmd += " -t {:s}".format(test)
+    if param != "":
+        cmd += " -p {:s}".format(param)
     return cmd
 
 
-def diag_seq_errcode_cmd(slot, dsp, test=None):
-    nic_str  = "nic{:d}".format(slot+1)
-    cmd = "diag -shist -c " + nic_str
-    cmd += " -d " + dsp
-    if test:
-        cmd += " -t " + test
+def diag_seq_errcode_cmd(card_name, dsp):
+    cmd = "./diag -shist -c {:s}".format(card_name)
+    cmd += " -d {:s}".format(dsp)
+    return cmd
+
+
+def diag_cleanup_cmd(card_name, dsp):
+    cmd = "./diag -chist -c {:s}".format(card_name)
+    cmd += " -d {:s}".format(dsp)
     return cmd
 
 
@@ -288,6 +292,48 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     session.expect_exact(get_linux_prompt_list())
 
     cmd = "md5sum " + remote_dir + os.path.basename(local_file)
+    session.sendline(cmd)
+    session.expect_exact(get_linux_prompt_list())
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    # md5sum match
+    if match:
+        if match.group(1) == local_md5sum:
+            return True
+        else:
+            cli_err("File md5sum mismatch")
+            return False
+    else:
+        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
+        return False
+
+
+def network_get_file(ip_addr, userid, passwd, local_dir, remote_file):
+    session = pexpect.spawn("scp {:s}@{:s}:{:s} {:s}".format(userid, ip_addr, remote_file, local_dir))
+    session.expect_exact("ssword:")
+    session.sendline(passwd)
+    session.expect_exact(pexpect.EOF)
+
+    cmd = "md5sum " + local_dir + os.path.basename(remote_file)
+    session = pexpect.spawn(cmd)
+    session.expect_exact(pexpect.EOF)
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    if match:
+        local_md5sum = match.group(1)
+    else:
+        cli_err("Execute command {:s} failed".format(cmd))
+        return False
+
+    # verify the file md5sum
+    cmd = " ".join(["ssh -l", userid, ip_addr])
+    session = pexpect.spawn(cmd)
+    session.setecho(False)
+    session.expect_exact("assword:")
+    session.sendline(passwd)
+    session.expect_exact(get_linux_prompt_list())
+
+    cmd = "md5sum " + remote_file
     session.sendline(cmd)
     session.expect_exact(get_linux_prompt_list())
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))

@@ -6,6 +6,7 @@ import libmfg_utils
 import random
 import re
 from libdefs import NIC_Type
+from libdefs import MTP_DIAG_Error
 from libdefs import MTP_Const
 from libdefs import NIC_Status
 from libdefs import MTP_Status
@@ -72,7 +73,7 @@ class mtp_ctrl():
         self._filep.write(msg + "\n")
 
 
-    def set_MTP_Status(self, status):
+    def set_mtp_status(self, status):
         if status < MTP_Status.MTP_STA_MAX:
             self._status = status
 
@@ -309,6 +310,32 @@ class mtp_ctrl():
         if self._mgmt_handle:
             self._mgmt_handle.close()
             self._mgmt_handle = None
+
+
+    def mtp_session_create(self):
+        # mgmt_cfg is a list with format [ip, userid, passwd]
+        ip = self._mgmt_cfg[0]
+        userid = self._mgmt_cfg[1]
+        passwd = self._mgmt_cfg[2]
+
+        ssh_cmd = 'ssh -l {:s} {:s} -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null"'.format(userid, ip)
+        handle = pexpect.spawn(ssh_cmd)
+        idx = handle.expect_exact(["assword:",
+                                   pexpect.TIMEOUT], timeout = 5)
+        if idx == 0:
+            handle.sendline(passwd)
+        else:
+            self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
+            return None
+        idx = handle.expect_exact(self._prompt_list, timeout = 5) 
+        if (idx < len(self._prompt_list)):
+            handle.sendline("whoami")
+            handle.expect_exact(userid)
+            handle.expect_exact(self._prompt_list[idx])
+            return handle
+        else:
+            self.cli_log_err("Unknown linux prompt", level = 0)
+            return None
 
 
     def mtp_mgmt_connect(self):
@@ -568,6 +595,7 @@ class mtp_ctrl():
             self.cli_log_err("VRM test timeout")
             rc = False
 
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
         return rc
 
 
@@ -675,6 +703,21 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 
+    def mtp_diag_init(self, filep):
+        # start the mtp diag
+        diagmgr_handle = self.mtp_session_create()
+        diagmgr_handle.logfile = filep
+        diagmgr_handle.sendline("diagmgr &")
+        diagmgr_handle.expect_exact(self._mgmt_prompt)
+        diagmgr_handle.sendline("cd ~/diag/python/infra/dshell")
+        diagmgr_handle.expect_exact(self._mgmt_prompt)
+        diagmgr_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
+        diagmgr_handle.expect_exact(self._mgmt_prompt)
+
+        self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+ 
+
     def mtp_hw_init(self, psu_check):
         rc = True
 
@@ -703,8 +746,8 @@ class mtp_ctrl():
         # build nic serial number list
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                self._nic_sn_list[slot] = self.mtp_get_nic_serial_number(slot)
-                self._nic_mac_list[slot] = self.mtp_get_nic_mac_address(slot)
+                self._nic_sn_list[slot] = self.mtp_get_nic_sn(slot)
+                self._nic_mac_list[slot] = self.mtp_get_nic_mac(slot)
 
         # check xcvr status
         for slot in range(self._slots):
@@ -712,15 +755,15 @@ class mtp_ctrl():
                 xcvr_prsnt_mask = self.mtp_get_nic_xcvr_prsnt(slot)
                 if not xcvr_prsnt_mask & NIC_Port_Mask.NIC_PORT1_MASK:
                     if not ignore_warning and not libmfg_utils.double_confirm("Front Panel Port 1 Transceiver Absent, Continue"):
-                        self.set_MTP_Status(MTP_Status.MTP_STA_ENV_FAIL)
+                        self.set_mtp_status(MTP_Status.MTP_STA_ENV_FAIL)
                         return False
                 if not xcvr_prsnt_mask & NIC_Port_Mask.NIC_PORT2_MASK:
                     if not ignore_warning and not libmfg_utils.double_confirm("Front Panel Port 2 Transceiver Absent, Continue"):
-                        self.set_MTP_Status(MTP_Status.MTP_STA_ENV_FAIL)
+                        self.set_mtp_status(MTP_Status.MTP_STA_ENV_FAIL)
                         return False
                 if not xcvr_prsnt_mask & NIC_Port_Mask.NIC_MGMT_MASK:
                     if not ignore_warning and not libmfg_utils.double_confirm("Management Port  Transceiver Absent, Continue"):
-                        self.set_MTP_Status(MTP_Status.MTP_STA_ENV_FAIL)
+                        self.set_mtp_status(MTP_Status.MTP_STA_ENV_FAIL)
                         return False
 
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_HW_READY
@@ -738,7 +781,7 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("devmgr -dev FAN -status")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
-        self.set_MTP_Status(MTP_Status.MTP_STA_READY)
+        self.set_mtp_status(MTP_Status.MTP_STA_READY)
 
         return True
 
@@ -842,6 +885,12 @@ class mtp_ctrl():
         return self._nic_sn_list[slot]
 
 
+    def mtp_set_nic_sn(self, slot, sn):
+        nic_cli_id_str = libmfg_utils.id_str(nic = slot)
+        self.cli_log_inf(nic_cli_id_str + "    -- Set SN to {:s}".format(sn))
+        self._nic_sn_list[slot] = sn
+
+
     def mtp_init_nic_mac(self):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
@@ -851,6 +900,12 @@ class mtp_ctrl():
 
     def mtp_get_nic_mac(self, slot):
         return self._nic_mac_list[slot]
+
+
+    def mtp_set_nic_mac(self, slot, mac):
+        nic_cli_id_str = libmfg_utils.id_str(nic = slot)
+        self.cli_log_inf(nic_cli_id_str + "    -- Set MAC to {:s}".format(mac))
+        self._nic_mac_list[slot] = mac
 
 
     def mtp_get_nic_xcvr_prsnt(self, slot):
@@ -868,7 +923,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_connect_test(self):
         if not self.mtp_mgmt_connect():
-            self.set_MTP_Status(MTP_Status.MTP_STA_MGMT_FAIL)
+            self.set_mtp_status(MTP_Status.MTP_STA_MGMT_FAIL)
             return False
 
         time.sleep(1)
@@ -883,22 +938,44 @@ class mtp_ctrl():
             False
 
 
-    def mtp_run_diag_test_seq(self, slot, diag_cmd, init_cmd=None, post_cmd=None):
-        ret = "PASS"
+    def mtp_mgmt_get_test_result(self, cmd, test, timeout=30):
+        self._mgmt_handle.sendline(cmd)
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout)
+        # Test pass fail timeout
+        match = re.findall(r"%s +(\d) +(\d) +(\d)" %test, str(self._mgmt_handle.before))
+        if match:
+            test_pass = int(match[0][0]) 
+            test_fail = int(match[0][1]) 
+            test_timeout = int(match[0][2]) 
+            if test_fail > 0:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
+            elif test_timeout > 0:
+                return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
+            else:
+                return MTP_DIAG_Error.MTP_DIAG_PASS
+        else:
+            return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
+
+
+
+    def mtp_run_diag_test_seq(self, slot, diag_cmd, rslt_cmd, clr_cmd, test, init_cmd=None, post_cmd=None):
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd(init_cmd):
-                return "FAIL"
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
 
-        if not self.mtp_mgmt_exec_cmd(diag_cmd):
-            return "FAIL"
-
+        if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=3600):
+            return MTP_DIAG_Error.NIC_DIAG_FAIL
+        
         # post command
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd(post_cmd):
-                return "FAIL"
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
 
-        return "PASS"
+        ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
+        # clear the history
+        self.mtp_mgmt_exec_cmd(clr_cmd)
+        return ret
 
 
     def mtp_run_diag_test_para(self, slot_list, cmd, count):
