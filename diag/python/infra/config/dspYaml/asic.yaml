@@ -41,7 +41,6 @@
 DSP: 
     NAME: ASIC 
     INFO: ASIC test
-    #TYPE: HOST
 
     # Properties apply to all platforms
     # Do not remove ite/timeout/dshid which are needed for all DSPs
@@ -51,33 +50,41 @@ DSP:
                 VALUE: 1
                 INFO: Iterations for the test
             timeout:
-                VALUE: 300
+                VALUE: 2200
                 INFO: Test timeout setting 
             dshid:
                 VALUE: 0
                 INFO: Diag shell ID index
 
-                #    TEST#PCIE_PRBS:
-                #        INFO: PCIE PRBS with external loopback
-                #        PLATFORM:
-                #            NIC: NAPLES100
-                #        PRIORITY: NORMAL 
-                #        PARAM:
-                #            duration:
-                #                VALUE:
-                #                    ALL: 30
-                #                INFO: test time
-                #
-                #    TEST#ETH_PRBS:
-                #        INFO: Ethernet port PRBS test
-                #        PLATFORM:
-                #            NIC: MTP
-                #        PRIORITY: NORMAL
-                #        PARAM:
-                #            duration:
-                #                VALUE:
-                #                    ALL: 30
-                #                INFO: test time
+    TEST#PCIE_PRBS:
+        INFO: PCIE PRBS with external loopback
+        PLATFORM:
+            NIC: MTP
+        PRIORITY: NORMAL 
+        PARAM:
+            duration:
+                VALUE:
+                    ALL: 30
+                INFO: test time
+            poly:
+                VALUE:
+                    ALL: prbs31
+                INFO: PRBS polynomial
+   
+    TEST#ETH_PRBS:
+        INFO: Ethernet port PRBS test
+        PLATFORM:
+            NIC: MTP
+        PRIORITY: NORMAL
+        PARAM:
+            duration:
+                VALUE:
+                    ALL: 30
+                INFO: test time
+            poly:
+                VALUE:
+                    ALL: prbs31
+                INFO: PRBS polynomial
 
                 #    TEST#TRF:
                 #        INFO: internal traffic test

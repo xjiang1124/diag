@@ -105,6 +105,47 @@ func copyLogs(r io.Reader) {
     }
 }
 
+
+func Mtp_AsicPcie_PrbsHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 30, "test time")
+    polyPtr := fs.String("poly", "prbs31", "PRBS polynomial")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", "duration", *durationPtr, "poly", *polyPtr)
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.SUCCESS
+    return
+}
+
+func Mtp_AsicEth_PrbsHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 30, "test time")
+    polyPtr := fs.String("poly", "prbs31", "PRBS polynomial")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", "duration", *durationPtr, "poly", *polyPtr)
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.SUCCESS
+    return
+}
+
 func AsicL1_TestHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     snPtr := fs.String("sn", "SN000001", "Serial number")
