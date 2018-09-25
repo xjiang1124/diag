@@ -699,7 +699,7 @@ class mtp_ctrl():
     def mtp_diag_pre_init(self):
         # start the mtp diag
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
-        self._mgmt_handle.expect_exact("Set up diag amd64 -- Done")
+        self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=60)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 

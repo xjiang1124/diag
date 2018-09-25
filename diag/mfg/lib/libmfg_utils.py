@@ -308,13 +308,13 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
         return False
 
 
-def network_get_file(ip_addr, userid, passwd, local_dir, remote_file):
-    session = pexpect.spawn("scp {:s}@{:s}:{:s} {:s}".format(userid, ip_addr, remote_file, local_dir))
+def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
+    session = pexpect.spawn("scp {:s}@{:s}:{:s} {:s}".format(userid, ip_addr, remote_file, local_file))
     session.expect_exact("ssword:")
     session.sendline(passwd)
     session.expect_exact(pexpect.EOF)
 
-    cmd = "md5sum " + local_dir + os.path.basename(remote_file)
+    cmd = "md5sum " + local_file 
     session = pexpect.spawn(cmd)
     session.expect_exact(pexpect.EOF)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
