@@ -13,6 +13,7 @@ import (
     "common/dcli"
     "common/errType"
     "common/misc"
+    "common/runCmd"
     "config"
     //"bytes"
 )
@@ -23,62 +24,6 @@ const (
     // Each DSP should know it own name
     dspName = "ASIC"
 )
-
-//func AsicPcie_PrbsHdl(argList []string) {
-//    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-//    durationPtr := fs.Int("duration", 30, "test time")
-//
-//    errFs := fs.Parse(argList)
-//    if errFs != nil {
-//        dcli.Println("e", "Parse failed", errFs)
-//    }
-//
-//    // To avoid compile error: variable not used
-//    // Need to remove after implementing DSP handler
-//    dcli.Println("i", "duration", *durationPtr)
-//
-//    // Inform diag engine that test handler is done
-//    // Use chan to return error code
-//    diagEngine.FuncMsgChan <- errType.SUCCESS
-//    return
-//}
-//
-//func AsicEth_PrbsHdl(argList []string) {
-//    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-//    durationPtr := fs.Int("duration", 30, "test time")
-//
-//    errFs := fs.Parse(argList)
-//    if errFs != nil {
-//        dcli.Println("e", "Parse failed", errFs)
-//    }
-//
-//    // To avoid compile error: variable not used
-//    // Need to remove after implementing DSP handler
-//    dcli.Println("i", "duration", *durationPtr)
-//
-//    // Inform diag engine that test handler is done
-//    // Use chan to return error code
-//    diagEngine.FuncMsgChan <- errType.SUCCESS
-//    return
-//}
-//
-//func AsicTrfHdl(argList []string) {
-//    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-//
-//    errFs := fs.Parse(argList)
-//    if errFs != nil {
-//        dcli.Println("e", "Parse failed", errFs)
-//    }
-//
-//    // To avoid compile error: variable not used
-//    // Need to remove after implementing DSP handler
-//    dcli.Println("i", )
-//
-//    // Inform diag engine that test handler is done
-//    // Use chan to return error code
-//    diagEngine.FuncMsgChan <- errType.SUCCESS
-//    return
-//}
 
 func print(stdout io.ReadCloser) {
     r := bufio.NewReader(stdout)
@@ -187,6 +132,34 @@ func AsicL1_TestHdl(argList []string) {
     cmd.Wait()
 
     diagEngine.FuncMsgChan <- errType.SUCCESS
+    return
+}
+
+func AsicL11_TestHdl(argList []string) {
+    var err int
+
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    snPtr := fs.String("sn", "SN000001", "Serial number")
+    slotPtr := fs.Uint64("slot", 1, "Slot number")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    sn := *snPtr
+    slot := *slotPtr
+
+    dcli.Println("i", "sn:", sn, "; slot:", strconv.Itoa(int(slot)))
+
+    // Diable time stamp since there are too much asic output
+    dcli.TimeStampEnable(misc.DISABLE)
+    defer dcli.TimeStampEnable(misc.ENABLE)
+
+    err = runCmd.Run("L1 Test Passed", "L1 Test Failed", "tclsh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)))
+    //err = runCmd.Run("L1 Test Passed", "L1 Test Failed", "tclsh", "/home/diag/diag/scripts/asic/test.tcl", sn, strconv.Itoa(int(slot)))
+
+    diagEngine.FuncMsgChan <- err
     return
 }
 

@@ -15,6 +15,8 @@ set ASIC_GEN "$ASIC_SRC"
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.new
 
+exit 0
+
 diag_open_j2c_if 10 $slot_num
 source $ASIC_SRC/ip/cosim/capri/cap_l1_tests.tcl
 eth_eth_prbs $sn 10 $slot_num $time_sec $prbs

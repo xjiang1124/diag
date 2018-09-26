@@ -50,7 +50,7 @@ MTP003:
     APC_1_PORT: 
     APC_2_NAME: pen-hwlab-apc-02
     APC_2_PORT: 11
-    IP: 192.168.72.191
+    IP: 192.168.72.188
     SLOT_1:
     SLOT_2: 
     SLOT_3: 

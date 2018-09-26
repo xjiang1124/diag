@@ -1,5 +1,7 @@
 # !/bin/bash
 
+# ASIC repo need to be pulled and compiled before running this script
+
 DIAG_REPO="/vol/hw/diag/diag_repo/asic/amd64"
 ASIC_REPO="/home/xguo2/workspace/asic/"
 ASIC_GEN="/vol/dump/xguo2/workspace/asic"
