@@ -1005,14 +1005,14 @@ class mtp_ctrl():
         return rslt_list
 
 
-    def mtp_barcode_scan(self, sn_check=False):
+    def mtp_barcode_scan(self, present_check=True):
         mtp_scan_rslt = dict()
         mtp_ts_snapshot = libmfg_utils.get_timestamp()
         mtp_scan_rslt["MTP_ID"] = self._id
         mtp_scan_rslt["MTP_TS"] = mtp_ts_snapshot
         valid_nic_key_list = list()
+
         unscanned_nic_key_list = list()
- 
         scan_nic_key_list = list()
         scan_sn_list = list()
         scan_mac_list = list()
@@ -1021,34 +1021,43 @@ class mtp_ctrl():
         for slot in range(self._slots):
             key = libmfg_utils.nic_key(slot)
             valid_nic_key_list.append(key)
-            if self._nic_prsnt_list[slot]:
+            if present_check and self._nic_prsnt_list[slot]:
                 unscanned_nic_key_list.append(key)
  
         while True:
-            unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
+            if present_check:
+                unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
+                usr_prompt = "\nUnscanned NIC list [{:s}]\nPlease Scan NIC ID Barcode:".format(unscanned_nic_list_cli_str)
+            else:
+                usr_prompt = "\nPlease Scan NIC ID Barcode:"
             nic_scan_rslt = dict()
-            usr_prompt = "\nUnscanned NIC list [{:s}]\nPlease Scan NIC ID Barcode:".format(unscanned_nic_list_cli_str)
             raw_scan = raw_input(usr_prompt)
  
             if raw_scan == "STOP":
-                # basic sanity check, make sure all nic in the system get scanned
-                if len(unscanned_nic_key_list) != 0:
-                    self.cli_log_err("Diag detect {:s}, but not scanned yet".format(unscanned_nic_list_cli_str), level=0)
+                if present_check and len(unscanned_nic_key_list) != 0:
+                    self.cli_log_err("{:s} have not scanned yet".format(unscanned_nic_list_cli_str), level=0)
                     continue
                 else:
                     break
             elif raw_scan in scan_nic_key_list:
-                self.cli_log_err("Duplicate NIC ID Barcode: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                self.cli_log_err("NIC ID Barcode: {:s} is double scanned, please restart the scan process\n".format(raw_scan), level=0)
                 return None
             else:
                 key = raw_scan
                 # basic sanity check
-                if key not in unscanned_nic_key_list:
-                    self.cli_log_err("Invalid NIC ID: {:s}".format(key), level=0)
-                    continue
+                if present_check:
+                    if key not in unscanned_nic_key_list:
+                        self.cli_log_err("Invalid NIC ID: {:s}".format(key), level=0)
+                        continue
+                    else:
+                        scan_nic_key_list.append(key)
+                        unscanned_nic_key_list.remove(key)
                 else:
-                    scan_nic_key_list.append(key)
-                    unscanned_nic_key_list.remove(key)
+                    if key not in valid_nic_key_list:
+                        self.cli_log_err("Invalid NIC ID: {:s}".format(key), level=0)
+                        continue
+                    else:
+                        scan_nic_key_list.append(key)
  
             usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
             raw_scan = raw_input(usr_prompt)
@@ -1056,9 +1065,8 @@ class mtp_ctrl():
             if not sn:
                 self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
                 return None
- 
             if sn in scan_sn_list:
-                self.cli_log_err("Duplicate NIC Serial Number: {:s} detected, please restart the scan process\n".format(sn), level=0)
+                self.cli_log_err("NIC Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
                 return None
             else:
                 scan_sn_list.append(sn)
@@ -1069,10 +1077,9 @@ class mtp_ctrl():
             if not mac:
                 self.cli_log_err("Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
                 return None
- 
             mac_ui = libmfg_utils.mac_address_format(mac)
             if mac in scan_mac_list:
-                self.cli_log_err("Duplicate NIC MAC Address: {:s} detected, please restart the scan process\n".format(mac_ui), level=0)
+                self.cli_log_err("NIC MAC Address: {:s} is double scanned, please restart the scan process\n".format(mac_ui), level=0)
                 return None
             else:
                 scan_mac_list.append(mac)
@@ -1090,15 +1097,32 @@ class mtp_ctrl():
             nic_scan_rslt["NIC_VALID"] = False
             mtp_scan_rslt[key] = nic_scan_rslt
 
-        # double check the sn, if the nic already have sn programmed, the scan result should match
-        if sn_check:
-            for slot in range(self._slots):
-                if self._nic_prsnt_list[slot]:
-                    fru_sn = self._nic_sn_list[slot]
-                    key = libmfg_utils.nic_key(slot)
-                    scan_sn = mtp_scan_rslt[key]["NIC_SN"]
-                    if scan_sn != fru_sn:
-                        self.cli_log_err("NIC Serial Number mismatch, barcode scan get {:s} while fru read {:s}\n".format(scan_sn, fru_sn), level=0)
-                        return None
- 
         return mtp_scan_rslt
+
+    # generate the local barcode config file
+    def gen_barcode_config_file(self, pro_srv_id, file_p, scan_rslt):
+        config_lines = [str(scan_rslt["MTP_ID"]) + ":"]
+        tmp = "    SRV: " + pro_srv_id
+        config_lines.append(tmp)
+        tmp = "    TS: " +  scan_rslt["MTP_TS"]
+        config_lines.append(tmp)
+        for slot in range(self._slots):
+            key = libmfg_utils.nic_key(slot)
+            tmp = "    " + key + ":"
+            config_lines.append(tmp)
+ 
+            if scan_rslt[key]["NIC_VALID"]:
+                tmp = "        VALID: \"Yes\""
+                config_lines.append(tmp)
+                tmp = "        SN: \"" + scan_rslt[key]["NIC_SN"] + "\""
+                config_lines.append(tmp)
+                tmp = "        MAC: \"" + scan_rslt[key]["NIC_MAC"] + "\""
+                config_lines.append(tmp)
+                tmp = "        TS: " + scan_rslt[key]["NIC_TS"]
+                config_lines.append(tmp)
+            else:
+                tmp = "        VALID: \"No\""
+                config_lines.append(tmp)
+ 
+        for line in config_lines:
+            file_p.write(line + "\n")

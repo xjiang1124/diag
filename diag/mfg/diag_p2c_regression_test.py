@@ -51,7 +51,7 @@ def test_report(email_to, mtp_id, loop):
             return True
 
 
-def load_mtp_cfg():
+def get_pro_srv_id():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
     pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
@@ -61,7 +61,10 @@ def load_mtp_cfg():
             return None
     else:
         pro_srv_id = pro_srv_list[0]
+    return pro_srv_id
 
+
+def load_mtp_cfg(pro_srv_id):
     # find the mtp config files controlled by the chosen product server
     filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
     mtp_chassis_cfg_file = os.path.abspath("config/" + filename)
@@ -115,7 +118,8 @@ def main():
     if args.pwr_cycle:
         pwr_cycle = True
 
-    mtp_cfg_db = load_mtp_cfg()
+    pro_srv_id = get_pro_srv_id()
+    mtp_cfg_db = load_mtp_cfg(pro_srv_id)
     mtp_id = get_mtpid(mtp_cfg_db)
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     srv_log_filep = open("log/srv.log", "w+")

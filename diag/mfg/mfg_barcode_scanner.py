@@ -16,33 +16,16 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
 
-# generate the local barcode config file
-def gen_barcode_config_file(pro_srv_id, file_p, scan_rslt):
-    config_lines = [str(scan_rslt["MTP_ID"]) + ":"]
-    tmp = "    SRV: " + pro_srv_id
-    config_lines.append(tmp)
-    tmp = "    TS: " +  scan_rslt["MTP_TS"]
-    config_lines.append(tmp)
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        tmp = "    " + key + ":"
-        config_lines.append(tmp)
 
-        if scan_rslt[key]["NIC_VALID"]:
-            tmp = "        VALID: \"Yes\""
-            config_lines.append(tmp)
-            tmp = "        SN: \"" + scan_rslt[key]["NIC_SN"] + "\""
-            config_lines.append(tmp)
-            tmp = "        MAC: \"" + scan_rslt[key]["NIC_MAC"] + "\""
-            config_lines.append(tmp)
-            tmp = "        TS: " + scan_rslt[key]["NIC_TS"]
-            config_lines.append(tmp)
-        else:
-            tmp = "        VALID: \"No\""
-            config_lines.append(tmp)
+def logfile_close(filep_list):
+    for _filep in filep_list:
+        filep.close()
+    os.system("sync")
 
-    for line in config_lines:
-        file_p.write(line + "\n")
+
+def logfile_cleanup(file_list):
+    for _file in file_list:
+        os.system("rm -f {:s}".format(_file))
 
 
 def main():
@@ -89,13 +72,16 @@ def main():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
     # local log files
-    scan_cfg_file = "_".join(["barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
+    log_file_list = list()
+    log_filep_list = list()
     test_log_file = "_".join(["test_dl", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".log"
+    log_file_list.append(test_log_file)
     diag_log_file = "_".join(["diag_dl", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".log"
-    asic_log_file = "_".join(["asic_dl", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".log"
-    scan_cfg_filep = open(scan_cfg_file, "w+")
+    log_file_list.append(diag_log_file)
     diag_log_filep = open(diag_log_file, "w+")
+    log_filep_list.append(diag_log_filep)
     test_log_filep = open(test_log_file, "w+")
+    log_filep_list.append(test_log_filep)
 
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg, dbg_mode = verbosity)
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -107,8 +93,9 @@ def main():
     libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Try to connect MTP chassis")
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         libmfg_utils.cli_log_err(test_log_filep, mtp_cli_id_str + "Unable to connect MTP chassis")
+        logfile_close(log_filep_list)
         return
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "MTP chassis connected")
+    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "MTP chassis connected\n")
 
     # get the sw version info
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
@@ -125,11 +112,16 @@ def main():
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
         libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power off APC")
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        logfile_close(log_filep_list)
         return
 
     # power on all the nic.
     mtp_mgmt_ctrl.mtp_power_on_nic()
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_prsnt_nic_list()
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    if not True in nic_prsnt_list:
+        libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "No NIC Present, Abort Barcode Scan Process")
+        logfile_close(log_filep_list)
+        return
 
     nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
     naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
@@ -160,9 +152,11 @@ def main():
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
     libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
 
-    gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
+    scan_cfg_file = "_".join(["barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
+    scan_cfg_filep = open(scan_cfg_file, "w+")
+    mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
-    os.system("sync")
+    log_file_list.append(scan_cfg_file)
 
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
@@ -188,18 +182,14 @@ def main():
                 vrm_img_file = naples25_vrm_img_file
                 vrm_img_cksum = naples25_vrm_img_cksum
             else:
-                libmfg_utils.sys_exit("Unknown NIC type detected: {:s}".format(card_type))
+                libmfg_utils.cli_log_err(test_log_filep, nic_cli_id_str + "Unknown NIC type detected: {:s}".format(card_type))
+                logfile_close(log_filep_list)
+                return
 
             libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui)
             libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "CPLD image: " + os.path.basename(cpld_img_file))
             libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "VRM image: " + os.path.basename(vrm_img_file) + "\n")
             err_inj_slot_list.append(slot)
-
-    if len(err_inj_slot_list) == 0:
-        libmfg_utils.cli_log_err(test_log_filep, mtp_cli_id_str + "No NIC present, firmware update is not required")
-        test_log_filep.close()
-        diag_log_filep.close()
-        return
 
     # start the programming
     libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "NIC firmware update process started\n")
@@ -238,7 +228,9 @@ def main():
                 vrm_img_cksum = naples25_vrm_img_cksum
                 naples25_sn_list.append(sn)
             else:
-                libmfg_utils.sys_exit("Unknown NIC type detected: {:s}".format(card_type))
+                libmfg_utils.cli_log_err(test_log_filep, nic_cli_id_str + "Unknown NIC type detected: {:s}".format(card_type))
+                logfile_close(log_filep_list)
+                return
 
             if not mtp_mgmt_ctrl.mtp_nic_fw_update(slot, sn, mac, cpld_img_file, vrm_img_file, vrm_img_cksum, slot_err_inj):
                 fail_nic_list.append(key)
@@ -262,9 +254,7 @@ def main():
         pass_rslt_list.append(mtp_cli_id_str + ", ".join(pass_nic_list) + " Firmware Program Passed")
     libmfg_utils.cli_log_rslt("NIC Fimrware Update Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
 
-    test_log_filep.close()
-    diag_log_filep.close()
-    os.system("sync")
+    logfile_close(log_filep_list)
 
     # move the logs to the log root dir
     if len(naples100_sn_list) > 0:
@@ -302,8 +292,7 @@ def main():
             os.system("cp " + scan_cfg_file + " " + logdir + logfile)
 
     # remove the local log files
-    os.system("rm -f " + scan_cfg_file + " " + test_log_file + " " + diag_log_file)
-
+    logfile_cleanup(log_file_list)
     return
 
 if __name__ == "__main__":
