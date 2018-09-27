@@ -8,6 +8,8 @@ import os
 import time
 import pexpect
 
+from libdefs import MTP_Const
+
 def get_linux_prompt_list():
     return ["#", "$", ">"]
 
@@ -269,7 +271,7 @@ def load_cfg_from_yaml(yaml_file):
 def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + local_file
     session = pexpect.spawn(cmd)
-    session.expect_exact(pexpect.EOF)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
     if match:
@@ -281,7 +283,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s}".format(local_file, userid, ip_addr, remote_dir))
     session.expect_exact("ssword:")
     session.sendline(passwd)
-    session.expect_exact(pexpect.EOF)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
 
     # verify the file md5sum
     cmd = " ".join(["ssh -l", userid, ip_addr])
@@ -291,9 +293,13 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     session.sendline(passwd)
     session.expect_exact(get_linux_prompt_list())
 
+    cmd = "sync"
+    session.sendline(cmd)
+    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_SYNC_DELAY)
+
     cmd = "md5sum " + remote_dir + os.path.basename(local_file)
     session.sendline(cmd)
-    session.expect_exact(get_linux_prompt_list())
+    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
     # md5sum match
@@ -312,11 +318,15 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
     session = pexpect.spawn("scp {:s}@{:s}:{:s} {:s}".format(userid, ip_addr, remote_file, local_file))
     session.expect_exact("ssword:")
     session.sendline(passwd)
-    session.expect_exact(pexpect.EOF)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
+
+    cmd = "sync"
+    session = pexpect.spawn(cmd)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_SYNC_DELAY)
 
     cmd = "md5sum " + local_file 
     session = pexpect.spawn(cmd)
-    session.expect_exact(pexpect.EOF)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
     if match:
@@ -335,7 +345,7 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
 
     cmd = "md5sum " + remote_file
     session.sendline(cmd)
-    session.expect_exact(get_linux_prompt_list())
+    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
     # md5sum match

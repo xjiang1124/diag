@@ -13,7 +13,7 @@ from libdefs import MTP_Status
 from libdefs import NIC_Port_Mask
 
 class mtp_ctrl():
-    def __init__(self, mtpid, filep, diag_logfile_p, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, dbg_mode = False):
+    def __init__(self, mtpid, filep, diag_log_filep, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, dbg_mode = False):
         self._id = mtpid
         self._ts_handle = None
         self._mgmt_handle = None
@@ -36,7 +36,7 @@ class mtp_ctrl():
 
         self._debug_mode = dbg_mode
         self._filep = filep
-        self._diag_filep = diag_logfile_p
+        self._diag_filep = diag_log_filep
 
 
     def cli_log_inf(self, msg, level = 1):
@@ -85,7 +85,7 @@ class mtp_ctrl():
     def _mtp_single_apc_pwr_off(self, apc, userid, passwd, port_list):
         handle = pexpect.spawn("telnet " + apc)
         if self._debug_mode:
-            handle.logfile = sys.stdout
+            handle.logfile_read = sys.stdout
         while True:
             idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
             if idx == 0:
@@ -120,7 +120,7 @@ class mtp_ctrl():
     def _mtp_single_apc_pwr_on(self, apc, userid, passwd, port_list):
         handle = pexpect.spawn("telnet " + apc)
         if self._debug_mode:
-            handle.logfile = sys.stdout
+            handle.logfile_read = sys.stdout
         while True:
             idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
             if idx == 0:
@@ -154,7 +154,7 @@ class mtp_ctrl():
     def _mtp_single_apc_pwr_cycle(self, apc, userid, passwd, port_list):
         handle = pexpect.spawn("telnet " + apc)
         if self._debug_mode:
-            handle.logfile = sys.stdout
+            handle.logfile_read = sys.stdout
         while True:
             idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
             if idx == 0:
@@ -332,6 +332,7 @@ class mtp_ctrl():
             handle.sendline("whoami")
             handle.expect_exact(userid)
             handle.expect_exact(self._prompt_list[idx])
+            self.mtp_prompt_cfg(handle, userid, self._prompt_list[idx])
             return handle
         else:
             self.cli_log_err("Unknown linux prompt", level = 0)
@@ -372,22 +373,28 @@ class mtp_ctrl():
 
         idx = self._mgmt_handle.expect_exact(self._prompt_list, timeout = 5) 
         if (idx < len(self._prompt_list)):
+            self._mgmt_prompt = self._prompt_list[idx]
             self._mgmt_handle.sendline("whoami")
             self._mgmt_handle.expect_exact(userid)
-            self._mgmt_handle.expect_exact(self._prompt_list[idx])
-            self._mgmt_prompt = self._prompt_list[idx]
-            self._mgmt_handle.sendline("stty rows 50 cols 160")
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
+            self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
             # set logfile
             if self._debug_mode:
-                self._mgmt_handle.logfile = sys.stdout
+                self._mgmt_handle.logfile_read = sys.stdout
             else:
-                self._mgmt_handle.logfile = self._diag_filep
+                self._mgmt_handle.logfile_read = self._diag_filep
             return self._mgmt_prompt
         else:
             self.cli_log_err("Unknown linux prompt", level = 0)
             return None
         
+
+    def mtp_prompt_cfg(self, handle, userid, prompt):
+        handle.sendline("stty rows 50 cols 160")
+        handle.expect_exact(prompt)
+        handle.sendline("PS1='\u@\h:{:s} '".format(prompt))
+        handle.expect(r"{:s}.*{:s}".format(userid, prompt))
+
 
     def mtp_enter_user_ctrl(self):
         if self._mgmt_handle:
@@ -408,7 +415,7 @@ class mtp_ctrl():
         self._mgmt_handle.sendline(passwd)
         if cmd == "reboot" or cmd == "poweroff":
             self._mgmt_handle.expect_exact(pexpect.EOF)
-            self._mgmt_handle.logfile = None
+            self._mgmt_handle.logfile_read = None
             self.mtp_mgmt_disconnect()
         else:
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
@@ -428,7 +435,9 @@ class mtp_ctrl():
 
     def mtp_update_sw_image(self, image):
         self._mgmt_handle.sendline("tar zxf " + image)
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.OS_CMD_DELAY)
+        self._mgmt_handle.sendline("sync")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.OS_SYNC_DELAY)
 
 
     def mtp_mgmt_poweroff(self):
@@ -439,9 +448,12 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_exec_cmd(self, cmd, timeout=30):
+    def mtp_mgmt_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
         self._mgmt_handle.sendline(cmd)
-        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout)
+        try:
+            self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout)
+        except pexpect.TIMEOUT:
+            return False
         return True
 
 
@@ -699,23 +711,27 @@ class mtp_ctrl():
     def mtp_diag_pre_init(self):
         # start the mtp diag
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
-        self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=60)
+        self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=MTP_Const.OS_CMD_DELAY)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 
     def mtp_diag_init(self, filep):
         # start the mtp diag
         diagmgr_handle = self.mtp_session_create()
-        diagmgr_handle.logfile = filep
+        diagmgr_handle.logfile_read = filep
         diagmgr_handle.sendline("diagmgr &")
         diagmgr_handle.expect_exact(self._mgmt_prompt)
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
         diagmgr_handle.sendline("cd ~/diag/python/infra/dshell")
         diagmgr_handle.expect_exact(self._mgmt_prompt)
         diagmgr_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
+        diagmgr_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
         diagmgr_handle.expect_exact(self._mgmt_prompt)
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
         self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
  
 
     def mtp_hw_init(self, psu_check):
@@ -887,7 +903,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_sn(self, slot, sn):
         nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "    -- Set SN to {:s}".format(sn))
+        self.cli_log_inf(nic_cli_id_str + "    Set SN to {:s}".format(sn), level = 0)
         self._nic_sn_list[slot] = sn
 
 
@@ -904,7 +920,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_mac(self, slot, mac):
         nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "    -- Set MAC to {:s}".format(mac))
+        self.cli_log_inf(nic_cli_id_str + "    Set MAC to {:s}".format(mac), level = 0)
         self._nic_mac_list[slot] = mac
 
 
@@ -964,8 +980,8 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(init_cmd):
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
 
-        if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=3600):
-            return MTP_DIAG_Error.NIC_DIAG_FAIL
+        if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
+            return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
         
         # post command
         if post_cmd:

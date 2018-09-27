@@ -7,6 +7,7 @@ import pexpect
 import re
 import argparse
 import random
+import datetime 
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -210,6 +211,7 @@ def main():
     #naples25_test_db = diag_db(naples25_test_cfg_file)
 
     # get nic present, nic type, nic sn, etc
+    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP SW version: {:s}".format(sw_ver))
     mtp_mgmt_ctrl.mtp_nic_init(load_sn = fru_load, load_mac = fru_load)
 
     # if sn is not from fru,  from config file
@@ -257,9 +259,9 @@ def main():
     libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test List End\n")
 
     libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment:")
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    -- Iteration = {:3d}".format(iteration))
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    -- Fan Speed = {:3d}%".format(fanspd))
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    -- Voltage Margin = {:d}%".format(vmarg))
+    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    Iteration = {:3d}".format(iteration))
+    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    Fan Speed = {:3d}%".format(fanspd))
+    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    Voltage Margin = {:d}%".format(vmarg))
     libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment End\n")
 
     # Fan speed, voltage margin setup
@@ -293,14 +295,18 @@ def main():
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=slot)
                 nic_key = libmfg_utils.nic_key(slot)
                 libmfg_utils.cli_log_inf(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Started".format(dsp))
+
+                start_ts = datetime.datetime.now().replace(microsecond=0)
                 ret = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, clr_cmd, test, init_cmd, post_cmd)
+                stop_ts = datetime.datetime.now().replace(microsecond=0)
+
                 if ret == MTP_DIAG_Error.MTP_DIAG_PASS:
                     libmfg_utils.cli_log_inf(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Passed".format(dsp))
                 elif ret == MTP_DIAG_Error.NIC_DIAG_FAIL:
                     libmfg_utils.cli_log_err(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Failed".format(dsp))
                     mtp_error_report(MTP_DIAG_Error.NIC_DIAG_FAIL)
                     if stop_on_err:
-                        test_nic_list.remove(slot)
+                        naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list: 
                         fail_nic_list.append(nic_key)
                     if nic_key in pass_nic_list:
@@ -309,11 +315,13 @@ def main():
                     libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Test {:s} Timeout".format(dsp))
                     mtp_error_report(MTP_DIAG_Error.NIC_DIAG_TIMEOUT)
                     if stop_on_err:
-                        test_nic_list.remove(slot)
+                        naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list: 
                         fail_nic_list.append(nic_key)
                     if nic_key in pass_nic_list:
                         pass_nic_list.remove(nic_key)
+
+                libmfg_utils.cli_log_inf(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Cost {:s}".format(dsp, stop_ts-start_ts))
 
         libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP Diag Regression Iteration - {:03d} Complete\n".format(loop))
     libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP Diag Regression Test Complete")
