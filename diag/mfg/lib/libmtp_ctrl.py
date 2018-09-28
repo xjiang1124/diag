@@ -371,23 +371,26 @@ class mtp_ctrl():
                     self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
                     return None
 
-        idx = self._mgmt_handle.expect_exact(self._prompt_list, timeout = 5) 
-        if (idx < len(self._prompt_list)):
-            self._mgmt_prompt = self._prompt_list[idx]
-            self._mgmt_handle.sendline("whoami")
-            self._mgmt_handle.expect_exact(userid)
-            self._mgmt_handle.expect_exact(self._mgmt_prompt)
-            self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
-            # set logfile
-            if self._debug_mode:
-                self._mgmt_handle.logfile_read = sys.stdout
+        try:
+            idx = self._mgmt_handle.expect_exact(self._prompt_list, timeout = 5) 
+            if (idx < len(self._prompt_list)):
+                self._mgmt_prompt = self._prompt_list[idx]
+                self._mgmt_handle.sendline("whoami")
+                self._mgmt_handle.expect_exact(userid)
+                self._mgmt_handle.expect_exact(self._mgmt_prompt)
+                self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
+                # set logfile
+                if self._debug_mode:
+                    self._mgmt_handle.logfile_read = sys.stdout
+                else:
+                    self._mgmt_handle.logfile_read = self._diag_filep
+                return self._mgmt_prompt
             else:
-                self._mgmt_handle.logfile_read = self._diag_filep
-            return self._mgmt_prompt
-        else:
-            self.cli_log_err("Unknown linux prompt", level = 0)
-            return None
-        
+                self.cli_log_err("Unknown linux prompt", level = 0)
+                return None
+        except pexpect.TIMEOUT:
+            libmfg_utils.sys_exit("MTP mgmt connection hangs...")
+       
 
     def mtp_prompt_cfg(self, handle, userid, prompt):
         handle.sendline("stty rows 50 cols 160")
@@ -715,7 +718,7 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 
-    def mtp_diag_init(self, filep):
+    def mtp_diag_init(self, filep, naples100_test_db):
         # start the mtp diag
         diagmgr_handle = self.mtp_session_create()
         diagmgr_handle.logfile_read = filep
@@ -728,10 +731,22 @@ class mtp_ctrl():
         diagmgr_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
         diagmgr_handle.expect_exact(self._mgmt_prompt)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+        diagmgr_handle.sendline("./diag -sdsp")
+        diagmgr_handle.expect_exact(self._mgmt_prompt)
+
+        # naples100 dsp check
+        self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
+        naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
+        for dsp in naples100_dsp_list: 
+            if dsp not in diagmgr_handle.before:
+                self.cli_log_err("Diag DSP: {:s} is not detected", level = 0)
+                return False
+        self.cli_log_inf("Diag DSP Sanity Check Complete", level = 0)
 
         self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
+        return True
  
 
     def mtp_hw_init(self, psu_check):
@@ -828,6 +843,10 @@ class mtp_ctrl():
         self.cli_log_inf("Init NIC Type")
         self.mtp_init_nic_type()
 
+        # nic sanity check
+        self.cli_log_inf("NIC Sanity Check")
+        self.mtp_sys_sanity_check()
+
         # power on nic
         self.cli_log_inf("Power on NICs")
         self.mtp_power_on_nic()
@@ -858,7 +877,7 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("inventory -present")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
-        match = re.findall(r"UUT_(\d) +NAPLES", self._mgmt_handle.before)
+        match = re.findall(r"UUT_(\d) +NAPLES\d+", self._mgmt_handle.before)
         if match: 
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
@@ -888,6 +907,17 @@ class mtp_ctrl():
 
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
+
+
+    def mtp_sys_sanity_check(self):
+        if True not in self._nic_prsnt_list:
+            self._mgmt_handle.sendline("sys_sanity.sh 1")
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        else:
+            for slot in range(self._slots):
+                if self._nic_prsnt_list[slot]:
+                    self._mgmt_handle.sendline("sys_sanity.sh {:d}".format(slot+1))
+                    self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 
     def mtp_init_nic_sn(self):

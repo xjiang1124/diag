@@ -147,10 +147,14 @@ def sys_exit(err):
 
 def get_timestamp():
     # 2018-08-07 22:54:40.484198
-    tmp = str(datetime.datetime.now())[:19]
+    tmp = str(timestamp_snapshot())
     tmp = tmp.replace(' ', '_')
     tmp = tmp.replace(':', '-')
     return tmp
+
+
+def timestamp_snapshot():
+    return datetime.datetime.now().replace(microsecond=0)
 
 
 def serial_number_validate(tmp):

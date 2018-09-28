@@ -137,10 +137,19 @@ class diag_db():
         return self._seq_tests[dsp][test]
 
 
+    def get_diag_seq_dsp_list(self):
+        return self._seq_tests.keys()
+
+
     def get_diag_para_test_list(self):   
         return self._para_test_id_list
 
 
     def get_diag_para_test(self, dsp, test):   
         return self._para_tests[dsp][test]
+
+
+    def get_diag_para_dsp_list(self):
+        return self._para_tests.keys()
+
 

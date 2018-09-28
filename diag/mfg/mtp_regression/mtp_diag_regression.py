@@ -34,6 +34,7 @@ def mtp_test_cleanup(error_code, fp_list=None):
             fp.close()
         os.system("sync")
 
+    os.system("cleanup.sh")
     mtp_error_report(error_code)
 
 
@@ -201,6 +202,7 @@ def main():
     ret = mtp_mgmt_ctrl.mtp_hw_init(psu_check)
     if not ret:
         libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "MTP Sanity Check Failed")
+        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
         return
 
@@ -232,7 +234,11 @@ def main():
     else:
         pass
 
-    mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_filep)
+    ret = mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_filep, naples100_test_db)
+    if not ret: 
+        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
+        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+        return
 
     naples100_nic_list = list()
     #naples25_nic_list = list()
@@ -268,6 +274,7 @@ def main():
     libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment Setup")
     if not mtp_mgmt_ctrl.mtp_diag_env_init(fanspd, vmarg):
         libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment Setup Failed\n")
+        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
         return
     else:
@@ -335,6 +342,7 @@ def main():
         diag_pass_rslt_list.append(mtp_cli_id_str + ", ".join(pass_nic_list) + " Diag Regression Test Pass")
 
     libmfg_utils.cli_log_rslt("Diag Test Summary", diag_pass_rslt_list, diag_fail_rslt_list, mtp_test_log_filep)
+    os.system("cleanup.sh")
 
 
 if __name__ == "__main__":

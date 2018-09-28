@@ -28,6 +28,20 @@ MTP_SEQ:
                 NIC_NAME: No
                 SN: Yes
                 SLOT: Yes
+        ETH_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+        PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
 #    I2C:
 #        PROBE:
 #            - INIT: ""

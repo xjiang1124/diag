@@ -28,6 +28,7 @@ def main():
     skip_image_update = True
     apc = False
     mtp_id = None
+    email_to = None
 
     args = parser.parse_args()
     if args.apc:
