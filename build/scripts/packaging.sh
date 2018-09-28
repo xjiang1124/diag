@@ -59,6 +59,7 @@ cp -r $TOP_DIR/diag/python/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
+cp -r $TOP_DIR/diag/util/bin/$arch/* $TEMP_DIR/util/
 
 # Version
 git log --name-status HEAD^..HEAD > $TEMP_DIR/scripts/version.txt
