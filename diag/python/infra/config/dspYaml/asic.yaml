@@ -77,6 +77,19 @@ DSP:
             NIC: MTP
         PRIORITY: NORMAL
         PARAM:
+            timeout:
+                VALUE:
+                    ALL: 2500
+                INFO: Test timeout setting
+            sn:
+                VALUE:
+                    ALL: "SN000001"
+                INFO: NIC slot number
+            slot:
+                VALUE:
+                    ALL: 0
+                INFO: NIC slot number
+
             duration:
                 VALUE:
                     ALL: 30
@@ -85,13 +98,6 @@ DSP:
                 VALUE:
                     ALL: prbs31
                 INFO: PRBS polynomial
-
-                #    TEST#TRF:
-                #        INFO: internal traffic test
-                #        PLATFORM:
-                #            NIC: NAPLES100
-                #        PRIORITY: NORMAL
-                #        PARAM:
 
     TEST#L1:
         INFO: chip internal test

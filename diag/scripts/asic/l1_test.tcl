@@ -15,5 +15,11 @@ source .tclrc.diag.new
 puts "brd_num: $brd_num; slot_id: $slot_id"
 diag_open_j2c_if 10 $slot_id
 source $ASIC_SRC/ip/cosim/capri/cap_l1_tests.tcl
-cap_l1_screen $brd_num 10 $slot_id
+set err_cnt [cap_l1_screen $brd_num 10 $slot_id]
+
+if {$err_cnt == 0} {
+    puts "L1 TEST PASSED"
+} else {
+    puts "L1 TEST FAILED"
+}
 
