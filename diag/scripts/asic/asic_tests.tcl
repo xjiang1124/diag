@@ -30,7 +30,7 @@ proc ext_eth_prbs { {board_id SN000001} {j2c_port 10} {j2c_slot 1} {time_sec 60}
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     plog_stop
 
-    return err_cnt
+    return $err_cnt
 }
 
 proc ext_pcie_prbs { board_id j2c_port j2c_slot {time_sec 60} {prbs prbs31} } {
@@ -53,5 +53,5 @@ proc ext_pcie_prbs { board_id j2c_port j2c_slot {time_sec 60} {prbs prbs31} } {
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     plog_stop
-    return err_cnt
+    return $err_cnt
 }
