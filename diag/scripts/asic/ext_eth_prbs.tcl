@@ -19,7 +19,7 @@ source $ASIC_SRC/ip/cosim/capri/cap_l1_tests.tcl
 source $DIAG_SRC/asic_tests.tcl
 
 diag_open_j2c_if 10 $slot_num
-set err_cnt [ext_eth_prbs $sn 10 $slot_num $time_sec $prbs
+set err_cnt [ext_eth_prbs $sn 10 $slot_num $time_sec $prbs]
 if {$err_cnt == 0} {
     plog_msg "ETH PRBS PASSED"
 } else {
