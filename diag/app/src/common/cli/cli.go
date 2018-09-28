@@ -64,7 +64,7 @@ func Init(fileName string, mode int) {
         if err != nil {
             log.Fatal("Open file failed!", path, fileName)
         }
-        multi = io.MultiWriter(os.Stdout, file)
+        multi = io.MultiWriter(os.Stdout, os.Stderr, file)
     }
 
 	var debugHandle io.Writer = multi
