@@ -3,6 +3,7 @@
 import pexpect
 import re
 import sys
+import time
 
 child = pexpect.spawn("bash")
 child.logfile_read = sys.stdout
@@ -27,6 +28,8 @@ child.expect("\$ ")
 
 child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/002")
 child.expect("\$ ")
+
+time.sleep(30)
 
 # Enable fan controller
 #child.sendline("spi_acc reg 0xe 0x10")
