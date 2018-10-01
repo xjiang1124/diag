@@ -1,0 +1,146 @@
+/home/diag/start_diag.sh
+-------------------
+Preparing diag environment
+Set up ASIC environment
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ sudo chmod ugo+rw /dev/i2c-8
+[sudo] password for diag: 
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ sudo chmod ugo+rw /dev/i2c-0
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ sudo rmmod ftdi_sio
+rmmod: ERROR: Module ftdi_sio is not currently loaded
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ sudo chmod ugo+rw /dev/bus/usb/001/001
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ sudo chmod ugo+rw /dev/bus/usb/001/002
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ cpldutil -cpld-wr -addr=0xe -data=0x10
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ cpldutil -cpld-wr -addr=0x2 -data=0x00
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ devmgr -dev=fan -faninit
+[INFO]   [2018-10-01-10:14:03.838] Fan initialized
+[INFO]   [2018-10-01-10:14:03.838] Fan initialized
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ devmgr -dev=fan -speed -pct=40
+]0;diag@MTP: ~[01;32mdiag@MTP[00m:[01;34m~[00m$ envinit Done
+Could not connect to Redis at 127.0.0.1:6379: Connection refused
+Turning on diag engine
+OK
+OK
+Diag engine turned on
+OK
+Redis keys loaded
+Preparing diag environment -- Done
+-------------------
+Set up diag amd64 -- Done
+====================================
+diag@MTP:$ version
+commit 2a6928093ead51194f6855c8452e176049d10114
+Author: Xin Guo <xin.guo@pensando.io>
+Date:   Fri Sep 28 19:44:50 2018 -0700
+
+    add sleep 30 in envinti.py
+
+M	diag/python/regression/envinit.py
+HEAD detached at 2a692809
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	temp/
+
+nothing added to commit but untracked files present (use "git add" to track)
+diag@MTP:$ mtptest -present
+[INFO]    [2018-10-01-10:14:09.535] CPLD read at addr 0x3 with data 0x17
+[INFO]    [2018-10-01-10:14:09.536] Fan 0 is present
+[INFO]    [2018-10-01-10:14:09.536] Fan 1 is present
+[INFO]    [2018-10-01-10:14:09.536] Fan 2 is present
+[INFO]    [2018-10-01-10:14:09.536] PSU 0 is NOT present
+[INFO]    [2018-10-01-10:14:09.537] PSU 1 is present
+[INFO]    [2018-10-01-10:14:10.062] CPLD read at addr 0x14 with data 0x0
+[INFO]    [2018-10-01-10:14:10.063] NIC 0 is NOT present
+[INFO]    [2018-10-01-10:14:10.063] NIC 1 is NOT present
+[INFO]    [2018-10-01-10:14:10.064] NIC 2 is NOT present
+[INFO]    [2018-10-01-10:14:10.064] NIC 3 is NOT present
+[INFO]    [2018-10-01-10:14:10.064] NIC 4 is NOT present
+[INFO]    [2018-10-01-10:14:10.064] NIC 5 is NOT present
+[INFO]    [2018-10-01-10:14:10.064] NIC 6 is NOT present
+[INFO]    [2018-10-01-10:14:10.064] NIC 7 is NOT present
+[INFO]    [2018-10-01-10:14:10.078] CPLD read at addr 0x15 with data 0xff
+[INFO]    [2018-10-01-10:14:10.078] NIC 8 is present
+[INFO]    [2018-10-01-10:14:10.078] NIC 9 is present
+[ERROR]   [2018-10-01-10:14:10.079] (misctest.go 365) ##### Present TEST FAILED! #####
+
+diag@MTP:$ mtptest -fanspd
+[INFO]    [2018-10-01-10:14:20.233] ##### Fan Speed TEST PASSED! #####
+diag@MTP:$ devmgr -dev=fan -speed -pct=40
+diag@MTP:$ mtptest -psu -psumask 0x2
+[INFO]    [2018-10-01-10:14:20.386] PSU_1 bypassed
+[INFO]    [2018-10-01-10:14:20.389] =================================
+[INFO]    [2018-10-01-10:14:20.392] MFR_ID: BEL POWER SOLUTIONS
+[INFO]    [2018-10-01-10:14:20.395] MFR_MODEL: PET1600-12-074NA    
+[INFO]    [2018-10-01-10:14:20.395] --------------------
+[INFO]    [2018-10-01-10:14:20.395] NAME                STATUS    STS_VOUT  STS_IOUT  STS_INPUT STS_TEMP  STS_CML   STS_MFR   STS_FAN   
+[INFO]    [2018-10-01-10:14:20.401] PSU_2               0x0       0x0       0x0       0x0       0x0       0x0       0x0       0x0       
+[INFO]    [2018-10-01-10:14:20.401] --------------------
+[INFO]    [2018-10-01-10:14:20.401] NAME                POUT      VOUT      IOUT      PIN       VIN       IIN       
+[INFO]    [2018-10-01-10:14:20.409] PSU_2               62.562    12.037    5.195     108.500   206.500   0.636     
+[INFO]    [2018-10-01-10:14:20.409] --------------------
+[INFO]    [2018-10-01-10:14:20.409] NAME                TEMP-1    TEMP-2    TEMP-3    FAN-1     FAN-2     
+[INFO]    [2018-10-01-10:14:20.414] PSU_2               26.000    29.250    31.000    7168.000  6752.000  
+
+[INFO]    [2018-10-01-10:14:20.414] ##### PSU_2 TEST PASSED! #####
+diag@MTP:$ mtptest -vrm
+[INFO]    [2018-10-01-10:14:20.492] =================================
+[INFO]    [2018-10-01-10:14:20.493] NAME                STATUS    
+[INFO]    [2018-10-01-10:14:20.494] DC                  0x0       
+
+[INFO]    [2018-10-01-10:14:20.494] ##### DC TEST PASSED! #####
+diag@MTP:$ inventory -present
+[INFO]    [2018-10-01-10:14:20.68 ] UUT_1                   Not Present
+[INFO]    [2018-10-01-10:14:20.683] UUT_2                   NAPLES100
+[INFO]    [2018-10-01-10:14:20.686] UUT_3                   Not Present
+[INFO]    [2018-10-01-10:14:20.689] UUT_4                   Not Present
+[INFO]    [2018-10-01-10:14:20.691] UUT_5                   Not Present
+[INFO]    [2018-10-01-10:14:20.693] UUT_6                   Not Present
+[INFO]    [2018-10-01-10:14:20.696] UUT_7                   Not Present
+[INFO]    [2018-10-01-10:14:20.698] UUT_8                   Not Present
+[INFO]    [2018-10-01-10:14:20.7  ] UUT_9                   Not Present
+[INFO]    [2018-10-01-10:14:20.702] UUT_10                  Not Present
+diag@MTP:$ inventory -present
+[INFO]    [2018-10-01-10:14:20.78 ] UUT_1                   Not Present
+[INFO]    [2018-10-01-10:14:20.786] UUT_2                   NAPLES100
+[INFO]    [2018-10-01-10:14:20.791] UUT_3                   Not Present
+[INFO]    [2018-10-01-10:14:20.795] UUT_4                   Not Present
+[INFO]    [2018-10-01-10:14:20.798] UUT_5                   Not Present
+[INFO]    [2018-10-01-10:14:20.801] UUT_6                   Not Present
+[INFO]    [2018-10-01-10:14:20.804] UUT_7                   Not Present
+[INFO]    [2018-10-01-10:14:20.807] UUT_8                   Not Present
+[INFO]    [2018-10-01-10:14:20.811] UUT_9                   Not Present
+[INFO]    [2018-10-01-10:14:20.813] UUT_10                  Not Present
+diag@MTP:$ sys_sanity.sh 2
+====== jtag_cpurd_debug ======
+data 0x00000001, valid bit 0x1, error 0x00, RSP 0x00
+Receive data:
+0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x80 0xab 0x20 0x20 0x0 0x0 0x0 0x0 0xba 0x5d 
+0x00000001
+
+====== lsusb ======
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 001 Device 003: ID 0424:3503 Standard Microsystems Corp. 
+Bus 001 Device 002: ID 0403:6010 Future Technology Devices International, Ltd FT2232C Dual USB-UART/FIFO IC
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+
+====== ls -l /dev/bus/usb/001 ======
+total 0
+crw-rw-rw- 1 root root 189, 0 Oct  1 10:12 001
+crw-rw-rw- 1 root root 189, 1 Oct  1 10:14 002
+crw-rw-r-- 1 root root 189, 2 Oct  1 10:12 003
+diag@MTP:$ turn_on_slot.sh on all
+Turning on all slots
+All slots turned on
+[INFO]    [2018-10-01-10:14:24.424] inst: 1
+[INFO]    [2018-10-01-10:14:24.437] CPLD read at addr 0x10 with data 0x0
+[INFO]    [2018-10-01-10:14:24.448] inst: 1
+[INFO]    [2018-10-01-10:14:24.463] CPLD read at addr 0x11 with data 0x0
+[INFO]    [2018-10-01-10:14:24.474] inst: 1
+[INFO]    [2018-10-01-10:14:24.488] CPLD read at addr 0x12 with data 0x0
+[INFO]    [2018-10-01-10:14:24.498] inst: 1
+[INFO]    [2018-10-01-10:14:24.512] CPLD read at addr 0x13 with data 0x0
+[INFO]    [2018-10-01-10:14:24.525] inst: 1
+[INFO]    [2018-10-01-10:14:24.537] CPLD read at addr 0x16 with data 0x0
+[INFO]    [2018-10-01-10:14:24.55 ] inst: 1
+[INFO]    [2018-10-01-10:14:24.564] CPLD read at addr 0x17 with data 0x0
+diag@MTP:$ 

@@ -319,7 +319,7 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        ssh_cmd = 'ssh -l {:s} {:s} -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null"'.format(userid, ip)
+        ssh_cmd = "ssh -l {:s} {:s}".format(userid, ip) + ligmfg_utils.get_ssh_option()
         handle = pexpect.spawn(ssh_cmd)
         idx = handle.expect_exact(["assword:",
                                    pexpect.TIMEOUT], timeout = 5)
@@ -353,7 +353,7 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        ssh_cmd = 'ssh -l {:s} {:s} -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null"'.format(userid, ip)
+        ssh_cmd = "ssh -l {:s} {:s}".format(userid, ip) + libmfg_utils.get_ssh_option()
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
             idx = self._mgmt_handle.expect_exact(["assword:",
@@ -721,35 +721,27 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 
-    def mtp_diag_init(self, filep, naples100_test_db):
+    def mtp_diag_init(self, diagmgr_logfile, naples100_test_db):
         # start the mtp diag
-        diagmgr_handle = self.mtp_session_create()
-        diagmgr_handle.logfile_read = filep
-        diagmgr_handle.logfile_send = self._diag_cmd_filep
-        diagmgr_handle.sendline("diagmgr &")
-        diagmgr_handle.expect_exact(self._mgmt_prompt)
+        pexpect.run("nohup diagmgr > {:s} 2>&1 &".format(diagmgr_logfile))
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
-        diagmgr_handle.sendline("cd ~/diag/python/infra/dshell")
-        diagmgr_handle.expect_exact(self._mgmt_prompt)
-        diagmgr_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
-        diagmgr_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
-        diagmgr_handle.expect_exact(self._mgmt_prompt)
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
-        diagmgr_handle.sendline("./diag -sdsp")
-        diagmgr_handle.expect_exact(self._mgmt_prompt)
 
+        self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self._mgmt_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
+        self._mgmt_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+        self._mgmt_handle.sendline("./diag -sdsp")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
         # naples100 dsp check
         self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
         naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
         for dsp in naples100_dsp_list: 
-            if dsp not in diagmgr_handle.before:
+            if dsp not in self._mgmt_handle.before:
                 self.cli_log_err("Diag DSP: {:s} is not detected", level = 0)
                 return False
         self.cli_log_inf("Diag DSP Sanity Check Complete", level = 0)
-
-        self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        self._mgmt_handle.expect_exact("KEEP THE SESSION OPEN, IT SHALL NEVER HAPPEN!", timeout=None)
 
         return True
  

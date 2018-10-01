@@ -1,0 +1,11 @@
+/home/diag/start_diag.sh
+version
+mtptest -present
+mtptest -fanspd
+devmgr -dev=fan -speed -pct=40
+mtptest -psu -psumask 0x2
+mtptest -vrm
+inventory -present
+inventory -present
+sys_sanity.sh 2
+turn_on_slot.sh on all

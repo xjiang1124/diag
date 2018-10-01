@@ -181,7 +181,6 @@ def main():
     mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, "w+")
     open_file_track_list.append(mtp_diag_cmd_log_filep)
     mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, "w+")
-    open_file_track_list.append(mtp_diagmgr_log_filep)
 
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id,
                              mtp_test_log_filep,
@@ -217,7 +216,7 @@ def main():
 
     mtp_mgmt_ctrl.mtp_nic_init(fru_load)
 
-    ret = mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_filep, naples100_test_db)
+    ret = mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_file, naples100_test_db)
     if not ret: 
         libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)

@@ -13,6 +13,8 @@ from libdefs import MTP_Const
 def get_linux_prompt_list():
     return ["#", "$", ">"]
 
+def get_ssh_option():
+    return " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null'"
 
 def cli_out(info):
     print("## ATT: " + info)
@@ -284,13 +286,13 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
         cli_err("Execute command {:s} failed".format(cmd))
         return False
 
-    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s}".format(local_file, userid, ip_addr, remote_dir))
+    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, remote_dir))
     session.expect_exact("ssword:")
     session.sendline(passwd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
 
     # verify the file md5sum
-    cmd = " ".join(["ssh -l", userid, ip_addr])
+    cmd = " ".join(["ssh -l", userid, ip_addr]) + get_ssh_option()
     session = pexpect.spawn(cmd)
     session.setecho(False)
     session.expect_exact("assword:")
@@ -319,7 +321,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
 
 
 def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
-    session = pexpect.spawn("scp {:s}@{:s}:{:s} {:s}".format(userid, ip_addr, remote_file, local_file))
+    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file))
     session.expect_exact("ssword:")
     session.sendline(passwd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
@@ -340,7 +342,7 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
         return False
 
     # verify the file md5sum
-    cmd = " ".join(["ssh -l", userid, ip_addr])
+    cmd = " ".join(["ssh -l", userid, ip_addr]) + get_ssh_option()
     session = pexpect.spawn(cmd)
     session.setecho(False)
     session.expect_exact("assword:")

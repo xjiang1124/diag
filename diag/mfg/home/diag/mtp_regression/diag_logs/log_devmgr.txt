@@ -1,0 +1,1 @@
+[INFO]   [2018-10-01-10:14:03.838] Fan initialized
