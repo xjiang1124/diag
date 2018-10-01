@@ -319,7 +319,7 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        ssh_cmd = "ssh -l {:s} {:s}".format(userid, ip) + ligmfg_utils.get_ssh_option()
+        ssh_cmd = "ssh -l {:s} {:s}".format(userid, ip) + libmfg_utils.get_ssh_option()
         handle = pexpect.spawn(ssh_cmd)
         idx = handle.expect_exact(["assword:",
                                    pexpect.TIMEOUT], timeout = 5)
@@ -723,8 +723,12 @@ class mtp_ctrl():
 
     def mtp_diag_init(self, diagmgr_logfile, naples100_test_db):
         # start the mtp diag
-        pexpect.run("nohup diagmgr > {:s} 2>&1 &".format(diagmgr_logfile))
+        diagmgr_handle = self.mtp_session_create()
+        cmd = "nohup diagmgr > {:s} 2>&1 &".format(diagmgr_logfile)
+        diagmgr_handle.sendline(cmd)
+        diagmgr_handle.expect_exact(self._mgmt_prompt)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+        diagmgr_handle.close()
 
         self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)

@@ -170,10 +170,11 @@ def main():
 
     open_file_track_list = list()
         
-    mtp_test_log_file = "mtp_test.log"
-    mtp_diag_log_file = "mtp_diag.log"
-    mtp_diag_cmd_log_file = "mtp_diag_cmd.log"
-    mtp_diagmgr_log_file = "mtp_diagmgr.log"
+    mtp_script_dir = "/home/diag/mtp_regression/"
+    mtp_test_log_file = mtp_script_dir + "mtp_test.log"
+    mtp_diag_log_file = mtp_script_dir + "mtp_diag.log"
+    mtp_diag_cmd_log_file = mtp_script_dir + "mtp_diag_cmd.log"
+    mtp_diagmgr_log_file = mtp_script_dir + "mtp_diagmgr.log"
     mtp_test_log_filep = open(mtp_test_log_file, "w+")
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, "w+")
