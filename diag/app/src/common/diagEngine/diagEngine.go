@@ -354,9 +354,11 @@ func DspInfraMainLoop() (err error) {
             // Check stop_on_error
             if (stopOnErrFlag > 0 && funcMsg != 0) {
                 stopOnErrEn = 1
+                cli.Println("e", "Stopped on Error!")
                 break
             }
             if stopOnErrEn == 0xFF {
+                cli.Println("e", "Timeout happened, quiting DSP!")
                 break
             }
         }
