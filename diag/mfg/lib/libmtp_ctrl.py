@@ -13,7 +13,7 @@ from libdefs import MTP_Status
 from libdefs import NIC_Port_Mask
 
 class mtp_ctrl():
-    def __init__(self, mtpid, filep, diag_log_filep, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, dbg_mode = False):
+    def __init__(self, mtpid, filep, diag_log_filep, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, dbg_mode = False):
         self._id = mtpid
         self._ts_handle = None
         self._mgmt_handle = None
@@ -37,6 +37,7 @@ class mtp_ctrl():
         self._debug_mode = dbg_mode
         self._filep = filep
         self._diag_filep = diag_log_filep
+        self._diag_cmd_filep = diag_cmd_log_filep
 
 
     def cli_log_inf(self, msg, level = 1):
@@ -384,6 +385,7 @@ class mtp_ctrl():
                     self._mgmt_handle.logfile_read = sys.stdout
                 else:
                     self._mgmt_handle.logfile_read = self._diag_filep
+                    self._mgmt_handle.logfile_send = self._diag_cmd_filep
                 return self._mgmt_prompt
             else:
                 self.cli_log_err("Unknown linux prompt", level = 0)
@@ -419,6 +421,7 @@ class mtp_ctrl():
         if cmd == "reboot" or cmd == "poweroff":
             self._mgmt_handle.expect_exact(pexpect.EOF)
             self._mgmt_handle.logfile_read = None
+            self._mgmt_handle.logfile_send = None
             self.mtp_mgmt_disconnect()
         else:
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
@@ -722,6 +725,7 @@ class mtp_ctrl():
         # start the mtp diag
         diagmgr_handle = self.mtp_session_create()
         diagmgr_handle.logfile_read = filep
+        diagmgr_handle.logfile_send = self._diag_cmd_filep
         diagmgr_handle.sendline("diagmgr &")
         diagmgr_handle.expect_exact(self._mgmt_prompt)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
@@ -745,6 +749,7 @@ class mtp_ctrl():
 
         self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self._mgmt_handle.expect_exact("KEEP THE SESSION OPEN, IT SHALL NEVER HAPPEN!", timeout=None)
 
         return True
  
@@ -834,7 +839,8 @@ class mtp_ctrl():
         return 95
 
 
-    def mtp_nic_init(self, load_sn=False, load_mac=False):
+    def mtp_nic_init(self, fru_load=False):
+        self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
         # init nic present list
         self.cli_log_inf("Init NIC Present")
         self.mtp_init_nic_prsnt()
@@ -851,20 +857,25 @@ class mtp_ctrl():
         self.cli_log_inf("Power on NICs")
         self.mtp_power_on_nic()
 
-        # load sn from fru
-        if load_sn:
-            self.cli_log_inf("Load NIC SN from Fru")
+        # load from fru
+        if fru_load:
+            self.cli_log_inf("Load NIC SN/MAC from Fru")
             self.mtp_init_nic_sn()
-        else:
-            self.cli_log_inf("Bypass load NIC SN from Fru")
-
-        # load mac from fru
-        if load_mac:
-            self.cli_log_inf("Load NIC MAC from Fru")
             self.mtp_init_nic_mac()
         else:
-            self.cli_log_inf("Bypass load NIC MAC from Fru")
+            self.cli_log_inf("Load NIC SN/MAC from config file")
+            nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
+            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
+            for slot in range(self._slots):
+                key = libmfg_utils.nic_key(slot)
+                valid = nic_fru_cfg[self._id][key]["VALID"]
+                if str.upper(valid) == "YES":
+                    sn = nic_fru_cfg[self._id][key]["SN"]
+                    mac = nic_fru_cfg[self._id][key]["MAC"]
+                    self.mtp_set_nic_sn(slot, sn)
+                    self.mtp_set_nic_mac(slot, mac)
 
+        self.cli_log_inf("Init NICs in the MTP Chassis complete\n", level = 0)
         return True
 
 

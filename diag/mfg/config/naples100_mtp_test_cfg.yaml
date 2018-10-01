@@ -1,23 +1,22 @@
 # global init command beore diag run
 INIT:
     - "Initialize command 1"
-    - "Initialize command 2"
 
 SKIP:
     # skip whole dsp
-    - "DSP1#ALL"
+    # - "DSP1#ALL"
     # skip single test of a dsp
     - "DSP2#TEST1"
     # skip multiple tests of a dsp, seperate with '#'
-    - "DSP3#TEST1#TEST2"
+    # - "DSP3#TEST1#TEST2"
 
 PARAMS:
     # whole dsp share the same parameters
-    - "DSP1#ALL#timeout=30, iter=2"
+    # - "DSP1#ALL#timeout=30, iter=2"
     # single test of a dsp
     - "DSP2#TEST1#timeout=10, iter=3"
     # multiple tests of a dsp, seperate with '#'
-    - "DSP3#TEST1#TEST2#timeout=50, iter=4"
+    # - "DSP3#TEST1#TEST2#timeout=50, iter=4"
 
 MTP_SEQ:
     ASIC:

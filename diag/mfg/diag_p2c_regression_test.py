@@ -21,23 +21,55 @@ from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
-def get_mtp_logfile(log_dir, mtp_cfg_db, mtp_id, loop):
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_cfg_db, mtp_id, loop):
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
- 
-    mtp_test_log_file = log_dir + "mtp_test.log"
-    mtp_diag_log_file = log_dir + "mtp_diag.log"
-    mtp_diagmgr_log_file = log_dir + "mtp_diagmgr.log"
-    local_test_log_file = "log/{:s}_mtp_test.iter-{:d}.log".format(mtp_id, loop)
-    local_diag_log_file = "log/{:s}_mtp_diag.iter-{:d}.log".format(mtp_id, loop)
-    local_diagmgr_log_file = "log/{:s}_mtp_diagmgr.iter-{:d}.log".format(mtp_id, loop)
 
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, mtp_test_log_file)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_diag_log_file, mtp_diag_log_file)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_diagmgr_log_file, mtp_diagmgr_log_file)
+     # log pkg filename
+    log_pkg_file = "mtp_regression.{:d}.tar.gz".format(loop)
+
+    # need to be sync'd with cleanup.sh
+    diag_onboard_log_files = "/home/diag/diag/log/*txt"  
+    asic_onboard_log_files = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log" 
+
+    # regression logs
+    logfile_list = list()
+    test_log_file = "{:s}mtp_test.log".format(log_dir)
+    diag_log_file = "{:s}mtp_diag.log".format(log_dir)
+    diag_log_cmd_file = "{:s}mtp_diag_cmd.log".format(log_dir)
+    diagmgr_log_file = "{:s}mtp_diagmgr.log".format(log_dir)
+    # diag onboard log files
+    cmd = "mkdir -p {:s}diag_logs/".format(log_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    # asic onboard log files
+    cmd = "mkdir -p {:s}asic_logs/".format(log_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd = "cleanup.sh"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    logfile_list.append(test_log_file)
+    logfile_list.append(diag_log_file)
+    logfile_list.append(diag_log_cmd_file)
+    logfile_list.append(diagmgr_log_file)
+    logfile_list.append("{:s}diag_logs/".format(log_dir))
+    logfile_list.append("{:s}asic_logs/".format(log_dir))
+
+    cmd = "tar czvf {:s} {:s}".format(log_dir+log_pkg_file, " ".join(logfile_list))
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    local_test_log_file = "log/{:s}_mtp_test.iter-{:d}.log".format(mtp_id, loop)
+    libmfg_utils.network_get_file(ipaddr, userid, passwd, log_pkg_file, log_dir+log_pkg_file)
+    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
  
+    cmd = "rm -rf {:s}".format(" ".join(logfile_list))
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
 
 def test_report(email_to, mtp_id, loop):
     mtp_cli_id_str = libmfg_utils.id_str(mtp=mtp_id)
@@ -135,12 +167,12 @@ def main():
     parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=True)
-    parser.add_argument("--image", help="MTP diag image")
-    parser.add_argument("--email", help="send report to email address")
-    parser.add_argument("--error-injection", help="randomly inject error", action='store_true')
+    parser.add_argument("--image", help="MTP Chassis diag image")
+    parser.add_argument("--email", help="Send report to email address")
+    parser.add_argument("--error-injection", help="Randomly inject error", action='store_true')
     parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
-    parser.add_argument("--pwr-cycle", help="Power cycle MTP with each iteration", action='store_true')
-    parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
+    parser.add_argument("--pwr-cycle", help="Power cycle MTP before test", action='store_true')
+    parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
     args = parser.parse_args()
 
@@ -216,6 +248,25 @@ def main():
     cmd = "rm -f {:s}".format(mtp_script_pkg)
     os.system(cmd)
 
+    if pwr_cycle:
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+            mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+            mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+            mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+            mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
+        time.sleep(1)
+
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+            mtp_mgmt_ctrl.mtp_apc_pwr_on()
+            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis")
+
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     for loop in range(iteration):
         libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Regression Test Iteration-{:03d} on {:s} start".format(loop, mtp_id))
@@ -233,25 +284,24 @@ def main():
         libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Regression Test Iteration-{:03d} on {:s} complete".format(loop, mtp_id))
         libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Regression Test Iteration-{:03d} Cost time:{:s}".format(loop, mtp_stop_ts-mtp_start_ts))
 
-        get_mtp_logfile(mtp_diag_dir+mtp_script_dir, mtp_cfg_db, mtp_id, loop)
+        get_mtp_logfile(mtp_mgmt_ctrl, mtp_diag_dir+mtp_script_dir, mtp_cfg_db, mtp_id, loop)
         if not test_report(email_to, mtp_id, loop) and stop_on_err:
             return
 
-        if pwr_cycle:
-            mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-            libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
-            libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-            libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Power off APC")
-            mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Power off APC")
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-            time.sleep(1)
+        time.sleep(1)
 
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY))
-            libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-                libmfg_utils.cli_log_err(regression_log_filep, mtp_cli_id_str + "Unable to connect MTP Chassis")
-                return
+        mtp_mgmt_ctrl.mtp_apc_pwr_on()
+        libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY))
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+            libmfg_utils.cli_log_err(regression_log_filep, mtp_cli_id_str + "Unable to connect MTP Chassis")
+            return
 
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_log_inf(regression_log_filep, mtp_cli_id_str + "Regression Test Total Cost time:{:s}".format(regression_stop_ts - regression_start_ts))

@@ -34,7 +34,6 @@ def mtp_test_cleanup(error_code, fp_list=None):
             fp.close()
         os.system("sync")
 
-    os.system("cleanup.sh")
     mtp_error_report(error_code)
 
 
@@ -173,17 +172,21 @@ def main():
         
     mtp_test_log_file = "mtp_test.log"
     mtp_diag_log_file = "mtp_diag.log"
+    mtp_diag_cmd_log_file = "mtp_diag_cmd.log"
     mtp_diagmgr_log_file = "mtp_diagmgr.log"
     mtp_test_log_filep = open(mtp_test_log_file, "w+")
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, "w+")
     open_file_track_list.append(mtp_diag_log_filep)
+    mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, "w+")
+    open_file_track_list.append(mtp_diag_cmd_log_filep)
     mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, "w+")
     open_file_track_list.append(mtp_diagmgr_log_filep)
 
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id,
                              mtp_test_log_filep,
                              mtp_diag_log_filep,
+                             diag_cmd_log_filep = mtp_diag_cmd_log_filep,
                              mgmt_cfg = mtp_mgmt_cfg,
                              apc_cfg = mtp_apc_cfg,
                              dbg_mode = verbosity)
@@ -212,27 +215,7 @@ def main():
     naples100_test_db = diag_db(naples100_test_cfg_file)
     #naples25_test_db = diag_db(naples25_test_cfg_file)
 
-    # get nic present, nic type, nic sn, etc
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP SW version: {:s}".format(sw_ver))
-    mtp_mgmt_ctrl.mtp_nic_init(load_sn = fru_load, load_mac = fru_load)
-
-    # if sn is not from fru,  from config file
-    if not fru_load:
-        nic_fru_cfg_file = "config/{:s}.yaml".format(mtp_id)
-        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
-
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            key = libmfg_utils.nic_key(slot)
-            nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) == "YES":
-                sn = nic_fru_cfg[mtp_id][key]["SN"]
-                mac = nic_fru_cfg[mtp_id][key]["MAC"]
-                mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-                mtp_mgmt_ctrl.mtp_set_nic_mac(slot, mac)
-    # TODO, compare the nic present list and the config
-    else:
-        pass
+    mtp_mgmt_ctrl.mtp_nic_init(fru_load)
 
     ret = mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_filep, naples100_test_db)
     if not ret: 
@@ -342,7 +325,6 @@ def main():
         diag_pass_rslt_list.append(mtp_cli_id_str + ", ".join(pass_nic_list) + " Diag Regression Test Pass")
 
     libmfg_utils.cli_log_rslt("Diag Test Summary", diag_pass_rslt_list, diag_fail_rslt_list, mtp_test_log_filep)
-    os.system("cleanup.sh")
 
 
 if __name__ == "__main__":
