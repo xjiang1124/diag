@@ -3,11 +3,11 @@ package main
 import (
     //"fmt"
     "flag"
-    "os"
+    //"os"
     "strings"
 
-    "common/cli"
-    "config"
+    //"common/cli"
+    //"config"
     "hardware/hwdev"
     "hardware/hwinfo"
     "hardware/i2cinfo"
@@ -15,9 +15,9 @@ import (
 )
 
 func init() {
-    procNameTemp := strings.Split(os.Args[0], "/")
-    procName := procNameTemp[len(procNameTemp)-1]
-    cli.Init("log_"+procName+".txt", config.OutputMode)
+    //procNameTemp := strings.Split(os.Args[0], "/")
+    //procName := procNameTemp[len(procNameTemp)-1]
+    //cli.Init("log_"+procName+".txt", config.OutputMode)
 }
 
 func dispInfo() {
@@ -27,13 +27,13 @@ func dispInfo() {
 }
 
 func main() {
-    devNamePtr := flag.String("dev",    "ALL",          "Device name")
+    devNamePtr := flag.String("dev",    "FRU",          "Device name")
     infoPtr    := flag.Bool  ("info",   false,          "Display device info")
     dispPtr    := flag.Bool  ("disp",   false,          "Display eeprom content")
     updatePtr  := flag.Bool  ("update", false,          "Update eeprom")
-    macPtr     := flag.String("mac",    "", 			"MAC address")
-    snPtr      := flag.String("sn",     "",   			"Serial number")
-    mfgDatePtr := flag.String("date",   "",   			"Manufacturing date")
+    macPtr     := flag.String("mac",    "",             "MAC address")
+    snPtr      := flag.String("sn",     "",             "Serial number")
+    mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
