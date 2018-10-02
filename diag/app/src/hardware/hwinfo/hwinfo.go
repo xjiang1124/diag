@@ -124,10 +124,10 @@ func init() {
     // NAPLES100
     naples100DispStaList = make(map[string]DispStaFunc)
     naples100DispStaList["CAP0_CORE_DVDD"] = tps53659.DispStatus
-    naples100DispStaList["CAP0_CORE_AVDD"] = tps53659.DispStatus
+    naples100DispStaList["CAP0_CORE_AVDD"] = tps549a20.DispStatus
     naples100DispStaList["CAP0_3V3"]        = tps549a20.DispStatus
     naples100DispStaList["CAP0_HBM"]        = tps549a20.DispStatus
-    naples100DispStaList["CAP0_ARM"]        = tps549a20.DispStatus
+    naples100DispStaList["CAP0_ARM"]        = tps53659.DispStatus
     naples100DispStaList["TSENSOR"]    = tmp42123.DispStatus
 
     // Dummy I2C hub map
