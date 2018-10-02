@@ -62,6 +62,10 @@ DSP:
             NIC: MTP
         PRIORITY: NORMAL 
         PARAM:
+            timeout:
+                VALUE:
+                    ALL: 600
+                INFO: Test timeout setting
             sn:
                 VALUE:
                     ALL: "SN000001"
@@ -72,7 +76,7 @@ DSP:
                 INFO: NIC slot number
             duration:
                 VALUE:
-                    ALL: 600
+                    ALL: 60
                 INFO: test time
             poly:
                 VALUE:
@@ -85,6 +89,10 @@ DSP:
             NIC: MTP
         PRIORITY: NORMAL
         PARAM:
+            timeout:
+                VALUE:
+                    ALL: 400
+                INFO: Test timeout setting
             sn:
                 VALUE:
                     ALL: "SN000001"
@@ -95,7 +103,7 @@ DSP:
                 INFO: NIC slot number
             duration:
                 VALUE:
-                    ALL: 400
+                    ALL: 60
                 INFO: test time
             poly:
                 VALUE:
