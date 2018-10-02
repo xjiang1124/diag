@@ -51,6 +51,12 @@ group.add_argument("-shist", "--showHist", action="store_true",
 Display per test pass/fail/timeout history
 format: diag -shist [-c CARD_IDX] [-d DSP]
 ''')
+group.add_argument("-sresult", "--showResult", action="store_true", 
+        help='''\
+Display last test result
+format: diag -sresult [-c CARD_IDX] [-d DSP] [-t TEST_NAME]
+''')
+
 group.add_argument("-sskip",  "--showSkip", action="store_true", help="Show skeped test list")
 group.add_argument("-sparam", "--showParam", action="store_true", help="Show parameter setting of specified test")
 
@@ -164,6 +170,10 @@ if args.showTest == True:
 
 if args.showHist == True:
     diagsts.showHist(args.cardidx, args.dspname)
+    sys.exit()
+
+if args.showResult == True:
+    diagsts.showResult(args.cardidx, args.dspname, args.testname)
     sys.exit()
 
 if args.cleanSystem == True:

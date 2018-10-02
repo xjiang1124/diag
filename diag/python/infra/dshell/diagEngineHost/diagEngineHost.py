@@ -61,6 +61,9 @@ class diagEngineHost:
         # Test history, e.g. GET HIST:NIC1:PMBUS:INTR:FAILURE
         self.testHistKeyFmt = 'HIST:{}:{}:{}:{}'
 
+        # Test result for last test, e.g. GET RESULT:NIC1:PMBUS:INTR
+        self.testLastResultKeyFmt = 'RESULT:{}:{}:{}'
+
         # Skip list, e.g. SADD SKIPLIST NIC1:PMBUS:INTR
         self.skiplistKey = "SKIPLIST"
         #==========================================================
@@ -285,6 +288,11 @@ class diagEngineHost:
                     test[5] = testResult
                     testDoneStr = fmtTestDone.format(test[0], test[1], test[2])
                     print testDoneStr
+
+                    # update last test result
+                    lastResultKey = self.testLastResultKeyFmt.format(test[0], test[1], test[2])
+                    print "result:", lastResultKey, testResult
+                    self.r.set(lastResultKey, self.errType.toName(int(testResult)))
     
             # Check whether all tests have result back
             for test in testList:
@@ -413,7 +421,7 @@ class diagEngineHost:
             cards = [cardNm]
         return cards, 0
 
-    def getDspList(self, cardNm=""):
+    def getDspList(self, cardNm="", dspNm=""):
         cardNm = cardNm.upper()
         if self.checkCardExist(cardNm) != True:
             print "_NOT_ a live card:", cardNm
@@ -425,9 +433,19 @@ class diagEngineHost:
         dspList = []
         for dspFull in dspListFull:
             dspList.append(dspFull.split(":")[4])
-        return dspList, 0
 
-    def getTestList(self, cardNm="", dspNm=""):
+        # DSP name is empty
+        if not dspNm:
+            return dspList, 0
+
+        dspNm = dspNm.upper()
+        if dspNm in dspList:
+            return [dspNm], 0
+        else:
+            print "_NOT_ a valid DSP name:", dspNm
+            return [], -1
+
+    def getTestList(self, cardNm="", dspNm="", testNm=''):
         cardNm = cardNm.upper()
         if self.checkCardExist(cardNm) != True:
             print "_NOT_ a live card:", cardNm
@@ -439,7 +457,18 @@ class diagEngineHost:
             return [], -1
 
         testList = self.r.smembers(self.dspTestKeyFmt.format(self.getCardType(cardNm), dspNm))
-        return testList, 0
+
+        # if given test name is empty, return whole list
+        if not testNm:
+            return testList, 0
+
+        testNm = testNm.upper()
+        if testNm in testList:
+            return [testNm], 0
+        else:
+            print "_NOT_ a valid test:", testNm
+            return [], -1
+
 
     def checkIfSkipped(self, cardTp, dspNm, testNm):
         return self.r.sismember(self.skiplistKey, cardTp+":"+dspNm+":"+testNm)
@@ -597,8 +626,8 @@ class diagSts(diagEngineHost):
                     print fmtTest.format(test, sts)
         return
 
-    def showHist (self, cardTp="", dspNm=""):
-        cardList, err = self.getCardList(cardTp)
+    def showHist (self, cardNm="", dspNm=""):
+        cardList, err = self.getCardList(cardNm)
         if err != 0:
             return -1
 
@@ -642,6 +671,42 @@ class diagSts(diagEngineHost):
                     
                     testHistStr = fmtTestHist.format(test, histSucc, histFail, histTout)
                     print testHistStr
+
+    def showResult (self, cardNm="", dspNm="", testNm=""):
+        cardList, err = self.getCardList(cardNm)
+        if err != 0:
+            return -1
+
+        fmtCard = "============ {}:{} ============"
+        fmtDsp = "-------- {} --------"
+        fmtTestResult = "{:<15}{:<10}"
+        for card in cardList: 
+            cardNm = self.getCardTpFromDict(card)
+            print fmtCard.format(card, cardNm)
+            dspList, err = self.getDspList(card, dspNm)
+            if err != 0:
+                continue
+
+            testResultStr = fmtTestResult.format("TEST_NAME", "RESULT")
+            print testResultStr
+            for dsp in dspList:
+
+                # Skip DIAGMGR
+                if dsp == "DIAGMGR":
+                    continue
+                print fmtDsp.format(dsp)
+                testList, err = self.getTestList(card, dsp, testNm)
+                if err != 0:
+                    continue
+
+                for test in testList:
+                    testResultKey = self.testLastResultKeyFmt.format(card, dsp, test)
+                    testResult = self.r.get(testResultKey)
+                    if testResult == None:
+                        testResult = "Not Tested"
+                    
+                    testResultStr = fmtTestResult.format(test, testResult)
+                    print testResultStr
 
     def showSkip(self):
         skipMems = self.r.smembers(self.skiplistKey)
