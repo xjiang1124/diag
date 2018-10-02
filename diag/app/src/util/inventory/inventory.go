@@ -1,8 +1,9 @@
 package main
 
 import (
-    //"fmt"
+    "fmt"
     "flag"
+    "os"
     "strconv"
     "strings"
 
@@ -37,7 +38,7 @@ func present() (err int) {
     var presentStr string
 
     maxUut := 10
-    prsntNoneStr := "Not Present"
+    prsntNoneStr := "UUT_NONE"
     for i := 1; i <= maxUut; i++ {
         uutName := "UUT_"+strconv.Itoa(i)
         data, present := uutPresent(uutName)
@@ -60,6 +61,39 @@ func present() (err int) {
 }
 
 
+func sysDetect() (err int) {
+    var presentStr string
+    var fmtStr string = "export UUT_%d=%s\n"
+
+    file, err1 := os.Create("board_env.txt")
+    if err1 != nil {
+        cli.Println("e", "Cannot create file", err)
+    }
+    defer file.Close()
+
+    maxUut := 10
+    prsntNoneStr := "UUT_NONE"
+    for i := 1; i <= maxUut; i++ {
+        uutName := "UUT_"+strconv.Itoa(i)
+        data, present := uutPresent(uutName)
+
+        if present == true {
+            switch data {
+            case naples100Cpld.ID:
+                presentStr = "NAPLES100"
+            case naplesMtpCpld.ID:
+                presentStr = "NAPLES_MTP"
+            default:
+                presentStr = "Unknown"
+            }
+        } else {
+            presentStr = prsntNoneStr
+        }
+        fmt.Printf(fmtStr, i, presentStr)
+    }
+    return
+}
+
 func myUsage() {
     flag.PrintDefaults()
     //i2cinfo.DispI2cInfoAll()
@@ -71,11 +105,11 @@ func main() {
     infoPtr     := flag.Bool(  "info", false, "Show I2C info table")
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     presentPtr  := flag.Bool("present", false, "Show UUT present status")
+    envPtr  := flag.Bool("env", false, "Detect/set environment")
     flag.Parse()
 
     //devName := strings.ToUpper(*devNamePtr)
     uut := strings.ToUpper(*uutPtr)
-
 
     if *infoPtr == true {
         if uut != "UUT_NONE" {
@@ -87,6 +121,11 @@ func main() {
 
     if *presentPtr == true {
         present()
+        return
+    }
+
+    if *envPtr == true {
+        sysDetect()
         return
     }
 
