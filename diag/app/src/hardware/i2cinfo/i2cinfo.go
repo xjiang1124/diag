@@ -165,7 +165,7 @@ func init() {
     } else if uutType == "NAPLES100" {
         UutI2cTbl = Naples100MtpTbl
     } else if uutType == "UUT_NONE" {
-        cli.Println("i", "No need to init UUT I2C table", CardType)
+        //cli.Println("i", "No need to init UUT I2C table", CardType)
     } else {
         cli.Println("i", "UUT I2C table not intialized:", CardType, uutType)
         return

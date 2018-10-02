@@ -5,13 +5,11 @@ import (
     "flag"
     "os"
     "strconv"
-    "strings"
 
     "common/cli"
     "common/errType"
     "device/cpld/naples100Cpld"
     "device/cpld/naplesMtpCpld"
-    "hardware/i2cinfo"
     "hardware/hwdev"
 )
 
@@ -63,9 +61,9 @@ func present() (err int) {
 
 func sysDetect() (err int) {
     var presentStr string
-    var fmtStr string = "export UUT_%d=%s\n"
+    var fmtStr string = "export UUT_%d=\"%s\"\n"
 
-    file, err1 := os.Create("board_env.txt")
+    file, err1 := os.Create("/home/diag/diag/log/board_env.txt")
     if err1 != nil {
         cli.Println("e", "Cannot create file", err)
     }
@@ -89,7 +87,7 @@ func sysDetect() (err int) {
         } else {
             presentStr = prsntNoneStr
         }
-        fmt.Printf(fmtStr, i, presentStr)
+        fmt.Fprintf(file, fmtStr, i, presentStr)
     }
     return
 }
@@ -102,22 +100,9 @@ func myUsage() {
 func main() {
     flag.Usage = myUsage
 
-    infoPtr     := flag.Bool(  "info", false, "Show I2C info table")
-    uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     presentPtr  := flag.Bool("present", false, "Show UUT present status")
     envPtr  := flag.Bool("env", false, "Detect/set environment")
     flag.Parse()
-
-    //devName := strings.ToUpper(*devNamePtr)
-    uut := strings.ToUpper(*uutPtr)
-
-    if *infoPtr == true {
-        if uut != "UUT_NONE" {
-            i2cinfo.SwitchI2cTbl(uut)
-        }
-        i2cinfo.DispI2cInfoAll()
-        return
-    }
 
     if *presentPtr == true {
         present()

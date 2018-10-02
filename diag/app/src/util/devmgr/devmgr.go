@@ -3,20 +3,20 @@ package main
 import (
     "fmt"
     "flag"
-    "os"
+    //"os"
     "strings"
 
     "common/cli"
     "common/errType"
-    "config"
+    //"config"
     "hardware/i2cinfo"
     "hardware/hwdev"
 )
 
 func init() {
-    procNameTemp := strings.Split(os.Args[0], "/")
-    procName := procNameTemp[len(procNameTemp)-1]
-    cli.Init("log_"+procName+".txt", config.OutputMode)
+    //procNameTemp := strings.Split(os.Args[0], "/")
+    //procName := procNameTemp[len(procNameTemp)-1]
+    //cli.Init("log_"+procName+".txt", config.OutputMode)
 }
 
 func myUsage() {

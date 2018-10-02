@@ -20,9 +20,13 @@ DIAG_DIR=/home/diag/diag
 # Prepare all paths
 if [[ $arch == "amd64" ]]
 then
-cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
+
+    envinit.py
+    turn_on_slot.sh on all
+    cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
+    cat $DIAG_DIR/log/board_env.txt >> temp_profile
 else
-cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
+    cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
 fi
 
 echo "" >> temp_profile
@@ -59,7 +63,7 @@ hack_asic.sh
 
 if [[ $arch == "amd64" ]]
 then
-    envinit.py
+    #envinit.py
 
     # Start redis if it is not running
     redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
