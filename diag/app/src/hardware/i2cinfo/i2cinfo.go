@@ -22,7 +22,7 @@ type I2cInfo struct {
 }
 
 var I2cTbl    []I2cInfo
-var UutI2cTbl []I2cInfo
+//var UutI2cTbl []I2cInfo
 var CurI2cTbl []I2cInfo
 
 //=========================================
@@ -159,17 +159,17 @@ func init() {
     }
     CurI2cTbl = I2cTbl
 
-    uutType := os.Getenv("UUT_TYPE")
-    if uutType == "NAPLES_MTP" {
-        UutI2cTbl = NaplesMtpTbl
-    } else if uutType == "NAPLES100" {
-        UutI2cTbl = Naples100MtpTbl
-    } else if uutType == "UUT_NONE" {
-        //cli.Println("i", "No need to init UUT I2C table", CardType)
-    } else {
-        cli.Println("i", "UUT I2C table not intialized:", CardType, uutType)
-        return
-    }
+    //uutType := os.Getenv("UUT_TYPE")
+    //if uutType == "NAPLES_MTP" {
+    //    UutI2cTbl = NaplesMtpTbl
+    //} else if uutType == "NAPLES100" {
+    //    UutI2cTbl = Naples100MtpTbl
+    //} else if uutType == "UUT_NONE" {
+    //    //cli.Println("i", "No need to init UUT I2C table", CardType)
+    //} else {
+    //    cli.Println("i", "UUT I2C table not intialized:", CardType, uutType)
+    //    return
+    //}
 }
 
 /**
@@ -190,14 +190,16 @@ func FindUutType(uutName string) (uutType string, err int) {
  * Todo: support mix of Naples in the same MTP
  */
 func SwitchI2cTbl(uutName string) (err int) {
-    if uutName == "UUT_NONE" {
-        CurI2cTbl = I2cTbl
-        return
-    }
     uutType, err := FindUutType(uutName)
     if err != errType.SUCCESS {
         return
     }
+
+    if uutType == "UUT_NONE" {
+        CurI2cTbl = I2cTbl
+        return
+    }
+
     if uutType == "NAPLES_MTP" {
         CurI2cTbl = NaplesMtpTbl
     } else if uutType == "NAPLES100" {
