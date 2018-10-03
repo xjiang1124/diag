@@ -29,7 +29,7 @@ child.expect("\$ ")
 child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/002")
 child.expect("\$ ")
 
-time.sleep(30)
+time.sleep(3)
 
 # Enable fan controller
 #child.sendline("spi_acc reg 0xe 0x10")
