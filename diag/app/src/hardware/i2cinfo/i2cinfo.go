@@ -179,8 +179,9 @@ func init() {
 func FindUutType(uutName string) (uutType string, err int) {
     uutType, found := os.LookupEnv(uutName)
     if found == false {
-        cli.Println("e", "Cannot find uutType with uutName", uutName)
-        err = errType.INVALID_PARAM
+        //cli.Println("e", "Cannot find uutType with uutName", uutName)
+        //err = errType.INVALID_PARAM
+        uutType = "NAPLES_MTP"
     }
     return
 }
