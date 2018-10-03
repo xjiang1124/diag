@@ -22,7 +22,7 @@ func main() {
     ssePtr           := flag.Uint  ("sse",             0x2,   "Size and security bit, set bit 1 indicates 2 bytes access")
     cpldRdPtr        := flag.Bool  ("cpld-rd",         false, "CPLD register read")
     cpldWrPtr        := flag.Bool  ("cpld-wr",         false, "CPLD register write")
-    typePtr          := flag.String("type",            "IO-OR-JTAG",  "CPLD type: IO/JTAG")
+    typePtr          := flag.String("type",            "IO",  "CPLD type: IO/JTAG")
 //    cpldIdPtr           := flag.Bool("cpld-id",          false, "CPLD ID read")
     cpldFlashRdPtr   := flag.Bool  ("cpld-flash-rd",   false, "CPLD flash read into an output file")
     cpldFlashProgPtr := flag.Bool  ("cpld-flash-prog", false, "CPLD flash program")
