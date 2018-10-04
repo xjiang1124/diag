@@ -74,6 +74,10 @@ class mtp_ctrl():
         self._filep.write(msg + "\n")
 
 
+    def get_mgmt_cfg(self):
+        return self._mgmt_cfg
+
+
     def set_mtp_status(self, status):
         if status < MTP_Status.MTP_STA_MAX:
             self._status = status
@@ -333,7 +337,6 @@ class mtp_ctrl():
             handle.sendline("whoami")
             handle.expect_exact(userid)
             handle.expect_exact(self._prompt_list[idx])
-            self.mtp_prompt_cfg(handle, userid, self._prompt_list[idx])
             return handle
         else:
             self.cli_log_err("Unknown linux prompt", level = 0)
@@ -379,7 +382,6 @@ class mtp_ctrl():
                 self._mgmt_handle.sendline("whoami")
                 self._mgmt_handle.expect_exact(userid)
                 self._mgmt_handle.expect_exact(self._mgmt_prompt)
-                self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
                 # set logfile
                 if self._debug_mode:
                     self._mgmt_handle.logfile_read = sys.stdout
@@ -719,6 +721,10 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
         self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=MTP_Const.OS_CMD_DELAY)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self._mgmt_handle.sendline("source ~/.bash_profile")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        userid = self._mgmt_cfg[1]
+        self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
 
 
     def mtp_diag_init(self, diagmgr_logfile, naples100_test_db):
@@ -761,7 +767,7 @@ class mtp_ctrl():
             # psu init
             rc &= self.mtp_psu_init()
         else:
-            self.cli_log_inf("-- MTP PSU Check bypassed")
+            self.cli_log_inf("PSU Check bypassed")
 
         # other platform init
         rc &= self.mtp_misc_init()
@@ -771,7 +777,8 @@ class mtp_ctrl():
         else:
             self.cli_log_inf("MTP chassis sanity check failed\n", level = 0)
 
-        return rc 
+        return True
+        #return rc 
 
 
     def mtp_diag_env_init(self, fan_speed, vmarg):
@@ -847,7 +854,11 @@ class mtp_ctrl():
 
         # nic sanity check
         self.cli_log_inf("NIC Sanity Check")
-        self.mtp_sys_sanity_check()
+        if self.mtp_sys_sanity_check():
+            self.cli_log_inf("NIC Sanity Check Passed")
+        else:
+            self.cli_log_inf("NIC Sanity Check Failed")
+            return False
 
         # power on nic
         self.cli_log_inf("Power on NICs")
@@ -920,11 +931,17 @@ class mtp_ctrl():
         if True not in self._nic_prsnt_list:
             self._mgmt_handle.sendline("sys_sanity.sh 1")
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
+            return True
         else:
             for slot in range(self._slots):
                 if self._nic_prsnt_list[slot]:
                     self._mgmt_handle.sendline("sys_sanity.sh {:d}".format(slot+1))
                     self._mgmt_handle.expect_exact(self._mgmt_prompt)
+                    match = re.findall(r"(valid bit 0x1, +error 0x0+)", self._mgmt_handle.before)
+                    if match:
+                        return True
+                    else:
+                        return False
 
 
     def mtp_init_nic_sn(self):
@@ -940,7 +957,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_sn(self, slot, sn):
         nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "    Set SN to {:s}".format(sn), level = 0)
+        self.cli_log_inf(nic_cli_id_str + "Set SN to {:s}".format(sn))
         self._nic_sn_list[slot] = sn
 
 
@@ -957,7 +974,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_mac(self, slot, mac):
         nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "    Set MAC to {:s}".format(mac), level = 0)
+        self.cli_log_inf(nic_cli_id_str + "Set MAC to {:s}".format(mac))
         self._nic_mac_list[slot] = mac
 
 
@@ -994,40 +1011,42 @@ class mtp_ctrl():
     def mtp_mgmt_get_test_result(self, cmd, test, timeout=30):
         self._mgmt_handle.sendline(cmd)
         self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout)
-        # Test pass fail timeout
-        match = re.findall(r"%s +(\d) +(\d) +(\d)" %test, str(self._mgmt_handle.before))
+        # Test    Error code, SUCCESS means pass
+        match = re.findall(r"%s +([A-Za-z0-9_]+)" %test, str(self._mgmt_handle.before))
         if match:
-            test_pass = int(match[0][0]) 
-            test_fail = int(match[0][1]) 
-            test_timeout = int(match[0][2]) 
-            if test_fail > 0:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-            elif test_timeout > 0:
-                return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
-            else:
-                return MTP_DIAG_Error.MTP_DIAG_PASS
+            return match[0]
         else:
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
 
 
-
-    def mtp_run_diag_test_seq(self, slot, diag_cmd, rslt_cmd, clr_cmd, test, init_cmd=None, post_cmd=None):
+    def mtp_run_diag_test_seq(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd(init_cmd):
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
 
+        # log the timestamp in diag log
+        start = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Started - at {:s}".format(test, str(start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+
         if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
         
+        # log the timestamp in diag log
+        stop = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+
         # post command
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd(post_cmd):
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
 
         ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
-        # clear the history
-        self.mtp_mgmt_exec_cmd(clr_cmd)
+        end = libmfg_utils.timestamp_snapshot()
         return ret
 
 

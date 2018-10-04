@@ -124,15 +124,6 @@ class diag_db():
         return libmfg_utils.diag_seq_errcode_cmd(card_name, dsp)
 
 
-    def clear_diag_seq_test_errcode_cmd(self, dsp, slot, opts):   
-        if opts["NIC_NAME"]:
-            card_name = "nic{:d}".format(slot+1)
-        else:
-            card_name = "MTP1"
-
-        return libmfg_utils.diag_cleanup_cmd(card_name, dsp)
-
-
     def get_diag_seq_test(self, dsp, test):   
         return self._seq_tests[dsp][test]
 

@@ -19,14 +19,6 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
 
-# report pre defined error code 
-def mtp_error_report(error_code):
-    if error_code != MTP_DIAG_Error.MTP_DIAG_PASS:
-        libmfg_utils.cli_err(error_code)
-    else:
-        libmfg_utils.cli_inf(error_code)
-
-
 # test cleanup.
 def mtp_test_cleanup(error_code, fp_list=None):
     if fp_list:
@@ -34,35 +26,33 @@ def mtp_test_cleanup(error_code, fp_list=None):
             fp.close()
         os.system("sync")
 
-    mtp_error_report(error_code)
-
 
 def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List:".format(card_type), level = 0)
     cmd_list = naples_test_db.get_init_cmd_list()
-    mtp_mgmt_ctrl.cli_log_inf("-- Init Command List:")
+    mtp_mgmt_ctrl.cli_log_inf("Init Command List:")
     for item in cmd_list:
-        mtp_mgmt_ctrl.cli_log_inf("-- {:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
  
     skip_list = naples_test_db.get_skip_test_list()
-    mtp_mgmt_ctrl.cli_log_inf("-- Skip Test List:")
+    mtp_mgmt_ctrl.cli_log_inf("Skip Test List:")
     for item in skip_list:
-        mtp_mgmt_ctrl.cli_log_inf("-- {:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
  
     param_list = naples_test_db.get_test_param_list()
-    mtp_mgmt_ctrl.cli_log_inf("-- Parameter List:")
+    mtp_mgmt_ctrl.cli_log_inf("Parameter List:")
     for item in param_list:
-        mtp_mgmt_ctrl.cli_log_inf("-- {:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
  
     seq_test_list = naples_test_db.get_diag_seq_test_list()
-    mtp_mgmt_ctrl.cli_log_inf("-- Sequential Test List:")
+    mtp_mgmt_ctrl.cli_log_inf("Sequential Test List:")
     for item in seq_test_list:
-        mtp_mgmt_ctrl.cli_log_inf("-- {:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
  
     para_test_list = naples_test_db.get_diag_para_test_list()
-    mtp_mgmt_ctrl.cli_log_inf("-- Parallel Test List:")
+    mtp_mgmt_ctrl.cli_log_inf("Parallel Test List:")
     for item in para_test_list:
-        mtp_mgmt_ctrl.cli_log_inf("-- {:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     return
 
@@ -104,6 +94,7 @@ def main():
     parser.add_argument("--fru-load", help="Load the SN from Fru, instead of config file", action='store_true')
     parser.add_argument("--psu-check", help="force to check the psu", action='store_true')
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
+    parser.add_argument("--skip-test", help="Test will not run, debug purpose", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
 
     args = parser.parse_args()
@@ -116,12 +107,14 @@ def main():
     iteration = 1
     stop_on_err = False
     verbosity = False
+    skip_test = False
     skip_nic_list = list()
 
     if args.fru_load:
         fru_load = True
     if args.mtpid:
         mtp_id = args.mtpid
+        mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     if args.vmarg:
         vmarg = args.vmarg
     if args.fanspd:
@@ -132,6 +125,8 @@ def main():
         iteration = args.iteration
     if args.stop_on_error:
         stop_on_err = True
+    if args.skip_test:
+        skip_test = True
     if args.verbosity:
         verbosity = True
 
@@ -142,14 +137,10 @@ def main():
             try:
                 val = int(slot)
                 if val > MTP_Const.MTP_SLOT_NUM or val <= 0: 
-                    mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM)
-                    libmfg_utils.sys_exit("Invalid slot number")
+                    libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid slot number")
                 skip_nic_list.append(libmfg_utils.nic_key(slot, base=0))
             except ValueError:
-                mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM)
-                libmfg_utils.sys_exit("Invalid nic parameter")
-
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
+                libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid nic parameter")
 
     # load the mtp config
     mtp_chassis_cfg_file = "config/pensando_pro_srv1_mtp_chassis_cfg.yaml"
@@ -158,23 +149,21 @@ def main():
     # find the mtp management config based on the mtpid
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM)
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
         return
 
     # find the apc config based on the mtpid
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM)
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
     open_file_track_list = list()
         
-    mtp_script_dir = "/home/diag/mtp_regression/"
-    mtp_test_log_file = mtp_script_dir + "mtp_test.log"
-    mtp_diag_log_file = mtp_script_dir + "mtp_diag.log"
-    mtp_diag_cmd_log_file = mtp_script_dir + "mtp_diag_cmd.log"
-    mtp_diagmgr_log_file = mtp_script_dir + "mtp_diagmgr.log"
+    mtp_script_dir = os.getcwd()
+    mtp_test_log_file = mtp_script_dir + "/mtp_test.log"
+    mtp_diag_log_file = mtp_script_dir + "/mtp_diag.log"
+    mtp_diag_cmd_log_file = mtp_script_dir + "/mtp_diag_cmd.log"
+    mtp_diagmgr_log_file = mtp_script_dir + "/mtp_diagmgr.log"
     mtp_test_log_filep = open(mtp_test_log_file, "w+")
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, "w+")
@@ -191,7 +180,8 @@ def main():
                              apc_cfg = mtp_apc_cfg,
                              dbg_mode = verbosity)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Unable to connect MTP Chassis")
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        mtp_mgmt_ctrl.cli_log_err("{:s}".format(MTP_DIAG_Error.MTP_DIAG_REGRESSION_FAIL), level=0)
         mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
         return
 
@@ -199,13 +189,13 @@ def main():
 
     # get the sw version info
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP SW version: {:s}".format(sw_ver))
+    mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
 
     # PSU/FAN absent, powerdown MTP
     ret = mtp_mgmt_ctrl.mtp_hw_init(psu_check)
     if not ret:
-        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "MTP Sanity Check Failed")
-        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
+        mtp_mgmt_ctrl.cli_log_err("MTP Sanity Check Failed", level=0)
+        mtp_mgmt_ctrl.cli_log_err("{:s}".format(MTP_DIAG_Error.MTP_DIAG_REGRESSION_FAIL), level=0)
         mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
         return
 
@@ -215,11 +205,15 @@ def main():
     naples100_test_db = diag_db(naples100_test_cfg_file)
     #naples25_test_db = diag_db(naples25_test_cfg_file)
 
-    mtp_mgmt_ctrl.mtp_nic_init(fru_load)
+    if not mtp_mgmt_ctrl.mtp_nic_init(fru_load):
+        mtp_mgmt_ctrl.cli_log_err("Diag Initialize NIC Fail", level=0)
+        mtp_mgmt_ctrl.cli_log_err("{:s}".format(MTP_DIAG_Error.MTP_DIAG_REGRESSION_FAIL), level=0)
+        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+        return
 
-    ret = mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_file, naples100_test_db)
-    if not ret: 
-        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
+    if not mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_file, naples100_test_db):
+        mtp_mgmt_ctrl.cli_log_err("Diag Environment Setup Fail", level=0)
+        mtp_mgmt_ctrl.cli_log_err("{:s}".format(MTP_DIAG_Error.MTP_DIAG_REGRESSION_FAIL), level=0)
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
@@ -237,7 +231,7 @@ def main():
             #else:
             #    naples25_nic_list.append(slot)
 
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test List:")
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test List:", level=0)
     if naples100_nic_list:
         naples_diag_cfg_show(NIC_Type.NAPLES100, naples100_test_db, mtp_mgmt_ctrl)
         naples_exec_init_cmd(naples100_test_db, mtp_mgmt_ctrl)
@@ -245,29 +239,39 @@ def main():
         naples_exec_param_cmd(naples100_nic_list, naples100_test_db, mtp_mgmt_ctrl)
     #if naples25_nic_list:
     #    naples_diag_cfg_show(NIC_Type.NAPLES25, mtp_test_log_filep, mtp_id, naples25_test_db)
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test List End\n")
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test List End\n", level=0)
 
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment:")
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    Iteration = {:3d}".format(iteration))
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    Fan Speed = {:3d}%".format(fanspd))
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "    Voltage Margin = {:d}%".format(vmarg))
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment End\n")
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Iteration = {:3d}".format(iteration))
+    mtp_mgmt_ctrl.cli_log_inf("Fan Speed = {:3d}%".format(fanspd))
+    mtp_mgmt_ctrl.cli_log_inf("Voltage Margin = {:d}%".format(vmarg))
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
     # Fan speed, voltage margin setup
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment Setup")
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup", level=0)
     if not mtp_mgmt_ctrl.mtp_diag_env_init(fanspd, vmarg):
-        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment Setup Failed\n")
-        libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Fail")
+        mtp_mgmt_ctrl.cli_log_err("Diag Regression Test Environment Setup Failed", level=0)
+        mtp_mgmt_ctrl.cli_log_err("{:s}".format(MTP_DIAG_Error.MTP_DIAG_REGRESSION_FAIL), level=0)
         mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
         return
     else:
-        libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "Diag Regression Test Environment Setup Complete\n")
+        mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup Complete\n", level=0)
+
+    if skip_test:
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(nic_key, MTP_DIAG_Error.NIC_DIAG_REGRESSION_PASS), level=0)
+        for nic_key in pass_nic_list:
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(nic_key, MTP_DIAG_Error.NIC_DIAG_REGRESSION_PASS), level=0)
+
+        for fp in open_file_track_list:
+            fp.close()
+        return
 
     # run the naples100 MTP_SEQ diag test
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP Diag Regression Test Start")
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
     for loop in range(iteration):
-        libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP Diag Regression Iteration - {:03d} Start\n".format(loop))
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Start".format(loop))
         for dsp, test in naples100_seq_test_list:
             test_cfg = naples100_test_db.get_diag_seq_test(dsp, test)
             init_cmd = None
@@ -281,20 +285,19 @@ def main():
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 diag_cmd = naples100_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
                 rslt_cmd = naples100_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
-                clr_cmd = naples100_test_db.clear_diag_seq_test_errcode_cmd(dsp, slot, opts)
-                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=slot)
+                nic_cli_id_str = libmfg_utils.id_str(nic=slot)
                 nic_key = libmfg_utils.nic_key(slot)
-                libmfg_utils.cli_log_inf(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Started".format(dsp))
+                mtp_mgmt_ctrl.cli_log_inf(nic_cli_id_str + "Diag Test ({:s}, {:s}) Started".format(dsp, test))
 
                 start_ts = datetime.datetime.now().replace(microsecond=0)
-                ret = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, clr_cmd, test, init_cmd, post_cmd)
+                ret = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
                 stop_ts = datetime.datetime.now().replace(microsecond=0)
+                duration = str(stop_ts - start_ts)
 
-                if ret == MTP_DIAG_Error.MTP_DIAG_PASS:
-                    libmfg_utils.cli_log_inf(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Passed".format(dsp))
-                elif ret == MTP_DIAG_Error.NIC_DIAG_FAIL:
-                    libmfg_utils.cli_log_err(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Failed".format(dsp))
-                    mtp_error_report(MTP_DIAG_Error.NIC_DIAG_FAIL)
+                if ret == "SUCCESS":
+                    mtp_mgmt_ctrl.cli_log_inf(nic_cli_id_str + "Diag Test {:s}#{:s} Passed, Duration {:s}".format(dsp, test, duration))
+                elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
+                    mtp_mgmt_ctrl.cli_log_err(nic_cli_id_str + "Diag Test {:s}#{:s} Timeout, Duration {:s}".format(dsp, test, duration))
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list: 
@@ -302,8 +305,7 @@ def main():
                     if nic_key in pass_nic_list:
                         pass_nic_list.remove(nic_key)
                 else:
-                    libmfg_utils.cli_log_err(mtp_test_log_filep, mtp_cli_id_str + "Diag Test {:s} Timeout".format(dsp))
-                    mtp_error_report(MTP_DIAG_Error.NIC_DIAG_TIMEOUT)
+                    mtp_mgmt_ctrl.cli_log_err(nic_cli_id_str + "Diag Test {:s}#{:s} {:s}, Duration {:s}".format(dsp, test, ret, duration))
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list: 
@@ -311,20 +313,27 @@ def main():
                     if nic_key in pass_nic_list:
                         pass_nic_list.remove(nic_key)
 
-                libmfg_utils.cli_log_inf(mtp_test_log_filep, nic_cli_id_str + "Diag Test {:s} Cost {:s}".format(dsp, stop_ts-start_ts))
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Complete".format(loop))
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete", level=0)
 
-        libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP Diag Regression Iteration - {:03d} Complete\n".format(loop))
-    libmfg_utils.cli_log_inf(mtp_test_log_filep, mtp_cli_id_str + "MTP Diag Regression Test Complete")
+    # log the diag test history
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("./diag -shist")
+    # clear the diag test history
+    if not stop_on_err:
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("./diag -chist")
 
-    diag_fail_rslt_list = list()
-    diag_pass_rslt_list = list()
-    if len(fail_nic_list) > 0:
-        diag_fail_rslt_list.append(mtp_cli_id_str + ", ".join(fail_nic_list) + " Diag Regression Test Fail")
+    for nic_key in fail_nic_list:
+        if nic_key:
+            mtp_mgmt_ctrl.cli_log_err("{:s} {:s}".format(nic_key, MTP_DIAG_Error.NIC_DIAG_REGRESSION_FAIL), level=0)
 
-    if len(pass_nic_list) > 0:
-        diag_pass_rslt_list.append(mtp_cli_id_str + ", ".join(pass_nic_list) + " Diag Regression Test Pass")
+    for nic_key in pass_nic_list:
+        if nic_key:
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(nic_key, MTP_DIAG_Error.NIC_DIAG_REGRESSION_PASS), level=0)
 
-    libmfg_utils.cli_log_rslt("Diag Test Summary", diag_pass_rslt_list, diag_fail_rslt_list, mtp_test_log_filep)
+    for fp in open_file_track_list:
+        fp.close()
+
+    os.system("sync")
 
 
 if __name__ == "__main__":

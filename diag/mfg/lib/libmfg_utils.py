@@ -95,13 +95,7 @@ def diag_seq_run_cmd(card_name, dsp, test, param):
 
 
 def diag_seq_errcode_cmd(card_name, dsp):
-    cmd = "./diag -shist -c {:s}".format(card_name)
-    cmd += " -d {:s}".format(dsp)
-    return cmd
-
-
-def diag_cleanup_cmd(card_name, dsp):
-    cmd = "./diag -chist -c {:s}".format(card_name)
+    cmd = "./diag -sresult -c {:s}".format(card_name)
     cmd += " -d {:s}".format(dsp)
     return cmd
 

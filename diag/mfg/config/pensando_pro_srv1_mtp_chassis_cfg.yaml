@@ -58,3 +58,23 @@ MTP-003:
     ALIAS: "mtp003"
     SLOTS: 10
 
+MTP-004:
+    MODE: ""
+    TS: "192.168.74.208"
+    TS_PORT: "2009"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "10"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.75.206"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp004"
+    SLOTS: 10
+

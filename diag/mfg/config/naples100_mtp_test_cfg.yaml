@@ -41,11 +41,6 @@ MTP_SEQ:
                 NIC_NAME: No
                 SN: Yes
                 SLOT: Yes
-#    I2C:
-#        PROBE:
-#            - INIT: ""
-#            - POST: ""
-
 MTP_PARA:
 #    DSP:
 #        TEST:
