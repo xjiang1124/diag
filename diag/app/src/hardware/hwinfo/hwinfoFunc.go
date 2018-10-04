@@ -163,7 +163,7 @@ func UnlockDev(lockName string) {
 /** 
  * Lock UUT I2C root device
  */
- func PreUutSetup(uutName string) (lockName string, err int) {
+func PreUutSetup(uutName string) (lockName string, err int) {
     i2cDevIdx, err := FindUutI2cDev(uutName)
     if err != errType.SUCCESS {
         return
@@ -181,6 +181,39 @@ func UnlockDev(lockName string) {
     }
 
     err = i2cinfo.SwitchI2cTbl(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = SwitchHwInfo(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+}
+
+/** 
+ * Lock UUT I2C root device
+ */
+func PreUutSetupBlind(uutName string) (lockName string, err int) {
+    i2cDevIdx, err := FindUutI2cDev(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = EnableHubChannelUut(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = i2cinfo.SwitchI2cTbl("UUT_BLIND")
     if err != errType.SUCCESS {
         return
     }

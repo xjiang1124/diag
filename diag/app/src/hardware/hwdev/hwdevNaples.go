@@ -22,7 +22,7 @@ func NaplesCpldRd(devName string, addr uint64, uutName string) (data byte, err i
         return
     }
 
-    lockName, err = hwinfo.PreUutSetup(uutName)
+    lockName, err = hwinfo.PreUutSetupBlind(uutName)
     if err != errType.SUCCESS {
         return
     }

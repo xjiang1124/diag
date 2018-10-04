@@ -179,9 +179,9 @@ func init() {
 func FindUutType(uutName string) (uutType string, err int) {
     uutType, found := os.LookupEnv(uutName)
     if found == false {
-        //cli.Println("e", "Cannot find uutType with uutName", uutName)
-        //err = errType.INVALID_PARAM
-        uutType = "NAPLES_MTP"
+        cli.Println("e", "Cannot find uutType with uutName", uutName)
+        err = errType.INVALID_PARAM
+        //uutType = "NAPLES_MTP"
     }
     return
 }
@@ -191,6 +191,11 @@ func FindUutType(uutName string) (uutType string, err int) {
  * Todo: support mix of Naples in the same MTP
  */
 func SwitchI2cTbl(uutName string) (err int) {
+    if uutName == "UUT_BLIND" {
+        CurI2cTbl = NaplesMtpTbl
+        return
+    }
+
     uutType, err := FindUutType(uutName)
     if err != errType.SUCCESS {
         return
