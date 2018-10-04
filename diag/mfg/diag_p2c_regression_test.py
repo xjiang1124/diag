@@ -280,7 +280,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
  
-        time.sleep(10)
+        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
  
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
         mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
@@ -405,7 +405,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
             mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-        time.sleep(10)
+        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
             mtp_mgmt_ctrl.mtp_apc_pwr_on()
