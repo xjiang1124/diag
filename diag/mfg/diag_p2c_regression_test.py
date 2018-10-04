@@ -122,6 +122,8 @@ def test_report(email_to, mtp_id, loop, test_log_file):
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
 
+    # clean the logfile
+    os.system("rm -f {:s}".format(test_log_file))
     return ret
 
 
