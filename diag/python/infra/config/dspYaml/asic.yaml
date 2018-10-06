@@ -117,7 +117,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE:
-                    ALL: 2500
+                    ALL: 3600
                 INFO: Test timeout setting
             sn:
                 VALUE:
