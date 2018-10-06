@@ -19,10 +19,10 @@ set err_cnt [cap_l1_screen $brd_num 10 $slot_id]
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {
-    plog_msg "L1 TEST PASSED"
-    plog_msg "L1 TEST PASSED"
+    puts "L1 TEST PASSED"
+    puts "L1 TEST PASSED"
 } else {
-    plog_msg "L1 TEST FAILED"
-    plog_msg "L1 TEST FAILED"
+    puts "L1 TEST FAILED"
+    puts "L1 TEST FAILED"
 }
 

@@ -23,10 +23,10 @@ set err_cnt [ext_eth_prbs $sn 10 $slot_num $time_sec $prbs]
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {
-    plog_msg "ETH PRBS PASSED"
-    plog_msg "ETH PRBS PASSED"
+    puts "ETH PRBS PASSED"
+    puts "ETH PRBS PASSED"
 } else {
-    plog_msg "ETH PRBS FAILED"
-    plog_msg "ETH PRBS FAILED"
+    puts "ETH PRBS FAILED"
+    puts "ETH PRBS FAILED"
 }
 

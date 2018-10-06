@@ -23,10 +23,10 @@ set err_cnt [ext_pcie_prbs $sn 10 $slot_num $time_sec $prbs]
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {
-    plog_msg "PCIE PRBS PASSED"
-    plog_msg "PCIE PRBS PASSED"
+    puts "PCIE PRBS PASSED"
+    puts "PCIE PRBS PASSED"
 } else {
-    plog_msg "PCIE PRBS FAILED"
-    plog_msg "PCIE PRBS FAILED"
+    puts "PCIE PRBS FAILED"
+    puts "PCIE PRBS FAILED"
 }
 
