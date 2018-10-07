@@ -23,10 +23,10 @@ func NaplesCpldRd(devName string, addr uint64, uutName string) (data byte, err i
     }
 
     lockName, err = hwinfo.PreUutSetupBlind(uutName)
+    defer hwinfo.PostUutClean(lockName)
     if err != errType.SUCCESS {
         return
     }
-    defer hwinfo.PostUutClean(lockName)
 
     data, err = cpldSmb.ReadSmb(devName, addr)
 
@@ -43,16 +43,11 @@ func NaplesCpldWr(devName string, addr uint64, data byte, uutName string) (err i
         return
     }
 
-    lockName, err = hwinfo.PreUutSetup(uutName)
+    lockName, err = hwinfo.PreUutSetupBlind(uutName)
     if err != errType.SUCCESS {
         return
     }
     defer hwinfo.PostUutClean(lockName)
-
-    err = hwinfo.EnableHubChannelExclusive(devName)
-    if err != errType.SUCCESS {
-        return
-    }
 
     err = cpldSmb.WriteSmb(devName, addr, data)
 

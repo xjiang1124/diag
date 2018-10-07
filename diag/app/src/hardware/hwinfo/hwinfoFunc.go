@@ -16,7 +16,7 @@ import (
  */
 func SwitchHwInfo(uutName string) (err int) {
     var uutType string
-    if uutName == "UUT_NONE" {
+    if uutName == "UUT_NONE" || uutName == "UUT_BLIND" {
         DispStaList   = dispMap[cardType]
         PmbusTestList = pmbusTestMap[cardType]
         EepromList    = eepromMap[cardType]
@@ -218,7 +218,7 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
         return
     }
 
-    err = SwitchHwInfo(uutName)
+    err = SwitchHwInfo("UUT_BLIND")
     if err != errType.SUCCESS {
         return
     }
