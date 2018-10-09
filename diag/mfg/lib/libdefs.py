@@ -66,7 +66,7 @@ class MTP_Const:
 
     MTP_DIAGMGR_DELAY = 10
 
-    DIAG_REGRESSION_TIMEOUT = 36000
+    DIAG_REGRESSION_TIMEOUT = 72000
     DIAG_TEST_TIMEOUT = 3600
     
     LOW_TEMP_FAN_SPD = 40
@@ -82,6 +82,23 @@ class MTP_DIAG_Error:
     MTP_ENV_SETUP = "MTP_DIAG_ENV_SETUP"
     NIC_DIAG_FAIL = "MTP_DIAG_NIC_TEST_FAIL"
     NIC_DIAG_TIMEOUT = "MTP_DIAG_NIC_TEST_TIMEOUT"
+
+
+class MTP_DIAG_Logfile:
+    ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*txt"
+    ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
+    ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
+
+    DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
+
+
+class MTP_DIAG_Report:
+    NIC_DIAG_TEST_START = "{:s} DIAG TEST ({:s}, {:s}) STARTED"
+    NIC_DIAG_TEST_PASS = "{:s} DIAG TEST {:s} {:s} PASSED, DURATION {:s}"
+    NIC_DIAG_TEST_TIMEOUT = "{:s} DIAG TEST {:s} {:s} TIMEOUT, DURATION {:s}"
+    NIC_DIAG_TEST_FAIL = "{:s} DIAG TEST {:s} {:s} {:s}, DURATION {:s}"
+    NIC_DIAG_TEST_RSLT_RE = r"\[NIC-{:s}\]: +{:s} DIAG TEST (.*) (.*) (.*), DURATION"
+    MTP_DIAG_REGRESSION_FAIL = "MTP_DIAG_REGRESSION_TEST_FAIL"
     NIC_DIAG_REGRESSION_FAIL = "DIAG_REGRESSION_TEST_FAIL"
     NIC_DIAG_REGRESSION_PASS = "DIAG_REGRESSION_TEST_PASS"
-    MTP_DIAG_REGRESSION_FAIL = "MTP_DIAG_REGRESSION_TEST_FAIL"
+    NIC_DIAG_REGRESSION_RSLT_RE = r"NIC-(\d{{2}}) (.*) {:s}"

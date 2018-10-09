@@ -15,6 +15,8 @@ sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
+from libdefs import MTP_DIAG_Report
+from libdefs import MTP_DIAG_Logfile
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -27,63 +29,62 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop):
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
 
-     # log pkg filename
+    # create the log subdir
+    sub_dir = "{:s}_iter{:d}_{:s}/".format(mtp_id, loop, libmfg_utils.get_timestamp())
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
+
+    # log pkg filename
     log_pkg_file = "{:s}mtp_regression.{:d}.tar.gz".format(log_dir, loop)
 
     # need to be sync'd with cleanup.sh
-    diag_onboard_log_files = "/home/diag/diag/log/*txt"  
-    asic_onboard_log_files = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log" 
+    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  
+    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES 
+    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES 
 
     # regression logs
     logfile_list = list()
-    test_log_file = "{:s}mtp_test.log".format(log_dir)
-    diag_log_file = "{:s}mtp_diag.log".format(log_dir)
-    diag_log_cmd_file = "{:s}mtp_diag_cmd.log".format(log_dir)
-    diagmgr_log_file = "{:s}mtp_diagmgr.log".format(log_dir)
     # diag onboard log files
-    cmd = "mkdir -p {:s}diag_logs/".format(log_dir)
+    cmd = "mkdir -p {:s}diag_logs/".format(log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir)
+    cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     # asic onboard log files
-    cmd = "mkdir -p {:s}asic_logs/".format(log_dir)
+    cmd = "mkdir -p {:s}asic_logs/".format(log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir)
+    cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "cleanup.sh"
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     # all the test logs
-    logfile_list.append(test_log_file)
-    logfile_list.append(diag_log_file)
-    logfile_list.append(diag_log_cmd_file)
-    logfile_list.append(diagmgr_log_file)
-    logfile_list.append("{:s}diag_logs/".format(log_dir))
-    logfile_list.append("{:s}asic_logs/".format(log_dir))
+    test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
 
     # pkg the onboard logs
-    cmd = "tar czvf {:s} {:s}".format(log_pkg_file, " ".join(logfile_list))
+    cmd = "tar czvf {:s} -C {:s} {:s}".format(log_pkg_file, log_dir, sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    ts = libmfg_utils.get_timestamp()
     # create the log dir if not exist
-    qa_log_dir = "/vol/hw/diag/diag_qa/regression_log/{:s}/".format(str(datetime.datetime.now().date()))
+    qa_log_dir = MTP_DIAG_Logfile.DIAG_QA_LOG_DIR + libmfg_utils.get_date() + "/"
     cmd = "mkdir -p {:s}".format(qa_log_dir)
     os.system(cmd)
     # copy the onboard logs
+    ts = libmfg_utils.get_timestamp()
     local_test_log_file = "log/{:s}_mtp_test.iter-{:d}.log".format(mtp_id, loop)
     qa_log_pkg_file = qa_log_dir + "{:s}_{:s}_{:s}".format(mtp_id, ts, os.path.basename(log_pkg_file))
     libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
     # clear the onboard logs
     logfile_list.append(log_pkg_file)
+    logfile_list.append(log_dir+sub_dir)
     cmd = "rm -rf {:s}".format(" ".join(logfile_list))
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    return local_test_log_file
+    return [local_test_log_file, qa_log_pkg_file]
 
 
-def test_report(email_to, mtp_id, loop, test_log_file):
+def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg):
     ret = True
     mtp_cli_id_str = libmfg_utils.id_str(mtp=mtp_id)
     report_title = ""
@@ -92,33 +93,40 @@ def test_report(email_to, mtp_id, loop, test_log_file):
     with open(test_log_file, 'r') as fp:
         buf = fp.read()
 
-    if MTP_DIAG_Error.MTP_DIAG_REGRESSION_FAIL in buf:
+    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
         report_title = mtp_cli_id_str + "Diag Regression Test Iteration - {:d}, MTP Setup Failed".format(loop)
         ret = False
     else:
-        if MTP_DIAG_Error.NIC_DIAG_REGRESSION_FAIL in buf: 
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
             report_title = mtp_cli_id_str + "Diag Regression Test Iteration - {:d}, NIC Test Failed".format(loop)
-            match = re.findall(r"NIC-(\d{2}) %s" %MTP_DIAG_Error.NIC_DIAG_REGRESSION_FAIL, buf)
-            for slot in match:
+            nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
+            match = re.findall(nic_fail_reg_exp, buf)
+            for slot, sn in match:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                report_body += nic_cli_id_str + "Diag Regression Test Failed\n"
+                report_body += nic_cli_id_str + "[**** {:s} ****] Diag Regression Test Failed\n".format(sn)
                 # find all test status
-                sub_match = re.findall(r"\[NIC-%s\]: Diag Test (.*)#(.*) (.*), Duration" %slot, buf)
+                nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+                sub_match = re.findall(nic_test_rslt_reg_exp, buf)
                 for dsp, test, result in sub_match:
-                    report_body += "    Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
+                    report_body += "        ---- Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
+                report_body += "\n"
                 ret = False
 
-        if MTP_DIAG_Error.NIC_DIAG_REGRESSION_PASS in buf: 
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
             if report_title == "":
                 report_title = mtp_cli_id_str + "Diag Regression Test Iteration - {:d}, NIC Test Passed".format(loop)
-            match = re.findall(r"NIC-(\d{2}) %s" %MTP_DIAG_Error.NIC_DIAG_REGRESSION_PASS, buf)
-            for slot in match:
+            nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+            match = re.findall(nic_pass_reg_exp, buf)
+            for slot, sn in match:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                report_body += nic_cli_id_str + "Diag Regression Test Passed\n"
+                report_body += nic_cli_id_str + "[**** {:s} ****] Diag Regression Test Passed\n".format(sn)
                 # find all test status
-                sub_match = re.findall(r"\[NIC-%s\]: Diag Test (.*)#(.*) (.*), Duration" %slot, buf)
+                nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+                sub_match = re.findall(nic_test_rslt_reg_exp, buf)
                 for dsp, test, result in sub_match:
-                    report_body += "    Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
+                    report_body += "        ---- Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
+                report_body += "\n"
+    report_body += "[**** QA Logfile ****]: {:s}".format(qa_log_pkg)
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
 
@@ -266,8 +274,8 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
 
-        test_log_file = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop)
-        result = test_report(email_to, mtp_id, loop, test_log_file)
+        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop)
+        result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg)
         cmd = "rm -rf {:s}".format(test_log_file)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
@@ -346,7 +354,6 @@ def main():
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
     mtp_mgmt_ctrl_list = list()
-    regression_log_filep = open("log/regression.log", "w+")
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list: 
@@ -354,19 +361,16 @@ def main():
             diag_log_filep = sys.stdout
         else:
             diag_log_filep = None
-        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, regression_log_filep, diag_log_filep)
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, diag_log_filep)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     # scan and generate nic barcode config file
     if not skip_scan:
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-            mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, regression_log_filep)
+            mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     # generate the regression script pkg
     mtp_diag_dir = "/home/diag/"
-    mtp_script_dir = "mtp_regression/"
-    mtp_script_pkg = "mtp_regression.tar"
-    mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -391,10 +395,13 @@ def main():
             mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file, mtp_diag_dir)
 
     # Copy script, config file on to each MTP Chassis
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
+        mtp_script_dir = "mtp_regression/"
+        mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+        mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
         mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg, mtp_diag_dir)
-    cmd = "rm -f {:s}".format(mtp_script_pkg)
-    os.system(cmd)
+        cmd = "rm -f {:s}".format(mtp_script_pkg)
+        os.system(cmd)
 
     if pwr_cycle:
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
@@ -435,9 +442,7 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_log_inf(regression_log_filep, "Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
-    regression_log_filep.close()
-    os.system("sync")
+    libmfg_utils.cli_inf("Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
 
 
 if __name__ == "__main__":

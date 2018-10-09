@@ -5,8 +5,10 @@ import sys
 import libmfg_utils
 import random
 import re
+from libmfg_cfg import MFG_CFG_NIC_FRU_VALID
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
+from libdefs import MTP_DIAG_Report
 from libdefs import MTP_Const
 from libdefs import NIC_Status
 from libdefs import MTP_Status
@@ -73,7 +75,7 @@ class mtp_ctrl():
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
 
-
+    
     def get_mgmt_cfg(self):
         return self._mgmt_cfg
 
@@ -465,6 +467,33 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_diag_fail_report(self, msg):
+        err_msg = MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL + ", ERR_MSG: {:s}".format(msg)
+        self.cli_log_err(err_msg, level=0)
+
+
+    def mtp_nic_diag_fail_report(self, slot, sn):
+        err_msg = "SN[{:s}]".format(sn) + MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL
+        self.cli_log_slot_err(slot, err_msg, level=0)
+
+
+    def mtp_nic_diag_pass_report(self, slot, sn):
+        err_msg = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS
+        self.cli_log_slot_inf(slot, err_msg, level=0)
+
+
+    def mtp_set_psu_led(self, status):
+        pass
+
+
+    def mtp_set_fan_led(self, status):
+        pass
+
+
+    def mtp_set_sys_led(self, status):
+        pass
+
+
     def mtp_program_nic_fru(self, slot, sn, mac):
         # TODO: how to program nic fru?
         self._mgmt_handle.sendline("echo 'Fake FRU program on the nic'")
@@ -533,9 +562,9 @@ class mtp_ctrl():
         if err_inj_type == "FRU-PROG":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "-- Program NIC with mac address: {:s}, sn: {:s} complete".format(mac_ui, sn))
+            self.cli_log_slot_inf(slot, "Program NIC with mac address: {:s}, sn: {:s} complete".format(mac_ui, sn))
         else:
-            self.cli_log_slot_err(slot, "-- Program NIC with mac address: {:s}, sn: {:s} failed".format(mac_ui, sn))
+            self.cli_log_slot_err(slot, "Program NIC with mac address: {:s}, sn: {:s} failed".format(mac_ui, sn))
             return False
 
         # verify FRU
@@ -545,9 +574,9 @@ class mtp_ctrl():
         if err_inj_type == "FRU-VERIFY":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "-- Verify NIC with mac address: {:s}, sn: {:s} complete".format(mac_ui, sn))
+            self.cli_log_slot_inf(slot, "Verify NIC with mac address: {:s}, sn: {:s} complete".format(mac_ui, sn))
         else:
-            self.cli_log_slot_err(slot, "-- Verify NIC with mac address: {:s}, sn: {:s} failed".format(mac_ui, sn))
+            self.cli_log_slot_err(slot, "Verify NIC with mac address: {:s}, sn: {:s} failed".format(mac_ui, sn))
             return False
 
         # program CPLD
@@ -557,9 +586,9 @@ class mtp_ctrl():
         if err_inj_type == "CPLD-PROG":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "-- Program NIC CPLD file: {:s} complete".format(cpld_img_file))
+            self.cli_log_slot_inf(slot, "Program NIC CPLD file: {:s} complete".format(cpld_img_file))
         else:
-            self.cli_log_slot_err(slot, "-- Program NIC CPLD file: {:s} Failed".format(cpld_img_file))
+            self.cli_log_slot_err(slot, "Program NIC CPLD file: {:s} Failed".format(cpld_img_file))
             return False
 
         # verify CPLD
@@ -569,9 +598,9 @@ class mtp_ctrl():
         if err_inj_type == "CPLD-VERIFY":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "-- Verify NIC CPLD file: {:s} complete".format(cpld_img_file))
+            self.cli_log_slot_inf(slot, "Verify NIC CPLD file: {:s} complete".format(cpld_img_file))
         else:
-            self.cli_log_slot_err(slot, "-- Verify NIC CPLD file: {:s} Failed".format(cpld_img_file))
+            self.cli_log_slot_err(slot, "Verify NIC CPLD file: {:s} Failed".format(cpld_img_file))
             return False
 
         # program VRM
@@ -581,9 +610,9 @@ class mtp_ctrl():
         if err_inj_type == "VRM-PROG":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "-- Program NIC VRM file: {:s} complete".format(vrm_img_file))
+            self.cli_log_slot_inf(slot, "Program NIC VRM file: {:s} complete".format(vrm_img_file))
         else:
-            self.cli_log_slot_err(slot, "-- Program NIC VRM file: {:s} Failed".format(vrm_img_file))
+            self.cli_log_slot_err(slot, "Program NIC VRM file: {:s} Failed".format(vrm_img_file))
             return False
 
         # verify VRM
@@ -593,9 +622,9 @@ class mtp_ctrl():
         if err_inj_type == "VRM-VERIFY":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "-- Verify NIC VRM file: {:s} complete\n".format(vrm_img_file))
+            self.cli_log_slot_inf(slot, "Verify NIC VRM file: {:s} complete\n".format(vrm_img_file))
         else:
-            self.cli_log_slot_err(slot, "-- Verify NIC VRM file: {:s} Failed\n".format(vrm_img_file))
+            self.cli_log_slot_err(slot, "Verify NIC VRM file: {:s} Failed\n".format(vrm_img_file))
             return False
 
         return True
@@ -842,7 +871,7 @@ class mtp_ctrl():
         return 95
 
 
-    def mtp_nic_init(self, fru_load=False):
+    def mtp_nic_init(self, fru_load):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
         # init nic present list
         self.cli_log_inf("Init NIC Present")
@@ -864,26 +893,80 @@ class mtp_ctrl():
         self.cli_log_inf("Power on NICs")
         self.mtp_power_on_nic()
 
-        # load from fru
         if fru_load:
-            self.cli_log_inf("Load NIC SN/MAC from Fru")
-            self.mtp_init_nic_sn()
-            self.mtp_init_nic_mac()
-        else:
-            self.cli_log_inf("Load NIC SN/MAC from config file")
+            self.cli_log_inf("Load Barcode config file")
             nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
+
+            # load sn/mac from fru sprom
+            if MFG_CFG_NIC_FRU_VALID:
+                self.cli_log_inf("Load NIC SN/MAC from Fru")
+                self.mtp_init_nic_sn()
+                self.mtp_init_nic_mac()
+            # load sn/mac from config file
+            else:
+                self.cli_log_inf("Load NIC SN/MAC from barcode config file")
+                for slot in range(self._slots):
+                    key = libmfg_utils.nic_key(slot)
+                    valid = nic_fru_cfg[self._id][key]["VALID"]
+                    if str.upper(valid) == "YES":
+                        sn = nic_fru_cfg[self._id][key]["SN"]
+                        mac = nic_fru_cfg[self._id][key]["MAC"]
+                        self.mtp_set_nic_sn(slot, sn)
+                        self.mtp_set_nic_mac(slot, mac)
+
+            # sanity check
+            # all present nic should have been scanned
+            # all scanned nic should have been detected
+            # sn/mac should match
+            self.cli_log_inf("Start NIC Present/SN/MAC check")
             for slot in range(self._slots):
                 key = libmfg_utils.nic_key(slot)
                 valid = nic_fru_cfg[self._id][key]["VALID"]
                 if str.upper(valid) == "YES":
-                    sn = nic_fru_cfg[self._id][key]["SN"]
-                    mac = nic_fru_cfg[self._id][key]["MAC"]
-                    self.mtp_set_nic_sn(slot, sn)
-                    self.mtp_set_nic_mac(slot, mac)
+                    scanned = True
+                else:
+                    scanned = False
+                prsnt = self._nic_prsnt_list[slot]
+
+                if scanned != prsnt:
+                    # scanned, but not present
+                    if scanned:
+                        self.cli_log_slot_err(slot, "NIC is scanned, but not detected by system")
+                    # prsnet, but not present
+                    if prsnt:
+                        self.cli_log_slot_err(slot, "NIC is present, but barcode is not scanned")
+                    return False
+           
+                # mac/sn should match
+                if scanned and prsnt:
+                    sn = self.mtp_get_nic_sn(slot)
+                    mac = self.mtp_get_nic_mac(slot)
+                    scan_sn = nic_fru_cfg[self._id][key]["SN"]
+                    scan_mac = nic_fru_cfg[self._id][key]["MAC"]
+                    if sn != scan_sn:
+                        self.cli_log_slot_err(slot, "NIC SN mismatch, scanned: {:s}, fru: {:s}".format(scan_sn, sn))
+                        return False
+                    if mac != scan_mac:
+                        self.cli_log_slot_err(slot, "NIC MAC mismatch, scanned: {:s}, fru: {:s}".format(scan_mac, mac))
+                        return False
+            self.cli_log_inf("NIC Present/SN/MAC check complete")
+        else:
+            self.cli_log_inf("Bypass load NIC SN/MAC")
 
         self.cli_log_inf("Init NICs in the MTP Chassis complete\n", level = 0)
+        self.mtp_nic_info_show()
         return True
+
+
+    def mtp_nic_info_show(self):
+        self.cli_log_inf("NIC Info Dump in the MTP Chassis:", level = 0)
+        for slot, prsnt, nic_type in zip(range(self._slots), self._nic_prsnt_list, self._nic_type_list):
+            if prsnt:
+                self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
+            else:
+                self.cli_log_slot_err(slot, "NIC is Absent")
+        self.cli_log_inf("NIC Info Dump in the MTP Chassis complete\n", level = 0)
 
 
     def mtp_power_on_nic(self):
@@ -895,7 +978,7 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("inventory -present")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
-        match = re.findall(r"UUT_(\d) +NAPLES\d+", self._mgmt_handle.before)
+        match = re.findall(r"UUT_(\d+) +NAPLES\d+", self._mgmt_handle.before)
         if match: 
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
@@ -910,13 +993,13 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("inventory -present")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
-        match = re.findall(r"UUT_(\d) +NAPLES100", self._mgmt_handle.before)
+        match = re.findall(r"UUT_(\d+) +NAPLES100", self._mgmt_handle.before)
         if match: 
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
                 self._nic_type_list[slot] = NIC_Type.NAPLES100
 
-        match = re.findall(r"UUT_(\d) +NAPLES25", self._mgmt_handle.before)
+        match = re.findall(r"UUT_(\d+) +NAPLES25", self._mgmt_handle.before)
         if match: 
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
@@ -956,8 +1039,7 @@ class mtp_ctrl():
 
 
     def mtp_set_nic_sn(self, slot, sn):
-        nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "Set SN to {:s}".format(sn))
+        self.cli_log_slot_inf(slot, "Set SN to {:s}".format(sn))
         self._nic_sn_list[slot] = sn
 
 
@@ -973,8 +1055,7 @@ class mtp_ctrl():
 
 
     def mtp_set_nic_mac(self, slot, mac):
-        nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "Set MAC to {:s}".format(mac))
+        self.cli_log_slot_inf(slot, "Set MAC to {:s}".format(mac))
         self._nic_mac_list[slot] = mac
 
 
@@ -986,8 +1067,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_vmarg(self, slot, vmarg):
         # TODO, how to set nic vmarg?
-        nic_cli_id_str = libmfg_utils.id_str(nic = slot)
-        self.cli_log_inf(nic_cli_id_str + "Set voltage margin to {:d}%".format(vmarg))
+        self.cli_log_slot_inf(slot, "Set voltage margin to {:d}%".format(vmarg))
         return True
 
 

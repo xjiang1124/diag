@@ -18,8 +18,8 @@ from libpro_srv_db import pro_srv_db
 
 
 def logfile_close(filep_list):
-    for _filep in filep_list:
-        filep.close()
+    for fp in filep_list:
+        fp.close()
     os.system("sync")
 
 
@@ -87,19 +87,19 @@ def main():
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+    mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Try to connect MTP chassis")
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        libmfg_utils.cli_log_err(test_log_filep, mtp_cli_id_str + "Unable to connect MTP chassis")
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
         logfile_close(log_filep_list)
         return
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "MTP chassis connected\n")
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
     # get the sw version info
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "MTP SW version: {:s}".format(sw_ver))
+    mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
 
     # diag environment pre init
     mtp_mgmt_ctrl.mtp_diag_pre_init()
@@ -108,18 +108,20 @@ def main():
     ret = mtp_mgmt_ctrl.mtp_hw_init(True)
     if not ret:
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power off APC")
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
         logfile_close(log_filep_list)
         return
 
     # power on all the nic.
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    if not mtp_mgmt_ctrl.mtp_nic_init(fru_load = False):
+        mtp_mgmt_ctrl.cli_log_err("Diag Initialize NIC Fail", level=0)
+
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     if not True in nic_prsnt_list:
-        libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "No NIC Present, Abort Barcode Scan Process")
+        mtp_mgmt_ctrl.cli_log_inf("No NIC Present, Abort Barcode Scan Process", level=0)
         logfile_close(log_filep_list)
         return
 
@@ -131,12 +133,12 @@ def main():
     naples25_vrm_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["VRM_FILE"]
     naples25_vrm_img_cksum = nic_fw_cfg[NIC_Type.NAPLES25]["VRM_CKSUM"]
 
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Start the Barcode Scan Process")
+    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
     while True:
         scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan()
         if scan_rslt:
             break;
-        libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Restart the Barcode Scan Process")
+        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
 
     pass_rslt_list = list()
     fail_rslt_list = list()
@@ -160,13 +162,12 @@ def main():
 
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Use the barcode configuration file generated on {:s}\n".format(nic_fru_cfg[mtp_id]["TS"]))
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "FRU Program Matrix:")
+    mtp_mgmt_ctrl.cli_log_inf("Use the barcode configuration file generated on {:s}\n".format(nic_fru_cfg[mtp_id]["TS"]), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("FRU Program Matrix:", level=0)
 
     err_inj_slot_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             sn = nic_fru_cfg[mtp_id][key]["SN"]
@@ -182,17 +183,17 @@ def main():
                 vrm_img_file = naples25_vrm_img_file
                 vrm_img_cksum = naples25_vrm_img_cksum
             else:
-                libmfg_utils.cli_log_err(test_log_filep, nic_cli_id_str + "Unknown NIC type detected: {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
                 logfile_close(log_filep_list)
                 return
 
-            libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui)
-            libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "CPLD image: " + os.path.basename(cpld_img_file))
-            libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "VRM image: " + os.path.basename(vrm_img_file) + "\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = " + sn + "; MAC = " + mac_ui)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file) + "\n")
             err_inj_slot_list.append(slot)
 
     # start the programming
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "NIC firmware update process started\n")
+    mtp_mgmt_ctrl.cli_log_inf("NIC firmware update process started\n", level=0)
 
     if err_inj:
         err_inj_slot = random.choice(err_inj_slot_list)
@@ -205,7 +206,6 @@ def main():
     naples25_sn_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
 
         if err_inj_slot == slot:
@@ -228,7 +228,7 @@ def main():
                 vrm_img_cksum = naples25_vrm_img_cksum
                 naples25_sn_list.append(sn)
             else:
-                libmfg_utils.cli_log_err(test_log_filep, nic_cli_id_str + "Unknown NIC type detected: {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
                 logfile_close(log_filep_list)
                 return
 
@@ -237,12 +237,12 @@ def main():
             else:
                 pass_nic_list.append(key)
         else:
-            libmfg_utils.cli_log_inf(test_log_filep, nic_cli_id_str + "    -- Bypass empty slot\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
 
     mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+    mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    libmfg_utils.cli_log_inf(test_log_filep, mtp_cli_id_str + "Power off APC")
+    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
     mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
     # print summary

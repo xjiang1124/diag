@@ -20,13 +20,6 @@ PARAMS:
 
 MTP_SEQ:
     ASIC:
-        L1:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: No
-                SN: Yes
-                SLOT: Yes
         ETH_PRBS:
             INIT: ""
             POST: ""
@@ -35,6 +28,13 @@ MTP_SEQ:
                 SN: Yes
                 SLOT: Yes
         PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+        L1:
             INIT: ""
             POST: ""
             OPTS:

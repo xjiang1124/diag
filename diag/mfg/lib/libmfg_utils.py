@@ -9,12 +9,13 @@ import time
 import pexpect
 
 from libdefs import MTP_Const
+from libmfg_cfg import * 
 
 def get_linux_prompt_list():
-    return ["#", "$", ">"]
+    return DIAG_OS_PROMPT_LIST
 
 def get_ssh_option():
-    return " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null'"
+    return DIAG_SSH_OPTIONS
 
 def cli_out(info):
     print("## ATT: " + info)
@@ -153,17 +154,19 @@ def timestamp_snapshot():
     return datetime.datetime.now().replace(microsecond=0)
 
 
+def get_date():
+    return str(datetime.datetime.now().date())
+
+
 def serial_number_validate(tmp):
-    # please check the label specification
-    # FL[M,Z,G][Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
-    if re.match("FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}", tmp) and (len(tmp) == 11):
+    if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
         return tmp
     else:
         return None
 
 
 def mac_address_validate(tmp):
-    if re.match("00AECD[A-F0-9]+$", tmp) and (len(tmp) == 12):
+    if re.match(NAPLES_MAC_FMT, tmp) and (len(tmp) == 12):
         return tmp
     else:
         return None
@@ -367,12 +370,12 @@ def email_report(email_to, title, body = None):
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
-    server.login("psdiag.qa@gmail.com", "psdiag!234")
+    server.login(DIAG_NIGHTLY_REPORT_ACCOUNT, DIAG_NIGHTLY_REPORT_PASSWD)
 
     msg = "Subject: {:s}\n\n".format(title)
     if body:
         msg += "{:s}".format(body)
 
-    server.sendmail("psdiag.qa@gmail.com", email_to, msg)
+    server.sendmail(DIAG_NIGHTLY_REPORT_ACCOUNT, email_to, msg)
     server.quit()
 

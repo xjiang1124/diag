@@ -82,16 +82,16 @@ def main():
 
     if apc:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Try to connect MTP chassis")
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis connected")
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
 
     if not skip_image_update:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Copy MTP Chassis image: {:s}".format(mtp_image_file))
+        mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
         mtp_ip_addr = mtp_mgmt_cfg[0]
         mtp_usrid = mtp_mgmt_cfg[1]
         mtp_passwd = mtp_mgmt_cfg[2]
@@ -99,35 +99,34 @@ def main():
         if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
             libmfg_utils.sys_exit(mtp_cli_id_str + "Copy MTP Chassis image: {:s} failed".format(mtp_image_file))
         else:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Copy MTP Chassis image: {:s} complete".format(mtp_image_file))
+            mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s} complete".format(mtp_image_file), level=0)
 
         pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)))
+        mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
         mtp_mgmt_ctrl.mtp_update_sw_image(remote_dir + os.path.basename(mtp_image_file))
         post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver))
+        mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver))
 
     for count in range(iteration):
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Started".format(count))
+        mtp_mgmt_ctrl.cli_log_inf("MTP Reload Test Iteration - {:d} Started".format(count), level=0)
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-        time.sleep(1)
+        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-            libmfg_utils.cli_err(mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Failed\n".format(count))
             libmfg_utils.email_report(email_to, mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Failed".format(count))
-            return
+            libmfg_utils.sys_exit("MTP Reload Test Iteration - {:d} Failed\n".format(count))
         version = mtp_mgmt_ctrl.mtp_get_sw_version()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis is up and running, diag version = {:s}".format(version))
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Complete\n".format(count))
+        mtp_mgmt_ctrl.cli_log_inf("MTP chassis is up and running, diag version = {:s}".format(version), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP Reload Test Iteration - {:d} Complete\n".format(count), level=0)
         libmfg_utils.email_report(email_to, mtp_cli_id_str + "MTP Reload Test Iteration - {:d} Complete".format(count))
 
     libmfg_utils.email_report(email_to, mtp_cli_id_str + "MTP Reload Test Passed")
