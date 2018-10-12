@@ -267,7 +267,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         cmd = "cd {:s}".format(mtp_script_dir)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
-        cmd += " --psu-check"
+        #cmd += " --psu-check"
         if stop_on_err:
             cmd += " --stop-on-error"
         if skip_test:

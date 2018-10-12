@@ -257,6 +257,10 @@ def main():
     else:
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup Complete\n", level=0)
 
+    # get the inlet temperature info
+    env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp()
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:.2f}".format(env_temp), level=0)
+
     if skip_test:
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(nic_key, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
         for nic_key in pass_nic_list:
