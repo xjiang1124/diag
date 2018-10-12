@@ -76,6 +76,7 @@ then
     DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
     DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
     ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
+    SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/$arch
     
     mkdir -p $DIAG_ASIC_PATH
     mkdir -p $DIAG_ASIC_IMG_PATH
@@ -85,6 +86,8 @@ then
     
     mkdir -p $DIAG_ASIC_IMG_PATH
     rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
+
+    rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
 
 fi
 echo "ASIC file -- Done"
