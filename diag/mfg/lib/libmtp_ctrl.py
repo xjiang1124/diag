@@ -443,6 +443,16 @@ class mtp_ctrl():
             libmfg_utils.sys_exit("Failed to get diag image version info")
 
 
+    def mtp_get_asic_version(self):
+        self._mgmt_handle.sendline("head /home/diag/diag/asic/asic_version.txt")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        match = re.search(r"Date: +(.*20\d{2})", self._mgmt_handle.before)
+        if match:
+            return match.group(1)
+        else:
+            libmfg_utils.sys_exit("Failed to get asic image version info")
+
+
     def mtp_update_sw_image(self, image):
         self._mgmt_handle.sendline("tar zxf " + image)
         self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.OS_CMD_DELAY)

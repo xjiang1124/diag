@@ -90,11 +90,16 @@ class MTP_DIAG_Logfile:
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
+    DIAG_MFG_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
+
+
+class MTP_DIAG_Path:
+    ONBOARD_MTP_DIAG_PATH = "/home/diag/"
 
 
 class MTP_DIAG_Report:
     NIC_DIAG_TEST_START = "{:s} DIAG TEST ({:s}, {:s}) STARTED"
-    NIC_DIAG_TEST_PASS = "{:s} DIAG TEST {:s} {:s} PASSED, DURATION {:s}"
+    NIC_DIAG_TEST_PASS = "{:s} DIAG TEST {:s} {:s} PASS, DURATION {:s}"
     NIC_DIAG_TEST_TIMEOUT = "{:s} DIAG TEST {:s} {:s} TIMEOUT, DURATION {:s}"
     NIC_DIAG_TEST_FAIL = "{:s} DIAG TEST {:s} {:s} {:s}, DURATION {:s}"
     NIC_DIAG_TEST_RSLT_RE = r"\[NIC-{:s}\]: +{:s} DIAG TEST (.*) (.*) (.*), DURATION"

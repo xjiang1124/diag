@@ -187,6 +187,10 @@ def main():
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
     mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
 
+    # get the sw version info
+    asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
+    mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver), level=0)
+
     # PSU/FAN absent, powerdown MTP
     ret = mtp_mgmt_ctrl.mtp_hw_init(psu_check)
     if not ret:

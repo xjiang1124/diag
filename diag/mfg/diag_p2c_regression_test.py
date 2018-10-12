@@ -17,6 +17,7 @@ from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
+from libdefs import MTP_DIAG_Path
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -130,6 +131,7 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg):
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
 
+
     # clean the logfile
     os.system("rm -f {:s}".format(test_log_file))
     return ret
@@ -219,31 +221,35 @@ def mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg):
     os.system(cmd)
 
 
-def mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file, mtp_diag_dir):
+def mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file):
     mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     mtp_ip_addr = mtp_mgmt_cfg[0]
     mtp_usrid = mtp_mgmt_cfg[1]
     mtp_passwd = mtp_mgmt_cfg[2]
-    if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, mtp_diag_dir):
+    if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
         mtp_mgmt_ctrl.cli_log_err("Copy MTP Chassis image: {:s} failed".format(mtp_image_file), level=0)
         libmfg_utils.sys_exit("Network error")
     else:
         mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s} complete".format(mtp_image_file), level=0)
-    pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+    diag_pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+    asic_pre_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
     mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
-    mtp_mgmt_ctrl.mtp_update_sw_image(mtp_diag_dir + os.path.basename(mtp_image_file))
-    post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image complete [{:s}] --> [{:s}]".format(pre_ver, post_ver), level=0)
+    mtp_mgmt_ctrl.mtp_update_sw_image(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + os.path.basename(mtp_image_file))
+    diag_post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+    asic_post_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
+    mtp_mgmt_ctrl.cli_log_inf("Diag image update [{:s}] --> [{:s}]".format(diag_pre_ver, diag_post_ver))
+    mtp_mgmt_ctrl.cli_log_inf("ASIC image update [{:s}] --> [{:s}]".format(asic_pre_ver, asic_post_ver))
+    mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image complete", level=0)
 
 
-def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg, mtp_diag_dir):
+def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Copy MTP Regression script: {:s}".format(mtp_script_pkg), level=0)
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
-    if not libmfg_utils.network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, mtp_diag_dir):
+    if not libmfg_utils.network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
         mtp_mgmt_ctrl.cli_log_err("Download regression script onto MTP Chassis failed", level=0)
         return
     mtp_mgmt_ctrl.cli_log_inf("Copy MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
@@ -255,7 +261,7 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg, mtp_diag_dir):
 
 
 def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to):
-    for loop in range(iteration):
+    for loop in range(1, iteration+1):
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} start".format(loop), level=0)
         # go to mtp_regression and Start the regression
         cmd = "cd {:s}".format(mtp_script_dir)
@@ -275,7 +281,8 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
 
         test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop)
-        result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg)
+        if email_to:
+            result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg)
         cmd = "rm -rf {:s}".format(test_log_file)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
@@ -290,6 +297,10 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
  
         time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
  
+        # leave the MTP in power down state if the last loop complete
+        if loop == iteration:
+            return
+
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
         mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
@@ -369,11 +380,7 @@ def main():
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
             mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
-    # generate the regression script pkg
-    mtp_diag_dir = "/home/diag/"
-
     regression_start_ts = libmfg_utils.timestamp_snapshot()
-
     # power on the mtp chassis, if --apc is set
     if apc:
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
@@ -392,14 +399,14 @@ def main():
     # Update the MTP image, if --image is on
     if not skip_image_update:
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-            mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file, mtp_diag_dir)
+            mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file)
 
     # Copy script, config file on to each MTP Chassis
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
         mtp_script_dir = "mtp_regression/"
         mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
-        mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg, mtp_diag_dir)
+        mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg)
         cmd = "rm -f {:s}".format(mtp_script_pkg)
         os.system(cmd)
 
@@ -427,7 +434,7 @@ def main():
 
     mtp_thread_list = list()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (mtp_diag_dir+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to))
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

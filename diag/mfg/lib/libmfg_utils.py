@@ -1,5 +1,6 @@
 import getpass
 import smtplib
+import httplib
 import sys
 import datetime
 import re
@@ -379,3 +380,85 @@ def email_report(email_to, title, body = None):
     server.sendmail(DIAG_NIGHTLY_REPORT_ACCOUNT, email_to, msg)
     server.quit()
 
+###################################################################################
+
+def flx_soap_save_uut_result_xml(stage, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
+    test_xml = ""
+    for test, test_rslt, err_dsc, err_code in zip(test_list, test_rslt_list, err_dsc_list, err_code_list):
+        # (test, status, value, description, failure code)
+        value = ""
+        test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code) 
+
+    #(stage, SN, start_ts, duration, stop_ts, result)
+    save_uut_rslt_entry = FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage, sn, str(start_ts), str(duration), str(stop_ts), rslt, duration, rslt)
+
+    return FLX_SAVE_UUT_RSLT_XML_HEAD + \
+           save_uut_rslt_entry + \
+           test_xml + \
+           FLX_SAVE_UUT_RSLT_ENTRY_END + \
+           FLX_SAVE_UUT_RSLT_XML_TAIL
+
+
+def flx_soap_get_uut_info_xml(stage, sn):
+    get_uut_info_entry = FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) 
+    return FLX_GET_UUT_INFO_XML_HEAD + \
+           get_uut_info_entry + \
+           FLX_GET_UUT_INFO_XML_TAIL
+
+
+def soap_post_report(xml):
+    webservice = httplib.HTTP(FLX_WEBSERVER)
+    webservice.putrequest("POST", FLX_API_URL)
+    webservice.putheader("Content-Type", "text/xml")
+    webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
+    webservice.putheader("Content-length", "%d" % len(xml))
+    webservice.endheaders()
+
+    webservice.send(xml)
+
+    statuscode, statusmessage, header = webservice.getreply()
+    resp = webservice.getfile().read()
+    match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
+    if match:
+        return match[0]
+    else:
+        print("################## SAVE UUT RSLT #######################")
+        print resp
+        print("################## SAVE UUT RSLT #######################")
+        return "500"
+
+
+def soap_get_uut_info(xml):
+    webservice = httplib.HTTP(FLX_WEBSERVER)
+    webservice.putrequest("POST", FLX_API_URL)
+    webservice.putheader("Content-Type", "text/xml")
+    webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
+    webservice.putheader("Content-length", "%d" % len(xml))
+    webservice.endheaders()
+
+    webservice.send(xml)
+
+    statuscode, statusmessage, header = webservice.getreply()
+    resp = webservice.getfile().read()
+    match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
+    if match:
+        return match[0]
+    else:
+        print("################## GET UUT INF #######################")
+        print resp
+        print("################## GET UUT INF #######################")
+        return "500"
+
+
+def flx_web_srv_post_uut_report(stage, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
+    xml = flx_soap_get_uut_info_xml(stage, sn)
+    ret = soap_get_uut_info(xml) 
+    if int(ret) != 0:
+        return False
+
+    xml = flx_soap_save_uut_result_xml(stage, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+    ret = soap_post_report(xml)
+    if int(ret) != 0:
+        return False
+
+    return True
