@@ -107,7 +107,7 @@ def main():
     libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
     mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-    time.sleep(1)
+    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
     libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
