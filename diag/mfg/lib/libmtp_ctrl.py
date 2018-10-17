@@ -764,6 +764,7 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         userid = self._mgmt_cfg[1]
         self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
+        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
 
 
     def mtp_diag_init(self, diagmgr_logfile, naples100_test_db):
