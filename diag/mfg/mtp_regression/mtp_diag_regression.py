@@ -181,7 +181,7 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
         return
 
-    mtp_mgmt_ctrl.mtp_diag_pre_init()
+    mtp_mgmt_ctrl.mtp_diag_pre_init(mtp_diagmgr_log_file)
 
     # get the sw version info
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
@@ -209,7 +209,7 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
-    if not mtp_mgmt_ctrl.mtp_diag_init(mtp_diagmgr_log_file, naples100_test_db):
+    if not mtp_mgmt_ctrl.mtp_diag_init(naples100_test_db):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Environment Setup Fail")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return

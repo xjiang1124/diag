@@ -755,20 +755,15 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_pre_init(self):
+    def mtp_diag_pre_init(self, diagmgr_logfile):
         # start the mtp diag
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
         self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=MTP_Const.OS_CMD_DELAY)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         self._mgmt_handle.sendline("source ~/.bash_profile")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        userid = self._mgmt_cfg[1]
-        self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
-        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
 
-
-    def mtp_diag_init(self, diagmgr_logfile, naples100_test_db):
-        # start the mtp diag
+        # start the mtp diagmgr
         diagmgr_handle = self.mtp_session_create()
         cmd = "nohup diagmgr > {:s} 2>&1 &".format(diagmgr_logfile)
         diagmgr_handle.sendline(cmd)
@@ -776,12 +771,21 @@ class mtp_ctrl():
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
         diagmgr_handle.close()
 
+        # config the prompt
+        userid = self._mgmt_cfg[1]
+        self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt)
+        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
+
+        # register MTP diagsp
         self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         self._mgmt_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
         self._mgmt_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+
+    def mtp_diag_init(self, naples100_test_db):
         self._mgmt_handle.sendline("./diag -sdsp")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         # naples100 dsp check

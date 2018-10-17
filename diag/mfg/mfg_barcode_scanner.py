@@ -102,7 +102,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
 
     # diag environment pre init
-    mtp_mgmt_ctrl.mtp_diag_pre_init()
+    mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
 
     # PSU/FAN absent, powerdown MTP
     ret = mtp_mgmt_ctrl.mtp_hw_init(True)
