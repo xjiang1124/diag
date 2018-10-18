@@ -24,6 +24,7 @@ proc ext_eth_prbs { {board_id SN000001} {j2c_port 10} {j2c_slot 1} {time_sec 60}
     # === reset
     cap_jtag_chip_rst $j2c_port $j2c_slot
 
+    sknobs_set_value  test/sbus/load_pcie_rom_file_frontdoor 1
     cap_upload_spico
     cap_eth_srds_prbs 34 41 $time_sec all 0 $prbs
 
@@ -54,4 +55,22 @@ proc ext_pcie_prbs { board_id j2c_port j2c_slot {time_sec 60} {prbs prbs31} } {
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     plog_stop
     return $err_cnt
+}
+
+proc ext_snake {{mode "pcie_lb"} {board_id SN000001} {duration 60}} {
+    if {$mode == "pcie_lb"} {
+        set snake_num 6
+    } elseif {$mode == "hbm_lb"} {
+        set snake_num 4
+    } else {
+        puts "Invalide snake mode: $mode"
+        return -1
+    }
+    set chip_id [ cap_get_cur_chip_id ]
+    set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
+    set log_file ext_snake_${mode}_${board_id}_${cur_time}.log
+    set cur_dir [pwd]
+
+    set errCnt [cap_get_myerr_cnt "cap_snake_test_mtp $snake_num 8000 1 1600 1 $duration"]
+    return $errCnt
 }
