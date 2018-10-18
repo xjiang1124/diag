@@ -80,6 +80,15 @@ class mtp_ctrl():
         return self._mgmt_cfg
 
 
+    def set_mtp_logfile(self, filep):
+        self._filep = filep
+
+
+    def set_mtp_diag_logfile(self, diag_filep):
+        self._diag_filep = diag_filep
+        self._mgmt_handle.logfile_read = self._diag_filep
+
+
     def set_mtp_status(self, status):
         if status < MTP_Status.MTP_STA_MAX:
             self._status = status

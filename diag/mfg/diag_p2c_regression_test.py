@@ -273,9 +273,11 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         if skip_test:
             cmd += " --skip-test"
 
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
         mtp_start_ts = libmfg_utils.timestamp_snapshot()
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_REGRESSION_TIMEOUT)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
@@ -372,7 +374,7 @@ def main():
             diag_log_filep = sys.stdout
         else:
             diag_log_filep = None
-        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, diag_log_filep)
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     # scan and generate nic barcode config file
