@@ -134,9 +134,9 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
                 err_code_list.append(result)
             ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s} result to webserver failed]".format(sn))
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s} result to webserver complete]".format(sn))
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
         nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
@@ -157,9 +157,9 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
                 err_code_list.append(result)
             ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s} result to webserver failed]".format(sn))
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s} result to webserver complete]".format(sn))
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
 def get_pro_srv_id():
