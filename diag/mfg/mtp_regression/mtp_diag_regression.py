@@ -15,6 +15,7 @@ from libdefs import MTP_Const
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
+from libdefs import env_cond
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -87,8 +88,6 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
 
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--fanspd", help="Fan speed parameter", type=int)
-    parser.add_argument("--vmarg", help="Voltage margin", type=int)
     parser.add_argument("--iteration", help="Iteration to run", type=int)
     parser.add_argument("--skip-nic", help="skip the nic, nic number is 1 based and seperate by comma")
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -96,18 +95,18 @@ def main():
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--skip-test", help="Test will not run, debug purpose", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
+    parser.add_argument("--corner", type=env_cond, help="diagnostic environment condition", choices=list(env_cond), default=env_cond.NTNV)
 
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
-    vmarg = 0
-    fanspd = 40
     psu_check = False
     iteration = 1
     stop_on_err = False
     verbosity = False
     skip_test = False
     skip_nic_list = list()
+    corner = env_cond.NTNV
 
     if args.mtpid:
         mtp_id = args.mtpid
@@ -126,6 +125,28 @@ def main():
         skip_test = True
     if args.verbosity:
         verbosity = True
+    if args.corner:
+        corner = args.corner
+
+    if corner == env_cond.LTLV or corner == env_cond.LTNV or corner == env_cond.LTHV:
+        fan_spd = MTP_Const.LOW_TEMP_FAN_SPD
+        low_temp_threshold = MTP_Const.DIAG_EDVT_LOW_TEMP
+        high_temp_threshold = None
+    elif corner == env_cond.NTLV or corner == env_cond.NTNV or corner == env_cond.NTHV:
+        fan_spd = MTP_Const.NORMAL_TEMP_FAN_SPD
+        low_temp_threshold = None
+        high_temp_threshold = None
+    else:
+        fan_spd = MTP_Const.HIGH_TEMP_FAN_SPD
+        low_temp_threshold = None
+        high_temp_threshold = MTP_Const.DIAG_EDVT_HIGH_TEMP
+
+    if corner == env_cond.LTLV or corner == env_cond.NTLV or corner == env_cond.HTLV:
+        vmarg = MTP_Const.DIAG_EDVT_LOW_VOLT
+    elif corner == env_cond.LTNV or corner == env_cond.NTNV or corner == env_cond.HTNV:
+        vmarg = 0
+    else:
+        vmarg = MTP_Const.DIAG_EDVT_HIGH_VOLT
 
     if args.skip_nic:
         tmp_str = args.skip_nic.replace(' ','')
@@ -256,6 +277,10 @@ def main():
         return
     else:
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup Complete\n", level=0)
+
+    # Wait the Chamber temperature, if HT or LT
+    if low_temp_threshold or high_temp_threshold: 
+
 
     # get the inlet temperature info
     env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp()

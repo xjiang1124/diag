@@ -878,6 +878,42 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
+        if low_threshold:
+            self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
+        elif high_threshold:
+            self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
+        else:
+            self.cli_log_err("No threshold set")
+            return False
+
+        timeout = MTP_Const.MTP_TEMP_WAIT_TIMEOUT
+        while timeout > 0:
+            inlet = self.mtp_get_inlet_temp()
+            if low_threshold:
+                if inlet > low_threshold:
+                    time.sleep(MTP_Const.MTP_TEMP_CHECK_INTERVAL)
+                    timeout -= MTP_Const.MTP_TEMP_CHECK_INTERVAL
+                else:
+                    break
+            else:
+                if inlet < high_threshold: 
+                    time.sleep(MTP_Const.MTP_TEMP_CHECK_INTERVAL)
+                    timeout -= MTP_Const.MTP_TEMP_CHECK_INTERVAL
+                else:
+                    break
+
+        if timeout <= 0:
+            if low_threshold:
+                self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(low_threshold, MTP_Const.MTP_TEMP_WAIT_TIMEOUT))
+            else:
+                self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(high_threshold, MTP_Const.MTP_TEMP_WAIT_TIMEOUT))
+            return False
+
+        self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}".format(inlet))
+        return True 
+
+
     def mtp_get_inlet_temp(self):
         self._mgmt_handle.sendline("devmgr -dev FAN -status")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)

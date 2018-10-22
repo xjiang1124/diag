@@ -13,6 +13,7 @@ import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+from libdefs import env_cond
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -24,14 +25,14 @@ from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop):
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
 
     # create the log subdir
-    sub_dir = "{:s}_iter{:d}_{:s}/".format(mtp_id, loop, libmfg_utils.get_timestamp())
+    sub_dir = "{:s}_{:s}_iter{:d}_{:s}/".format(corner, mtp_id, loop, libmfg_utils.get_timestamp())
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
 
     # log pkg filename
@@ -85,7 +86,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop):
     return [local_test_log_file, qa_log_pkg_file]
 
 
-def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg):
+def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
     ret = True
     mtp_cli_id_str = libmfg_utils.id_str(mtp=mtp_id)
     report_title = ""
@@ -95,11 +96,11 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg):
         buf = fp.read()
 
     if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        report_title = mtp_cli_id_str + "Diag Regression Test Iteration - {:d}, MTP Setup Failed".format(loop)
+        report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, MTP Setup Failed".format(corner, loop)
         ret = False
     else:
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
-            report_title = mtp_cli_id_str + "Diag Regression Test Iteration - {:d}, NIC Test Failed".format(loop)
+            report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, NIC Test Failed".format(corner, loop)
             nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
             match = re.findall(nic_fail_reg_exp, buf)
             for slot, sn in match:
@@ -115,7 +116,7 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg):
 
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
             if report_title == "":
-                report_title = mtp_cli_id_str + "Diag Regression Test Iteration - {:d}, NIC Test Passed".format(loop)
+                report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, NIC Test Passed".format(corner, loop)
             nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
             match = re.findall(nic_pass_reg_exp, buf)
             for slot, sn in match:
@@ -260,13 +261,13 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner):
     for loop in range(1, iteration+1):
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} start".format(loop), level=0)
         # go to mtp_regression and Start the regression
         cmd = "cd {:s}".format(mtp_script_dir)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
         #cmd += " --psu-check"
         if stop_on_err:
             cmd += " --stop-on-error"
@@ -282,9 +283,9 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
 
-        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop)
+        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
         if email_to:
-            result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg)
+            result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner)
         cmd = "rm -rf {:s}".format(test_log_file)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
@@ -327,6 +328,7 @@ def main():
     parser.add_argument("--skip-test", help="Test will not run", action='store_true')
     parser.add_argument("--skip-scan", help="Skip the barcode scan process, diag use only", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
+    parser.add_argument("--corner", type=env_cond, help="diagnostic environment condition", choices=list(env_cond), default=env_cond.NTNV)
 
     args = parser.parse_args()
 
@@ -339,6 +341,7 @@ def main():
     pwr_cycle = False
     skip_test = False
     skip_scan = False
+    corner = env_cond.NTNV
 
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")
@@ -362,6 +365,8 @@ def main():
         skip_test = True
     if args.skip_scan:
         skip_scan = True
+    if args.corner:
+        corner = args.corner
 
     pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
@@ -436,7 +441,7 @@ def main():
 
     mtp_thread_list = list()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to))
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
