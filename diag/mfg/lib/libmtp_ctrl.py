@@ -884,8 +884,8 @@ class mtp_ctrl():
         elif high_threshold:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
         else:
-            self.cli_log_err("No threshold set")
-            return False
+            self.cli_log_inf("No threshold set, bypass ambient temperature check")
+            return True
 
         timeout = MTP_Const.MTP_TEMP_WAIT_TIMEOUT
         while timeout > 0:

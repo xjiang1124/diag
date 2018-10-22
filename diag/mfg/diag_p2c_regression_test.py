@@ -13,7 +13,7 @@ import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import env_cond
+from libdefs import Env_Cond
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -74,7 +74,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     # copy the onboard logs
     ts = libmfg_utils.get_timestamp()
     local_test_log_file = "log/{:s}_mtp_test.iter-{:d}.log".format(mtp_id, loop)
-    qa_log_pkg_file = qa_log_dir + "{:s}_{:s}_{:s}".format(mtp_id, ts, os.path.basename(log_pkg_file))
+    qa_log_pkg_file = qa_log_dir + "{:s}_{:s}_{:s}_{:s}".format(corner, mtp_id, ts, os.path.basename(log_pkg_file))
     libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
     # clear the onboard logs
@@ -328,7 +328,7 @@ def main():
     parser.add_argument("--skip-test", help="Test will not run", action='store_true')
     parser.add_argument("--skip-scan", help="Skip the barcode scan process, diag use only", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--corner", type=env_cond, help="diagnostic environment condition", choices=list(env_cond), default=env_cond.NTNV)
+    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.NTNV)
 
     args = parser.parse_args()
 
@@ -341,7 +341,7 @@ def main():
     pwr_cycle = False
     skip_test = False
     skip_scan = False
-    corner = env_cond.NTNV
+    corner = Env_Cond.NTNV
 
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")
