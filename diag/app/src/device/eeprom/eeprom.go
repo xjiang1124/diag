@@ -4,7 +4,6 @@ import (
     "fmt"
     "os"
     "strconv"
-    "bytes"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -157,25 +156,25 @@ func ProgEeprom(devName string) (err int) {
     defer smbus.Close()
 
     for _, entry := range(EepromTbl) {
-        if entry.Name == "Serial Number" {
-            dftArray := []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
-            if bytes.Equal(entry.Value, dftArray) {
-                cli.Println("i", "skip sn")
-                continue
-            }
-        } else if entry.Name == "Manufacturing Date" {
-            dftArray := []byte{0, 0, 0}
-            if bytes.Equal(entry.Value, dftArray) {
-                cli.Println("i", "skip date")
-                continue
-            }
-        } else if entry.Name == "MAC Address Base" {
-            dftArray := []byte{0, 0, 0, 0, 0, 0}
-            if bytes.Equal(entry.Value, dftArray) {
-            cli.Println("i", "skip mac")
-            continue
-            }
-        }
+//        if entry.Name == "Serial Number" {
+//            dftArray := []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
+//            if bytes.Equal(entry.Value, dftArray) {
+//                cli.Println("i", "skip sn")
+//                continue
+//            }
+//        } else if entry.Name == "Manufacturing Date" {
+//            dftArray := []byte{0, 0, 0}
+//            if bytes.Equal(entry.Value, dftArray) {
+//                cli.Println("i", "skip date")
+//                continue
+//            }
+//        } else if entry.Name == "MAC Address Base" {
+//            dftArray := []byte{0, 0, 0, 0, 0, 0}
+//            if bytes.Equal(entry.Value, dftArray) {
+//            cli.Println("i", "skip mac")
+//            continue
+//            }
+//        }
         
         if entry.Name == "Board Info Area Checksum" {
             entry.Value[0] = byte(0x100 - brdInfoChk % 0x100)
@@ -217,6 +216,13 @@ func UpdateMacMtp(devName string, mac []byte) (err int) {
 
 func UpdateMac(devName string, mac []byte) (err int) {
     cardType := os.Getenv("CARD_TYPE")
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    
     if cardType == "MTP" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC_ADDR" {
@@ -235,7 +241,15 @@ func UpdateMac(devName string, mac []byte) (err int) {
 //                    entry.Value[i] = byte((mac >> uint64(40 - i * 8)) & 0xFF)
 //                    cli.Println("i", "mac ", i, " ", entry.Value[i], "  ", (mac >> uint64(40 - i * 8)) & 0xFF)
 //                }
-                break
+                continue
+            } else if entry.Name == "Serial Number" {
+                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, sn)
+                continue
+            } else if entry.Name == "Manufacturing Date" {
+                date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, date)
+                continue
             }
         }
         updateIntChk()
@@ -244,6 +258,8 @@ func UpdateMac(devName string, mac []byte) (err int) {
 }
 
 func updateIntChk() () {
+    brdInfoChk = 0
+    intUseChk = 0
     for _, entry := range(EepromTbl) {
         if (entry.Offset > 7) && (entry.Offset < 89) {
 //            brdInfoChk += entry.Value
@@ -268,7 +284,13 @@ func UpdateSn(devName string, sn []byte) (err int) {
         cli.Println("f", "SN too long: ", sn)
         return
     }
-
+    
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    
     cardType := os.Getenv("CARD_TYPE")
     if cardType == "MTP" {
         for _, entry := range(EepromTbl) {
@@ -284,7 +306,15 @@ func UpdateSn(devName string, sn []byte) (err int) {
                     sn[i] -= 0x20
                 }
                 copy(entry.Value, sn)
-                break
+                continue
+            } else if entry.Name == "MAC Address Base" {
+                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, mac)
+                continue
+            } else if entry.Name == "Manufacturing Date" {
+                date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, date)
+                continue
             }
         }
         updateIntChk()
@@ -297,8 +327,14 @@ func UpdateDate(devName string, date []byte) (err int) {
 //        cli.Println("f", "Date format is invalid: ", date)
 //        return
 //    }
-
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    
     cardType := os.Getenv("CARD_TYPE")
+
     if cardType == "NAPLES100" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Manufacturing Date" {
@@ -307,7 +343,15 @@ func UpdateDate(devName string, date []byte) (err int) {
 //                    entry.Value[i] = byte((date >> uint64(16 - i * 8)) & 0xFF)
 //                    fmt.Printf("%d\n", entry.Value[i])
 //                }
-                break
+                continue
+            } else if entry.Name == "MAC Address Base" {
+                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, mac)
+                continue
+            } else if entry.Name == "Serial Number" {
+                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, sn)
+                continue
             }
         }
         updateIntChk()

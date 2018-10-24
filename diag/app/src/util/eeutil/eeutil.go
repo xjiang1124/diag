@@ -3,15 +3,24 @@ package main
 import (
     //"fmt"
     "flag"
+<<<<<<< Updated upstream
     //"os"
     "strings"
 
     //"common/cli"
     //"config"
+=======
+//    "os"
+    "strings"
+
+//    "common/cli"
+//    "config"
+>>>>>>> Stashed changes
     "hardware/hwdev"
     "hardware/hwinfo"
     "hardware/i2cinfo"
     //"device/eeprom"
+    "common/misc"
 )
 
 func init() {
@@ -55,12 +64,15 @@ func main() {
 //        hwdev.EepromUpdate(devName, mac, sn)
         if mac != "" {
             hwdev.EepromUpdateMac(devName, mac)
+            misc.SleepInUSec(500000)
         }
         if sn != "" {
             hwdev.EepromUpdateSn(devName, sn)
+            misc.SleepInUSec(500000)
         }
         if date != "" {
             hwdev.EepromUpdateDate(devName, date)
+            misc.SleepInUSec(500000)
         }
         return
     }
