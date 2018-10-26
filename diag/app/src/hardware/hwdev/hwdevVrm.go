@@ -66,6 +66,106 @@ func marginUut(devName string, pct int, uutName string) (err int) {
     return
 }
 
+func UpdateVboot(devName string, tgtVbootMv uint64, uutName string) (err int) {
+    if uutName == "UUT_NONE" {
+        err = updateVboot(devName, tgtVbootMv, true)
+    } else {
+        err = updateVbootUut(devName, tgtVbootMv, uutName)
+    }
+    return
+}
+
+func updateVboot(devName string, tgtVbootMv uint64, lockFlag bool) (err int){
+    var lockName string
+    var i2cif i2cinfo.I2cInfo
+    if lockFlag == true {
+        lockName, i2cif, err = hwinfo.LockDev(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer hwinfo.UnlockDev(lockName)
+    } else {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+    }
+
+    err = hwinfo.EnableHubChannelExclusive(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if i2cif.Comp == "TPS53659" {
+        err = tps53659.UpdateVboot(devName, tgtVbootMv)
+    } else {
+        cli.Println("e", "Unsupported device: ", i2cif.Comp)
+        err = errType.INVALID_PARAM
+    }
+    return
+}
+
+func updateVbootUut(devName string, tgtVbootMv uint64, uutName string) (err int) {
+    lockName, err := hwinfo.PreUutSetup(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer hwinfo.PostUutClean(lockName)
+
+    err = updateVboot(devName, tgtVbootMv, false)
+    return
+}
+
+func FindVid(devName string, tgtVoutMv uint64, uutName string) (vid byte, err int) {
+    if uutName == "UUT_NONE" {
+        vid, err = findVid(devName, tgtVoutMv, true)
+    } else {
+        vid, err = findVidUut(devName, tgtVoutMv, uutName)
+    }
+    return
+}
+
+func findVid(devName string, tgtVoutMv uint64, lockFlag bool) (vid byte, err int){
+    var lockName string
+    var i2cif i2cinfo.I2cInfo
+    if lockFlag == true {
+        lockName, i2cif, err = hwinfo.LockDev(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer hwinfo.UnlockDev(lockName)
+    } else {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+    }
+
+    err = hwinfo.EnableHubChannelExclusive(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if i2cif.Comp == "TPS53659" {
+        vid, err = tps53659.FindVid(devName, tgtVoutMv)
+    } else {
+        cli.Println("e", "Unsupported device: ", i2cif.Comp)
+        err = errType.INVALID_PARAM
+    }
+    return
+}
+
+func findVidUut(devName string, tgtVoutMv uint64, uutName string) (vid byte, err int) {
+    lockName, err := hwinfo.PreUutSetup(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer hwinfo.PostUutClean(lockName)
+
+    vid, err = findVid(devName, tgtVoutMv, false)
+    return
+}
+
 func MarginByValue(devName string, tgtVoutMv uint64, uutName string) (err int) {
     if uutName == "UUT_NONE" {
         err = marginByValue(devName, tgtVoutMv, true)

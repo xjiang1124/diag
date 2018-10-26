@@ -19,6 +19,8 @@ const (
 
     CTRL_SVID  = 0x2
     CTRL_PMBUS = 0x1
+
+    VOUT_MAX_MV= 1000
 )
 
 // Register/Command offset

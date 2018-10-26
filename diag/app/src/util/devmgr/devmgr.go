@@ -29,21 +29,23 @@ func main() {
     flag.Usage = myUsage
 
     devNamePtr  := flag.String("dev",     "ALL", "Device name")
-    statusPtr   := flag.Bool(  "status",  false, "Device status")
-    infoPtr     := flag.Bool(  "info",    false, "Device info")
-    listPtr     := flag.Bool(  "list",    false, "Device info")
-    rvoutPtr    := flag.Bool(  "rvout",   false, "VRM - Read VOUT in mV")
-    rioutPtr    := flag.Bool(  "riout",   false, "VRM - Read IOUT in mA")
-    marginPtr   := flag.Bool(  "margin",  false, "VRM - Enable voltage marigining")
+    statusPtr   := flag.Bool  ("status",  false, "Device status")
+    infoPtr     := flag.Bool  ("info",    false, "Device info")
+    listPtr     := flag.Bool  ("list",    false, "Device info")
+    rvoutPtr    := flag.Bool  ("rvout",   false, "VRM - Read VOUT in mV")
+    rioutPtr    := flag.Bool  ("riout",   false, "VRM - Read IOUT in mA")
+    marginPtr   := flag.Bool  ("margin",  false, "VRM - Enable voltage marigining")
     margModePtr := flag.String("mgmode",  "PCT", "VRM - Vmargin mode: PCT - percentage based; MV: value (mv) based")
-    pctPtr      := flag.Int(   "pct",     0x0,   "VRM - Margin percentage; FAN - Fan speed percentage")
-    VoutMvPtr   := flag.Uint64("vout",    8500,  "VRM - Margin in mv")
-    programPtr  := flag.Bool(  "program", false, "VRM - Program with specified file")
-    verifyPtr   := flag.Bool(  "verify",  false, "VRM - Verify NVM content with specified file")
+    pctPtr      := flag.Int   ("pct",     0x0,   "VRM - Margin percentage; FAN - Fan speed percentage")
+    voutMvPtr   := flag.Uint64("vout",    8500,  "VRM - Margin in mv")
+    vidPtr      := flag.Bool  ("vid",     false, "VRM - Find VID of given vout in mv")
+    vbootPtr    := flag.Bool  ("vboot",   false, "VRM - Change vboot in mv")
+    programPtr  := flag.Bool  ("program", false, "VRM - Program with specified file")
+    verifyPtr   := flag.Bool  ("verify",  false, "VRM - Verify NVM content with specified file")
     filePtr     := flag.String("file",    "",    "VRM - /path/to/image.file")
-    verbosePtr  := flag.Bool(  "verbose", false, "Verbose")
-    speedPtr    := flag.Bool(  "speed",   false, "FAN - Set fan speed")
-    faninitPtr  := flag.Bool(  "faninit", false, "FAN - Initialization")
+    verbosePtr  := flag.Bool  ("verbose", false, "Verbose")
+    speedPtr    := flag.Bool  ("speed",   false, "FAN - Set fan speed")
+    faninitPtr  := flag.Bool  ("faninit", false, "FAN - Initialization")
     maskPtr     := flag.Uint64("mask",    0x7,   "FAN - fan instance mask")
     uutPtr      := flag.String("uut",     "UUT_NONE", "UUT name, e.g. UUT_1")
     flag.Parse()
@@ -72,12 +74,32 @@ func main() {
         if margMode == "PCT" {
             err = hwdev.Margin(devName, pct, uut)
         } else if margMode == "MV" {
-            err = hwdev.MarginByValue(devName, *VoutMvPtr, uut)
+            err = hwdev.MarginByValue(devName, *voutMvPtr, uut)
         }
         if err != errType.SUCCESS {
             cli.Println("e", "Voltage margin failed!")
         } else {
             hwdev.DispStatus(devName, uut)
+        }
+        return
+    }
+
+    if *vidPtr == true {
+        vid, err := hwdev.FindVid(devName, *voutMvPtr, uut)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "Failed to find vid of %d(mv)\n!", *voutMvPtr)
+        } else {
+            cli.Printf("i", "%d(mv) vid is 0x%x\n", *voutMvPtr, vid)
+        }
+        return
+    }
+
+    if *vbootPtr == true {
+        err = hwdev.UpdateVboot(devName, *voutMvPtr, uut)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "Failed to update vboot\n!", *voutMvPtr)
+        } else {
+            cli.Printf("i", "vboot is changed to %d(mv)\n", *voutMvPtr)
         }
         return
     }

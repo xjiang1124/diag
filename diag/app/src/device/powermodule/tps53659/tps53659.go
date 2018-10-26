@@ -299,6 +299,96 @@ func ReadDeviceID(devName string) (devID byte, err int) {
     return devID, err
 }
 
+func findVid(devName string, voutMv uint64) (vid byte, err int) {
+    var dacStepRegVal byte
+    var dacStep uint64
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+    vid, err = calcVidFromVolt(voutMv, dacStep)
+    return
+}
+
+func FindVid(devName string, voutMv uint64) (vid byte, err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    vid, err = findVid(devName, voutMv)
+    return
+}
+
+func UpdateVboot(devName string, tgtVoutMv uint64) (err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to write Page")
+        return
+    }
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+
+    // Set to PMBus control
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Can not set to PMBus control!")
+        return
+    }
+
+    // Set VOUT_MAX
+    voutMaxVid, err := findVid(devName, VOUT_MAX_MV)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+    err = pmbus.WriteWord(devName, pmbus.VOUT_MAX, uint16(voutMaxVid))
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VOUT_MAX")
+        return
+    }
+
+    // Update VBoot
+    vbootVid, err := findVid(devName, tgtVoutMv)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_11, vbootVid)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VBOOT")
+        return
+    }
+
+    // Store to NVM
+    err = pmbus.SendByte(devName, pmbus.STORE_DEFAULT_ALL)
+
+    return
+}
 func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var marginReg uint64
     var marginCmd byte
@@ -316,8 +406,6 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     if err != errType.SUCCESS {
         return
     }
-
-    cli.Println("d", tgtVoutMv)
 
     // Get current VOUT
     // Write page register
