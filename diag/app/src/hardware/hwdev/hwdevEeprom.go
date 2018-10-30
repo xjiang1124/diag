@@ -177,7 +177,7 @@ func EepromUpdate(devName string, mac string, sn string) (err int) {
     return
 }
 
-func EepromDisp(devName string) (err int) {
+func EepromDisp(devName string, field string) (err int) {
     var i2cif i2cinfo.I2cInfo
 
     i2cif, err = i2cinfo.GetI2cInfo(devName)
@@ -194,7 +194,7 @@ func EepromDisp(devName string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.DispEeprom(devName)
+    err = eeprom.DispEeprom(devName, field)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM display failed!")
         return

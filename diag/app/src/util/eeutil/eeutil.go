@@ -3,19 +3,11 @@ package main
 import (
     //"fmt"
     "flag"
-<<<<<<< Updated upstream
     //"os"
     "strings"
 
     //"common/cli"
     //"config"
-=======
-//    "os"
-    "strings"
-
-//    "common/cli"
-//    "config"
->>>>>>> Stashed changes
     "hardware/hwdev"
     "hardware/hwinfo"
     "hardware/i2cinfo"
@@ -43,12 +35,14 @@ func main() {
     macPtr     := flag.String("mac",    "",             "MAC address")
     snPtr      := flag.String("sn",     "",             "Serial number")
     mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
+    fieldPtr   := flag.String("field",  "all",          "Display specific eeprom field")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
     mac := strings.ToUpper(*macPtr)
     sn := strings.ToUpper(*snPtr)
     date := strings.ToUpper(*mfgDatePtr)
+    field := strings.ToUpper(*fieldPtr)
 
     if *infoPtr == true {
         dispInfo()
@@ -56,7 +50,7 @@ func main() {
     }
 
     if *dispPtr == true {
-        hwdev.EepromDisp(devName)
+        hwdev.EepromDisp(devName, field)
         return
     }
 

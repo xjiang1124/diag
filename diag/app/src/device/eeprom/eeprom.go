@@ -359,7 +359,7 @@ func UpdateDate(devName string, date []byte) (err int) {
     return
 }
 
-func DispEeprom(devName string) (err int) {
+func DispEeprom(devName string, field string) (err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
@@ -373,6 +373,15 @@ func DispEeprom(devName string) (err int) {
     fmtHex := "%-45s0x%-20x"
     var outStr string
     for _, entry := range(EepromTbl) {
+        if(field == "SN") {
+            if entry.Name != "Serial Number" {
+                continue
+            }
+        } else if(field == "MAC") {
+            if entry.Name != "MAC Address Base" {
+                continue
+            }
+        }
         data, err = readField(devName, entry.Offset, entry.NumBytes)
         if err != errType.SUCCESS {
             cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
