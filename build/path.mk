@@ -40,7 +40,8 @@ ARM64_SRC_DIR=			\
 	dsp/tempsensor
 
 ARM64_C_SRC_DIR=		\
-	lib/spi_userspace
+	lib/spi_userspace	\
+	util/capricpld
 
 
 
