@@ -54,20 +54,70 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mgmt(self, rate=9600):
+    def enable_mgmt(self, rate=9600, slot=0):
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
         session = common.session_start()
         self.uart_session_start(session, rate)
 
         session.timeout = 60
         cmd = "sh /mnt/load_mnic.sh"
         try:
-            session.sendline(cmd)
-            session.expect("\# ")
-        except:
+            for i in range(10):
+                session.sendline("ifconfig -a")
+                session.expect("\# ")
+                temp = session.after
+                if 'eth0' in session.before:
+                    print 'eth0 enabled'
+                    break
+                else:
+                    session.sendline("rmmod ionic-mnic")
+                    session.expect("\#")
+
+                    # Some QSPI image does not have load_mnic.sh
+                    # Create the file from script
+                    session.sendline("echo \"#! /bin/sh\" > /mnt/load_mnic.sh")
+                    session.expect("\#")
+                    session.sendline("echo \"insmod /platform/ionic_mnic.ko\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+                    session.sendline("echo \"tx_intr=\`cat /proc/interrupts | grep ionic-lif0-tx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+     
+                    session.sendline("echo \"echo 8 > /proc/irq/\$tx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+
+                    session.sendline("echo \"echo 8 > /sys/class/net/eth0/queues/tx-0/xps_cpus\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+
+                    session.sendline("echo \"rx_intr=\`cat /proc/interrupts | grep ionic-lif0-rx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+
+                    session.sendline("echo \"echo 4 > /proc/irq/\$rx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+
+                    session.sendline("echo \"echo 4 > /sys/class/net/eth0/queues/rx-0/rps_cpus\" >> /mnt/load_mnic.sh")
+                    session.expect("\#")
+
+                    session.sendline("sync")
+                    session.expect("\#")
+
+                    session.timeout = 120
+                    session.sendline("sh /mnt/load_mnic.sh")
+                    session.expect("\#")
+
+            # Configure IP
+            session.timeout=30
+            session.sendline("ifconfig eth0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
+            session.expect("\#")
+
+        except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to enable management port ==="
             return -1
 
         self.uart_session_stop(session)
+        print temp
         common.session_stop(session)
 
 if __name__ == "__main__":
@@ -79,6 +129,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-or", "--orig_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-tr", "--tgt_rate", help="Target baud rate", type=int, default=9600)
+    parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     args = parser.parse_args()
     
     con = nic_con()
@@ -88,5 +139,5 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.ena_mgmt_port == True:
-        con.enable_mgmt(args.tgt_rate)
+        con.enable_mgmt(args.tgt_rate, args.slot)
         sys.exit()
