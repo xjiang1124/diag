@@ -908,9 +908,13 @@ class mtp_ctrl():
                 self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(low_threshold, MTP_Const.MTP_TEMP_WAIT_TIMEOUT))
             else:
                 self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(high_threshold, MTP_Const.MTP_TEMP_WAIT_TIMEOUT))
+            self.cli_log_err("Current Environment temperature is {:2.2f}".format(inlet))
             return False
 
-        self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}".format(inlet))
+        self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}, start soaking process".format(inlet))
+        time.sleep(MTP_Const.DIAG_HW_SOAK_DELAY)
+        inlet = self.mtp_get_inlet_temp()
+        self.cli_log_inf("Soaking process complete, current inlet reading is {:2.2f}".format(inlet))
         return True 
 
 

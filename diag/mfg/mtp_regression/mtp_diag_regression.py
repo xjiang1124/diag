@@ -152,7 +152,7 @@ def main():
                 val = int(slot)
                 if val > MTP_Const.MTP_SLOT_NUM or val <= 0: 
                     libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid slot number")
-                skip_nic_list.append(libmfg_utils.nic_key(slot, base=0))
+                skip_nic_list.append(libmfg_utils.nic_key(val, base=0))
             except ValueError:
                 libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid nic parameter")
 
@@ -249,7 +249,17 @@ def main():
             #else:
             #    naples25_nic_list.append(slot)
 
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test List:", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test NIC List:", level=0)
+    for slot in range(len(nic_prsnt_list)):
+        key = libmfg_utils.nic_key(slot)
+        if nic_prsnt_list[slot] and key not in skip_nic_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC is present")
+        elif key in skip_nic_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC is skipped")
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC is absent")
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test List End\n", level=0)
+
     if naples100_nic_list:
         naples_diag_cfg_show(NIC_Type.NAPLES100, naples100_test_db, mtp_mgmt_ctrl)
         naples_exec_init_cmd(naples100_test_db, mtp_mgmt_ctrl)
@@ -278,14 +288,13 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
     rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
     if not rdy:
-        mtp_mgmt_ctrl.cli_log_err("Diag Regression Test Ambient Temperature Check Failed\n", level=0)
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Regression Test Ambient Temperature Check Failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
         return
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
-
     # get the inlet temperature info
     env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp()
-    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}\n".format(env_temp), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}\n".format(env_temp))
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
     if skip_test:
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(nic_key, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)

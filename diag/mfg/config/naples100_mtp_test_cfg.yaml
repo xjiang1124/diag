@@ -14,7 +14,7 @@ PARAMS:
     # whole dsp share the same parameters
     # - "DSP1#ALL#timeout=30, iter=2"
     # single test of a dsp
-    - "DSP2#TEST1#timeout=10, iter=3"
+    - "ASIC#L1#timeout=7200"
     # multiple tests of a dsp, seperate with '#'
     # - "DSP3#TEST1#TEST2#timeout=50, iter=4"
 
