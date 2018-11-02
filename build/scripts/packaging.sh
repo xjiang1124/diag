@@ -22,6 +22,7 @@ BUILD_DIR=$(pwd)
 TOP_DIR=$(dirname $BUILD_DIR)
 
 TEMP_DIR=$BUILD_DIR/temp/$arch/diag/
+NIC_UTIL_DIR=$BUILD_DIR/temp/$arch/nic_util/
 IMG_DIR=$BUILD_DIR/images/
 
 # In case images/ folder is not created yet for new repo
@@ -67,6 +68,29 @@ git status >> $TEMP_DIR/scripts/version.txt
 
 echo "Copying diag files -- Done"
 
+# NIC utilities
+if [[ $arch == "arm64" ]]
+then
+    echo "--------------------"
+    echo "Preparing NIC utilities"
+
+    mkdir -p $NIC_UTIL_DIR
+
+    cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/cpld $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/python/regression/update_mac.py $NIC_UTIL_DIR
+
+    cd $NIC_UTIL_DIR
+    tar czf $IMG_DIR/nic_util.tar -C $BUILD_DIR/temp/$arch/ nic_util/
+
+    echo "NIC Utilities Done"
+fi
+
+
+
 # Prepare ASIC files
 echo "--------------------"
 echo "Preparing ASIC files"
@@ -102,7 +126,7 @@ echo "Preparing image -- Done"
 
 echo "--------------------"
 echo "Cleaning up"
-rm -rf $BUILD_DIR/temp/$arch
+#rm -rf $BUILD_DIR/temp/$arch
 echo "Clean up -- Done"
 
 echo "--------------------"
