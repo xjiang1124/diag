@@ -55,6 +55,7 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("Parallel Test List:")
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+    mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List End\n".format(card_type), level = 0)
 
     return
 
@@ -78,10 +79,11 @@ def naples_exec_skip_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
 
 
 def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
-    cmd_list = naples_test_db.get_test_param_cmd_list(nic_list)
-    mtp_mgmt_ctrl.cli_log_inf("Execute Command in Parameter set List:", level = 0)
+    cmd_list = naples_test_db.get_test_param_cmd_list()
+    mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters:", level = 0)
     for cmd in cmd_list:
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters complete\n", level = 0)
  
     return
 
@@ -200,13 +202,15 @@ def main():
 
     mtp_mgmt_ctrl.mtp_diag_pre_init(mtp_diagmgr_log_file)
 
-    # get the sw version info
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
-
-    # get the sw version info
+    mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver))
     asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
-    mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver))
+    mtp_mgmt_ctrl.cli_log_inf("Iteration = {:3d}".format(iteration))
+    mtp_mgmt_ctrl.cli_log_inf("Fan Speed = {:3d}%".format(fanspd))
+    mtp_mgmt_ctrl.cli_log_inf("Voltage Margin = {:d}%".format(vmarg))
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
     # PSU/FAN absent, powerdown MTP
     ret = mtp_mgmt_ctrl.mtp_hw_init(psu_check)
@@ -249,17 +253,6 @@ def main():
             #else:
             #    naples25_nic_list.append(slot)
 
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test NIC List:", level=0)
-    for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        if nic_prsnt_list[slot] and key not in skip_nic_list:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC is present")
-        elif key in skip_nic_list:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC is skipped")
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC is absent")
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test List End\n", level=0)
-
     if naples100_nic_list:
         naples_diag_cfg_show(NIC_Type.NAPLES100, naples100_test_db, mtp_mgmt_ctrl)
         naples_exec_init_cmd(naples100_test_db, mtp_mgmt_ctrl)
@@ -267,13 +260,6 @@ def main():
         naples_exec_param_cmd(naples100_nic_list, naples100_test_db, mtp_mgmt_ctrl)
     #if naples25_nic_list:
     #    naples_diag_cfg_show(NIC_Type.NAPLES25, mtp_test_log_filep, mtp_id, naples25_test_db)
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test List End\n", level=0)
-
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
-    mtp_mgmt_ctrl.cli_log_inf("Iteration = {:3d}".format(iteration))
-    mtp_mgmt_ctrl.cli_log_inf("Fan Speed = {:3d}%".format(fanspd))
-    mtp_mgmt_ctrl.cli_log_inf("Voltage Margin = {:d}%".format(vmarg))
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
     # Fan speed, voltage margin setup
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup", level=0)

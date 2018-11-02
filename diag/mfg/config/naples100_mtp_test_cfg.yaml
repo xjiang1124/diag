@@ -11,12 +11,7 @@ SKIP:
     # - "DSP3#TEST1#TEST2"
 
 PARAMS:
-    # whole dsp share the same parameters
-    # - "DSP1#ALL#timeout=30, iter=2"
-    # single test of a dsp
-    - "ASIC#L1#timeout=7200"
-    # multiple tests of a dsp, seperate with '#'
-    # - "DSP3#TEST1#TEST2#timeout=50, iter=4"
+    - "MTP1#ASIC#L1#timeout=5400"
 
 MTP_SEQ:
     ASIC:

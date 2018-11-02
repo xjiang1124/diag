@@ -804,7 +804,7 @@ class mtp_ctrl():
             if dsp not in self._mgmt_handle.before:
                 self.cli_log_err("Diag DSP: {:s} is not detected", level = 0)
                 return False
-        self.cli_log_inf("Diag DSP Sanity Check Complete", level = 0)
+        self.cli_log_inf("Diag DSP Sanity Check Complete\n", level = 0)
 
         return True
  
@@ -946,11 +946,11 @@ class mtp_ctrl():
         self.mtp_init_nic_type()
 
         # nic sanity check
-        self.cli_log_inf("NIC Sanity Check")
+        self.cli_log_inf("JTAG Sanity Check")
         if self.mtp_sys_sanity_check():
-            self.cli_log_inf("NIC Sanity Check Passed")
+            self.cli_log_inf("JTAG Sanity Check Passed")
         else:
-            self.cli_log_inf("NIC Sanity Check Failed")
+            self.cli_log_inf("JTAG Sanity Check Failed")
             return False
 
         # power on nic

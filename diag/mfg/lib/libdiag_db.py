@@ -40,14 +40,13 @@ class diag_db():
         # build parameter list
         param_list = diag_test_cfg["PARAMS"]
         for tmp in param_list:
-            # yaml format is DSP#ALL#Param_list, DSP#TEST1#Param_list, DSP#TEST1#TEST2#Param_list, etc
+            # yaml format is CARD#DSP#TEST#Param_list
             tmp_list = tmp.split('#')
-            if len(tmp_list) < 3:
+            if len(tmp_list) != 4:
                 libmfg_utils.sys_exit("Diag Test Yaml file {:s} parameter format error".format(diag_cfg_file))
             else:
-                for name in tmp_list[1:-1]:
-                    param_cmd = libmfg_utils.diag_param_cmd(tmp_list[0], name, tmp_list[-1])
-                    self._test_param_list.append(param_cmd)
+                param_cmd = libmfg_utils.diag_param_cmd(tmp_list)
+                self._test_param_list.append(param_cmd)
 
         # sequential test:
         for dsp in diag_test_cfg["MTP_SEQ"].keys():
@@ -85,13 +84,11 @@ class diag_db():
         return self._test_param_list
 
 
-    def get_test_param_cmd_list(self, nic_list):   
+    def get_test_param_cmd_list(self):   
         param_list = list()
-        for slot in nic_list:
-            nic_str = "nic{:d}".format(slot+1)
-            for param in self._test_param_list:
-                cmd = "./diag -param -c " + nic_str + param
-                param_list.append(cmd)
+        for param in self._test_param_list:
+            cmd = "./diag -param {:s}".format(param)
+            param_list.append(cmd)
         return param_list
 
 

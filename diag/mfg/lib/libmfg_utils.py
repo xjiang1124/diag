@@ -76,13 +76,14 @@ def diag_skip_cmd(dsp, test=None):
     return cmd
 
 
-def diag_param_cmd(dsp, param, test=None):
-    cmd = " -d " + dsp
-    if test:
-        cmd += " -t " + test
-    return cmd
+def diag_param_cmd(param_list):
+    # CARD, DSP, TEST, Param_list
+    card = param_list[0]
+    dsp = param_list[1]
+    test = param_list[2]
+    param = param_list[3]
 
-    cmd += " -p " + param
+    cmd = " -c {:s} -d {:s} -t {:s} -p '{:s}'".format(card, dsp, test, param) 
     return cmd
 
 
