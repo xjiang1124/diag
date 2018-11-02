@@ -43,6 +43,18 @@ class nic_con:
             print "=== TIMEOUT: Faled to stop UART session ==="
             return -1
 
+    def uart_session_cmd(self, session, cmd, timeout=30, ending="\# "):
+        session.timeout = timeout
+        try:
+            session.sendline(cmd)
+            session.expect(ending)
+        except:
+            print "=== TIMEOUT:", cmd, "==="
+            session.send(chr(3))
+            time.sleep(0.05)
+            session.expect(ending)
+            return -1
+
     def change_rate(self, orig_rate=115200, tgt_rate=9600):
         session = common.session_start()
         self.uart_session_start(session, orig_rate)
@@ -54,7 +66,21 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mgmt(self, rate=9600, slot=0):
+    def get_mgmt_rdy(self, rate=9600, slot=0):
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session = common.session_start()
+        session.timeout = 30
+        session.sendline("ping -w3 10.1.1.{}".format(100+slot))
+        session.expect("\$ ")
+        if ", 0% packet loss" not in session.before:
+            self.enable_mgmt(rate, slot, True)
+
+        session = common.session_stop(session)
+
+    def enable_mgmt(self, rate=9600, slot=0, pre_cl=False):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
@@ -63,9 +89,13 @@ class nic_con:
         self.uart_session_start(session, rate)
 
         session.timeout = 60
+        if pre_cl == True:
+            self.uart_session_cmd(session, "rmmod ionic-mnic", 30)
+
         cmd = "sh /mnt/load_mnic.sh"
         try:
             for i in range(10):
+
                 session.sendline("ifconfig -a")
                 session.expect("\# ")
                 temp = session.after
@@ -73,44 +103,31 @@ class nic_con:
                     print 'eth0 enabled'
                     break
                 else:
-                    session.sendline("rmmod ionic-mnic")
-                    session.expect("\#")
+                    self.uart_session_cmd(session, "rmmod ionic-mnic", 30)
 
-                    # Some QSPI image does not have load_mnic.sh
-                    # Create the file from script
-                    session.sendline("echo \"#! /bin/sh\" > /mnt/load_mnic.sh")
-                    session.expect("\#")
-                    session.sendline("echo \"insmod /platform/ionic_mnic.ko\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
-                    session.sendline("echo \"tx_intr=\`cat /proc/interrupts | grep ionic-lif0-tx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
-     
-                    session.sendline("echo \"echo 8 > /proc/irq/\$tx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
+                    # Depending on different version of QSPI, there are two different method
+                    self.uart_session_cmd(session, "sh /platform/tools/load_mnic.sh", 120)
 
-                    session.sendline("echo \"echo 8 > /sys/class/net/eth0/queues/tx-0/xps_cpus\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
+                    session.sendline("ifconfig -a")
+                    session.expect("\# ")
+                    temp = session.after
+                    if 'eth0' in session.before:
+                        print 'eth0 enabled'
+                        break
 
-                    session.sendline("echo \"rx_intr=\`cat /proc/interrupts | grep ionic-lif0-rx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
-
-                    session.sendline("echo \"echo 4 > /proc/irq/\$rx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
-
-                    session.sendline("echo \"echo 4 > /sys/class/net/eth0/queues/rx-0/rps_cpus\" >> /mnt/load_mnic.sh")
-                    session.expect("\#")
-
-                    session.sendline("sync")
-                    session.expect("\#")
-
-                    session.timeout = 120
-                    session.sendline("sh /mnt/load_mnic.sh")
-                    session.expect("\#")
+                    self.uart_session_cmd(session, "echo \"#! /bin/sh\" > /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"insmod /platform/ionic_mnic.ko\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"tx_intr=\`cat /proc/interrupts | grep ionic-lif0-tx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"echo 8 > /proc/irq/\$tx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"echo 8 > /sys/class/net/eth0/queues/tx-0/xps_cpus\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"rx_intr=\`cat /proc/interrupts | grep ionic-lif0-rx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"echo 4 > /proc/irq/\$rx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "echo \"echo 4 > /sys/class/net/eth0/queues/rx-0/rps_cpus\" >> /mnt/load_mnic.sh")
+                    self.uart_session_cmd(session, "sync")
+                    self.uart_session_cmd(session, "sh /mnt/load_mnic.sh", 120)
 
             # Configure IP
-            session.timeout=30
-            session.sendline("ifconfig eth0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
-            session.expect("\#")
+            self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
 
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to enable management port ==="
@@ -139,5 +156,6 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.ena_mgmt_port == True:
-        con.enable_mgmt(args.tgt_rate, args.slot)
+        #con.enable_mgmt(args.tgt_rate, args.slot)
+        con.get_mgmt_rdy(args.tgt_rate, args.slot)
         sys.exit()
