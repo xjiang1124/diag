@@ -55,8 +55,15 @@ class nic_con:
             session.expect(ending)
             return -1
 
-    def change_rate(self, orig_rate=115200, tgt_rate=9600):
+    def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
         session = common.session_start()
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+
         self.uart_session_start(session, orig_rate)
 
         cmd = self.fmt_change_rate.format(tgt_rate)
@@ -86,6 +93,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+
         self.uart_session_start(session, rate)
 
         session.timeout = 60
