@@ -293,7 +293,7 @@ def main():
         return
     # get the inlet temperature info
     env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp()
-    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}\n".format(env_temp))
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}".format(env_temp))
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
     if skip_test:
