@@ -126,7 +126,7 @@ echo "Preparing image -- Done"
 
 echo "--------------------"
 echo "Cleaning up"
-#rm -rf $BUILD_DIR/temp/$arch
+rm -rf $BUILD_DIR/temp/$arch
 echo "Clean up -- Done"
 
 echo "--------------------"
