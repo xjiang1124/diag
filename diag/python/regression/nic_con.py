@@ -162,7 +162,7 @@ if __name__ == "__main__":
     con = nic_con()
 
     if args.change_baud_rate == True:
-        con.change_rate(args.orig_rate, args.tgt_rate)
+        con.change_rate(args.orig_rate, args.tgt_rate, args.slot)
         sys.exit()
 
     if args.ena_mgmt_port == True:
