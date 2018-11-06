@@ -7,23 +7,30 @@ proc init {} {
     set ASIC_GEN "$ASIC_SRC"
     
     cd $ASIC_SRC/ip/cosim/tclsh
-    source .tclrc.diag.new
+    source .tclrc.diag
 }
 
-proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {mac_serdes_int_lpbk 1} {duration 60}  } {
+proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
     set chip_id [ cap_get_cur_chip_id ]
     set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
     set log_file cap_snake_${mode}_${board_id}_${cur_time}.log
     set cur_dir [pwd]
     set j2c_port 10
     
+    puts "use_zmq: $use_zmq; zmq_conn: $zmq_conn"
     plog_stop
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
     
+    if { $use_zmq } {
+        diag_open_zmq_if $zmq_conn $j2c_slot
+    } else {
+        diag_open_j2c_if $j2c_port $j2c_slot
+    }
+
     set in_err [plog_get_err_count]
     # === reset
-    cap_jtag_chip_rst $j2c_port $j2c_slot
+    cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn
 
     sknobs_set_value  test/sbus/load_pcie_rom_file_frontdoor 1
     if {$mode == "pcie_lb"} {

@@ -214,11 +214,11 @@ MTP024:
     MODE: MTP_QK
     TS: pen-hwlab-tel-02
     TS_PORT: 2007
-    APC_1_NAME: pen-hwlab-apc-03
-    APC_1_PORT: 1
-    APC_2_NAME: pen-hwlab-apc-03
+    APC_1_NAME: pen-chamber-apc-01
+    APC_1_PORT: 
+    APC_2_NAME: pen-chamber-apc-01
     APC_2_PORT: 2
-    IP: 192.168.72.110
+    IP: 192.168.74.36
     SLOT_1:
     SLOT_2: 
     SLOT_3: 
