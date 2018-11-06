@@ -76,12 +76,13 @@ then
 
     mkdir -p $NIC_UTIL_DIR
 
-    cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/cpld $NIC_UTIL_DIR
-    cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr $NIC_UTIL_DIR
-    cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil $NIC_UTIL_DIR
-    cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil $NIC_UTIL_DIR
-    cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil $NIC_UTIL_DIR
-    cp $TOP_DIR/diag/python/regression/update_mac.py $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/cpld      $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr    $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil    $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil   $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil   $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/python/regression/update_mac.py    $NIC_UTIL_DIR
+    cp $TEMP_DIR/scripts/version.txt                    $NIC_UTIL_DIR
 
     cd $NIC_UTIL_DIR
     tar czf $IMG_DIR/nic_util.tar -C $BUILD_DIR/temp/$arch/ nic_util/
