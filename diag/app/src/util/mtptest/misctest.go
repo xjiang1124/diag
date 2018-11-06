@@ -316,7 +316,7 @@ func pcsTest(index uint) (err int) {
 }
 
 func prstTest() (err int) {
-    var data, fan, psu, nic, i uint8
+    var data, fan, psu, i uint8
     absent := 0
     data, err = mtpCpld.CpldRead(0x3)
     fan = data & 0x7
@@ -337,30 +337,31 @@ func prstTest() (err int) {
             absent = 1
         }
     }
-    
-    //turn on all nic
-    err = mtpCpld.CpldWrite(0x10, 0x0)
-    err = mtpCpld.CpldWrite(0x11, 0x0)
-    
-    misc.SleepInUSec(500000)
-    nic, err = mtpCpld.CpldRead(0x14)
-    for i = 0; i < 8; i++ {
-        if nic & uint8(1 << i) > 0 {
-            cli.Println("i", "NIC", i, "is present")
-        } else {
-            cli.Println("i", "NIC", i, "is NOT present")
-            absent = 1
-        }
-    }
-    nic, err = mtpCpld.CpldRead(0x15)
-    for i = 0; i < 2; i++ {
-        if nic & uint8(1 << i) > 0 {
-            cli.Println("i", "NIC", i+8, "is present")
-        } else {
-            cli.Println("i", "NIC", i+8, "is NOT present")
-            absent = 1
-        }
-    }
+
+//    //turn on all nic
+//    err = mtpCpld.CpldWrite(0x10, 0x0)
+//    err = mtpCpld.CpldWrite(0x11, 0x0)
+//    
+//    misc.SleepInUSec(500000)
+//    nic, err = mtpCpld.CpldRead(0x14)
+//    for i = 0; i < 8; i++ {
+//        if nic & uint8(1 << i) > 0 {
+//            cli.Println("i", "NIC", i, "is present")
+//        } else {
+//            cli.Println("i", "NIC", i, "is NOT present")
+//            absent = 1
+//        }
+//    }
+//    nic, err = mtpCpld.CpldRead(0x15)
+//    for i = 0; i < 2; i++ {
+//        if nic & uint8(1 << i) > 0 {
+//            cli.Println("i", "NIC", i+8, "is present")
+//        } else {
+//            cli.Println("i", "NIC", i+8, "is NOT present")
+//            absent = 1
+//        }
+//    }
+
     if absent == 1 {
         cli.Println("e", "##### Present TEST FAILED! #####")
     } else {
