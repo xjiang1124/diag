@@ -8,7 +8,7 @@ set parameters {
     {mac_lb.arg   1   "MAC loopback: 0 disable; 1 enable"}
     {duration.arg 60   "duation"}
     {use_zmq.arg  "0"    "Use ZMQ"}
-    {mtp_ip.arg   ""   "MTP IP"}
+    {zmq_srv_ip.arg   ""   "MTP IP"}
     {zmq_port.arg ""   "ZMQ port"}
 }
 
@@ -19,15 +19,15 @@ set mode $arg(mode)
 set mac_lb $arg(mac_lb)
 set duration $arg(duration)
 set use_zmq $arg(use_zmq)
-set mtp_ip $arg(mtp_ip)
+set zmq_srv_ip $arg(zmq_srv_ip)
 set zmq_port $arg(zmq_port)
 
-if { $arg(mtp_ip) == "" || $arg(slot) == "" || $arg(zmq_port) == ""} {
+if { $arg(zmq_srv_ip) == "" || $arg(slot) == "" || $arg(zmq_port) == ""} {
     error "Need MTP IP, port and slot args"
     exit
 }
 
-set zmq_conn "tcp://${arg(mtp_ip)}:${arg(zmq_port)}/"
+set zmq_conn "tcp://${arg(zmq_srv_ip)}:${arg(zmq_port)}/"
 puts "zmq_conn: $zmq_conn"
 
 puts "sn: $sn; slot: $slot; mode: $mode; mac_lb: $mac_lb; duration: $duration"
