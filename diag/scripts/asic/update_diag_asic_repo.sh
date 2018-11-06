@@ -10,8 +10,8 @@ cd $DIAG_REPO
 cp -rf $ASIC_GEN/ip/cosim/diag/nic/* .
 
 cd $ASIC_REPO
-gitVer=$(git log --name-status HEAD^..HEAD > $DIAG_REPO/asic_version.txt.temp)
+gitVer=$(git log --name-status HEAD^..HEAD 2>&1 | head -n 6 > $DIAG_REPO/asic_version.txt.temp)
 echo -e "\n-----------------\n" >> $DIAG_REPO/asic_version.txt.temp
 mv $DIAG_REPO/asic_version.txt $DIAG_REPO/asic_version.txt.temp1
-cat $DIAG_REPO/asic_version.txt.temp $DIAG_REPO/asic_version.txt.temp > $DIAG_REPO/asic_version.txt
+cat $DIAG_REPO/asic_version.txt.temp $DIAG_REPO/asic_version.txt.temp1 > $DIAG_REPO/asic_version.txt
 cat $DIAG_REPO/asic_version.txt

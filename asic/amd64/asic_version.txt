@@ -1,0 +1,40 @@
+commit 77db344e0f626f06f1a2a976c6108991660937ec
+Merge: d974bad a9aecb2
+Author: kmulam <kalyan@pensando.io>
+Date:   Wed Oct 31 09:46:02 2018 -0700
+
+    Merge pull request #5743 from kmulam/kcm_elb3
+    
+    update for screen
+
+commit a9aecb2f7d7565c9e561bee0532e072e3f770bee
+Author: Kalyan Mulam <kalyan@nuovamente.io>
+Date:   Wed Oct 31 09:39:51 2018 -0700
+
+    update for screen
+
+M	ip/cosim/capri/cap_l1_tests.tcl
+M	ip/cosim/haps/common/cpld.tcl
+
+-----------------
+
+commit 77db344e0f626f06f1a2a976c6108991660937ec
+Merge: d974bad a9aecb2
+Author: kmulam <kalyan@pensando.io>
+Date:   Wed Oct 31 09:46:02 2018 -0700
+
+    Merge pull request #5743 from kmulam/kcm_elb3
+    
+    update for screen
+
+commit a9aecb2f7d7565c9e561bee0532e072e3f770bee
+Author: Kalyan Mulam <kalyan@nuovamente.io>
+Date:   Wed Oct 31 09:39:51 2018 -0700
+
+    update for screen
+
+M	ip/cosim/capri/cap_l1_tests.tcl
+M	ip/cosim/haps/common/cpld.tcl
+
+-----------------
+
