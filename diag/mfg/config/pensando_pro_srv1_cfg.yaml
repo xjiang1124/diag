@@ -4,4 +4,4 @@ PENSANDO-PRO-SRV1:
     PASSWORD: "pensando"
     ALIAS: "hw-mftg-host"
     MTP_CFG_FILE: "pensando_pro_srv1_mtp_chassis_cfg.yaml"
-    LOGPATH: "/mfg_log/"
+    LOGPATH: "/home/xingchang/mfg_log/"

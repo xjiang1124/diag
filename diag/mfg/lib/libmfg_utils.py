@@ -160,6 +160,16 @@ def get_date():
     return str(datetime.datetime.now().date())
 
 
+def get_fru_date():
+    # return format mmddyy
+    return datetime.datetime.now().strftime("%m%d%y")
+
+
+def get_nic_ip_addr(slot):
+    # return 10.1.1.(100+slot)
+    return "10.1.1.{:d}".format(100+slot+1)
+
+
 def serial_number_validate(tmp):
     if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
         return tmp

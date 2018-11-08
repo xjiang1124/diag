@@ -88,7 +88,7 @@ MTP-100:
     APC1_PORT: "9"
     APC1_USERID: "apc"
     APC1_PASSWORD: "apc"
-    APC2: "192.168.1.114" 
+    APC2: "192.168.1.114"
     APC2_PORT: "10"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"

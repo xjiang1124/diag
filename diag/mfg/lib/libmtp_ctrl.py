@@ -6,9 +6,20 @@ import libmfg_utils
 import random
 import re
 from libmfg_cfg import MFG_CFG_NIC_FRU_VALID
+from libmfg_cfg import MFG_BYPASS_PSU_CHECK
+from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
+from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
+from libmfg_cfg import NIC_MGMT_USERNAME
+from libmfg_cfg import NIC_MGMT_PASSWORD
+from libmfg_cfg import MFG_BYPASS_NIC_FRU_WR_PROT
+from libmfg_cfg import MFG_BYPASS_NIC_ENV_SET
+from libmfg_cfg import NAPLES_DISP_SN_FMT
+from libmfg_cfg import NAPLES_DISP_MAC_FMT
+from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
+from libdefs import MTP_DIAG_Path
 from libdefs import MTP_Const
 from libdefs import NIC_Status
 from libdefs import MTP_Status
@@ -428,7 +439,7 @@ class mtp_ctrl():
         if not self._mgmt_handle:
             self.cli_log_err("Management port is not connected")
             return False
-        self._mgmt_handle.sendline("sudo " + cmd)
+        self._mgmt_handle.sendline("sudo -k " + cmd)
         self._mgmt_handle.expect_exact(userid + ":")
         self._mgmt_handle.sendline(passwd)
         if cmd == "reboot" or cmd == "poweroff":
@@ -513,81 +524,101 @@ class mtp_ctrl():
         pass
 
 
-    def mtp_program_nic_fru(self, slot, sn, mac):
-        # TODO: how to program nic fru?
-        self._mgmt_handle.sendline("echo 'Fake FRU program on the nic'")
-        self._mgmt_handle.expect_exact("Fake FRU")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+    def mtp_program_nic_fru(self, slot, date, sn, mac):
+        self.cli_log_slot_inf(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}".format(date, sn, mac))
+        nic_cmd_list = list()
 
+        # 1. turn off FRU write protection
+        if not MFG_BYPASS_NIC_FRU_WR_PROT:
+            nic_cmd = "/mnt/cpld -w 1 2"
+            nic_cmd_list.append(nic_cmd)
+        # 2. program FRU
+        nic_cmd = "/mnt/eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -update".format(date, sn, mac)
+        nic_cmd_list.append(nic_cmd)
+        # 3. turn on FRU write protection
+        if not MFG_BYPASS_NIC_FRU_WR_PROT:
+            nic_cmd = "/mnt/cpld -w 1 6"
+            nic_cmd_list.append(nic_cmd)
+
+        self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
+        self.cli_log_slot_inf(slot, "Program NIC FRU complete")
         return True
 
 
-    def mtp_verify_nic_fru(self, slot, sn, mac):
-        # TODO: how to verify nic fru?
-        self._mgmt_handle.sendline("echo 'Fake FRU verify on the nic'")
-        self._mgmt_handle.expect_exact("Fake FRU")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+    def mtp_verify_nic_fru(self, slot, date, sn, mac):
+        self.cli_log_slot_inf(slot, "Verify NIC FRU date={:s}, sn={:s}, mac={:s}".format(date, sn, mac))
+        nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
+        if not nic_fru_info:
+            self.cli_log_slot_err(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
+            return False
+        else:
+            nic_sn = nic_fru_info[0]
+            nic_date = nic_fru_info[1]
+            nic_mac = nic_fru_info[2]
+
+        if nic_sn != sn:
+            self.cli_log_slot_err(slot, "SN Verify Failed, get {:s}, expect {:s}".format(nic_sn, sn))
+            return False
+        if nic_date != date:
+            self.cli_log_slot_err(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
+            return False
+        if nic_mac != mac:
+            self.cli_log_slot_err(slot, "MAC Verify Failed, get {:s}, expect {:s}".format(nic_mac, mac))
+            return False
 
         return True
 
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
         # TODO: how to program nic cpld?
-        self._mgmt_handle.sendline("echo 'Fake CPLD program on the nic'")
-        self._mgmt_handle.expect_exact("Fake CPLD")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-
         return True
 
 
     def mtp_verify_nic_cpld(self, slot, cpld_img):
         # TODO: how to verify nic cpld?
-        self._mgmt_handle.sendline("echo 'Fake CPLD verify on the nic'")
-        self._mgmt_handle.expect_exact("Fake CPLD")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-
         return True
 
 
     def mtp_program_nic_vrm(self, slot, vrm_img, vrm_img_cksum):
         # TODO: how to program nic vrm?
-        self._mgmt_handle.sendline("echo 'Fake VRM program on the nic'")
-        self._mgmt_handle.expect_exact("Fake VRM")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-
         return True
 
 
     def mtp_verify_nic_vrm(self, slot, vrm_img, vrm_img_cksum):
         # TODO: how to program nic vrm?
-        self._mgmt_handle.sendline("echo 'Fake VRM verify on the nic'")
-        self._mgmt_handle.expect_exact("Fake VRM")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-
         return True
 
 
-    def mtp_nic_fw_update(self, slot, sn = None, mac = None, cpld_img_file = None, vrm_img_file = None, vrm_img_cksum = None, err_inj = False):
+    def mtp_nic_fw_update(self, slot, sn, mac, cpld_img_file = None, vrm_img_file = None, vrm_img_cksum = None, err_inj = False):
         if err_inj:
             err_inj_type = random.choice(["FRU-PROG", "FRU-VERIFY", "CPLD-PROG", "CPLD-VERIFY", "VRM-PROG", "VRM-VERIFY"])
         else:
             err_inj_type = None
 
+        self.cli_log_slot_inf(slot, "NIC FW Update Started", level=0)
+
+        # power on nic
+        self.mtp_power_on_single_nic(slot)
+
+        # init nic for fw update
+        self.mtp_nic_dl_init(slot)
+
         # program FRU
-        ret = self.mtp_program_nic_fru(slot, sn, mac)
+        prog_date = libmfg_utils.get_fru_date()
+        ret = self.mtp_program_nic_fru(slot, prog_date, sn, mac)
         mac_ui = libmfg_utils.mac_address_format(mac)
 
         # error injection
         if err_inj_type == "FRU-PROG":
-            ret = False
-        if ret:
-            self.cli_log_slot_inf(slot, "Program NIC with mac address: {:s}, sn: {:s} complete".format(mac_ui, sn))
-        else:
-            self.cli_log_slot_err(slot, "Program NIC with mac address: {:s}, sn: {:s} failed".format(mac_ui, sn))
+            self.cli_log_slot_err(slot, "Error Inject Program NIC Failure")
             return False
 
         # verify FRU
-        ret = self.mtp_verify_nic_fru(slot, sn, mac)
+        # mm/dd/yy
+        exp_date = "/".join(re.findall("..", prog_date))
+        exp_sn = sn
+        exp_mac = "-".join(re.findall("..", mac.lower()))
+        ret = self.mtp_verify_nic_fru(slot, exp_date, exp_sn, exp_mac)
 
         # error injection
         if err_inj_type == "FRU-VERIFY":
@@ -645,6 +676,9 @@ class mtp_ctrl():
         else:
             self.cli_log_slot_err(slot, "Verify NIC VRM file: {:s} Failed\n".format(vrm_img_file))
             return False
+
+        # power off nic
+        self.mtp_power_off_single_nic(slot)
 
         return True
 
@@ -766,6 +800,7 @@ class mtp_ctrl():
 
     def mtp_diag_pre_init(self, diagmgr_logfile):
         # start the mtp diag
+        self.cli_log_inf("Init Diag SW Environment", level=0)
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
         self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=MTP_Const.OS_CMD_DELAY)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
@@ -793,6 +828,16 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
+        # config the enp2s0 internal mgmt port
+        cmd = "ifconfig enp2s0 {:s} netmask {:s}".format(MTP_INTERNAL_MGMT_IP_ADDR, MTP_INTERNAL_MGMT_NETMASK)
+        self.mtp_mgmt_exec_sudo_cmd(cmd)
+
+        # other necessary init steps
+        cmd = "sw_cfg.sh"
+        self.mtp_mgmt_exec_cmd(cmd)
+        self.cli_log_inf("Init Diag SW Environment complete", level=0)
+
+
 
     def mtp_diag_init(self, naples100_test_db):
         self._mgmt_handle.sendline("./diag -sdsp")
@@ -816,7 +861,7 @@ class mtp_ctrl():
         # fan init
         rc &= self.mtp_fan_init()
         
-        if psu_check:
+        if psu_check and not MFG_BYPASS_PSU_CHECK:
             # psu init
             rc &= self.mtp_psu_init()
         else:
@@ -935,27 +980,134 @@ class mtp_ctrl():
         return 95
 
 
+    def mtp_mgmt_nic_utils_dl(self, slot):
+        # copy nic utils onto nic
+        self.cli_log_slot_inf(slot, "Download NIC Utils")
+        ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+        cmd = "scp {:s} /home/diag/nic_util/* {:s}@{:s}:/mnt".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
+        self._mgmt_handle.sendline(cmd)
+        self._mgmt_handle.expect_exact("assword:")
+        self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
+
+
+    def mtp_mgmt_exec_nic_con_cmd(self, nic_con_cmd):
+        # goto the nic_con dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        self.mtp_mgmt_exec_cmd(cmd)
+        self._mgmt_handle.sendline(nic_con_cmd)
+        self._mgmt_handle.expect_exact("Thanks for using picocom", timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        self._mgmt_handle.expect_exact("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+ 
+
+    def mtp_mgmt_init_nic_hanle(self, slot):
+        ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+        cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
+        self._mgmt_handle.sendline(cmd)
+        exp_list = ["assword:"] + libmfg_utils.get_linux_prompt_list()
+        while True:
+            idx = self._mgmt_handle.expect_exact(exp_list)
+            if idx == 0:
+                self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+                continue
+            elif idx < len(exp_list):
+                nic_prompt = exp_list[idx]
+                break
+            else:
+                self.cli_log_slot_err(slot, "Connect to NIC managment port failed")
+
+        card_type = self._nic_type_list[slot]
+        if not MFG_BYPASS_NIC_ENV_SET:
+            self._mgmt_handle.sendline("export CARD_NAME=NIC{:d} CARD_TYPE={:s}".format(slot+1, card_type))
+            self._mgmt_handle.expect_exact(nic_prompt)
+        return nic_prompt
+
+
+    def mtp_mgmt_exec_nic_cmds(self, slot, nic_cmd_list):
+        nic_prompt = self.mtp_mgmt_init_nic_hanle(slot)
+        for nic_cmd in nic_cmd_list:
+            self._mgmt_handle.sendline(nic_cmd)
+            self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
+            time.sleep(1)
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        return True
+
+ 
+    # retrieve fru info from nic
+    # return [sn, date, mac]
+    def mtp_mgmt_get_nic_fru_info(self, slot):
+        nic_prompt = self.mtp_mgmt_init_nic_hanle(slot)
+        # dump the fru
+        self._mgmt_handle.sendline("/mnt/cpld -r 0")
+        self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        self._mgmt_handle.sendline("/mnt/eeutil -disp")
+        self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        match = re.findall(NAPLES_DISP_SN_FMT, self._mgmt_handle.before)
+        if match:
+            sn = match[0]
+        else:
+            sn = ""
+        match = re.findall(NAPLES_DISP_DATE_FMT, self._mgmt_handle.before)
+        if match:
+            date = match[0]
+        else:
+            date = ""
+        match = re.findall(NAPLES_DISP_MAC_FMT, self._mgmt_handle.before)
+        if match:
+            mac = match[0]
+        else:
+            mac = ""
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self.cli_log_slot_inf(slot, "Retrieve info from FRU {:s}-{:s}-{:s}".format(sn, date, mac))
+        if sn == "" or date == "" or mac == "":
+            return None 
+
+        return [sn, date, mac]
+
+
+    # retrieve misc hw info from nic
+    # return [cpld_ver, etc]
+    def mtp_mgmt_get_nic_hw_info(self, slot):
+        nic_prompt = self.mtp_mgmt_init_nic_hanle(slot)
+        # dump the fru
+        self._mgmt_handle.sendline("/mnt/cpld -r 0")
+        self._mgmt_handle.expect_exact(nic_prompt)
+        return [sn, date, mac]
+
+
+    def mtp_nic_dl_init(self, slot):
+        self.cli_log_slot_inf(slot, "Init NIC for FW upgrade")
+        # 2. change baud rate to 9600
+        self.cli_log_slot_inf(slot, "Set NIC Console baudrate")
+        nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
+        self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
+        # 3. config nic ip address
+        self.cli_log_slot_inf(slot, "Set NIC MGMT ip address")
+        nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
+        self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
+        time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+        self.mtp_mgmt_nic_utils_dl(slot)
+        self.cli_log_slot_inf(slot, "Init NIC for FW upgrade complete\n")
+
+
     def mtp_nic_init(self, fru_load):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
+
         # init nic present list
-        self.cli_log_inf("Init NIC Present")
         self.mtp_init_nic_prsnt()
 
         # init nic type list
-        self.cli_log_inf("Init NIC Type")
         self.mtp_init_nic_type()
 
-        # nic sanity check
-        self.cli_log_inf("JTAG Sanity Check")
-        if self.mtp_sys_sanity_check():
-            self.cli_log_inf("JTAG Sanity Check Passed")
-        else:
-            self.cli_log_inf("JTAG Sanity Check Failed")
-            return False
-
         # power on nic
-        self.cli_log_inf("Power on NICs")
         self.mtp_power_on_nic()
+
+        # nic sanity check
+        if not self.mtp_jtag_sanity_check():
+            return False
 
         if fru_load:
             self.cli_log_inf("Load Barcode config file")
@@ -1034,11 +1186,35 @@ class mtp_ctrl():
 
 
     def mtp_power_on_nic(self):
+        self.cli_log_inf("Power on all NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
         self._mgmt_handle.sendline("turn_on_slot.sh on all")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+
+
+    def mtp_power_off_nic(self):
+        self.cli_log_inf("Power off all NIC")
+        self._mgmt_handle.sendline("turn_on_slot.sh off all")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
+
+
+    def mtp_power_on_single_nic(self, slot):
+        self.cli_log_slot_inf(slot, "Power on NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
+        self._mgmt_handle.sendline("turn_on_slot.sh on {:d}".format(slot+1))
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+
+
+    def mtp_power_off_single_nic(self, slot):
+        self.cli_log_inf("Power off NIC")
+        self._mgmt_handle.sendline("turn_on_slot.sh off {:d}".format(slot+1))
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
 
 
     def mtp_init_nic_prsnt(self):
+        self.cli_log_inf("Init NIC Present")
         self._mgmt_handle.sendline("inventory -present")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
@@ -1054,6 +1230,7 @@ class mtp_ctrl():
 
 
     def mtp_init_nic_type(self):
+        self.cli_log_inf("Init NIC Type")
         self._mgmt_handle.sendline("inventory -present")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
@@ -1074,7 +1251,8 @@ class mtp_ctrl():
         return self._nic_type_list[slot]
 
 
-    def mtp_sys_sanity_check(self):
+    def mtp_jtag_sanity_check(self):
+        self.cli_log_inf("MTP JTAG Sanity Check")
         if True not in self._nic_prsnt_list:
             self._mgmt_handle.sendline("sys_sanity.sh 1")
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
@@ -1085,10 +1263,10 @@ class mtp_ctrl():
                     self._mgmt_handle.sendline("sys_sanity.sh {:d}".format(slot+1))
                     self._mgmt_handle.expect_exact(self._mgmt_prompt)
                     match = re.findall(r"(valid bit 0x1, +error 0x0+)", self._mgmt_handle.before)
-                    if match:
-                        return True
-                    else:
+                    if not match:
+                        self.cli_log_slot_err(slot, "MTP JTAG Sanity Check Failed")
                         return False
+            return True
 
 
     def mtp_init_nic_sn(self):

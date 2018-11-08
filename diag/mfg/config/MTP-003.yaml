@@ -17,7 +17,7 @@ MTP-003:
         MAC: "00AECD0010E0"
         TS: 2018-11-01_16-22-53
     NIC-04:
-        VALID: "Yes"
+        VALID: "No"
         SN: "FLM18420007"
         MAC: "00AECD000E70"
         TS: 2018-11-01_16-23-19

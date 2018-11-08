@@ -63,6 +63,11 @@ class MTP_Const:
     MTP_NETCOPY_DELAY = 600
     OS_SYNC_DELAY = 300
     OS_CMD_DELAY = 120
+    NIC_CON_CMD_DELAY = 300
+    NIC_NETCOPY_DELAY = 120
+    NIC_MGMT_IP_SET_DELAY = 10
+    NIC_POWER_ON_DELAY = 120
+    NIC_POWER_OFF_DELAY = 10
 
     MTP_DIAGMGR_DELAY = 10
 
@@ -109,6 +114,7 @@ class MTP_DIAG_Logfile:
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
+    ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
 
 
 class MTP_DIAG_Report:

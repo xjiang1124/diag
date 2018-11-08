@@ -1,5 +1,9 @@
 # No valid content in the Fru
 MFG_CFG_NIC_FRU_VALID = False
+MFG_BYPASS_PSU_CHECK = True
+MFG_BYPASS_NIC_FRU_WR_PROT = True
+MFG_BYPASS_NIC_ENV_SET = False
+
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
 DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
@@ -9,6 +13,14 @@ DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/n
 # FL[M,Z,G][Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 NAPLES_SN_FMT = r"FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]+$"
+NAPLES_DISP_SN_FMT = r"Serial Number +(FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4})"
+NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-ae-cd-[a-f0-9]{2}-[a-f0-9]{2}-[a-f0-9]{2})"
+NAPLES_DISP_DATE_FMT = r"Manufacturing Date +(\d{2}/\d{2}/\d{2})"
+NIC_MGMT_USERNAME = "root"
+NIC_MGMT_PASSWORD = "pen123"
+
+MTP_INTERNAL_MGMT_IP_ADDR = "10.1.1.100"
+MTP_INTERNAL_MGMT_NETMASK = "255.255.255.0"
 
 FLX_WEBSERVER = "10.20.33.140"
 FLX_API_URL = "/Pensando/fftester20.asmx"
