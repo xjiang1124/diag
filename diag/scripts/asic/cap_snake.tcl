@@ -2,25 +2,27 @@
 #
 package require cmdline
 set parameters {
-    {sn.arg       "20" "Serial Number"}
-    {slot.arg     ""   "Slot number"}
-    {mode.arg     "hbm_lb"   "Mode: pcie_lb or hbm_lb"}
-    {mac_lb.arg   1   "MAC loopback: 0 disable; 1 enable"}
-    {duration.arg 60   "duation"}
-    {use_zmq.arg  "0"    "Use ZMQ"}
-    {zmq_srv_ip.arg   ""   "MTP IP"}
-    {zmq_port.arg ""   "ZMQ port"}
+    {sn.arg         "Slotxxx"     "Serial Number"}
+    {slot.arg       ""       "Slot number"}
+    {mode.arg       "hbm_lb" "Mode: pcie_lb or hbm_lb"}
+    {mac_lb.arg     1        "MAC loopback: 0 disable; 1 enable"}
+    {duration.arg   60       "duation"}
+    {use_zmq.arg    0        "Use ZMQ"}
+    {zmq_srv_ip.arg ""       "MTP IP"}
+    {zmq_port.arg   "55000"  "ZMQ port"}
+    {diag_dir.arg   "/home/xguo2/workspace/temp/diag/" "Diag home directory"}
 }
 
 array set arg [cmdline::getoptions argv $parameters]
-set sn $arg(sn)
-set slot $arg(slot)
-set mode $arg(mode)
-set mac_lb $arg(mac_lb)
-set duration $arg(duration)
-set use_zmq $arg(use_zmq)
-set zmq_srv_ip $arg(zmq_srv_ip)
-set zmq_port $arg(zmq_port)
+set sn          $arg(sn)
+set slot        $arg(slot)
+set mode        $arg(mode)
+set mac_lb      $arg(mac_lb)
+set duration    $arg(duration)
+set use_zmq     $arg(use_zmq)
+set zmq_srv_ip  $arg(zmq_srv_ip)
+set zmq_port    $arg(zmq_port)
+set DIAG_DIR    $arg(diag_dir)
 
 if { $arg(zmq_srv_ip) == "" || $arg(slot) == "" || $arg(zmq_port) == ""} {
     error "Need MTP IP, port and slot args"
@@ -32,8 +34,10 @@ puts "zmq_conn: $zmq_conn"
 
 puts "sn: $sn; slot: $slot; mode: $mode; mac_lb: $mac_lb; duration: $duration"
 
-set DIAG_DIR "/home/xguo2/workspace/temp/diag/"
+#set DIAG_DIR "/home/xguo2/workspace/temp/diag/"
 #set DIAG_DIR "/home/diag/"
+#puts $DIAG_DIR
+
 set ASIC_LIB_BUNDLE "$DIAG_DIR/diag/asic"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
@@ -45,6 +49,8 @@ source .tclrc.diag
 source $DIAG_SRC/asic_tests.tcl
 
 puts "sn: $sn; slot: $slot; mode: $mode; mac_lb: $mac_lb; duration: $duration; use_zmq: $use_zmq"
+
+exit
 
 set ::SSI_OPERATION_TIMEOUT_S 10
 diag_force_close_zmq_if $zmq_conn $slot
