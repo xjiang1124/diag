@@ -672,13 +672,15 @@ class mtp_ctrl():
         if err_inj_type == "VRM-VERIFY":
             ret = False
         if ret:
-            self.cli_log_slot_inf(slot, "Verify NIC VRM file: {:s} complete\n".format(vrm_img_file))
+            self.cli_log_slot_inf(slot, "Verify NIC VRM file: {:s} complete".format(vrm_img_file))
         else:
-            self.cli_log_slot_err(slot, "Verify NIC VRM file: {:s} Failed\n".format(vrm_img_file))
+            self.cli_log_slot_err(slot, "Verify NIC VRM file: {:s} Failed".format(vrm_img_file))
             return False
 
         # power off nic
         self.mtp_power_off_single_nic(slot)
+
+        self.cli_log_slot_inf(slot, "NIC FW Update Completed\n", level=0)
 
         return True
 
