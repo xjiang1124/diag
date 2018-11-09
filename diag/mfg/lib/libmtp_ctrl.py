@@ -605,7 +605,7 @@ class mtp_ctrl():
         self.mtp_power_on_single_nic(slot)
 
         # init nic for fw update
-        self.mtp_nic_dl_init(slot)
+        self.mtp_nic_diag_init(slot)
 
         # program FRU
         prog_date = libmfg_utils.get_fru_date()
@@ -620,7 +620,7 @@ class mtp_ctrl():
         if not ret:
             self.mtp_power_off_single_nic(slot)
             return ret
-    
+
         # verify FRU
         # mm/dd/yy
         exp_date = "/".join(re.findall("..", prog_date))
@@ -857,7 +857,7 @@ class mtp_ctrl():
         naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
         for dsp in naples100_dsp_list: 
             if dsp not in self._mgmt_handle.before:
-                self.cli_log_err("Diag DSP: {:s} is not detected", level = 0)
+                self.cli_log_err("Diag DSP: {:s} is not detected".format(dsp), level = 0)
                 return False
         self.cli_log_inf("Diag DSP Sanity Check Complete\n", level = 0)
 
@@ -890,31 +890,6 @@ class mtp_ctrl():
 
 
     def mtp_diag_env_init(self, fan_speed, vmarg):
-        # build nic serial number list
-        for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
-                self._nic_sn_list[slot] = self.mtp_get_nic_sn(slot)
-                self._nic_mac_list[slot] = self.mtp_get_nic_mac(slot)
-
-        # check xcvr status
-        for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
-                xcvr_prsnt_mask = self.mtp_get_nic_xcvr_prsnt(slot)
-                if not xcvr_prsnt_mask & NIC_Port_Mask.NIC_PORT1_MASK:
-                    if not ignore_warning and not libmfg_utils.double_confirm("Front Panel Port 1 Transceiver Absent, Continue"):
-                        self.set_mtp_status(MTP_Status.MTP_STA_ENV_FAIL)
-                        return False
-                if not xcvr_prsnt_mask & NIC_Port_Mask.NIC_PORT2_MASK:
-                    if not ignore_warning and not libmfg_utils.double_confirm("Front Panel Port 2 Transceiver Absent, Continue"):
-                        self.set_mtp_status(MTP_Status.MTP_STA_ENV_FAIL)
-                        return False
-                if not xcvr_prsnt_mask & NIC_Port_Mask.NIC_MGMT_MASK:
-                    if not ignore_warning and not libmfg_utils.double_confirm("Management Port  Transceiver Absent, Continue"):
-                        self.set_mtp_status(MTP_Status.MTP_STA_ENV_FAIL)
-                        return False
-
-                self._nic_sta_list[slot] = NIC_Status.NIC_STA_HW_READY
-
         # set nic voltage margin
         if vmarg != 0:
             for slot in range(self._slots):
@@ -1093,19 +1068,35 @@ class mtp_ctrl():
         return [cpld_ver]
 
 
-    def mtp_nic_dl_init(self, slot):
-        self.cli_log_slot_inf(slot, "Init NIC for FW upgrade")
-        # 2. change baud rate to 9600
-        self.cli_log_slot_inf(slot, "Set NIC Console baudrate")
-        nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
-        self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
-        # 3. config nic ip address
-        self.cli_log_slot_inf(slot, "Set NIC MGMT ip address")
-        nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
-        self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
-        time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
-        self.mtp_mgmt_nic_utils_dl(slot)
-        self.cli_log_slot_inf(slot, "Init NIC for FW upgrade complete\n")
+    def mtp_nic_diag_init(self, slot=None):
+        if slot:
+            self.cli_log_slot_inf(slot, "Init Diag Environment on NIC")
+            # 1. change baud rate to 9600
+            self.cli_log_slot_inf(slot, "Set NIC Console baudrate")
+            nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
+            self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
+            # 2. config nic ip address
+            self.cli_log_slot_inf(slot, "Set NIC MGMT ip address")
+            nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
+            self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
+            time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+            self.mtp_mgmt_nic_utils_dl(slot)
+            self.cli_log_slot_inf(slot, "Init Diag Environment on NIC complete\n")
+        else:
+            for slot in range(self._slots):
+                if self._nic_prsnt_list[slot]:
+                    self.cli_log_slot_inf(slot, "Init Diag Environment on NIC")
+                    # 1. change baud rate to 9600
+                    self.cli_log_slot_inf(slot, "Set NIC Console baudrate")
+                    nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
+                    self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
+                    # 2. config nic ip address
+                    self.cli_log_slot_inf(slot, "Set NIC MGMT ip address")
+                    nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
+                    self.mtp_mgmt_exec_nic_con_cmd(nic_con_cmd)
+                    time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+                    self.mtp_mgmt_nic_utils_dl(slot)
+                    self.cli_log_slot_inf(slot, "Init Diag Environment on NIC complete\n")
 
 
     def mtp_nic_init(self, fru_load):
@@ -1125,6 +1116,7 @@ class mtp_ctrl():
             return False
 
         if fru_load:
+            #self.mtp_nic_diag_init()
             self.cli_log_inf("Load Barcode config file")
             nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
