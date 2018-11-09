@@ -83,6 +83,27 @@ MTP004:
     SLOT_9: 
     SLOT_10: 
 
+MTP005:
+    SKIP:
+    MODE: MTP_QK
+    TS: pen-hwlab-tel-02
+    TS_PORT: 2009
+    APC_1_NAME: pen-chamber-apc-01
+    APC_1_PORT: 22
+    APC_2_NAME: pen-chamber-apc-01
+    APC_2_PORT:
+    IP: 192.168.74.25
+    SLOT_1:
+    SLOT_2: 
+    SLOT_3: 
+    SLOT_4: 
+    SLOT_5: 
+    SLOT_6: 
+    SLOT_7: 
+    SLOT_8: 
+    SLOT_9: 
+    SLOT_10: 
+
 MTP006:
     SKIP:
     MODE: MTP_QK

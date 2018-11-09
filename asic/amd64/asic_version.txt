@@ -1,3 +1,21 @@
+commit b53abfb50dddb3c53ae4f4a6f352090ab9d36d7f
+Merge: 08a59d6 48d5c2f
+Author: pensandobot <erikh@pensando.io>
+Date:   Wed Nov 7 15:57:29 2018 -0800
+
+    Merge pull request #5837 from asic/asic_fork_new
+
+-----------------
+
+commit a3d5008e7ca304e5a12ceeb6fcb50724d34bb3d2
+Merge: ca380bd 535cc40
+Author: pensandobot <erikh@pensando.io>
+Date:   Tue Nov 6 15:19:07 2018 -0800
+
+    Merge pull request #5821 from asic/l1_update_nov_6
+
+-----------------
+
 commit 77db344e0f626f06f1a2a976c6108991660937ec
 Merge: d974bad a9aecb2
 Author: kmulam <kalyan@pensando.io>
