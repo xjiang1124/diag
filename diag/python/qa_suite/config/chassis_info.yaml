@@ -88,9 +88,9 @@ MTP005:
     MODE: MTP_QK
     TS: pen-hwlab-tel-02
     TS_PORT: 2009
-    APC_1_NAME: pen-chamber-apc-01
+    APC_1_NAME: pen-hwlab-apc-02
     APC_1_PORT: 22
-    APC_2_NAME: pen-chamber-apc-01
+    APC_2_NAME:
     APC_2_PORT:
     IP: 192.168.74.25
     SLOT_1:
