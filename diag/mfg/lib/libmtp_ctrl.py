@@ -16,6 +16,10 @@ from libmfg_cfg import MFG_BYPASS_NIC_ENV_SET
 from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
+from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
+from libmfg_cfg import MFG_NAPLES100_VRM_CKSUM
+from libmfg_cfg import MFG_NAPLES100_QSPI_PROGRAM
+
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -610,9 +614,13 @@ class mtp_ctrl():
 
         # error injection
         if err_inj_type == "FRU-PROG":
-            self.cli_log_slot_err(slot, "Error Inject Program NIC Failure")
-            return False
+            self.cli_log_slot_err(slot, "Error Inject Program FRU Failure")
+            ret = False
 
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
+    
         # verify FRU
         # mm/dd/yy
         exp_date = "/".join(re.findall("..", prog_date))
@@ -622,60 +630,60 @@ class mtp_ctrl():
 
         # error injection
         if err_inj_type == "FRU-VERIFY":
+            self.cli_log_slot_err(slot, "Error Inject Verify FRU Failure")
             ret = False
-        if ret:
-            self.cli_log_slot_inf(slot, "Verify NIC with mac address: {:s}, sn: {:s} complete".format(mac_ui, sn))
-        else:
-            self.cli_log_slot_err(slot, "Verify NIC with mac address: {:s}, sn: {:s} failed".format(mac_ui, sn))
-            return False
+
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
 
         # program CPLD
         ret = self.mtp_program_nic_cpld(slot, cpld_img_file)
 
         # error injection
         if err_inj_type == "CPLD-PROG":
+            self.cli_log_slot_err(slot, "Error Inject Program CPLD Failure")
             ret = False
-        if ret:
-            self.cli_log_slot_inf(slot, "Program NIC CPLD file: {:s} complete".format(cpld_img_file))
-        else:
-            self.cli_log_slot_err(slot, "Program NIC CPLD file: {:s} Failed".format(cpld_img_file))
-            return False
+
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
 
         # verify CPLD
         ret = self.mtp_verify_nic_cpld(slot, cpld_img_file)
 
         # error injection
         if err_inj_type == "CPLD-VERIFY":
+            self.cli_log_slot_err(slot, "Error Inject Verify CPLD Failure")
             ret = False
-        if ret:
-            self.cli_log_slot_inf(slot, "Verify NIC CPLD file: {:s} complete".format(cpld_img_file))
-        else:
-            self.cli_log_slot_err(slot, "Verify NIC CPLD file: {:s} Failed".format(cpld_img_file))
-            return False
+
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
 
         # program VRM
         ret = self.mtp_program_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
 
         # error injection
         if err_inj_type == "VRM-PROG":
+            self.cli_log_slot_err(slot, "Error Inject Program VRM Failure")
             ret = False
-        if ret:
-            self.cli_log_slot_inf(slot, "Program NIC VRM file: {:s} complete".format(vrm_img_file))
-        else:
-            self.cli_log_slot_err(slot, "Program NIC VRM file: {:s} Failed".format(vrm_img_file))
-            return False
+
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
 
         # verify VRM
         ret = self.mtp_verify_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
 
         # error injection
         if err_inj_type == "VRM-VERIFY":
+            self.cli_log_slot_err(slot, "Error Inject Verify VRM Failure")
             ret = False
-        if ret:
-            self.cli_log_slot_inf(slot, "Verify NIC VRM file: {:s} complete".format(vrm_img_file))
-        else:
-            self.cli_log_slot_err(slot, "Verify NIC VRM file: {:s} Failed".format(vrm_img_file))
-            return False
+
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
 
         # power off nic
         self.mtp_power_off_single_nic(slot)
@@ -1003,7 +1011,7 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
  
 
-    def mtp_mgmt_init_nic_hanle(self, slot):
+    def mtp_mgmt_init_nic_handle(self, slot):
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
         cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
         self._mgmt_handle.sendline(cmd)
@@ -1027,7 +1035,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_exec_nic_cmds(self, slot, nic_cmd_list):
-        nic_prompt = self.mtp_mgmt_init_nic_hanle(slot)
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         for nic_cmd in nic_cmd_list:
             self._mgmt_handle.sendline(nic_cmd)
             self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
@@ -1040,7 +1048,7 @@ class mtp_ctrl():
     # retrieve fru info from nic
     # return [sn, date, mac]
     def mtp_mgmt_get_nic_fru_info(self, slot):
-        nic_prompt = self.mtp_mgmt_init_nic_hanle(slot)
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         # dump the fru
         self._mgmt_handle.sendline("/mnt/cpld -r 0")
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
@@ -1073,11 +1081,16 @@ class mtp_ctrl():
     # retrieve misc hw info from nic
     # return [cpld_ver, etc]
     def mtp_mgmt_get_nic_hw_info(self, slot):
-        nic_prompt = self.mtp_mgmt_init_nic_hanle(slot)
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         # dump the fru
         self._mgmt_handle.sendline("/mnt/cpld -r 0")
         self._mgmt_handle.expect_exact(nic_prompt)
-        return [sn, date, mac]
+        match = re.findall(r"(0x[0-9a-fA-F]+)", self._mgmt_handle.before)
+        if match:
+            cpld_ver = match[0]
+        else:
+            cpld_ver = "0xdeadbeef"
+        return [cpld_ver]
 
 
     def mtp_nic_dl_init(self, slot):
@@ -1274,8 +1287,12 @@ class mtp_ctrl():
     def mtp_init_nic_sn(self):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                # TODO how to read sn from nic fru
-                self._nic_sn_list[slot] = "FLM0000000" + str(slot)
+                nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
+                if not nic_fru_info:
+                    self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
+                    self._nic_sn_list[slot] = "INVALID_NIC_SN"
+                else:
+                    self._nic_sn_list[slot] = nic_fru_info[0]
 
 
     def mtp_get_nic_sn(self, slot):
@@ -1290,8 +1307,12 @@ class mtp_ctrl():
     def mtp_init_nic_mac(self):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                # TODO how to read mac from nic fru
-                self._nic_mac_list[slot] = "00AECD00000" + str(slot)
+                nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
+                if not nic_fru_info:
+                    self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
+                    self._nic_sn_list[slot] = "INVALID_NIC_MAC"
+                else:
+                    self._nic_sn_list[slot] = nic_fru_info[2]
 
 
     def mtp_get_nic_mac(self, slot):
