@@ -17,7 +17,7 @@ from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
-from libmfg_cfg import MFG_NAPLES100_VRM_CKSUM
+from libmfg_cfg import MFG_NAPLES100_VRM_PROGRAM
 from libmfg_cfg import MFG_NAPLES100_QSPI_PROGRAM
 
 from libdefs import NIC_Type
@@ -528,6 +528,16 @@ class mtp_ctrl():
         pass
 
 
+    def mtp_update_nic_mac_address(self, slot):
+        self.cli_log_slot_inf(slot, "Update NIC MGMT MAC Address")
+        nic_cmd_list = list()
+        nic_cmd = "/mnt/update_mac.py"
+        nic_cmd_list.append(nic_cmd)
+        self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
+        self.cli_log_slot_inf(slot, "Update NIC MGMT MAC Address complete")
+        return True
+
+
     def mtp_program_nic_fru(self, slot, date, sn, mac):
         self.cli_log_slot_inf(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}".format(date, sn, mac))
         nic_cmd_list = list()
@@ -574,21 +584,108 @@ class mtp_ctrl():
 
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
-        # TODO: how to program nic cpld?
-        return True
+        self.cli_log_slot_inf(slot, "Program NIC CPLD")
+        hw_info = self.mtp_mgmt_get_nic_hw_info(slot)
+        if not hw_info:
+            self.cli_log_slot_err(slot, "Retrieve NIC CPLD version failed")
+            return False
+
+        cur_ver = hw_info[0]
+        if cur_ver == MFG_NAPLES100_CPLD_VERSION:
+            self.cli_log_slot_inf(slot, "NIC CPLD is up-to-date, bypass the upgrade")
+            return True
+        else:
+            self.cli_log_slot_inf(slot, "Program NIC CPLD, current version: {:s}, upgrade to: {:s}".format(cur_ver, MFG_NAPLES100_CPLD_VERSION))
+            # copy the image
+            ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+            cmd = "scp {:s} {:s} {:s}@{:s}:/".format(libmfg_utils.get_ssh_option(), cpld_img, NIC_MGMT_USERNAME, ipaddr)
+            self._mgmt_handle.sendline(cmd)
+            self._mgmt_handle.expect_exact("assword:")
+            self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+            self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
+
+            # program the cpld
+            img_name = os.path.basename(cpld_img) 
+            nic_cmd_list = list()
+            nic_cmd = "/mnt/cpld -prog /{:s}".format(img_name)
+            nic_cmd_list.append(nic_cmd)
+            self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
+            self.cli_log_slot_inf(slot, "Program NIC CPLD complete")
+            return True
 
 
     def mtp_verify_nic_cpld(self, slot, cpld_img):
-        # TODO: how to verify nic cpld?
-        return True
+        self.cli_log_slot_inf(slot, "Verify NIC CPLD")
+        hw_info = self.mtp_mgmt_get_nic_hw_info(slot)
+        if not hw_info:
+            self.cli_log_slot_err(slot, "Retrieve NIC CPLD version failed")
+            return False
+
+        cur_ver = hw_info[0]
+        if cur_ver != MFG_NAPLES100_CPLD_VERSION:
+            self.cli_log_slot_err(slot, "Verify NIC CPLD Failed, exp: {:s}, get: {:s}".format(MFG_NAPLES100_CPLD_VERSION, cur_ver))
+            return False
+        else:
+            self.cli_log_slot_inf(slot, "Verify NIC CPLD complete")
+            return True
 
 
     def mtp_program_nic_vrm(self, slot, vrm_img, vrm_img_cksum):
-        # TODO: how to program nic vrm?
+        if MFG_NAPLES100_VRM_PROGRAM:
+            self.cli_log_slot_inf(slot, "Program NIC VRM")
+            # copy the image
+            ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+            cmd = "scp {:s} {:s} {:s}@{:s}:/".format(libmfg_utils.get_ssh_option(), vrm_img, NIC_MGMT_USERNAME, ipaddr)
+            self._mgmt_handle.sendline(cmd)
+            self._mgmt_handle.expect_exact("assword:")
+            self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+            self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
+
+            # program the vrm
+            img_name = os.path.basename(vrm_img) 
+            nic_cmd_list = list()
+            nic_cmd = "/mnt/devmgr -program -file=/{:s}".format(img_name)
+            nic_cmd_list.append(nic_cmd)
+            nic_cmd = "/mnt/devmgr -verify -file=/{:s}".format(img_name)
+            nic_cmd_list.append(nic_cmd)
+            self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
+            self.cli_log_slot_inf(slot, "Program NIC VRM AVS")
+            self.cli_log_slot_inf(slot, "Program NIC VRM AVS complete")
+            self.cli_log_slot_inf(slot, "Program NIC VRM complete")
+        else:
+            self.cli_log_slot_inf(slot, "Program NIC VRM bypassed")
         return True
 
 
     def mtp_verify_nic_vrm(self, slot, vrm_img, vrm_img_cksum):
+        # TODO: how to program nic vrm?
+        return True
+
+
+    def mtp_program_nic_qspi(self, slot, qspi_img):
+        if MFG_NAPLES100_VRM_PROGRAM:
+            self.cli_log_slot_inf(slot, "Program NIC QSPI")
+            # copy the image
+            ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+            cmd = "scp {:s} {:s} {:s}@{:s}:/".format(libmfg_utils.get_ssh_option(), qspi_img, NIC_MGMT_USERNAME, ipaddr)
+            self._mgmt_handle.sendline(cmd)
+            self._mgmt_handle.expect_exact("assword:")
+            self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+            self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
+
+            # program the vrm
+            img_name = os.path.basename(qspi_img) 
+            nic_cmd_list = list()
+            nic_cmd = "/nic/tools/sysupdate.sh -p {:s}".format(img_name)
+            nic_cmd_list.append(nic_cmd)
+            self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
+            self.cli_log_slot_inf(slot, "Program NIC QSPI complete")
+        else:
+            self.cli_log_slot_inf(slot, "Program NIC QSPI bypassed")
+        return True
+
+
+    def mtp_verify_nic_qspi(self, slot, qspi_img):
         # TODO: how to program nic vrm?
         return True
 
@@ -636,6 +733,8 @@ class mtp_ctrl():
         if not ret:
             self.mtp_power_off_single_nic(slot)
             return ret
+
+        self.mtp_update_nic_mac_address(slot)
 
         # program CPLD
         ret = self.mtp_program_nic_cpld(slot, cpld_img_file)
@@ -685,9 +784,20 @@ class mtp_ctrl():
             self.mtp_power_off_single_nic(slot)
             return ret
 
+        # program QSPI
+        ret = self.mtp_program_nic_qspi(slot, qspi_img_file)
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
+
+        # verify QSPI
+        ret = self.mtp_verify_nic_qspi(slot, qspi_img_file)
+        if not ret:
+            self.mtp_power_off_single_nic(slot)
+            return ret
+
         # power off nic
         self.mtp_power_off_single_nic(slot)
-
         self.cli_log_slot_inf(slot, "NIC FW Update Completed\n", level=0)
 
         return True
@@ -1005,6 +1115,8 @@ class mtp_ctrl():
         card_type = self._nic_type_list[slot]
         if not MFG_BYPASS_NIC_ENV_SET:
             self._mgmt_handle.sendline("export CARD_NAME=NIC{:d} CARD_TYPE={:s}".format(slot+1, card_type))
+            self._mgmt_handle.expect_exact(nic_prompt)
+            self._mgmt_handle.sendline("mkdir -p /home/diag/diag/log/")
             self._mgmt_handle.expect_exact(nic_prompt)
         return nic_prompt
 
