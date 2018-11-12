@@ -61,6 +61,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
+
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd) 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
 
@@ -73,17 +76,22 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def get_mgmt_rdy(self, rate=9600, slot=0):
+    def get_mgmt_rdy(self, rate=9600, slot=0, ping=False, pre_cl=False):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
 
+        print "ping:", ping
+
         session = common.session_start()
         session.timeout = 30
-        session.sendline("ping -w3 10.1.1.{}".format(100+slot))
-        session.expect("\$ ")
-        if ", 0% packet loss" not in session.before:
-            self.enable_mgmt(rate, slot, True)
+        if ping == True:
+            session.sendline("ping -w3 10.1.1.{}".format(100+slot))
+            session.expect("\$ ")
+            if ", 0% packet loss" not in session.before:
+                self.enable_mgmt(rate, slot, True)
+        else:
+            self.enable_mgmt(rate, slot, pre_cl)
 
         session = common.session_stop(session)
 
@@ -93,6 +101,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
+
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd) 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
 
@@ -157,6 +168,8 @@ if __name__ == "__main__":
     parser.add_argument("-or", "--orig_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-tr", "--tgt_rate", help="Target baud rate", type=int, default=9600)
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
+    parser.add_argument("-ping", "--ping", help="Ping test before enable management port", action='store_true')
+    parser.add_argument("-pre_cl", "--pre_cl", help="Pre-clean before enable management port", action='store_true')
     args = parser.parse_args()
     
     con = nic_con()
@@ -167,5 +180,5 @@ if __name__ == "__main__":
 
     if args.ena_mgmt_port == True:
         #con.enable_mgmt(args.tgt_rate, args.slot)
-        con.get_mgmt_rdy(args.tgt_rate, args.slot)
+        con.get_mgmt_rdy(args.tgt_rate, args.slot, args.ping, args.pre_cl)
         sys.exit()
