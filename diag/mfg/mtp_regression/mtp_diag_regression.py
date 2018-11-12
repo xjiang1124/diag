@@ -82,6 +82,7 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
     cmd_list = naples_test_db.get_test_param_cmd_list()
     mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters:", level = 0)
     for cmd in cmd_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(cmd))
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters complete\n", level = 0)
  
@@ -311,7 +312,7 @@ def main():
                 diag_cmd = naples100_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
                 rslt_cmd = naples100_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
                 nic_key = libmfg_utils.nic_key(slot)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
                 start_ts = datetime.datetime.now().replace(microsecond=0)
                 ret = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
@@ -319,9 +320,9 @@ def main():
                 duration = str(stop_ts - start_ts)
 
                 if ret == "SUCCESS":
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
                 elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration))
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list: 
@@ -331,7 +332,7 @@ def main():
                         pass_nic_list.remove(nic_key)
                         pass_sn_list.remove(sn)
                 else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration))
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list: 

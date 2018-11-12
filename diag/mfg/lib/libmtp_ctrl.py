@@ -1298,9 +1298,9 @@ class mtp_ctrl():
         self.cli_log_inf("NIC Info Dump in the MTP Chassis:", level = 0)
         for slot, prsnt, nic_type in zip(range(self._slots), self._nic_prsnt_list, self._nic_type_list):
             if prsnt:
-                self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
+                self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type), level=0)
             else:
-                self.cli_log_slot_err(slot, "NIC is Absent")
+                self.cli_log_slot_err(slot, "NIC is Absent", level=0)
         self.cli_log_inf("NIC Info Dump in the MTP Chassis complete\n", level = 0)
 
 
@@ -1404,7 +1404,7 @@ class mtp_ctrl():
 
 
     def mtp_set_nic_sn(self, slot, sn):
-        self.cli_log_slot_inf(slot, "Set SN to {:s}".format(sn))
+        self.cli_log_slot_inf(slot, "Set SN to {:s}".format(sn), level=0)
         self._nic_sn_list[slot] = sn
 
 
@@ -1424,7 +1424,7 @@ class mtp_ctrl():
 
 
     def mtp_set_nic_mac(self, slot, mac):
-        self.cli_log_slot_inf(slot, "Set MAC to {:s}".format(mac))
+        self.cli_log_slot_inf(slot, "Set MAC to {:s}".format(mac), level=0)
         self._nic_mac_list[slot] = mac
 
 
