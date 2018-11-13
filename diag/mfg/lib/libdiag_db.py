@@ -97,6 +97,9 @@ class diag_db():
 
 
     def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):   
+        if dsp == "MISC":
+            return ""
+
         if opts["NIC_NAME"]:
             card_name = "nic{:d}".format(slot+1)
         else:
@@ -113,6 +116,9 @@ class diag_db():
 
 
     def get_diag_seq_test_errcode_cmd(self, dsp, slot, opts):   
+        if dsp == "MISC":
+            return "sys_sanity.sh {:d}".format(slot+1)
+
         if opts["NIC_NAME"]:
             card_name = "nic{:d}".format(slot+1)
         else:

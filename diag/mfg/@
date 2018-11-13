@@ -1366,6 +1366,24 @@ class mtp_ctrl():
         return self._nic_type_list[slot]
 
 
+    def mtp_mgmt_nic_jtag_test(self, slot):
+        self.cli_log_slog_inf(slot, "NIC JTAG Test")
+        if True not in self._nic_prsnt_list:
+            self._mgmt_handle.sendline("sys_sanity.sh 1")
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
+            return True
+        else:
+            for slot in range(self._slots):
+                if self._nic_prsnt_list[slot]:
+                    self._mgmt_handle.sendline("sys_sanity.sh {:d}".format(slot+1))
+                    self._mgmt_handle.expect_exact(self._mgmt_prompt)
+                    match = re.findall(r"(valid bit 0x1, +error 0x0+)", self._mgmt_handle.before)
+                    if not match:
+                        self.cli_log_slot_err(slot, "MTP JTAG Sanity Check Failed")
+                        return False
+            return True
+
+
     def mtp_init_nic_sn(self):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
@@ -1440,12 +1458,6 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout)
 
         if test == "JTAG":
-            match = re.findall(r"(valid bit 0x1, +error 0x0+)", self._mgmt_handle.before)
-            if match:
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-
         # Test    Error code, SUCCESS means pass
         match = re.findall(r"%s +([A-Za-z0-9_]+)" %test, str(self._mgmt_handle.before))
         if match:
