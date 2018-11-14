@@ -115,7 +115,7 @@ class diag_db():
         return libmfg_utils.diag_seq_run_cmd(card_name, dsp, test, param)
 
 
-    def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):   
+    def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):
         if test == "JTAG":
             return "sys_sanity.sh {:d}".format(slot+1)
 
