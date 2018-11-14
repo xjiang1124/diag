@@ -97,7 +97,7 @@ class diag_db():
 
 
     def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):   
-        if dsp == "MISC":
+        if test == "JTAG":
             return ""
 
         if opts["NIC_NAME"]:
@@ -115,8 +115,8 @@ class diag_db():
         return libmfg_utils.diag_seq_run_cmd(card_name, dsp, test, param)
 
 
-    def get_diag_seq_test_errcode_cmd(self, dsp, slot, opts):   
-        if dsp == "MISC":
+    def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):   
+        if test == "JTAG":
             return "sys_sanity.sh {:d}".format(slot+1)
 
         if opts["NIC_NAME"]:

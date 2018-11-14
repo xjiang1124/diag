@@ -14,15 +14,14 @@ PARAMS:
     - "MTP1#ASIC#L1#timeout=5400"
 
 MTP_SEQ:
-    MISC:
+    ASIC:
         JTAG:
             INIT: ""
             POST: ""
             OPTS:
                 NIC_NAME: No
                 SN: No
-                SLOT: Yes
-    ASIC:
+                SLOT: No
         PCIE_PRBS:
             INIT: ""
             POST: ""

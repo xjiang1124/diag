@@ -310,7 +310,7 @@ def main():
                 opts = test_cfg["OPTS"]
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 diag_cmd = naples100_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
-                rslt_cmd = naples100_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
+                rslt_cmd = naples100_test_db.get_diag_seq_test_errcode_cmd(dsp, test, slot, opts)
                 nic_key = libmfg_utils.nic_key(slot)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
