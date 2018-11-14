@@ -1,11 +1,13 @@
 package main
 
 import (
-    "flag"
+//    "flag"
 	"common/spi"
     "common/diagEngine"
+    "common/cli"
     "common/dcli"
     "common/errType"
+    "common/misc"
     "config"
 )
 
@@ -26,36 +28,60 @@ func Mvl_Init() {
 func Mvl_AccHdl(argList []string) {
     var data uint32
 
-	MvlRegRead(MVL_ID_REG, &data)
-	if data != MVL_ID {
-	    dcli.Println(ERROR, "MVL acc test failed!")
-	    diagEngine.FuncMsgChan <- errType.
-	}
-	else {
-	    diagEngine.FuncMsgChan <- errType.Success
+    spi.MvlSmiRegRead(0x2, &data, 0x3)
+    cli.Printf("d", "cpld 0x%x", data)
+	spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
+	if (data >> 4) != MVL_ID {
+	    dcli.Println("e", "MVL acc test failed!")
+	    diagEngine.FuncMsgChan <- errType.FAIL
+	} else {
+	    diagEngine.FuncMsgChan <- errType.SUCCESS
+	    dcli.Println("i", "MVL acc test passed!")
 	}
     return
 }
 
-func Mvl_PrbsHdl(argList []string) {
-    var data uint32
-	//get duration, port mask
+func Mvl_StubHdl(argList []string) {
+    var data0, data1 uint32
+	err := 0
 	
-	//start PRBS
+	spi.MvlSmiRegWrite(0x16, 0x6, 0x3)
+	spi.MvlSmiRegWrite(0x12, 0x8, 0x3)
+	spi.MvlSmiRegWrite(0x10, 0x18, 0x3)
+	
+	spi.MvlSmiRegWrite(0x16, 0x6, 0x4)
+	spi.MvlSmiRegWrite(0x12, 0x8, 0x4)
+	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
+	
+	misc.SleepInSec(1)
 	
 	//check error counter
-	
-	if data != MVL_ID {
-	    dcli.Println(ERROR, "MVL acc test failed!")
-	    diagEngine.FuncMsgChan <- errType.
+	spi.MvlSmiRegRead(0x11, &data0, 0x3)
+	if (data0 & 0xFF) != 0 {
+	   dcli.Println("e", "Port 3 stub test has error")
+	   err = 1
+	} else if data0 == 0 {
+	    dcli.Println("e", "Port 3 stub test has no packet")
+	    err = 1
 	}
-	else {
-	    diagEngine.FuncMsgChan <- errType.Success
+	spi.MvlSmiRegRead(0x11, &data1, 0x3)
+	if (data1 & 0xFF) != 0 {
+	   dcli.Println("e", "Port 4 stub test has error")
+	   err = 1
+	} else if data1 == 0 {
+	    dcli.Println("e", "Port 4 stub test has no packet")
+	    err = 1
+	}
+	if err == 1 {
+	    dcli.Println("e", "MVL acc test failed!")
+	    diagEngine.FuncMsgChan <- errType.FAIL
+	} else {
+	    diagEngine.FuncMsgChan <- errType.SUCCESS
 	}
     return
 }
 
-func Mvl_TrfcHdl(argList []string) {
+func Mvl_TrfHdl(argList []string) {
     var data uint32
 
 	//get packet number, port mask
@@ -65,11 +91,10 @@ func Mvl_TrfcHdl(argList []string) {
 	//check error counter
 	
 	if data != MVL_ID {
-	    dcli.Println(ERROR, "MVL acc test failed!")
-	    diagEngine.FuncMsgChan <- errType.
-	}
-	else {
-	    diagEngine.FuncMsgChan <- errType.Success
+	    dcli.Println("e", "MVL acc test failed!")
+	    diagEngine.FuncMsgChan <- errType.FAIL
+	} else {
+	    diagEngine.FuncMsgChan <- errType.SUCCESS
 	}
     return
 }
@@ -79,13 +104,12 @@ func Mvl_LedHdl(argList []string) {
 
 	//duration, port mask?
 	
-	MvlRegRead(MVL_ID_REG, &data)
+	spi.MvlRegRead(MVL_ID_REG, &data, 0x3)
 	if data != MVL_ID {
-	    dcli.Println(ERROR, "MVL acc test failed!")
-	    diagEngine.FuncMsgChan <- errType.
-	}
-	else {
-	    diagEngine.FuncMsgChan <- errType.Success
+	    dcli.Println("e", "MVL acc test failed!")
+	    diagEngine.FuncMsgChan <- errType.FAIL
+	} else {
+	    diagEngine.FuncMsgChan <- errType.SUCCESS
 	}
     return
 }
@@ -93,7 +117,7 @@ func Mvl_LedHdl(argList []string) {
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
     diagEngine.FuncMap["ACC"]	= Mvl_AccHdl
-    diagEngine.FuncMap["PRBS"]	= Mvl_PrbsHdl
+    diagEngine.FuncMap["STUB"]	= Mvl_StubHdl
     diagEngine.FuncMap["TRF"]	= Mvl_TrfHdl
     diagEngine.FuncMap["LED"]	= Mvl_LedHdl
 
