@@ -10,7 +10,7 @@ proc init {} {
     source .tclrc.diag
 }
 
-proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
+proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.0} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
     set chip_id [ cap_get_cur_chip_id ]
     set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
     set log_file cap_snake_${mode}_${board_id}_${cur_time}.log
@@ -43,8 +43,7 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {mac_serdes_int
         return -1
     }
 
-    #cap_snake_test_mtp $snake_num 8000 $mac_serdes_int_lpbk 1600 1 833.0 1 $duration
-    cap_snake_test_mtp $snake_num
+    cap_snake_test_mtp $snake_num 8000 $mac_serdes_int_lpbk 1600 1 $core_freq 1 $duration
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
         plog_msg "cap_snake $mode failed:  $err_cnt"
