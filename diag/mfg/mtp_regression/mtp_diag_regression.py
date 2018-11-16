@@ -46,6 +46,11 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in param_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
  
+    pre_test_check_list = naples_test_db.get_pre_diag_test_intf_list()
+    mtp_mgmt_ctrl.cli_log_inf("Pre Diag Test Check List:")
+    for item in pre_test_check_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+ 
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("Sequential Test List:")
     for item in seq_test_list:
@@ -294,10 +299,38 @@ def main():
 
     # run the naples100 MTP_SEQ diag test
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
+    naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Pre Check Start")
+    for intf in naples100_pre_test_check_list:
+        for slot in naples100_nic_list[:]: 
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_PRE_CHECK", intf), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_diag_check(intf, slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if ret == "SUCCESS":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_PRE_CHECK", intf, duration), level=0)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
+                if stop_on_err:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list: 
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
+    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Pre Check Complete\n")
+
     for loop in range(iteration):
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Start".format(loop))
+
+        mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Start")
         for dsp, test in naples100_seq_test_list:
             test_cfg = naples100_test_db.get_diag_seq_test(dsp, test)
             init_cmd = None
@@ -341,6 +374,7 @@ def main():
                     if nic_key in pass_nic_list:
                         pass_nic_list.remove(nic_key)
                         pass_sn_list.remove(sn)
+        mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Complete\n")
 
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Complete".format(loop))
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)

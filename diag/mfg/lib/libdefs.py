@@ -24,13 +24,9 @@ class Env_Cond(Enum):
 class NIC_Status:
     NIC_STA_POWEROFF = 0
     NIC_STA_POWERUP = 1
-    NIC_STA_NO_SN = 2
-    NIC_STA_NO_MAC = 3
-    NIC_STA_NO_XCVR = 4
-    NIC_STA_HW_READY = 5
-    NIC_STA_DIAG_NOT_RUN = 6
-    NIC_STA_DIAG_FAIL = 7
-    NIC_STA_DIAG_PASS = 8
+    NIC_STA_TERM_FAIL = 2
+    NIC_STA_MGMT_FAIL = 3
+    NIC_STA_OK = 10
     NIC_STA_MAX = 11
 
 
@@ -70,6 +66,7 @@ class MTP_Const:
     NIC_POWER_OFF_DELAY = 10
 
     MTP_DIAGMGR_DELAY = 10
+    MTP_MGMT_IP_SET_DELAY = 10
 
     DIAG_REGRESSION_TIMEOUT = 72000
     DIAG_TEST_TIMEOUT = 7200
@@ -110,6 +107,7 @@ class MTP_DIAG_Logfile:
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
     DIAG_MFG_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
+    DIAG_MFG_DL_LOG_DIR = "/home/xingchang/mfg_log/NAPLES100/DL/"
 
 
 class MTP_DIAG_Path:

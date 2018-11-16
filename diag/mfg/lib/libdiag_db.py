@@ -7,6 +7,7 @@ class diag_db():
         self._skip_test_list = list()
         self._test_param_list = list()
         self._seq_test_id_list = list()
+        self._pre_test_intf_list = list()
         self._para_test_id_list = list()
         self._seq_tests = dict()
         self._para_tests = dict()
@@ -47,6 +48,11 @@ class diag_db():
             else:
                 param_cmd = libmfg_utils.diag_param_cmd(tmp_list)
                 self._test_param_list.append(param_cmd)
+
+        # pre test interface check:
+        for intf in diag_test_cfg["MTP_PRE"].keys():
+            if diag_test_cfg["MTP_PRE"][intf]:
+                self._pre_test_intf_list.append(intf)
 
         # sequential test:
         for dsp in diag_test_cfg["MTP_SEQ"].keys():
@@ -96,10 +102,11 @@ class diag_db():
         return self._seq_test_id_list
 
 
-    def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):   
-        if test == "JTAG":
-            return ""
+    def get_pre_diag_test_intf_list(self):   
+        return self._pre_test_intf_list
 
+
+    def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):   
         if opts["NIC_NAME"]:
             card_name = "nic{:d}".format(slot+1)
         else:
@@ -116,9 +123,6 @@ class diag_db():
 
 
     def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):
-        if test == "JTAG":
-            return "sys_sanity.sh {:d}".format(slot+1)
-
         if opts["NIC_NAME"]:
             card_name = "nic{:d}".format(slot+1)
         else:

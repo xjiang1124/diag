@@ -13,15 +13,13 @@ SKIP:
 PARAMS:
     - "MTP1#ASIC#L1#timeout=5400"
 
+MTP_PRE:
+    NIC_JTAG: True
+    NIC_MGMT: True
+    NIC_FRU:  True
+
 MTP_SEQ:
     ASIC:
-        JTAG:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: No
-                SN: No
-                SLOT: No
         PCIE_PRBS:
             INIT: ""
             POST: ""

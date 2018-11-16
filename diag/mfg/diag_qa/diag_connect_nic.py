@@ -8,7 +8,7 @@ import argparse
 import re
 import random
 
-sys.path.append(os.path.relpath("lib"))
+sys.path.append(os.path.relpath("../lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
@@ -18,35 +18,22 @@ from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
 
 
-def logfile_close(filep_list):
-    for fp in filep_list:
-        fp.close()
-    os.system("sync")
-
-
-def logfile_cleanup(file_list):
-    for _file in file_list:
-        os.system("rm -f {:s}".format(_file))
-
-
 def main():
-    parser = argparse.ArgumentParser(description="MFG Barcode Scanner Utility", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--error-injection", help="The utility will randomly generate error", action='store_true')
-    parser.add_argument("--verbosity", help="display more debug information", action='store_true')
+    parser = argparse.ArgumentParser(description="Diag QA login onto NIC utility", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--mtp", help="MTP ID")
+    parser.add_argument("--slot", help="slot number to be connected", type=int, required=True)
 
-    err_inj = False
-    verbosity = False
     args = parser.parse_args()
-    if args.error_injection:
-        err_inj = True
-    if args.verbosity:
-        verbosity = True
+    if args.mtp:
+        mtp_id = args.mtp
+    else:
+        mtp_id = None
 
+    slot = args.slot
+    
+    if not mtp_id:
     # get the absolute file path
-    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-
-    # load the product server config
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
     pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
     if len(pro_srv_list) > 1:
