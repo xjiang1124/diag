@@ -56,6 +56,8 @@ func main() {
 
     if *updatePtr == true {
 //        hwdev.EepromUpdate(devName, mac, sn)
+        CpldWrite(0x1, 0x2)
+        misc.SleepInUSec(1000)
         if mac != "" {
             hwdev.EepromUpdateMac(devName, mac)
             misc.SleepInUSec(500000)
@@ -68,6 +70,7 @@ func main() {
             hwdev.EepromUpdateDate(devName, date)
             misc.SleepInUSec(500000)
         }
+        CpldWrite(0x1, 0x6)
         return
     }
 

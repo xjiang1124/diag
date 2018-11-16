@@ -42,7 +42,8 @@ ARM64_SRC_DIR=			\
 
 ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\
-	util/capricpld
+	util/capricpld		\
+	lib/capricpld
 
 
 
