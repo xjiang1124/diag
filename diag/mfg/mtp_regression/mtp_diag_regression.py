@@ -7,7 +7,7 @@ import pexpect
 import re
 import argparse
 import random
-import datetime 
+import datetime
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -35,27 +35,27 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("Init Command List:")
     for item in cmd_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
- 
+
     skip_list = naples_test_db.get_skip_test_list()
     mtp_mgmt_ctrl.cli_log_inf("Skip Test List:")
     for item in skip_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
- 
+
     param_list = naples_test_db.get_test_param_list()
     mtp_mgmt_ctrl.cli_log_inf("Parameter List:")
     for item in param_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
- 
+
     pre_test_check_list = naples_test_db.get_pre_diag_test_intf_list()
     mtp_mgmt_ctrl.cli_log_inf("Pre Diag Test Check List:")
     for item in pre_test_check_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
- 
+
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("Sequential Test List:")
     for item in seq_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
- 
+
     para_test_list = naples_test_db.get_diag_para_test_list()
     mtp_mgmt_ctrl.cli_log_inf("Parallel Test List:")
     for item in para_test_list:
@@ -70,7 +70,7 @@ def naples_exec_init_cmd(naples_test_db, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("Execute Command in Init Command List:", level = 0)
     for cmd in cmd_list:
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
- 
+
     return
 
 
@@ -79,7 +79,7 @@ def naples_exec_skip_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("Execute Command in Skip Command List:", level = 0)
     for cmd in cmd_list:
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
- 
+
     return
 
 
@@ -90,7 +90,7 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(cmd))
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters complete\n", level = 0)
- 
+
     return
 
 
@@ -158,7 +158,7 @@ def main():
         for slot in skip_list:
             try:
                 val = int(slot)
-                if val > MTP_Const.MTP_SLOT_NUM or val <= 0: 
+                if val > MTP_Const.MTP_SLOT_NUM or val <= 0:
                     libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid slot number")
                 skip_nic_list.append(libmfg_utils.nic_key(val, base=0))
             except ValueError:
@@ -180,7 +180,7 @@ def main():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
     open_file_track_list = list()
-        
+
     mtp_script_dir = os.getcwd()
     mtp_test_log_file = mtp_script_dir + "/mtp_test.log"
     mtp_diag_log_file = mtp_script_dir + "/mtp_diag.log"
@@ -226,8 +226,8 @@ def main():
         return
 
     # load the diag test config
-    naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml" 
-    #naples25_test_cfg_file = "config/naples25_mtp_test_cfg.yaml" 
+    naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml"
+    #naples25_test_cfg_file = "config/naples25_mtp_test_cfg.yaml"
     naples100_test_db = diag_db(naples100_test_cfg_file)
     #naples25_test_db = diag_db(naples25_test_cfg_file)
 
@@ -305,7 +305,7 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Pre Check Start")
     for intf in naples100_pre_test_check_list:
-        for slot in naples100_nic_list[:]: 
+        for slot in naples100_nic_list[:]:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_PRE_CHECK", intf), level=0)
@@ -319,7 +319,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
                 if stop_on_err:
                     naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list: 
+                if nic_key not in fail_nic_list:
                     fail_nic_list.append(nic_key)
                     fail_sn_list.append(sn)
                 if nic_key in pass_nic_list:
@@ -339,7 +339,7 @@ def main():
                 init_cmd = test_cfg["INIT"]
             if test_cfg["POST"] != "":
                 post_cmd = test_cfg["POST"]
-            for slot in naples100_nic_list[:]: 
+            for slot in naples100_nic_list[:]:
                 opts = test_cfg["OPTS"]
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 diag_cmd = naples100_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
@@ -358,7 +358,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list: 
+                    if nic_key not in fail_nic_list:
                         fail_nic_list.append(nic_key)
                         fail_sn_list.append(sn)
                     if nic_key in pass_nic_list:
@@ -368,7 +368,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list: 
+                    if nic_key not in fail_nic_list:
                         fail_nic_list.append(nic_key)
                         fail_sn_list.append(sn)
                     if nic_key in pass_nic_list:

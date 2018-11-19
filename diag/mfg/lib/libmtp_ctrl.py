@@ -82,19 +82,25 @@ class mtp_ctrl():
     def cli_log_slot_inf(self, slot, msg, level = 1):
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        libmfg_utils.cli_log_inf(self._filep, nic_cli_id_str + indent + msg)
+        if self._filep:
+            libmfg_utils.cli_log_inf(self._filep, nic_cli_id_str + indent + msg)
+        else:
+            libmfg_utils.cli_inf(nic_cli_id_str + indent + msg)
 
 
     def cli_log_slot_err(self, slot, msg, level = 1):
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        libmfg_utils.cli_log_err(self._filep, nic_cli_id_str + indent + msg)
+        if self._filep:
+            libmfg_utils.cli_log_err(self._filep, nic_cli_id_str + indent + msg)
+        else:
+            libmfg_utils.cli_err(nic_cli_id_str + indent + msg)
 
 
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
 
-    
+
     def get_mgmt_cfg(self):
         return self._mgmt_cfg
 
@@ -362,7 +368,7 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
             return None
-        idx = handle.expect_exact(self._prompt_list, timeout = 5) 
+        idx = handle.expect_exact(self._prompt_list, timeout = 5)
         if (idx < len(self._prompt_list)):
             handle.sendline("whoami")
             handle.expect_exact(userid)
@@ -406,7 +412,7 @@ class mtp_ctrl():
                     return None
 
         try:
-            idx = self._mgmt_handle.expect_exact(self._prompt_list, timeout = 5) 
+            idx = self._mgmt_handle.expect_exact(self._prompt_list, timeout = 5)
             if (idx < len(self._prompt_list)):
                 self._mgmt_prompt = self._prompt_list[idx]
                 self._mgmt_handle.sendline("whoami")
@@ -424,7 +430,7 @@ class mtp_ctrl():
                 return None
         except pexpect.TIMEOUT:
             libmfg_utils.sys_exit("MTP mgmt connection hangs...")
-       
+
 
     def mtp_prompt_cfg(self, handle, userid, prompt):
         handle.sendline("stty rows 50 cols 160")
@@ -615,7 +621,7 @@ class mtp_ctrl():
             self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
 
             # program the cpld
-            img_name = os.path.basename(cpld_img) 
+            img_name = os.path.basename(cpld_img)
             nic_cmd_list = list()
             nic_cmd = "/mnt/cpld -prog /{:s}".format(img_name)
             nic_cmd_list.append(nic_cmd)
@@ -652,7 +658,7 @@ class mtp_ctrl():
             self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
 
             # program the vrm
-            img_name = os.path.basename(vrm_img) 
+            img_name = os.path.basename(vrm_img)
             nic_cmd_list = list()
             nic_cmd = "/mnt/devmgr -program -file=/{:s}".format(img_name)
             nic_cmd_list.append(nic_cmd)
@@ -685,7 +691,7 @@ class mtp_ctrl():
             self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
 
             # program the qspi
-            img_name = os.path.basename(qspi_img) 
+            img_name = os.path.basename(qspi_img)
             nic_cmd_list = list()
             nic_cmd = "/nic/tools/sysupdate.sh -p /{:s}".format(img_name)
             nic_cmd_list.append(nic_cmd)
@@ -879,7 +885,7 @@ class mtp_ctrl():
             self.cli_log_err("Fan speed diag test timeout.")
             rc = False
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        
+
         # put the fan speed back
         cmd_str = "devmgr -dev=fan -speed -pct={:d}".format(MTP_Const.NORMAL_TEMP_FAN_SPD)
         self._mgmt_handle.sendline(cmd_str)
@@ -902,7 +908,7 @@ class mtp_ctrl():
                 self.cli_log_err(psu_cli_id_str + " is not present")
                 rc = False
             elif idx == 1:
-                # double check if the apc is on. 
+                # double check if the apc is on.
                 match = re.findall(r"-\.-", self._mgmt_handle.before)
                 if match:
                     self.cli_log_err(psu_cli_id_str + " is present, but input power is off")
@@ -922,7 +928,7 @@ class mtp_ctrl():
                 self.cli_log_err(psu_cli_id_str + " is not present")
                 rc = False
             elif idx == 1:
-                # double check if the apc is on. 
+                # double check if the apc is on.
                 match = re.findall(r"-\.-", self._mgmt_handle.before)
                 if match:
                     self.cli_log_err(psu_cli_id_str + " is present, but input power is off")
@@ -985,14 +991,14 @@ class mtp_ctrl():
         # naples100 dsp check
         self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
         naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
-        for dsp in naples100_dsp_list: 
+        for dsp in naples100_dsp_list:
             if dsp not in self._mgmt_handle.before:
                 self.cli_log_err("Diag DSP: {:s} is not detected".format(dsp), level = 0)
                 return False
         self.cli_log_inf("Diag DSP Sanity Check Complete\n", level = 0)
 
         return True
- 
+
 
     def mtp_hw_init(self, psu_check):
         rc = True
@@ -1000,7 +1006,7 @@ class mtp_ctrl():
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # fan init
         rc &= self.mtp_fan_init()
-        
+
         if psu_check and not MFG_BYPASS_PSU_CHECK:
             # psu init
             rc &= self.mtp_psu_init()
@@ -1016,7 +1022,7 @@ class mtp_ctrl():
             self.cli_log_inf("MTP chassis sanity check failed\n", level = 0)
 
         return True
-        #return rc 
+        #return rc
 
 
     def mtp_diag_env_init(self, fan_speed, vmarg):
@@ -1057,7 +1063,7 @@ class mtp_ctrl():
                 else:
                     break
             else:
-                if inlet < high_threshold: 
+                if inlet < high_threshold:
                     time.sleep(MTP_Const.MTP_TEMP_CHECK_INTERVAL)
                     timeout -= MTP_Const.MTP_TEMP_CHECK_INTERVAL
                 else:
@@ -1075,7 +1081,7 @@ class mtp_ctrl():
         time.sleep(MTP_Const.DIAG_HW_SOAK_DELAY)
         inlet = self.mtp_get_inlet_temp()
         self.cli_log_inf("Soaking process complete, current inlet reading is {:2.2f}".format(inlet))
-        return True 
+        return True
 
 
     def mtp_get_inlet_temp(self):
@@ -1168,13 +1174,13 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         return True
 
- 
+
     # retrieve fru info from nic
     # return [sn, date, mac]
     def mtp_mgmt_get_nic_fru_info(self, slot):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
-            return None 
+            return None
 
         # dump the fru
         self._mgmt_handle.sendline("/mnt/cpld -r 0")
@@ -1200,7 +1206,7 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         self.cli_log_slot_inf(slot, "Retrieve info from FRU {:s}-{:s}-{:s}".format(sn, date, mac))
         if sn == "" or date == "" or mac == "":
-            return None 
+            return None
 
         return [sn, date, mac]
 
@@ -1337,7 +1343,7 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
         match = re.findall(r"UUT_(\d+) +NAPLES\d+", self._mgmt_handle.before)
-        if match: 
+        if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
                 self._nic_prsnt_list[slot] = True
@@ -1353,13 +1359,13 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
         match = re.findall(r"UUT_(\d+) +NAPLES100", self._mgmt_handle.before)
-        if match: 
+        if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
                 self._nic_type_list[slot] = NIC_Type.NAPLES100
 
         match = re.findall(r"UUT_(\d+) +NAPLES25", self._mgmt_handle.before)
-        if match: 
+        if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
                 self._nic_type_list[slot] = NIC_Type.NAPLES25
@@ -1486,7 +1492,7 @@ class mtp_ctrl():
                 if self._nic_prsnt_list[slot]:
                     self.cli_log_slot_err(slot, "NIC is present, but barcode is not scanned")
                     return MTP_DIAG_Error.NIC_DIAG_FAIL
-           
+
                 # mac/sn should match
             if self._nic_scan_prsnt_list[slot] and self._nic_prsnt_list[slot]:
                 if self._nic_scan_sn_list[slot] != self._nic_sn_list[slot]:
@@ -1527,7 +1533,7 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
-        
+
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
@@ -1566,14 +1572,14 @@ class mtp_ctrl():
         scan_nic_key_list = list()
         scan_sn_list = list()
         scan_mac_list = list()
- 
+
         # build all valid nic key list
         for slot in range(self._slots):
             key = libmfg_utils.nic_key(slot)
             valid_nic_key_list.append(key)
             if present_check and self._nic_prsnt_list[slot]:
                 unscanned_nic_key_list.append(key)
- 
+
         while True:
             if present_check:
                 unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
@@ -1582,7 +1588,7 @@ class mtp_ctrl():
                 usr_prompt = "\nPlease Scan NIC ID Barcode:"
             nic_scan_rslt = dict()
             raw_scan = raw_input(usr_prompt)
- 
+
             if raw_scan == "STOP":
                 if present_check and len(unscanned_nic_key_list) != 0:
                     self.cli_log_err("{:s} have not scanned yet".format(unscanned_nic_list_cli_str), level=0)
@@ -1608,7 +1614,7 @@ class mtp_ctrl():
                         continue
                     else:
                         scan_nic_key_list.append(key)
- 
+
             usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
             raw_scan = raw_input(usr_prompt)
             sn = libmfg_utils.serial_number_validate(raw_scan)
@@ -1620,7 +1626,7 @@ class mtp_ctrl():
                 return None
             else:
                 scan_sn_list.append(sn)
- 
+
             usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
             raw_scan = raw_input(usr_prompt)
             mac = libmfg_utils.mac_address_validate(raw_scan)
@@ -1633,14 +1639,14 @@ class mtp_ctrl():
                 return None
             else:
                 scan_mac_list.append(mac)
- 
+
             ts_snapshot = libmfg_utils.get_timestamp()
             nic_scan_rslt["NIC_VALID"] = True
             nic_scan_rslt["NIC_SN"] = sn
             nic_scan_rslt["NIC_MAC"] = mac
             nic_scan_rslt["NIC_TS"] = ts_snapshot
             mtp_scan_rslt[key] = nic_scan_rslt
- 
+
         nic_empty_list = list(set(valid_nic_key_list).difference(set(scan_nic_key_list)))
         for key in nic_empty_list:
             nic_scan_rslt = dict()
@@ -1660,7 +1666,7 @@ class mtp_ctrl():
             key = libmfg_utils.nic_key(slot)
             tmp = "    " + key + ":"
             config_lines.append(tmp)
- 
+
             if scan_rslt[key]["NIC_VALID"]:
                 tmp = "        VALID: \"Yes\""
                 config_lines.append(tmp)
@@ -1673,6 +1679,6 @@ class mtp_ctrl():
             else:
                 tmp = "        VALID: \"No\""
                 config_lines.append(tmp)
- 
+
         for line in config_lines:
             file_p.write(line + "\n")

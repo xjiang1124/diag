@@ -18,16 +18,16 @@ class nic_con:
 
     def uart_session_start(self, session, baud=115200):
         cmd = self.fmt_con_cmd.format(baud)
-        expstr = ["capri login: ", "\# "]
+        expstr = ["capri login:", "\#"]
         try:
             session.send(cmd)
             session.send("\r")
             i = session.expect(expstr, 15)
             if i == 0:
                 session.sendline(self.usr)
-                session.expect("Password: ")
+                session.expect("Password:")
                 session.sendline(self.pwd)
-                session.expect("\# ")
+                session.expect("\#")
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Can not connect to NIC on UART!"
             return -1
@@ -37,13 +37,13 @@ class nic_con:
         try:
             session.sendcontrol('a')
             session.sendcontrol('x')
-            session.expect("\$ ")
+            session.expect("\$")
             return 0
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to stop UART session ==="
             return -1
 
-    def uart_session_cmd(self, session, cmd, timeout=30, ending="\# "):
+    def uart_session_cmd(self, session, cmd, timeout=30, ending="\#"):
         session.timeout = timeout
         try:
             session.sendline(cmd)
@@ -64,8 +64,10 @@ class nic_con:
 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
         common.session_cmd(session, cmd) 
+        time.sleep(3)
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
+        time.sleep(3)
 
         self.uart_session_start(session, orig_rate)
 
@@ -87,7 +89,7 @@ class nic_con:
         session.timeout = 30
         if ping == True:
             session.sendline("ping -w3 10.1.1.{}".format(100+slot))
-            session.expect("\$ ")
+            session.expect("\$")
             if ", 0% packet loss" not in session.before:
                 self.enable_mgmt(rate, slot, True)
         else:
@@ -104,8 +106,10 @@ class nic_con:
 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
         common.session_cmd(session, cmd) 
+        time.sleep(3)
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
+        time.sleep(3)
 
         self.uart_session_start(session, rate)
 
@@ -118,7 +122,7 @@ class nic_con:
             for i in range(10):
 
                 session.sendline("ifconfig -a")
-                session.expect("\# ")
+                session.expect("\#")
                 temp = session.after
                 if 'eth0' in session.before:
                     print 'eth0 enabled'
@@ -130,7 +134,7 @@ class nic_con:
                     self.uart_session_cmd(session, "sh /platform/tools/load_mnic.sh", 120)
 
                     session.sendline("ifconfig -a")
-                    session.expect("\# ")
+                    session.expect("\#")
                     temp = session.after
                     if 'eth0' in session.before:
                         print 'eth0 enabled'
