@@ -630,7 +630,7 @@ class mtp_ctrl():
             return True
 
 
-    def mtp_verify_nic_cpld(self, slot, cpld_img):
+    def mtp_verify_nic_cpld(self, slot):
         self.cli_log_slot_inf(slot, "Verify NIC CPLD")
         hw_info = self.mtp_mgmt_get_nic_hw_info(slot)
         if not hw_info:
@@ -982,18 +982,38 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_nic_utils_dl(self, slot):
-        # copy nic utils onto nic
+        # nic utils list
+        nic_utils_list = ["cpld", "devmgr", "eeutil", "rtcutil", "smbutil", "update_mac.py"]
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-        cmd = "scp {:s} /home/diag/nic_util/* {:s}@{:s}:/mnt".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
-        self._mgmt_handle.sendline(cmd)
-        idx = self._mgmt_handle.expect_exact(["assword:", pexpect.TIMEOUT])
-        if idx == 0:
-            self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
-            self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
-            return True
-        else:
-            self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
+
+        # copy nic utils onto nic
+        for util in nic_utils_list:
+            cmd = "scp {:s} /home/diag/nic_util/{:s} {:s}@{:s}:/mnt".format(libmfg_utils.get_ssh_option(), util, NIC_MGMT_USERNAME, ipaddr)
+            self._mgmt_handle.sendline(cmd)
+            idx = self._mgmt_handle.expect_exact(["assword:", pexpect.TIMEOUT])
+            if idx == 0:
+                self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+                self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
+            else:
+                self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
+                return False
+
+        # check nic utils are on the nic
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
+        if not nic_prompt:
             return False
+        nic_cmd = "ls /mnt"
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+        for util in nic_utils_list:
+            if util not in self._mgmt_handle.before:
+                self.cli_log_slot_err(slot, "Copy NIC Util '{:s}' Failed".format(util))
+                return False
+
+        # disconnect the nic
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        return True
 
 
     def mtp_mgmt_exec_nic_con_cmd(self, slot, nic_con_cmd):
