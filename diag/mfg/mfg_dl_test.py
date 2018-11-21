@@ -275,14 +275,14 @@ def main():
             #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
             #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             #     return ret
-            # 
+            #
             # # program VRM
             # ret = mtp_mgmt_ctrl.mtp_program_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
             # if not ret:
             #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
             #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             #     return ret
-            
+
             # program QSPI
             start_ts = datetime.datetime.now().replace(microsecond=0)
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
@@ -345,14 +345,14 @@ def main():
             #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
             #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             #     return ret
-            # 
+            #
             # # verify VRM
             # ret = mtp_mgmt_ctrl.mtp_verify_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
             # if not ret:
             #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
             #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             #     return ret
-            
+
             # verify QSPI
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DL_QSPI", "QSPI_VERIFY"), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
