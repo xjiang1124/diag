@@ -1,31 +1,28 @@
 MTP-003:
     SRV: PENSANDO-PRO-SRV1
-    TS: 2018-11-16_16-26-25
+    TS: 2018-11-20_13-36-55
     NIC-01:
         VALID: "Yes"
-        SN: "FLM18111601"
-        MAC: "00AECD000001"
-        TS: 2018-11-16_16-27-23
+        SN: "FLM1837000A"
+        MAC: "00AECD00000A"
+        TS: 2018-11-20_13-37-16
     NIC-02:
         VALID: "Yes"
-        SN: "FLM18111602"
-        MAC: "00AECD000002"
-        TS: 2018-11-16_16-27-34
+        SN: "FLM18310005"
+        MAC: "00AECD000005"
+        TS: 2018-11-20_13-37-30
     NIC-03:
         VALID: "Yes"
-        SN: "FLM18111603"
-        MAC: "00AECD000003"
-        TS: 2018-11-16_16-27-45
+        SN: "FLM18400008"
+        MAC: "00AECD000008"
+        TS: 2018-11-20_13-37-46
     NIC-04:
         VALID: "Yes"
-        SN: "FLM18111604"
-        MAC: "00AECD000004"
-        TS: 2018-11-16_16-27-57
+        SN: "FLM18370003"
+        MAC: "00AECD000003"
+        TS: 2018-11-20_13-38-00
     NIC-05:
-        VALID: "Yes"
-        SN: "FLM18111605"
-        MAC: "00AECD000005"
-        TS: 2018-11-16_16-28-10
+        VALID: "No"
     NIC-06:
         VALID: "No"
     NIC-07:

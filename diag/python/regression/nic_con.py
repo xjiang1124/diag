@@ -13,19 +13,20 @@ class nic_con:
     def __init__(self):
         self.usr = "root"
         self.pwd = "pen123"
-        self.fmt_con_cmd = "picocom -b {} -f h /dev/ttyS1\n"
+        self.fmt_con_cmd = "picocom -b {} -f h /dev/ttyS1"
         self.fmt_change_rate = "stty speed {}"
 
     def uart_session_start(self, session, baud=115200):
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "\#"]
         try:
-            session.send(cmd)
+            session.sendline(cmd)
+            session.expect("Terminal ready")
             session.send("\r")
             i = session.expect(expstr, 15)
             if i == 0:
                 session.sendline(self.usr)
-                session.expect("Password:")
+                session.expect("assword:")
                 session.sendline(self.pwd)
                 session.expect("\#")
         except pexpect.TIMEOUT:
@@ -155,6 +156,7 @@ class nic_con:
             self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
 
         except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
             print "=== TIMEOUT: Faled to enable management port ==="
             return -1
 

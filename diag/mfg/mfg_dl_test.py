@@ -3,6 +3,7 @@
 import sys
 import os
 import time
+import datetime
 import pexpect
 import argparse
 import re
@@ -13,6 +14,7 @@ import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Logfile
+from libdefs import MTP_DIAG_Report
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -29,48 +31,62 @@ def logfile_cleanup(file_list):
         os.system("rm -f {:s}".format(_file))
 
 
-def main():
-    parser = argparse.ArgumentParser(description="MFG Barcode Scanner Utility", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--error-injection", help="The utility will randomly generate error", action='store_true')
-    parser.add_argument("--verbosity", help="display more debug information", action='store_true')
-
-    err_inj = False
-    verbosity = False
-    args = parser.parse_args()
-    if args.error_injection:
-        err_inj = True
-    if args.verbosity:
-        verbosity = True
-
-    # get the absolute file path
-    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
+def get_pro_srv_id():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-
-    # load the product server config
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
     pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
     if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Choose Product Server", pro_srv_list)
+        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
         if not pro_srv_id:
-            return
+            return None
     else:
         pro_srv_id = pro_srv_list[0]
+    return pro_srv_id
 
-    # find the mtp config files controlled by the chosen product server
+
+def load_mtp_cfg():
+    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
+    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
+    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
+    if len(pro_srv_list) > 1:
+        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
+        if not pro_srv_id:
+            return None
+    else:
+        pro_srv_id = pro_srv_list[0]
     filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
     mtp_chassis_cfg_file = os.path.abspath("config/" + filename)
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    return mtp_cfg_db
+
+
+def get_mtpid_list(mtp_cfg_db):
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
-    # find the mtp management config based on the mtpid
+    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
+    return sub_mtpid_list
+
+
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
+    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
-
-    # find the apc config based on the mtpid
+        return
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    return mtp_mgmt_ctrl
+
+
+def main():
+    parser = argparse.ArgumentParser(description="MFG Barcode Scanner Utility", formatter_class=argparse.RawTextHelpFormatter)
+
+    pro_srv_id = get_pro_srv_id()
+    mtp_cfg_db = load_mtp_cfg()
+    mtpid_list = get_mtpid_list(mtp_cfg_db)
+    mtp_id = mtpid_list[0]
+    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     # local log files
     log_file_list = list()
@@ -84,8 +100,45 @@ def main():
     test_log_filep = open(test_log_file, "w+")
     log_filep_list.append(test_log_filep)
 
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg, dbg_mode = verbosity)
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep)
+
+    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
+    while True:
+        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False)
+        if scan_rslt:
+            break;
+        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
+
+    pass_rslt_list = list()
+    fail_rslt_list = list()
+    # print scan summary
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
+        if scan_rslt[key]["NIC_VALID"]:
+            sn = scan_rslt[key]["NIC_SN"]
+            mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
+            pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui)
+        else:
+            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
+    libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
+
+    scan_cfg_file = "_".join(["barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
+    scan_cfg_filep = open(scan_cfg_file, "w+")
+    mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
+    scan_cfg_filep.close()
+    log_file_list.append(scan_cfg_file)
+
+    # get the absolute file path
+    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
+    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
+    naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
+    naples100_vrm_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["VRM_FILE"]
+    naples100_vrm_img_cksum = nic_fw_cfg[NIC_Type.NAPLES100]["VRM_CKSUM"]
+    naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
+
+    # reload the barcode config file
+    nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
@@ -116,62 +169,29 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    # power on all the nic.
+    # init all the nic.
     if not mtp_mgmt_ctrl.mtp_nic_init(fru_load = False):
         mtp_mgmt_ctrl.cli_log_err("Diag Initialize NIC Fail", level=0)
 
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-    if not True in nic_prsnt_list:
-        mtp_mgmt_ctrl.cli_log_inf("No NIC Present, Abort Barcode Scan Process", level=0)
-        logfile_close(log_filep_list)
-        return
+    pass_nic_list = list()
+    pass_sn_list = list()
+    fail_nic_list = list()
+    fail_sn_list = list()
+    naples100_sn_list = list()
 
-    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
-    naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
-    naples100_vrm_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["VRM_FILE"]
-    naples100_vrm_img_cksum = nic_fw_cfg[NIC_Type.NAPLES100]["VRM_CKSUM"]
-    naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
-    naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
-    naples25_vrm_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["VRM_FILE"]
-    naples25_vrm_img_cksum = nic_fw_cfg[NIC_Type.NAPLES25]["VRM_CKSUM"]
-    naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
-
-    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-    while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan()
-        if scan_rslt:
-            break;
-        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-
-    pass_rslt_list = list()
-    fail_rslt_list = list()
-    # print scan summary
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["NIC_VALID"]:
-            sn = scan_rslt[key]["NIC_SN"]
-            mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
-            pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui)
-        else:
-            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-    libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
-
-    scan_cfg_file = "_".join(["barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
-    scan_cfg_filep = open(scan_cfg_file, "w+")
-    mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
-    scan_cfg_filep.close()
-    log_file_list.append(scan_cfg_file)
-
-    # reload the barcode config file
-    nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-
-    mtp_mgmt_ctrl.cli_log_inf("FRU Program Matrix:", level=0)
-    err_inj_slot_list = list()
+    mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
+
+        if mtp_mgmt_ctrl.mtp_get_nic_prsnt(slot) and str.upper(valid) != "YES":
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC is present, but barcode is not scanned")
+            mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Stopped", level=0)
+            break
+
         if str.upper(valid) == "YES":
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC FW Update Started", level=0)
+
             sn = nic_fru_cfg[mtp_id][key]["SN"]
             mac = nic_fru_cfg[mtp_id][key]["MAC"]
             mac_ui = libmfg_utils.mac_address_format(mac)
@@ -181,85 +201,196 @@ def main():
                 vrm_img_file = naples100_vrm_img_file
                 vrm_img_cksum = naples100_vrm_img_cksum
                 qspi_img_file = naples100_qspi_img_file
-            elif card_type == NIC_Type.NAPLES25:
-                cpld_img_file = naples25_cpld_img_file
-                vrm_img_file = naples25_vrm_img_file
-                vrm_img_cksum = naples25_vrm_img_cksum
-                qspi_img_file = naples25_qspi_img_file
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
-                logfile_close(log_filep_list)
-                return
-
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = " + sn + "; MAC = " + mac_ui, level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file), level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file), level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file), level=0)
-            err_inj_slot_list.append(slot)
-    mtp_mgmt_ctrl.cli_log_inf("FRU Program Matrix end\n", level=0)
-
-    if err_inj:
-        err_inj_slot = random.choice(err_inj_slot_list)
-    else:
-        err_inj_slot = MTP_Const.MTP_SLOT_INVALID
-
-    fail_nic_list = list()
-    pass_nic_list = list()
-    naples100_sn_list = list()
-    naples25_sn_list = list()
-    mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-
-        if err_inj_slot == slot:
-            slot_err_inj = True
-        else:
-            slot_err_inj = False
-
-        if str.upper(valid) == "YES":
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100:
-                cpld_img_file = naples100_cpld_img_file
-                vrm_img_file = naples100_vrm_img_file
-                vrm_img_cksum = naples100_vrm_img_cksum
-                qspi_img_file = naples100_qspi_img_file
                 naples100_sn_list.append(sn)
-            elif card_type == NIC_Type.NAPLES25:
-                cpld_img_file = naples25_cpld_img_file
-                vrm_img_file = naples25_vrm_img_file
-                vrm_img_cksum = naples25_vrm_img_cksum
-                qspi_img_file = naples25_qspi_img_file
-                naples25_sn_list.append(sn)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
                 logfile_close(log_filep_list)
                 return
 
-            if not mtp_mgmt_ctrl.mtp_nic_fw_update(slot, sn, mac, cpld_img_file, vrm_img_file, vrm_img_cksum, qspi_img_file, slot_err_inj):
+            mtp_mgmt_ctrl.mtp_set_nic_scan_sn(slot, sn)
+            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
+            mtp_mgmt_ctrl.mtp_set_nic_scan_mac(slot, mac)
+            mtp_mgmt_ctrl.mtp_set_nic_mac(slot, mac)
+
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FRU Program Matrix:", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = " + sn + "; MAC = " + mac_ui)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FRU Program Matrix end\n", level=0)
+
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DL_PRE_CHECK", "NIC_PRSNT"), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_diag_check("NIC_FRU", slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_PRE_CHECK", "NIC_PRSNT", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
                 fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
             else:
-                pass_nic_list.append(key)
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_PRE_CHECK", "NIC_PRSNT", duration), level=0)
+
+            # power on nic
+            mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+
+            # init nic for fw update
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DL_PRE_CHECK", "NIC_INIT"), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_PRE_CHECK", "NIC_INIT", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_PRE_CHECK", "NIC_INIT", duration), level=0)
+
+            # program FRU
+            prog_date = libmfg_utils.get_fru_date()
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_FRU", "FRU_PROG", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_FRU", "FRU_PROG", duration), level=0)
+
+            # # program CPLD
+            # ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+            # if not ret:
+            #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            #     return ret
+            # 
+            # # program VRM
+            # ret = mtp_mgmt_ctrl.mtp_program_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
+            # if not ret:
+            #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            #     return ret
+            
+            # program QSPI
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_QSPI", "QSPI_PROG", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_QSPI", "QSPI_PROG", duration), level=0)
+
+            # power cycle nic
+            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
+            mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+
+            # init nic for fw verify
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DL_PRE_CHECK", "NIC_INIT"), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_PRE_CHECK", "NIC_INIT", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_PRE_CHECK", "NIC_INIT", duration), level=0)
+
+            # verify FRU
+            # mm/dd/yy
+            exp_date = "/".join(re.findall("..", prog_date))
+            exp_sn = sn
+            exp_mac = "-".join(re.findall("..", mac.lower()))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DL_FRU", "FRU_VERIFY"), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_date, exp_sn, exp_mac)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_FRU", "FRU_VERIFY", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_FRU", "FRU_VERIFY", duration), level=0)
+
+            # # verify CPLD
+            # ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, cpld_img_file)
+            # if not ret:
+            #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            #     return ret
+            # 
+            # # verify VRM
+            # ret = mtp_mgmt_ctrl.mtp_verify_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
+            # if not ret:
+            #     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            #     return ret
+            
+            # verify QSPI
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DL_QSPI", "QSPI_VERIFY"), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot, qspi_img_file)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DL_QSPI", "QSPI_VERIFY", "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DL_QSPI", "QSPI_VERIFY", duration), level=0)
+
+            # update MAC address
+            # mtp_mgmt_ctrl.mtp_update_nic_mac_address(slot)
+
+            # power off nic
+            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Passed\n", level=0)
+            pass_nic_list.append(key)
+            pass_sn_list.append(sn)
+
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
 
-   # mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-   # mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-   # libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-   # mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-   # mtp_mgmt_ctrl.mtp_apc_pwr_off()
+    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+    mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+    mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-    # print summary
-    pass_rslt_list = list()
-    fail_rslt_list = list()
-    if len(fail_nic_list) > 0:
-        fail_rslt_list.append(mtp_cli_id_str + ", ".join(fail_nic_list) + " Firmware Upgrade Failed")
-    if len(pass_nic_list) > 0:
-        pass_rslt_list.append(mtp_cli_id_str + ", ".join(pass_nic_list) + " Firmware Upgrade Passed")
-    libmfg_utils.cli_log_rslt("NIC Fimrware Update Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
+    for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
+        mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s}".format(nic_key, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+    for nic_key, nic_sn in zip(pass_nic_list, pass_sn_list):
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s}".format(nic_key, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
 
     logfile_close(log_filep_list)
 
@@ -269,37 +400,12 @@ def main():
         for sn in naples100_sn_list:
             logdir = dl_log_path + sn + "/"
             os.system("mkdir -p " + logdir)
-            logfile = sn + "_" + test_log_file
-            os.system("cp " + test_log_file + " " + logdir + logfile)
-            logfile = sn + "_" + diag_log_file
-            os.system("cp " + diag_log_file + " " + logdir + logfile)
+            for logfile in log_file_list:
+                dst_logfile = "{:s}_{:s}".format(sn, logfile)
+                os.system("cp {:s} {:s}".format(logfile, logdir+logfile))
 
-        barcode_cfg_path = pro_srv_cfg_db.get_pro_srv_barcode_cfgpath(pro_srv_id, NIC_Type.NAPLES100)
-        for sn in naples100_sn_list:
-            logdir = barcode_cfg_path + sn + "/"
-            os.system("mkdir -p " + logdir)
-            logfile = sn + "_" + scan_cfg_file
-            os.system("cp " + scan_cfg_file + " " + logdir + logfile)
-
-    if len(naples25_sn_list) > 0:
-        dl_log_path = pro_srv_cfg_db.get_pro_srv_dl_logpath(pro_srv_id, NIC_Type.NAPLES25)
-        for sn in naples25_sn_list:
-            logdir = dl_log_path + sn + "/"
-            os.system("mkdir -p " + logdir)
-            logfile = sn + "_" + test_log_file
-            os.system("cp " + test_log_file + " " + logdir + logfile)
-            logfile = sn + "_" + diag_log_file
-            os.system("cp " + diag_log_file + " " + logdir + logfile)
-
-        barcode_cfg_path = pro_srv_cfg_db.get_pro_srv_barcode_cfgpath(pro_srv_id, NIC_Type.NAPLES25)
-        for sn in naples25_sn_list:
-            logdir = barcode_cfg_path + sn + "/"
-            os.system("mkdir -p " + logdir)
-            logfile = sn + "_" + scan_cfg_file
-            os.system("cp " + scan_cfg_file + " " + logdir + logfile)
-
-    # remove the local log files
     logfile_cleanup(log_file_list)
+
     return
 
 if __name__ == "__main__":

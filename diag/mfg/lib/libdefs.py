@@ -107,7 +107,7 @@ class MTP_DIAG_Logfile:
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
     DIAG_MFG_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
-    DIAG_MFG_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"
+    DIAG_MFG_DL_LOG_DIR = "/home/xingchang/mfg_log/NAPLES100/DL/"
 
 
 class MTP_DIAG_Path:

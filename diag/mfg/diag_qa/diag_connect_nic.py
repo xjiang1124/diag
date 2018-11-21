@@ -23,16 +23,28 @@ def main():
     parser.add_argument("--mtp", help="MTP ID")
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--slot", help="slot number to be connected", type=int, required=True)
+    parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
     args = parser.parse_args()
+    if args.verbosity:
+        verbosity = True
+    else:
+        verbosity = False
+
     if args.apc:
         apc = True
     else:
         apc = False
+
     if args.mtp:
         mtp_id = args.mtp
     else:
         mtp_id = None
+
+    if verbosity:
+        diag_log_filep = sys.stdout
+    else:
+        diag_log_filep = None
 
     slot = args.slot - 1
     
@@ -66,7 +78,7 @@ def main():
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     if apc:
