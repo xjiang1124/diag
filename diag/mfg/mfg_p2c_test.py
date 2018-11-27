@@ -320,7 +320,7 @@ def main():
 
     # scan and generate nic barcode config file
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
+        mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, None)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
     # power on the mtp chassis

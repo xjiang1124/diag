@@ -31,6 +31,66 @@ def logfile_cleanup(file_list):
         os.system("rm -f {:s}".format(_file))
 
 
+def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
+    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
+    duration = mtp_stop_ts - mtp_start_ts
+
+    with open(test_log_file, 'r') as fp:
+        buf = fp.read()
+
+    # MTP related error, don't post any report
+    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
+        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
+        return
+
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
+        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
+        match = re.findall(nic_fail_reg_exp, buf)
+        for slot, sn in match:
+            test_list = list()
+            test_rslt_list = list()
+            err_dsc_list = list()
+            err_code_list = list()
+            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+            # find all test status
+            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+            for dsp, test, result in sub_match:
+                test_list.append("{:s}-{:s}".format(dsp, test))
+                test_rslt_list.append(result)
+                err_dsc_list.append(nic_cli_id_str)
+                err_code_list.append(result)
+            ret = libmfg_utils.flx_web_srv_post_uut_report("DL", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            if not ret:
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            else:
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
+        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+        match = re.findall(nic_pass_reg_exp, buf)
+        for slot, sn in match:
+            test_list = list()
+            test_rslt_list = list()
+            err_dsc_list = list()
+            err_code_list = list()
+            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+            # find all test status
+            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+            for dsp, test, result in sub_match:
+                test_list.append("{:s}-{:s}".format(dsp, test))
+                test_rslt_list.append(result)
+                err_dsc_list.append(nic_cli_id_str)
+                err_code_list.append(result)
+            ret = libmfg_utils.flx_web_srv_post_uut_report("DL", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            if not ret:
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            else:
+                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+
+
 def get_pro_srv_id():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
@@ -198,7 +258,7 @@ def main():
     fail_sn_list = list()
     naples100_sn_list = list()
 
-    mtp_mgmt_ctrl.cli_log_inf("", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("NIC SCAN Check Start", level=0)
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
@@ -213,8 +273,10 @@ def main():
             logfile_close(log_filep_list)
             logfile_cleanup(log_file_list)
             return
+    mtp_mgmt_ctrl.cli_log_inf("NIC SCAN Check Complete\n", level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
+    mtp_start_ts = libmfg_utils.timestamp_snapshot()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
@@ -242,12 +304,12 @@ def main():
             mtp_mgmt_ctrl.mtp_set_nic_scan_mac(slot, mac)
             mtp_mgmt_ctrl.mtp_set_nic_mac(slot, mac)
 
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FRU Program Matrix:", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = " + sn + "; MAC = " + mac_ui)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FRU Program Matrix end\n", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n", level=0)
 
             # nic present check
             dsp = "DL_PRE_CHECK"
@@ -308,22 +370,22 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # program CPLD
-            dsp = "DL_CPLD"
-            test = "CPLD_PROG"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            # dsp = "DL_CPLD"
+            # test = "CPLD_PROG"
+            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            # start_ts = datetime.datetime.now().replace(microsecond=0)
+            # ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+            # stop_ts = datetime.datetime.now().replace(microsecond=0)
+            # duration = str(stop_ts - start_ts)
+            # if not ret:
+            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+            #     fail_nic_list.append(key)
+            #     fail_sn_list.append(sn)
+            #     continue
+            # else:
+            #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # dsp = "DL_VRM"
             # test = "VRM_PROG"
@@ -406,22 +468,22 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # verify CPLD
-            dsp = "DL_CPLD"
-            test = "CPLD_VERIFY"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            # dsp = "DL_CPLD"
+            # test = "CPLD_VERIFY"
+            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            # start_ts = datetime.datetime.now().replace(microsecond=0)
+            # ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+            # stop_ts = datetime.datetime.now().replace(microsecond=0)
+            # duration = str(stop_ts - start_ts)
+            # if not ret:
+            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+            #     fail_nic_list.append(key)
+            #     fail_sn_list.append(sn)
+            #     continue
+            # else:
+            #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # verify VRM
             # dsp = "DL_VRM"
@@ -469,6 +531,7 @@ def main():
             pass_sn_list.append(sn)
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
 
     mtp_mgmt_ctrl.mtp_mgmt_poweroff()
@@ -494,6 +557,7 @@ def main():
                 dst_logfile = "{:s}_{:s}".format(sn, os.path.basename(logfile))
                 os.system("cp {:s} {:s}".format(logfile, logdir+os.path.basename(logfile)))
 
+    mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
     logfile_cleanup(log_file_list)
 
     return
