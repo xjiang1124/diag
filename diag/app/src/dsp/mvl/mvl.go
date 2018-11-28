@@ -42,42 +42,66 @@ func Mvl_AccHdl(argList []string) {
 }
 
 func Mvl_StubHdl(argList []string) {
+
     var data0, data1 uint32
 	err := 0
-	
+
 	spi.MvlSmiRegWrite(0x16, 0x6, 0x3)
+	misc.SleepInSec(1)
 	spi.MvlSmiRegWrite(0x12, 0x8, 0x3)
 	spi.MvlSmiRegWrite(0x10, 0x18, 0x3)
-	
-	spi.MvlSmiRegWrite(0x16, 0x6, 0x4)
-	spi.MvlSmiRegWrite(0x12, 0x8, 0x4)
-	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
+	spi.MvlSmiRegWrite(0x12, 0x18, 0x3)
 	
 	misc.SleepInSec(1)
 	
 	//check error counter
 	spi.MvlSmiRegRead(0x11, &data0, 0x3)
 	if (data0 & 0xFF) != 0 {
-	   dcli.Println("e", "Port 3 stub test has error")
+	   dcli.Printf("e", "Port 3 stub test has error, counter reg 0x%x\n", data0)
 	   err = 1
 	} else if data0 == 0 {
 	    dcli.Println("e", "Port 3 stub test has no packet")
 	    err = 1
+	} else {
+	    dcli.Printf("i", "Port 3 stub test passed! 0x%x\n", data0)
 	}
-	spi.MvlSmiRegRead(0x11, &data1, 0x3)
+	spi.MvlSmiRegWrite(0x10, 0x0, 0x3)
+	spi.MvlSmiRegWrite(0x12, 0x0, 0x3)
+	spi.MvlSmiRegWrite(0x16, 0x0, 0x3)
+	
+	misc.SleepInSec(1)
+	
+	spi.MvlSmiRegWrite(0x16, 0x6, 0x4)
+	misc.SleepInSec(1)
+	spi.MvlSmiRegWrite(0x12, 0x8, 0x4)
+	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
+	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
+		
+	misc.SleepInSec(1)
+	
+	spi.MvlSmiRegRead(0x11, &data1, 0x4)
 	if (data1 & 0xFF) != 0 {
-	   dcli.Println("e", "Port 4 stub test has error")
+	   dcli.Printf("e", "Port 4 stub test has error, counter reg 0x%x\n", data1)
 	   err = 1
 	} else if data1 == 0 {
 	    dcli.Println("e", "Port 4 stub test has no packet")
 	    err = 1
+	} else {
+	    dcli.Printf("i", "Port 4 stub test passed! 0x%x\n", data1)
 	}
 	if err == 1 {
-	    dcli.Println("e", "MVL acc test failed!")
+	    dcli.Println("e", "MVL stub test failed!")
 	    diagEngine.FuncMsgChan <- errType.FAIL
 	} else {
 	    diagEngine.FuncMsgChan <- errType.SUCCESS
 	}
+
+	spi.MvlSmiRegWrite(0x10, 0x0, 0x4)
+	spi.MvlSmiRegWrite(0x12, 0x0, 0x4)
+	spi.MvlSmiRegWrite(0x16, 0x0, 0x4)
+    misc.SleepInSec(5)
+    spi.MvlSmiRegWrite(0x10, 0x0, 0x4)
+
     return
 }
 

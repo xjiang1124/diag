@@ -481,55 +481,25 @@ static int mdio_wr(uint8_t addr, uint16_t data, uint8_t phy)
 
 static int mdio_smi_rd(uint8_t addr, uint16_t* data, uint8_t phy)
 {
-	uint8_t data_lo, data_hi;
 	uint16_t tmp;
 
 	tmp = SMI_BUSY | SMI_MODE | SMI_READ | phy << DEV_BITS | addr;
-	data_lo = tmp & 0xFF;
-	data_hi = (tmp >> 8) & 0xFF;
-	cpld_write(MDIO_CRTL_HI_REG, SMI_CMD_REG);
-	cpld_write(MDIO_DATA_LO_REG, data_lo);
-	cpld_write(MDIO_DATA_HI_REG, data_hi);
-	cpld_write(MDIO_CRTL_LO_REG, (SMI_PHY_ADDR << 3) | MDIO_WR_ENA | MDIO_ACC_ENA);
-	usleep(1000);
-	cpld_write(MDIO_CRTL_LO_REG, 0);
-	usleep(1000);
-	cpld_write(MDIO_CRTL_HI_REG, SMI_DATA_REG);
-	cpld_write(MDIO_CRTL_LO_REG, (SMI_PHY_ADDR << 3) | MDIO_RD_ENA | MDIO_ACC_ENA);
-	usleep(1000);
-	cpld_write(MDIO_CRTL_LO_REG, 0);
 
+	mdio_wr(SMI_CMD_REG, tmp, SMI_PHY_ADDR);
 	usleep(1000);
-	data_lo = cpld_read(MDIO_DATA_LO_REG);
-	data_hi = cpld_read(MDIO_DATA_HI_REG);
-	*data = (data_hi << 8) | data_lo;
+	mdio_rd(SMI_DATA_REG, data, SMI_PHY_ADDR);
 
 	return 0;
 }
 
 static int mdio_smi_wr(uint8_t addr, uint16_t data, uint8_t phy)
 {
-	uint8_t data_lo, data_hi;
 	uint16_t tmp;
 
-	data_lo = data & 0xFF;
-	data_hi = (data >> 8) & 0xFF;
-	cpld_write(MDIO_DATA_LO_REG, data_lo);
-	cpld_write(MDIO_DATA_HI_REG, data_hi);
-	cpld_write(MDIO_CRTL_HI_REG, SMI_DATA_REG);
-	cpld_write(MDIO_CRTL_LO_REG, (SMI_PHY_ADDR << 3) | MDIO_WR_ENA | MDIO_ACC_ENA);
-	usleep(1000);
-	cpld_write(MDIO_CRTL_LO_REG, 0);
+	mdio_wr(SMI_DATA_REG, data, SMI_PHY_ADDR);
 	usleep(1000);
 	tmp = SMI_BUSY | SMI_MODE | SMI_WRITE | phy << DEV_BITS | addr;
-	data_lo = tmp & 0xFF;
-	data_hi = (tmp >> 8) & 0xFF;
-	cpld_write(MDIO_DATA_LO_REG, data_lo);
-	cpld_write(MDIO_DATA_HI_REG, data_hi);
-	cpld_write(MDIO_CRTL_HI_REG, SMI_CMD_REG);
-	cpld_write(MDIO_CRTL_LO_REG, (SMI_PHY_ADDR << 3) | MDIO_WR_ENA | MDIO_ACC_ENA);
-	usleep(1000);
-	cpld_write(MDIO_CRTL_LO_REG, 0);
+	mdio_wr(SMI_CMD_REG, tmp, SMI_PHY_ADDR);
 
 	return 0;
 }
@@ -696,6 +666,7 @@ main(int argc, char *argv[])
     	mdio_rd(addr, &data, phy);
     	printf("0x%x\n", data);
     } else if (strcmp(argv[1], "-mdiowr") == 0) {
+    	addr = strtoul(argv[2], NULL, 0);
     	uint8_t phy = strtoul(argv[3], NULL, 0);
     	uint16_t data = strtoul(argv[4], NULL, 0);
     	mdio_wr(addr, data, phy);
@@ -706,6 +677,7 @@ main(int argc, char *argv[])
     	mdio_smi_rd(addr, &data, phy);
     	printf("0x%x\n", data);
     } else if (strcmp(argv[1], "-smiwr") == 0) {
+    	addr = strtoul(argv[2], NULL, 0);
     	uint8_t phy = strtoul(argv[3], NULL, 0);
     	uint16_t data = strtoul(argv[4], NULL, 0);
     	mdio_smi_wr(addr, data, phy);
