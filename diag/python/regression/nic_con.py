@@ -163,9 +163,6 @@ class nic_con:
 
         session = common.session_start()
 
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
-        time.sleep(3)
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         time.sleep(3)
