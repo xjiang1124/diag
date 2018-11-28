@@ -63,10 +63,9 @@ class nic_con:
 
         session = common.session_start()
 
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
+        time.sleep(3)
 
         self.uart_session_start(session, orig_rate)
 
@@ -101,12 +100,9 @@ class nic_con:
 
         session = common.session_start()
 
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
-        time.sleep(1)
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
-        time.sleep(1)
+        time.sleep(3)
 
         self.uart_session_start(session, rate)
 
