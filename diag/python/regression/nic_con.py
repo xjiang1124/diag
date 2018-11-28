@@ -63,40 +63,37 @@ class nic_con:
 
         session.timeout = timeout
 
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd) 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         cmd = "turn_on_slot.sh off {}".format(slot)
         common.session_cmd(session, cmd) 
         cmd = "turn_on_slot.sh on {}".format(slot)
         common.session_cmd(session, cmd) 
-        cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
-        session.sendline(cmd)
-        session.expect("Terminal ready")
-        session.send("\r")
-        session.sendcontrol('c')
-        print "C+C 1"
-        time.sleep(1)
-        session.sendcontrol('c')
-        print "C+C 2"
-        time.sleep(1)
-        session.sendcontrol('c')
-        print "C+C 3"
-        time.sleep(1)
-        session.sendcontrol('c')
-        print "C+C 4"
-        time.sleep(1)
-        session.sendcontrol('c')
-        print "C+C 5"
+        for i in range(15):
+            cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
+            session.sendline(cmd)
+            session.expect("Terminal ready")
+            #time.sleep(1)
+            session.send("\r")
+            session.sendcontrol('c')
+            print "C+C", i
+            time.sleep(1)
 
-        self.uart_session_stop(session)
+            self.uart_session_stop(session)
 
     def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
         exprStr = "Capri# "
+        ret = 0
+        session.timeout=5
         try:
             cmd = "picocom -b {} -f h /dev/ttyS1".format(orig_rate)
             session.sendline(cmd)
-            time.sleep(3)
+            session.expect("Terminal ready")
+            time.sleep(1)
             session.send("\r")
+            #session.send("\r")
             session.expect(exprStr)
             
             cmd = "setenv bootargs earlycon=uart8250,mmio32,0x4800 console=ttyS0,{}n8".format(tgt_rate)
@@ -108,8 +105,10 @@ class nic_con:
             session.sendline(cmd)
             session.expect("press ENTER ..")
         except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Faled to chagne uboot baud rate ==="
+            print "=== TIMEOUT: Faled to change uboot baud rate ==="
+            ret = -1
         self.uart_session_stop(session)
+        return ret
 
 
     def change_rate_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0, save=False):
@@ -123,15 +122,19 @@ class nic_con:
         session = common.session_start()
         self.enter_uboot(session, slot, orig_rate)
         time.sleep(15)
-        self.change_rate_uboot_i(session, orig_rate, tgt_rate, False)
+        ret = self.change_rate_uboot_i(session, orig_rate, tgt_rate, False)
+        if ret != 0:
+            return -1
 
         exprStr = "Capri# "
         mtest_cmd = "mtest {} {} 0xaaaaaaaa 3"
         try:
             cmd = "picocom -b {} -f h /dev/ttyS1".format(tgt_rate)
             session.sendline(cmd)
+            session.expect("Terminal ready")
             time.sleep(1)
             session.send("\r")
+            #session.send("\r")
             session.expect(exprStr)
 
             session.timeout = 30
@@ -166,6 +169,8 @@ class nic_con:
 
         session = common.session_start()
 
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd) 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         time.sleep(3)
@@ -202,6 +207,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
+
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd) 
 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
@@ -264,6 +272,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
+
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd) 
 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
