@@ -102,6 +102,7 @@ class nic_con:
             cmd = "setenv bootargs earlycon=uart8250,mmio32,0x4800 console=ttyS0,{}n8".format(tgt_rate)
             session.sendline(cmd)
             session.expect(exprStr)
+            time.sleep(2)
             
             cmd = "setenv baudrate {}".format(tgt_rate)
             session.sendline(cmd)
