@@ -1,6 +1,7 @@
 # !/usr/bin/tclsh
 #
-package require cmdline
+#package require cmdline
+source ./cmdline.tcl
 set parameters {
     {sn.arg         "Slotxxx"     "Serial Number"}
     {slot.arg       ""       "Slot number"}
@@ -26,8 +27,15 @@ set zmq_srv_ip  $arg(zmq_srv_ip)
 set zmq_port    $arg(zmq_port)
 set DIAG_DIR    $arg(diag_dir)
 
-if { $arg(zmq_srv_ip) == "" || $arg(slot) == "" || $arg(zmq_port) == ""} {
-    error "Need MTP IP, port and slot args"
+if { $use_zmq != 0 } {
+    if { $zmq_srv_ip == "" || $zmq_port == ""} {
+        error "Need MTP IP and slot args"
+        exit
+    }
+}
+
+if { $slot == "" } {
+    error "Need port arg"
     exit
 }
 
@@ -52,13 +60,13 @@ source $DIAG_SRC/asic_tests.tcl
 
 puts "sn: $sn; slot: $slot; mode: $mode; mac_lb: $mac_lb; duration: $duration; use_zmq: $use_zmq"
 
-set ::SSI_OPERATION_TIMEOUT_S 10
-diag_force_close_zmq_if $zmq_conn $slot
-
 if { $use_zmq == 1 } {
-    diag_open_zmq_if $zmq_conn $slot
+     set ::SSI_OPERATION_TIMEOUT_S 10
+    diag_force_close_zmq_if $zmq_conn $slot
+
+    #diag_open_zmq_if $zmq_conn $slot
 } else {
-    diag_open_j2c_if 10 $slot
+    #diag_open_j2c_if 10 $slot
 }
 set err_cnt [cap_snake $sn $slot $mode $core_freq $mac_lb $duration $use_zmq $zmq_conn]
 
