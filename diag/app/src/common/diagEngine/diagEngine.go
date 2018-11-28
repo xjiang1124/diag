@@ -334,6 +334,9 @@ func DspInfraMainLoop() (err error) {
                 cli.Println("i", "DSP is in PermSkip mode")
                 stopOnErrEn = 0xFF
             }
+            if ite != (*itePtr - 1) {
+                misc.SleepInSec(3)
+            }
 
             // Process test return code
             if timeoutFlag == 0 {
