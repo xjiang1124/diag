@@ -78,6 +78,11 @@ class nic_con:
         session.sendcontrol('c')
         time.sleep(1)
         session.sendcontrol('c')
+        time.sleep(1)
+        session.sendcontrol('c')
+        time.sleep(1)
+        session.sendcontrol('c')
+
         self.uart_session_stop(session)
 
     def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
@@ -96,10 +101,9 @@ class nic_con:
             cmd = "setenv baudrate {}".format(tgt_rate)
             session.sendline(cmd)
             session.expect("press ENTER ..")
-            self.uart_session_stop(session)
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to chagne uboot baud rate ==="
-            self.uart_session_stop(session)
+        self.uart_session_stop(session)
 
 
     def change_rate_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0, save=False):
@@ -109,6 +113,45 @@ class nic_con:
         self.change_rate_uboot_i(session, orig_rate, tgt_rate, save)
         common.session_stop(session)
 
+    def mtest_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0):
+        session = common.session_start()
+        self.enter_uboot(session, slot, orig_rate)
+        time.sleep(15)
+        self.change_rate_uboot_i(session, orig_rate, tgt_rate, False)
+
+        exprStr = "Capri# "
+        mtest_cmd = "mtest {} {} 0xaaaaaaaa 3"
+        try:
+            cmd = "picocom -b {} -f h /dev/ttyS1".format(tgt_rate)
+            session.sendline(cmd)
+            time.sleep(1)
+            session.send("\r")
+            session.expect(exprStr)
+
+            session.timeout = 30
+            cmd = mtest_cmd.format("0x80000000", "0xBE9FFFFF")
+            session.sendline(cmd)
+            session.expect(exprStr)
+            if "with 0 errors" in session.before:
+                print "=== MTEST PASSED LOW 1G ==="
+            else:
+                print "=== MTEST FAILED LOW 1G ==="
+
+            session.timeout = 60
+            cmd = mtest_cmd.format("0xc0000000", "0x17FFFFFFF")
+            session.sendline(cmd)
+            session.expect(exprStr)
+            if "with 0 errors" in session.before:
+                print "=== MTEST PASSED HIGH 3G ==="
+            else:
+                print "=== MTEST FAILED HIGH 3G ==="
+
+        except pexpect.TIMEOUT:
+            print "=== TIMEOUT: Faled to perform uboot mtest ==="
+
+        self.uart_session_stop(session)
+
+        common.session_stop(session)
 
     def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
         if slot == 0 or slot > 10:
@@ -278,6 +321,7 @@ if __name__ == "__main__":
 
     group.add_argument("-br", "--change_baud_rate", help="Change baud rate", action='store_true')
     group.add_argument("-mgmt", "--ena_mgmt_port", help="Enable managment port", action='store_true')
+    group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
 
     parser.add_argument("-or", "--orig_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-tr", "--tgt_rate", help="Target baud rate", type=int, default=9600)
@@ -302,4 +346,8 @@ if __name__ == "__main__":
             con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping, args.pre_cl)
         else:
             con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping)
+        sys.exit()
+
+    if args.mtest == True:
+        con.mtest_uboot(args.orig_rate, args.tgt_rate, args.slot)
         sys.exit()
