@@ -56,6 +56,60 @@ class nic_con:
             session.expect(ending)
             return -1
 
+    def enter_uboot(self, session, slot=0, rate=115200, timeout=30):
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session.timeout = timeout
+
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+        cmd = "turn_on_slot.sh off {}".format(slot)
+        common.session_cmd(session, cmd) 
+        cmd = "turn_on_slot.sh on {}".format(slot)
+        common.session_cmd(session, cmd) 
+        cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
+        session.sendline(cmd)
+        session.expect("Terminal ready")
+        session.send("\r")
+        session.sendcontrol('c')
+        time.sleep(1)
+        session.sendcontrol('c')
+        time.sleep(1)
+        session.sendcontrol('c')
+        self.uart_session_stop(session)
+
+    def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
+        exprStr = "Capri# "
+        try:
+            cmd = "picocom -b {} -f h /dev/ttyS1".format(orig_rate)
+            session.sendline(cmd)
+            time.sleep(3)
+            session.send("\r")
+            session.expect(exprStr)
+            
+            cmd = "setenv bootargs earlycon=uart8250,mmio32,0x4800 console=ttyS0,{}n8".format(tgt_rate)
+            session.sendline(cmd)
+            session.expect(exprStr)
+            
+            cmd = "setenv baudrate {}".format(tgt_rate)
+            session.sendline(cmd)
+            session.expect("press ENTER ..")
+            self.uart_session_stop(session)
+        except pexpect.TIMEOUT:
+            print "=== TIMEOUT: Faled to chagne uboot baud rate ==="
+            self.uart_session_stop(session)
+
+
+    def change_rate_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0, save=False):
+        session = common.session_start()
+        self.enter_uboot(session, slot, orig_rate)
+        time.sleep(15)
+        self.change_rate_uboot_i(session, orig_rate, tgt_rate, save)
+        common.session_stop(session)
+
+
     def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -91,7 +145,7 @@ class nic_con:
         else:
             self.enable_mgmt_new(rate, slot)
 
-        session = common.session_stop(session)
+        common.session_stop(session)
 
     def enable_mgmt_new(self, rate=9600, slot=0):
         if slot == 0 or slot > 10:
@@ -134,7 +188,6 @@ class nic_con:
             return -1
 
         self.uart_session_stop(session)
-        print temp
         common.session_stop(session)
 
     def get_mgmt_rdy(self, rate=9600, slot=0, ping=False, pre_cl=False):
@@ -231,13 +284,17 @@ if __name__ == "__main__":
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-ping", "--ping", help="Ping test before enable management port", action='store_true')
     parser.add_argument("-old", "--old", help="New management port configure", action='store_true')
+    parser.add_argument("-uboot", "--uboot", help="Uboot operations", action='store_true')
     parser.add_argument("-pre_cl", "--pre_cl", help="Pre-clean before enable management port", action='store_true')
     args = parser.parse_args()
     
     con = nic_con()
 
     if args.change_baud_rate == True:
-        con.change_rate(args.orig_rate, args.tgt_rate, args.slot)
+        if args.uboot == True:
+            con.change_rate_uboot(args.orig_rate, args.tgt_rate, args.slot)
+        else:
+            con.change_rate(args.orig_rate, args.tgt_rate, args.slot)
         sys.exit()
 
     if args.ena_mgmt_port == True:
