@@ -74,14 +74,19 @@ class nic_con:
         session.expect("Terminal ready")
         session.send("\r")
         session.sendcontrol('c')
+        print "C+C 1"
         time.sleep(1)
         session.sendcontrol('c')
+        print "C+C 2"
         time.sleep(1)
         session.sendcontrol('c')
+        print "C+C 3"
         time.sleep(1)
         session.sendcontrol('c')
+        print "C+C 4"
         time.sleep(1)
         session.sendcontrol('c')
+        print "C+C 5"
 
         self.uart_session_stop(session)
 
