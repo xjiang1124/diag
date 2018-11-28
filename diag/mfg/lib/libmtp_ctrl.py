@@ -713,13 +713,13 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
 
         # install the emmc
-        img_name = os.path.basename(qspi_img)
+        img_name = os.path.basename(emmc_img)
         nic_cmd_list = list()
         nic_cmd = "fwupdate --init-emmc"
         nic_cmd_list.append(nic_cmd)
         nic_cmd = "fwupdate -l"
         nic_cmd_list.append(nic_cmd)
-        nic_cmd = "fwupdate -p {:s} -i 'uboot mainfwa mainfwb'".format(emmc_img)
+        nic_cmd = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'".format(img_name)
         nic_cmd_list.append(nic_cmd)
         nic_cmd = "fwupdate -s diagfw"
         nic_cmd_list.append(nic_cmd)
@@ -1578,11 +1578,10 @@ class mtp_ctrl():
             else:
                 scan_mac_list.append(mac)
 
-            ts_snapshot = libmfg_utils.get_timestamp()
             nic_scan_rslt["NIC_VALID"] = True
             nic_scan_rslt["NIC_SN"] = sn
             nic_scan_rslt["NIC_MAC"] = mac
-            nic_scan_rslt["NIC_TS"] = ts_snapshot
+            nic_scan_rslt["NIC_TS"] = libmfg_utils.get_fru_date()
             mtp_scan_rslt[key] = nic_scan_rslt
 
         nic_empty_list = list(set(valid_nic_key_list).difference(set(scan_nic_key_list)))

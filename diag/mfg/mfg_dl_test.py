@@ -278,22 +278,21 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
+
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
-
         if str.upper(valid) == "YES":
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC FW Update Started", level=0)
-
             sn = nic_fru_cfg[mtp_id][key]["SN"]
             mac = nic_fru_cfg[mtp_id][key]["MAC"]
+            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
             mac_ui = libmfg_utils.mac_address_format(mac)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
-                cpld_img_file = naples100_cpld_img_file
-                vrm_img_file = naples100_vrm_img_file
-                vrm_img_cksum = naples100_vrm_img_cksum
-                qspi_img_file = naples100_qspi_img_file
+                # cpld_img_file = naples100_cpld_img_file
+                # vrm_img_file = naples100_vrm_img_file
+                # vrm_img_cksum = naples100_vrm_img_cksum
+                # qspi_img_file = naples100_qspi_img_file
                 emmc_img_file = naples100_emmc_img_file
                 naples100_sn_list.append(sn)
             else:
@@ -307,12 +306,12 @@ def main():
             mtp_mgmt_ctrl.mtp_set_nic_mac(slot, mac)
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = " + sn + "; MAC = " + mac_ui)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; DATE = {:s}".format(sn, mac_ui, prog_date))
+            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
+            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file))
+            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "EMMC image: " + os.path.basename(emmc_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end", level=0)
 
             # nic present check
             dsp = "DL_PRE_CHECK"
@@ -332,8 +331,16 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-            # power on nic
-            mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+    # power on all nic
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) == "YES":
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
+            mac = nic_fru_cfg[mtp_id][key]["MAC"]
+            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
 
             # init nic for fw update
             dsp = "DL_PRE_CHECK"
@@ -357,7 +364,6 @@ def main():
             dsp = "DL_FRU"
             test = "FRU_PROG"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            prog_date = libmfg_utils.get_fru_date()
             start_ts = datetime.datetime.now().replace(microsecond=0)
             ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
@@ -443,10 +449,18 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-            # power cycle nic
-            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
-            mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+    # power cycle nic
+    mtp_mgmt_ctrl.mtp_power_off_nic()
+    time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) == "YES":
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
+            mac = nic_fru_cfg[mtp_id][key]["MAC"]
+            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
 
             # init nic for fw verify
             dsp = "DL_PRE_CHECK"
@@ -545,13 +559,13 @@ def main():
             # update MAC address
             # mtp_mgmt_ctrl.mtp_update_nic_mac_address(slot)
 
-            # power off nic
-            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC FW Update Passed\n", level=0)
             pass_nic_list.append(key)
             pass_sn_list.append(sn)
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+
+    # power off nic
+    mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
 
