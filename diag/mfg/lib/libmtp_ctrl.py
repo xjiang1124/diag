@@ -702,6 +702,32 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_install_nic_emmc(self, slot, emmc_img):
+        self.cli_log_slot_inf(slot, "Install NIC EMMC")
+        # copy the image
+        ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+        cmd = "scp {:s} {:s} {:s}@{:s}:/".format(libmfg_utils.get_ssh_option(), emmc_img, NIC_MGMT_USERNAME, ipaddr)
+        self._mgmt_handle.sendline(cmd)
+        self._mgmt_handle.expect_exact("assword:")
+        self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
+
+        # install the emmc
+        img_name = os.path.basename(qspi_img)
+        nic_cmd_list = list()
+        nic_cmd = "fwupdate --init-emmc"
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = "fwupdate -l"
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = "fwupdate -p {:s} -i 'uboot mainfwa mainfwb'".format(emmc_img)
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = "fwupdate -s diagfw"
+        nic_cmd_list.append(nic_cmd)
+        self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
+        self.cli_log_slot_inf(slot, "Install NIC EMMC complete")
+        return True
+
+
     def mtp_verify_nic_qspi(self, slot, qspi_img):
         if MFG_NAPLES100_QSPI_PROGRAM:
             return True
