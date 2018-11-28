@@ -78,6 +78,7 @@ class nic_con:
             #time.sleep(1)
             session.send("\r")
             session.sendcontrol('c')
+            session.sendcontrol('c')
             print "C+C", i
             time.sleep(1)
 
