@@ -52,12 +52,12 @@ cp -r $TOP_DIR/diag/app/bin/linux_$arch/dsp/ $TEMP_DIR/
 cp -r $TOP_DIR/diag/app/bin/linux_$arch/util/ $TEMP_DIR/
 [ "$(ls -A $TOP_DIR/diag/app/bin/linux_$arch/cbin)" ] && cp -r $TOP_DIR/diag/app/bin/linux_$arch/cbin/* $TEMP_DIR/util/
 cp -r -L $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/scripts
-cp $TOP_DIR/diag/scripts/*sh $TEMP_DIR/scripts/
+cp -r $TOP_DIR/diag/scripts/* $TEMP_DIR/scripts/
 cp $TOP_DIR/diag/scripts/version* $TEMP_DIR/scripts/
 cp -r $TOP_DIR/diag/scripts/asic/ $TEMP_DIR/scripts/
 
 cp -r $TOP_DIR/diag/python/ $TEMP_DIR/
-cp -r $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
+cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 cp -r $TOP_DIR/diag/util/bin/$arch/* $TEMP_DIR/util/
