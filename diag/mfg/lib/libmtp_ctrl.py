@@ -439,6 +439,15 @@ class mtp_ctrl():
         handle.expect(r"{:s}.*{:s}".format(userid, prompt))
 
 
+    def mtp_mgmt_refresh(self):
+        # mgmt_cfg is a list with format [ip, userid, passwd]
+        userid = self._mgmt_cfg[1]
+        if self._mgmt_handle:
+            self._mgmt_handle.sendline("whoami")
+            handle.expect_exact(userid)
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
+
     def mtp_enter_user_ctrl(self):
         if self._mgmt_handle:
             self._mgmt_handle.sendline("\n")
@@ -892,6 +901,8 @@ class mtp_ctrl():
 
 
     def mtp_diag_init(self, naples100_test_db):
+        self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
         self._mgmt_handle.sendline("./diag -sdsp")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         # naples100 dsp check
@@ -1021,6 +1032,7 @@ class mtp_ctrl():
                 self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
                 self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.NIC_NETCOPY_DELAY)
             else:
+                self.mtp_mgmt_refresh()
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
                 return False
 
@@ -1196,7 +1208,6 @@ class mtp_ctrl():
         if fru_load:
             # power on nic
             self.mtp_power_on_nic()
-            #self.mtp_nic_diag_init(None)
             self.cli_log_inf("Load Barcode config file")
             nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
@@ -1212,6 +1223,11 @@ class mtp_ctrl():
             # load sn/mac from fru sprom
             if MFG_CFG_NIC_FRU_VALID:
                 self.cli_log_inf("Load NIC SN/MAC from Fru")
+                for slot in range(self._slots):
+                    key = libmfg_utils.nic_key(slot)
+                    valid = nic_fru_cfg[self._id][key]["VALID"]
+                    if str.upper(valid) == "YES":
+                        self.mtp_nic_diag_init(slot)
                 self.mtp_init_nic_sn()
                 self.mtp_init_nic_mac()
             # load sn/mac from config file
@@ -1315,7 +1331,7 @@ class mtp_ctrl():
 
     def mtp_init_nic_sn(self):
         for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
+            if self._nic_prsnt_list[slot] and self._nic_sta_list[slot] == NIC_Status.NIC_STA_OK:
                 nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
                 if not nic_fru_info:
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
@@ -1345,13 +1361,13 @@ class mtp_ctrl():
 
     def mtp_init_nic_mac(self):
         for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
+            if self._nic_prsnt_list[slot] and self._nic_sta_list[slot] == NIC_Status.NIC_STA_OK:
                 nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
                 if not nic_fru_info:
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
                     self._nic_mac_list[slot] = "00AEDEADBEEF"
                 else:
-                    self._nic_mac_list[slot] = nic_fru_info[2]
+                    self._nic_mac_list[slot] = str.upper(nic_fru_info[2]).replace('-', '')
 
 
     def mtp_get_nic_mac(self, slot):
@@ -1434,10 +1450,10 @@ class mtp_ctrl():
                 # mac/sn should match
             if self._nic_scan_prsnt_list[slot] and self._nic_prsnt_list[slot]:
                 if self._nic_scan_sn_list[slot] != self._nic_sn_list[slot]:
-                    self.cli_log_slot_err(slot, "NIC SN mismatch, scanned: {:s}, fru: {:s}".format(scan_sn, sn))
+                    self.cli_log_slot_err(slot, "NIC SN mismatch, scanned: {:s}, fru: {:s}".format(self._nic_scan_sn_list[slot], self._nic_sn_list[slot]))
                     return MTP_DIAG_Error.NIC_DIAG_FAIL
                 if self._nic_scan_mac_list[slot] != self._nic_mac_list[slot]:
-                    self.cli_log_slot_err(slot, "NIC MAC mismatch, scanned: {:s}, fru: {:s}".format(scan_mac, mac))
+                    self.cli_log_slot_err(slot, "NIC MAC mismatch, scanned: {:s}, fru: {:s}".format(self._nic_scan_mac_list[slot], self._nic_mac_list[slot]))
                     return MTP_DIAG_Error.NIC_DIAG_FAIL
             return "SUCCESS"
         else:
