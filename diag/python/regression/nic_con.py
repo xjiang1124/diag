@@ -71,18 +71,24 @@ class nic_con:
         common.session_cmd(session, cmd) 
         cmd = "turn_on_slot.sh on {}".format(slot)
         common.session_cmd(session, cmd) 
-        for i in range(15):
+        #time.sleep(2)
+        for i in range(10):
             cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
             session.sendline(cmd)
             session.expect("Terminal ready")
             #time.sleep(1)
-            session.send("\r")
-            session.sendcontrol('c')
-            session.sendcontrol('c')
-            print "C+C", i
-            time.sleep(1)
+            session.timeout = 3
+            try:
+                print "C+C", i
+                #session.send("\r")
+                session.send(chr(3))
+                session.expect("Capri# ")
+                time.sleep(5)
+                self.uart_session_stop(session)
+                break
+            except pexpect.TIMEOUT:
+                self.uart_session_stop(session)
 
-            self.uart_session_stop(session)
 
     def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
         exprStr = "Capri# "
@@ -94,21 +100,33 @@ class nic_con:
             session.expect("Terminal ready")
             time.sleep(1)
             session.send("\r")
-            #session.send("\r")
             session.expect(exprStr)
             
             cmd = "setenv bootargs earlycon=uart8250,mmio32,0x4800 console=ttyS0,{}n8".format(tgt_rate)
             session.sendline(cmd)
             session.expect(exprStr)
-            time.sleep(2)
-            
+            self.uart_session_stop(session)
+            #time.sleep(2)
+            print "step 1 down"
+
+            cmd = "picocom -b {} -f h /dev/ttyS1".format(orig_rate)
+            session.sendline(cmd)
+            session.expect("Terminal ready")
+            time.sleep(1)
+            session.send("\r")
+            session.expect(exprStr)
+           
             cmd = "setenv baudrate {}".format(tgt_rate)
             session.sendline(cmd)
-            session.expect("press ENTER ..")
+            session.expect("press ENTER")
+            self.uart_session_stop(session)
+            print "step 2 down"
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to change uboot baud rate ==="
+            print "before", session.before
+            print "after", session.after
+            self.uart_session_stop(session)
             ret = -1
-        self.uart_session_stop(session)
         return ret
 
 
@@ -127,8 +145,10 @@ class nic_con:
         if ret != 0:
             return -1
 
+        print "before mtest"
         exprStr = "Capri# "
         mtest_cmd = "mtest {} {} 0xaaaaaaaa 3"
+        session.timeout = 30
         try:
             cmd = "picocom -b {} -f h /dev/ttyS1".format(tgt_rate)
             session.sendline(cmd)
