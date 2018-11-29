@@ -123,8 +123,6 @@ class nic_con:
             print "step 2 down"
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to change uboot baud rate ==="
-            print "before", session.before
-            print "after", session.after
             self.uart_session_stop(session)
             ret = -1
         return ret
@@ -138,14 +136,15 @@ class nic_con:
         common.session_stop(session)
 
     def mtest_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0):
+        err = 0
         session = common.session_start()
         self.enter_uboot(session, slot, orig_rate)
         time.sleep(15)
         ret = self.change_rate_uboot_i(session, orig_rate, tgt_rate, False)
         if ret != 0:
+            print "=== MTEST FAILED ==="
             return -1
 
-        print "before mtest"
         exprStr = "Capri# "
         mtest_cmd = "mtest {} {} 0xaaaaaaaa 3"
         session.timeout = 30
@@ -158,6 +157,19 @@ class nic_con:
             #session.send("\r")
             session.expect(exprStr)
 
+            session.sendline("bdinfo")
+            session.expect(exprStr)
+
+            start = "0xC0000000"
+            if "start    = 0x140000000" in session.before:
+                print "=== 4G HBM detected ==="
+                end = "0x17fffffff"
+                timeout = 60
+            elif "start    = 0x240000000" in session.before:
+                print "=== 8G HBM detected ==="
+                end = "0x27fffffff"
+                timeout = 150
+
             session.timeout = 30
             cmd = mtest_cmd.format("0x80000000", "0xBE9FFFFF")
             session.sendline(cmd)
@@ -166,21 +178,28 @@ class nic_con:
                 print "=== MTEST PASSED LOW 1G ==="
             else:
                 print "=== MTEST FAILED LOW 1G ==="
+                err = err + 1
 
-            session.timeout = 60
-            cmd = mtest_cmd.format("0xc0000000", "0x17FFFFFFF")
+            session.timeout = timeout
+            cmd = mtest_cmd.format(start, end)
             session.sendline(cmd)
             session.expect(exprStr)
             if "with 0 errors" in session.before:
                 print "=== MTEST PASSED HIGH 3G ==="
             else:
                 print "=== MTEST FAILED HIGH 3G ==="
+                err = err + 1
 
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to perform uboot mtest ==="
+            err = -1
+
+        if err == 0:
+            print "=== MTEST PASSED ==="
+        else:
+            print "=== MTEST FAILED ==="
 
         self.uart_session_stop(session)
-
         common.session_stop(session)
 
     def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
