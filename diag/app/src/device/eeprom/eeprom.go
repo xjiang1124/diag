@@ -80,8 +80,8 @@ var naples100Tbl = []entry {
     entry{"Number of MAC Address",     				INT8,		89, 	2,  []byte{0x18, 0x0}},
     entry{"MAC Address Base Type/Length",     		INT8,		91, 	1,  []byte{6}},
     entry{"MAC Address Base",     					INT8,		92, 	6,  []byte{0, 0xAE, 0xCD, 0, 0, 0}},
-    entry{"PAD",     								INT8,		98, 	5,  []byte{0, 0, 0, 0, 0}},
-    entry{"End of Field",				     		INT8,	 	103,	1,  []byte{0xC1}},
+    entry{"End of Field",				     		INT8,	 	98,		1,  []byte{0xC1}},
+    entry{"PAD",     								INT8,		99, 	5,  []byte{0, 0, 0, 0, 0}},
     entry{"Board Info Area Checksum",     			INT8,	 	104,	1,  []byte{0}},
 }
 
@@ -237,7 +237,7 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
-            } else if entry.Name == "Manufacturing Date" {
+            } else if entry.Name == "Manufacturing Date/Time" {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
@@ -252,7 +252,7 @@ func updateIntChk() () {
     brdInfoChk = 0
     cmnHeadChk = 0
     for _, entry := range(EepromTbl) {
-        if (entry.Offset > 7) && (entry.Offset < 103) {
+        if (entry.Offset > 7) && (entry.Offset < 104) {
 //            brdInfoChk += entry.Value
             brdInfoChk += calcSum(entry)
         } else if (entry.Offset >= 0) && (entry.Offset < 7) {
@@ -299,7 +299,7 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 mac, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, mac)
                 continue
-            } else if entry.Name == "Manufacturing Date" {
+            } else if entry.Name == "Manufacturing Date/Time" {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
