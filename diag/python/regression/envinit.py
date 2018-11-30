@@ -35,6 +35,9 @@ child.expect("\$ ")
 child.sendline("sudo ifconfig enp2s0 10.1.1.100 netmask 255.255.255.0")
 child.expect("\$ ")
 
+child.sendline("sw_cfg.sh")
+child.expect("\$ ")
+
 time.sleep(3)
 
 # Enable fan controller
