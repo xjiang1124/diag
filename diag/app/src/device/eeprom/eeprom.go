@@ -59,7 +59,7 @@ var naples100Tbl = []entry {
     entry{"Manufacturing Date/Time", 				INT8,		11, 	3,  []byte{0, 0, 0}},
     entry{"Manufacturing Type/Length", 				INT8,		14, 	1,  []byte{0xD5}},
     entry{"Manufacturer",     						STRING,		15, 	21, []byte{0x50, 0x45, 0x4E, 0x53, 
-        0x45, 0x4E, 0x44, 0x4F, 0x20, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4D, 0x53, 0x20, 0x49, 0x4E, 0x43, 0x2E}},
+        0x41, 0x4E, 0x44, 0x4F, 0x20, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4D, 0x53, 0x20, 0x49, 0x4E, 0x43, 0x2E}},
     entry{"Product Name Type/Length",     			INT8,		36, 	1,  []byte{0xD0}},
     entry{"Product Name",     						STRING,		37, 	10, []byte{0x4E, 0x41, 0x50, 0x4C, 
         0x45, 0x53, 0x20, 0x31, 0x30, 0x30}},
@@ -81,8 +81,8 @@ var naples100Tbl = []entry {
     entry{"MAC Address Base Type/Length",     		INT8,		91, 	1,  []byte{6}},
     entry{"MAC Address Base",     					INT8,		92, 	6,  []byte{0, 0xAE, 0xCD, 0, 0, 0}},
     entry{"End of Field",				     		INT8,	 	98,		1,  []byte{0xC1}},
-    entry{"PAD",     								INT8,		99, 	5,  []byte{0, 0, 0, 0, 0}},
-    entry{"Board Info Area Checksum",     			INT8,	 	104,	1,  []byte{0}},
+    entry{"PAD",     								INT8,		99, 	4,  []byte{0, 0, 0, 0}},
+    entry{"Board Info Area Checksum",     			INT8,	 	103,	1,  []byte{0}},
 }
 
 var EepromTbl []entry
@@ -252,7 +252,7 @@ func updateIntChk() () {
     brdInfoChk = 0
     cmnHeadChk = 0
     for _, entry := range(EepromTbl) {
-        if (entry.Offset > 7) && (entry.Offset < 104) {
+        if (entry.Offset > 7) && (entry.Offset < 103) {
 //            brdInfoChk += entry.Value
             brdInfoChk += calcSum(entry)
         } else if (entry.Offset >= 0) && (entry.Offset < 7) {
