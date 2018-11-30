@@ -365,15 +365,9 @@ func UpdateDate(devName string, str string) (err int) {
             if entry.Name == "Manufacturing Date/Time" {
                 const shortForm = "2006-01-02"
                 date := fmt.Sprintf("%s%s%s%s%s%s", "20", string(str[4:6]), "-", string(str[0:2]), "-", string(str[2:4]))
-            	fmt.Println(date)
-            
             	start, _ := time.Parse(shortForm, "1996-01-01")
             	end, _ := time.Parse(shortForm, date)
-            	fmt.Println(start)
-            	fmt.Println(end)
             	difference := end.Sub(start)
-            	fmt.Println(difference)
-            	fmt.Printf("0x%x\n", int(difference.Minutes()))
             	data := make([]byte, 3)
             	data[0] = byte(int(difference.Minutes()) & 0xFF)
             	data[1] = byte((int(difference.Minutes()) >> 8) & 0xFF)
