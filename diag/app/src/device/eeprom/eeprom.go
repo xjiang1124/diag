@@ -427,7 +427,9 @@ func DispEeprom(devName string, field string) (err int) {
                 start := time.Date(1996, 1, 1, 0, 0, 0, 0, time.UTC)
                 minutes := int((int(data[2]) * 0x10000) + (int(data[1]) * 0x100) + int(data[0]))
                 now := start.Add(time.Minute * time.Duration(minutes))
-                outStr = fmt.Sprintf(fmtDate, entry.Name, data[2], data[1], data[0], now)
+                year, month, day := now.Date()
+                date := fmt.Sprintf("%d/%d/%d", int(month), int(day), (int(year) % 100))
+                outStr = fmt.Sprintf(fmtDate, entry.Name, data[2], data[1], data[0], date)
             } else if entry.Name == "MAC Address Base" {
                 outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
             } else {
