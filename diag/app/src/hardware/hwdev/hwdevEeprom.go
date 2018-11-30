@@ -107,13 +107,13 @@ func EepromUpdateDate(devName string, date string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    date1 := make([]byte, 3)
-    data, _ := strconv.Atoi(date)
-    date1[0] = byte(data / 10000)
-    date1[1] = byte(data % 10000 / 100)
-    date1[2] = byte(data % 100)
-//    copy(date1, []byte(date))
-    err = eeprom.UpdateDate(devName, date1)
+//    date1 := make([]byte, 3)
+//    data, _ := strconv.Atoi(date)
+//    date1[0] = byte(data / 10000)
+//    date1[1] = byte(data % 10000 / 100)
+//    date1[2] = byte(data % 100)
+
+    err = eeprom.UpdateDate(devName, date)
     if err != errType.SUCCESS {
         return
     }

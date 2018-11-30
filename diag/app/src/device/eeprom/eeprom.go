@@ -3,7 +3,8 @@ package eeprom
 import (
     "fmt"
     "os"
-    "strconv"
+//    "strconv"
+    "time"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -43,56 +44,49 @@ var mtpTbl = []entry {
 
 var naples100Tbl = []entry {
     entry{"Common Format Version",      			INT8,		0,		1,	[]byte{1}},
-    entry{"Internal Use Area Offset",   			INT8,		1,		1,	[]byte{0xC}},
+    entry{"Internal Use Area Offset",   			INT8,		1,		1,	[]byte{0}},
     entry{"Chassis Area Offset",   					INT8,		2,		1,	[]byte{0}},
-    entry{"Board Info Offset",   					INT8,		3,		1,	[]byte{0}},
+    entry{"Board Info Offset",   					INT8,		3,		1,	[]byte{1}},
     entry{"Product Area Offset",     				INT8,		4,		1,	[]byte{0}},
     entry{"Multi-Record Area Offset",   			INT8,		5,		1,	[]byte{0}},
     entry{"PAD",  									INT8, 		6,		1,	[]byte{0}},
-    entry{"Common Header Checksum",     			INT8,	 	7,		1,  []byte{0xF2}},
+    entry{"Common Header Checksum",     			INT8,	 	7,		1,  []byte{0}},
     
     
     entry{"Board Info Format Version",				INT8, 		8,		1,  []byte{1}},
-    entry{"Board Area Length",       				INT8,		9,		1,	[]byte{0xA}},
-    entry{"Language Code",     						INT8,		10, 	1,  []byte{0}},
-    entry{"FRU File ID Type/Length",     			INT8,		11, 	1,  []byte{2}},
-    entry{"FRU File ID",     						INT8,		12, 	1,  []byte{2}},
-    entry{"Product Name Type/Length",     			INT8,		13, 	1,  []byte{0xC}},
-    entry{"Product Name",     						STRING,		14, 	10, []byte{0x10, 0x10, 0x10, 0x10, 
-        0x10, 0x10, 0x10, 0x10, 0x10, 0x10}},
-    entry{"Part Number Type/Length",     			INT8,		24, 	1,  []byte{0x10}},
-    entry{"Part Number",     						STRING,		25, 	13, []byte{0x16, 0x18, 0x0D, 0x38, 
-        0x38, 0x38, 0x38, 0x0D, 0x38, 0x38, 0x00, 0x38, 0x38}},
-    entry{"Serial Number Type/Length",     			INT8,		38, 	1,  []byte{0xE}},
-    entry{"Serial Number",     						STRING,		39, 	11, []byte{0x10, 0x10, 0x10, 0x10, 
-        0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}},
-    entry{"Manufacturer Type/Length",     			INT8,		50, 	1,  []byte{0x1A}},
-    entry{"Manufacturer",     						STRING,		51, 	21, []byte{0x30, 0x25, 0x2E, 0x33, 
-        0x25, 0x2E, 0x24, 0x2F, 0x00, 0x33, 0x39, 0x33, 0x34, 0x25, 0x2D, 0x33, 0x00, 0x29, 0x2E, 0x23, 0x0E}},
-    entry{"Manufacturing Date Type/Length", 		INT8,		72, 	1,  []byte{9}},
-    entry{"Manufacturing Date", 					INT8,		73, 	3,  []byte{0, 0, 0}},
-    entry{"SKU Type/Length",     					INT8,		76, 	1,  []byte{0xD}},
-    entry{"SKU",     								INT8,		77, 	4,  []byte{0, 0, 0, 0}},
-    entry{"Engineering Change Level Type/Length",	INT8,		81, 	1,  []byte{0xE}},
-    entry{"Engineering Change Level",     			INT8,		82, 	1,  []byte{1}},
-    entry{"Vendor IANA Type/Length",     			INT8,		83, 	1,  []byte{0xE}},
-    entry{"Vendor IANA",     						INT8,		84, 	4,  []byte{0, 0, 0, 0x12}},
-    entry{"PAD",     								INT8,		88, 	1,  []byte{0}},
-    entry{"Board Info Area Checksum",     			INT8,	 	89,		1,  []byte{0}},
-
-
-    entry{"Internal Use Area Format Version",     	INT8,		96, 	1,  []byte{1}},
-    entry{"Internal Use Area Length",     			INT8,		97, 	1,  []byte{2}},
-    entry{"Format Revision",     					INT8,		98, 	1,  []byte{1}},
-    entry{"Board ID",     							INT8,		99, 	4,  []byte{0, 0, 0, 1}},
-    entry{"Number of MAC Address",     				INT8,		103, 	2,  []byte{0, 0x18}},
-    entry{"MAC Address Base",     					INT8,		106, 	6,  []byte{0, 0, 0, 0, 0, 0}},
-    entry{"PAD",     								INT8,		112, 	1,  []byte{0}},
-    entry{"Internal Use Area Checksum",     		INT8,	 	120,	1,  []byte{0}},
+    entry{"Board Area Length",       				INT8,		9,		1,	[]byte{0xC}},
+    entry{"Language Code",     						INT8,		10, 	1,  []byte{0x19}},
+    entry{"Manufacturing Date/Time", 				INT8,		11, 	3,  []byte{0, 0, 0}},
+    entry{"Manufacturing Type/Length", 				INT8,		14, 	1,  []byte{0xD5}},
+    entry{"Manufacturer",     						STRING,		15, 	21, []byte{0x50, 0x45, 0x4E, 0x53, 
+        0x45, 0x4E, 0x44, 0x4F, 0x20, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4D, 0x53, 0x20, 0x49, 0x4E, 0x43, 0x2E}},
+    entry{"Product Name Type/Length",     			INT8,		36, 	1,  []byte{0xD0}},
+    entry{"Product Name",     						STRING,		37, 	10, []byte{0x4E, 0x41, 0x50, 0x4C, 
+        0x45, 0x53, 0x20, 0x31, 0x30, 0x30}},
+    entry{"Reserved",     							STRING,		47, 	6, 	[]byte{0x20, 0x20, 0x20, 0x20, 
+        0x20, 0x20}},
+    entry{"Serial Number Type/Length",     			INT8,		53, 	1,  []byte{0xCB}},
+    entry{"Serial Number",     						STRING,		54, 	11, []byte{0x30, 0x30, 0x30, 0x30, 
+        0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Part Number Type/Length",     			INT8,		65, 	1,  []byte{0xCD}},
+    entry{"Part Number",     						STRING,		66, 	13, []byte{0x36, 0x38, 0x2D, 0x30, 
+        0x30, 0x30, 0x32, 0x2D, 0x30, 0x31, 0x20, 0x30, 0x31}},
+    entry{"FRU File ID Type/Length",     			INT8,		79, 	1,  []byte{0xC0}},
+    entry{"Board ID Type/Length",     				INT8,		80, 	1,  []byte{4}},
+    entry{"Board ID",     							INT8,		81, 	4,  []byte{1, 0 , 0, 0}},
+    entry{"Engineering Change Level Type/Length",	INT8,		85, 	1,  []byte{0xC2}},
+    entry{"Engineering Change Level",     			INT8,		86, 	2,  []byte{0, 0}},
+    entry{"Number of MAC Address Type/Length",     	INT8,		88, 	1,  []byte{2}},
+    entry{"Number of MAC Address",     				INT8,		89, 	2,  []byte{0x18, 0x0}},
+    entry{"MAC Address Base Type/Length",     		INT8,		91, 	1,  []byte{6}},
+    entry{"MAC Address Base",     					INT8,		92, 	6,  []byte{0, 0xAE, 0xCD, 0, 0, 0}},
+    entry{"PAD",     								INT8,		98, 	5,  []byte{0, 0, 0, 0, 0}},
+    entry{"End of Field",				     		INT8,	 	103,	1,  []byte{0xC1}},
+    entry{"Board Info Area Checksum",     			INT8,	 	104,	1,  []byte{0}},
 }
 
 var EepromTbl []entry
-var brdInfoChk, intUseChk uint
+var brdInfoChk, cmnHeadChk uint
 
 func init() {
     cardType := os.Getenv("CARD_TYPE")
@@ -181,16 +175,13 @@ func ProgEeprom(devName string) (err int) {
 //            binary.Write(entry.Value, binary.LittleEndian, (0x100 - brdInfoChk % 0x100))
 //            entry.Value = []byte(strconv.FormatUint(uint64(0x100 - brdInfoChk % 0x100), 16))
             
-        } else if entry.Name == "Internal Use Area Checksum" {
-            entry.Value[0] = byte(0x100 - intUseChk % 0x100)
+        } else if entry.Name == "Common Header Checksum" {
+            entry.Value[0] = byte(0x100 - cmnHeadChk % 0x100)
         }
         
         if entry.DataType == STRING {
             data := make([]byte, entry.NumBytes)
             copy(data, entry.Value)
-            for i := 0; i < entry.NumBytes; i++ {
-                data[i] += 0x20
-            }
             cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
         } else {
             outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
@@ -259,14 +250,14 @@ func UpdateMac(devName string, mac []byte) (err int) {
 
 func updateIntChk() () {
     brdInfoChk = 0
-    intUseChk = 0
+    cmnHeadChk = 0
     for _, entry := range(EepromTbl) {
-        if (entry.Offset > 7) && (entry.Offset < 89) {
+        if (entry.Offset > 7) && (entry.Offset < 103) {
 //            brdInfoChk += entry.Value
             brdInfoChk += calcSum(entry)
-        } else if (entry.Offset > 95) && (entry.Offset < 120) {
+        } else if (entry.Offset >= 0) && (entry.Offset < 7) {
 //            intUseChk += entry.Value
-            intUseChk += calcSum(entry)
+            cmnHeadChk += calcSum(entry)
         }
     }
 }
@@ -302,9 +293,6 @@ func UpdateSn(devName string, sn []byte) (err int) {
     } else if cardType == "NAPLES100" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Serial Number" {
-                for i := 0; i < entry.NumBytes; i++ {
-                    sn[i] -= 0x20
-                }
                 copy(entry.Value, sn)
                 continue
             } else if entry.Name == "MAC Address Base" {
@@ -322,7 +310,44 @@ func UpdateSn(devName string, sn []byte) (err int) {
     return
 }
 
-func UpdateDate(devName string, date []byte) (err int) {
+//func UpdateDate(devName string, date []byte) (err int) {
+////    if len(date) != 3 {
+////        cli.Println("f", "Date format is invalid: ", date)
+////        return
+////    }
+//    err = smbus.Open(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer smbus.Close()
+//    
+//    cardType := os.Getenv("CARD_TYPE")
+//
+//    if cardType == "NAPLES100" {
+//        for _, entry := range(EepromTbl) {
+//            if entry.Name == "Manufacturing Date" {
+//                copy(entry.Value, date)
+////                for i := 0; i < entry.NumBytes; i++ {
+////                    entry.Value[i] = byte((date >> uint64(16 - i * 8)) & 0xFF)
+////                    fmt.Printf("%d\n", entry.Value[i])
+////                }
+//                continue
+//            } else if entry.Name == "MAC Address Base" {
+//                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+//                copy(entry.Value, mac)
+//                continue
+//            } else if entry.Name == "Serial Number" {
+//                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+//                copy(entry.Value, sn)
+//                continue
+//            }
+//        }
+//        updateIntChk()
+//    }
+//    return
+//}
+
+func UpdateDate(devName string, str string) (err int) {
 //    if len(date) != 3 {
 //        cli.Println("f", "Date format is invalid: ", date)
 //        return
@@ -337,12 +362,23 @@ func UpdateDate(devName string, date []byte) (err int) {
 
     if cardType == "NAPLES100" {
         for _, entry := range(EepromTbl) {
-            if entry.Name == "Manufacturing Date" {
-                copy(entry.Value, date)
-//                for i := 0; i < entry.NumBytes; i++ {
-//                    entry.Value[i] = byte((date >> uint64(16 - i * 8)) & 0xFF)
-//                    fmt.Printf("%d\n", entry.Value[i])
-//                }
+            if entry.Name == "Manufacturing Date/Time" {
+                const shortForm = "2006-01-02"
+                date := fmt.Sprintf("%s%s%s%s%s%s", "20", string(str[4:6]), "-", string(str[0:2]), "-", string(str[2:4]))
+            	fmt.Println(date)
+            
+            	start, _ := time.Parse(shortForm, "1996-01-01")
+            	end, _ := time.Parse(shortForm, date)
+            	fmt.Println(start)
+            	fmt.Println(end)
+            	difference := end.Sub(start)
+            	fmt.Println(difference)
+            	fmt.Printf("0x%x\n", int(difference.Minutes()))
+            	data := make([]byte, 3)
+            	data[0] = byte(int(difference.Minutes()) & 0xFF)
+            	data[1] = byte((int(difference.Minutes()) >> 8) & 0xFF)
+            	data[2] = byte((int(difference.Minutes()) >> 16) & 0xFF)
+            	copy(entry.Value, data)
                 continue
             } else if entry.Name == "MAC Address Base" {
                 mac, _ := readField(devName, entry.Offset, entry.NumBytes)
@@ -368,9 +404,9 @@ func DispEeprom(devName string, field string) (err int) {
 
     var data []byte
     fmtStr := "%-45s%-20s"
-    fmtDate := "%-45s%02s/%02s/%02s"
-    fmtMac := "%-45s%02x-%02x-%02x-%02x-%02x-%02x"
-    fmtHex := "%-45s0x%-20x"
+    fmtDate := "%-45s0x%02X%02X%02X  %s"
+    fmtMac := "%-45s%02X-%02X-%02X-%02X-%02X-%02X"
+    fmtHex := "%-45s0x%-20X"
     var outStr string
     for _, entry := range(EepromTbl) {
         if(field == "SN") {
@@ -381,6 +417,8 @@ func DispEeprom(devName string, field string) (err int) {
             if entry.Name != "MAC Address Base" {
                 continue
             }
+        } else if(entry.Name == "Reserved") {
+            continue
         }
         data, err = readField(devName, entry.Offset, entry.NumBytes)
         if err != errType.SUCCESS {
@@ -388,14 +426,14 @@ func DispEeprom(devName string, field string) (err int) {
             return
         }
         if entry.DataType == STRING {
-                for i := 0; i < entry.NumBytes; i++ {
-                    data[i] += 0x20
-                }
             dataStr := string(data[:entry.NumBytes])
             outStr = fmt.Sprintf(fmtStr, entry.Name, dataStr)
         } else {
-            if entry.Name == "Manufacturing Date" {
-                outStr = fmt.Sprintf(fmtDate, entry.Name, strconv.Itoa(int(data[0])), strconv.Itoa(int(data[1])), strconv.Itoa(int(data[2])))
+            if entry.Name == "Manufacturing Date/Time" {
+                start := time.Date(1996, 1, 1, 0, 0, 0, 0, time.UTC)
+                minutes := int((int(data[2]) * 0x10000) + (int(data[1]) * 0x100) + int(data[0]))
+                now := start.Add(time.Minute * time.Duration(minutes))
+                outStr = fmt.Sprintf(fmtDate, entry.Name, data[2], data[1], data[0], now)
             } else if entry.Name == "MAC Address Base" {
                 outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
             } else {
