@@ -201,3 +201,7 @@ func EepromDisp(devName string, field string) (err int) {
     }
     return
 }
+
+func EepromDump(devName string) {
+    eeprom.DumpEeprom(devName)
+}

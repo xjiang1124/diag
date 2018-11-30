@@ -442,3 +442,31 @@ func DispEeprom(devName string, field string) (err int) {
     return
 }
 
+func DumpEeprom(devName string) (err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    var data []byte
+    cardType := os.Getenv("CARD_TYPE")
+
+    if cardType == "NAPLES100" {
+        f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+        if error != nil {
+            cli.Println("e", "file create failed")
+        }
+        cli.Println("i", "dump FRU to file eeprom")
+        for _, entry := range(EepromTbl) {
+            data, err = readField(devName, entry.Offset, entry.NumBytes)
+            if err != errType.SUCCESS {
+                cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
+                return
+            }
+            f.WriteString(string(data[:]))
+        }
+        f.Close()
+    }
+    return
+}

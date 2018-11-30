@@ -36,6 +36,7 @@ func main() {
     snPtr      := flag.String("sn",     "",             "Serial number")
     mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",          "Display specific eeprom field")
+    dumpPtr  	:= flag.Bool ("dump", 	false,          "Dump FRU")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -71,6 +72,11 @@ func main() {
             misc.SleepInUSec(500000)
         }
         CpldWrite(0x1, 0x6)
+        return
+    }
+    
+    if *dumpPtr == true {
+        hwdev.EepromDump(devName)
         return
     }
 
