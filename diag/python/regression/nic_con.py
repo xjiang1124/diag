@@ -45,7 +45,9 @@ class nic_con:
             return -1
 
     def uart_session_cmd(self, session, cmd, timeout=30, ending="\#"):
+        temp = session.timeout
         session.timeout = timeout
+        ret = 0
         try:
             session.sendline(cmd)
             session.expect(ending)
@@ -54,7 +56,9 @@ class nic_con:
             session.send(chr(3))
             time.sleep(0.05)
             session.expect(ending)
-            return -1
+            ret = -1
+        session.timeout = temp
+        return ret
 
     def enter_uboot(self, session, slot=0, rate=115200, timeout=30):
         if slot == 0 or slot > 10:
@@ -89,38 +93,59 @@ class nic_con:
             except pexpect.TIMEOUT:
                 self.uart_session_stop(session)
 
-
-    def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
+    def conn_uboot(self, session, rate=115200):
         exprStr = "Capri# "
+        session.timeout = 15
         ret = 0
-        session.timeout=5
         try:
-            cmd = "picocom -b {} -f h /dev/ttyS1".format(orig_rate)
+            cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
             session.sendline(cmd)
             session.expect("Terminal ready")
             time.sleep(1)
             session.send("\r")
             session.expect(exprStr)
-            
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            ret = -1
+        return ret
+
+    def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
+        if orig_rate == tgt_rate:
+            print "=== No need to change baud rate ==="
+            return 0
+
+        exprStr = "Capri# "
+        ret = 0
+        session.timeout=15
+        try:
+            ret = self.conn_uboot(session, orig_rate)
+            if ret != 0:
+                return ret
             cmd = "setenv bootargs earlycon=uart8250,mmio32,0x4800 console=ttyS0,{}n8".format(tgt_rate)
             session.sendline(cmd)
             session.expect(exprStr)
             self.uart_session_stop(session)
-            #time.sleep(2)
-            print "step 1 down"
 
-            cmd = "picocom -b {} -f h /dev/ttyS1".format(orig_rate)
-            session.sendline(cmd)
-            session.expect("Terminal ready")
-            time.sleep(1)
-            session.send("\r")
-            session.expect(exprStr)
-           
+            ret = self.conn_uboot(session, orig_rate)
+            if ret != 0:
+                return ret
             cmd = "setenv baudrate {}".format(tgt_rate)
             session.sendline(cmd)
             session.expect("press ENTER")
+            #self.uart_session_cmd(session, cmd, 3, "press ENTER")
+
             self.uart_session_stop(session)
-            print "step 2 down"
+
+            if save == True:
+                ret = self.conn_uboot(session, tgt_rate)
+                if ret != 0:
+                    return ret
+                self.uart_session_cmd(session, "saveenv", 10, exprStr)
+                session.send("reset\r")
+                time.sleep(1)
+                self.uart_session_stop(session)
+                
+
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Faled to change uboot baud rate ==="
             self.uart_session_stop(session)
@@ -129,6 +154,10 @@ class nic_con:
 
 
     def change_rate_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0, save=False):
+        if orig_rate == tgt_rate:
+            print "=== No need to change baud rate ==="
+            return 0
+
         session = common.session_start()
         self.enter_uboot(session, slot, orig_rate)
         time.sleep(15)
@@ -146,7 +175,7 @@ class nic_con:
             return -1
 
         exprStr = "Capri# "
-        mtest_cmd = "mtest {} {} 0xaaaaaaaa 3"
+        mtest_cmd = "mtest {} {} 0xaaaaaaaa 1"
         session.timeout = 30
         try:
             cmd = "picocom -b {} -f h /dev/ttyS1".format(tgt_rate)
@@ -387,21 +416,21 @@ if __name__ == "__main__":
     parser.add_argument("-ping", "--ping", help="Ping test before enable management port", action='store_true')
     parser.add_argument("-old", "--old", help="New management port configure", action='store_true')
     parser.add_argument("-uboot", "--uboot", help="Uboot operations", action='store_true')
-    parser.add_argument("-pre_cl", "--pre_cl", help="Pre-clean before enable management port", action='store_true')
+    parser.add_argument("-save", "--save", help="Save uboot settings", action='store_true')
     args = parser.parse_args()
     
     con = nic_con()
 
     if args.change_baud_rate == True:
         if args.uboot == True:
-            con.change_rate_uboot(args.orig_rate, args.tgt_rate, args.slot)
+            con.change_rate_uboot(args.orig_rate, args.tgt_rate, args.slot, args.save)
         else:
             con.change_rate(args.orig_rate, args.tgt_rate, args.slot)
         sys.exit()
 
     if args.ena_mgmt_port == True:
         if args.old == True:
-            con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping, args.pre_cl)
+            con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping, False)
         else:
             con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping)
         sys.exit()
