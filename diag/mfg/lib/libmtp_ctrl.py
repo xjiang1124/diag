@@ -476,6 +476,26 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_get_hw_version(self):
+        self._mgmt_handle.sendline("cpldutil -cpld-rd -addr=0x0")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        match = re.findall(r"addr 0x0 with data (0x[0-9a-fA-F]+)", self._mgmt_handle.before)
+        if match:
+            io_cpld_ver = match[0]
+        else:
+            libmfg_utils.sys_exit("Failed to get MTP IO-CPLD image version info")
+
+        self._mgmt_handle.sendline("cpldutil -cpld-rd -addr=0x19")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        match = re.findall(r"addr 0x19 with data (0x[0-9a-fA-F]+)", self._mgmt_handle.before)
+        if match:
+            jtag_cpld_ver = match[0]
+        else:
+            libmfg_utils.sys_exit("Failed to get MTP JTAG-CPLD image version info")
+
+        return [io_cpld_ver, jtag_cpld_ver]
+
+
     def mtp_get_sw_version(self):
         self._mgmt_handle.sendline("version")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
@@ -1039,6 +1059,7 @@ class mtp_ctrl():
         # check nic utils are on the nic
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
+            self.mtp_enter_user_ctrl()
             return False
         nic_cmd = "ls /mnt"
         self._mgmt_handle.sendline(nic_cmd)
@@ -1059,13 +1080,12 @@ class mtp_ctrl():
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         self.mtp_mgmt_exec_cmd(cmd)
         self._mgmt_handle.sendline(nic_con_cmd)
-        idx = self._mgmt_handle.expect_exact(["Thanks for using picocom", "TIMEOUT: Can not connect to NIC on UART", "TIMEOUT: Faled to enable management port", pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
-        if idx == 0:
+        idx = self._mgmt_handle.expect_exact(["Thanks for using picocom", "TIMEOUT", pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        if idx == 0 and "TIMEOUT" not in self._mgmt_handle.before:
             self._mgmt_handle.expect_exact("exit")
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
             return True
         else:
-            self.cli_log_slot_err(slot, "Execute '{:s}' Failed".format(nic_con_cmd))
             self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
             return False
 
@@ -1074,13 +1094,13 @@ class mtp_ctrl():
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
         cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
         self._mgmt_handle.sendline(cmd)
-        exp_list = ["assword:"] + libmfg_utils.get_linux_prompt_list() + [pexpect.TIMEOUT]
+        exp_list = ["assword:", "#", pexpect.TIMEOUT]
         while True:
             idx = self._mgmt_handle.expect_exact(exp_list)
             if idx == 0:
                 self._mgmt_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
-            elif idx < len(exp_list) - 1:
+            elif idx == 1:
                 nic_prompt = exp_list[idx]
                 break
             else:
@@ -1100,6 +1120,7 @@ class mtp_ctrl():
     def mtp_mgmt_exec_nic_cmds(self, slot, nic_cmd_list):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
+            self.mtp_enter_user_ctrl()
             return False
 
         for nic_cmd in nic_cmd_list:
@@ -1118,10 +1139,13 @@ class mtp_ctrl():
     def mtp_mgmt_get_nic_fru_info(self, slot):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
+            self.mtp_enter_user_ctrl()
             return None
 
         # dump the fru
         self._mgmt_handle.sendline("/mnt/cpld -r 0")
+        self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        self._mgmt_handle.sendline("/mnt/devmgr -status")
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
         self._mgmt_handle.sendline("/mnt/eeutil -disp")
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
@@ -1154,6 +1178,7 @@ class mtp_ctrl():
     def mtp_mgmt_get_nic_hw_info(self, slot):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
+            self.mtp_enter_user_ctrl()
             return None
         # dump the fru
         self._mgmt_handle.sendline("/mnt/cpld -r 0")
@@ -1176,14 +1201,25 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC Console baudrate")
         nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
         if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
-            self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
-            return False
+            # try once more
+            self.cli_log_slot_inf(slot, "Set NIC Console baudrate failed, try again")
+            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
+                self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
+                return False
+            else:
+                self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
         # 2. config nic ip address
         self.cli_log_slot_inf(slot, "Set NIC MGMT ip address")
         nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
         if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
-            self.cli_log_slot_err(slot, "Set NIC MGMT ip address failed")
-            return False
+            # try once more
+            self.cli_log_slot_inf(slot, "Set NIC MGMT ip address failed, try again")
+            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
+                self.cli_log_slot_err(slot, "Set NIC MGMT ip address failed")
+                return False
+            else:
+                self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
+
         time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
         # 3. verify /mnt write permission
 

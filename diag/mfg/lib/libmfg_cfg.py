@@ -1,5 +1,5 @@
 # No valid content in the Fru
-MFG_CFG_NIC_FRU_VALID = True
+MFG_CFG_NIC_FRU_VALID = False
 MFG_BYPASS_PSU_CHECK = True
 MFG_BYPASS_NIC_FRU_WR_PROT = True
 MFG_BYPASS_NIC_ENV_SET = False
@@ -23,8 +23,8 @@ DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/n
 NAPLES_SN_FMT = r"FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]+$"
 NAPLES_DISP_SN_FMT = r"Serial Number +(FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4})"
-NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-ae-cd-[a-f0-9]{2}-[a-f0-9]{2}-[a-f0-9]{2})"
-NAPLES_DISP_DATE_FMT = r"Manufacturing Date +(\d{2}/\d{2}/\d{2})"
+NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
+NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 

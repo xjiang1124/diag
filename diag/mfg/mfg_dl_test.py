@@ -231,6 +231,10 @@ def main():
     # diag environment pre init
     mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
 
+    # get the hw version info
+    io_cpld_ver, jtag_cpld_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
+    mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)), level=0)
+
     # PSU/FAN absent, powerdown MTP
     ret = mtp_mgmt_ctrl.mtp_hw_init(True)
     if not ret:
@@ -336,6 +340,8 @@ def main():
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
+        if key in fail_nic_list: 
+            continue
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             sn = nic_fru_cfg[mtp_id][key]["SN"]
@@ -456,6 +462,8 @@ def main():
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
+        if key in fail_nic_list: 
+            continue
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             sn = nic_fru_cfg[mtp_id][key]["SN"]
@@ -484,7 +492,7 @@ def main():
             # mm/dd/yy
             exp_date = "/".join(re.findall("..", prog_date))
             exp_sn = sn
-            exp_mac = "-".join(re.findall("..", mac.lower()))
+            exp_mac = "-".join(re.findall("..", mac))
             dsp = "DL_FRU"
             test = "FRU_VERIFY"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
@@ -494,7 +502,6 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_enter_user_ctrl()
                 mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
                 fail_nic_list.append(key)

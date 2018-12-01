@@ -82,7 +82,10 @@ def main():
         return
     version = mtp_mgmt_ctrl.mtp_get_sw_version()
     libmfg_utils.cli_inf(mtp_cli_id_str + "MTP is connected, diag version = {:s}".format(version))
-
+    # diag environment pre init
+    mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
+    io_cpld_ver, jtag_cpld_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP IO-CPLD version = {:s}, JTAG-CPLD version = {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)))
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
 if __name__ == "__main__":

@@ -100,7 +100,31 @@ def main():
 
     mtp_mgmt_ctrl.mtp_init_nic_type()
 
-    for loop in range(10):
+    mtp_mgmt_ctrl.mtp_power_off_nic()
+    time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    for slot in range(4):
+        mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+
+    if not mtp_mgmt_ctrl.mtp_program_nic_fru(0, "112918", "FLM18310001", "00AECD000001"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_install_nic_emmc(0, "/home/diag/naples100_fw_112718.tar"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_program_nic_fru(1, "112918", "FLM18310002", "00AECD000002"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_install_nic_emmc(1, "/home/diag/naples100_fw_112718.tar"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_program_nic_fru(2, "112918", "FLM18310003", "00AECD000003"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_install_nic_emmc(2, "/home/diag/naples100_fw_112718.tar"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_program_nic_fru(3, "112918", "FLM18310004", "00AECD000004"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+    if not mtp_mgmt_ctrl.mtp_install_nic_emmc(3, "/home/diag/naples100_fw_112718.tar"):
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+
+    for loop in range(20):
         # power cycle the nic.
         mtp_mgmt_ctrl.mtp_power_off_nic()
         time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
@@ -108,10 +132,12 @@ def main():
 
         # init nic.
         for slot in range(4):
-            mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(slot):
+                mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         for slot in range(4):
-            mtp_mgmt_ctrl.mtp_mgmt_get_nic_fru_info(slot)
+            if not mtp_mgmt_ctrl.mtp_mgmt_get_nic_fru_info(slot):
+                mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
     return
 
