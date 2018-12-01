@@ -1,0 +1,27 @@
+# !/bin/bash
+arch=arm64
+slot=$2
+
+# Set up environment
+echo "-------------------"
+echo "Preparing diag environment"
+DIAG_DIR=/home/diag/diag
+mkdir -p $DIAG_DIR/diag/log/
+
+if [[ -f /etc/profile.bak ]]
+then
+    echo "Skip back up profile"
+else
+    cp /etc/profile /etc/profile.bak
+fi
+cat /etc/profile.bak $DIAG_DIR/python/regression/scripts/dft_profile_nic > /etc/profile
+
+source /etc/profile
+sh $DIAG_DIR/python/regression/scripts/nic_config.sh
+
+echo "Preparing diag environment -- Done"
+
+echo "-------------------"
+echo "Set up diag $arch -- Done"
+echo "===================================="
+

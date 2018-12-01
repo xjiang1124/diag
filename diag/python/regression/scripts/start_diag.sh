@@ -7,6 +7,7 @@ else
     if [[ $1 == "arm" || $1 == "arm64" ]]
     then
         arch=arm64
+        slot=$2
     else
         arch=amd64
     fi
@@ -16,14 +17,13 @@ fi
 echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
+mkdir -p $DIAG_DIR/diag/log/
 
 # Prepare all paths
 if [[ $arch == "amd64" ]]
 then
-
     envinit.py
     #turn_on_slot.sh on all
-    mkdir -p /home/diag/diag/log/
     /home/diag/diag/util/inventory -env
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     cat $DIAG_DIR/log/board_env.txt >> temp_profile
@@ -44,29 +44,22 @@ echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/scripts/asic" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
-if [[ $arch == "arm64" ]]
-then
-    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_nic1
-else
-    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
-    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
-fi
-
-#==================================
-echo "Set up ASIC environment"
-echo "export ASIC_LIB_BUNDLE=/home/diag/diag/asic/" >> temp_profile
-echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
-echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
-echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
-echo "source \$ASIC_LIB/source_env_path" >> temp_profile
-
-cp temp_profile ~/.bash_profile
-source ~/.bash_profile
-hack_asic.sh
-
 if [[ $arch == "amd64" ]]
 then
-    #envinit.py
+    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
+    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
+
+    #==================================
+    echo "Set up ASIC environment"
+    echo "export ASIC_LIB_BUNDLE=/home/diag/diag/asic/" >> temp_profile
+    echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
+    echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
+    echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
+    echo "source \$ASIC_LIB/source_env_path" >> temp_profile
+    
+    cp temp_profile ~/.bash_profile
+    source ~/.bash_profile
+    hack_asic.sh
 
     # Start redis if it is not running
     redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)

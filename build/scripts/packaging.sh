@@ -57,11 +57,16 @@ cp $TOP_DIR/diag/scripts/version* $TEMP_DIR/scripts/
 cp -r $TOP_DIR/diag/scripts/asic/ $TEMP_DIR/scripts/
 
 cp -r $TOP_DIR/diag/python/ $TEMP_DIR/
-cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
 
 cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
 cp -r $TOP_DIR/diag/util/bin/$arch/* $TEMP_DIR/util/
 
+if [[ $arch == "amd64" ]]
+then
+    cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
+else
+    cp $TOP_DIR/diag/python/regression/scripts/start_diag.arm64.sh $TEMP_DIR/..
+fi
 # Version
 git log --name-status HEAD^..HEAD > $TEMP_DIR/scripts/version.txt
 git status >> $TEMP_DIR/scripts/version.txt
