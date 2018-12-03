@@ -301,7 +301,14 @@ def main():
                 naples100_sn_list.append(sn)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("NIC PRSNT Check Failed, Please Restart", level=0)
+                mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+                mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+                libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+                mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+                mtp_mgmt_ctrl.mtp_apc_pwr_off()
                 logfile_close(log_filep_list)
+                logfile_cleanup(log_file_list)
                 return
 
             mtp_mgmt_ctrl.mtp_set_nic_scan_sn(slot, sn)
@@ -489,15 +496,13 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # verify FRU
-            # mm/dd/yy
-            exp_date = "/".join(re.findall("..", prog_date))
             exp_sn = sn
             exp_mac = "-".join(re.findall("..", mac))
             dsp = "DL_FRU"
             test = "FRU_VERIFY"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_date, exp_sn, exp_mac)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if not ret:

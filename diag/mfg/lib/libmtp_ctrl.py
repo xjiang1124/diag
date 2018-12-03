@@ -604,22 +604,18 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_verify_nic_fru(self, slot, date, sn, mac):
-        self.cli_log_slot_inf(slot, "Verify NIC FRU date={:s}, sn={:s}, mac={:s}".format(date, sn, mac))
+    def mtp_verify_nic_fru(self, slot, sn, mac):
+        self.cli_log_slot_inf(slot, "Verify NIC FRU sn={:s}, mac={:s}".format(sn, mac))
         nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
         if not nic_fru_info:
             self.cli_log_slot_err(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
             return False
         else:
             nic_sn = nic_fru_info[0]
-            nic_date = nic_fru_info[1]
-            nic_mac = nic_fru_info[2]
+            nic_mac = nic_fru_info[1]
 
         if nic_sn != sn:
             self.cli_log_slot_err(slot, "SN Verify Failed, get {:s}, expect {:s}".format(nic_sn, sn))
-            return False
-        if nic_date != date:
-            self.cli_log_slot_err(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
             return False
         if nic_mac != mac:
             self.cli_log_slot_err(slot, "MAC Verify Failed, get {:s}, expect {:s}".format(nic_mac, mac))
@@ -1059,7 +1055,6 @@ class mtp_ctrl():
         # check nic utils are on the nic
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
-            self.mtp_enter_user_ctrl()
             return False
         nic_cmd = "ls /mnt"
         self._mgmt_handle.sendline(nic_cmd)
@@ -1120,7 +1115,6 @@ class mtp_ctrl():
     def mtp_mgmt_exec_nic_cmds(self, slot, nic_cmd_list):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
-            self.mtp_enter_user_ctrl()
             return False
 
         for nic_cmd in nic_cmd_list:
@@ -1139,7 +1133,6 @@ class mtp_ctrl():
     def mtp_mgmt_get_nic_fru_info(self, slot):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
-            self.mtp_enter_user_ctrl()
             return None
 
         # dump the fru
@@ -1154,11 +1147,6 @@ class mtp_ctrl():
             sn = match[0]
         else:
             sn = ""
-        match = re.findall(NAPLES_DISP_DATE_FMT, self._mgmt_handle.before)
-        if match:
-            date = match[0]
-        else:
-            date = ""
         match = re.findall(NAPLES_DISP_MAC_FMT, self._mgmt_handle.before)
         if match:
             mac = match[0]
@@ -1166,11 +1154,10 @@ class mtp_ctrl():
             mac = ""
         self._mgmt_handle.sendline("exit")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        self.cli_log_slot_inf(slot, "Retrieve info from FRU {:s}-{:s}-{:s}".format(sn, date, mac))
-        if sn == "" or date == "" or mac == "":
+        if sn == "" or mac == "":
             return None
 
-        return [sn, date, mac]
+        return [sn, mac]
 
 
     # retrieve misc hw info from nic
@@ -1178,7 +1165,6 @@ class mtp_ctrl():
     def mtp_mgmt_get_nic_hw_info(self, slot):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
-            self.mtp_enter_user_ctrl()
             return None
         # dump the fru
         self._mgmt_handle.sendline("/mnt/cpld -r 0")
@@ -1403,7 +1389,7 @@ class mtp_ctrl():
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
                     self._nic_mac_list[slot] = "00AEDEADBEEF"
                 else:
-                    self._nic_mac_list[slot] = str.upper(nic_fru_info[2]).replace('-', '')
+                    self._nic_mac_list[slot] = str.upper(nic_fru_info[1]).replace('-', '')
 
 
     def mtp_get_nic_mac(self, slot):
