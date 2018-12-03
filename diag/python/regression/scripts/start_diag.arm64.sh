@@ -1,6 +1,6 @@
 # !/bin/bash
 arch=arm64
-slot=$2
+
 
 # Set up environment
 echo "-------------------"
@@ -15,6 +15,18 @@ else
     cp /etc/profile /etc/profile.bak
 fi
 cat /etc/profile.bak $DIAG_DIR/python/regression/scripts/dft_profile_nic > /etc/profile
+
+if [[ $# -eq 1 ]]
+then
+    slot=$1
+else
+    slot_val="$(cpld -r 0xA)"
+    slot=$((slot_val & 0x7F))
+fi
+nic_name_pre="CARD_NAME=NIC"
+nic_name="$nic_name_pre$slot"
+echo "nic_name: $nic_name"
+echo "export $nic_name" >> /etc/profile
 
 source /etc/profile
 sh $DIAG_DIR/python/regression/scripts/nic_config.sh

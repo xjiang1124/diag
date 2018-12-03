@@ -13,6 +13,6 @@ PATH=$PATH:$DIAG_DIR/scripts/asic
 PATH=$PATH:$DIAG_DIR/tools
 PATH=$PATH:/root
 
-export CARD_NAME="NIC1"
 export CARD_TYPE="NAPLES100"
+export REDIS_IP=10.1.1.100
 
