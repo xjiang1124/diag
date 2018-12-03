@@ -444,7 +444,7 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         if self._mgmt_handle:
             self._mgmt_handle.sendline("whoami")
-            handle.expect_exact(userid)
+            self._mgmt_handle.expect_exact(userid)
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
 
