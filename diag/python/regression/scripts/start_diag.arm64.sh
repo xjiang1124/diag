@@ -33,6 +33,9 @@ sh $DIAG_DIR/python/regression/scripts/nic_config.sh
 
 echo "Preparing diag environment -- Done"
 
+source /etc/profile
+diagmgr &
+
 echo "-------------------"
 echo "Set up diag $arch -- Done"
 echo "===================================="
