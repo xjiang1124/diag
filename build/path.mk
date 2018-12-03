@@ -35,6 +35,7 @@ ARM64_SRC_DIR=			\
 	dsp/cpld     		\
 	dsp/i2c 			\
 	dsp/intr    		\
+	dsp/mvl    			\
 	dsp/qsfp    		\
 	dsp/rtc     		\
 	dsp/spi    			\
