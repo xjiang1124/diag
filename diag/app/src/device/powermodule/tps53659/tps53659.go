@@ -295,7 +295,9 @@ func ReadDeviceID(devName string) (devID byte, err int) {
     }
     defer pmbus.Close()
 
-    devID, err = pmbus.ReadByte(devName, pmbus.IC_DEVICE_ID)
+    readData := make([]byte, 1)
+    _, err = pmbus.ReadBlock(devName, pmbus.IC_DEVICE_ID, readData)
+    devID = readData[0]
     return devID, err
 }
 

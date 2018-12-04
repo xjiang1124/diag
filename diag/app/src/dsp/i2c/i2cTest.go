@@ -63,13 +63,14 @@ func testPcf85263a(devName string) (err int) {
 
 func I2cI2cHdl(argList []string) {
     var ret int
+    ret = errType.SUCCESS
 
     for _, devName := range(i2cTestList) {
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
-        if err != errType.SUCCESS {
-             diagEngine.FuncMsgChan <- err
-             return
-        }
+        //if err != errType.SUCCESS {
+        //     diagEngine.FuncMsgChan <- err
+        //     return
+        //}
         dcli.Println("i", "Starting testing", devName, "as component", i2cInfo.Comp)
         switch i2cInfo.Comp {
         case "TPS53659":

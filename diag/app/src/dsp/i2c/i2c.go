@@ -15,7 +15,7 @@ const (
 
 var naples100TestList = []string {
     "CAP0_CORE_DVDD", "CAP0_CORE_AVDD", "CAP0_HBM", "CAP0_ARM", "CAP0_3V3",
-    "TEMP_SENSOR", "RTC",
+    "TSENSOR", "RTC",
 }
 var i2cTestList []string
 
