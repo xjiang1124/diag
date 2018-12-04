@@ -294,7 +294,7 @@ class nic_con:
         print cmd_mac
 
         try:
-            for i in range(2):
+            for idx in range(2):
                 session.sendline("ifconfig -a")
                 session.expect("\#")
                 temp = session.after
@@ -308,6 +308,67 @@ class nic_con:
 
             # Configure IP
             self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
+
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Faled to enable management port ==="
+            return -1
+
+        self.uart_session_stop(session)
+        common.session_stop(session)
+
+    def enable_mnic(self, rate=9600, slot=0):
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session = common.session_start()
+        self.uart_session_start(session, rate)
+
+        session.timeout = 60
+
+        cmd_mac = "echo \'00:11:22:33:44:{:02}\' > /sysconfig/config0/sysuuid"
+        cmd_mac = cmd_mac.format(slot)
+        print "MAC:", cmd_mac
+
+        try:
+            session.sendline("ifconfig -a")
+            session.expect("\#")
+            temp = session.after
+            if 'oob_mnic0' in session.before:
+                print 'oob_mnic0 enabled'
+            else:
+                self.uart_session_cmd(session, cmd_mac)
+                self.uart_session_cmd(session, "sysinit.sh classic hw", 15)
+
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Faled to enable management port ==="
+            return -1
+
+        self.uart_session_stop(session)
+        common.session_stop(session)
+
+    def config_mnic(self, rate=9600, slot=0):
+        ret = 0
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session = common.session_start()
+        self.uart_session_start(session, rate)
+
+        session.timeout = 30
+
+        try:
+            session.sendline("ifconfig -a")
+            session.expect("\#")
+            temp = session.after
+            if 'oob_mnic0' in session.before:
+                print 'oob_mnic0 enabled'
+                self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
+            else:
+                print 'oob_mnic0 NOT enabled!'
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
@@ -408,6 +469,8 @@ if __name__ == "__main__":
 
     group.add_argument("-br", "--change_baud_rate", help="Change baud rate", action='store_true')
     group.add_argument("-mgmt", "--ena_mgmt_port", help="Enable managment port", action='store_true')
+    group.add_argument("-ena_mnic", "--ena_mnic", help="Enable mnic", action='store_true')
+    group.add_argument("-cfg_mnic", "--cfg_mnic", help="Configure mnic", action='store_true')
     group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
 
     parser.add_argument("-or", "--orig_rate", help="Original baud rate", type=int, default=115200)
@@ -433,6 +496,14 @@ if __name__ == "__main__":
             con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping, False)
         else:
             con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping)
+        sys.exit()
+
+    if args.ena_mnic == True:
+        con.enable_mnic(args.tgt_rate, args.slot)
+        sys.exit()
+
+    if args.cfg_mnic == True:
+        con.config_mnic(args.tgt_rate, args.slot)
         sys.exit()
 
     if args.mtest == True:

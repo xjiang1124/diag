@@ -15,6 +15,7 @@ else
     cp /etc/profile /etc/profile.bak
 fi
 cat /etc/profile.bak $DIAG_DIR/python/regression/scripts/dft_profile_nic > /etc/profile
+source /etc/profile
 
 if [[ $# -eq 1 ]]
 then

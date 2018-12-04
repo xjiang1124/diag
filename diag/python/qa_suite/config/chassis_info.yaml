@@ -255,12 +255,12 @@ MTPS01:
     SKIP:
     MODE: MTP_QK
     TS: pen-hwlab-tel-02
-    TS_PORT: 2003
+    TS_PORT: 2018
     APC_1_NAME: pen-hwlab-apc-02
-    APC_1_PORT: 4
+    APC_1_PORT: 22
     APC_2_NAME: pen-hwlab-apc-02
-    APC_2_PORT: 3
-    IP: 192.168.74.21
+    APC_2_PORT: 
+    IP: 192.168.74.40
     SLOT_1:
     SLOT_2: 
     SLOT_3: 
