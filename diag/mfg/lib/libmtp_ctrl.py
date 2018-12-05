@@ -956,8 +956,7 @@ class mtp_ctrl():
         else:
             self.cli_log_inf("MTP chassis sanity check failed\n", level = 0)
 
-        return True
-        #return rc
+        return rc
 
 
     def mtp_diag_env_init(self, fan_speed, vmarg):
