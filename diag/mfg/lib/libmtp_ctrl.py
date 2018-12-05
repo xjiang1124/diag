@@ -517,6 +517,8 @@ class mtp_ctrl():
 
 
     def mtp_update_sw_image(self, image):
+        self._mgmt_handle.sendline("rm -rf /home/diag/diag")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
         self._mgmt_handle.sendline("tar zxf " + image)
         self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         self._mgmt_handle.sendline("sync")
