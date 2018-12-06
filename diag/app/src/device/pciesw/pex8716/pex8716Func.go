@@ -1,6 +1,10 @@
 package pex8716
 
 import (
+    "bufio"
+    "encoding/binary"
+    "os"
+
     "common/cli"
     "common/errType"
     "common/misc"
@@ -140,7 +144,7 @@ func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
     stsCtrlData = stsCtrlData | (EEP_OP_RD << 13)
     stsCtrlData = stsCtrlData | EEP_EN_ADDR_WTH_OW << 21
     stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
-    cli.Printf("d", "stsCtrlData=0x%x\n", stsCtrlData)
+    //cli.Printf("d", "stsCtrlData=0x%x\n", stsCtrlData)
 
     err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
@@ -150,7 +154,7 @@ func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
 
     // Check done flag
     for i := 0; i < MAX_RETRY; i++ {
-        cli.Println("d", "Wait for EEP done", i)
+        //cli.Println("d", "Wait for EEP done", i)
         data, err = ReadReg(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
         if err != errType.SUCCESS {
             cli.Printf("e", "Faild to read; addr=0x%x\n", REG_EEP_STS_CTRL)
@@ -178,7 +182,7 @@ func ReadEepDw(offset uint32, port byte) (data uint32, err int) {
 }
 
 /**
- * Read one DWORD (4-byte) from EEPROM
+ * Write one DWORD (4-byte) to EEPROM
  */
 func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     var stsCtrlData uint32
@@ -202,7 +206,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     stsCtrlData = EEP_EN_ADDR_WTH_OW << 21
     stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
     stsCtrlData = stsCtrlData | EEP_OP_SET_WR_EN << 13
-    cli.Printf("d", "P0: stsCtrl=0x%x\n", stsCtrlData)
+    //cli.Printf("d", "P0: stsCtrl=0x%x\n", stsCtrlData)
 
     err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
@@ -216,7 +220,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
     stsCtrlData = stsCtrlData | (EEP_OP_WR << 13)
 
-    cli.Printf("d", "P1: stsCtrlData=0x%x\n", stsCtrlData)
+    //cli.Printf("d", "P1: stsCtrlData=0x%x\n", stsCtrlData)
 
     err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
@@ -226,7 +230,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
 
     // Check done flag
     for i := 0; i < MAX_RETRY; i++ {
-        cli.Println("d", "Wait for EEP done", i)
+        //cli.Println("d", "Wait for EEP done", i)
         data, err = ReadReg(REG_EEP_STS_CTRL, ACC_MODE_TP, port, 0xF)
         if err != errType.SUCCESS {
             cli.Printf("e", "Faild to read; addr=0x%x\n", REG_EEP_STS_CTRL)
@@ -249,7 +253,7 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     stsCtrlData = EEP_EN_ADDR_WTH_OW << 21
     stsCtrlData = stsCtrlData | EEP_ADDR_WTH_2B << 22
     stsCtrlData = stsCtrlData | EEP_OP_RST_WR_EN << 13
-    cli.Printf("d", "P2: stsCtrl=0x%x\n", stsCtrlData)
+    //cli.Printf("d", "P2: stsCtrl=0x%x\n", stsCtrlData)
 
     err = WriteReg(REG_EEP_STS_CTRL, stsCtrlData, ACC_MODE_TP, port, 0xF)
     if err != errType.SUCCESS {
@@ -258,6 +262,131 @@ func WriteEepDw(offset uint32, port byte, data uint32) (err int) {
     return
 
 }
+
+/**
+ * Program EEPROM
+ */
+func Program(devName string, fileName string) (err int) {
+    err = Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer Close()
+
+    f, e := os.Open(fileName)
+    if e != nil {
+        cli.Println("e", "Failed to open file", fileName)
+        err = errType.FAIL
+        return
+    }
+    defer f.Close()
+
+    fi , e := f.Stat()
+    if e != nil {
+        cli.Println("e", "Failed to get file size")
+        err = errType.FAIL
+        return
+    }
+
+    size := fi.Size()
+    cli.Println("i", "File size:", size)
+
+    data := make([]byte, size)
+    bufr := bufio.NewReader(f)
+    _, e = bufr.Read(data)
+    if e != nil {
+        cli.Println("e", "Failed to read data")
+        err = errType.FAIL
+        return
+    }
+    cli.Println("i", data)
+
+    numWord := size / 4
+    for i := 0; i < int(numWord); i++ {
+        offset := i * 4
+        temp := data[offset : offset+4]
+        //cli.Println("i", temp)
+        eepWord := binary.LittleEndian.Uint32(temp)
+        cli.Printf("i", "0x%08x\n", eepWord)
+        err = WriteEepDw(uint32(offset), 0, eepWord)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Program eeprom failed!", offset)
+            return
+        }
+    }
+    cli.Printf("i", "Program %s EEPROM done\n", devName)
+
+    return
+}
+
+/**
+ * Verify EEPROM
+ */
+func Verify(devName string, fileName string) (err int) {
+    err = Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer Close()
+
+    f, e := os.Open(fileName)
+    if e != nil {
+        cli.Println("e", "Failed to open file", fileName)
+        err = errType.FAIL
+        return
+    }
+    defer f.Close()
+
+    fi , e := f.Stat()
+    if e != nil {
+        cli.Println("e", "Failed to get file size")
+        err = errType.FAIL
+        return
+    }
+
+    size := fi.Size()
+    cli.Println("i", "File size:", size)
+
+    OrigData := make([]byte, size)
+    bufr := bufio.NewReader(f)
+    _, e = bufr.Read(OrigData)
+    if e != nil {
+        cli.Println("e", "Failed to read data")
+        err = errType.FAIL
+        return
+    }
+    //cli.Println("i", OrigData)
+
+    numWord := size / 4
+    errCount := 0
+    for i := 0; i < int(numWord); i++ {
+        offset := i * 4
+        temp := OrigData[offset : offset+4]
+        //cli.Println("i", temp)
+        eepWord := binary.LittleEndian.Uint32(temp)
+        //cli.Printf("i", "0x%08x\n", eepWord)
+        var rdWord uint32
+        rdWord, err = ReadEepDw(uint32(offset), 0)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Program eeprom failed!", offset)
+            return
+        }
+        if eepWord != rdWord {
+            cli.Printf("e", "Offset 0x%04x; expected 0x%08x; read back 0x%08x\n", offset, eepWord, rdWord)
+            errCount = errCount + 1
+        }
+    }
+
+    if errCount != 0 {
+        cli.Printf("i", "Verify %s eeprom failed: %d\n", devName, errCount)
+    } else {
+        cli.Printf("i", "Verify %s eeprom passed\n", devName)
+    }
+
+    return
+}
+
+
 
 
 
