@@ -31,6 +31,7 @@ func main() {
     ewrPtr      := flag.Bool(  "ewr",   false, "Write PEX EEPROM")
     progPtr     := flag.Bool(  "prog",  false, "Program PEX eeprom")
     verifPtr    := flag.Bool(  "verif", false, "Verify PEX eeprom")
+    dumpPtr     := flag.Bool(  "dump",  false, "Dump PEX eeprom")
     //------------------------
     addrPtr     := flag.Uint64("addr",  0,    "Register addr")
     dataPtr     := flag.Uint64("data",  0,    "Data value")
@@ -46,6 +47,7 @@ func main() {
     uutPtr      := flag.String("uut",   "UUT_NONE", "Target UUT")
     //------------------------
     fnPtr       := flag.String("fn",    "", "File name")
+    sizePtr     := flag.Int(   "size",   4096, "File size")
     //------------------------
     flag.Parse()
 
@@ -57,6 +59,7 @@ func main() {
     byteEn := byte(*byteEnPtr)
     uut  := strings.ToUpper(*uutPtr)
     fn   := *fnPtr
+    size := *sizePtr
 
     if uut != "UUT_NONE" {
         i2cinfo.SwitchI2cTbl(uut)
@@ -131,6 +134,11 @@ func main() {
 
     if *verifPtr == true {
         pex8716.Verify(devName, fn)
+        return
+    }
+
+    if *dumpPtr == true {
+        pex8716.Dump(devName, fn, size)
         return
     }
 

@@ -386,7 +386,44 @@ func Verify(devName string, fileName string) (err int) {
     return
 }
 
+/**
+ * Dump EEPROM to a file
+ */
+func Dump(devName string, fileName string, size int) (err int) {
+    err = Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer Close()
 
+    data := make([]byte, size)
+    temp := make([]byte, 4)
 
+    numWord := size / 4
+    for i := 0; i < int(numWord); i++ {
+        offset := i * 4
+        var rdWord uint32
+        rdWord, err = ReadEepDw(uint32(offset), 0)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Program eeprom failed!", offset)
+            return
+        }
+        binary.LittleEndian.PutUint32(temp, rdWord)
+        for j :=0; j < 4; j++ {
+            data[offset + j] = temp[j]
+        }
+        //data[offset:offset+4] = temp
+    }
 
+    f, e := os.Create(fileName)
+    if e != nil {
+        cli.Println("e", "Failed to create file", fileName)
+        err = errType.FAIL
+        return
+    }
+    defer f.Close()
+    f.Write(data)
+
+    return
+}
 
