@@ -106,8 +106,9 @@ class MTP_DIAG_Logfile:
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
-    DIAG_MFG_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
     DIAG_MFG_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"
+    DIAG_MFG_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
+    DIAG_MFG_4C_LOG_DIR = "/mfg_log/NAPLES100/4C/"
 
 
 class MTP_DIAG_Path:

@@ -232,7 +232,9 @@ def single_select_menu(title, opt_list):
     # validate input loop
     while True:
         scan_input = raw_input(menu).replace(' ', '')
-        if scan_input in opt_list:
+        if scan_input == "STOP":
+            return None
+        elif scan_input in opt_list:
             break
         else:
             cli_err("Invalid MTP ID: {:s}".format(scan_input))
