@@ -66,11 +66,9 @@ class nic_con:
             sys.exit(0)
 
         session.timeout = timeout
-
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
+        ommon.session_cmd(session, cmd) 
+        time.sleep(1)
         cmd = "turn_on_slot.sh off {}".format(slot)
         common.session_cmd(session, cmd) 
         cmd = "turn_on_slot.sh on {}".format(slot)
@@ -237,13 +235,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
-
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
-        time.sleep(3)
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
-        time.sleep(3)
+        time.sleep(1)
 
         self.uart_session_start(session, orig_rate)
 
@@ -254,10 +248,10 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def get_mgmt_rdy_new(self, rate=9600, slot=0, ping=False):
+    def get_mgmt_rdy(self, rate=9600, slot=0, ping=False):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
-            sys.exit(0)
+            return -1
 
         session = common.session_start()
         session.timeout = 30
@@ -277,13 +271,9 @@ class nic_con:
             sys.exit(0)
 
         session = common.session_start()
-
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
-        time.sleep(3)
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
-        time.sleep(3)
+        time.sleep(1)
 
         self.uart_session_start(session, rate)
 
@@ -318,9 +308,10 @@ class nic_con:
         common.session_stop(session)
 
     def enable_mnic(self, rate=9600, slot=0):
+        ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
-            sys.exit(0)
+            return -1
 
         session = common.session_start()
         self.uart_session_start(session, rate)
@@ -344,16 +335,17 @@ class nic_con:
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
             print "=== TIMEOUT: Faled to enable management port ==="
-            return -1
+            ret = -1
 
         self.uart_session_stop(session)
         common.session_stop(session)
+        return ret
 
     def config_mnic(self, rate=9600, slot=0):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
-            sys.exit(0)
+            return -1
 
         session = common.session_start()
         self.uart_session_start(session, rate)
@@ -369,99 +361,36 @@ class nic_con:
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
             else:
                 print 'oob_mnic0 NOT enabled!'
+                ret = 1
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
             print "=== TIMEOUT: Faled to enable management port ==="
-            return -1
+            ret = -1
 
         self.uart_session_stop(session)
         common.session_stop(session)
+        return ret
 
-    def get_mgmt_rdy(self, rate=9600, slot=0, ping=False, pre_cl=False):
+    def get_mgmt_rdy_new(self, rate, slot=0):
+        numRetry = 6
+        ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
-            sys.exit(0)
-
-        print "ping:", ping
-
-        session = common.session_start()
-        session.timeout = 30
-        if ping == True:
-            session.sendline("ping -w3 10.1.1.{}".format(100+slot))
-            session.expect("\$")
-            if ", 0% packet loss" not in session.before:
-                self.enable_mgmt(rate, slot, True)
-        else:
-            self.enable_mgmt(rate, slot, pre_cl)
-
-        session = common.session_stop(session)
-
-    def enable_mgmt(self, rate=9600, slot=0, pre_cl=False):
-        if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
-            sys.exit(0)
-
-        session = common.session_start()
-
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
-        common.session_cmd(session, cmd) 
-        time.sleep(3)
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
-        time.sleep(3)
-
-        self.uart_session_start(session, rate)
-
-        session.timeout = 60
-        if pre_cl == True:
-            self.uart_session_cmd(session, "rmmod ionic-mnic", 30)
-
-        cmd = "sh /mnt/load_mnic.sh"
-        try:
-            for i in range(10):
-
-                session.sendline("ifconfig -a")
-                session.expect("\#")
-                temp = session.after
-                if 'eth0' in session.before:
-                    print 'eth0 enabled'
-                    break
-                else:
-                    self.uart_session_cmd(session, "rmmod ionic-mnic", 30)
-
-                    # Depending on different version of QSPI, there are two different method
-                    self.uart_session_cmd(session, "sh /platform/tools/load_mnic.sh", 120)
-
-                    session.sendline("ifconfig -a")
-                    session.expect("\#")
-                    temp = session.after
-                    if 'eth0' in session.before:
-                        print 'eth0 enabled'
-                        break
-
-                    self.uart_session_cmd(session, "echo \"#! /bin/sh\" > /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"insmod /platform/ionic_mnic.ko\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"tx_intr=\`cat /proc/interrupts | grep ionic-lif0-tx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"echo 8 > /proc/irq/\$tx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"echo 8 > /sys/class/net/eth0/queues/tx-0/xps_cpus\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"rx_intr=\`cat /proc/interrupts | grep ionic-lif0-rx | cut -d\':\' -f1 | cut -d\' \' -f2\`\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"echo 4 > /proc/irq/\$rx_intr/smp_affinity\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "echo \"echo 4 > /sys/class/net/eth0/queues/rx-0/rps_cpus\" >> /mnt/load_mnic.sh")
-                    self.uart_session_cmd(session, "sync")
-                    self.uart_session_cmd(session, "sh /mnt/load_mnic.sh", 120)
-
-            # Configure IP
-            self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
-
-        except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to enable management port ==="
             return -1
 
-        self.uart_session_stop(session)
-        print temp
-        common.session_stop(session)
+        ret = self.enable_mnic(rate, slot)
+        if ret != 0:
+            return ret
+
+        for i in range(numRetry):
+            time.sleep(10)
+            ret = self.config_mnic(rate, slot)
+            if ret == -1:
+                return ret
+            elif ret == 0:
+                break
+        return ret
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -493,9 +422,9 @@ if __name__ == "__main__":
 
     if args.ena_mgmt_port == True:
         if args.old == True:
-            con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping, False)
+            con.get_mgmt_rdy(args.tgt_rate, args.slot, args.ping)
         else:
-            con.get_mgmt_rdy_new(args.tgt_rate, args.slot, args.ping)
+            con.get_mgmt_rdy_new(args.tgt_rate, args.slot)
         sys.exit()
 
     if args.ena_mnic == True:
