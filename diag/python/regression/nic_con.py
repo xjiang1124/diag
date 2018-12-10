@@ -381,15 +381,19 @@ class nic_con:
 
         ret = self.enable_mnic(rate, slot)
         if ret != 0:
+            print "=== FAIL to enable management port! ==="
             return ret
 
         for i in range(numRetry):
             time.sleep(10)
             ret = self.config_mnic(rate, slot)
             if ret == -1:
+                print "=== FAIL to enable management port! ==="
                 return ret
             elif ret == 0:
                 break
+        
+        print "=== Management port is ready ==="
         return ret
 
 if __name__ == "__main__":
