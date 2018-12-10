@@ -344,7 +344,7 @@ def main():
         mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
-    
+
     for corner in corner_list:
         # Power on the MTP
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
