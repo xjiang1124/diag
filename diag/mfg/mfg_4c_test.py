@@ -3,7 +3,7 @@
 import sys
 import os
 import time
-import datetime 
+import datetime
 import pexpect
 import re
 import argparse
@@ -39,9 +39,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     log_pkg_file = "{:s}mtp_regression.{:s}.tar.gz".format(log_dir, corner)
 
     # need to be sync'd with cleanup.sh
-    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  
-    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES 
-    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES 
+    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
+    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES
+    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
 
     # regression logs
     logfile_list = list()
@@ -67,14 +67,14 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     cmd = "tar czvf {:s} -C {:s} {:s}".format(log_pkg_file, log_dir, sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    local_test_log_file = "log/{:s}_{:s}_mtp_test.log".format(corner, mtp_id)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
 
     sn_list = list()
     with open(local_test_log_file, 'r') as fp:
         buf = fp.read()
-    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
-    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
+    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
     fail_match = re.findall(nic_fail_reg_exp, buf)
     pass_match = re.findall(nic_pass_reg_exp, buf)
     for slot, sn in fail_match:
@@ -102,64 +102,84 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     return local_test_log_file
 
 
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
+def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
+    corner_list = [Env_Cond.HTHV, Env_Cond.HTLV, Env_Cond.LTHV, Env_Cond.LTLV]
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     duration = mtp_stop_ts - mtp_start_ts
 
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
+    pass_sn_list = list()
+    fail_sn_list = list()
+    sn_test_dict = dict()
+    sn_test_rslt_dict = dict()
+    sn_err_dsc_dict = dict()
+    sn_err_code_dict = dict()
 
-    # MTP related error, don't post any report
-    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
-        return
+    for corner, test_log_file in zip(corner_list, test_log_file_list):
+        # init the list
+        if corner == corner_list[0]:
+            sn_test_dict[sn] = list()
+            sn_test_rslt_dict[sn] = list()
+            sn_err_dsc_dict[sn] = list()
+            sn_err_code_dict[sn] = list()
+
+        with open(test_log_file, 'r') as fp:
+            buf = fp.read()
+
+        # MTP related error, don't post any report
+        if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
+            libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
+            continue
+
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
+            nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
+            match = re.findall(nic_fail_reg_exp, buf)
+            for slot, sn in match:
+                if sn not in fail_sn_list:
+                    fail_sn_list.append(sn)
+                if sn in pass_sn_list:
+                    pass_sn_list.remove(sn)
+
+                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+                # find all test status
+                nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+                sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+                for dsp, test, result in sub_match:
+                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(corner, dsp, test))
+                    sn_test_rslt_dict[sn].append(result)
+                    sn_err_dsc_dict[sn].append(nic_cli_id_str)
+                    sn_err_code_dict[sn].append(result)
+
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
+            nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
+            match = re.findall(nic_pass_reg_exp, buf)
+            for slot, sn in match:
+                if sn not in fail_sn_list and sn not in pass_sn_list:
+                    pass_sn_list.append(sn)
+
+                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+                # find all test status
+                nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+                sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+                for dsp, test, result in sub_match:
+                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(corner, dsp, test))
+                    sn_test_rslt_dict[sn].append(result)
+                    sn_err_dsc_dict[sn].append(nic_cli_id_str)
+                    sn_err_code_dict[sn].append(result)
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
-        match = re.findall(nic_fail_reg_exp, buf)
-        for slot, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+    for sn in fail_sn_list:
+        ret = libmfg_utils.flx_web_srv_post_uut_report("4C", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
+        if not ret:
+            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+        else:
+            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
-        match = re.findall(nic_pass_reg_exp, buf)
-        for slot, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+    for sn in pass_sn_list:
+        ret = libmfg_utils.flx_web_srv_post_uut_report("4C", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
+        if not ret:
+            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+        else:
+            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
 def get_pro_srv_id():
@@ -209,7 +229,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
-    
+
 def mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, log_filep):
     scan_cfg_filep = open("config/{:s}.yaml".format(mtp_id), "w+")
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
@@ -264,7 +284,7 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
 
 
 def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test start", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Regression Test start @{:s}".format(corner), level=0)
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -277,13 +297,10 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test complete", level=0)
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration:{:s}".format(mtp_stop_ts-mtp_start_ts), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Regression Test complete @{:s}".format(corner), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration @{:s}:{:s}".format(corner, mtp_stop_ts-mtp_start_ts), level=0)
 
-    test_log_file = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id)
-    mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner)
 
     mtp_mgmt_ctrl.mtp_mgmt_poweroff()
     mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
@@ -291,14 +308,15 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
     mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
     mtp_mgmt_ctrl.mtp_apc_pwr_off()
     time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
- 
+
     return
 
- 
+
 def main():
     parser = argparse.ArgumentParser(description="Diagnostics 4C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
+    corner_list = [Env_Cond.HTHV, Env_Cond.HTLV, Env_Cond.LTHV, Env_Cond.LTLV]
     verbosity = False
     args = parser.parse_args()
     if args.verbosity:
@@ -326,49 +344,61 @@ def main():
         mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
+    
+    for corner in corner_list:
+        # Power on the MTP
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+            mtp_mgmt_ctrl.mtp_apc_pwr_on()
+            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    # Power on the MTP
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        # Connect to MTP
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+                return
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
-    # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-            return
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+        # Copy script, config file on to each MTP Chassis
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_script_dir = "mtp_regression/"
+            mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+            mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
+            mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg)
+            cmd = "rm -f {:s}".format(mtp_script_pkg)
+            os.system(cmd)
 
-    # Copy script, config file on to each MTP Chassis
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_script_dir = "mtp_regression/"
-        mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-        mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
-        mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg)
-        cmd = "rm -f {:s}".format(mtp_script_pkg)
-        os.system(cmd)
+        mtp_thread_list = list()
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner))
+            mtp_thread.daemon = True
+            mtp_thread.start()
+            mtp_thread_list.append(mtp_thread)
+            time.sleep(2)
 
-    mtp_thread_list = list()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner))
-        mtp_thread.daemon = True
-        mtp_thread.start()
-        mtp_thread_list.append(mtp_thread)
-        time.sleep(2)
+        # monitor all the thread
+        while True:
+            if len(mtp_thread_list) == 0:
+                break
+            for mtp_thread in mtp_thread_list:
+                if not mtp_thread.is_alive():
+                    ret = mtp_thread.join()
+                    mtp_thread_list.remove(mtp_thread)
+            time.sleep(5)
 
-    # monitor all the thread
-    while True:
-        if len(mtp_thread_list) == 0:
-            break 
-        for mtp_thread in mtp_thread_list:
-            if not mtp_thread.is_alive():
-                ret = mtp_thread.join()
-                mtp_thread_list.remove(mtp_thread)
-        time.sleep(5)
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
+
+    # mfg report
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        test_log_file_list = list()
+        for corner in corner_list:
+            test_log_file_list.append("log/{:s}_{:s}_mtp_test.log".format(corner, mtp_id))
+        mfg_report(mtp_id, regression_start_ts, regression_stop_ts, test_log_file_list)
+
+        cmd = "rm -f {:s}".format(" ".join(test_log_file_list))
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
 
 if __name__ == "__main__":
