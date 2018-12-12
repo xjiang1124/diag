@@ -67,7 +67,7 @@ class nic_con:
 
         session.timeout = timeout
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        ommon.session_cmd(session, cmd) 
+        common.session_cmd(session, cmd) 
         time.sleep(1)
         cmd = "turn_on_slot.sh off {}".format(slot)
         common.session_cmd(session, cmd) 
