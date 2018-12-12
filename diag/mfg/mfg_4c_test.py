@@ -83,7 +83,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
         sn_list.append(sn)
 
     for sn in sn_list:
-        nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR + sn + "/"
+        nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR + "/" + corner + "/" + sn + "/"
         cmd = "mkdir -p {:s}".format(nic_log_dir)
         os.system(cmd)
         # copy the onboard logs
@@ -115,13 +115,6 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
     sn_err_code_dict = dict()
 
     for corner, test_log_file in zip(corner_list, test_log_file_list):
-        # init the list
-        if corner == corner_list[0]:
-            sn_test_dict[sn] = list()
-            sn_test_rslt_dict[sn] = list()
-            sn_err_dsc_dict[sn] = list()
-            sn_err_code_dict[sn] = list()
-
         with open(test_log_file, 'r') as fp:
             buf = fp.read()
 
@@ -134,6 +127,13 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
             nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
             match = re.findall(nic_fail_reg_exp, buf)
             for slot, sn in match:
+                # init the list
+                if corner == corner_list[0]:
+                    sn_test_dict[sn] = list()
+                    sn_test_rslt_dict[sn] = list()
+                    sn_err_dsc_dict[sn] = list()
+                    sn_err_code_dict[sn] = list()
+
                 if sn not in fail_sn_list:
                     fail_sn_list.append(sn)
                 if sn in pass_sn_list:
@@ -153,6 +153,13 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
             nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
             match = re.findall(nic_pass_reg_exp, buf)
             for slot, sn in match:
+                # init the list
+                if corner == corner_list[0]:
+                    sn_test_dict[sn] = list()
+                    sn_test_rslt_dict[sn] = list()
+                    sn_err_dsc_dict[sn] = list()
+                    sn_err_code_dict[sn] = list()
+
                 if sn not in fail_sn_list and sn not in pass_sn_list:
                     pass_sn_list.append(sn)
 
@@ -314,13 +321,17 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
 
 def main():
     parser = argparse.ArgumentParser(description="Diagnostics 4C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
-    corner_list = [Env_Cond.HTHV, Env_Cond.HTLV, Env_Cond.LTHV, Env_Cond.LTLV]
     verbosity = False
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
+    if args.high_temp:
+        corner_list = [Env_Cond.HTHV, Env_Cond.HTLV]
+    else:
+        corner_list = [Env_Cond.LTHV, Env_Cond.LTLV]
 
     if verbosity:
         diag_log_filep = sys.stdout

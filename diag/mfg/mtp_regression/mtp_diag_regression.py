@@ -133,24 +133,24 @@ def main():
         corner = args.corner
 
     if corner == Env_Cond.LTLV or corner == Env_Cond.LTNV or corner == Env_Cond.LTHV:
-        fanspd = MTP_Const.LOW_TEMP_FAN_SPD
-        low_temp_threshold = MTP_Const.DIAG_EDVT_LOW_TEMP
+        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
         high_temp_threshold = None
     elif corner == Env_Cond.NTLV or corner == Env_Cond.NTNV or corner == Env_Cond.NTHV:
-        fanspd = MTP_Const.NORMAL_TEMP_FAN_SPD
+        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
     else:
-        fanspd = MTP_Const.HIGH_TEMP_FAN_SPD
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         low_temp_threshold = None
-        high_temp_threshold = MTP_Const.DIAG_EDVT_HIGH_TEMP
+        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
 
     if corner == Env_Cond.LTLV or corner == Env_Cond.NTLV or corner == Env_Cond.HTLV:
-        vmarg = MTP_Const.DIAG_EDVT_LOW_VOLT
+        vmarg = MTP_Const.MFG_EDVT_LOW_VOLT
     elif corner == Env_Cond.LTNV or corner == Env_Cond.NTNV or corner == Env_Cond.HTNV:
         vmarg = 0
     else:
-        vmarg = MTP_Const.DIAG_EDVT_HIGH_VOLT
+        vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
 
     if args.skip_nic:
         tmp_str = args.skip_nic.replace(' ','')

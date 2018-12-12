@@ -15,6 +15,7 @@ PARAMS:
 
 MTP_PRE:
     NIC_JTAG: True
+    #NIC_MEM:  True
     NIC_MGMT: True
     NIC_FRU:  True
 

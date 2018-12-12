@@ -293,7 +293,7 @@ def main():
             mac_ui = libmfg_utils.mac_address_format(mac)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
-                # cpld_img_file = naples100_cpld_img_file
+                cpld_img_file = naples100_cpld_img_file
                 # vrm_img_file = naples100_vrm_img_file
                 # vrm_img_cksum = naples100_vrm_img_cksum
                 # qspi_img_file = naples100_qspi_img_file
@@ -318,7 +318,7 @@ def main():
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; DATE = {:s}".format(sn, mac_ui, prog_date))
-            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
             # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file))
             # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "EMMC image: " + os.path.basename(emmc_img_file))
@@ -392,23 +392,24 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # program CPLD
-            # dsp = "DL_CPLD"
-            # test = "CPLD_PROG"
-            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            # start_ts = datetime.datetime.now().replace(microsecond=0)
-            # ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
-            # stop_ts = datetime.datetime.now().replace(microsecond=0)
-            # duration = str(stop_ts - start_ts)
-            # if not ret:
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-            #     fail_nic_list.append(key)
-            #     fail_sn_list.append(sn)
-            #     continue
-            # else:
-            #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            dsp = "DL_CPLD"
+            test = "CPLD_PROG"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
+            # program VRM
             # dsp = "DL_VRM"
             # test = "VRM_PROG"
             # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
@@ -516,22 +517,22 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # verify CPLD
-            # dsp = "DL_CPLD"
-            # test = "CPLD_VERIFY"
-            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            # start_ts = datetime.datetime.now().replace(microsecond=0)
-            # ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
-            # stop_ts = datetime.datetime.now().replace(microsecond=0)
-            # duration = str(stop_ts - start_ts)
-            # if not ret:
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-            #     fail_nic_list.append(key)
-            #     fail_sn_list.append(sn)
-            #     continue
-            # else:
-            #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            dsp = "DL_CPLD"
+            test = "CPLD_VERIFY"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # verify VRM
             # dsp = "DL_VRM"

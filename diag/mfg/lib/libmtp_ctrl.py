@@ -584,7 +584,6 @@ class mtp_ctrl():
             self.cli_log_slot_inf(slot, "Update NIC MGMT MAC Address bypassed")
 
 
-
     def mtp_program_nic_fru(self, slot, date, sn, mac):
         self.cli_log_slot_inf(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}".format(date, sn, mac))
         nic_cmd_list = list()
@@ -820,7 +819,7 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
         # put the fan speed back
-        cmd_str = "devmgr -dev=fan -speed -pct={:d}".format(MTP_Const.NORMAL_TEMP_FAN_SPD)
+        cmd_str = "devmgr -dev=fan -speed -pct={:d}".format(MTP_Const.MFG_EDVT_NORM_FAN_SPD)
         self._mgmt_handle.sendline(cmd_str)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
@@ -981,39 +980,53 @@ class mtp_ctrl():
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
+            upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
+            lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
         elif high_threshold:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
+            upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
+            lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
         else:
             self.cli_log_inf("No threshold set, bypass ambient temperature check")
             return True
 
-        timeout = MTP_Const.MTP_TEMP_WAIT_TIMEOUT
+        timeout = MTP_Const.MFG_TEMP_WAIT_TIMEOUT
         while timeout > 0:
             inlet = self.mtp_get_inlet_temp()
             if low_threshold:
-                if inlet > low_threshold:
-                    time.sleep(MTP_Const.MTP_TEMP_CHECK_INTERVAL)
-                    timeout -= MTP_Const.MTP_TEMP_CHECK_INTERVAL
+                if inlet > upper_limit:
+                    time.sleep(MTP_Const.MFG_TEMP_CHECK_INTERVAL)
+                    timeout -= 1
                 else:
                     break
             else:
-                if inlet < high_threshold:
-                    time.sleep(MTP_Const.MTP_TEMP_CHECK_INTERVAL)
-                    timeout -= MTP_Const.MTP_TEMP_CHECK_INTERVAL
+                if inlet < lower_limit:
+                    time.sleep(MTP_Const.MFG_TEMP_CHECK_INTERVAL)
+                    timeout -= 1
                 else:
                     break
 
         if timeout <= 0:
+            total_time = MTP_Const.MFG_TEMP_WAIT_TIMEOUT * MTP_Const.MFG_TEMP_CHECK_INTERVAL
             if low_threshold:
-                self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(low_threshold, MTP_Const.MTP_TEMP_WAIT_TIMEOUT))
+                self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(upper_limit, total_time))
             else:
-                self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(high_threshold, MTP_Const.MTP_TEMP_WAIT_TIMEOUT))
+                self.cli_log_err("Environment temperature can not reach {:2.2f} after {:d} seconds".format(lower_limit, total_time))
             self.cli_log_err("Current Environment temperature is {:2.2f}".format(inlet))
             return False
+        self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}".format(inlet))
 
-        self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}, start soaking process".format(inlet))
-        time.sleep(MTP_Const.DIAG_HW_SOAK_DELAY)
-        inlet = self.mtp_get_inlet_temp()
+        # Soaking process
+        timeout = MTP_Const.MFG_TEMP_SOAK_TIMEOUT
+        self.cli_log_inf("Start soaking process, wait for {:d} seconds".format(timeout * MTP_Const.MFG_TEMP_CHECK_INTERVAL))
+        while timeout > 0:
+            time.sleep(MTP_Const.MFG_TEMP_CHECK_INTERVAL)
+            timeout -= 1
+            inlet = self.mtp_get_inlet_temp()
+            if inlet > upper_limit or inlet < lower_limit:
+                self.cli_log_err("Soaking process failed, current inlet reading is {:2.2f}".format(inlet))
+                self.cli_log_err("Temperature is out of range [{:2.2f}, {:2.2g}], check the chamber".format(lower_limit, upper_limit))
+                return False
         self.cli_log_inf("Soaking process complete, current inlet reading is {:2.2f}".format(inlet))
         return True
 
@@ -1071,19 +1084,38 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_exec_nic_con_cmd(self, slot, nic_con_cmd):
+    def mtp_mgmt_exec_nic_con_cmd(self, slot, nic_con_cmd, match=None):
         # goto the nic_con dir
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         self.mtp_mgmt_exec_cmd(cmd)
         self._mgmt_handle.sendline(nic_con_cmd)
+
+        # extra match to deal with identical output
+        if match:
+            idx = self._mgmt_handle.expect_exact([match, pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
+            if idx == 0 and "TIMEOUT" not in self._mgmt_handle.before:
+                extra_timeout = False
+            else:
+                extra_timeout = True
+        else:
+            extra_timeout = False
+
         idx = self._mgmt_handle.expect_exact(["Thanks for using picocom", "TIMEOUT", pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
-        if idx == 0 and "TIMEOUT" not in self._mgmt_handle.before:
+        if idx == 0 and "TIMEOUT" not in self._mgmt_handle.before and not extra_timeout:
             self._mgmt_handle.expect_exact("exit")
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
             return True
         else:
             self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
             return False
+
+
+    def mtp_mgmt_test_nic_mem(self, slot):
+        nic_con_cmd = "nic_con.py -mtest -slot {:d}".format(slot+1)
+        if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "MTEST PASSED"):
+            return False
+        else:
+            return True
 
 
     def mtp_mgmt_init_nic_handle(self, slot):
@@ -1185,27 +1217,36 @@ class mtp_ctrl():
     def mtp_nic_diag_init(self, slot):
         self.cli_log_slot_inf(slot, "Init Diag Environment on NIC")
         # 1. change baud rate to 9600
-        self.cli_log_slot_inf(slot, "Set NIC Console baudrate")
-        nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
-        if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
-            # try once more
-            self.cli_log_slot_inf(slot, "Set NIC Console baudrate failed, try again")
+        for loop in range(MTP_Const.NIC_CON_INIT_RETRY):
+            self.cli_log_slot_inf(slot, "Set NIC Console baudrate - <{:d}> try".format(loop+1))
+            nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
             if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
-                self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
-                return False
+                # retry
+                self.mtp_power_off_single_nic(slot)
+                self.mtp_power_on_single_nic(slot)
+                continue
             else:
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
+                break
+
+        if loop >= MTP_Const.NIC_CON_INIT_RETRY:
+            self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
+            return False
+
         # 2. config nic ip address
-        self.cli_log_slot_inf(slot, "Set NIC MGMT ip address")
-        nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
-        if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
-            # try once more
-            self.cli_log_slot_inf(slot, "Set NIC MGMT ip address failed, try again")
-            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
-                self.cli_log_slot_err(slot, "Set NIC MGMT ip address failed")
-                return False
+        for loop in range(MTP_Const.NIC_MGMT_IP_INIT_RETRY):
+            self.cli_log_slot_inf(slot, "Set NIC MGMT ip address - <{:d}> try".format(loop+1))
+            nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
+            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "ifconfig oob_mnic0"):
+                # retry
+                continue
             else:
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
+                break
+
+        if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
+            self.cli_log_slot_err(slot, "Set NIC MGMT ip address failed")
+            return False
 
         time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
         # 3. verify /mnt write permission
@@ -1419,7 +1460,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_vmarg(self, slot, vmarg):
         # TODO, how to set nic vmarg?
-        self.cli_log_slot_inf(slot, "Set voltage margin to {:d}%".format(vmarg))
+        self.cli_log_slot_inf(slot, "Set voltage margin to {:d}%".format(vmarg), level=0)
         return True
 
 
@@ -1447,6 +1488,11 @@ class mtp_ctrl():
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
             match = re.findall(r"(valid bit 0x1, +error 0x00)", self._mgmt_handle.before)
             if match:
+                return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
+        elif intf == "NIC_MEM":
+            if self.mtp_mgmt_test_nic_mem(slot):
                 return "SUCCESS"
             else:
                 return MTP_DIAG_Error.NIC_DIAG_FAIL

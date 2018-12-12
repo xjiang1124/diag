@@ -1,47 +1,53 @@
 MTP-001:
     SRV: PENSANDO-PRO-SRV1
-    TS: 2018-12-07_17-59-06
+    TS: 2018-12-10_18-33-15
     NIC-01:
         VALID: "Yes"
-        SN: "FLM18480012"
-        MAC: "00AECD001470"
-        TS: 120718
+        SN: "FLM18480030"
+        MAC: "00AECD001440"
+        TS: 121018
     NIC-02:
         VALID: "Yes"
-        SN: "FLM1848004E"
-        MAC: "00AECD001368"
-        TS: 120718
+        SN: "FLM18480019"
+        MAC: "00AECD001500"
+        TS: 121018
     NIC-03:
-        VALID: "Yes"
-        SN: "FLM1848005D"
-        MAC: "00AECD001458"
-        TS: 120718
-    NIC-04:
-        VALID: "Yes"
-        SN: "FLM1848000D"
-        MAC: "00AECD0013F8"
-        TS: 120718
-    NIC-05:
-        VALID: "Yes"
-        SN: "FLM1848004D"
-        MAC: "00AECD001428"
-        TS: 120718
-    NIC-06:
-        VALID: "Yes"
-        SN: "FLM18480029"
-        MAC: "00AECD001548"
-        TS: 120718
-    NIC-07:
         VALID: "Yes"
         SN: "FLM18480065"
         MAC: "00AECD001398"
-        TS: 120718
-    NIC-08:
+        TS: 121018
+    NIC-04:
         VALID: "Yes"
         SN: "FLM1848000C"
         MAC: "00AECD0014E8"
-        TS: 120718
+        TS: 121018
+    NIC-05:
+        VALID: "Yes"
+        SN: "FLM18480029"
+        MAC: "00AECD001548"
+        TS: 121018
+    NIC-06:
+        VALID: "Yes"
+        SN: "FLM1848004D"
+        MAC: "00AECD001428"
+        TS: 121018
+    NIC-07:
+        VALID: "Yes"
+        SN: "FLM1848000D"
+        MAC: "00AECD0013F8"
+        TS: 121018
+    NIC-08:
+        VALID: "Yes"
+        SN: "FLM1848004E"
+        MAC: "00AECD001368"
+        TS: 121018
     NIC-09:
-        VALID: "No"
+        VALID: "Yes"
+        SN: "FLM1848005D"
+        MAC: "00AECD001458"
+        TS: 121018
     NIC-10:
-        VALID: "No"
+        VALID: "Yes"
+        SN: "FLM18480012"
+        MAC: "00AECD001470"
+        TS: 121018
