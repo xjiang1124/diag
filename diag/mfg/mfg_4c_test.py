@@ -83,7 +83,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
         sn_list.append(sn)
 
     for sn in sn_list:
-        nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR + "/" + corner + "/" + sn + "/"
+        nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR + "/" + str(corner) + "/" + sn + "/"
         cmd = "mkdir -p {:s}".format(nic_log_dir)
         os.system(cmd)
         # copy the onboard logs
