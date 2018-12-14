@@ -28,20 +28,20 @@ MTP_SEQ:
                 NIC_NAME: No
                 SN: Yes
                 SLOT: Yes
-                #        L1:
-                #            INIT: ""
-                #            POST: ""
-                #            OPTS:
-                #                NIC_NAME: No
-                #                SN: Yes
-                #                SLOT: Yes
-                #        ETH_PRBS:
-                #            INIT: ""
-                #            POST: ""
-                #            OPTS:
-                #                NIC_NAME: No
-                #                SN: Yes
-                #                SLOT: Yes
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+        ETH_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
 MTP_PARA:
 #    DSP:
 #        TEST:
