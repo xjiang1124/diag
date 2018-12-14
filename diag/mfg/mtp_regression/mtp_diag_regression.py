@@ -132,6 +132,7 @@ def main():
     if args.corner:
         corner = args.corner
 
+    # Chamber temperature
     if corner == Env_Cond.LTLV or corner == Env_Cond.LTNV or corner == Env_Cond.LTHV:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
         low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
@@ -145,12 +146,19 @@ def main():
         low_temp_threshold = None
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
 
+    # Voltage margin
     if corner == Env_Cond.LTLV or corner == Env_Cond.NTLV or corner == Env_Cond.HTLV:
         vmarg = MTP_Const.MFG_EDVT_LOW_VOLT
     elif corner == Env_Cond.LTNV or corner == Env_Cond.NTNV or corner == Env_Cond.HTNV:
         vmarg = 0
     else:
         vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
+
+    # Last stage, NIC will boot up with sw
+    if corner == Env_Cond.LTLV:
+        default_sw_boot = True
+    else:
+        default_sw_boot = False
 
     if args.skip_nic:
         tmp_str = args.skip_nic.replace(' ','')
@@ -386,6 +394,14 @@ def main():
     # clear the diag test history
     if not stop_on_err:
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("./diag -chist")
+
+    # Set the default boot image
+    if default_sw_boot and len(naples100_nic_list) > 0:
+        mtp_mgmt_ctrl.mtp_power_off_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic()
+        for slot in naples100_nic_list:
+            mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+            mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
 
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
         mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s}".format(nic_key, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
