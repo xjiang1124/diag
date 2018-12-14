@@ -26,6 +26,7 @@ class NIC_Status:
     NIC_STA_POWERUP = 1
     NIC_STA_TERM_FAIL = 2
     NIC_STA_MGMT_FAIL = 3
+    NIC_STA_DIAG_FAIL = 4
     NIC_STA_OK = 10
     NIC_STA_MAX = 11
 
@@ -76,8 +77,8 @@ class MTP_Const:
     MFG_EDVT_LOW_FAN_SPD = 40
     MFG_EDVT_NORM_FAN_SPD = 40
     MFG_EDVT_HIGH_FAN_SPD = 50
-    MFG_EDVT_HIGH_TEMP = 22
-    MFG_EDVT_LOW_TEMP = 22
+    MFG_EDVT_HIGH_TEMP = 50
+    MFG_EDVT_LOW_TEMP = 0
     MFG_EDVT_TEMP_DIFF = 5
     MFG_EDVT_HIGH_VOLT = 5
     MFG_EDVT_LOW_VOLT = -5
@@ -109,6 +110,9 @@ class MTP_DIAG_Logfile:
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
+    ONBOARD_NIC_DIAG_PATH = "/home/diag/"
+    ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
+    ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
     ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
 
 

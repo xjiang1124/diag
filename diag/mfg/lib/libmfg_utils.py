@@ -220,6 +220,12 @@ def double_confirm(msg):
             continue
 
 
+def action_confirm(msg, action):
+    tmp = ""
+    while (tmp != action):
+        tmp = raw_input("Operator Confirm " + msg + ":")
+
+
 def single_select_menu(title, opt_list):
     menu = "+-" + "-"*len(title) + "-+\n"
     menu += "| " + title + " |\n"

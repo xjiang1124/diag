@@ -32,11 +32,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     passwd = mtp_mgmt_cfg[2]
 
     # create the log subdir
-    sub_dir = "{:s}_{:s}_{:s}/".format(corner, mtp_id, libmfg_utils.get_timestamp())
+    sub_dir = "{:s}_{:s}_{:s}/".format(str(corner), mtp_id, libmfg_utils.get_timestamp())
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
 
     # log pkg filename
-    log_pkg_file = "{:s}mtp_regression.{:s}.tar.gz".format(log_dir, corner)
+    log_pkg_file = "{:s}mtp_regression.{:s}.tar.gz".format(log_dir, str(corner))
 
     # need to be sync'd with cleanup.sh
     diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
@@ -67,7 +67,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     cmd = "tar czvf {:s} -C {:s} {:s}".format(log_pkg_file, log_dir, sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    local_test_log_file = "log/{:s}_{:s}_mtp_test.log".format(corner, mtp_id)
+    local_test_log_file = "log/{:s}_{:s}_mtp_test.log".format(str(corner), mtp_id)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
 
     sn_list = list()
@@ -102,8 +102,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     return local_test_log_file
 
 
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
-    corner_list = [Env_Cond.HTHV, Env_Cond.HTLV, Env_Cond.LTHV, Env_Cond.LTLV]
+def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_list, flex_station):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     duration = mtp_stop_ts - mtp_start_ts
 
@@ -128,7 +127,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
             match = re.findall(nic_fail_reg_exp, buf)
             for slot, sn in match:
                 # init the list
-                if corner == corner_list[0]:
+                if sn not in sn_test_dict.keys():
                     sn_test_dict[sn] = list()
                     sn_test_rslt_dict[sn] = list()
                     sn_err_dsc_dict[sn] = list()
@@ -144,7 +143,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
                 nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
                 sub_match = re.findall(nic_test_rslt_reg_exp, buf)
                 for dsp, test, result in sub_match:
-                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(corner, dsp, test))
+                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(str(corner), dsp, test))
                     sn_test_rslt_dict[sn].append(result)
                     sn_err_dsc_dict[sn].append(nic_cli_id_str)
                     sn_err_code_dict[sn].append(result)
@@ -154,7 +153,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
             match = re.findall(nic_pass_reg_exp, buf)
             for slot, sn in match:
                 # init the list
-                if corner == corner_list[0]:
+                if sn not in sn_test_dict.keys():
                     sn_test_dict[sn] = list()
                     sn_test_rslt_dict[sn] = list()
                     sn_err_dsc_dict[sn] = list()
@@ -168,21 +167,21 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list):
                 nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
                 sub_match = re.findall(nic_test_rslt_reg_exp, buf)
                 for dsp, test, result in sub_match:
-                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(corner, dsp, test))
+                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(str(corner), dsp, test))
                     sn_test_rslt_dict[sn].append(result)
                     sn_err_dsc_dict[sn].append(nic_cli_id_str)
                     sn_err_code_dict[sn].append(result)
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
     for sn in fail_sn_list:
-        ret = libmfg_utils.flx_web_srv_post_uut_report("4C", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
+        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
         if not ret:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
         else:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
     for sn in pass_sn_list:
-        ret = libmfg_utils.flx_web_srv_post_uut_report("4C", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
+        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
         if not ret:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
         else:
@@ -291,11 +290,11 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
 
 
 def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test start @{:s}".format(corner), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Regression Test start @{:s}".format(str(corner)), level=0)
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
+    cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, str(corner))
     cmd += " --psu-check"
 
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
@@ -304,8 +303,8 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test complete @{:s}".format(corner), level=0)
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration @{:s}:{:s}".format(corner, mtp_stop_ts-mtp_start_ts), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Regression Test complete @{:s}".format(str(corner)), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration @{:s}:{:s}".format(str(corner), mtp_stop_ts-mtp_start_ts), level=0)
 
     get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner)
 
@@ -322,6 +321,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
 def main():
     parser = argparse.ArgumentParser(description="Diagnostics 4C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
+    parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
     verbosity = False
@@ -330,8 +330,13 @@ def main():
         verbosity = True
     if args.high_temp:
         corner_list = [Env_Cond.HTHV, Env_Cond.HTLV]
-    else:
+        flex_station = "4C-H"
+    elif args.low_temp:
         corner_list = [Env_Cond.LTHV, Env_Cond.LTLV]
+        flex_station = "4C-L"
+    else:
+        corner_list = [Env_Cond.HTHV, Env_Cond.HTLV, Env_Cond.LTHV, Env_Cond.LTLV]
+        flex_station = "4C"
 
     if verbosity:
         diag_log_filep = sys.stdout
@@ -349,12 +354,22 @@ def main():
         if not mtp_id:
             break
 
+        if mtp_id in mtpid_list:
+            libmfg_utils.sys_exit("Duplicate MTPID: {:s} is selected".format(mtp_id))
+
         mtpid_list.append(mtp_id)
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
         mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
+
+    if args.high_temp:
+        libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO 50 DEGREE CENTIGRADE\n")
+        libmfg_utils.action_confirm("Close Chamber and set chamber temperature to 50 degree centigrade", "STOP")
+    elif args.low_temp:
+        libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO 0 DEGREE CENTIGRADE\n")
+        libmfg_utils.action_confirm("close chamber and set chamber temperature to 0 degree centigrade", "STOP")
 
     for corner in corner_list:
         # Power on the MTP
@@ -402,14 +417,14 @@ def main():
     libmfg_utils.cli_inf("Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
 
     # mfg report
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id in mtpid_list:
         test_log_file_list = list()
         for corner in corner_list:
-            test_log_file_list.append("log/{:s}_{:s}_mtp_test.log".format(corner, mtp_id))
-        mfg_report(mtp_id, regression_start_ts, regression_stop_ts, test_log_file_list)
+            test_log_file_list.append("log/{:s}_{:s}_mtp_test.log".format(str(corner), mtp_id))
+        mfg_report(mtp_id, regression_start_ts, regression_stop_ts, test_log_file_list, corner_list, flex_station)
 
         cmd = "rm -f {:s}".format(" ".join(test_log_file_list))
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        os.system(cmd)
 
 
 if __name__ == "__main__":

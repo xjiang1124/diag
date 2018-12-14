@@ -590,14 +590,14 @@ class mtp_ctrl():
 
         # 1. turn off FRU write protection
         if not MFG_BYPASS_NIC_FRU_WR_PROT:
-            nic_cmd = "/mnt/cpld -w 1 2"
+            nic_cmd = "{:s}cpld -w 1 2".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
             nic_cmd_list.append(nic_cmd)
         # 2. program FRU
-        nic_cmd = "/mnt/eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -update".format(date, sn, mac)
+        nic_cmd = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -update".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac)
         nic_cmd_list.append(nic_cmd)
         # 3. turn on FRU write protection
         if not MFG_BYPASS_NIC_FRU_WR_PROT:
-            nic_cmd = "/mnt/cpld -w 1 6"
+            nic_cmd = "{:s}cpld -w 1 6".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
             nic_cmd_list.append(nic_cmd)
 
         self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
@@ -649,7 +649,7 @@ class mtp_ctrl():
             # program the cpld
             img_name = os.path.basename(cpld_img)
             nic_cmd_list = list()
-            nic_cmd = "/mnt/cpld -prog /{:s}".format(img_name)
+            nic_cmd = "{:s}cpld -prog /{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name)
             nic_cmd_list.append(nic_cmd)
             self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
             self.cli_log_slot_inf(slot, "Program NIC CPLD complete")
@@ -686,9 +686,9 @@ class mtp_ctrl():
             # program the vrm
             img_name = os.path.basename(vrm_img)
             nic_cmd_list = list()
-            nic_cmd = "/mnt/devmgr -program -file=/{:s}".format(img_name)
+            nic_cmd = "{:s}devmgr -program -file=/{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name)
             nic_cmd_list.append(nic_cmd)
-            nic_cmd = "/mnt/devmgr -verify -file=/{:s}".format(img_name)
+            nic_cmd = "{:s}devmgr -verify -file=/{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name)
             nic_cmd_list.append(nic_cmd)
             self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
             self.cli_log_slot_inf(slot, "Program NIC VRM AVS")
@@ -1048,14 +1048,23 @@ class mtp_ctrl():
         return 95
 
 
-    def mtp_mgmt_nic_utils_dl(self, slot):
-        # nic utils list
-        nic_utils_list = ["cpld", "devmgr", "eeutil", "rtcutil", "smbutil", "update_mac.py"]
+    def mtp_mgmt_copy_nic_diag(self, slot):
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
 
-        # copy nic utils onto nic
-        for util in nic_utils_list:
-            cmd = "scp {:s} /home/diag/nic_util/{:s} {:s}@{:s}:/mnt".format(libmfg_utils.get_ssh_option(), util, NIC_MGMT_USERNAME, ipaddr)
+        # create diag dir on NIC
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
+        if not nic_prompt:
+            return False
+        nic_cmd = "mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
+        # copy nic diag image onto nic
+        nic_diag_list = ["diag", "start_diag.arm64.sh"]
+        for util in nic_diag_list:
+            cmd = "scp {:s} -r {:s}{:s} {:s}@{:s}:{:s}".format(libmfg_utils.get_ssh_option(), MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH, util, NIC_MGMT_USERNAME, ipaddr, MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
             self._mgmt_handle.sendline(cmd)
             idx = self._mgmt_handle.expect_exact(["assword:", pexpect.TIMEOUT])
             if idx == 0:
@@ -1066,21 +1075,39 @@ class mtp_ctrl():
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
                 return False
 
-        # check nic utils are on the nic
+        # check nic diag image are on the nic
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
             return False
-        nic_cmd = "ls /mnt"
+        nic_cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
         self._mgmt_handle.sendline(nic_cmd)
         self._mgmt_handle.expect_exact(nic_prompt)
-        for util in nic_utils_list:
+        for util in nic_diag_list:
             if util not in self._mgmt_handle.before:
-                self.cli_log_slot_err(slot, "Copy NIC Util '{:s}' Failed".format(util))
+                self.cli_log_slot_err(slot, "Copy NIC Diag image '{:s}' Failed".format(util))
                 return False
 
-        # disconnect the nic
+        # setup diag env
+        nic_cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+
+        nic_cmd = "./start_diag.arm64.sh {:d}".format(slot+1)
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.OS_CMD_DELAY)
+
+        nic_cmd = "source /etc/profile"
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+
         self._mgmt_handle.sendline("exit")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
+
+        # Start NIC DSP
+        mtp_cmd = "diag -r -c NIC{:d} -d diagmgr -t dsp_start".format(slot+1)
+        self._mgmt_handle.sendline(mtp_cmd)
+        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.OS_CMD_DELAY)
+
         return True
 
 
@@ -1136,8 +1163,8 @@ class mtp_ctrl():
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
                 return None
 
-        card_type = self._nic_type_list[slot]
         if not MFG_BYPASS_NIC_ENV_SET:
+            card_type = self._nic_type_list[slot]
             self._mgmt_handle.sendline("export CARD_NAME=NIC{:d} CARD_TYPE={:s}".format(slot+1, card_type))
             self._mgmt_handle.expect_exact(nic_prompt)
             self._mgmt_handle.sendline("mkdir -p /home/diag/diag/log/")
@@ -1169,11 +1196,11 @@ class mtp_ctrl():
             return None
 
         # dump the fru
-        self._mgmt_handle.sendline("/mnt/cpld -r 0")
+        self._mgmt_handle.sendline("{:s}cpld -r 0".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
-        self._mgmt_handle.sendline("/mnt/devmgr -status")
+        self._mgmt_handle.sendline("{:s}devmgr -status".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
-        self._mgmt_handle.sendline("/mnt/eeutil -disp")
+        self._mgmt_handle.sendline("{:s}eeutil -disp".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
         match = re.findall(NAPLES_DISP_SN_FMT, self._mgmt_handle.before)
         if match:
@@ -1200,7 +1227,7 @@ class mtp_ctrl():
         if not nic_prompt:
             return None
         # dump the fru
-        self._mgmt_handle.sendline("/mnt/cpld -r 0")
+        self._mgmt_handle.sendline("{:s}cpld -r 0".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt)
         match = re.findall(r"(0x[0-9a-fA-F]+)", self._mgmt_handle.before)
         if match:
@@ -1249,13 +1276,13 @@ class mtp_ctrl():
             return False
 
         time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
-        # 3. verify /mnt write permission
 
-        # 4. copy utils
-        self.cli_log_slot_inf(slot, "Download NIC Utils")
-        if not self.mtp_mgmt_nic_utils_dl(slot):
-            self.cli_log_slot_err(slot, "Download NIC Utils failed")
+        # 3. copy diag image
+        self.cli_log_slot_inf(slot, "Download NIC Diag image")
+        if not self.mtp_mgmt_copy_nic_diag(slot):
+            self.cli_log_slot_err(slot, "Download NIC Diag image failed")
             return False
+
         self.cli_log_slot_inf(slot, "Init Diag Environment on NIC complete")
         return True
 
@@ -1401,6 +1428,7 @@ class mtp_ctrl():
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
                     self._nic_sn_list[slot] = "FLMDEADBEEF"
                 else:
+                    self.cli_log_slot_inf(slot, "Set SN to {:s}".format(nic_fru_info[0]))
                     self._nic_sn_list[slot] = nic_fru_info[0]
 
 
@@ -1459,8 +1487,25 @@ class mtp_ctrl():
 
 
     def mtp_set_nic_vmarg(self, slot, vmarg):
-        # TODO, how to set nic vmarg?
-        self.cli_log_slot_inf(slot, "Set voltage margin to {:d}%".format(vmarg), level=0)
+        if vmarg > 0:
+            vmarg_param = "high"
+        elif vmarg == 0:
+            vmarg_param = "normal"
+        else:
+            vmarg_param = "low"
+
+        self.cli_log_slot_inf(slot, "Set voltage margin to {:s}".format(vmarg_param), level=0)
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
+        if not nic_prompt:
+            self.cli_log_slot_inf(slot, "Set voltage margin to {:s} failed".format(vmarg_param), level=0)
+            return False
+        nic_cmd = "vmarg.sh {:s}".format(vmarg_param)
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self.cli_log_slot_inf(slot, "Set voltage margin to {:s} complete".format(vmarg_param), level=0)
+
         return True
 
 

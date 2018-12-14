@@ -20,12 +20,12 @@ from libpro_srv_db import pro_srv_db
 def main():
     parser = argparse.ArgumentParser(description="Diag MTP Reload", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--image", help="New MTP image file")
-    parser.add_argument("--nic-utils", help="New nic-utils image file")
+    parser.add_argument("--nic-image", help="New NIC image file")
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--mtp", help="MTP ID")
 
     skip_image_update = True
-    nic_utils_file = None
+    nic_image_file = None
     apc = False
     mtp_id = None
 
@@ -37,8 +37,8 @@ def main():
     if args.image:
         mtp_image_file = args.image
         skip_image_update = False
-    if args.nic_utils:
-        nic_utils_file = args.nic_utils
+    if args.nic_image:
+        nic_image_file = args.nic_image
 
     # get the absolute file path
     product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
@@ -88,22 +88,6 @@ def main():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
     libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis connected")
 
-    if nic_utils_file:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Copy NIC Utils image: {:s}".format(nic_utils_file))
-        mtp_ip_addr = mtp_mgmt_cfg[0]
-        mtp_usrid = mtp_mgmt_cfg[1]
-        mtp_passwd = mtp_mgmt_cfg[2]
-        remote_dir = "/home/diag/"
-        if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_utils_file, remote_dir):
-            libmfg_utils.sys_exit(mtp_cli_id_str + "Copy NIC Utils image: {:s} failed".format(nic_utils_file))
-        else:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Copy NIC Utils image: {:s} complete".format(nic_utils_file))
-
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Unpack NIC Utils image: {:s}".format(os.path.basename(nic_utils_file)))
-        cmd = "tar zxf {:s}".format(os.path.basename(nic_utils_file))
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Unpack NIC Utils image {:s} complete".format(os.path.basename(nic_utils_file)))
-
     if not skip_image_update:
         libmfg_utils.cli_inf(mtp_cli_id_str + "Copy MTP Chassis image: {:s}".format(mtp_image_file))
         mtp_ip_addr = mtp_mgmt_cfg[0]
@@ -120,6 +104,24 @@ def main():
         mtp_mgmt_ctrl.mtp_update_sw_image(remote_dir + os.path.basename(mtp_image_file))
         post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         libmfg_utils.cli_inf(mtp_cli_id_str + "Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver))
+
+    if nic_image_file:
+        libmfg_utils.cli_inf(mtp_cli_id_str + "Copy NIC Diag image: {:s}".format(nic_image_file))
+        mtp_ip_addr = mtp_mgmt_cfg[0]
+        mtp_usrid = mtp_mgmt_cfg[1]
+        mtp_passwd = mtp_mgmt_cfg[2]
+        nic_image_dir = "/home/diag/nic_diag/"
+        cmd = "mkdir -p {:s}".format(nic_image_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, nic_image_dir):
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Copy NIC Diag image: {:s} failed".format(nic_image_file))
+        else:
+            libmfg_utils.cli_inf(mtp_cli_id_str + "Copy NIC Diag image: {:s} complete".format(nic_image_file))
+
+        libmfg_utils.cli_inf(mtp_cli_id_str + "Unpack NIC Diag image: {:s}".format(os.path.basename(nic_image_file)))
+        cmd = "tar zxf {:s} -C {:s}".format(nic_image_dir+os.path.basename(nic_image_file), nic_image_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        libmfg_utils.cli_inf(mtp_cli_id_str + "Unpack NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)))
 
     mtp_mgmt_ctrl.mtp_mgmt_poweroff()
     libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))

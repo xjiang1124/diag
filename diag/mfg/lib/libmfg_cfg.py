@@ -1,8 +1,8 @@
 # No valid content in the Fru
-MFG_CFG_NIC_FRU_VALID = False
+MFG_CFG_NIC_FRU_VALID = True
 MFG_BYPASS_PSU_CHECK = True
 MFG_BYPASS_NIC_FRU_WR_PROT = True
-MFG_BYPASS_NIC_ENV_SET = False
+MFG_BYPASS_NIC_ENV_SET = True
 
 # MFG release version control
 MFG_NAPLES100_CPLD_VERSION = "0x7"
