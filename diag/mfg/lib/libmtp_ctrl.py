@@ -1502,6 +1502,22 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_mgmt_verify_nic_sw_boot(self, slot):
+        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw image")
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
+        if not nic_prompt:
+            self.cli_log_slot_inf(slot, "Verify NIC default boot with sw failed")
+            return False
+        nic_cmd = "fwupdate -r"
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw complete")
+
+        return True
+
+
     def mtp_set_nic_vmarg(self, slot, vmarg):
         if vmarg > 0:
             vmarg_param = "high"
