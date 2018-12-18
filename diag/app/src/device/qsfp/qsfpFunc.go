@@ -27,16 +27,16 @@ func ReadBytes(devName string, offset uint64, numBytes uint64) (data []byte, err
 }
 
 func ReadBytesUpper(devName string, offset uint64, numBytes uint64, page byte) (data []byte, err int) {
-    err = smbus.Open(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer smbus.Close()
-
-    err = smbus.WriteByte(devName, 127, page)
-    if err != errType.SUCCESS {
-        return
-    }
+//    err = smbus.Open(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer smbus.Close()
+//
+//    err = smbus.WriteByte(devName, 127, page)
+//    if err != errType.SUCCESS {
+//        return
+//    }
 
     data, err = ReadBytes(devName, offset, numBytes)
     if err != errType.SUCCESS {
@@ -86,7 +86,7 @@ func ReadFieldUpper(devName string, field string, page byte) (data []byte, err i
 }
 
 func ReadId(devName string) (id byte, err int) {
-    data, err := ReadFieldUpper(devName, "ID", 1)
+    data, err := ReadFieldUpper(devName, "ID", 0)
     id = data[0]
     return
 }
