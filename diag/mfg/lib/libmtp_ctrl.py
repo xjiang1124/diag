@@ -1486,6 +1486,22 @@ class mtp_ctrl():
         return mask
 
 
+    def mtp_mgmt_set_nic_diag_boot(self, slot):
+        self.cli_log_slot_inf(slot, "Set NIC default boot with diag image")
+        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
+        if not nic_prompt:
+            self.cli_log_slot_inf(slot, "Set NIC default boot with diag failed")
+            return False
+        nic_cmd = "fwupdate -s diagfw"
+        self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact(nic_prompt)
+        self._mgmt_handle.sendline("exit")
+        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        self.cli_log_slot_inf(slot, "Set NIC default boot with diag complete")
+
+        return True
+
+
     def mtp_mgmt_set_nic_sw_boot(self, slot):
         self.cli_log_slot_inf(slot, "Set NIC default boot with sw image")
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)

@@ -137,11 +137,37 @@ def main():
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP Chassis")
-    version = mtp_mgmt_ctrl.mtp_get_sw_version()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Chassis Reload Complete, diag version = {:s}".format(version))
+    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Chassis Reload Complete")
+
+    # init MTP diag environment
+    mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
+
+    sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+    asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
+    cpld_io_ver, cpld_jtag_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver))
+    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver))
+
+    # init nic present list
+    mtp_mgmt_ctrl.mtp_init_nic_prsnt()
+
+    # init nic type list
+    mtp_mgmt_ctrl.mtp_init_nic_type()
+
+    # get nic present list
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+
+    # power cycle the NICs
+    mtp_mgmt_ctrl.mtp_power_off_nic()
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    # init the nic diag environment
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if nic_prsnt_list[slot]:
+            mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+            mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
-
 
 if __name__ == "__main__":
     main()

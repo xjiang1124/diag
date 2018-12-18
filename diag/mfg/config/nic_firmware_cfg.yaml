@@ -3,12 +3,12 @@ NAPLES100:
     VRM_FILE:  "/home/diag/naples100_vrm_rev0.bin"
     VRM_CKSUM: 0x55AA
     QSPI_FILE: "/home/diag/naples100_qspi_111518.tar"
-    EMMC_FILE: "/home/diag/naples100_fw_112718.tar"
+    EMMC_FILE: "/home/diag/naples100_fw_121818.tar"
 
 NAPLES25:
     CPLD_FILE: "/home/diag/naples25.bin"
     VRM_FILE:  "/home/diag/naples25_vrm.bin"
     VRM_CKSUM: 0x55AA
     QSPI_FILE: "/home/diag/naples25_qspi.tar"
-    EMMC_FILE: "/home/diag/naples25_fw_112718.tar"
+    EMMC_FILE: "/home/diag/naples25_fw_121818.tar"
 
