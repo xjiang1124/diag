@@ -86,6 +86,7 @@ then
     cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil    $NIC_UTIL_DIR
     cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil   $NIC_UTIL_DIR
     cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil   $NIC_UTIL_DIR
+    cp $TOP_DIR/diag/app/bin/linux_arm64/util/emmc      $NIC_UTIL_DIR
     cp $TOP_DIR/diag/python/regression/update_mac.py    $NIC_UTIL_DIR
     cp $TEMP_DIR/scripts/version.txt                    $NIC_UTIL_DIR
 
