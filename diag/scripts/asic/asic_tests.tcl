@@ -11,6 +11,13 @@ proc init {} {
 }
 
 proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.0} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
+    global G_USE_ZMQ
+    global G_ZMQ_CONN
+    global G_SLOT 0
+    set G_USE_ZMQ $use_zmq
+    set G_ZMQ_CONN $zmq_conn
+    set G_SLOT $j2c_slot
+
     set chip_id [ cap_get_cur_chip_id ]
     set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
     set log_file cap_snake_${mode}_${board_id}_${cur_time}.log
