@@ -10,6 +10,33 @@ proc init {} {
     source .tclrc.diag
 }
 
+proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} } {
+    set chip_id [ cap_get_cur_chip_id ]
+    set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
+    set log_file set_avs_${board_id}_${cur_time}.log
+    set cur_dir [pwd]
+    set j2c_port 10
+
+    plog_stop
+    plog_start $log_file 1000000000
+    plog_msg "Running [info level 0]"
+
+    diag_open_j2c_if $j2c_port $j2c_slot
+
+    set in_err [plog_get_err_count]
+    cap_ic_setup 2
+    cap_set_avs $arm_vdd $freq
+
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+    if {$err_cnt != 0} {
+        plog_msg "set avs slot$slot failed:  $err_cnt"
+    }
+
+    plog_stop
+
+    return $err_cnt
+}
+
 proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.0} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
@@ -60,6 +87,7 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
 
     return $err_cnt
 }
+
 proc ext_eth_prbs { {board_id SN000001} {j2c_port 10} {j2c_slot 1} {time_sec 60} {prbs prbs31} } {
     set chip_id [ cap_get_cur_chip_id ]
     set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
