@@ -429,7 +429,22 @@ class mtp_ctrl():
                 self.cli_log_err("Unknown linux prompt", level = 0)
                 return None
         except pexpect.TIMEOUT:
-            libmfg_utils.sys_exit("MTP mgmt connection hangs...")
+            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
+            return None
+
+
+    def mtp_mgmt_expect_exact(self, exp, delay=None):
+        if self._mgmt_handle:
+            try:
+                if delay:
+                    self._mgmt_handle.expect_exact(exp, timeout=delay)
+                else:
+                    self._mgmt_handle.expect_exact(exp)
+                return True
+            except pexpect.TIMEOUT:
+                return False
+        else:
+            libmfg_utils.sys_exit("MTP MGMT handle is not initialized")
 
 
     def mtp_prompt_cfg(self, handle, userid, prompt):
@@ -978,11 +993,11 @@ class mtp_ctrl():
 
 
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
-        if low_threshold:
+        if low_threshold != None:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
             upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
             lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
-        elif high_threshold:
+        elif high_threshold != None:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
             upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
             lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
@@ -1057,7 +1072,9 @@ class mtp_ctrl():
             return False
         nic_cmd = "mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
         self._mgmt_handle.sendline(nic_cmd)
-        self._mgmt_handle.expect_exact(nic_prompt)
+        if not self.mtp_mgmt_expect_exact(nic_prompt):
+            self.cli_log_slot_err(slot, "Create diag directory {:s} Failed".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH))
+            return False
         self._mgmt_handle.sendline("exit")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
