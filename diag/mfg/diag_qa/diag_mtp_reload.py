@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description="Diag MTP Reload", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--image", help="New MTP image file")
     parser.add_argument("--nic-image", help="New NIC image file")
+    parser.add_argument("--reset-nic", help="Reset NIC boot with diag image", action='store_true')
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--mtp", help="MTP ID")
 
@@ -28,6 +29,7 @@ def main():
     nic_image_file = None
     apc = False
     mtp_id = None
+    reset_nic = False
 
     args = parser.parse_args()
     if args.apc:
@@ -39,6 +41,8 @@ def main():
         skip_image_update = False
     if args.nic_image:
         nic_image_file = args.nic_image
+    if args.reset_nic:
+        reset_nic = True
 
     # get the absolute file path
     product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
@@ -131,41 +135,42 @@ def main():
 
     time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
-#    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-#    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
-#    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-#
-#    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-#        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP Chassis")
-#    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Chassis Reload Complete")
-#
-#    # init MTP diag environment
-#    mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
-#
-#    sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-#    asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
-#    cpld_io_ver, cpld_jtag_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
-#    libmfg_utils.cli_inf(mtp_cli_id_str + "Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver))
-#    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver))
-#
-#    # init nic present list
-#    mtp_mgmt_ctrl.mtp_init_nic_prsnt()
-#
-#    # init nic type list
-#    mtp_mgmt_ctrl.mtp_init_nic_type()
-#
-#    # get nic present list
-#    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-#
-#    # power cycle the NICs
-#    mtp_mgmt_ctrl.mtp_power_off_nic()
-#    mtp_mgmt_ctrl.mtp_power_on_nic()
-#
-#    # init the nic diag environment
-#    for slot in range(MTP_Const.MTP_SLOT_NUM):
-#        if nic_prsnt_list[slot]:
-#            mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
-#            mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
+    mtp_mgmt_ctrl.mtp_apc_pwr_on()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP Chassis")
+    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Chassis Reload Complete")
+
+    # init MTP diag environment
+    mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
+
+    sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+    asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
+    cpld_io_ver, cpld_jtag_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver))
+    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver))
+
+    if reset_nic:
+        # init nic present list
+        mtp_mgmt_ctrl.mtp_init_nic_prsnt()
+
+        # init nic type list
+        mtp_mgmt_ctrl.mtp_init_nic_type()
+
+        # get nic present list
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+
+        # power cycle the NICs
+        mtp_mgmt_ctrl.mtp_power_off_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic()
+
+        # init the nic diag environment
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if nic_prsnt_list[slot]:
+                mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+                mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
