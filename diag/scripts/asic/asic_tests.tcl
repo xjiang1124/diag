@@ -62,6 +62,11 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
         diag_open_j2c_if $j2c_port $j2c_slot
     }
 
+    cap_print_die_id
+    if { $use_zmq == 0 } {
+        exec devmgr -dev=fan -status
+    }
+
     set in_err [plog_get_err_count]
     # === reset
     cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn
@@ -80,7 +85,9 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
     cap_snake_test_mtp $snake_num 8000 $mac_serdes_int_lpbk 1600 1 $core_freq 1 $duration
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
-        plog_msg "cap_snake $mode failed:  $err_cnt"
+        plog_msg "cap_snake $mode FAILED:  $err_cnt"
+    } else {
+        plog_msg "cap_snake $mode FASSED"
     }
 
     plog_stop
