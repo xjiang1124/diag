@@ -48,9 +48,11 @@ func Mvl_StubHdl(argList []string) {
 
 	spi.MvlSmiRegWrite(0x16, 0x6, 0x3)
 	misc.SleepInSec(1)
-	spi.MvlSmiRegWrite(0x12, 0x8, 0x3)
-	spi.MvlSmiRegWrite(0x10, 0x18, 0x3)
 	spi.MvlSmiRegWrite(0x12, 0x18, 0x3)
+	misc.SleepInSec(1)
+	spi.MvlSmiRegWrite(0x10, 0x18, 0x3)
+//	misc.SleepInSec(1)
+//	spi.MvlSmiRegWrite(0x12, 0x18, 0x3)
 	
 	misc.SleepInSec(1)
 	
@@ -73,9 +75,10 @@ func Mvl_StubHdl(argList []string) {
 	
 	spi.MvlSmiRegWrite(0x16, 0x6, 0x4)
 	misc.SleepInSec(1)
-	spi.MvlSmiRegWrite(0x12, 0x8, 0x4)
-	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
 	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
+	misc.SleepInSec(1)
+	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
+//	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
 		
 	misc.SleepInSec(1)
 	
@@ -100,7 +103,6 @@ func Mvl_StubHdl(argList []string) {
 	spi.MvlSmiRegWrite(0x12, 0x0, 0x4)
 	spi.MvlSmiRegWrite(0x16, 0x0, 0x4)
     misc.SleepInSec(5)
-    spi.MvlSmiRegWrite(0x10, 0x0, 0x4)
 
     return
 }
