@@ -59,13 +59,13 @@ class diag_db():
             for test in diag_test_cfg["MTP_SEQ"][dsp]:
                 self._seq_test_id_list.append((dsp, test))
 
-#        # parallel test:
-#        for dsp in diag_test_cfg["MTP_PARA"].keys():
-#            for test in diag_test_cfg["MTP_PARA"][dsp]:
-#                self._para_test_id_list.append((dsp, test))
+        # parallel test:
+        for dsp in diag_test_cfg["MTP_PARA"].keys():
+            for test in diag_test_cfg["MTP_PARA"][dsp]:
+                self._para_test_id_list.append((dsp, test))
 
         self._seq_tests = diag_test_cfg["MTP_SEQ"]
-#        self._para_tests = diag_test_cfg["MTP_PARA"]
+        self._para_tests = diag_test_cfg["MTP_PARA"]
 
 
     def get_init_cmd_list(self):
@@ -102,6 +102,10 @@ class diag_db():
         return self._seq_test_id_list
 
 
+    def get_diag_para_test_list(self):
+        return self._para_test_id_list
+
+
     def get_pre_diag_test_intf_list(self):
         return self._pre_test_intf_list
 
@@ -122,6 +126,22 @@ class diag_db():
         return libmfg_utils.diag_seq_run_cmd(card_name, dsp, test, param)
 
 
+    def get_diag_para_test_run_cmd(self, dsp, test, slot, opts, sn):
+        if opts["NIC_NAME"]:
+            card_name = "NIC{:d}".format(slot+1)
+        else:
+            card_name = "MTP1"
+
+        param = '"'
+        if opts["SN"]:
+            param += 'sn={:s} '.format(sn)
+        if opts["SLOT"]:
+            param += 'slot={:d}'.format(slot+1)
+        param += '"'
+
+        return libmfg_utils.diag_para_run_cmd(card_name, dsp, test, param)
+
+
     def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):
         if opts["NIC_NAME"]:
             card_name = "nic{:d}".format(slot+1)
@@ -131,16 +151,21 @@ class diag_db():
         return libmfg_utils.diag_seq_errcode_cmd(card_name, dsp)
 
 
+    def get_diag_para_test_errcode_cmd(self, dsp, test, slot, opts):
+        if opts["NIC_NAME"]:
+            card_name = "NIC{:d}".format(slot+1)
+        else:
+            card_name = "MTP1"
+
+        return libmfg_utils.diag_para_errcode_cmd(card_name, dsp)
+
+
     def get_diag_seq_test(self, dsp, test):
         return self._seq_tests[dsp][test]
 
 
     def get_diag_seq_dsp_list(self):
         return self._seq_tests.keys()
-
-
-    def get_diag_para_test_list(self):
-        return self._para_test_id_list
 
 
     def get_diag_para_test(self, dsp, test):

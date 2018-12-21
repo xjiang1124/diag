@@ -92,12 +92,28 @@ def diag_seq_run_cmd(card_name, dsp, test, param):
     cmd += " -d {:s}".format(dsp)
     if test:
         cmd += " -t {:s}".format(test)
-    if param != "":
+    if param != '""':
+        cmd += " -p {:s}".format(param)
+    return cmd
+
+
+def diag_para_run_cmd(card_name, dsp, test, param):
+    cmd = "./diag -r -c {:s}".format(card_name)
+    cmd += " -d {:s}".format(dsp)
+    if test:
+        cmd += " -t {:s}".format(test)
+    if param != '""':
         cmd += " -p {:s}".format(param)
     return cmd
 
 
 def diag_seq_errcode_cmd(card_name, dsp):
+    cmd = "./diag -sresult -c {:s}".format(card_name)
+    cmd += " -d {:s}".format(dsp)
+    return cmd
+
+
+def diag_para_errcode_cmd(card_name, dsp):
     cmd = "./diag -sresult -c {:s}".format(card_name)
     cmd += " -d {:s}".format(dsp)
     return cmd

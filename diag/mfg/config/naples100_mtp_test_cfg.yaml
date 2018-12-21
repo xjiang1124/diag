@@ -43,7 +43,79 @@ MTP_SEQ:
                 SN: Yes
                 SLOT: Yes
 MTP_PARA:
-#    DSP:
-#        TEST:
-#            - INIT: ""
-#            - POST: ""
+        #    CPLD:
+        #        INT:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+        #        GPIO:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+        #        MDIO:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+        #        WP:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+    I2C:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    QSFP:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+                #    INTR:
+                #        ESW:
+                #            INIT: ""
+                #            POST: ""
+                #            OPTS:
+                #                NIC_NAME: Yes
+                #                SN: No
+                #                SLOT: No
+    MVL:
+        STUB:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        ACC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+                #    SPI:
+                #        ID:
+                #            INIT: ""
+                #            POST: ""
+                #            OPTS:
+                #                NIC_NAME: Yes
+                #                SN: No
+                #                SLOT: No
