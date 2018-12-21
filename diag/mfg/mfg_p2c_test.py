@@ -112,6 +112,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
     # MTP related error, don't post any report
     if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
         libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
+        cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
         return
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
