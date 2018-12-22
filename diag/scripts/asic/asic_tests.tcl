@@ -84,11 +84,13 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
 
     cap_snake_test_mtp $snake_num 8000 $mac_serdes_int_lpbk 1600 1 $core_freq 1 $duration
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+    plog_msg "============================================"
     if {$err_cnt != 0} {
         plog_msg "cap_snake $mode FAILED:  $err_cnt"
     } else {
         plog_msg "cap_snake $mode FASSED"
     }
+    plog_msg "============================================"
 
     plog_stop
 
