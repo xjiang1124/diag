@@ -20,77 +20,6 @@ from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
 
 
-def logfile_close(filep_list):
-    for fp in filep_list:
-        fp.close()
-    os.system("sync")
-
-
-def logfile_cleanup(file_list):
-    for _file in file_list:
-        os.system("rm -f {:s}".format(_file))
-
-
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
-    duration = mtp_stop_ts - mtp_start_ts
-
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
-
-    # MTP related error, don't post any report
-    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
-        return
-
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
-        match = re.findall(nic_fail_reg_exp, buf)
-        for slot, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("DL", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
-        match = re.findall(nic_pass_reg_exp, buf)
-        for slot, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("DL", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-
 def get_pro_srv_id():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
@@ -171,18 +100,18 @@ def main():
             logfile_cleanup(log_file_list)
             return
         mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
- 
+
         # get the sw version info
         sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
- 
+
         # diag environment pre init
         mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
- 
+
         # get the hw version info
         io_cpld_ver, jtag_cpld_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
         mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)), level=0)
- 
+
         mtp_mgmt_ctrl.mtp_init_nic_prsnt()
         for nic_loop in range(10):
             mtp_mgmt_ctrl.mtp_power_off_nic()
@@ -195,6 +124,8 @@ def main():
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
         mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
+        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
         mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
