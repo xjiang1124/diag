@@ -115,6 +115,7 @@ def main():
     skip_test = False
     skip_nic_list = list()
     corner = Env_Cond.NTNV
+    sn_tag = False
 
     if args.mtpid:
         mtp_id = args.mtpid
@@ -159,6 +160,9 @@ def main():
         default_sw_boot = True
     else:
         default_sw_boot = False
+
+    if corner == Env_Cond.NTNV:
+        sn_tag = True
 
     if args.skip_nic:
         tmp_str = args.skip_nic.replace(' ','')
@@ -241,7 +245,7 @@ def main():
     naples100_test_db = diag_db(naples100_test_cfg_file)
     #naples25_test_db = diag_db(naples25_test_cfg_file)
 
-    if not mtp_mgmt_ctrl.mtp_nic_init(fru_load = True):
+    if not mtp_mgmt_ctrl.mtp_nic_init(True, sn_tag):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Initialize NIC Fail")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
@@ -294,7 +298,7 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
         return
     # get the inlet temperature info
-    env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp()
+    env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}".format(env_temp))
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 

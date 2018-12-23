@@ -5,14 +5,12 @@ import sys
 import libmfg_utils
 import random
 import re
-from libmfg_cfg import MFG_CFG_NIC_FRU_VALID
 from libmfg_cfg import MFG_BYPASS_PSU_CHECK
 from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
 from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
 from libmfg_cfg import NIC_MGMT_USERNAME
 from libmfg_cfg import NIC_MGMT_PASSWORD
 from libmfg_cfg import MFG_BYPASS_NIC_FRU_WR_PROT
-from libmfg_cfg import MFG_BYPASS_NIC_ENV_SET
 from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
@@ -112,6 +110,12 @@ class mtp_ctrl():
     def set_mtp_diag_logfile(self, diag_filep):
         self._diag_filep = diag_filep
         self._mgmt_handle.logfile_read = self._diag_filep
+
+
+    def dump_err_msg(self, buf):
+        self.cli_log_err("==== Error Message Start: ====")
+        self.cli_log_inf(buf)
+        self.cli_log_err("==== Error Message End: ====")
 
 
     def set_mtp_status(self, status):
@@ -781,6 +785,7 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("mtptest -vrm")
         idx = self._mgmt_handle.expect_exact(["TEST FAILED", "TEST PASSED", pexpect.TIMEOUT])
         if idx == 0:
+            self.dump_err_msg(self._mgmt_handle.before)
             self.cli_log_err("VRM test failed")
             rc = False
         elif idx == 1:
@@ -813,6 +818,7 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("mtptest -fanspd")
         idx = self._mgmt_handle.expect_exact(["TEST FAILED", "TEST PASSED", pexpect.TIMEOUT])
         if idx == 0:
+            self.dump_err_msg(self._mgmt_handle.before)
             match = re.findall(r"idx=(\d)", str(self._mgmt_handle.before))
             if match:
                 fan_fail_list = list()
@@ -1007,7 +1013,7 @@ class mtp_ctrl():
 
         timeout = MTP_Const.MFG_TEMP_WAIT_TIMEOUT
         while timeout > 0:
-            inlet = self.mtp_get_inlet_temp()
+            inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
             if low_threshold != None:
                 if inlet > upper_limit:
                     time.sleep(MTP_Const.MFG_TEMP_CHECK_INTERVAL)
@@ -1037,7 +1043,7 @@ class mtp_ctrl():
         while timeout > 0:
             time.sleep(MTP_Const.MFG_TEMP_CHECK_INTERVAL)
             timeout -= 1
-            inlet = self.mtp_get_inlet_temp()
+            inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
             #if inlet > upper_limit or inlet < lower_limit:
             #    self.cli_log_err("Soaking process failed, current inlet reading is {:2.2f}".format(inlet))
             #    self.cli_log_err("Temperature is out of range [{:2.2f}, {:2.2g}], check the chamber".format(lower_limit, upper_limit))
@@ -1047,18 +1053,35 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_get_inlet_temp(self):
+    def mtp_get_inlet_temp(self, low_threshold, high_threshold):
         self._mgmt_handle.sendline("devmgr -dev FAN -status")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
         # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
         # FAN                 23.50          25.50          21.75          21.75
         match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", str(self._mgmt_handle.before))
         if match:
-            return (float(match.group(3)) + float(match.group(4))) / 2
+            # validate the readings
+            inlet_1 = float(match.group(3))
+            inlet_2 = float(match.group(4))
+            inlet_diff = abs(inlet_1 - inlet_2)
+            # if the difference is more than 5, something is wrong, relay on any inlet near the threshold
+            if inlet_diff > 5.0:
+                if low_threshold != None:
+                    temp = low_threshold
+                elif high_threshold != None:
+                    temp = high_threshold
+                else:
+                    temp = 25
+
+                # return the nearest inlet reading
+                if abs(inlet_1 - temp) < abs(inlet_2 - temp):
+                    return inlet_1
+                else:
+                    return inlet_2
+            else:
+                return (inlet_1 + inlet_2) / 2
         else:
-            self.cli_log_err("==== Error Message Start: ====")
-            self.cli_log_inf(self._mgmt_handle.before)
-            self.cli_log_err("==== Error Message End: ====")
+            self.dump_err_msg(self._mgmt_handle.before)
             self.cli_log_err("Unable to get inlet temperature")
             return 0.0
 
@@ -1133,15 +1156,15 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_exec_nic_con_cmd(self, slot, nic_con_cmd, match=None):
+    def mtp_mgmt_exec_nic_con_cmd(self, slot, nic_con_cmd, pass_match=None, fail_match=None):
         # goto the nic_con dir
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         self.mtp_mgmt_exec_cmd(cmd)
         self._mgmt_handle.sendline(nic_con_cmd)
 
         # extra match to deal with identical output
-        if match:
-            idx = self._mgmt_handle.expect_exact([match, pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        if pass_match and fail_match:
+            idx = self._mgmt_handle.expect_exact([pass_match, fail_match, pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
             if idx == 0 and "TIMEOUT" not in self._mgmt_handle.before:
                 extra_timeout = False
             else:
@@ -1161,7 +1184,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_test_nic_mem(self, slot):
         nic_con_cmd = "nic_con.py -mtest -slot {:d}".format(slot+1)
-        if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "MTEST PASSED"):
+        if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "MTEST PASSED", "MTEST FAILED"):
             return False
         else:
             return True
@@ -1185,12 +1208,6 @@ class mtp_ctrl():
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
                 return None
 
-        if not MFG_BYPASS_NIC_ENV_SET:
-            card_type = self._nic_type_list[slot]
-            self._mgmt_handle.sendline("export CARD_NAME=NIC{:d} CARD_TYPE={:s}".format(slot+1, card_type))
-            self._mgmt_handle.expect_exact(nic_prompt)
-            self._mgmt_handle.sendline("mkdir -p /home/diag/diag/log/")
-            self._mgmt_handle.expect_exact(nic_prompt)
         return nic_prompt
 
 
@@ -1266,34 +1283,38 @@ class mtp_ctrl():
     def mtp_nic_diag_init(self, slot):
         self.cli_log_slot_inf(slot, "Init Diag Environment on NIC")
         # 1. change baud rate to 9600
-        for loop in range(MTP_Const.NIC_CON_INIT_RETRY):
+        loop = 0
+        while loop < MTP_Const.NIC_CON_INIT_RETRY:
             self.cli_log_slot_inf(slot, "Set NIC Console baudrate - <{:d}> try".format(loop+1))
             nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
             if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd):
                 # retry
                 self.mtp_power_off_single_nic(slot)
                 self.mtp_power_on_single_nic(slot)
+                loop += 1
                 continue
             else:
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
                 break
 
-        if loop >= MTP_Const.NIC_CON_INIT_RETRY - 1:
+        if loop >= MTP_Const.NIC_CON_INIT_RETRY:
             self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
             return False
 
         # 2. config nic ip address
-        for loop in range(MTP_Const.NIC_MGMT_IP_INIT_RETRY):
+        loop = 0
+        while loop < MTP_Const.NIC_MGMT_IP_INIT_RETRY:
             self.cli_log_slot_inf(slot, "Set NIC MGMT ip address - <{:d}> try".format(loop+1))
             nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
-            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "ifconfig oob_mnic0"):
+            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "ifconfig oob_mnic0", "FAIL to enable management port"):
                 # retry
+                loop += 1
                 continue
             else:
                 self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
                 break
 
-        if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY - 1:
+        if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
             self.cli_log_slot_err(slot, "Set NIC MGMT ip address failed")
             return False
 
@@ -1303,17 +1324,42 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Download NIC Diag image")
         if not self.mtp_mgmt_copy_nic_diag(slot):
             self.cli_log_slot_err(slot, "Download NIC Diag image failed")
+            self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
             return False
 
         self.cli_log_slot_inf(slot, "Init Diag Environment on NIC complete")
         return True
 
 
-    def mtp_nic_init(self, fru_load):
+    def mtp_nic_load_sn(self, sn_tag):
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                ret = self.mtp_nic_diag_init(slot)
+        self.mtp_init_nic_sn(sn_tag)
+        self.mtp_init_nic_mac(sn_tag)
+        return True
+
+
+    def mtp_nic_load_scan_sn(self):
+        self.cli_log_inf("Load Barcode config file")
+        nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
+        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
+        for slot in range(self._slots):
+            key = libmfg_utils.nic_key(slot)
+            valid = nic_fru_cfg[self._id][key]["VALID"]
+            if str.upper(valid) == "YES":
+                sn = nic_fru_cfg[self._id][key]["SN"]
+                mac = nic_fru_cfg[self._id][key]["MAC"]
+                self.mtp_set_nic_scan_sn(slot, sn)
+                self.mtp_set_nic_scan_mac(slot, mac)
+        return True
+
+
+    def mtp_nic_init(self, fru_load, sn_tag=True):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
 
         # init nic present list
-        self.mtp_init_nic_prsnt()
+        self.mtp_init_nic_prsnt(sn_tag)
 
         # init nic type list
         self.mtp_init_nic_type()
@@ -1321,39 +1367,9 @@ class mtp_ctrl():
         if fru_load:
             # power on nic
             self.mtp_power_on_nic()
-            self.cli_log_inf("Load Barcode config file")
-            nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
-            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
-            for slot in range(self._slots):
-                key = libmfg_utils.nic_key(slot)
-                valid = nic_fru_cfg[self._id][key]["VALID"]
-                if str.upper(valid) == "YES":
-                    sn = nic_fru_cfg[self._id][key]["SN"]
-                    mac = nic_fru_cfg[self._id][key]["MAC"]
-                    self.mtp_set_nic_scan_sn(slot, sn)
-                    self.mtp_set_nic_scan_mac(slot, mac)
-
-            # load sn/mac from fru sprom
-            if MFG_CFG_NIC_FRU_VALID:
-                self.cli_log_inf("Load NIC SN/MAC from Fru")
-                for slot in range(self._slots):
-                    key = libmfg_utils.nic_key(slot)
-                    valid = nic_fru_cfg[self._id][key]["VALID"]
-                    if str.upper(valid) == "YES":
-                        self.mtp_nic_diag_init(slot)
-                self.mtp_init_nic_sn()
-                self.mtp_init_nic_mac()
-            # load sn/mac from config file
-            else:
-                self.cli_log_inf("Load NIC SN/MAC from barcode config file")
-                for slot in range(self._slots):
-                    key = libmfg_utils.nic_key(slot)
-                    valid = nic_fru_cfg[self._id][key]["VALID"]
-                    if str.upper(valid) == "YES":
-                        sn = nic_fru_cfg[self._id][key]["SN"]
-                        mac = nic_fru_cfg[self._id][key]["MAC"]
-                        self.mtp_set_nic_sn(slot, sn)
-                        self.mtp_set_nic_mac(slot, mac)
+            self.mtp_nic_load_sn(sn_tag)
+            if sn_tag:
+                self.mtp_nic_load_scan_sn()
         else:
             self.cli_log_inf("Bypass load NIC SN/MAC")
 
@@ -1400,7 +1416,7 @@ class mtp_ctrl():
         time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
 
 
-    def mtp_init_nic_prsnt(self):
+    def mtp_init_nic_prsnt(self, sn_tag=True):
         self.cli_log_inf("Init NIC Present")
         self._mgmt_handle.sendline("inventory -present")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
@@ -1410,6 +1426,8 @@ class mtp_ctrl():
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
                 self._nic_prsnt_list[slot] = True
+                if not sn_tag:
+                    self._nic_scan_prsnt_list[slot] = True
 
 
     def mtp_get_nic_prsnt_list(self):
@@ -1442,16 +1460,21 @@ class mtp_ctrl():
         return self._nic_type_list[slot]
 
 
-    def mtp_init_nic_sn(self):
+    def mtp_init_nic_sn(self, sn_tag):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot] and self._nic_sta_list[slot] == NIC_Status.NIC_STA_OK:
                 nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
                 if not nic_fru_info:
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
+                    self.mtp_enter_user_ctrl()
                     self._nic_sn_list[slot] = "FLMDEADBEEF"
+                    if not sn_tag:
+                        self._nic_scan_sn_list[slot] = "FLMDEADBEEF"
                 else:
                     self.cli_log_slot_inf(slot, "Set SN to {:s}".format(nic_fru_info[0]))
                     self._nic_sn_list[slot] = nic_fru_info[0]
+                    if not sn_tag:
+                        self._nic_scan_sn_list[slot] = nic_fru_info[0]
 
 
     def mtp_get_nic_sn(self, slot):
@@ -1473,15 +1496,19 @@ class mtp_ctrl():
         self._nic_scan_prsnt_list[slot] = True
 
 
-    def mtp_init_nic_mac(self):
+    def mtp_init_nic_mac(self, sn_tag):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot] and self._nic_sta_list[slot] == NIC_Status.NIC_STA_OK:
                 nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
                 if not nic_fru_info:
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
                     self._nic_mac_list[slot] = "00AEDEADBEEF"
+                    if not sn_tag:
+                        self._nic_scan_mac_list[slot] = "00AEDEADBEEF"
                 else:
                     self._nic_mac_list[slot] = str.upper(nic_fru_info[1]).replace('-', '')
+                    if not sn_tag:
+                        self._nic_scan_mac_list[slot] = str.upper(nic_fru_info[1]).replace('-', '')
 
 
     def mtp_get_nic_mac(self, slot):

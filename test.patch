@@ -1,0 +1,62 @@
+diff --git a/diag/mfg/config/naples100_mtp_test_cfg.yaml b/diag/mfg/config/naples100_mtp_test_cfg.yaml
+index f94b1610..2023b708 100644
+--- a/diag/mfg/config/naples100_mtp_test_cfg.yaml
++++ b/diag/mfg/config/naples100_mtp_test_cfg.yaml
+@@ -28,20 +28,20 @@ MTP_SEQ:
+                 NIC_NAME: No
+                 SN: Yes
+                 SLOT: Yes
+-        L1:
+-            INIT: ""
+-            POST: ""
+-            OPTS:
+-                NIC_NAME: No
+-                SN: Yes
+-                SLOT: Yes
+-        ETH_PRBS:
+-            INIT: ""
+-            POST: ""
+-            OPTS:
+-                NIC_NAME: No
+-                SN: Yes
+-                SLOT: Yes
++                #        L1:
++                #            INIT: ""
++                #            POST: ""
++                #            OPTS:
++                #                NIC_NAME: No
++                #                SN: Yes
++                #                SLOT: Yes
++                #        ETH_PRBS:
++                #            INIT: ""
++                #            POST: ""
++                #            OPTS:
++                #                NIC_NAME: No
++                #                SN: Yes
++                #                SLOT: Yes
+ MTP_PARA:
+         #    CPLD:
+         #        INT:
+diff --git a/diag/mfg/lib/libdefs.py b/diag/mfg/lib/libdefs.py
+index d43637f2..2ca4fa9d 100644
+--- a/diag/mfg/lib/libdefs.py
++++ b/diag/mfg/lib/libdefs.py
+@@ -76,14 +76,14 @@ class MTP_Const:
+     
+     MFG_EDVT_LOW_FAN_SPD = 40
+     MFG_EDVT_NORM_FAN_SPD = 40
+-    MFG_EDVT_HIGH_FAN_SPD = 90
+-    MFG_EDVT_HIGH_TEMP = 50
+-    MFG_EDVT_LOW_TEMP = 0
++    MFG_EDVT_HIGH_FAN_SPD = 50
++    MFG_EDVT_HIGH_TEMP = 22
++    MFG_EDVT_LOW_TEMP = 22
+     MFG_EDVT_TEMP_DIFF = 5
+     MFG_EDVT_HIGH_VOLT = 5
+     MFG_EDVT_LOW_VOLT = -5
+     MFG_TEMP_WAIT_TIMEOUT = 180
+-    MFG_TEMP_SOAK_TIMEOUT = 180
++    MFG_TEMP_SOAK_TIMEOUT = 1
+     MFG_TEMP_CHECK_INTERVAL = 10
+ 
+ 
