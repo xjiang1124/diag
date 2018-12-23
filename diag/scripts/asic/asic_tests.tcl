@@ -10,7 +10,14 @@ proc init {} {
     source .tclrc.diag
 }
 
-proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} } {
+proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""} } {
+    global G_USE_ZMQ
+    global G_ZMQ_CONN
+    global G_SLOT 0
+    set G_USE_ZMQ $use_zmq
+    set G_ZMQ_CONN $zmq_conn
+    set G_SLOT $j2c_slot
+
     set chip_id [ cap_get_cur_chip_id ]
     set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
     set log_file set_avs_${board_id}_${cur_time}.log
@@ -21,11 +28,54 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} } {
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
 
-    diag_open_j2c_if $j2c_port $j2c_slot
+    if { $use_zmq } {
+        diag_force_close_zmq_if $zmq_conn $j2c_slot
+        diag_open_zmq_if $zmq_conn $j2c_slot
+    } else {
+        diag_open_j2c_if $j2c_port $j2c_slot
+    }
+
+    set in_err [plog_get_err_count]
+    cap_print_voltage_temp
+
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+    if {$err_cnt != 0} {
+        plog_msg "set avs slot$slot failed:  $err_cnt"
+    }
+
+    plog_stop
+
+    return $err_cnt
+}
+proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zmq 0} {zmq_conn ""} } {
+    global G_USE_ZMQ
+    global G_ZMQ_CONN
+    global G_SLOT 0
+    set G_USE_ZMQ $use_zmq
+    set G_ZMQ_CONN $zmq_conn
+    set G_SLOT $j2c_slot
+
+    set chip_id [ cap_get_cur_chip_id ]
+    set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
+    set log_file set_avs_${board_id}_${cur_time}.log
+    set cur_dir [pwd]
+    set j2c_port 10
+
+    plog_stop
+    plog_start $log_file 1000000000
+    plog_msg "Running [info level 0]"
+
+    if { $use_zmq } {
+        diag_force_close_zmq_if $zmq_conn $j2c_slot
+        diag_open_zmq_if $zmq_conn $j2c_slot
+    } else {
+        diag_open_j2c_if $j2c_port $j2c_slot
+    }
 
     set in_err [plog_get_err_count]
     cap_ic_setup 2
-    cap_set_avs $arm_vdd $freq
+    sleep 2
+    cap_set_avs $arm_vdd $freq 1
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
@@ -65,6 +115,22 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
     cap_print_die_id
     if { $use_zmq == 0 } {
         exec devmgr -dev=fan -status
+    }
+
+    if { $core_freq == 833 } {
+        cap_top_sbus_core_833 $chip_id 0
+    } elseif { $core_freq == 900 } {
+        cap_top_sbus_core_900 $chip_id 0
+    } elseif { $core_freq == 900 } {
+        cap_top_sbus_core_967 $chip_id 0
+    } elseif { $core_freq == 900 } {
+        cap_top_sbus_core_1033 $chip_id 0
+    } elseif { $core_freq == 900 } {
+        cap_top_sbus_core_1100 $chip_id 0
+    } else {
+        plog_msg "Invalid frequence $core_freq"
+        plot_stop
+        return 1
     }
 
     set in_err [plog_get_err_count]
