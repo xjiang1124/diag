@@ -9,7 +9,7 @@ import argparse
 import re
 import random
 
-sys.path.append(os.path.relpath("lib"))
+sys.path.append(os.path.relpath("../lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
@@ -21,7 +21,7 @@ from libpro_srv_db import pro_srv_db
 
 
 def get_pro_srv_id():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
+    product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
     pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
     if len(pro_srv_list) > 1:
@@ -34,7 +34,7 @@ def get_pro_srv_id():
 
 
 def load_mtp_cfg():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
+    product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
     pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
     if len(pro_srv_list) > 1:
@@ -44,7 +44,7 @@ def load_mtp_cfg():
     else:
         pro_srv_id = pro_srv_list[0]
     filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
-    mtp_chassis_cfg_file = os.path.abspath("config/" + filename)
+    mtp_chassis_cfg_file = os.path.abspath("../config/" + filename)
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
     return mtp_cfg_db
 
