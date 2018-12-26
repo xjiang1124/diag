@@ -1280,8 +1280,7 @@ class mtp_ctrl():
         return [cpld_ver]
 
 
-    def mtp_nic_diag_init(self, slot):
-        self.cli_log_slot_inf(slot, "Init Diag Environment on NIC")
+    def mtp_nic_mini_init(self, slot):
         # 1. change baud rate to 9600
         loop = 0
         while loop < MTP_Const.NIC_CON_INIT_RETRY:
@@ -1319,15 +1318,19 @@ class mtp_ctrl():
             return False
 
         time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+        return True
 
-        # 3. copy diag image
+
+    def mtp_nic_diag_init(self, slot):
+        if not self.mtp_nic_mini_init(slot):
+            return False
+
         self.cli_log_slot_inf(slot, "Download NIC Diag image")
         if not self.mtp_mgmt_copy_nic_diag(slot):
             self.cli_log_slot_err(slot, "Download NIC Diag image failed")
             self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
             return False
 
-        self.cli_log_slot_inf(slot, "Init Diag Environment on NIC complete")
         return True
 
 
@@ -1575,6 +1578,7 @@ class mtp_ctrl():
             return False
         nic_cmd = "fwupdate -r"
         self._mgmt_handle.sendline(nic_cmd)
+        self._mgmt_handle.expect_exact("mainfwa")
         self._mgmt_handle.expect_exact(nic_prompt)
         self._mgmt_handle.sendline("exit")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
