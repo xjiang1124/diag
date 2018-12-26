@@ -331,8 +331,8 @@ func DspInfraMainLoop() (err error) {
             case <-time.After(time.Second * time.Duration(*timeoutPtr)):
                 timeoutFlag = 1
                 cli.Println("i", "Timeout happend!, testID:", testID, "testName:", testName, "param:", testParam)
-                cli.Println("i", "DSP is in PermSkip mode")
-                stopOnErrEn = 0xFF
+                //cli.Println("i", "DSP is in PermSkip mode")
+                //stopOnErrEn = 0xFF
             }
             if ite != (*itePtr - 1) {
                 misc.SleepInSec(3)
