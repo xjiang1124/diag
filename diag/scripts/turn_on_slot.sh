@@ -56,9 +56,9 @@ control_slot() {
     
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
         sleep 1
-        cpldutil -cpld-wr -addr=$v12_addr -data=$v3v3
+        cpldutil -cpld-wr -addr=$v12_addr -data=$v12
         sleep 1
-        cpldutil -cpld-wr -addr=$v3v3_addr -data=$v12
+        cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
         sleep 1
     
         echo "slot $2 turned off"
