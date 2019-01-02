@@ -1,5 +1,7 @@
 cpld_id="$(cpld -r 0x80)"
+echo "P0: cpld_id $cpld_id"
 cpld_id="${cpld_id}"
+echo "P1: cpld_id $cpld_id"
 
 if [[ $cpld_id == "0x12" ]]
 then
