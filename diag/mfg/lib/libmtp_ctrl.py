@@ -1335,12 +1335,13 @@ class mtp_ctrl():
 
 
     def mtp_nic_load_sn(self, sn_tag):
+        ret = True
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                ret = self.mtp_nic_diag_init(slot)
+                ret &= self.mtp_nic_diag_init(slot)
         self.mtp_init_nic_sn(sn_tag)
         self.mtp_init_nic_mac(sn_tag)
-        return True
+        return ret
 
 
     def mtp_nic_load_scan_sn(self):
@@ -1469,7 +1470,6 @@ class mtp_ctrl():
                 nic_fru_info = self.mtp_mgmt_get_nic_fru_info(slot)
                 if not nic_fru_info:
                     self.cli_log_slot_err(slot, "Unable to retrieve NIC FRU content")
-                    self.mtp_enter_user_ctrl()
                     self._nic_sn_list[slot] = "FLMDEADBEEF"
                     if not sn_tag:
                         self._nic_scan_sn_list[slot] = "FLMDEADBEEF"

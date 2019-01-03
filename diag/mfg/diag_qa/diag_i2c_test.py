@@ -72,9 +72,13 @@ def main():
     parser = argparse.ArgumentParser(description="NIC I2C test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtp", help="MTP Chassis ID", required=True)
     parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
+    parser.add_argument("--mtp-reload", help="Iterations of the MTP reload", type=int, required=True)
+    parser.add_argument("--nic-reload", help="Iterations of the NIC reload", type=int, required=True)
 
     args = parser.parse_args()
     mtp_id = args.mtp
+    mtp_reload = args.mtp_reload
+    nic_reload = args.nic_reload
     if args.apc:
         apc = True
     else:
@@ -92,7 +96,10 @@ def main():
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     # power cycle nic
-    for mtp_loop in range(20):
+    for mtp_loop in range(mtp_reload):
+        mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("####### Power cycle MTP Iter - {:2d} #######".format(mtp_loop), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
         mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
@@ -113,11 +120,15 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)), level=0)
 
         mtp_mgmt_ctrl.mtp_init_nic_prsnt()
-        for nic_loop in range(10):
+        for nic_loop in range(nic_reload):
+            mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
+            mtp_mgmt_ctrl.cli_log_inf("####### Power cycle NIC Iter - {:2d} #######".format(nic_loop), level=0)
+            mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
             mtp_mgmt_ctrl.mtp_power_off_nic()
             time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
             mtp_mgmt_ctrl.mtp_power_on_nic()
-            mtp_mgmt_ctrl.mtp_nic_load_sn(True)
+            if not mtp_mgmt_ctrl.mtp_nic_load_sn(True):
+                mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)

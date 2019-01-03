@@ -449,17 +449,9 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Set Default Boot up Image to SW", level=0)
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic()
-
         for slot in naples100_nic_list:
             mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
             mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
-
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic()
-
-        for slot in naples100_nic_list:
-            mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
-            mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
         mtp_mgmt_ctrl.cli_log_inf("Set Default Boot up Image to SW Complete\n", level=0)
 
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
