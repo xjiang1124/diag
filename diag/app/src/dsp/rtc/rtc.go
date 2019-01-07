@@ -46,6 +46,7 @@ func RtcI2CHdl(argList []string) {
 
     diff := secondPost - secondPre
     if (diff > 2 && diff < 4) {
+        dcli.Println("i", "RTC test passed")
         diagEngine.FuncMsgChan <- errType.SUCCESS
     } else {
         dcli.Println("e", "time difference is", diff, ";expected: 3")
@@ -56,7 +57,7 @@ func RtcI2CHdl(argList []string) {
 
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
-    diagEngine.FuncMap["I2C"] = RtcI2CHdl
+    diagEngine.FuncMap["RTC"] = RtcI2CHdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
