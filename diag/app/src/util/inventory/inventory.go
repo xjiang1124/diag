@@ -10,6 +10,7 @@ import (
     "common/errType"
     "device/cpld/naples100Cpld"
     "device/cpld/naplesMtpCpld"
+    "device/cpld/mtpCpld"
     "hardware/hwdev"
 )
 
@@ -51,13 +52,50 @@ func present() (err int) {
                 presentStr = "Unknown"
             }
         } else {
-            presentStr = prsntNoneStr
+            cli.DisableVerbose()
+            var inst uint
+            if(i > 6) {
+                inst = 1
+            } else {
+                inst = 0
+            }
+            pcs, _ := mtpCpld.MvlRead(inst, uint((i-1)%5 + 0x10), 0x1)
+            if ((pcs & 0xC000) > 0) && (pcs != 0xffff){
+                presentStr = "PRESENT"
+            } else {
+                presentStr = prsntNoneStr
+            }
+            cli.EnableVerbose()
         }
+
         cli.Printf("i", "UUT_%-15d     %s\n", i, presentStr)
     }
     return
 }
 
+func powerStatusCheck(slot uint)  {
+    devName := "CPLD"
+    addr := uint64(naples100Cpld.REG_ID)
+    uutName := "UUT_"+string(slot)
+    var powerGood bool
+    
+    cli.DisableVerbose()
+    _, err := hwdev.NaplesCpldRd(devName, addr, uutName)
+    if err != errType.SUCCESS {
+        powerGood = false
+    } else {
+        powerGood = true
+    }
+    cli.EnableVerbose()
+    
+    if powerGood {
+        cli.Printf("i", "UUT_%-15d     power good\n", slot)
+    } else {
+        cli.Printf("i", "UUT_%-15d     power falure\n", slot)
+    }
+
+    return   
+}
 
 func sysDetect() (err int) {
     var presentStr string
@@ -101,8 +139,13 @@ func main() {
     flag.Usage = myUsage
 
     presentPtr  := flag.Bool("present", false, "Show UUT present status")
-    envPtr  := flag.Bool("env", false, "Detect/set environment")
+    envPtr  	:= flag.Bool("env", false, "Detect/set environment")
+    psPtr  		:= flag.Bool("ps", false, "Power Status")
+    slotPtr  	:= flag.Uint("slot", 0, "Slot Number")
+    
     flag.Parse()
+    
+    slot := *slotPtr
 
     if *presentPtr == true {
         present()
@@ -113,6 +156,12 @@ func main() {
         sysDetect()
         return
     }
+    
+    if *psPtr == true {
+        powerStatusCheck(slot)
+        return
+    }
+    
 
     myUsage()
 }
