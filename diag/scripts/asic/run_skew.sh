@@ -1,6 +1,10 @@
 # !/bin/bash
-if [ "$#" -ne 2 ]; then
-    echo "Wrong nubmer of input expected 2, get $#"
+if [ "$#" -ne 3 ]; then
+    echo "Wrong nubmer of input expected 3, get $#"
+    echo "run_skew.sh <ite> <Temp> <fan_ctrl>"
+    echo "Ite: Number of iterations"
+    echo "Temp: Chamber temp"
+    echo "Fan_ctrl: 0: fan control disable; 1: fan control enabled"
     exit
 fi
 
@@ -38,48 +42,23 @@ do
     for freq_idx in "${!freq_list[@]}"
     do
         FREQ=${freq_list[$freq_idx]}
-        FAN=${fan_spd_list[$freq_idx]}
+
+        if [ $FAN_CTRL -eq 1 ]
+        then
+            FAN=${fan_spd_list[$freq_idx]}
+        else
+            FAN=100
+        fi
+        echo "Setting Fan speed at $FAN"
         devmgr -dev=fan -speed -pct=$FAN
         sleep 3
         devmgr -dev=fan -status
+
         echo "=== Freq $FREQ ==="
         for slot_idx in "${!slot_list[@]}"
         do
             SLOT=${slot_list[$slot_idx]}
             SKEW=${skew_list[$slot_idx]}
-            #case $SLOT in
-            #    "1")
-            #        SKEW="SS-2.25"
-            #        ;;
-            #    "2")
-            #        SKEW="SS-2.00"
-            #        ;;
-            #    "3")
-            #        SKEW="SS-1.75"
-            #        ;;
-            #    "4")
-            #        SKEW="TT-0.24"
-            #        ;;
-            #    "5")
-            #        SKEW="TT-0.15"
-            #        ;;
-            #    "6")
-            #        SKEW="TT0.04"
-            #        ;;
-            #    "7")
-            #        SKEW="FF1.48"
-            #        ;;
-            #    "8")
-            #        SKEW="FF1.56"
-            #        ;;
-            #    "9")
-            #        SKEW="FF1.59"
-            #        ;;
-            #    *)
-            #        echo "invalid input", $1
-            #        exit
-            #esac
-
 
             echo "=== Slot $SLOT ==="
             date_c=`date`
