@@ -41,14 +41,14 @@ source .tclrc.diag
 source $DIAG_SRC/asic_tests.tcl
 
 if { $use_zmq == 1 } {
-     set ::SSI_OPERATION_TIMEOUT_S 10
+    set ::SSI_OPERATION_TIMEOUT_S 10
+    diag_zmq_lock_release $zmq_conn $slot
     diag_force_close_zmq_if $zmq_conn $slot
 }
 
-set xx [info args cap_set_avs]
-puts "===== $xx ====="
-
 set err_cnt [disp_volt_temp $sn $slot $use_zmq $zmq_conn]
+
+diag_close_zmq_if
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {

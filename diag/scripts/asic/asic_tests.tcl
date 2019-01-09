@@ -20,7 +20,7 @@ proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""}
 
     set chip_id [ cap_get_cur_chip_id ]
     set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
-    set log_file set_avs_${board_id}_${cur_time}.log
+    set log_file disp_volt_temp_${board_id}_${cur_time}.log
     set cur_dir [pwd]
     set j2c_port 10
 
@@ -28,7 +28,7 @@ proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""}
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
 
-    if { $use_zmq } {
+    if { $use_zmq == 1 } {
         diag_force_close_zmq_if $zmq_conn $j2c_slot
         diag_open_zmq_if $zmq_conn $j2c_slot
     } else {
@@ -41,6 +41,12 @@ proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""}
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
         plog_msg "set avs slot$slot failed:  $err_cnt"
+    }
+
+    if { $use_zmq == 1 } {
+        diag_close_zmq_if
+    } else {
+        diag_close_j2c_if $j2c_port $j2c_slot
     }
 
     plog_stop
@@ -65,12 +71,13 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
 
-    if { $use_zmq } {
+    if { $use_zmq == 1} {
         diag_force_close_zmq_if $zmq_conn $j2c_slot
         diag_open_zmq_if $zmq_conn $j2c_slot
     } else {
         diag_open_j2c_if $j2c_port $j2c_slot
     }
+    #cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn
 
     set in_err [plog_get_err_count]
     cap_ic_setup 2
@@ -79,7 +86,13 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
-        plog_msg "set avs slot$slot failed:  $err_cnt"
+        plog_msg "set avs slot$j2c_slot failed:  $err_cnt"
+    }
+
+    if { $use_zmq == 1 } {
+        diag_close_zmq_if
+    } else {
+        diag_close_j2c_if $j2c_port $j2c_slot
     }
 
     plog_stop
@@ -87,7 +100,7 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     return $err_cnt
 }
 
-proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.0} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
+proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
     global G_SLOT 0
@@ -106,7 +119,7 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
     
-    if { $use_zmq } {
+    if { $use_zmq == 1} {
         diag_open_zmq_if $zmq_conn $j2c_slot
     } else {
         diag_open_j2c_if $j2c_port $j2c_slot
@@ -117,25 +130,9 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
         exec devmgr -dev=fan -status
     }
 
-    if { $core_freq == 833 } {
-        cap_top_sbus_core_833 $chip_id 0
-    } elseif { $core_freq == 900 } {
-        cap_top_sbus_core_900 $chip_id 0
-    } elseif { $core_freq == 900 } {
-        cap_top_sbus_core_967 $chip_id 0
-    } elseif { $core_freq == 900 } {
-        cap_top_sbus_core_1033 $chip_id 0
-    } elseif { $core_freq == 900 } {
-        cap_top_sbus_core_1100 $chip_id 0
-    } else {
-        plog_msg "Invalid frequence $core_freq"
-        plot_stop
-        return 1
-    }
-
     set in_err [plog_get_err_count]
     # === reset
-    cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn
+    cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn 1 1 0 $core_freq
 
     sknobs_set_value  test/sbus/load_pcie_rom_file_frontdoor 1
     if {$mode == "pcie_lb"} {
@@ -157,6 +154,12 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833.
         plog_msg "cap_snake $mode FASSED"
     }
     plog_msg "============================================"
+
+    if { $use_zmq == 1 } {
+        diag_close_zmq_if
+    } else {
+        diag_close_j2c_if $j2c_port $j2c_slot
+    }
 
     plog_stop
 

@@ -61,14 +61,16 @@ source $DIAG_SRC/asic_tests.tcl
 puts "sn: $sn; slot: $slot; mode: $mode; mac_lb: $mac_lb; duration: $duration; use_zmq: $use_zmq"
 
 if { $use_zmq == 1 } {
-     set ::SSI_OPERATION_TIMEOUT_S 10
+    set ::SSI_OPERATION_TIMEOUT_S 10
+    diag_zmq_lock_release $zmq_conn $slot
     diag_force_close_zmq_if $zmq_conn $slot
 
     #diag_open_zmq_if $zmq_conn $slot
 } else {
-    #diag_open_j2c_if 10 $slot
+    diag_close_j2c_if 10 $slot
 }
 set err_cnt [cap_snake $sn $slot $mode $core_freq $mac_lb $duration $use_zmq $zmq_conn]
+diag_close_zmq_if
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {

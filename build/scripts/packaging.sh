@@ -107,6 +107,7 @@ then
     DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
     DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
     ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
+    #ASIC_PATH=/vol/hw/diag/diag_zmq/diag/asic/
     SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/$arch
     
     mkdir -p $DIAG_ASIC_PATH
