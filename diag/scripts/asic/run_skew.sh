@@ -66,12 +66,11 @@ do
             cd $DIAG_ROOT/diag/scripts/asic
             fn=slot$SLOT.$SKEW.FREQ$FREQ.TEMP$TEMP.FAN$FAN
             echo "fn: $fn"
-            #tclsh ./set_avs.tcl -sn $fn -slot $SLOT -arm_vdd vdd -freq $FREQ
-            #tclsh disp_volt_temp.tcl -sn $fn -slot $SLOT
-            #tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -diag_dir $diag_dir -core_freq $FREQ
-            #tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -mode pcie_lb -diag_dir $diag_dir -core_freq $FREQ
-            #tclsh l1_test.tcl $fn $SLOT
-            #tclsh l1_test.new.tcl -sn $fn -slot $SLOT -freq $FREQ
+            tclsh ./set_avs.tcl -sn $fn -slot $SLOT -arm_vdd vdd -freq $FREQ
+            tclsh disp_volt_temp.tcl -sn $fn -slot $SLOT
+            tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -diag_dir $diag_dir -core_freq $FREQ
+            tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -mode pcie_lb -diag_dir $diag_dir -core_freq $FREQ
+            tclsh l1_test.new.tcl -sn $fn -slot $SLOT -freq $FREQ
         done
     done
 done
