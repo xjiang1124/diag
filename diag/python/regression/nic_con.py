@@ -349,8 +349,6 @@ if __name__ == "__main__":
 
     group.add_argument("-br", "--change_baud_rate", help="Change baud rate", action='store_true')
     group.add_argument("-mgmt", "--ena_mgmt_port", help="Enable managment port", action='store_true')
-    group.add_argument("-ena_mnic", "--ena_mnic", help="Enable mnic", action='store_true')
-    group.add_argument("-cfg_mnic", "--cfg_mnic", help="Configure mnic", action='store_true')
     group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
 
     parser.add_argument("-or", "--orig_rate", help="Original baud rate", type=int, default=115200)
@@ -373,14 +371,6 @@ if __name__ == "__main__":
 
     if args.ena_mgmt_port == True:
         con.get_mgmt_rdy(args.tgt_rate, args.slot)
-        sys.exit()
-
-    if args.ena_mnic == True:
-        con.enable_mnic(args.tgt_rate, args.slot)
-        sys.exit()
-
-    if args.cfg_mnic == True:
-        con.config_mnic(args.tgt_rate, args.slot)
         sys.exit()
 
     if args.mtest == True:
