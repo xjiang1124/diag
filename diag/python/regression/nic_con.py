@@ -248,65 +248,6 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def get_mgmt_rdy(self, rate=9600, slot=0, ping=False):
-        if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
-            return -1
-
-        session = common.session_start()
-        session.timeout = 30
-        if ping == True:
-            session.sendline("ping -w3 10.1.1.{}".format(100+slot))
-            session.expect("\$")
-            if ", 0% packet loss" not in session.before:
-                self.enable_mgmt_new(rate, slot, True)
-        else:
-            self.enable_mgmt_new(rate, slot)
-
-        common.session_stop(session)
-
-    def enable_mgmt_new(self, rate=9600, slot=0):
-        if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
-            sys.exit(0)
-
-        session = common.session_start()
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
-        time.sleep(1)
-
-        self.uart_session_start(session, rate)
-
-        session.timeout = 60
-
-        cmd_mac = "echo \'00:11:22:33:44:{:02}\' > /sysconfig/config0/sysuuid"
-        cmd_mac = cmd_mac.format(slot)
-        print cmd_mac
-
-        try:
-            for idx in range(2):
-                session.sendline("ifconfig -a")
-                session.expect("\#")
-                temp = session.after
-                if 'oob_mnic0' in session.before:
-                    print 'oob_mnic0 enabled'
-                    break
-
-                self.uart_session_cmd(session, cmd_mac)
-                self.uart_session_cmd(session, "sysinit.sh classic hw", 15)
-                time.sleep(15)
-
-            # Configure IP
-            self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
-
-        except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to enable management port ==="
-            return -1
-
-        self.uart_session_stop(session)
-        common.session_stop(session)
-
     def enable_mnic(self, rate=9600, slot=0):
         ret = 0
         if slot == 0 or slot > 10:
@@ -372,12 +313,18 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy_new(self, rate, slot=0):
+    def get_mgmt_rdy(self, rate, slot=0):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             return -1
+
+        session = common.session_start()
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        common.session_stop(session)
 
         ret = self.enable_mnic(rate, slot)
         if ret != 0:
@@ -425,10 +372,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.ena_mgmt_port == True:
-        if args.old == True:
-            con.get_mgmt_rdy(args.tgt_rate, args.slot, args.ping)
-        else:
-            con.get_mgmt_rdy_new(args.tgt_rate, args.slot)
+        con.get_mgmt_rdy(args.tgt_rate, args.slot)
         sys.exit()
 
     if args.ena_mnic == True:
