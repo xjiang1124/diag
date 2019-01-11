@@ -339,7 +339,11 @@ class nic_con:
                 return ret
             elif ret == 0:
                 break
-        
+
+            if i == (numRetry-1):
+                print "=== FAIL to enable management port! Max retry reached!"
+                return -1
+
         print "=== Management port is ready ==="
         return ret
 
