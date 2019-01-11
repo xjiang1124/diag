@@ -6,6 +6,7 @@ import (
     "time"
     "runtime"
     "flag"
+    "strconv"
     "strings"
 
     "common/cli"
@@ -202,6 +203,14 @@ func DspInfraMainLoop() (err error) {
     // Timeout: INCR HIST:CardName:dspName:testName:TIMEOUT
     keyHistTimeoutFmt := "HIST:%s:%s:%s:TIMEOUT"
 
+    // ASIC test history
+    // Success: INCR HIST:CardName:dspName:testName:SUCCESS
+    keyHistSuccAsicFmt := "HIST:%s:%s:%s_NIC%s:SUCCESS"
+    // Fail: INCR HIST:CardName:dspName:testName:FAILURE
+    keyHistFailAsicFmt := "HIST:%s:%s:%s_NIC%s:FAILURE"
+    // Timeout: INCR HIST:CardName:dspName:testName:TIMEOUT
+    keyHistTimeoutAsicFmt := "HIST:%s:%s:%s_NIC%s:TIMEOUT"
+
     // Test result: SET TEST_RESULT:test_id err_code
     keyResultFmt := "TEST_RESULT:%s"
 
@@ -210,6 +219,11 @@ func DspInfraMainLoop() (err error) {
     timeoutPtr := fs.Int("timeout", 30, "Timeout setting for the test")
     itePtr := fs.Int("ite", 1, "Iterations for the test")
     dshIDPtr := fs.Int("dshid", 1, "diag Shell ID")
+
+    // Parameter passing, needed for timeout and ite only
+    var slotAsic int
+    fsAsic := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    slotAsicPtr := fsAsic.Int("slot", 0, "Slot index 1-10")
 
     engList := []string {"-timeout", "-ite", "-dshid"}
     var argList []string
@@ -222,8 +236,8 @@ func DspInfraMainLoop() (err error) {
     stopOnErrFlag := 0
     timeoutFlag := 0
     retValHost := 0
-    //i := 0
     var testID string
+
     // Forever loop should be placed here
     for {
         // Update queue status
@@ -296,6 +310,11 @@ func DspInfraMainLoop() (err error) {
         DshID = *dshIDPtr
         cli.Println("i", *timeoutPtr, *itePtr, DshID)
 
+        if (cardInfo.DspName == "ASIC") {
+            cli.Println("d", dspArgList)
+            err = fsAsic.Parse(dspArgList)
+            slotAsic = *slotAsicPtr
+        }
 
         // Match test handle table
         testHandler := FuncMap[testName]
@@ -352,6 +371,21 @@ func DspInfraMainLoop() (err error) {
             }
             RedisClient.Incr(histKey)
 
+            if (cardInfo.DspName == "ASIC") {
+                if timeoutFlag == 0 {
+                    if funcMsg == 0 {
+                        histKey = fmt.Sprintf(keyHistSuccAsicFmt, cardInfo.CardName, cardInfo.DspName, testName, strconv.Itoa(slotAsic))
+                    } else {
+                        histKey = fmt.Sprintf(keyHistFailAsicFmt, cardInfo.CardName, cardInfo.DspName, testName, strconv.Itoa(slotAsic))
+                    }
+                    retValHost = funcMsg
+                } else {
+                    histKey = fmt.Sprintf(keyHistTimeoutAsicFmt, cardInfo.CardName, cardInfo.DspName, testName, strconv.Itoa(slotAsic))
+                    retValHost = errType.TIMEOUT
+                }
+                RedisClient.Incr(histKey)
+            }
+
             cli.Println("i", "=== TEST DONE === testID:", testID, "testName:", testName)
 
             // Check stop_on_error
@@ -369,10 +403,9 @@ func DspInfraMainLoop() (err error) {
         // Inform Host test is done
         keyResult := fmt.Sprintf(keyResultFmt, testID)
         RedisClient.Set(keyResult, retValHost, 0)
+
         // Close function message channel after it is done
-        if retValHost != errType.TIMEOUT {
-           close(FuncMsgChan)
-        }
+        close(FuncMsgChan)
     }
     cli.Println("i", "Done mainloop", iteCount)
     return err

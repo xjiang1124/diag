@@ -19,7 +19,7 @@ declare -a slot_list=("1" "2" "3" "4" "5" "6" "7" "8" "9")
 declare -a freq_list=("833" "900" "967" "1033" "1100")
 #declare -a freq_list=("1100")
 
-declare -a fan_spd_list=("40" "50" "60" "70" "80")
+declare -a fan_spd_list=("40" "45" "50" "60" "65")
 
 declare -a skew_list=("SS-2.25" "SS-2.00" "SS-1.75" "TT-0.24" "TT-0.15" "TT0.04" "FF1.48" "FF1.56" "FF1.59")
 

@@ -57,9 +57,12 @@ class diagEngineHost:
        
         # Test result, e.g. GET TEST_RESULT:testId
         self.testResultKeyFmt = 'TEST_RESULT:{}'
-        
+         
         # Test history, e.g. GET HIST:NIC1:PMBUS:INTR:FAILURE
         self.testHistKeyFmt = 'HIST:{}:{}:{}:{}'
+       
+        # Test history, e.g. GET HIST:NIC1:PMBUS:INTR:FAILURE
+        self.testHistKeyAsicFmt = 'HIST:{}:{}:{}_NIC{}:{}'
 
         # Test result for last test, e.g. GET RESULT:NIC1:PMBUS:INTR
         self.testLastResultKeyFmt = 'RESULT:{}:{}:{}'
@@ -79,6 +82,8 @@ class diagEngineHost:
         self.dshid = self.r.incr("DSHID")
 
         self.errType = errType()
+
+        self.maxNumNic = 10
 
         #==========================================================
         # Logger init
@@ -279,20 +284,25 @@ class diagEngineHost:
             for test in testList:
                 self.listenToDsp()
     
+                cardNm = test[0]
+                dspNm  = test[1]
+                testNm = test[2]
                 testId = test[3]
+
                 testResultKey = self.testResultKeyFmt.format(testId)
                 testResult = self.r.get(testResultKey)
                 #print testId, testResult
                 # Test result shows up
                 if testResult != None and test[5] == None:
                     test[5] = testResult
-                    testDoneStr = fmtTestDone.format(test[0], test[1], test[2])
+                    testResultStr = self.errType.toName(int(testResult))
+                    testDoneStr = fmtTestDone.format(cardNm, dspNm, testNm)
                     print testDoneStr
 
                     # update last test result
-                    lastResultKey = self.testLastResultKeyFmt.format(test[0], test[1], test[2])
+                    lastResultKey = self.testLastResultKeyFmt.format(cardNm, dspNm, testNm)
                     print "result:", lastResultKey, testResult
-                    self.r.set(lastResultKey, self.errType.toName(int(testResult)))
+                    self.r.set(lastResultKey, testResultStr)
     
             # Check whether all tests have result back
             for test in testList:
@@ -320,12 +330,6 @@ class diagEngineHost:
         testResultStr = testResultFmt.format('CARD', 'DSP', 'TEST', 'RESULT')
         print testResultStr
         for test in testList:
-            #if test[5] == '0':
-            #    testR = 'PASS'
-            #elif test[5] == '48879': # skip signature
-            #    testR = 'SKIP'
-            #else:
-            #    testR = "FAIL"
             testR = self.errType.toName(int(test[5]))
             testResultStr = testResultFmt.format(test[0], test[1], test[2], testR)
             print testResultStr
@@ -626,14 +630,14 @@ class diagSts(diagEngineHost):
                     print fmtTest.format(test, sts)
         return
 
-    def showHist (self, cardNm="", dspNm=""):
+    def showHist (self, cardNm="", dspNm="", mode="nor"):
         cardList, err = self.getCardList(cardNm)
         if err != 0:
             return -1
 
         fmtCard = "============ {}:{} ============"
         fmtDsp = "-------- {} --------"
-        fmtTestHist = "{:<15}{:<10}{:<10}{:<10}"
+        fmtTestHist = "{:<18}{:<10}{:<10}{:<10}"
         for card in cardList: 
             cardNm = self.getCardTpFromDict(card)
             print fmtCard.format(card, cardNm)
@@ -648,29 +652,56 @@ class diagSts(diagEngineHost):
                 # Skip DIAGMGR
                 if dsp == "DIAGMGR":
                     continue
-                print fmtDsp.format(dsp)
-                testList, err = self.getTestList(card, dsp)
-                if err != 0:
-                    continue
+                if (dsp != "ASIC") or (mode == "nor"):
+                    print fmtDsp.format(dsp)
+                    testList, err = self.getTestList(card, dsp)
+                    if err != 0:
+                        continue
 
-                for test in testList:
-                    testHistKey = self.testHistKeyFmt.format(card, dsp, test, "SUCCESS")
-                    histSucc = self.r.get(testHistKey)
-                    if histSucc == None:
-                        histSucc = 0
+                    for test in testList:
+                        testHistKey = self.testHistKeyFmt.format(card, dsp, test, "SUCCESS")
+                        histSucc = self.r.get(testHistKey)
+                        if histSucc == None:
+                            histSucc = 0
 
-                    testHistKey = self.testHistKeyFmt.format(card, dsp, test, "FAILURE")
-                    histFail = self.r.get(testHistKey)
-                    if histFail == None:
-                        histFail = 0
+                        testHistKey = self.testHistKeyFmt.format(card, dsp, test, "FAILURE")
+                        histFail = self.r.get(testHistKey)
+                        if histFail == None:
+                            histFail = 0
 
-                    testHistKey = self.testHistKeyFmt.format(card, dsp, test, "TIMEOUT")
-                    histTout = self.r.get(testHistKey)
-                    if histTout == None:
-                        histTout = 0
-                    
-                    testHistStr = fmtTestHist.format(test, histSucc, histFail, histTout)
-                    print testHistStr
+                        testHistKey = self.testHistKeyFmt.format(card, dsp, test, "TIMEOUT")
+                        histTout = self.r.get(testHistKey)
+                        if histTout == None:
+                            histTout = 0
+                        
+                        testHistStr = fmtTestHist.format(test, histSucc, histFail, histTout)
+                        print testHistStr
+                else: # ASIC on MTP
+                    for nicIdx in range(1, self.maxNumNic+1):
+                        print fmtDsp.format(dsp+"_NIC"+str(nicIdx))
+                        testList, err = self.getTestList(card, dsp)
+                        if err != 0:
+                            continue
+
+                        for test in testList:
+                            testHistKey = self.testHistKeyAsicFmt.format(card, dsp, test, nicIdx, "SUCCESS")
+                            histSucc = self.r.get(testHistKey)
+                            if histSucc == None:
+                                histSucc = 0
+
+                            testHistKey = self.testHistKeyAsicFmt.format(card, dsp, test, nicIdx, "FAILURE")
+                            histFail = self.r.get(testHistKey)
+                            if histFail == None:
+                                histFail = 0
+
+                            testHistKey = self.testHistKeyAsicFmt.format(card, dsp, test, nicIdx, "TIMEOUT")
+                            histTout = self.r.get(testHistKey)
+                            if histTout == None:
+                                histTout = 0
+                            
+                            testHistStr = fmtTestHist.format(test, histSucc, histFail, histTout)
+                            print testHistStr
+
 
     def showResult (self, cardNm="", dspNm="", testNm=""):
         cardList, err = self.getCardList(cardNm)

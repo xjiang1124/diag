@@ -44,7 +44,7 @@ example: ./diag -pr 't -c nic1 -d pmbus -t intr -p timeout=45' -pr 't -c nic1 -d
 ''')
 
 group.add_argument("-scard", "--showCard", action="store_true", help="Show card list")
-group.add_argument("-sdsp",  "--showDsp", action="store_true", help="Show DSP list; if cardName specified, show DSP list on particular card; Otherwise, show DSPs of all cards")
+group.add_argument("-sdsp",  "--showDsp",  action="store_true", help="Show DSP list; if cardName specified, show DSP list on particular card; Otherwise, show DSPs of all cards")
 group.add_argument("-stest", "--showTest", action="store_true", help="Show test list; if cardName and dspName specified, show test list on particular card; Otherwise, show tests of all cards")
 group.add_argument("-shist", "--showHist", action="store_true", 
         help='''\
@@ -57,18 +57,19 @@ Display last test result
 format: diag -sresult [-c CARD_IDX] [-d DSP] [-t TEST_NAME]
 ''')
 
-group.add_argument("-sskip",  "--showSkip", action="store_true", help="Show skeped test list")
+group.add_argument("-sskip",  "--showSkip",  action="store_true", help="Show skeped test list")
 group.add_argument("-sparam", "--showParam", action="store_true", help="Show parameter setting of specified test")
 
-group.add_argument("-csys",   "--cleanSystem", action="store_true", help="Housekeeping command, clean all the queues and queue status")
+group.add_argument("-csys",   "--cleanSystem",  action="store_true", help="Housekeeping command, clean all the queues and queue status")
 group.add_argument("-chist",  "--cleanHistory", action="store_true", help="Housekeeping command, clean test histories")
 
 group.add_argument("-soe",    "--stopOnErr", type=int, help="Stop on error; 0: disable; 1: enable", default=100)
 
-parser.add_argument("-c", "--cardidx", help="Target card index, e.g. NIC1", type=str, default='')
-parser.add_argument("-d", "--dspname", help="Target DSP name, e.g. PMBUS", type=str, default='')
+parser.add_argument("-c", "--cardidx",  help="Target card index, e.g. NIC1", type=str, default='')
+parser.add_argument("-d", "--dspname",  help="Target DSP name, e.g. PMBUS", type=str, default='')
 parser.add_argument("-t", "--testname", help="Target test name, e.g. INTR", type=str, default='')
-parser.add_argument("-p", "--parameter", help="Test Parameter, e.g. \"timeout=10 mask=0x1F\"", type=str, default='')
+parser.add_argument("-p", "--parameter",help="Test Parameter, e.g. \"timeout=10 mask=0x1F\"", type=str, default='')
+parser.add_argument("-m", "--mode",     help="mode: adv: advanced; nor: normal", type=str, default='nor')
 
 group.add_argument("-lcard", "--showLostCard", action="store_true", help="Show lost cards")
 group.add_argument("-ldsp",  "--showLostDsp",  action="store_true", help="Show lost dsps")
@@ -169,7 +170,7 @@ if args.showTest == True:
     sys.exit()
 
 if args.showHist == True:
-    diagsts.showHist(args.cardidx, args.dspname)
+    diagsts.showHist(args.cardidx, args.dspname, args.mode)
     sys.exit()
 
 if args.showResult == True:
