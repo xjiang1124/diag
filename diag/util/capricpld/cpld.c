@@ -150,6 +150,45 @@ read_gpios(int d, uint32_t mask)
     return r;
 }
 
+int write_gpios(int gpio, uint32_t data)
+{
+    struct gpiochip_info ci;
+    struct gpiohandle_request hr;
+    struct gpiohandle_data hd;
+//    char buf[32];
+    int fd;
+
+//    snprintf(buf, sizeof (buf), "/dev/gpiochip%d", d);
+    memset(&hr, 0, sizeof (hr));
+    //control only one gpio
+    if(gpio > 7) {
+    	fd = e_open("/dev/gpiochip1", O_RDWR, 0);
+    	hr.lineoffsets[0] = gpio - 7;
+    } else {
+    	fd = e_open("/dev/gpiochip0", O_RDWR, 0);
+    	hr.lineoffsets[0] = gpio;
+    }
+    e_ioctl(fd, GPIO_GET_CHIPINFO_IOCTL, &ci);
+
+
+//    n = 0;
+//    for (i = 0; i < ci.lines; i++) {
+//        if (mask & (1 << i)) {
+//            hr.lineoffsets[n++] = i;
+//            hd.values[n++] = (data >> i) & 1;
+//        }
+//    }
+    hr.flags = GPIOHANDLE_REQUEST_OUTPUT;
+    hr.lines = 1;
+    hd.values[0] = data;
+    e_ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &hr);
+    close(fd);
+    e_ioctl(hr.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &hd);
+    close(hr.fd);
+
+    return 0;
+}
+
 static int
 read_cpld_gpios(void)
 {
@@ -595,9 +634,18 @@ main(int argc, char *argv[])
     	usage();
     }
     if (strcmp(argv[1], "-r") == 0) {
+    	int iter = 1;
         addr = strtoul(argv[2], NULL, 0);
-        data = cpld_read(addr);
-        printf("0x%x\n", data);
+        if(argc == 5) {
+        	if(strcmp(argv[3], "-c") == 0)
+        		iter = strtoul(argv[4], NULL, 0);
+        	else
+        		usage();
+        }
+        for(int i = 0; i < iter; i++) {
+			data = cpld_read(addr);
+			printf("0x%x\n", data);
+        }
     } else if (strcmp(argv[1], "-w") == 0) {
         if (argc < 4) {
             usage();
@@ -688,6 +736,10 @@ main(int argc, char *argv[])
     	uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
     	flash_refresh(fd);
     	close(fd);
+    } else if (strcmp(argv[1], "-gpiowr") == 0) {
+    	uint8_t gpio = strtoul(argv[2], NULL, 0);
+    	uint8_t data = strtoul(argv[3], NULL, 0);
+    	write_gpios(gpio, data);
     } else {
         usage();
     }

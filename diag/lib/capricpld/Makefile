@@ -10,6 +10,7 @@ libcpld: cpld.c
 	$(CMPL) -c cpld.c -o cpld
 	ar rs libcpld.a cpld
 	mv libcpld.a ${GOPATH}/pkg/linux_$(ARCH)/clib/libcpld.a
+	rm -rf cpld
 
 clean:
 	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libcpld.a *.o *.a

@@ -146,6 +146,45 @@ read_gpios(int d, uint32_t mask)
     return r;
 }
 
+int write_gpios(int gpio, uint32_t data)
+{
+    struct gpiochip_info ci;
+    struct gpiohandle_request hr;
+    struct gpiohandle_data hd;
+//    char buf[32];
+    int fd;
+
+//    snprintf(buf, sizeof (buf), "/dev/gpiochip%d", d);
+    memset(&hr, 0, sizeof (hr));
+    //control only one gpio
+    if(gpio > 7) {
+    	fd = e_open("/dev/gpiochip1", O_RDWR, 0);
+    	hr.lineoffsets[0] = gpio - 7;
+    } else {
+    	fd = e_open("/dev/gpiochip0", O_RDWR, 0);
+    	hr.lineoffsets[0] = gpio;
+    }
+    e_ioctl(fd, GPIO_GET_CHIPINFO_IOCTL, &ci);
+
+
+//    n = 0;
+//    for (i = 0; i < ci.lines; i++) {
+//        if (mask & (1 << i)) {
+//            hr.lineoffsets[n++] = i;
+//            hd.values[n++] = (data >> i) & 1;
+//        }
+//    }
+    hr.flags = GPIOHANDLE_REQUEST_OUTPUT;
+    hr.lines = 1;
+    hd.values[0] = data;
+    e_ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &hr);
+    close(fd);
+    e_ioctl(hr.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &hd);
+    close(hr.fd);
+
+    return 0;
+}
+
 static int
 read_cpld_gpios(void)
 {
