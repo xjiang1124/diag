@@ -13,7 +13,7 @@ TEMP=$2
 FAN_CTRL=$3
 
 #set -e
-declare -a slot_list=("1" "2" "3" "4" "5" "6" "7" "9")
+declare -a slot_list=("1" "2" "3" "4" "5" "6" "7" "8" "9")
 #declare -a slot_list=("1")
 
 declare -a freq_list=("833" "900" "967" "1033" "1100")
@@ -29,15 +29,15 @@ ASIC_SRC=/$DIAG_ROOT/diag/asic//asic_src
 ASIC_GEN=$DIAG_ROOT/diag/asic//asic_src
 ASIC_LIB_BUNDLE=$DIAG_ROOT/diag/asic/
 
-duration=3000
+duration=600
 diag_dir=$DIAG_ROOT
 
 for i in `seq 1 $ite`;
 do
     echo "=== Ite $i ==="
     #set +e
-    #turn_on_slot.sh off all
-    #turn_on_slot.sh on all
+    turn_on_slot.sh off all
+    turn_on_slot.sh on all
     #set -e
     for freq_idx in "${!freq_list[@]}"
     do
