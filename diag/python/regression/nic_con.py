@@ -61,6 +61,7 @@ class nic_con:
         return ret
 
     def enter_uboot(self, session, slot=0, rate=115200, timeout=30):
+        ret = -1
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
@@ -87,9 +88,14 @@ class nic_con:
                 session.expect("Capri# ")
                 time.sleep(5)
                 self.uart_session_stop(session)
+                ret = 0
                 break
             except pexpect.TIMEOUT:
+                ret = -1
                 self.uart_session_stop(session)
+        if ret == -1:
+            print "=== Failed to enter uboot ==="
+        return ret
 
     def conn_uboot(self, session, rate=115200):
         exprStr = "Capri# "
@@ -157,21 +163,37 @@ class nic_con:
             return 0
 
         session = common.session_start()
-        self.enter_uboot(session, slot, orig_rate)
+        ret = self.enter_uboot(session, slot, orig_rate)
+        if ret != 0:
+            common.session_stop(session)
+            return -1
         time.sleep(15)
-        self.change_rate_uboot_i(session, orig_rate, tgt_rate, save)
+
+        ret = self.change_rate_uboot_i(session, orig_rate, tgt_rate, save)
         common.session_stop(session)
+        return ret
 
     def mtest_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0):
         err = 0
-        session = common.session_start()
-        self.enter_uboot(session, slot, orig_rate)
-        time.sleep(15)
-        ret = self.change_rate_uboot_i(session, orig_rate, tgt_rate, False)
-        if ret != 0:
+        numRetry = 3
+        #session = common.session_start()
+        #self.enter_uboot(session, slot, orig_rate)
+        #time.sleep(15)
+        #ret = self.change_rate_uboot_i(session, orig_rate, tgt_rate, False)
+        #if ret != 0:
+        #    print "=== MTEST FAILED ==="
+        #    return -1
+        for i in range(numRetry):
+            print "=== Change uboot rate", i, " ==="
+            ret = self.change_rate_uboot(orig_rate, tgt_rate, slot)
+            if ret == 0:
+                break
+        if ret == -1:
+            print "=== Failed to change uboot board rate! ==="
             print "=== MTEST FAILED ==="
-            return -1
+            return ret
 
+        session = common.session_start()
         exprStr = "Capri# "
         mtest_cmd = "mtest {} {} 0xaaaaaaaa 1"
         session.timeout = 30
