@@ -8,6 +8,7 @@ import re
 import argparse
 import random
 import datetime
+import threading
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -19,6 +20,7 @@ from libdefs import Env_Cond
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 
 
 # test cleanup.
@@ -94,6 +96,41 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
     return
 
 
+def single_nic_diag_regression(mtp_mgmt_ctrl, slot, naples100_test_db, naples100_para_test_list, nic_test_rslt_list, stop_on_err):
+    for dsp, test in naples100_para_test_list:
+        test_cfg = naples100_test_db.get_diag_para_test(dsp, test)
+        init_cmd = None
+        post_cmd = None
+        if test_cfg["INIT"] != "":
+            init_cmd = test_cfg["INIT"]
+        if test_cfg["POST"] != "":
+            post_cmd = test_cfg["POST"]
+        opts = test_cfg["OPTS"]
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        diag_cmd = naples100_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn)
+        rslt_cmd = naples100_test_db.get_diag_para_test_errcode_cmd(dsp, test, slot, opts)
+        nic_key = libmfg_utils.nic_key(slot)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+
+        start_ts = datetime.datetime.now().replace(microsecond=0)
+        ret = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        duration = str(stop_ts - start_ts)
+
+        if ret == "SUCCESS":
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+        elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
+            nic_test_rslt_list[slot] = False
+            if stop_on_err:
+                return
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
+            nic_test_rslt_list[slot] = False
+            if stop_on_err:
+                return
+
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--iteration", help="Iteration to run", type=int)
@@ -135,17 +172,25 @@ def main():
 
     # Chamber temperature
     if corner == Env_Cond.LTLV or corner == Env_Cond.LTNV or corner == Env_Cond.LTHV:
-        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
-        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
+        if GLB_CFG_MFG_TEST_MODE:
+            fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+            low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
+        else:
+            fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
+            low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
         high_temp_threshold = None
     elif corner == Env_Cond.NTLV or corner == Env_Cond.NTNV or corner == Env_Cond.NTHV:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
     else:
-        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        if GLB_CFG_MFG_TEST_MODE:
+            fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+            high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
+        else:
+            fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
+            high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
 
     # Voltage margin
     if corner == Env_Cond.LTLV or corner == Env_Cond.NTLV or corner == Env_Cond.HTLV:
@@ -344,51 +389,38 @@ def main():
 
     for loop in range(iteration):
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Start".format(loop))
-
         mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Start")
-        for dsp, test in naples100_para_test_list:
-            test_cfg = naples100_test_db.get_diag_para_test(dsp, test)
-            init_cmd = None
-            post_cmd = None
-            if test_cfg["INIT"] != "":
-                init_cmd = test_cfg["INIT"]
-            if test_cfg["POST"] != "":
-                post_cmd = test_cfg["POST"]
-            for slot in naples100_nic_list[:]:
-                opts = test_cfg["OPTS"]
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                diag_cmd = naples100_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn)
-                rslt_cmd = naples100_test_db.get_diag_para_test_errcode_cmd(dsp, test, slot, opts)
+
+        nic_thread_list = list()
+        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+        for slot in naples100_nic_list[:]:
+            nic_thread = threading.Thread(target = single_nic_diag_regression, args = (mtp_mgmt_ctrl, slot, naples100_test_db, naples100_para_test_list, nic_test_rslt_list, stop_on_err))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list:
+                if not nic_thread.is_alive():
+                    ret = nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        for slot in naples100_nic_list[:]:
+            if not nic_test_rslt_list[slot]:
                 nic_key = libmfg_utils.nic_key(slot)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-
-                start_ts = datetime.datetime.now().replace(microsecond=0)
-                ret = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-                stop_ts = datetime.datetime.now().replace(microsecond=0)
-                duration = str(stop_ts - start_ts)
-
-                if ret == "SUCCESS":
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-                elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
-                    if stop_on_err:
-                        naples100_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list:
-                        fail_nic_list.append(nic_key)
-                        fail_sn_list.append(sn)
-                    if nic_key in pass_nic_list:
-                        pass_nic_list.remove(nic_key)
-                        pass_sn_list.remove(sn)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
-                    if stop_on_err:
-                        naples100_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list:
-                        fail_nic_list.append(nic_key)
-                        fail_sn_list.append(sn)
-                    if nic_key in pass_nic_list:
-                        pass_nic_list.remove(nic_key)
-                        pass_sn_list.remove(sn)
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if stop_on_err:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
 
         for dsp, test in naples100_seq_test_list:
             test_cfg = naples100_test_db.get_diag_seq_test(dsp, test)

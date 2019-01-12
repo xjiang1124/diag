@@ -1,5 +1,5 @@
+GLB_CFG_MFG_TEST_MODE = False
 MFG_BYPASS_PSU_CHECK = True
-MFG_BYPASS_NIC_FRU_WR_PROT = True
 
 # MFG release version control
 MFG_NAPLES100_CPLD_VERSION = "0x7"

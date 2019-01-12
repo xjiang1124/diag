@@ -20,6 +20,14 @@ MTP_PRE:
     NIC_FRU:  True
 
 MTP_SEQ:
+    MVL:
+        STUB:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
     ASIC:
         PCIE_PRBS:
             INIT: ""
@@ -43,43 +51,6 @@ MTP_SEQ:
                 SN: Yes
                 SLOT: Yes
 MTP_PARA:
-        #    CPLD:
-        #        INT:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
-        #        GPIO:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
-        #        MDIO:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
-        #        WP:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
-    I2C:
-        I2C:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: No
-                SLOT: No
     QSFP:
         I2C:
             INIT: ""
@@ -88,22 +59,23 @@ MTP_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-                #    INTR:
-                #        ESW:
-                #            INIT: ""
-                #            POST: ""
-                #            OPTS:
-                #                NIC_NAME: Yes
-                #                SN: No
-                #                SLOT: No
-    MVL:
-        STUB:
+    I2C:
+        I2C:
             INIT: ""
             POST: ""
             OPTS:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    RTC:
+        RTC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    MVL:
         ACC:
             INIT: ""
             POST: ""
@@ -111,11 +83,3 @@ MTP_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-                #    SPI:
-                #        ID:
-                #            INIT: ""
-                #            POST: ""
-                #            OPTS:
-                #                NIC_NAME: Yes
-                #                SN: No
-                #                SLOT: No

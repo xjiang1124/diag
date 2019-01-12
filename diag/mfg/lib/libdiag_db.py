@@ -79,7 +79,7 @@ class diag_db():
     def get_skip_test_cmd_list(self, nic_list):
         skip_list = list()
         for slot in nic_list:
-            nic_str = "nic{:d}".format(slot+1)
+            nic_str = "NIC{:d}".format(slot+1)
             for skip in self._skip_test_list:
                 cmd = "./diag -skip -c " + nic_str + skip
                 skip_list.append(cmd)
@@ -112,7 +112,7 @@ class diag_db():
 
     def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):
         if opts["NIC_NAME"]:
-            card_name = "nic{:d}".format(slot+1)
+            card_name = "NIC{:d}".format(slot+1)
         else:
             card_name = "MTP1"
 
@@ -144,7 +144,7 @@ class diag_db():
 
     def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):
         if opts["NIC_NAME"]:
-            card_name = "nic{:d}".format(slot+1)
+            card_name = "NIC{:d}".format(slot+1)
         else:
             card_name = "MTP1"
 

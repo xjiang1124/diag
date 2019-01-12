@@ -69,7 +69,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="NIC I2C test", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="NIC MGMT test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtp", help="MTP Chassis ID", required=True)
     parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
     parser.add_argument("--mtp-reload", help="Iterations of the MTP reload", type=int, required=True)
@@ -87,7 +87,7 @@ def main():
     mtp_cfg_db = load_mtp_cfg()
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
-    diag_log_filep = open("../log/nic_i2c_diag.log", 'w+')
+    diag_log_filep = open("../log/nic_mgmt_diag.log", 'w+')
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep)
 
     if apc:
@@ -120,11 +120,15 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)), level=0)
 
         mtp_mgmt_ctrl.mtp_init_nic_prsnt()
-        mtp_mgmt_ctrl.mtp_power_on_nic()
-        if not mtp_mgmt_ctrl.mtp_nic_load_sn(True):
-            mtp_mgmt_ctrl.mtp_enter_user_ctrl()
         for nic_loop in range(nic_reload):
-            mtp_mgmt_ctrl.mtp_init_nic_sn(True)
+            mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
+            mtp_mgmt_ctrl.cli_log_inf("####### Power cycle NIC Iter - {:2d} #######".format(nic_loop), level=0)
+            mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
+            mtp_mgmt_ctrl.mtp_power_off_nic()
+            time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
+            mtp_mgmt_ctrl.mtp_power_on_nic()
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+                mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
