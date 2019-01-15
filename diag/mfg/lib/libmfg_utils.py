@@ -18,6 +18,10 @@ def get_linux_prompt_list():
 def get_ssh_option():
     return DIAG_SSH_OPTIONS
 
+def get_ssh_connect_cmd(userid, ipaddr):
+    ssh_cmd = " ".join(["ssh -l", userid, ipaddr]) + get_ssh_option()
+    return ssh_cmd
+
 def cli_out(info):
     print("## ATT: " + info)
 
@@ -325,7 +329,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
 
     # verify the file md5sum
-    cmd = " ".join(["ssh -l", userid, ip_addr]) + get_ssh_option()
+    cmd = get_ssh_connect_cmd(userid, ip_addr)
     session = pexpect.spawn(cmd)
     session.setecho(False)
     session.expect_exact("assword:")
@@ -375,7 +379,7 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
         return False
 
     # verify the file md5sum
-    cmd = " ".join(["ssh -l", userid, ip_addr]) + get_ssh_option()
+    cmd = get_ssh_connect_cmd(userid, ip_addr)
     session = pexpect.spawn(cmd)
     session.setecho(False)
     session.expect_exact("assword:")

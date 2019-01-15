@@ -8,6 +8,7 @@ class diag_db():
         self._test_param_list = list()
         self._seq_test_id_list = list()
         self._pre_test_intf_list = list()
+        self._post_test_intf_list = list()
         self._para_test_id_list = list()
         self._seq_tests = dict()
         self._para_tests = dict()
@@ -64,6 +65,11 @@ class diag_db():
             for test in diag_test_cfg["MTP_PARA"][dsp]:
                 self._para_test_id_list.append((dsp, test))
 
+        # post test interface check:
+        for intf in diag_test_cfg["MTP_POST"].keys():
+            if diag_test_cfg["MTP_POST"][intf]:
+                self._post_test_intf_list.append(intf)
+
         self._seq_tests = diag_test_cfg["MTP_SEQ"]
         self._para_tests = diag_test_cfg["MTP_PARA"]
 
@@ -108,6 +114,10 @@ class diag_db():
 
     def get_pre_diag_test_intf_list(self):
         return self._pre_test_intf_list
+
+
+    def get_post_diag_test_intf_list(self):
+        return self._post_test_intf_list
 
 
     def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):

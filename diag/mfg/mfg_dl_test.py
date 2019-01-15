@@ -329,7 +329,7 @@ def main():
             test = "NIC_PRSNT"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_diag_check("NIC_FRU", slot)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check("NIC_FRU", slot)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if not ret:
@@ -463,10 +463,29 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-    # power cycle nic
-    mtp_mgmt_ctrl.mtp_power_off_nic()
-    time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # power cycle MTP
+    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
+    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
+    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+
+    mtp_mgmt_ctrl.mtp_apc_pwr_on()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
+        logfile_close(log_filep_list)
+        logfile_cleanup(log_file_list)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
+
+    # diag environment pre init
+    mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)

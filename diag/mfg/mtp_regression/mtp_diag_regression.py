@@ -53,6 +53,11 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in pre_test_check_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
+    post_test_check_list = naples_test_db.get_post_diag_test_intf_list()
+    mtp_mgmt_ctrl.cli_log_inf("Post Diag Test Check List:")
+    for item in post_test_check_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("Sequential Test List:")
     for item in seq_test_list:
@@ -360,6 +365,7 @@ def main():
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
     naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
+    naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
@@ -370,7 +376,7 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_PRE_CHECK", intf), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_diag_check(intf, slot)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if ret == "SUCCESS":
@@ -476,14 +482,41 @@ def main():
     if not stop_on_err:
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("./diag -chist")
 
+    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Post Check Start")
+    for intf in naples100_post_test_check_list:
+        for slot in naples100_nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_POST_CHECK", intf), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if ret == "SUCCESS":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_POST_CHECK", intf, duration), level=0)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_POST_CHECK", intf, ret, duration), level=0)
+                if stop_on_err:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
+    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Post Check Complete\n")
+
     # Set the default boot image
     if default_sw_boot and len(naples100_nic_list) > 0:
         mtp_mgmt_ctrl.cli_log_inf("Set Default Boot up Image to SW", level=0)
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic()
         for slot in naples100_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_POST_CHECK", "SWBOOT"), level=0)
             mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
             mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_POST_CHECK", "SWBOOT", duration), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Set Default Boot up Image to SW Complete\n", level=0)
 
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):

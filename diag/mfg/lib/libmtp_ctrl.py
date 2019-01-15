@@ -381,7 +381,7 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        ssh_cmd = "ssh -l {:s} {:s}".format(userid, ip) + libmfg_utils.get_ssh_option()
+        ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         handle = pexpect.spawn(ssh_cmd)
         idx = handle.expect_exact(["assword:",
                                    pexpect.TIMEOUT], timeout = 5)
@@ -436,7 +436,7 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        ssh_cmd = "ssh -l {:s} {:s}".format(userid, ip) + libmfg_utils.get_ssh_option()
+        ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
             idx = self._mgmt_handle.expect_exact(["assword:",
@@ -513,8 +513,6 @@ class mtp_ctrl():
 
     def mtp_enter_user_ctrl(self):
         if self._mgmt_handle and not GLB_CFG_MFG_TEST_MODE:
-            self._mgmt_handle.sendline("\n")
-            self._mgmt_handle.expect_exact(self._mgmt_prompt)
             self._mgmt_handle.interact()
 
 
@@ -1235,7 +1233,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_init_nic_handle(self, slot):
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-        cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
+        cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._mgmt_handle.sendline(cmd)
         exp_list = ["assword:", "#", pexpect.TIMEOUT]
         while True:
@@ -1385,7 +1383,7 @@ class mtp_ctrl():
 
 
     def mtp_nic_load_sn(self, sn_tag):
-        ret = self.mtp_nic_diag_init(slot)
+        ret = self.mtp_nic_diag_init()
         self.mtp_init_nic_sn(sn_tag)
         self.mtp_init_nic_mac(sn_tag)
         return ret
@@ -1675,7 +1673,7 @@ class mtp_ctrl():
             False
 
 
-    def mtp_mgmt_pre_diag_check(self, intf, slot):
+    def mtp_mgmt_pre_post_diag_check(self, intf, slot):
         if intf == "NIC_JTAG":
             cmd = "sys_sanity.sh {:d}".format(slot+1)
             self._mgmt_handle.sendline(cmd)
@@ -1687,9 +1685,10 @@ class mtp_ctrl():
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
         elif intf == "NIC_MEM":
             if self.mtp_mgmt_test_nic_mem(slot):
-                return "SUCCESS"
+                ret = "SUCCESS"
             else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
+                ret = MTP_DIAG_Error.NIC_DIAG_FAIL
+            return ret
         elif intf == "NIC_MGMT":
             if self.mtp_check_nic_status(slot):
                 return "SUCCESS"
