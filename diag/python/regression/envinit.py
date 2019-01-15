@@ -32,6 +32,12 @@ child.expect("\$ ")
 child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/002")
 child.expect("\$ ")
 
+child.sendline("mount | grep debugfs")
+child.expect("\$ ")
+
+child.sendline("sudo umount $(mount | grep debugfs | awk '{print $3}')")
+child.expect("\$ ")
+
 child.sendline("sudo ifconfig enp2s0 10.1.1.100 netmask 255.255.255.0")
 child.expect("\$ ")
 
