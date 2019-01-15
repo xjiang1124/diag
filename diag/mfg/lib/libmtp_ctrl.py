@@ -1685,10 +1685,9 @@ class mtp_ctrl():
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
         elif intf == "NIC_MEM":
             if self.mtp_mgmt_test_nic_mem(slot):
-                ret = "SUCCESS"
+                return "SUCCESS"
             else:
-                ret = MTP_DIAG_Error.NIC_DIAG_FAIL
-            return ret
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
         elif intf == "NIC_MGMT":
             if self.mtp_check_nic_status(slot):
                 return "SUCCESS"
