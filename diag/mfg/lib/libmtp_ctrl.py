@@ -838,7 +838,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_fan_init(self):
+    def mtp_fan_init(self, fan_spd):
         rc = True
         # scan the devices
         self._mgmt_handle.sendline("mtptest -present")
@@ -879,8 +879,11 @@ class mtp_ctrl():
             rc = False
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
-        # put the fan speed back
-        cmd = "devmgr -dev=fan -speed -pct={:d}".format(MTP_Const.MFG_EDVT_NORM_FAN_SPD)
+        # set the fan speed
+        self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_spd))
+        cmd = "devmgr -dev=fan -speed -pct={:d}".format(fan_spd)
+        self.mtp_mgmt_exec_cmd(cmd)
+        cmd = "devmgr -dev FAN -status"
         self.mtp_mgmt_exec_cmd(cmd)
 
         return rc
@@ -992,12 +995,12 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_hw_init(self, psu_check):
+    def mtp_hw_init(self, psu_check, fan_spd):
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # fan init
-        rc &= self.mtp_fan_init()
+        rc &= self.mtp_fan_init(fan_spd)
 
         if psu_check and not MFG_BYPASS_PSU_CHECK:
             # psu init
@@ -1022,13 +1025,6 @@ class mtp_ctrl():
             for slot in range(self._slots):
                 if self._nic_prsnt_list[slot]:
                     self.mtp_set_nic_vmarg(slot, vmarg)
-
-        # set the fan speed
-        self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_speed))
-        cmd = "devmgr -dev FAN -speed -pct {:d}".format(fan_speed)
-        self.mtp_mgmt_exec_cmd(cmd)
-        cmd = "devmgr -dev FAN -status"
-        self.mtp_mgmt_exec_cmd(cmd)
 
         self.set_mtp_status(MTP_Status.MTP_STA_READY)
 
@@ -1784,6 +1780,8 @@ class mtp_ctrl():
         cmd = "./diag -r -c MTP1 -d diagmgr -t dsp_stop"
         self.mtp_mgmt_exec_cmd(cmd)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+        cmd = "cleantcl.sh"
+        self.mtp_mgmt_exec_cmd(cmd)
         self._mgmt_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
         self._mgmt_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
         self._mgmt_handle.expect_exact(self._mgmt_prompt)

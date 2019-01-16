@@ -283,7 +283,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
     # PSU/FAN absent, powerdown MTP
-    ret = mtp_mgmt_ctrl.mtp_hw_init(psu_check)
+    ret = mtp_mgmt_ctrl.mtp_hw_init(psu_check, fanspd)
     if not ret:
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Sanity Check Failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
