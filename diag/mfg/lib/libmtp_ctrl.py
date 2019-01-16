@@ -880,9 +880,8 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
         # put the fan speed back
-        cmd_str = "devmgr -dev=fan -speed -pct={:d}".format(MTP_Const.MFG_EDVT_NORM_FAN_SPD)
-        self._mgmt_handle.sendline(cmd_str)
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "devmgr -dev=fan -speed -pct={:d}".format(MTP_Const.MFG_EDVT_NORM_FAN_SPD)
+        self.mtp_mgmt_exec_cmd(cmd)
 
         return rc
 
@@ -942,8 +941,8 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("/home/diag/start_diag.sh")
         self._mgmt_handle.expect_exact("Set up diag amd64 -- Done", timeout=MTP_Const.OS_CMD_DELAY)
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        self._mgmt_handle.sendline("source ~/.bash_profile")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "source ~/.bash_profile"
+        self.mtp_mgmt_exec_cmd(cmd)
 
         # start the mtp diagmgr
         diagmgr_handle = self.mtp_session_create()
@@ -1026,10 +1025,10 @@ class mtp_ctrl():
 
         # set the fan speed
         self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_speed))
-        self._mgmt_handle.sendline("devmgr -dev FAN -speed -pct " + str(fan_speed))
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        self._mgmt_handle.sendline("devmgr -dev FAN -status")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "devmgr -dev FAN -speed -pct {:d}".format(fan_speed)
+        self.mtp_mgmt_exec_cmd(cmd)
+        cmd = "devmgr -dev FAN -status"
+        self.mtp_mgmt_exec_cmd(cmd)
 
         self.set_mtp_status(MTP_Status.MTP_STA_READY)
 
@@ -1144,8 +1143,8 @@ class mtp_ctrl():
         if not self.mtp_mgmt_expect_exact(nic_prompt):
             self.cli_log_slot_err(slot, "Create diag directory {:s} Failed".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH))
             return False
-        self._mgmt_handle.sendline("exit")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "exit"
+        self.mtp_mgmt_exec_cmd(cmd)
 
         # copy nic diag image onto nic
         nic_diag_list = ["diag", "start_diag.arm64.sh"]
@@ -1190,9 +1189,8 @@ class mtp_ctrl():
         self._mgmt_handle.expect_exact(self._mgmt_prompt)
 
         # Start NIC DSP
-        mtp_cmd = "diag -r -c NIC{:d} -d diagmgr -t dsp_start".format(slot+1)
-        self._mgmt_handle.sendline(mtp_cmd)
-        self._mgmt_handle.expect_exact(self._mgmt_prompt, timeout=MTP_Const.OS_CMD_DELAY)
+        cmd = "diag -r -c NIC{:d} -d diagmgr -t dsp_start".format(slot+1)
+        self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY)
 
         return True
 
@@ -1206,7 +1204,7 @@ class mtp_ctrl():
         # extra match to deal with identical output
         if pass_match and fail_match:
             idx = self._mgmt_handle.expect_exact([pass_match, fail_match, pexpect.TIMEOUT], timeout=MTP_Const.NIC_CON_CMD_DELAY)
-            if idx == 0 and "TIMEOUT" not in self._mgmt_handle.before:
+            if idx == 0:
                 extra_timeout = False
             else:
                 extra_timeout = True
@@ -1439,29 +1437,29 @@ class mtp_ctrl():
 
     def mtp_power_on_nic(self):
         self.cli_log_inf("Power on all NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
-        self._mgmt_handle.sendline("turn_on_slot.sh on all")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "turn_on_slot.sh on all"
+        self.mtp_mgmt_exec_cmd(self._mgmt_prompt)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
 
 
     def mtp_power_off_nic(self):
         self.cli_log_inf("Power off all NIC")
-        self._mgmt_handle.sendline("turn_on_slot.sh off all")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "turn_on_slot.sh off all"
+        self.mtp_mgmt_exec_cmd(cmd)
         time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
 
 
     def mtp_power_on_single_nic(self, slot):
         self.cli_log_slot_inf(slot, "Power on NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
-        self._mgmt_handle.sendline("turn_on_slot.sh on {:d}".format(slot+1))
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "turn_on_slot.sh on {:d}".format(slot+1)
+        self.mtp_mgmt_exec_cmd(cmd)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
 
 
     def mtp_power_off_single_nic(self, slot):
         self.cli_log_slot_inf(slot, "Power off NIC")
-        self._mgmt_handle.sendline("turn_on_slot.sh off {:d}".format(slot+1))
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "turn_on_slot.sh off {:d}".format(slot+1)
+        self.mtp_mgmt_exec_cmd(cmd)
         time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
 
 
@@ -1781,10 +1779,10 @@ class mtp_ctrl():
 
     def mtp_mgmt_jtag_rst(self):
         self.cli_log_inf("Reset the MTP JTAG Interface", level = 0)
-        self._mgmt_handle.sendline("cd ~/diag/python/infra/dshell")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        self._mgmt_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_stop")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        cmd = "cd ~/diag/python/infra/dshell"
+        self.mtp_mgmt_exec_cmd(cmd)
+        cmd = "./diag -r -c MTP1 -d diagmgr -t dsp_stop"
+        self.mtp_mgmt_exec_cmd(cmd)
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
         self._mgmt_handle.sendline("./diag -r -c MTP1 -d diagmgr -t dsp_start")
         self._mgmt_handle.expect_exact("Test Done: MTP1:DIAGMGR:DSP_START")
