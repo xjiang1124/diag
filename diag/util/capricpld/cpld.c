@@ -622,6 +622,9 @@ static void
 usage(void)
 {
     printf("cpld (-r addr | -w addr data | -wf addr data offset mask)\n");
+    printf("cpld (-prog input_file | -file output_file | -refresh | -erase | -id)\n");
+    printf("cpld (-mdiord addr phy | -mdiowr addr phy | -smird addr phy | -smiwr addr phy data | -cnt port)\n");
+    printf("cpld (-led [green|yellow] [on|off])\n");
     exit(1);
 }
 
@@ -740,6 +743,27 @@ main(int argc, char *argv[])
     	uint8_t gpio = strtoul(argv[2], NULL, 0);
     	uint8_t data = strtoul(argv[3], NULL, 0);
     	write_gpios(gpio, data);
+    } else if (strcmp(argv[1], "-led") == 0) {
+    	cpld_write(0x15, 0x12);
+    	if (strcmp(argv[2], "green") == 0) {
+    		if (strcmp(argv[3], "on") == 0) {
+    			write_gpios(4, 1);
+    		} else if (strcmp(argv[3], "off") == 0) {
+    			write_gpios(4, 0);
+    		} else {
+    			usage();
+    		}
+    	} else if (strcmp(argv[2], "yellow") == 0) {
+    		if (strcmp(argv[3], "on") == 0) {
+    			write_gpios(5, 1);
+    		} else if (strcmp(argv[3], "off") == 0) {
+    			write_gpios(5, 0);
+    		} else {
+    			usage();
+    		}
+    	} else {
+    		usage();
+    	}
     } else {
         usage();
     }
