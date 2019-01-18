@@ -778,7 +778,7 @@ class mtp_ctrl():
             # program the qspi
             img_name = os.path.basename(qspi_img)
             nic_cmd_list = list()
-            nic_cmd = "/nic/tools/sysupdate.sh -p /{:s}".format(img_name)
+            nic_cmd = "fwupdate -p /{:s} -i 'diagfw'".format(img_name)
             nic_cmd_list.append(nic_cmd)
             self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
             self.cli_log_slot_inf(slot, "Program NIC QSPI complete")
@@ -1434,7 +1434,7 @@ class mtp_ctrl():
     def mtp_power_on_nic(self):
         self.cli_log_inf("Power on all NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
         cmd = "turn_on_slot.sh on all"
-        self.mtp_mgmt_exec_cmd(self._mgmt_prompt)
+        self.mtp_mgmt_exec_cmd(cmd)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
 
 
@@ -1584,11 +1584,10 @@ class mtp_ctrl():
         if not nic_prompt:
             self.cli_log_slot_inf(slot, "Set NIC default boot with diag failed")
             return False
+        nic_cmd_list = list()
         nic_cmd = "fwupdate -s diagfw"
-        self._mgmt_handle.sendline(nic_cmd)
-        self._mgmt_handle.expect_exact(nic_prompt)
-        self._mgmt_handle.sendline("exit")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        nic_cmd_list.append(nic_cmd)
+        self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
         self.cli_log_slot_inf(slot, "Set NIC default boot with diag complete")
 
         return True
@@ -1600,11 +1599,10 @@ class mtp_ctrl():
         if not nic_prompt:
             self.cli_log_slot_inf(slot, "Set NIC default boot with sw failed")
             return False
+        nic_cmd_list = list()
         nic_cmd = "fwupdate -s mainfwa"
-        self._mgmt_handle.sendline(nic_cmd)
-        self._mgmt_handle.expect_exact(nic_prompt)
-        self._mgmt_handle.sendline("exit")
-        self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        nic_cmd_list.append(nic_cmd)
+        self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list)
         self.cli_log_slot_inf(slot, "Set NIC default boot with sw complete")
 
         return True
