@@ -82,6 +82,12 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     set in_err [plog_get_err_count]
     cap_ic_setup 2
     sleep 2
+
+    get_freq
+    cap_get_voltage
+    cap_check_plls
+    cap_check_rei_status
+
     cap_set_avs $arm_vdd $freq 1
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
@@ -100,7 +106,7 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     return $err_cnt
 }
 
-proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} } {
+proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} {fan_ctrl 0} {tgt_temp 115} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
     global G_SLOT 0
@@ -145,7 +151,7 @@ proc cap_snake { {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833}
         return -1
     }
 
-    cap_snake_test_mtp $snake_num 8000 $mac_serdes_int_lpbk 1600 1 $core_freq 1 $duration
+    cap_snake_test_mtp $snake_num 8000 $mac_serdes_int_lpbk 1600 1 $core_freq 1 $duration $fan_ctrl $tgt_temp
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     plog_msg "============================================"
     if {$err_cnt != 0} {

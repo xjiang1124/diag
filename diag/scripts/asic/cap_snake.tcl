@@ -3,16 +3,18 @@
 #package require cmdline
 source ./cmdline.tcl
 set parameters {
-    {sn.arg         "Slotxxx"     "Serial Number"}
-    {slot.arg       ""       "Slot number"}
-    {mode.arg       "hbm_lb" "Mode: pcie_lb or hbm_lb"}
-    {mac_lb.arg     1        "MAC loopback: 0 disable; 1 enable"}
-    {core_freq.arg  833.0    "Core freqence"}
-    {duration.arg   60       "duation"}
-    {use_zmq.arg    0        "Use ZMQ"}
-    {zmq_srv_ip.arg ""       "MTP IP"}
-    {zmq_port.arg   "55000"  "ZMQ port"}
-    {diag_dir.arg   "/home/xguo2/workspace/temp/diag/" "Diag home directory"}
+    {sn.arg         "Slotxxx"       "Serial Number"}
+    {slot.arg       ""              "Slot number"}
+    {mode.arg       "hbm_lb"        "Mode: pcie_lb or hbm_lb"}
+    {mac_lb.arg     1               "MAC loopback: 0 disable; 1 enable"}
+    {core_freq.arg  833.0           "Core freqence"}
+    {duration.arg   60              "duation"}
+    {use_zmq.arg    0               "Use ZMQ"}
+    {zmq_srv_ip.arg ""              "MTP IP"}
+    {zmq_port.arg   "55000"         "ZMQ port"}
+    {diag_dir.arg   "/home/diag/"   "Diag home directory"}
+    {fan_ctrl.arg   0               "Fan control"}
+    {tgt_temp.arg   115             "Target temp"}
 }
 
 array set arg [cmdline::getoptions argv $parameters]
@@ -26,6 +28,8 @@ set use_zmq     $arg(use_zmq)
 set zmq_srv_ip  $arg(zmq_srv_ip)
 set zmq_port    $arg(zmq_port)
 set DIAG_DIR    $arg(diag_dir)
+set fan_ctrl    $arg(fan_ctrl)
+set tgt_temp    $arg(tgt_temp)
 
 if { $use_zmq != 0 } {
     if { $zmq_srv_ip == "" || $zmq_port == ""} {
@@ -69,7 +73,7 @@ if { $use_zmq == 1 } {
 } else {
     diag_close_j2c_if 10 $slot
 }
-set err_cnt [cap_snake $sn $slot $mode $core_freq $mac_lb $duration $use_zmq $zmq_conn]
+set err_cnt [cap_snake $sn $slot $mode $core_freq $mac_lb $duration $use_zmq $zmq_conn $fan_ctrl $tgt_temp]
 diag_close_zmq_if
 
 # Print twice for DSP to capture signature
