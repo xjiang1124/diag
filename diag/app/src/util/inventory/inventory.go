@@ -14,6 +14,9 @@ import (
     "hardware/hwdev"
 )
 
+var powerStatName = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc", 
+                            "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok"} 
+    
 func init() {
 }
 
@@ -73,10 +76,10 @@ func present() (err int) {
     return
 }
 
-func powerStatusCheck(slot uint)  {
+func powerStatusCheck(slot int)  {
     devName := "CPLD"
     addr := uint64(naples100Cpld.REG_ID)
-    uutName := "UUT_"+string(slot)
+    uutName := "UUT_"+strconv.Itoa(slot)
     var powerGood bool
     
     cli.DisableVerbose()
@@ -130,6 +133,26 @@ func sysDetect() (err int) {
     return
 }
 
+func powerStatusDump(slot int)  {
+    devName := "CPLD"
+    uutName := "UUT_"+strconv.Itoa(slot)
+    
+    cli.DisableVerbose()
+    stat0, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT0), uutName)
+    stat1, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT1), uutName)
+    cli.EnableVerbose()
+    
+    for i := 0; i < 12; i++ {
+        if(i < 8) {
+            cli.Printf("i","%-15s%d\n", powerStatName[i], (stat0 >> uint(i)) & 1)
+        } else {
+            cli.Printf("i","%-15s%d\n", powerStatName[i], (stat1 >> uint(i - 8)) & 1)
+        }
+    }
+    
+    return
+}
+
 func myUsage() {
     flag.PrintDefaults()
     //i2cinfo.DispI2cInfoAll()
@@ -141,7 +164,8 @@ func main() {
     presentPtr  := flag.Bool("present", false, "Show UUT present status")
     envPtr  	:= flag.Bool("env", false, "Detect/set environment")
     psPtr  		:= flag.Bool("ps", false, "Power Status")
-    slotPtr  	:= flag.Uint("slot", 0, "Slot Number")
+    slotPtr  	:= flag.Int("slot", 0, "Slot Number")
+    powDumpPtr  := flag.Bool("pw", false, "Power state dump")
     
     flag.Parse()
     
@@ -162,6 +186,10 @@ func main() {
         return
     }
     
+    if *powDumpPtr == true {
+        powerStatusDump(slot)
+        return
+    }
 
     myUsage()
 }

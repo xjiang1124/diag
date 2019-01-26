@@ -23,6 +23,8 @@ const (
     REG_ASIC_GPIO_1        = 0x14
     REG_ASIC_PSST          = 0x20
     REG_POWER_COST         = 0x30
+    REG_POWER_STAT0        = 0x31
+    REG_POWER_STAT1        = 0x32
     REG_ID                 = 0x80
 )
 
