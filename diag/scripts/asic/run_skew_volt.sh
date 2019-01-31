@@ -14,11 +14,15 @@ FAN_CTRL=$3
 
 #set -e
 declare -a slot_list=("1" "2" "3" "4" "5" "6" "8" "9" "10")
+#declare -a slot_list=("1" "2")
 
-declare -a freq_list=("833" "900" "967" "1033" "1100")
-#declare -a freq_list=("833")
+#declare -a freq_list=("833" "900" "967" "1033" "1100")
+declare -a freq_list=("833" "1100")
 
 declare -a fan_spd_list=("40" "45" "50" "60" "65")
+
+declare -a core_volt_list=("800" "700" "650" "750" "600")
+declare -a core_volt_list=("700" "650" "750" "600")
 
 declare -a skew_list=("SS-2.25" "SS-2.00" "SS-1.75" "TT-0.24" "TT-0.15" "TT0.04" "FF1.56" "FF1.59" "FF1.48")
 #declare -a skew_list=("FF1.56" "FF1.59" "FF1.48")
@@ -50,8 +54,8 @@ do
             FAN=80
             FAN_NAME="_CTRL"
         else
-            FAN=80
-            FAN_NAME=80
+            FAN=100
+            FAN_NAME=100
         fi
         echo "Setting Fan speed at $FAN"
         devmgr -dev=fan -speed -pct=$FAN
@@ -59,22 +63,25 @@ do
         devmgr -dev=fan -status
 
         echo "=== Freq $FREQ ==="
-        for slot_idx in "${!slot_list[@]}"
+        for core_volt in "${core_volt_list[@]}"
         do
-            SLOT=${slot_list[$slot_idx]}
-            SKEW=${skew_list[$slot_idx]}
+            for slot_idx in "${!slot_list[@]}"
+            do
+                SLOT=${slot_list[$slot_idx]}
+                SKEW=${skew_list[$slot_idx]}
 
-            echo "=== Slot $SLOT ==="
-            date_c=`date`
-            echo "=== date $date_c ==="
-            cd $DIAG_ROOT/diag/scripts/asic
-            fn=slot$SLOT.$SKEW.VOLT_800.FREQ$FREQ.TEMP$TEMP.FAN$FAN_NAME
-            echo "fn: $fn"
-            tclsh ./set_avs.tcl -sn $fn -slot $SLOT -arm_vdd vdd -freq $FREQ
-            tclsh disp_volt_temp.tcl -sn $fn -slot $SLOT
-            tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -diag_dir $diag_dir -core_freq $FREQ -fan_ctrl 1 -tgt_temp 90 -mac_lb 0
-            #tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -mode pcie_lb -diag_dir $diag_dir -core_freq $FREQ
-            #tclsh l1_test.new.tcl -sn $fn -slot $SLOT -freq $FREQ
+                echo "=== Slot $SLOT ==="
+                date_c=`date`
+                echo "=== date $date_c ==="
+                cd $DIAG_ROOT/diag/scripts/asic
+                fn=slot$SLOT.$SKEW.VOLT$core_volt.FREQ$FREQ.TEMP$TEMP.FAN$FAN_NAME
+                echo "fn: $fn"
+                tclsh ./set_avs.tcl -sn $fn -slot $SLOT -arm_vdd vdd -freq $FREQ -vboot 1 -vout $core_volt
+                #tclsh disp_volt_temp.tcl -sn $fn -slot $SLOT
+                tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -diag_dir $diag_dir -core_freq $FREQ -fan_ctrl 1 -tgt_temp $TEMP -mac_lb 0
+                #tclsh cap_snake.tcl -sn $fn -slot $SLOT -duration $duration -mode pcie_lb -diag_dir $diag_dir -core_freq $FREQ
+                #tclsh l1_test.new.tcl -sn $fn -slot $SLOT -freq $FREQ
+            done
         done
     done
 done
