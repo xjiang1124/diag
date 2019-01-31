@@ -4,7 +4,7 @@ if [ "$#" -ne 3 ]; then
     echo "run_skew.sh <ite> <Temp> <fan_ctrl>"
     echo "Ite: Number of iterations"
     echo "Temp: Chamber temp"
-    echo "Fan_ctrl: 0: fan control disable; 1: fan control enabled; 2: internal control"
+    echo "Fan_ctrl: 0: fan control disable; 1: fan control enabled"
     exit
 fi
 
@@ -18,8 +18,6 @@ declare -a slot_list=("1" "2" "3" "4" "5" "6" "8" "9" "10")
 
 #declare -a freq_list=("833" "900" "967" "1033" "1100")
 declare -a freq_list=("833" "1100")
-
-declare -a fan_spd_list=("40" "45" "50" "60" "65")
 
 declare -a core_volt_list=("800" "700" "650" "750" "600")
 declare -a core_volt_list=("700" "650" "750" "600")

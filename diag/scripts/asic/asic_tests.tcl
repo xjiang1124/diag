@@ -53,7 +53,7 @@ proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""}
 
     return $err_cnt
 }
-proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zmq 0} {zmq_conn ""} {force 0} {vout 800} } {
+proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zmq 0} {zmq_conn ""} {force 0} {vout 800} {use_pmro 0}} {
     global G_USE_ZMQ
     global G_ZMQ_CONN
     global G_SLOT 0
@@ -88,7 +88,7 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     cap_check_plls
     cap_check_rei_status
 
-    cap_set_avs $arm_vdd $freq 1 1 $force $vout
+    cap_set_avs $arm_vdd $freq $use_pmro 1 $force $vout
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
