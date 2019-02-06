@@ -88,7 +88,7 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     cap_check_plls
     cap_check_rei_status
 
-    cap_set_avs $arm_vdd $freq $use_pmro 1 $force $vout
+    cap_set_avs $arm_vdd $freq $use_pmro 0 $force $vout
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
