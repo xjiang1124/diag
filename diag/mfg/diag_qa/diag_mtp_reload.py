@@ -84,16 +84,16 @@ def main():
 
     if apc:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Try to connect MTP chassis")
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis connected")
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
 
     if not skip_image_update:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Copy MTP Chassis image: {:s}".format(mtp_image_file))
+        mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
         mtp_ip_addr = mtp_mgmt_cfg[0]
         mtp_usrid = mtp_mgmt_cfg[1]
         mtp_passwd = mtp_mgmt_cfg[2]
@@ -101,16 +101,16 @@ def main():
         if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
             libmfg_utils.sys_exit(mtp_cli_id_str + "Copy MTP Chassis image: {:s} failed".format(mtp_image_file))
         else:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Copy MTP Chassis image: {:s} complete".format(mtp_image_file))
+            mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s} complete".format(mtp_image_file), level=0)
 
         pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)))
+        mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
         mtp_mgmt_ctrl.mtp_update_sw_image(remote_dir + os.path.basename(mtp_image_file))
         post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver))
+        mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver), level=0)
 
     if nic_image_file:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Copy NIC Diag image: {:s}".format(nic_image_file))
+        mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s}".format(nic_image_file), level=0)
         mtp_ip_addr = mtp_mgmt_cfg[0]
         mtp_usrid = mtp_mgmt_cfg[1]
         mtp_passwd = mtp_mgmt_cfg[2]
@@ -120,28 +120,18 @@ def main():
         if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, nic_image_dir):
             libmfg_utils.sys_exit(mtp_cli_id_str + "Copy NIC Diag image: {:s} failed".format(nic_image_file))
         else:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Copy NIC Diag image: {:s} complete".format(nic_image_file))
+            mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s} complete".format(nic_image_file), level=0)
 
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Unpack NIC Diag image: {:s}".format(os.path.basename(nic_image_file)))
+        mtp_mgmt_ctrl.cli_log_inf("Unpack NIC Diag image: {:s}".format(os.path.basename(nic_image_file)), level=0)
         cmd = "tar zxf {:s} -C {:s}".format(nic_image_dir+os.path.basename(nic_image_file), nic_image_dir)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Unpack NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)))
+        mtp_mgmt_ctrl.cli_log_inf("Unpack NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)), level=0)
 
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
-
-    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
-
-    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    mtp_mgmt_ctrl.mtp_power_cycle()
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP Chassis")
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Chassis Reload Complete")
+    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis Reload Complete", level=0)
 
     # init MTP diag environment
     mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
@@ -149,8 +139,8 @@ def main():
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
     asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
     cpld_io_ver, cpld_jtag_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver))
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver))
+    mtp_mgmt_ctrl.cli_log_inf("Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver), level=0)
 
     if reset_nic:
         # init nic present list

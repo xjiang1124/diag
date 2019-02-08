@@ -594,6 +594,18 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_power_cycle(self):
+        self.mtp_mgmt_poweroff()
+        self.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        self.cli_log_inf("Power off APC", level=0)
+        self.mtp_apc_pwr_off()
+        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+        self.mtp_apc_pwr_on()
+        self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+
+
     def mtp_mgmt_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
         self._mgmt_handle.sendline(cmd)
         try:

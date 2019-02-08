@@ -73,15 +73,16 @@ def main():
 
     if apc:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Try to connect MTP chassis")
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        libmfg_utils.cli_err(mtp_cli_id_str + "Unable to connect MTP chassis")
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
         return
+
     version = mtp_mgmt_ctrl.mtp_get_sw_version()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP is connected, diag version = {:s}".format(version))
+    mtp_mgmt_ctrl.cli_log_inf("MTP is connected, diag version = {:s}".format(version), level=0)
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 

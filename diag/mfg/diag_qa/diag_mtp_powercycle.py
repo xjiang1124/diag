@@ -22,7 +22,8 @@ def main():
     parser.add_argument("--mtp", help="MTP ID")
 
     libmfg_utils.cli_inf("!!! Only use this command when mtp can not connected, console is stuck!!!")
-    libmfg_utils.double_confirm("to continue")
+    if not libmfg_utils.double_confirm("to continue"):
+        return
 
     mtp_id = None
 
@@ -71,13 +72,13 @@ def main():
     mtp_mgmt_ctrl.mtp_apc_pwr_off()
     time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+    mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Try to connect MTP chassis")
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis connected")
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 

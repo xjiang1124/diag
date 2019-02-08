@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description="Diag QA login onto NIC utility", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtp", help="MTP ID")
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
-    parser.add_argument("--slot", help="slot number to be connected", type=int, required=True)
+    parser.add_argument("--slot", help="slot number to be connected", type=int)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
     args = parser.parse_args()
@@ -46,7 +46,10 @@ def main():
     else:
         diag_log_filep = None
 
-    slot = args.slot - 1
+    if args.slot:
+        slot = args.slot - 1
+    else:
+        slot = None
     
     # get the absolute file path
     product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
@@ -83,7 +86,7 @@ def main():
 
     if apc:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
@@ -99,12 +102,8 @@ def main():
     # diag environment pre init
     mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
 
-    # power cycle the nic.
-    mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-    time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
-    mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
-
-    # init nic.
+    mtp_mgmt_ctrl.mtp_init_nic_prsnt()
+    mtp_mgmt_ctrl.mtp_power_on_nic()
     mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
 
     # user ctrl
