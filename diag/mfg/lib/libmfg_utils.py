@@ -311,6 +311,22 @@ def load_cfg_from_yaml(yaml_file):
     return cfg
 
 
+def mfg_expect(session, exp_list, timeout=None):
+    _exp_list = exp_list[:] + [pexpect.TIMEOUT]
+    _timeout = timeout
+    if _timeout != None:
+        idx = session.expect_exact(_exp_list, timeout = _timeout)
+    else:
+        idx = session.expect_exact(_exp_list)
+
+    if idx == len(exp_list):
+        if not GLB_CFG_MFG_TEST_MODE:
+            session.interact()
+        return -1
+    else:
+        return idx
+
+
 def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + local_file
     session = pexpect.spawn(cmd)

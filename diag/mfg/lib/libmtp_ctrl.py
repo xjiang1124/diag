@@ -383,27 +383,26 @@ class mtp_ctrl():
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         handle = pexpect.spawn(ssh_cmd)
-        idx = handle.expect_exact(["assword:",
-                                   pexpect.TIMEOUT], timeout = 5)
-        if idx == 0:
-            handle.sendline(passwd)
-        else:
+        idx = libmfg_utils.mfg_expect(handle, ["assword:"], timeout = 5)
+        if idx < 0:
             self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
             return None
-        try:
-            idx = handle.expect_exact(self._prompt_list, timeout = 5)
-            if (idx < len(self._prompt_list)):
-                handle.sendline("whoami")
-                handle.expect_exact(userid)
-                handle.expect_exact(self._prompt_list[idx])
-                return handle
-            else:
-                self.cli_log_err("Unknown linux prompt", level = 0)
-                return None
-        except pexpect.TIMEOUT:
+        else:
+            handle.sendline(passwd)
+
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout = 5)
+        if idx < 0:
             self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
-            self.mtp_enter_user_ctrl()
             return None
+
+        handle.sendline("whoami")
+        idx1 = libmfg_utils.mfg_expect(handle, [userid])
+        idx2 = libmfg_utils.mfg_expect(handle, [self._prompt_list[idx]])
+        if idx1 < 0 or idx2 < 0:
+            self.cli_log_err("Connect to mtp mgmt error", level = 0)
+            return None
+        else:
+            return handle
 
 
     def mtp_para_nic_session_init(self):
@@ -439,12 +438,8 @@ class mtp_ctrl():
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
-            idx = self._mgmt_handle.expect_exact(["assword:",
-                                                  pexpect.TIMEOUT], timeout = 5)
-            if idx == 0:
-                self._mgmt_handle.sendline(passwd)
-                break
-            else:
+            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"], timeout = 5)
+            if idx < 0:
                 if retries > 0:
                     self.cli_log_inf("Connect to mtp timeout, wait 30s and retry...", level = 0)
                     time.sleep(30)
@@ -452,32 +447,35 @@ class mtp_ctrl():
                     self._mgmt_handle = pexpect.spawn(ssh_cmd)
                     continue
                 else:
-                    self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
+                    self.cli_log_err("Connect to mtp failed\n", level = 0)
                     return None
-
-        try:
-            idx = self._mgmt_handle.expect_exact(self._prompt_list, timeout = 5)
-            if (idx < len(self._prompt_list)):
-                self._mgmt_prompt = self._prompt_list[idx]
-                self._mgmt_handle.sendline("whoami")
-                self._mgmt_handle.expect_exact(userid)
-                self._mgmt_handle.expect_exact(self._mgmt_prompt)
-                # set logfile
-                if self._debug_mode:
-                    self._mgmt_handle.logfile_read = sys.stdout
-                else:
-                    self._mgmt_handle.logfile_read = self._diag_filep
-                    self._mgmt_handle.logfile_send = self._diag_cmd_filep
-                return self._mgmt_prompt
             else:
-                self.cli_log_err("Unknown linux prompt", level = 0)
-                return None
-        except pexpect.TIMEOUT:
-            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
-            self.mtp_enter_user_ctrl()
+                self._mgmt_handle.sendline(passwd)
+                break
+
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout = 5)
+        if idx < 0:
+            self.cli_log_err("Connect to mtp failed", level = 0)
             return None
 
+        self._mgmt_prompt = self._prompt_list[idx]
 
+        self._mgmt_handle.sendline("whoami")
+        idx1 = libmfg_utils.mfg_expect(self._mgmt_handle, [userid])
+        idx2 = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt])
+        if idx1 < 0 or idx2 < 0:
+            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
+            return None
+
+        # set logfile
+        if self._debug_mode:
+            self._mgmt_handle.logfile_read = sys.stdout
+        else:
+            self._mgmt_handle.logfile_read = self._diag_filep
+            self._mgmt_handle.logfile_send = self._diag_cmd_filep
+        return self._mgmt_prompt
+
+## TODO
     def mtp_mgmt_expect_exact(self, exp, delay=None):
         if self._mgmt_handle:
             try:
