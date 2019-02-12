@@ -49,6 +49,85 @@ def untar(fname):
         tar.extractall()
         tar.close()
 
+def parse_asic_file1(file_list):
+    summary_msg = []
+
+    pcie_prbs_found = 0
+    pcie_prbs_pass = 0
+
+    eth_prbs_found = 0
+    eth_prbs_pass = 0
+
+    l1_found = 0
+    l1_pass = 0
+
+    file_list.sort()
+    for asic_log in file_list:
+
+        #print asic_log
+        if "pcie_prbs" in asic_log:
+            pcie_prbs_found = 1
+            pass_count = 0
+            sign_count = 0
+            for line in open(asic_log):
+                if "MSG :: pen_aapl_prbs_check :: sbus_addr" in line:
+                    sign_count = sign_count + 1
+                    if "passed" in line:
+                        pass_count = pass_count + 1
+            if pass_count == 16:
+                summary_msg.append("=== PCIE PRBS Passed ===\n")
+                pcie_prbs_pass = 1
+            else:
+                summary_msg.append("=== PCIE PRBS Failed ===\n")
+            if sign_count != 16:
+                summary_msg.append("=== PCIE PRBS Did Not Finish ===\n")
+    
+        if "eth_prbs" in asic_log:
+            eth_prbs_found = 1
+            pass_count = 0
+            sign_count = 0
+            for line in open(asic_log):
+                if "MSG :: pen_aapl_prbs_check :: sbus_addr" in line:
+                    sign_count = sign_count + 1
+                    if "passed" in line:
+                        pass_count = pass_count + 1
+                        #print line+"\n"
+    
+            # 10G and 25G
+            if pass_count == 16:
+                summary_msg.append("=== ETH PRBS Passed ===\n")
+                eth_prbs_pass = 1
+            else:
+                summary_msg.append("=== ETH PRBS Failed ===\n")
+            if sign_count != 16:
+                summary_msg.append("=== ETH PRBS Did Not Finish {} ===\n".format(sign_count))
+    
+        if "l1_screen" in asic_log:
+            l1_found = 1
+            for line in open(asic_log):
+                if "L1_SCREEN PASSED" in line:
+                    l1_pass = 1
+                    summary_msg.append("=== L1 Passed ===\n")
+                if "L1_SCREEN FAILED" in line:
+                    summary_msg.append("=== L1 Failed ===\n")
+
+        if os.stat(asic_log).st_size == 0:
+            summary_msg.append("=== "+os.path.basename(asic_log)+" has 0 size ===\n")
+
+    if ("L1 Passed" not in ''.join(summary_msg)) and ("L1 Failed" not in ''.join(summary_msg)):
+        summary_msg.append("=== L1 Did Not Finish ===\n")
+
+    if pcie_prbs_found == 0:
+        summary_msg.append("=== PCIE PRBS log not found ===\n")
+    if eth_prbs_found == 0:
+        summary_msg.append("=== ETH PRBS log not found ===\n")
+    if l1_found == 0:
+        summary_msg.append("=== L1 log not found ===\n")
+
+    tgt_msg = summary_msg
+
+    return tgt_msg, pcie_prbs_pass, eth_prbs_pass, l1_pass
+
 def parse_asic_file(file_list):
     summary_msg = []
     asic_pass = 1
@@ -142,7 +221,7 @@ def parse_asic_file(file_list):
                     summary_msg.append("=== L1 Failed ===\n")
 
         if os.stat(asic_log).st_size == 0:
-            summary_msg.append("=== "+asic_log+" has 0 size ===")
+            summary_msg.append("=== "+os.path.basename(asic_log)+" has 0 size ===\n")
 
     if "L1_SCREEN" not in ''.join(l1_msg):
         summary_msg.append("=== L1 Did Not Finish ===\n")
@@ -170,6 +249,89 @@ def parse_asic_file(file_list):
 
     return tgt_msg, asic_pass
 
+def parse_dsp_log(file_list, sn, pcie_prbs, eth_prbs, l1):
+    tgt_msg = []
+
+    dsp_msg = []
+    dsp_log_found = 0
+    parse_en = 0
+    jtag_found = 0
+
+    sig_pcie_start = ["PCIE_PRBS"]
+    sig_eth_start = ["ETH_PRBS"]
+    sig_l1_start = ["L1"]
+    sig_start = []
+    if pcie_prbs == 0:
+        sig_start = sig_start + sig_pcie_start
+    if eth_prbs == 0:
+        sig_start = sig_start + sig_eth_start
+    if l1 == 0:
+        sig_start = sig_start + sig_l1_start
+
+
+    sig_common = ["ERROR ::"]
+    sig_l1 = ["L1_SCREEN", "#FAIL#", "domain error: argument not in valid range"]
+    sig_timeout = [
+                    "error \"Operation timed out\"", 
+                    "procedure \"ssi_check_timeout\"",
+                    "procedure \"ssi_rx\"",
+                    "procedure \"ssi_cpld_write\" line",
+                    "procedure \"ssi_cpld_read\" line",
+                    "procedure \"cap_jtag_chip_rst\"",
+                    "\"cap_power_cycle_chk",
+                    "\"cap_esec_chamber_loop",
+                    "domain error: argument not in valid range",
+                  ]
+    sig_jtag = [ "max retry reached!",
+                 "Failure. Frame was corrupted",
+                 "Corrupted data:"
+               ] 
+
+    sig_all = sig_common + sig_l1 + sig_timeout
+
+    sig_ignore = ["IN_ETH_ERROR", "IN_TDMA_ERROR", "OUT_ETH_ERROR", "OUT_TDMA_ERROR"]
+
+    #print "parse_dsp_log", file_list, sn
+    for dsp_log in file_list:
+        dsp_log_found = 1
+        dsp_msg.append("=== ASIC log Details: "+sn+" ===\n")
+        index = 0
+        with open(dsp_log, 'r+') as f:
+            for line in f:
+                index = index + 1
+                if "TEST STARTED" in line:
+                    for sig in sig_start:
+                        if sig in line:
+                            f.next()
+                            line_next = f.next()
+                            line_nnext = f.next()
+                            if sn in line_next or sn in line_nnext:
+                                parse_en = 1
+                                dsp_msg.append(line)
+
+                if "TEST DONE" in line:
+                    parse_en = 0
+
+                if parse_en == 1:
+                    for sig in sig_all:
+                        if sig in line:
+                            dsp_msg.append(line)
+                    if "max retry reached!" in line:
+                        if jtag_found == 0:
+                            dsp_msg.append(line)
+                            f.next()
+                            dsp_msg.append(f.next())
+                            dsp_msg.append(f.next())
+                            f.next()
+                            jtag_found = 1
+                    else:
+                        jtag_found = 0
+
+
+        dsp_msg.append("---------------------------------\n")
+
+    return dsp_msg
+
 def parse_mtp_file(file_list):
     tgt_msg = []
 
@@ -189,7 +351,8 @@ def parse_mtp_file(file_list):
                 "procedure \"cap_jtag_chip_rst\"" in line or
                 "\"cap_power_cycle_chk" in line or
                 "\"cap_esec_chamber_loop" in line or
-                "domain error: argument not in valid range" in line
+                "domain error: argument not in valid range" in line or
+                "Failure. Frame was corrupted" in line
                 ):
                 mtp_msg.append(line)
 
@@ -208,7 +371,29 @@ for i,row in enumerate(data):
     if (row[2] !='') and ("FLM" in row[2]):
         sn_list.append(row[2])
 
-sn_list = ['FLM18510002']
+# Missing SN from "61"
+#sn_list = [
+#    "FLM185100A8",
+#    "FLM185100A9",
+#    "FLM185100B1",
+#    "FLM185100D1",
+#    "FLM185100EC"
+#    ]
+
+#sn_list = ['FLM18510012']
+#sn_list = ['FLM1851008F']
+#
+#sn_list = [
+#    "FLM18510012",
+#    "FLM1851001E",
+#    "FLM18510044",
+#    "FLM18510076",
+#    "FLM18510087",
+#    "FLM1851008F",
+#    "FLM185100DB",
+#    "FLM185100E1"
+#    ]
+
 log_root = "/mfg_log/"
 card = 'NAPLES100/'
 stage = "4C/"
@@ -221,6 +406,11 @@ try:
 except os.error:
     print "no test_logs folder"
 
+cwd_log = cwd_top+"/test_logs"
+if not os.path.exists(cwd_log):
+    os.mkdir(cwd_log)
+os.chdir(cwd_log)
+ 
 sn_dict = dict()
 print "Parsing error logs"
 for sn in sn_list:
@@ -241,10 +431,10 @@ for sn in sn_list:
                 file_name = os.path.basename(file_fullname)
                 #print file_fullname
         
-                tgt_dir = cwd_top+"/test_logs"
+                tgt_dir = cwd_top+"/test_logs/"+sn+"/"
                 if not os.path.exists(tgt_dir):
                     os.mkdir(tgt_dir)
-                os.chdir(cwd_top+"/test_logs")
+                os.chdir(tgt_dir)
         
                 untar(file_fullname)
         
@@ -254,13 +444,18 @@ for sn in sn_list:
                     tgt_files = find_file(pattern, corner_dir)
                     #print tgt_files
                     err_msg.append(os.path.basename(corner_dir)+'\n') 
-                    tgt_msg, asic_pass = parse_asic_file(tgt_files)
+                    tgt_msg, pcie_prbs_pass, eth_prbs_pass, l1_pass = parse_asic_file1(tgt_files)
                     err_msg = err_msg + tgt_msg
 
-                    if asic_pass != 1:
-                        tgt_files = find_file("mtp_diag.log", corner_dir)
-                        tgt_msg = parse_mtp_file(tgt_files)
-                        err_msg = err_msg + tgt_msg
+                    if pcie_prbs_pass == 0 or eth_prbs_pass == 0 or l1_pass == 0:
+                        log_files = find_file("log_ASIC.txt", corner_dir)
+                        dsp_msg = parse_dsp_log(log_files, sn, pcie_prbs_pass, eth_prbs_pass, l1_pass)
+                        err_msg = err_msg + dsp_msg
+
+                    #if asic_pass != 1:
+                    #    tgt_files = find_file("mtp_diag.log", corner_dir)
+                    #    tgt_msg = parse_mtp_file(tgt_files)
+                    #    err_msg = err_msg + tgt_msg
        
                     #shutil.rmtree(corner_dir)
                 #print cwd_top
