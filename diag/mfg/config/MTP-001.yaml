@@ -37,17 +37,17 @@ MTP-001:
         MAC: "00AECD000007"
         TS: 011119
     NIC-08:
-        VALID: "No"
+        VALID: "Yes"
         SN: "FLM18310008"
         MAC: "00AECD000008"
         TS: 011119
     NIC-09:
-        VALID: "No"
+        VALID: "Yes"
         SN: "FLM18310009"
         MAC: "00AECD000009"
         TS: 011119
     NIC-10:
-        VALID: "No"
+        VALID: "Yes"
         SN: "FLM1831000A"
         MAC: "00AECD00000A"
         TS: 011119
