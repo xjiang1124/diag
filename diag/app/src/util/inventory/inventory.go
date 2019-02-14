@@ -94,7 +94,7 @@ func powerStatusCheck(slot int)  {
     if powerGood {
         cli.Printf("i", "UUT_%-15d     power good\n", slot)
     } else {
-        cli.Printf("i", "UUT_%-15d     power falure\n", slot)
+        cli.Printf("i", "UUT_%-15d     power failure\n", slot)
     }
 
     return   
