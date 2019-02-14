@@ -237,6 +237,10 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
+            } else if entry.Name == "Part Number" {
+                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, pn)
+                continue
             } else if entry.Name == "Manufacturing Date/Time" {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
@@ -293,6 +297,54 @@ func UpdateSn(devName string, sn []byte) (err int) {
     } else if cardType == "NAPLES100" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Serial Number" {
+                copy(entry.Value, sn)
+                continue
+            } else if entry.Name == "MAC Address Base" {
+                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, mac)
+                continue
+            } else if entry.Name == "Manufacturing Date/Time" {
+                date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, date)
+                continue
+            } else if entry.Name == "Part Number" {
+                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, pn)
+                continue
+            }
+        }
+        updateIntChk()
+    }
+    return
+}
+
+func UpdatePn(devName string, pn []byte) (err int) {
+    if len(pn) > 13 {
+        cli.Println("f", "SN too long: ", pn)
+        return
+    }
+    
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    
+    cardType := os.Getenv("CARD_TYPE")
+    if cardType == "MTP" {
+        for _, entry := range(EepromTbl) {
+            if entry.Name == "Part Number" {
+                copy(entry.Value, pn)
+                break
+            }
+        }
+    } else if cardType == "NAPLES100" {
+        for _, entry := range(EepromTbl) {
+            if entry.Name == "Part Number" {
+                copy(entry.Value, pn)
+                continue
+            } else if entry.Name == "Serial Number" {
+                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
             } else if entry.Name == "MAC Address Base" {
@@ -378,6 +430,10 @@ func UpdateDate(devName string, str string) (err int) {
                 mac, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, mac)
                 continue
+            } else if entry.Name == "Part Number" {
+                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, pn)
+                continue
             } else if entry.Name == "Serial Number" {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
@@ -409,6 +465,10 @@ func DispEeprom(devName string, field string) (err int) {
             }
         } else if(field == "MAC") {
             if entry.Name != "MAC Address Base" {
+                continue
+            }
+        } else if(field == "PN") {
+            if entry.Name != "Part Number" {
                 continue
             }
         } else if(entry.Name == "Reserved") {

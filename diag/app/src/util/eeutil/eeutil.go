@@ -34,6 +34,7 @@ func main() {
     updatePtr  := flag.Bool  ("update", false,          "Update eeprom")
     macPtr     := flag.String("mac",    "",             "MAC address")
     snPtr      := flag.String("sn",     "",             "Serial number")
+    pnPtr      := flag.String("pn",     "",             "Part number")
     mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",          "Display specific eeprom field")
     dumpPtr  	:= flag.Bool ("dump", 	false,          "Dump FRU")
@@ -42,6 +43,7 @@ func main() {
     devName := strings.ToUpper(*devNamePtr)
     mac := strings.ToUpper(*macPtr)
     sn := strings.ToUpper(*snPtr)
+    pn := strings.ToUpper(*pnPtr)
     date := strings.ToUpper(*mfgDatePtr)
     field := strings.ToUpper(*fieldPtr)
 
@@ -65,6 +67,10 @@ func main() {
         }
         if sn != "" {
             hwdev.EepromUpdateSn(devName, sn)
+            misc.SleepInUSec(500000)
+        }
+        if pn != "" {
+            hwdev.EepromUpdatePn(devName, pn)
             misc.SleepInUSec(500000)
         }
         if date != "" {

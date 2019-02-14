@@ -75,9 +75,41 @@ func EepromUpdateSn(devName string, sn string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    sn1 := make([]byte, 11)
+    sn1 := make([]byte, 16)
     copy(sn1, []byte(sn))
     err = eeprom.UpdateSn(devName, sn1)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = eeprom.ProgEeprom(devName)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
+func EepromUpdatePn(devName string, pn string) (err int) {
+    var i2cif i2cinfo.I2cInfo
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    pn1 := make([]byte, 13)
+    copy(pn1, []byte(pn))
+    err = eeprom.UpdatePn(devName, pn1)
     if err != errType.SUCCESS {
         return
     }
