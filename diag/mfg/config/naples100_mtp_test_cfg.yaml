@@ -15,7 +15,7 @@ PARAMS:
 
 MTP_PRE:
     NIC_JTAG: True
-    NIC_MGMT: True
+    NIC_STATUS: True
     NIC_FRU:  True
 
 MTP_POST:

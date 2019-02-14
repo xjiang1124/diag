@@ -27,6 +27,7 @@ class NIC_Status:
     NIC_STA_TERM_FAIL = 2
     NIC_STA_MGMT_FAIL = 3
     NIC_STA_DIAG_FAIL = 4
+    NIC_STA_PWR_FAIL = 5
     NIC_STA_OK = 10
     NIC_STA_MAX = 11
 

@@ -121,8 +121,7 @@ def main():
 
         mtp_mgmt_ctrl.mtp_init_nic_prsnt()
         mtp_mgmt_ctrl.mtp_power_on_nic()
-        if not mtp_mgmt_ctrl.mtp_nic_load_sn(True):
-            mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+        mtp_mgmt_ctrl.mtp_nic_load_sn(True)
         for nic_loop in range(nic_reload):
             mtp_mgmt_ctrl.mtp_init_nic_sn(True)
 

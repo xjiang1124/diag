@@ -159,9 +159,12 @@ def main():
         # init the nic diag environment
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
-                mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                if not mtp_mgmt_ctrl.mtp_nic_mini_init(slot):
+                    continue
+                if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
+                    continue
+                if not mtp_mgmt_ctrl.mtp_power_off_single_nic(slot):
+                    continue
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 

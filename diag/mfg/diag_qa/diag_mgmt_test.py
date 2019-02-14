@@ -120,6 +120,9 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)), level=0)
 
         mtp_mgmt_ctrl.mtp_init_nic_prsnt()
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        if False in nic_prsnt_list:
+            mtp_mgmt_ctrl.mtp_enter_user_ctrl()
         for nic_loop in range(nic_reload):
             mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
             mtp_mgmt_ctrl.cli_log_inf("####### Power cycle NIC Iter - {:2d} #######".format(nic_loop), level=0)
@@ -127,7 +130,7 @@ def main():
             mtp_mgmt_ctrl.mtp_power_off_nic()
             time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
             mtp_mgmt_ctrl.mtp_power_on_nic()
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+            if not mtp_mgmt_ctrl.mtp_nic_load_sn(False):
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()

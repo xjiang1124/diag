@@ -399,6 +399,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
                 if stop_on_err:
                     naples100_nic_list.remove(slot)
+                if intf == "NIC_STATUS":
+                    naples100_nic_list.remove(slot)
                 if nic_key not in fail_nic_list:
                     fail_nic_list.append(nic_key)
                     fail_sn_list.append(sn)
