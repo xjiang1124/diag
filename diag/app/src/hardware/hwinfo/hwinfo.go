@@ -3,13 +3,13 @@ package hwinfo
 import (
     "os"
 
-    "device/board"
+    "device/boardinfo"
     "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/psu/pet1600"
     "device/tempsensor/tmp42123"
-    
+
     "gopkg.in/yaml.v2"
 )
 
@@ -44,18 +44,20 @@ var cardType string
 var uutName string
 
 //===============================
+// Naples common 
+var CpldInfo interface{}
+
+// EEPROM list
+var naplesEepList = []string {"FRU"}
+
+//===============================
 // Naples100 
 // Status display list
 var naplesMtpDispStaList map[string]DispStaFunc
 var naples100DispStaList map[string]DispStaFunc
-//var CpldInfo Naples100info.Naples100Cpld_T
-var CpldInfo interface{}
 
 // I2C hub map -- dummy
 var naples100I2cHubMap map[string] I2cHubInfo
-
-// EEPROM list
-var naplesEepList = []string {"FRU"}
 
 // QSFP table
 var naples100QsfpTbl = []QsfpInfo_t {
@@ -63,6 +65,14 @@ var naples100QsfpTbl = []QsfpInfo_t {
     QsfpInfo_t {"QSFP_1", 0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
     QsfpInfo_t {"QSFP_2", 0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
 }
+
+//===============================
+// Naples25 
+// Status display list
+var naples25DispStaList map[string]DispStaFunc
+
+// I2C hub map -- dummy
+var naples25I2cHubMap map[string] I2cHubInfo
 
 //===============================
 // MTP
@@ -118,20 +128,33 @@ func init() {
     naplesMtpDispStaList["CAP0_CORE_AVDD"] = tps53659.DispStatus
     naplesMtpDispStaList["VRM_HBM"]        = tps549a20.DispStatus
     naplesMtpDispStaList["VRM_ARM"]        = tps549a20.DispStatus
-    naplesMtpDispStaList["TSENSOR"]    = tmp42123.DispStatus
+    naplesMtpDispStaList["TSENSOR"]        = tmp42123.DispStatus
 
     //===============================
     // NAPLES100
     naples100DispStaList = make(map[string]DispStaFunc)
     naples100DispStaList["CAP0_CORE_DVDD"] = tps53659.DispStatus
     naples100DispStaList["CAP0_CORE_AVDD"] = tps549a20.DispStatus
-    naples100DispStaList["CAP0_3V3"]        = tps549a20.DispStatus
-    naples100DispStaList["CAP0_HBM"]        = tps549a20.DispStatus
-    naples100DispStaList["CAP0_ARM"]        = tps53659.DispStatus
-    naples100DispStaList["TSENSOR"]    = tmp42123.DispStatus
+    naples100DispStaList["CAP0_3V3"]       = tps549a20.DispStatus
+    naples100DispStaList["CAP0_HBM"]       = tps549a20.DispStatus
+    naples100DispStaList["CAP0_ARM"]       = tps53659.DispStatus
+    naples100DispStaList["TSENSOR"]        = tmp42123.DispStatus
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
+
+    //===============================
+    // NAPLES25
+    naples25DispStaList = make(map[string]DispStaFunc)
+    naples25DispStaList["CAP0_CORE_DVDD"] = tps53659.DispStatus
+    naples25DispStaList["CAP0_CORE_AVDD"] = tps549a20.DispStatus
+    naples25DispStaList["CAP0_3V3"]       = tps549a20.DispStatus
+    naples25DispStaList["CAP0_HBM"]       = tps549a20.DispStatus
+    naples25DispStaList["CAP0_ARM"]       = tps53659.DispStatus
+    naples25DispStaList["TSENSOR"]        = tmp42123.DispStatus
+
+    // Dummy I2C hub map
+    naples25I2cHubMap = make(map[string]I2cHubInfo)
 
     //===============================
     // MTP
@@ -171,9 +194,11 @@ func init() {
     mtpsI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4", "HUB_5"}
     naplesMtpI2cHubList := []string{"NIC_HUB"}
     naples100I2cHubList := []string{"HUB_NONE"}
+    naples25I2cHubList := []string{"HUB_NONE"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
     naples100PsuList := []string{"PSU_NONE"}
+    naples25PsuList := []string{"PSU_NONE"}
 
 
     //===============================
@@ -189,6 +214,7 @@ func init() {
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
     dispMap["NAPLES100"] = naples100DispStaList
+    dispMap["NAPLES25"]  = naples25DispStaList
     dispMap["NAPLES_MTP"]= naplesMtpDispStaList
     dispMap["MTP"]       = mtpDispStaList
     dispMap["MTPS"]      = mtpsDispStaList
@@ -204,7 +230,8 @@ func init() {
     eepromMap["MTP"]    = mtpEepList
     eepromMap["MTPS"]   = mtpEepList
     eepromMap["NAPLES_MTP"] = naplesEepList
-    eepromMap["NAPLES100"] = naplesEepList
+    eepromMap["NAPLES100"]  = naplesEepList
+    eepromMap["NAPLES25"]   = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -212,18 +239,21 @@ func init() {
     // MTP=MTPS
     i2cHubMap["MTPS"] = mtpI2cHubMap
     i2cHubMap["NAPLES100"] = naples100I2cHubMap
+    i2cHubMap["NAPLES25"] = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"] = mtpI2cHubList
     i2cHubListMap["MTPS"] = mtpsI2cHubList
     i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
     i2cHubListMap["NAPLES100"] = naples100I2cHubList
+    i2cHubListMap["NAPLES25"] = naples25I2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
     psuListMap["MTP"] = mtpPsuList
     psuListMap["MTPS"] = mtpPsuList
     psuListMap["NAPLES100"] = naples100PsuList
+    psuListMap["NAPLES25"]  = naples25PsuList
 
     //===============================
     // Platform specified list
@@ -241,8 +271,12 @@ func init() {
     switch cardType {
     case "NAPLES100":
         QsfpTbl = naples100QsfpTbl
-        var t Naples100info.Naples100Cpld_T
-        yaml.Unmarshal([]byte(Naples100info.Naples100Cpld), &t)
+        var t boardinfo.Naples100Cpld_T
+        yaml.Unmarshal([]byte(boardinfo.Naples100Cpld), &t)
+        CpldInfo = &t
+    case "NAPLES25":
+        var t boardinfo.Naples25Cpld_T
+        yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
     default:
         // Do nothing

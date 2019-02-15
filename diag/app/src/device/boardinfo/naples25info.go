@@ -1,11 +1,11 @@
-package Naples100info
+package boardinfo
 
 //import (
 //    "fmt"
 //    "gopkg.in/yaml.v2"
 //)
 
-type Naples100Cpld_T struct {
+type Naples25Cpld_T struct {
     REV					uint
     CTRL				uint
     CTRL_STS			uint
@@ -31,7 +31,7 @@ type Naples100Cpld_T struct {
     ID					uint
 }
 
-var Naples100Cpld = `
+var Naples25Cpld = `
     REV                : 0x00
     CTRL               : 0x01
     CTRL_STS           : 0x02

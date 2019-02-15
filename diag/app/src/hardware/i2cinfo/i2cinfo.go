@@ -147,6 +147,8 @@ func init() {
 
     if CardType == "NAPLES100" {
         I2cTbl = Naples100Tbl
+    } else if CardType == "NAPLES25" {
+        I2cTbl = Naples25Tbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -210,6 +212,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = NaplesMtpTbl
     } else if uutType == "NAPLES100" {
         CurI2cTbl = Naples100MtpTbl
+    } else if uutType == "NAPLES25" {
+        CurI2cTbl = Naples25MtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

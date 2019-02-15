@@ -9,6 +9,7 @@ import (
     "common/cli"
     "common/errType"
     "device/cpld/naples100Cpld"
+    "device/cpld/naples25Cpld"
     "device/cpld/naplesMtpCpld"
     "device/cpld/mtpCpld"
     "hardware/hwdev"
@@ -16,7 +17,6 @@ import (
 
 var powerStatName = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc", 
                             "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok"} 
-    
 func init() {
 }
 
@@ -49,6 +49,8 @@ func present() (err int) {
             switch data {
             case naples100Cpld.ID:
                 presentStr = "NAPLES100"
+            case naples25Cpld.ID:
+                presentStr = "NAPLES25"
             case naplesMtpCpld.ID:
                 presentStr = "NAPLES_MTP"
             default:
@@ -120,6 +122,8 @@ func sysDetect() (err int) {
             switch data {
             case naples100Cpld.ID:
                 presentStr = "NAPLES100"
+            case naples25Cpld.ID:
+                presentStr = "NAPLES25"
             case naplesMtpCpld.ID:
                 presentStr = "NAPLES_MTP"
             default:
@@ -136,7 +140,7 @@ func sysDetect() (err int) {
 func powerStatusDump(slot int)  {
     devName := "CPLD"
     uutName := "UUT_"+strconv.Itoa(slot)
-    
+
     cli.DisableVerbose()
     stat0, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT0), uutName)
     stat1, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT1), uutName)
