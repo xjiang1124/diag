@@ -8,6 +8,7 @@ echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 mkdir -p $DIAG_DIR/diag/log/
 
+
 if [[ -f /etc/profile.bak ]]
 then
     echo "Skip back up profile"
@@ -35,7 +36,15 @@ sh $DIAG_DIR/python/regression/scripts/nic_config.sh
 echo "Preparing diag environment -- Done"
 
 source /etc/profile
-diagmgr &
+
+num="$(ps -elf | grep diagmgr | wc | awk -F " " '{print $1}')"
+echo "num $num"
+if [[ $num -eq 1 ]]
+then
+    echo "Launching diagmgr"
+    diagmgr &
+fi
+
 
 echo "-------------------"
 echo "Set up diag $arch -- Done"

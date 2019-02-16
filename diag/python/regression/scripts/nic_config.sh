@@ -6,7 +6,11 @@ echo "P1: cpld_id $cpld_id"
 if [[ $cpld_id == "0x12" ]]
 then
     type="NAPLES100"
+elif [[ $cpld_id == "0x13" ]]
+then
+    type="NAPLES25"
 fi
+
 echo "$type Detected!"
 echo "export CARD_TYPE=\"$type\"" >> /etc/profile
 
