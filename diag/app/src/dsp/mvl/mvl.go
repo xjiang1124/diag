@@ -9,6 +9,7 @@ import (
     "common/errType"
     "common/misc"
     "config"
+    "os"
 )
 
 //========================================================
@@ -28,9 +29,9 @@ func Mvl_Init() {
 func Mvl_AccHdl(argList []string) {
     var data uint32
 
-    spi.MvlSmiRegRead(0x2, &data, 0x3)
-    cli.Printf("d", "cpld 0x%x", data)
+//    spi.MvlSmiRegRead(0x2, &data, 0x3)
 	spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
+    cli.Printf("d", "cpld 0x%x", data)
 	if (data >> 4) != MVL_ID {
 	    dcli.Println("e", "MVL acc test failed!")
 	    diagEngine.FuncMsgChan <- errType.FAIL
@@ -73,37 +74,40 @@ func Mvl_StubHdl(argList []string) {
 	
 	misc.SleepInSec(1)
 	
-	spi.MvlSmiRegWrite(0x16, 0x6, 0x4)
-	misc.SleepInSec(1)
-	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
-	misc.SleepInSec(1)
-	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
-//	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
-		
-	misc.SleepInSec(1)
-	
-	spi.MvlSmiRegRead(0x11, &data1, 0x4)
-	if (data1 & 0xFF) != 0 {
-	   dcli.Printf("e", "Port 4 stub test has error, counter reg 0x%x\n", data1)
-	   err = 1
-	} else if data1 == 0 {
-	    dcli.Println("e", "Port 4 stub test has no packet")
-	    err = 1
-	} else {
-	    dcli.Printf("i", "Port 4 stub test passed! 0x%x\n", data1)
+	if os.Getenv("CARD_TYPE") == "NAPLES100" {
+    	spi.MvlSmiRegWrite(0x16, 0x6, 0x4)
+    	misc.SleepInSec(1)
+    	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
+    	misc.SleepInSec(1)
+    	spi.MvlSmiRegWrite(0x10, 0x18, 0x4)
+    //	spi.MvlSmiRegWrite(0x12, 0x18, 0x4)
+    		
+    	misc.SleepInSec(1)
+    	
+    	spi.MvlSmiRegRead(0x11, &data1, 0x4)
+    	if (data1 & 0xFF) != 0 {
+    	   dcli.Printf("e", "Port 4 stub test has error, counter reg 0x%x\n", data1)
+    	   err = 1
+    	} else if data1 == 0 {
+    	    dcli.Println("e", "Port 4 stub test has no packet")
+    	    err = 1
+    	} else {
+    	    dcli.Printf("i", "Port 4 stub test passed! 0x%x\n", data1)
+    	}
+    
+    	spi.MvlSmiRegWrite(0x10, 0x0, 0x4)
+    	spi.MvlSmiRegWrite(0x12, 0x0, 0x4)
+    	spi.MvlSmiRegWrite(0x16, 0x0, 0x4)
+        misc.SleepInSec(5)
 	}
-	if err == 1 {
+	
+    if err == 1 {
 	    dcli.Println("e", "MVL stub test failed!")
 	    diagEngine.FuncMsgChan <- errType.FAIL
 	} else {
 	    diagEngine.FuncMsgChan <- errType.SUCCESS
 	}
-
-	spi.MvlSmiRegWrite(0x10, 0x0, 0x4)
-	spi.MvlSmiRegWrite(0x12, 0x0, 0x4)
-	spi.MvlSmiRegWrite(0x16, 0x0, 0x4)
-    misc.SleepInSec(5)
-
+	
     return
 }
 
