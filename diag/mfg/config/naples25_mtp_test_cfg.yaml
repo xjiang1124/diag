@@ -1,0 +1,87 @@
+# global init command beore diag run
+INIT:
+    - "Initialize command 1"
+
+SKIP:
+    # skip whole dsp
+    # - "DSP1#ALL"
+    # skip single test of a dsp
+    - "DSP2#TEST1"
+    # skip multiple tests of a dsp, seperate with '#'
+    # - "DSP3#TEST1#TEST2"
+
+PARAMS:
+    - "MTP1#ASIC#L1#timeout=5400"
+
+MTP_PRE:
+    NIC_JTAG: True
+    #    NIC_STATUS: True
+    #    NIC_FRU:  True
+
+MTP_POST:
+    NIC_MEM:  True
+
+MTP_SEQ:
+        #    MVL:
+        #        STUB:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+    ASIC:
+        PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+        ETH_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+MTP_PARA:
+        #    SFP:
+        #        I2C:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+        #    I2C:
+        #        I2C:
+        #            INIT: ""
+        #            POST: ""
+        #            OPTS:
+        #                NIC_NAME: Yes
+        #                SN: No
+        #                SLOT: No
+    RTC:
+        RTC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+                #    MVL:
+                #        ACC:
+                #            INIT: ""
+                #            POST: ""
+                #            OPTS:
+                #                NIC_NAME: Yes
+                #                SN: No
+                #                SLOT: No

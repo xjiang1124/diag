@@ -3,42 +3,51 @@ MTP-001:
     TS: 2019-02-13_17-10-44
     NIC-01:
         VALID: "Yes"
-        SN: "FLM1848004B"
-        MAC: "00AECD0016C8"
+        SN: "FLM18310004"
+        MAC: "00AECD000060"
         TS: 021319
     NIC-02:
         VALID: "Yes"
-        SN: "FLM1842003C"
-        MAC: "00AECD000EE8"
+        SN: "FLM18310002"
+        MAC: "00AECD000020"
         TS: 021319
     NIC-03:
-        VALID: "No"
-    NIC-04:
         VALID: "Yes"
-        SN: "FLM185100EB"
-        MAC: "00AECD0029B8"
-        TS: 021319
-    NIC-05:
-        VALID: "No"
-    NIC-06:
-        VALID: "Yes"
-        SN: "FLM1851006B"
-        MAC: "00AECD002988"
-        TS: 021319
-    NIC-07:
-        VALID: "Yes"
-        SN: "FLM18510059"
-        MAC: "00AECD002460"
-        TS: 021319
-    NIC-08:
-        VALID: "Yes"
-        SN: "FLM1851001F"
-        MAC: "00AECD001F80"
+        SN: "FLM18310003"
+        MAC: "00AECD000040"
         TS: 021319
     NIC-09:
         VALID: "Yes"
-        SN: "FLM18510075"
-        MAC: "00AECD0030A8"
+        SN: "FLM1848004B"
+        MAC: "00AECD0016C8"
+        TS: 021319
+    NIC-07:
+        VALID: "Yes"
+        SN: "FLM18310005"
+        MAC: "00AECD000080"
+        TS: 021319
+    NIC-08:
+        VALID: "Yes"
+        SN: "FLM18310006"
+        MAC: "00AECD0000A0"
+        TS: 021319
+    NIC-05:
+        VALID: "Yes"
+        SN: "FLM18310007"
+        MAC: "00AECD0000C0"
+        TS: 021319
+    NIC-04:
+        VALID: "Yes"
+        SN: "FLM18310008"
+        MAC: "00AECD0000E0"
         TS: 021319
     NIC-10:
-        VALID: "No"
+        VALID: "Yes"
+        SN: "FLM18310009"
+        MAC: "00AECD000100"
+        TS: 021319
+    NIC-06:
+        VALID: "Yes"
+        SN: "FLM1831000A"
+        MAC: "00AECD000120"
+        TS: 021319
