@@ -1,6 +1,7 @@
 package hwinfo
 
 import (
+    "os"
     "strconv"
 
     "common/cli"
@@ -39,7 +40,20 @@ func SwitchHwInfo(uutName string) (err int) {
  * Find UUT I2C root device
  */
 func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
-    cardType := i2cinfo.CardType
+    // This function is only useful on MTP
+    cardType, found := os.LookupEnv("CARD_TYPE")
+    if found == false {
+        cli.Println("e", "Cannot find CARD_TYPE")
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    if (cardType != "MTP" && cardType != "MTPS") {
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    cardType = i2cinfo.CardType
     hubMap, ok := i2cHubMap[cardType]
     if ok != true {
         cli.Println("e", "Invalid card name:", cardType)

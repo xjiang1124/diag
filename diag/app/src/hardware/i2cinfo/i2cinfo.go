@@ -179,11 +179,22 @@ func init() {
  * TODO: This functionality can be implemented through redis
  */
 func FindUutType(uutName string) (uutType string, err int) {
-    uutType, found := os.LookupEnv(uutName)
+    // This function is only useful on MTP
+    cardType, found := os.LookupEnv("CARD_TYPE")
+    if found == false {
+        cli.Println("e", "Cannot find CARD_TYPE")
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    if (cardType != "MTP" && cardType != "MTPS") {
+        return "UUT_NONE", errType.SUCCESS
+    }
+
+    uutType, found = os.LookupEnv(uutName)
     if found == false {
         cli.Println("e", "Cannot find uutType with uutName", uutName)
         err = errType.INVALID_PARAM
-        //uutType = "NAPLES_MTP"
     }
     return
 }
