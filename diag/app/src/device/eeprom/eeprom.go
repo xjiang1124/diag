@@ -28,7 +28,7 @@ type entry struct {
     Value    []byte
 }
 
-var mtpTbl = []entry {
+var MtpTbl = []entry {
     entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
     entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},
     entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
@@ -42,7 +42,7 @@ var mtpTbl = []entry {
     entry{"NUM_OF_MAC",     STRING, 106, 2,  []byte("00")},
 }
 
-var naples100Tbl = []entry {
+var Naples100Tbl = []entry {
     entry{"Common Format Version",      			INT8,		0,		1,	[]byte{1}},
     entry{"Internal Use Area Offset",   			INT8,		1,		1,	[]byte{0}},
     entry{"Chassis Area Offset",   					INT8,		2,		1,	[]byte{0}},
@@ -86,20 +86,8 @@ var naples100Tbl = []entry {
 }
 
 var EepromTbl []entry
+var CardType string
 var brdInfoChk, cmnHeadChk uint
-
-func init() {
-    cardType := os.Getenv("CARD_TYPE")
-    if cardType == "MTP" {
-        EepromTbl = mtpTbl
-    } else if cardType == "MTPS" {
-        EepromTbl = mtpTbl
-    } else if cardType == "NAPLES100" {
-        EepromTbl = naples100Tbl
-    } else {
-        cli.Println("e", "Unsupported card:", cardType)
-    }
-}
 
 func max(x, y int) (m int) {
     if x > y {
@@ -150,6 +138,11 @@ func ProgEeprom(devName string) (err int) {
     defer smbus.Close()
 
     for _, entry := range(EepromTbl) {
+        if entry.Name == "Product Name" {
+            if CardType == "NAPLES25" {
+                copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0})
+            }
+        }
 //        if entry.Name == "Serial Number" {
 //            dftArray := []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
 //            if bytes.Equal(entry.Value, dftArray) {
@@ -206,7 +199,7 @@ func UpdateMacMtp(devName string, mac []byte) (err int) {
 }
 
 func UpdateMac(devName string, mac []byte) (err int) {
-    cardType := os.Getenv("CARD_TYPE")
+//    CardType := os.Getenv("CARD_TYPE")
 
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -214,7 +207,7 @@ func UpdateMac(devName string, mac []byte) (err int) {
     }
     defer smbus.Close()
     
-    if cardType == "MTP" {
+    if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC_ADDR" {
                 copy(entry.Value, mac)
@@ -224,7 +217,7 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 break
             }
         }
-    } else if cardType == "NAPLES100" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC Address Base" {
                 copy(entry.Value, mac)
@@ -286,15 +279,15 @@ func UpdateSn(devName string, sn []byte) (err int) {
     }
     defer smbus.Close()
     
-    cardType := os.Getenv("CARD_TYPE")
-    if cardType == "MTP" {
+//    CardType := os.Getenv("CARD_TYPE")
+    if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "SERIAL_NUM" {
                 copy(entry.Value, sn)
                 break
             }
         }
-    } else if cardType == "NAPLES100" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Serial Number" {
                 copy(entry.Value, sn)
@@ -330,15 +323,15 @@ func UpdatePn(devName string, pn []byte) (err int) {
     }
     defer smbus.Close()
     
-    cardType := os.Getenv("CARD_TYPE")
-    if cardType == "MTP" {
+//    CardType := os.Getenv("CARD_TYPE")
+    if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Part Number" {
                 copy(entry.Value, pn)
                 break
             }
         }
-    } else if cardType == "NAPLES100" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Part Number" {
                 copy(entry.Value, pn)
@@ -373,9 +366,9 @@ func UpdatePn(devName string, pn []byte) (err int) {
 //    }
 //    defer smbus.Close()
 //    
-//    cardType := os.Getenv("CARD_TYPE")
+//    CardType := os.Getenv("CARD_TYPE")
 //
-//    if cardType == "NAPLES100" {
+//    if CardType == "NAPLES100" {
 //        for _, entry := range(EepromTbl) {
 //            if entry.Name == "Manufacturing Date" {
 //                copy(entry.Value, date)
@@ -410,9 +403,9 @@ func UpdateDate(devName string, str string) (err int) {
     }
     defer smbus.Close()
     
-    cardType := os.Getenv("CARD_TYPE")
+//    CardType := os.Getenv("CARD_TYPE")
 
-    if cardType == "NAPLES100" {
+    if CardType == "NAPLES100" || CardType == "NAPLES25" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Manufacturing Date/Time" {
                 const shortForm = "2006-01-02"
@@ -510,9 +503,9 @@ func DumpEeprom(devName string) (err int) {
     }
     defer smbus.Close()
     var data []byte
-    cardType := os.Getenv("CARD_TYPE")
+//    CardType := os.Getenv("CARD_TYPE")
 
-    if cardType == "NAPLES100" {
+    if CardType == "NAPLES100" || CardType == "NAPLES25" {
         f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
         if error != nil {
             cli.Println("e", "file create failed")

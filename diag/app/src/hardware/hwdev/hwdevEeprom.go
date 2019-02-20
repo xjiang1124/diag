@@ -4,34 +4,34 @@ import (
     "strconv"
     "strings"
     "common/cli"
-    "common/dmutex"
+//    "common/dmutex"
     "common/errType"
 
     "device/eeprom"
 
     "hardware/hwinfo"
-    "hardware/i2cinfo"
+//    "hardware/i2cinfo"
 
 )
 
 func EepromUpdateMac(devName string, mac string) (err int) {
-    var i2cif i2cinfo.I2cInfo
+//    var i2cif i2cinfo.I2cInfo
 
 //    mac1 := mac
 //    mac = strings.Replace(mac, " ", "", -1)
 //    mac = strings.Replace(mac, ":", "", -1)
 
-    i2cif, err = i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        return
-    }
+//    i2cif, err = i2cinfo.GetI2cInfo(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
 
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
+//    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+//    err = dmutex.Lock(lockName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
 
@@ -59,19 +59,19 @@ func EepromUpdateMac(devName string, mac string) (err int) {
 }
 
 func EepromUpdateSn(devName string, sn string) (err int) {
-    var i2cif i2cinfo.I2cInfo
-
-    i2cif, err = i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
+//    var i2cif i2cinfo.I2cInfo
+//
+//    i2cif, err = i2cinfo.GetI2cInfo(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//
+//    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+//    err = dmutex.Lock(lockName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
 
@@ -91,19 +91,19 @@ func EepromUpdateSn(devName string, sn string) (err int) {
 }
 
 func EepromUpdatePn(devName string, pn string) (err int) {
-    var i2cif i2cinfo.I2cInfo
-
-    i2cif, err = i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
+//    var i2cif i2cinfo.I2cInfo
+//
+//    i2cif, err = i2cinfo.GetI2cInfo(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//
+//    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+//    err = dmutex.Lock(lockName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
 
@@ -123,19 +123,19 @@ func EepromUpdatePn(devName string, pn string) (err int) {
 }
 
 func EepromUpdateDate(devName string, date string) (err int) {
-    var i2cif i2cinfo.I2cInfo
-
-    i2cif, err = i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
+//    var i2cif i2cinfo.I2cInfo
+//
+//    i2cif, err = i2cinfo.GetI2cInfo(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//
+//    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+//    err = dmutex.Lock(lockName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
 
@@ -159,7 +159,7 @@ func EepromUpdateDate(devName string, date string) (err int) {
 }
 
 func EepromUpdate(devName string, mac string, sn string) (err int) {
-    var i2cif i2cinfo.I2cInfo
+//    var i2cif i2cinfo.I2cInfo
 
     mac1 := mac
     mac1 = strings.Replace(mac1, " ", "", -1)
@@ -176,17 +176,17 @@ func EepromUpdate(devName string, mac string, sn string) (err int) {
         return
     }
 
-    i2cif, err = i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
+//    i2cif, err = i2cinfo.GetI2cInfo(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//
+//    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+//    err = dmutex.Lock(lockName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
 
@@ -210,19 +210,19 @@ func EepromUpdate(devName string, mac string, sn string) (err int) {
 }
 
 func EepromDisp(devName string, field string) (err int) {
-    var i2cif i2cinfo.I2cInfo
+//    var i2cif i2cinfo.I2cInfo
+//
+//    i2cif, err = i2cinfo.GetI2cInfo(devName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
 
-    i2cif, err = i2cinfo.GetI2cInfo(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer dmutex.Unlock(lockName)
+//    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+//    err = dmutex.Lock(lockName)
+//    if err != errType.SUCCESS {
+//        return
+//    }
+//    defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
 

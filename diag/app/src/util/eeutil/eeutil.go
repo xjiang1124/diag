@@ -1,9 +1,9 @@
 package main
 
 import (
-    //"fmt"
+    "fmt"
     "flag"
-    //"os"
+    "os"
     "strings"
 
     //"common/cli"
@@ -11,7 +11,8 @@ import (
     "hardware/hwdev"
     "hardware/hwinfo"
     "hardware/i2cinfo"
-    //"device/eeprom"
+    "device/eeprom"
+    "device/cpld/cpldSmb"
     "common/misc"
 )
 
@@ -27,6 +28,21 @@ func dispInfo() {
     }
 }
 
+func eepromTlbInit(uut string) {
+    if os.Getenv("CARD_TYPE") == "NAPLES100" {
+        eeprom.CardType = "NAPLES100"
+        eeprom.EepromTbl = eeprom.Naples100Tbl
+    } else if os.Getenv("CARD_TYPE") == "NAPLES25" || uut != "UUT_NONE" {
+        eeprom.CardType = "NAPLES25"
+        eeprom.EepromTbl = eeprom.Naples100Tbl
+    } else if uut == "UUT_NONE" {
+        eeprom.CardType = "MTP"
+        eeprom.EepromTbl = eeprom.MtpTbl
+    } else {
+        fmt.Println("Unsupported UUT and card type")
+    }
+}
+
 func main() {
     devNamePtr := flag.String("dev",    "FRU",          "Device name")
     infoPtr    := flag.Bool  ("info",   false,          "Display device info")
@@ -38,6 +54,7 @@ func main() {
     mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",          "Display specific eeprom field")
     dumpPtr  	:= flag.Bool ("dump", 	false,          "Dump FRU")
+    uutPtr      := flag.String("uut",  "UUT_NONE", 		"Target UUT")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -46,7 +63,14 @@ func main() {
     pn := strings.ToUpper(*pnPtr)
     date := strings.ToUpper(*mfgDatePtr)
     field := strings.ToUpper(*fieldPtr)
+    uut := strings.ToUpper(*uutPtr)
 
+    lock, _ := hwinfo.PreUutSetup(uut)
+    
+    defer hwinfo.PostUutClean(lock)
+
+    eepromTlbInit(uut)
+    
     if *infoPtr == true {
         dispInfo()
         return
@@ -59,7 +83,14 @@ func main() {
 
     if *updatePtr == true {
 //        hwdev.EepromUpdate(devName, mac, sn)
-        CpldWrite(0x1, 0x2)
+        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {
+            fmt.Println("MTP")
+            rd, _ := cpldSmb.ReadSmb("CPLD", 0x21)
+            rd = rd & 0xFD
+            _ = cpldSmb.WriteSmb("CPLD", 0x21, rd)
+        } else {
+            CpldWrite(0x1, 0x2)
+        }
         misc.SleepInUSec(1000)
         if mac != "" {
             hwdev.EepromUpdateMac(devName, mac)
@@ -77,7 +108,13 @@ func main() {
             hwdev.EepromUpdateDate(devName, date)
             misc.SleepInUSec(500000)
         }
-        CpldWrite(0x1, 0x6)
+        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {
+            rd, _ := cpldSmb.ReadSmb("CPLD", 0x21)
+            rd = rd | 0x2
+            _ = cpldSmb.WriteSmb("CPLD", 0x21, rd)
+        } else {
+            CpldWrite(0x1, 0x6)
+        }
         return
     }
     
