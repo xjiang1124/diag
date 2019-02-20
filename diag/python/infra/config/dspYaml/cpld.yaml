@@ -39,8 +39,8 @@
 
 ---
 DSP: 
-    NAME: RTC 
-    INFO: RTC device test
+    NAME: CPLD 
+    INFO: CPLD tests and commands
 
     # Properties apply to all platforms
     # Do not remove ite/timeout/dshid which are needed for all DSPs
@@ -50,16 +50,37 @@ DSP:
                 VALUE: 1
                 INFO: Iterations for the test
             timeout:
-                VALUE: 30
+                VALUE: 10
                 INFO: Test timeout setting 
             dshid:
                 VALUE: 0
                 INFO: Diag shell ID index
 
-    TEST#RTC:
-        INFO: Test RTC device
+    TEST#MDIO:
+        INFO: Test CPLD and switch connectivity
         PLATFORM:
-            NIC: NAPLES100 NAPLES25
+            NIC:
         PRIORITY: NORMAL
         PARAM:
 
+    TEST#INT:
+        INFO: Test CPLD INT register 
+        PLATFORM:
+            NIC:
+        PRIORITY: NORMAL 
+        PARAM:
+
+    TEST#GPIO:
+        INFO: Test GPIO pins between CPLD and Capri
+        PLATFORM:
+            NIC:
+        PRIORITY: NORMAL 
+        PARAM:
+
+    TEST#WP:
+        INFO: Check write protect jumper status
+        PLATFORM:
+            NIC:
+        PRIORITY: NORMAL 
+        PARAM:
+...

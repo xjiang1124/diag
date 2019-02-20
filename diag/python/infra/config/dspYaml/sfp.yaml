@@ -39,8 +39,9 @@
 
 ---
 DSP: 
-    NAME: CPLD 
-    INFO: CPLD tests and commands
+    NAME: SFP
+    INFO: DSP for SFP interface
+    #TYPE: HOST
 
     # Properties apply to all platforms
     # Do not remove ite/timeout/dshid which are needed for all DSPs
@@ -50,37 +51,44 @@ DSP:
                 VALUE: 1
                 INFO: Iterations for the test
             timeout:
-                VALUE: 10
+                VALUE: 30
                 INFO: Test timeout setting 
             dshid:
                 VALUE: 0
                 INFO: Diag shell ID index
 
-    TEST#MDIO:
-        INFO: Test CPLD and switch connectivity
+    TEST#I2C:
+        INFO: Test SFP I2C bus
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES25
+        PRIORITY: NORMAL 
+        PARAM:
+
+    CMD#laser_en:
+        INFO: Enable optical module laser
+        PLATFORM:
+            NIC: NAPLES25
         PRIORITY: NORMAL
         PARAM:
+            mask:
+                VALUE:
+                    ALL: 3
+                INFO: Devices instance index
 
-    TEST#INT:
-        INFO: Test CPLD INT register 
+    CMD#laser_dis:
+        INFO: Disnable optical module laser
         PLATFORM:
-            NIC: NAPLES100
-        PRIORITY: NORMAL 
+            NIC: NAPLES25
+        PRIORITY: NORMAL
         PARAM:
+            mask:
+                VALUE:
+                    ALL: 3
+                INFO: Devices instance index
 
-    TEST#GPIO:
-        INFO: Test GPIO pins between CPLD and Capri
+    CMD#present:
+        INFO: Display QSFP present status
         PLATFORM:
-            NIC: NAPLES100
-        PRIORITY: NORMAL 
-        PARAM:
-
-    TEST#WP:
-        INFO: Check write protect jumper status
-        PLATFORM:
-            NIC: NAPLES100
-        PRIORITY: NORMAL 
+            NIC: NAPLES25
         PARAM:
 ...

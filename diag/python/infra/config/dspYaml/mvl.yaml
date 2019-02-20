@@ -67,7 +67,7 @@ DSP:
     TEST#STUB:
         INFO: Marvell Switch front panel RJ45 ports test
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES100 NAPLES25
         PRIORITY: NORMAL
         PARAM:
 

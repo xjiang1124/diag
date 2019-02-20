@@ -60,7 +60,7 @@ DSP:
     TEST#I2C:
         INFO: Test I2C/SMBus access of each device
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES100 NAPLES25
         PRIORITY: NORMAL 
         PARAM:
 ...
