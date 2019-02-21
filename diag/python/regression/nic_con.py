@@ -281,9 +281,10 @@ class nic_con:
 
         session.timeout = 60
 
+        cmd_pre = "ulimit -c unlimited"
         cmd_mac = "echo \'00:11:22:33:44:{:02}\' > /sysconfig/config0/sysuuid"
         cmd_mac = cmd_mac.format(slot)
-        print "MAC:", cmd_mac
+        #print "MAC:", cmd_mac
 
         try:
             session.sendline("ifconfig -a")
@@ -292,6 +293,7 @@ class nic_con:
             if 'oob_mnic0' in session.before:
                 print 'oob_mnic0 enabled'
             else:
+                self.uart_session_cmd(session, cmd_pre)
                 self.uart_session_cmd(session, cmd_mac)
                 self.uart_session_cmd(session, "sysinit.sh classic hw", 15)
 
