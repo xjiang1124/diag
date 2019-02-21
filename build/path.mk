@@ -32,11 +32,12 @@ AMD64_C_SRC_DIR=		\
 
 ARM64_SRC_DIR=			\
 	util/ledutil 		\
-	util/emmc 		\
+	util/emmc 			\
 	dsp/i2c 			\
 	dsp/mvl    			\
 	dsp/qsfp    		\
-	dsp/rtc
+	dsp/rtc				\
+	dsp/sfp 
 
 ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\

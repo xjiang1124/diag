@@ -127,4 +127,9 @@ DSP:
                 VALUE:
                     ALL: 1
                 INFO: NIC slot number
+            int_lpbk:
+                VALUE:
+                    ALL: 0
+                INFO: Enable internal loopback
+
 ...
