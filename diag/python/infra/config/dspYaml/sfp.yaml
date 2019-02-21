@@ -64,28 +64,6 @@ DSP:
         PRIORITY: NORMAL 
         PARAM:
 
-    CMD#laser_en:
-        INFO: Enable optical module laser
-        PLATFORM:
-            NIC: NAPLES25
-        PRIORITY: NORMAL
-        PARAM:
-            mask:
-                VALUE:
-                    ALL: 3
-                INFO: Devices instance index
-
-    CMD#laser_dis:
-        INFO: Disnable optical module laser
-        PLATFORM:
-            NIC: NAPLES25
-        PRIORITY: NORMAL
-        PARAM:
-            mask:
-                VALUE:
-                    ALL: 3
-                INFO: Devices instance index
-
     CMD#present:
         INFO: Display QSFP present status
         PLATFORM:

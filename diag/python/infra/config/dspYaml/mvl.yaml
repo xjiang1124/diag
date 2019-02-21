@@ -59,8 +59,8 @@ DSP:
 
     TEST#ACC:
         INFO: Marvell Switch acceesibility test
-        PLATFORM:
-            NIC: NAPLES100
+        PLATFORM: 
+            NIC: NAPLES100 NAPLES25
         PRIORITY: NORMAL 
         PARAM:
 

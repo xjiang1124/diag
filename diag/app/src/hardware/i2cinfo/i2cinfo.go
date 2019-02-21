@@ -144,6 +144,7 @@ func init() {
     MtpsI2cTbl   = append(MtpsI2cTbl,   MtpHubI2cTbl...)
     NaplesMtpTbl = append(NaplesMtpTbl, MtpHubI2cTbl...)
     Naples100MtpTbl = append(Naples100MtpTbl, MtpHubI2cTbl...)
+    Naples25MtpTbl = append(Naples25MtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" {
         I2cTbl = Naples100Tbl

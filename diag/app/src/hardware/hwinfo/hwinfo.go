@@ -74,6 +74,12 @@ var naples25DispStaList map[string]DispStaFunc
 // I2C hub map -- dummy
 var naples25I2cHubMap map[string] I2cHubInfo
 
+// SFP table
+var naples25SfpTbl = []QsfpInfo_t {
+    //          devName   modRstReg modRstBit lpReg lpBit prstReg prstBit intrReg intrBit prstIntReg prstIntBit rmIntReg rmIntBit
+    QsfpInfo_t {"SFP_1",  0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
+    QsfpInfo_t {"SFP_2",  0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
+}
 //===============================
 // MTP
 // Status display list
@@ -117,6 +123,7 @@ var I2cHubList []string
 var PsuList []string
 // QSFP table
 var QsfpTbl []QsfpInfo_t
+var SfpTbl []QsfpInfo_t
 
 func init() {
     // Can only do map initialization here
@@ -275,6 +282,7 @@ func init() {
         yaml.Unmarshal([]byte(boardinfo.Naples100Cpld), &t)
         CpldInfo = &t
     case "NAPLES25":
+        SfpTbl = naples25SfpTbl
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
