@@ -45,7 +45,7 @@ func RtcI2CHdl(argList []string) {
     }
 
     diff := secondPost - secondPre
-    if (diff > 2 && diff < 4) {
+    if (diff >= 2 && diff <= 4) {
         dcli.Println("i", "RTC test passed")
         diagEngine.FuncMsgChan <- errType.SUCCESS
     } else {
