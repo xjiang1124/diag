@@ -93,6 +93,9 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
 
     if not skip_image_update:
+        if "amd64" not in mtp_image_file:
+            mtp_mgmt_ctrl.cli_log_err("Wrong MTP Chassis image: {:s}".format(mtp_image_file), level=0)
+            return
         mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
         mtp_ip_addr = mtp_mgmt_cfg[0]
         mtp_usrid = mtp_mgmt_cfg[1]
@@ -110,6 +113,9 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver), level=0)
 
     if nic_image_file:
+        if "arm64" not in nic_image_file:
+            mtp_mgmt_ctrl.cli_log_err("Wrong NIC image: {:s}".format(nic_image_file), level=0)
+            return
         mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s}".format(nic_image_file), level=0)
         mtp_ip_addr = mtp_mgmt_cfg[0]
         mtp_usrid = mtp_mgmt_cfg[1]

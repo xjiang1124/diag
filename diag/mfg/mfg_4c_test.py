@@ -3,13 +3,10 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import re
 import argparse
 import threading
-import Queue
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -109,6 +106,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
     pass_sn_list = list()
     fail_sn_list = list()
     sn_test_dict = dict()
+    sn_type_dict = dict()
     sn_test_rslt_dict = dict()
     sn_err_dsc_dict = dict()
     sn_err_code_dict = dict()
@@ -127,11 +125,12 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
             nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
             match = re.findall(nic_fail_reg_exp, buf)
-            for slot, sn in match:
+            for slot, nic_type, sn in match:
                 # init the list
                 if sn not in sn_test_dict.keys():
                     sn_test_dict[sn] = list()
                     sn_test_rslt_dict[sn] = list()
+                    sn_type_dict[sn] = nic_type
                     sn_err_dsc_dict[sn] = list()
                     sn_err_code_dict[sn] = list()
 
@@ -153,11 +152,12 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
             nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
             match = re.findall(nic_pass_reg_exp, buf)
-            for slot, sn in match:
+            for slot, sn_type, sn in match:
                 # init the list
                 if sn not in sn_test_dict.keys():
                     sn_test_dict[sn] = list()
                     sn_test_rslt_dict[sn] = list()
+                    sn_type_dict[sn] = nic_type
                     sn_err_dsc_dict[sn] = list()
                     sn_err_code_dict[sn] = list()
 
@@ -176,14 +176,14 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
     for sn in fail_sn_list:
-        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
+        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn_type_dict[sn], sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
         if not ret:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
         else:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
     for sn in pass_sn_list:
-        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
+        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn_type_dict[sn], sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
         if not ret:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
         else:
@@ -319,7 +319,6 @@ def main():
     else:
         diag_log_filep = None
 
-    pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
 
     mtp_mgmt_ctrl_list = list()
@@ -384,7 +383,7 @@ def main():
                 break
             for mtp_thread in mtp_thread_list:
                 if not mtp_thread.is_alive():
-                    ret = mtp_thread.join()
+                    mtp_thread.join()
                     mtp_thread_list.remove(mtp_thread)
             time.sleep(5)
 

@@ -11,33 +11,36 @@ SKIP:
     # - "DSP3#TEST1#TEST2"
 
 PARAMS:
-    - "MTP1#ASIC#L1#timeout=5400"
+    P2C:
+        - "MTP1#ASIC#L1#timeout=5400"
+    4C:
+        - "MTP1#ASIC#L1#timeout=5400"
 
 MTP_PRE:
     NIC_JTAG: True
-    #    NIC_STATUS: True
-    #    NIC_FRU:  True
+    NIC_STATUS: True
+    NIC_FRU:  True
 
 MTP_POST:
     NIC_MEM:  True
 
 MTP_SEQ:
-        #    MVL:
-        #        STUB:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
-    ASIC:
-        PCIE_PRBS:
+    MVL:
+        STUB:
             INIT: ""
             POST: ""
             OPTS:
-                NIC_NAME: No
-                SN: Yes
-                SLOT: Yes
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    ASIC:
+            #        PCIE_PRBS:
+            #            INIT: ""
+            #            POST: ""
+            #            OPTS:
+            #                NIC_NAME: No
+            #                SN: Yes
+            #                SLOT: Yes
         L1:
             INIT: ""
             POST: ""
@@ -45,30 +48,30 @@ MTP_SEQ:
                 NIC_NAME: No
                 SN: Yes
                 SLOT: Yes
-        ETH_PRBS:
+                #        ETH_PRBS:
+                #            INIT: ""
+                #            POST: ""
+                #            OPTS:
+                #                NIC_NAME: No
+                #                SN: Yes
+                #                SLOT: Yes
+MTP_PARA:
+    SFP:
+        I2C:
             INIT: ""
             POST: ""
             OPTS:
-                NIC_NAME: No
-                SN: Yes
-                SLOT: Yes
-MTP_PARA:
-        #    SFP:
-        #        I2C:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
-        #    I2C:
-        #        I2C:
-        #            INIT: ""
-        #            POST: ""
-        #            OPTS:
-        #                NIC_NAME: Yes
-        #                SN: No
-        #                SLOT: No
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    I2C:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
     RTC:
         RTC:
             INIT: ""
@@ -77,11 +80,11 @@ MTP_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-                #    MVL:
-                #        ACC:
-                #            INIT: ""
-                #            POST: ""
-                #            OPTS:
-                #                NIC_NAME: Yes
-                #                SN: No
-                #                SLOT: No
+    MVL:
+        ACC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No

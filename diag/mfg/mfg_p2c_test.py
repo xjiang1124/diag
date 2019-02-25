@@ -3,13 +3,10 @@
 import sys
 import os
 import time
-import datetime 
 import pexpect
 import re
 import argparse
 import threading
-import Queue
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -113,13 +110,14 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
     if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
         libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
         cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
+        os.system(cmd)
         return
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
         nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
         match = re.findall(nic_fail_reg_exp, buf)
-        for slot, sn in match:
+        for slot, sn_type, sn in match:
             test_list = list()
             test_rslt_list = list()
             err_dsc_list = list()
@@ -133,7 +131,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
@@ -142,7 +140,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
         nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
         match = re.findall(nic_pass_reg_exp, buf)
-        for slot, sn in match:
+        for slot, sn_type, sn in match:
             test_list = list()
             test_rslt_list = list()
             err_dsc_list = list()
@@ -156,7 +154,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            ret = libmfg_utils.flx_web_srv_post_uut_report("P2C", sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
@@ -360,7 +358,7 @@ def main():
             break 
         for mtp_thread in mtp_thread_list:
             if not mtp_thread.is_alive():
-                ret = mtp_thread.join()
+                mtp_thread.join()
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
     regression_stop_ts = libmfg_utils.timestamp_snapshot()

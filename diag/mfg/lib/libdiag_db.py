@@ -1,7 +1,8 @@
 import libmfg_utils
+from libdefs import Env_Cond
 
 class diag_db():
-    def __init__(self, diag_cfg_file):
+    def __init__(self, corner, diag_cfg_file):
         diag_test_cfg = libmfg_utils.load_cfg_from_yaml(diag_cfg_file)
         self._init_cmd_list = list()
         self._skip_test_list = list()
@@ -40,7 +41,11 @@ class diag_db():
                     self._skip_test_list.append(skip_cmd)
 
         # build parameter list
-        param_list = diag_test_cfg["PARAMS"]
+        if corner == Env_Cond.NTNV:
+            param_list = diag_test_cfg["PARAMS"]["P2C"]
+        else:
+            param_list = diag_test_cfg["PARAMS"]["4C"]
+
         for tmp in param_list:
             # yaml format is CARD#DSP#TEST#Param_list
             tmp_list = tmp.split('#')

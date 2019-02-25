@@ -64,7 +64,7 @@ def main():
     if not mtp_id:
         mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
     elif mtp_id not in mtpid_list:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid MTP ID: {:s}".format(mtp_id))
+        libmfg_utils.sys_exit("Invalid MTP ID: {:s}".format(mtp_id))
 
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 

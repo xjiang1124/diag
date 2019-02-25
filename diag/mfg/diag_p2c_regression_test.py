@@ -103,9 +103,9 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
             report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, NIC Test Failed".format(corner, loop)
             nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
             match = re.findall(nic_fail_reg_exp, buf)
-            for slot, sn in match:
+            for slot, nic_type, sn in match:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                report_body += nic_cli_id_str + "[**** {:s} ****] Diag Regression Test Failed\n".format(sn)
+                report_body += nic_cli_id_str + "[* {:s} *] [* {:s} *] Diag Regression Test Failed\n".format(nic_type, sn)
                 # find all test status
                 nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
                 sub_match = re.findall(nic_test_rslt_reg_exp, buf)
@@ -119,9 +119,9 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
                 report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, NIC Test Passed".format(corner, loop)
             nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
             match = re.findall(nic_pass_reg_exp, buf)
-            for slot, sn in match:
+            for slot, nic_type, sn in match:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                report_body += nic_cli_id_str + "[**** {:s} ****] Diag Regression Test Passed\n".format(sn)
+                report_body += nic_cli_id_str + "[* {:s} *] [* {:s} *] Diag Regression Test Passed\n".format(nic_type, sn)
                 # find all test status
                 nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
                 sub_match = re.findall(nic_test_rslt_reg_exp, buf)

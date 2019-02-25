@@ -204,6 +204,13 @@ def mac_address_validate(tmp):
         return None
 
 
+def part_number_validate(tmp):
+    if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13):
+        return tmp
+    else:
+        return None
+
+
 def mac_address_format(tmp):
     return "-".join(re.findall("..", tmp))
 
@@ -453,7 +460,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
     test_xml = ""
     for test, test_rslt, err_dsc, err_code in zip(test_list, test_rslt_list, err_dsc_list, err_code_list):
         # (test, status, value, description, failure code)
@@ -461,7 +468,7 @@ def flx_soap_save_uut_result_xml(stage, sn, rslt, start_ts, stop_ts, duration, t
         test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code) 
 
     #(stage, SN, start_ts, duration, stop_ts, result)
-    save_uut_rslt_entry = FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage, sn, str(start_ts), str(duration), str(stop_ts), rslt, duration, rslt)
+    save_uut_rslt_entry = FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage, sn, str(start_ts), str(duration), str(stop_ts), rslt, nic_type, duration, rslt)
 
     return FLX_SAVE_UUT_RSLT_XML_HEAD + \
            save_uut_rslt_entry + \
@@ -521,13 +528,13 @@ def soap_get_uut_info(xml):
         return "500"
 
 
-def flx_web_srv_post_uut_report(stage, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
     xml = flx_soap_get_uut_info_xml(stage, sn)
     ret = soap_get_uut_info(xml) 
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
     ret = soap_post_report(xml)
     if int(ret) != 0:
         return False

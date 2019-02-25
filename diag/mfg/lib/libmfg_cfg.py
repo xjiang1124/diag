@@ -1,30 +1,29 @@
-GLB_CFG_MFG_TEST_MODE = True
+GLB_CFG_MFG_TEST_MODE = False
 MFG_BYPASS_PSU_CHECK = True
 
 # MFG release version control
 MFG_NAPLES100_CPLD_VERSION = "0x8"
-MFG_NAPLES100_CPLD_PROGRAM = False
-MFG_NAPLES100_FRU_PROGRAM = False
-MFG_NAPLES100_EMMC_PROGRAM = False
-MFG_NAPLES100_VRM_PROGRAM = False
-MFG_NAPLES100_QSPI_PROGRAM = True
-MFG_NAPLES100_UPDATE_MAC_ADDR = False
-
-MFG_NAPLES25_CPLD_VERSION = "0xFF"
-
+MFG_NAPLES25_CPLD_VERSION = "0x1"
+MFG_NIC_CPLD_PROGRAM = False
+MFG_NIC_FRU_PROGRAM = True
+MFG_NIC_EMMC_PROGRAM = False
+MFG_NIC_VRM_PROGRAM = False
+MFG_NIC_QSPI_PROGRAM = False
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
 DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
-DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null'"
+DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=10'"
 
 # please check the label specification
 # FL[M,Z,G][Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 NAPLES_SN_FMT = r"FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]+$"
+NAPLES_PN_FMT = r"[A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2}$"
 NAPLES_DISP_SN_FMT = r"Serial Number +(FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4})"
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
+NAPLES_DISP_PN_FMT = r"Part Number +([A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2})"
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 
@@ -63,7 +62,7 @@ FLX_SAVE_UUT_RSLT_ENTRY_FMT =                '&lt;BATCH&gt;&#xD; \
                                               &lt;FACTORY TESTER="{:s}" USER="admin" /&gt;&#xD; \
                                               &lt;PANEL&gt;&#xD; \
                                               &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD; \
-                                              &lt;GROUP NAME="Board" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+                                              &lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 FLX_SAVE_UUT_TEST_RSLT_FMT =                 '&lt;TEST NAME="{:s}" STATUS="{:s}" VALUE="{:s}" DESCRIPTION="{:s}" FAILURECODE="{:s}" /&gt;&#xD;'
 FLX_SAVE_UUT_RSLT_ENTRY_END =                '&lt;/GROUP&gt;&#xD; \
                                               &lt;/DUT&gt;&#xD; \

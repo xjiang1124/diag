@@ -1,53 +1,63 @@
 MTP-001:
     SRV: PENSANDO-PRO-SRV1
-    TS: 2019-02-13_17-10-44
+    TS: 2019-02-21_13-30-14
     NIC-01:
         VALID: "Yes"
-        SN: "FLM18310004"
-        MAC: "00AECD000060"
-        TS: 021319
+        SN: "FLM1907000E"
+        MAC: "00AECD0039F0"
+        PN: "73-0009-01 05"
+        TS: 022119
     NIC-02:
         VALID: "Yes"
-        SN: "FLM18310002"
-        MAC: "00AECD000020"
-        TS: 021319
+        SN: "FLM19070001"
+        MAC: "00AECD003A98"
+        PN: "73-0009-01 05"
+        TS: 022119
     NIC-03:
         VALID: "Yes"
-        SN: "FLM18310003"
-        MAC: "00AECD000040"
-        TS: 021319
-    NIC-09:
-        VALID: "Yes"
-        SN: "FLM1848004B"
-        MAC: "00AECD0016C8"
-        TS: 021319
-    NIC-07:
-        VALID: "Yes"
-        SN: "FLM18310005"
-        MAC: "00AECD000080"
-        TS: 021319
-    NIC-08:
-        VALID: "Yes"
-        SN: "FLM18310006"
-        MAC: "00AECD0000A0"
-        TS: 021319
-    NIC-05:
-        VALID: "Yes"
-        SN: "FLM18310007"
-        MAC: "00AECD0000C0"
-        TS: 021319
+        SN: "FLM19070018"
+        MAC: "00AECD003AB0"
+        PN: "73-0009-01 05"
+        TS: 022119
     NIC-04:
         VALID: "Yes"
-        SN: "FLM18310008"
-        MAC: "00AECD0000E0"
-        TS: 021319
-    NIC-10:
+        SN: "FLM19070014"
+        MAC: "00AECD0038A0"
+        PN: "73-0009-01 05"
+        TS: 022119
+    NIC-05:
         VALID: "Yes"
-        SN: "FLM18310009"
-        MAC: "00AECD000100"
-        TS: 021319
+        SN: "FLM19070002"
+        MAC: "00AECD003918"
+        PN: "73-0009-01 05"
+        TS: 022119
     NIC-06:
         VALID: "Yes"
-        SN: "FLM1831000A"
-        MAC: "00AECD000120"
-        TS: 021319
+        SN: "FLM19070019"
+        MAC: "00AECD003948"
+        PN: "73-0009-01 05"
+        TS: 022119
+    NIC-07:
+        VALID: "Yes"
+        SN: "FLM19070016"
+        MAC: "00AECD0038D0"
+        PN: "73-0009-01 05"
+        TS: 022119
+    NIC-08:
+        VALID: "Yes"
+        SN: "FLM1907000A"
+        MAC: "00AECD0038B8"
+        PN: "73-0009-01 05"
+        TS: 022119
+    NIC-09:
+        VALID: "Yes"
+        SN: "FLM19070010"
+        MAC: "00AECD003A20"
+        PN: "73-0009-01 05"
+        TS: 022119
+    NIC-10:
+        VALID: "Yes"
+        SN: "FLM19070003"
+        MAC: "00AECD0039C0"
+        PN: "73-0009-01 05"
+        TS: 022119
