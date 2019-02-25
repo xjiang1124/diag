@@ -44,8 +44,8 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
         return
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
+        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
         match = re.findall(nic_fail_reg_exp, buf)
         for slot, nic_type, sn in match:
             test_list = list()
@@ -67,8 +67,8 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
             else:
                 libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
+        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
         match = re.findall(nic_pass_reg_exp, buf)
         for slot, nic_type, sn in match:
             test_list = list()
@@ -380,7 +380,7 @@ def main():
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        if key in fail_nic_list: 
+        if key in fail_nic_list:
             continue
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
@@ -407,7 +407,7 @@ def main():
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        if key in fail_nic_list: 
+        if key in fail_nic_list:
             continue
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
@@ -574,7 +574,7 @@ def main():
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        if key in fail_nic_list: 
+        if key in fail_nic_list:
             continue
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
