@@ -39,7 +39,7 @@ source /etc/profile
 
 num="$(ps -elf | grep diagmgr | wc | awk -F " " '{print $1}')"
 echo "num $num"
-if [[ $num -eq 1 ]]
+if [[ $num -le 1 ]]
 then
     echo "Launching diagmgr"
     diagmgr &
