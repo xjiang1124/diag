@@ -1,3 +1,10 @@
+echo "=== RTC Sanity Check ==="
+
+stop_en="$(smbutil -dev=RTC -rd -addr=0x2E)"
+echo "Before RTC reset"
+echo $stop_en
+
+
 rtc_sec_pre="$(smbutil -dev=RTC -rd -addr=0x1 | awk -F ';' '{print $2}')"
 echo $rtc_sec_pre
 
@@ -11,7 +18,12 @@ then
     echo "RTC sanity check passed"
 else
     echo "RTC sanity check FAILED"
-    echo "Resetting RTC"
-    cpld -w 0x2F 0x2C
 fi
+
+echo "Resetting RTC"
+cpld -w 0x2F 0x2C
+
+stop_en="$(smbutil -dev=RTC -rd -addr=0x2E)"
+echo "After RTC reset"
+echo $stop_en
 

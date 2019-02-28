@@ -14,7 +14,6 @@ fi
 echo "$type Detected!"
 echo "export CARD_TYPE=\"$type\"" >> /etc/profile
 
-echo "RTC Resetted"
-cpld -w 0x2F 0x2C
+sh /home/diag/diag/python/regression/scripts/rtc_sanity.sh
 
 echo "Hello"

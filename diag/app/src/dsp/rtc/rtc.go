@@ -9,6 +9,7 @@ import (
     "common/misc"
     "device/rtc/pcf85263a"
     "config"
+    "protocol/smbus"
 )
 
 //========================================================
@@ -43,6 +44,19 @@ func RtcI2CHdl(argList []string) {
     if secondPost < secondPre {
         secondPost = secondPost + 60
     }
+    misc.SleepInSec(3)
+
+    err = smbus.Open("RTC")
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    data, err := smbus.ReadByte("RTC", 0x2E)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "failed to read RTC data")
+    }
+    dcli.Printf("d", "Stop_en: 0x%x\n", data)
 
     diff := secondPost - secondPre
     if (diff >= 2 && diff <= 4) {
@@ -52,6 +66,8 @@ func RtcI2CHdl(argList []string) {
         dcli.Println("e", "time difference is", diff, ";expected: 3")
         diagEngine.FuncMsgChan <- errType.FAIL
     }
+
+
     return
 }
 
