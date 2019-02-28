@@ -34,13 +34,6 @@ MTP_SEQ:
                 SN: No
                 SLOT: No
     ASIC:
-            #        PCIE_PRBS:
-            #            INIT: ""
-            #            POST: ""
-            #            OPTS:
-            #                NIC_NAME: No
-            #                SN: Yes
-            #                SLOT: Yes
         L1:
             INIT: ""
             POST: ""
@@ -48,14 +41,15 @@ MTP_SEQ:
                 NIC_NAME: No
                 SN: Yes
                 SLOT: Yes
-                #        ETH_PRBS:
-                #            INIT: ""
-                #            POST: ""
-                #            OPTS:
-                #                NIC_NAME: No
-                #                SN: Yes
-                #                SLOT: Yes
 MTP_PARA:
+    RTC:
+        RTC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
     SFP:
         I2C:
             INIT: ""
@@ -66,14 +60,6 @@ MTP_PARA:
                 SLOT: No
     I2C:
         I2C:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: No
-                SLOT: No
-    RTC:
-        RTC:
             INIT: ""
             POST: ""
             OPTS:

@@ -17,7 +17,9 @@ from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
+from libmfg_cfg import MFG_NAPLES100_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_CPLD_VERSION
+from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_VRM_PROGRAM
@@ -733,18 +735,33 @@ class mtp_ctrl():
         if MFG_NIC_CPLD_PROGRAM:
             self.cli_log_slot_inf(slot, "Program NIC CPLD")
             nic_type = self.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES100:
-                hw_info = self.mtp_mgmt_get_nic_hw_info(slot)
-                if not hw_info:
-                    self.cli_log_slot_err(slot, "Retrieve NIC CPLD version failed")
-                    return False
+            hw_info = self.mtp_mgmt_get_nic_hw_info(slot)
+            if not hw_info:
+                self.cli_log_slot_err(slot, "Retrieve NIC CPLD version failed")
+                return False
+            cur_ver = hw_info[0]
+            cur_timestamp = hw_info[1]
 
-                cur_ver = hw_info[0]
-                if cur_ver == MFG_NAPLES100_CPLD_VERSION:
+            if nic_type == NIC_Type.NAPLES100:
+                if cur_ver == MFG_NAPLES100_CPLD_VERSION and cur_timestamp == MFG_NAPLES100_CPLD_TIMESTAMP:
                     self.cli_log_slot_inf(slot, "NIC CPLD is up-to-date, bypass the upgrade")
                     return True
                 else:
-                    self.cli_log_slot_inf(slot, "Program NIC CPLD, current version: {:s}, upgrade to: {:s}".format(cur_ver, MFG_NAPLES100_CPLD_VERSION))
+                    self.cli_log_slot_inf(slot, "Program NIC CPLD")
+                    self.cli_log_slot_inf(slot, "Version: {:s} ---> {:s}".format(cur_ver, MFG_NAPLES100_CPLD_VERSION))
+                    self.cli_log_slot_inf(slot, "Timestamp: {:s} ---> {:s}".format(cur_timestamp, MFG_NAPLES100_CPLD_TIMESTAMP))
+            elif nic_type == NIC_Type.NAPLES25:
+                if cur_ver == MFG_NAPLES25_CPLD_VERSION and cur_timestamp == MFG_NAPLES25_CPLD_TIMESTAMP:
+                    self.cli_log_slot_inf(slot, "NIC CPLD is up-to-date, bypass the upgrade")
+                    return True
+                else:
+                    self.cli_log_slot_inf(slot, "Program NIC CPLD")
+                    self.cli_log_slot_inf(slot, "Version: {:s} ---> {:s}".format(cur_ver, MFG_NAPLES25_CPLD_VERSION))
+                    self.cli_log_slot_inf(slot, "Timestamp: {:s} ---> {:s}".format(cur_timestamp, MFG_NAPLES25_CPLD_TIMESTAMP))
+            else:
+                self.cli_log_slot_err(slot, "Unknown NIC Type")
+                return False
+
             if not self.mtp_mgmt_copy_nic_image(slot, cpld_img):
                 self.cli_log_slot_err(slot, "Failed to copy NIC CPLD image")
                 return False
@@ -772,18 +789,23 @@ class mtp_ctrl():
             if not hw_info:
                 self.cli_log_slot_err(slot, "Retrieve NIC CPLD version failed")
                 return False
-
             cur_ver = hw_info[0]
+            cur_timestamp = hw_info[1]
+
             if nic_type == NIC_Type.NAPLES100:
-                if cur_ver != MFG_NAPLES100_CPLD_VERSION:
-                    self.cli_log_slot_err(slot, "Verify NIC CPLD Failed, exp: {:s}, get: {:s}".format(MFG_NAPLES100_CPLD_VERSION, cur_ver))
+                if cur_ver != MFG_NAPLES100_CPLD_VERSION or cur_timestamp != MFG_NAPLES100_CPLD_TIMESTAMP:
+                    self.cli_log_slot_err(slot, "Verify NIC CPLD Failed")
+                    self.cli_log_slot_err(slot, "Expect Version: {:s}, get: {:s}".format(MFG_NAPLES100_CPLD_VERSION, cur_ver))
+                    self.cli_log_slot_err(slot, "Expect Timestamp: {:s}, get: {:s}".format(MFG_NAPLES100_CPLD_TIMESTAMP, cur_timestamp))
                     return False
                 else:
                     self.cli_log_slot_inf(slot, "Verify NIC CPLD complete")
                     return True
             elif nic_type == NIC_Type.NAPLES25:
-                if cur_ver != MFG_NAPLES25_CPLD_VERSION:
-                    self.cli_log_slot_err(slot, "Verify NIC CPLD Failed, exp: {:s}, get: {:s}".format(MFG_NAPLES25_CPLD_VERSION, cur_ver))
+                if cur_ver != MFG_NAPLES25_CPLD_VERSION or cur_timestamp != MFG_NAPLES25_CPLD_TIMESTAMP:
+                    self.cli_log_slot_err(slot, "Verify NIC CPLD Failed")
+                    self.cli_log_slot_err(slot, "Expect Version: {:s}, get: {:s}".format(MFG_NAPLES25_CPLD_VERSION, cur_ver))
+                    self.cli_log_slot_err(slot, "Expect Timestamp: {:s}, get: {:s}".format(MFG_NAPLES25_CPLD_TIMESTAMP, cur_timestamp))
                     return False
                 else:
                     self.cli_log_slot_inf(slot, "Verify NIC CPLD complete")
@@ -1049,6 +1071,11 @@ class mtp_ctrl():
         cmd = "source ~/.bash_profile"
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+
+        cmd = "env | grep UUT"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute env command", level=0)
             return False
 
         # start the mtp diagmgr
@@ -1594,13 +1621,13 @@ class mtp_ctrl():
 
 
     # retrieve misc hw info from nic
-    # return [cpld_ver, etc]
+    # return [cpld_ver, cpld_timestamp]
     def mtp_mgmt_get_nic_hw_info(self, slot):
         nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
         if not nic_prompt:
             self.cli_log_slot_err(slot, "Unable to setup connection to NIC")
             return None
-        # dump the fru
+        # get the revision
         self._mgmt_handle.sendline("{:s}cpld -r 0".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         try:
             self._mgmt_handle.expect_exact(nic_prompt)
@@ -1613,12 +1640,142 @@ class mtp_ctrl():
         else:
             cpld_ver = "0xdeadbeef"
 
+        # get the month timestamp
+        self._mgmt_handle.sendline("{:s}cpld -r 34".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
+        try:
+            self._mgmt_handle.expect_exact(nic_prompt)
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Failed to run cpld command on NIC")
+            return None
+        match = re.findall(r"(0x[0-9a-fA-F]+)", self._mgmt_handle.before)
+        if match:
+            month = int(match[0], 16)
+        else:
+            month = "0"
+        self._mgmt_handle.sendline("{:s}cpld -r 35".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
+        try:
+            self._mgmt_handle.expect_exact(nic_prompt)
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Failed to run cpld command on NIC")
+            return None
+        match = re.findall(r"(0x[0-9a-fA-F]+)", self._mgmt_handle.before)
+        if match:
+            date = int(match[0], 16)
+        else:
+            date = "0"
+        cpld_timestamp = "{:02d}-{:02d}".format(month, date)
+
         cmd = "exit"
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_slot_err(slot, "Failed to run command {:s} on NIC".format(cmd))
             return None
 
-        return [cpld_ver]
+        return [cpld_ver, cpld_timestamp]
+
+
+    def mtp_mgmt_dump_rtc_sta(self, slot):
+        pll_sta_reg_exp = r"data=(0x[0-9a-fA-F]+)"
+
+        cmd = "turn_on_uut.sh {:d}".format(slot+1)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+
+        cmd = "smbutil -rd -addr=0x26 -uut='UUT_{:d}' -dev=CPLD".format(slot+1)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+
+        match = re.findall(pll_sta_reg_exp, self._mgmt_handle.before)
+        if not match:
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+        else:
+            reg_data = int(match[0], 16)
+            self.cli_log_slot_inf(slot, "CPLD 0x26 = {:x}".format(reg_data))
+            core_pll_lock = reg_data & 0x1
+            cpu_pll_lock = reg_data & 0x2
+            flash_pll_lock = reg_data & 0x4
+            proto_mode = reg_data & 0x20
+            if not core_pll_lock:
+                self.cli_log_slot_err(slot, "Capri core pll is not locked")
+            if not cpu_pll_lock:
+                self.cli_log_slot_err(slot, "Capri cpu pll is not locked")
+            if not flash_pll_lock:
+                self.cli_log_slot_err(slot, "Capri flash pll is not locked")
+            if proto_mode:
+                self.cli_log_slot_err(slot, "Capri proto mode is set")
+                self.mtp_enter_user_ctrl()
+
+        cmd = "smbutil -rd -addr=0x28 -uut='UUT_{:d}' -dev=CPLD".format(slot+1)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+
+        match = re.findall(pll_sta_reg_exp, self._mgmt_handle.before)
+        if not match:
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+        else:
+            reg_data = int(match[0], 16)
+            self.cli_log_slot_inf(slot, "CPLD 0x28 = {:x}".format(reg_data))
+            pcie_pll_lock = reg_data & 0x40
+            if not pcie_pll_lock:
+                self.cli_log_slot_err(slot, "Capri pcie pll is not locked")
+        return
+
+
+
+    def mtp_mgmt_dump_nic_pll_sta(self, slot):
+        pll_sta_reg_exp = r"data=(0x[0-9a-fA-F]+)"
+
+        cmd = "turn_on_uut.sh {:d}".format(slot+1)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+
+        cmd = "smbutil -rd -addr=0x26 -uut='UUT_{:d}' -dev=CPLD".format(slot+1)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+
+        match = re.findall(pll_sta_reg_exp, self._mgmt_handle.before)
+        if not match:
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+        else:
+            reg_data = int(match[0], 16)
+            self.cli_log_slot_inf(slot, "CPLD 0x26 = {:x}".format(reg_data))
+            core_pll_lock = reg_data & 0x1
+            cpu_pll_lock = reg_data & 0x2
+            flash_pll_lock = reg_data & 0x4
+            proto_mode = reg_data & 0x20
+            if not core_pll_lock:
+                self.cli_log_slot_err(slot, "Capri core pll is not locked")
+            if not cpu_pll_lock:
+                self.cli_log_slot_err(slot, "Capri cpu pll is not locked")
+            if not flash_pll_lock:
+                self.cli_log_slot_err(slot, "Capri flash pll is not locked")
+            if proto_mode:
+                self.cli_log_slot_err(slot, "Capri proto mode is set")
+                self.mtp_enter_user_ctrl()
+
+        cmd = "smbutil -rd -addr=0x28 -uut='UUT_{:d}' -dev=CPLD".format(slot+1)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+
+        match = re.findall(pll_sta_reg_exp, self._mgmt_handle.before)
+        if not match:
+            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
+            return
+        else:
+            reg_data = int(match[0], 16)
+            self.cli_log_slot_inf(slot, "CPLD 0x28 = {:x}".format(reg_data))
+            pcie_pll_lock = reg_data & 0x40
+            if not pcie_pll_lock:
+                self.cli_log_slot_err(slot, "Capri pcie pll is not locked")
+        return
 
 
     def mtp_init_nic_pwr_status(self, slot):
@@ -1641,8 +1798,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mini_init(self, slot):
-        # 1. change baud rate to 9600
+    def mtp_nic_con_baudrate_init(self, slot):
         loop = 0
         while loop < MTP_Const.NIC_CON_INIT_RETRY:
             self.cli_log_slot_inf(slot, "Set NIC Console baudrate - <{:d}> try".format(loop+1))
@@ -1660,25 +1816,51 @@ class mtp_ctrl():
         if loop >= MTP_Const.NIC_CON_INIT_RETRY:
             self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
             return False
+        return True
 
-        # 2. config nic ip address
+
+    def mtp_nic_mgmt_init(self, slot):
         loop = 0
         while loop < MTP_Const.NIC_MGMT_IP_INIT_RETRY:
-            self.cli_log_slot_inf(slot, "Set NIC MGMT ip address - <{:d}> try".format(loop+1))
-            nic_con_cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
-            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "ifconfig oob_mnic0", "FAIL to enable management port"):
-                # retry
-                loop += 1
+            loop += 1
+            self.cli_log_slot_inf(slot, "Set NIC MGMT ip address - <{:d}> try".format(loop))
+            # goto the nic_con dir
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
+                continue
+
+            cmd = "nic_con.py -mgmt -slot {:d}".format(slot+1)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
+                continue
+
+            if "Management port is ready" in self._mgmt_handle.before:
+                break
+            elif "FAIL to enable management port" in self._mgmt_handle.before:
                 continue
             else:
-                self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
-                break
+                self.cli_log_slot_err(slot, "Invalid output of command {:s}".format(cmd))
+                self.mtp_enter_user_ctrl()
+                continue
 
-        if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
+        if loop > MTP_Const.NIC_MGMT_IP_INIT_RETRY:
             self.cli_log_slot_err(slot, "Set NIC MGMT ip address failed")
+            self._nic_sta_list[slot] = NIC_Status.NIC_STA_MGMT_FAIL
+            return False
+        else:
+            self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
+            return True
+
+
+    def mtp_nic_mini_init(self, slot):
+        if not self.mtp_nic_con_baudrate_init(slot):
             return False
 
-        # 3. flush the arp entry
+        if not self.mtp_nic_mgmt_init(slot):
+            return False
+
+        # flush the arp entry
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
         cmd = "arp -d {:s}".format(ipaddr)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
@@ -1896,6 +2078,13 @@ class mtp_ctrl():
                     self._nic_sn_list[slot] = nic_fru_info[0]
                     if not sn_tag:
                         self._nic_scan_sn_list[slot] = nic_fru_info[0]
+
+                nic_hw_info = self.mtp_mgmt_get_nic_hw_info(slot)
+                if not nic_hw_info:
+                    self.mtp_enter_user_ctrl()
+                    self.cli_log_slot_err(slot, "Retrieve NIC CPLD version failed")
+                else:
+                    self.cli_log_slot_inf(slot, "Set CPLD version - {:s}; timestamp - {:s}".format(nic_hw_info[0], nic_hw_info[1]))
 
 
     def mtp_get_nic_sn(self, slot):
@@ -2172,7 +2361,7 @@ class mtp_ctrl():
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd(init_cmd):
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
+                return [MTP_DIAG_Error.NIC_DIAG_FAIL, "Init Fail"]
 
         # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
@@ -2181,7 +2370,9 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd(ts_record_cmd)
 
         if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
-            return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
+            return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, "Diag Command Timeout"]
+
+        #err_msg = str(self._mgmt_handle.before)
 
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
@@ -2192,14 +2383,14 @@ class mtp_ctrl():
         # post command
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd(post_cmd):
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
+                return [MTP_DIAG_Error.NIC_DIAG_FAIL, "Post Fail"]
 
         ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
         if ret == "TIMEOUT":
             if not self.mtp_mgmt_jtag_rst():
                 self.mtp_enter_user_ctrl()
 
-        return ret
+        return [ret, "Failure"]
 
 
     def mtp_mgmt_jtag_rst(self):
@@ -2253,7 +2444,10 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
         if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
-            return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
+            timeout_msg = self._nic_handle_list[slot].before
+            return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, timeout_msg]
+
+        err_msg = str(self._nic_handle_list[slot].before)
 
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
@@ -2264,10 +2458,11 @@ class mtp_ctrl():
         # post command
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, post_cmd):
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
+                timeout_msg = self._nic_handle_list[slot].before
+                return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, timeout_msg]
 
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
-        return ret
+        return [ret, err_msg]
 
 
 

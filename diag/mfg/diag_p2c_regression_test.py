@@ -111,6 +111,11 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
                 sub_match = re.findall(nic_test_rslt_reg_exp, buf)
                 for dsp, test, result in sub_match:
                     report_body += "        ---- Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
+                    # find test error message
+                    nic_test_err_msg_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG_RE.format(slot, sn, dsp, test)
+                    err_msg_match = re.findall(nic_test_err_msg_reg_exp, buf)
+                    if err_msg_match:
+                        report_body += "            [* Error Message *]: {:s}\n".format(err_msg_match[0])
                 report_body += "\n"
                 ret = False
 
@@ -128,6 +133,7 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
                 for dsp, test, result in sub_match:
                     report_body += "        ---- Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
                 report_body += "\n"
+
     report_body += "[**** QA Logfile ****]: {:s}".format(qa_log_pkg)
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
