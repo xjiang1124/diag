@@ -40,6 +40,18 @@ type QsfpInfo_t struct {
     RmIntBit   int
 }
 
+type SfpInfo_t struct {
+    DevName     string
+    TxDisReg	uint32
+    TxDisBit    uint32
+    TxFaultReg  uint32
+    TxFaultBit  uint32
+    PrstReg     uint32
+    PrstBit     uint32
+    RxLossReg   uint32
+    RxLossBit   uint32
+}
+
 var cardType string
 var uutName string
 
@@ -75,10 +87,10 @@ var naples25DispStaList map[string]DispStaFunc
 var naples25I2cHubMap map[string] I2cHubInfo
 
 // SFP table
-var naples25SfpTbl = []QsfpInfo_t {
-    //          devName   modRstReg modRstBit lpReg lpBit prstReg prstBit intrReg intrBit prstIntReg prstIntBit rmIntReg rmIntBit
-    QsfpInfo_t {"SFP_1",  0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
-    QsfpInfo_t {"SFP_2",  0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
+var naples25SfpTbl = []SfpInfo_t {
+    //          devName   txDisReg txDisBit txFaultReg txFaultBit prstReg prstBit rxLossReg rxLossBit
+    SfpInfo_t {"SFP_1",  0x2,      0,       0x2,      2,         0x2,     4,      0x2,      6,     },
+    SfpInfo_t {"SFP_2",  0x2,      1,       0x2,      3,         0x2,     5,      0x2,      7,     },
 }
 //===============================
 // MTP
@@ -123,7 +135,7 @@ var I2cHubList []string
 var PsuList []string
 // QSFP table
 var QsfpTbl []QsfpInfo_t
-var SfpTbl []QsfpInfo_t
+var SfpTbl []SfpInfo_t
 
 func init() {
     // Can only do map initialization here

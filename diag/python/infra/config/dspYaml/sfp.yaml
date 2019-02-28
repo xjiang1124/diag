@@ -64,6 +64,13 @@ DSP:
         PRIORITY: NORMAL 
         PARAM:
 
+    TEST#LASER:
+        INFO: Test SFP Laser funtionality
+        PLATFORM:
+            NIC: NAPLES25
+        PRIORITY: NORMAL
+        PARAM:
+ 
     CMD#present:
         INFO: Display QSFP present status
         PLATFORM:

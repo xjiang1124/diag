@@ -36,6 +36,7 @@ func init() {
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
     diagEngine.FuncMap["I2C"] = SfpI2CHdl
+    diagEngine.FuncMap["LASER"] = SfpLaserHdl
     diagEngine.FuncMap["present"] = SfpPresentHdl
 
     //dcli.Init("log_"+dspName+".txt", config.OutputMode)

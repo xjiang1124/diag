@@ -32,4 +32,8 @@ const(
     // PMBUS
     PMBUS_NUM_BYTE_MISMATCH = 500
     PMBUS_INV_MODE       = 501
+    // SFP
+    SFP_NOT_PRESENT      = 600
+    SFP_TX_FAULT         = 601
+    SFP_RX_LOSS          = 602
 )
