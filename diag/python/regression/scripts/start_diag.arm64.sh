@@ -6,7 +6,7 @@ arch=arm64
 echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
-mkdir -p $DIAG_DIR/diag/log/
+mkdir -p $DIAG_DIR/log/
 
 
 if [[ -f /etc/profile.bak ]]

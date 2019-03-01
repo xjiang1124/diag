@@ -17,7 +17,7 @@ fi
 echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
-mkdir -p $DIAG_DIR/diag/log/
+mkdir -p $DIAG_DIR/log/
 
 # Prepare all paths
 if [[ $arch == "amd64" ]]
@@ -51,7 +51,7 @@ then
 
     #==================================
     echo "Set up ASIC environment"
-    echo "export ASIC_LIB_BUNDLE=/home/diag/diag/asic/" >> temp_profile
+    echo "export ASIC_LIB_BUNDLE=$DIRG_DIR/asic/" >> temp_profile
     echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
     echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
     echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
