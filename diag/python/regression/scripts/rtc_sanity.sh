@@ -21,7 +21,7 @@ else
 fi
 
 echo "Resetting RTC"
-cpld -w 0x2F 0x2C
+smbutil -dev=rtc -wr -addr=0x2F -data=0x2C
 
 stop_en="$(smbutil -dev=RTC -rd -addr=0x2E)"
 echo "After RTC reset"

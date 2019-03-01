@@ -1800,20 +1800,30 @@ class mtp_ctrl():
 
     def mtp_nic_con_baudrate_init(self, slot):
         loop = 0
+        # goto the nic_con dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
+            return False
+
         while loop < MTP_Const.NIC_CON_INIT_RETRY:
-            self.cli_log_slot_inf(slot, "Set NIC Console baudrate - <{:d}> try".format(loop+1))
-            nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
-            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "stty speed 9600", "TIMEOUT"):
+            loop += 1
+            self.cli_log_slot_inf(slot, "Set NIC Console baudrate - <{:d}> try".format(loop))
+            cmd = "nic_con.py -br -slot {:d}".format(slot+1)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_INIT_DELAY):
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
+                continue
+
+            if "stty speed 9600" in self._mgmt_handle.before:
+                self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
+                break
+            else:
                 # retry
                 self.mtp_power_off_single_nic(slot)
                 self.mtp_power_on_single_nic(slot)
-                loop += 1
                 continue
-            else:
-                self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
-                break
 
-        if loop >= MTP_Const.NIC_CON_INIT_RETRY:
+        if loop > MTP_Const.NIC_CON_INIT_RETRY:
             self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
             return False
         return True
@@ -1855,6 +1865,9 @@ class mtp_ctrl():
 
     def mtp_nic_mini_init(self, slot):
         if not self.mtp_nic_con_baudrate_init(slot):
+            return False
+
+        if not self.mtp_mgmt_set_nic_core_space(slot):
             return False
 
         if not self.mtp_nic_mgmt_init(slot):
@@ -2139,24 +2152,42 @@ class mtp_ctrl():
         self._nic_scan_mac_list[slot] = mac
 
 
-    def mtp_mgmt_set_nic_diag_boot(self, slot):
-        # 1. change baud rate to 9600
-        loop = 0
-        while loop < MTP_Const.NIC_CON_INIT_RETRY:
-            self.cli_log_slot_inf(slot, "Set NIC Console baudrate - <{:d}> try".format(loop+1))
-            nic_con_cmd = "nic_con.py -br -slot {:d}".format(slot+1)
-            if not self.mtp_mgmt_exec_nic_con_cmd(slot, nic_con_cmd, "stty speed 9600", "TIMEOUT"):
-                # retry
-                self.mtp_power_off_single_nic(slot)
-                self.mtp_power_on_single_nic(slot)
-                loop += 1
-                continue
-            else:
-                self._nic_sta_list[slot] = NIC_Status.NIC_STA_OK
-                break
+    def mtp_mgmt_set_nic_core_space(self, slot):
+        self.cli_log_slot_inf(slot, "Set NIC core file space")
+        self._mgmt_handle.sendline("con_connect.sh {:d}".format(slot+1))
+        try:
+            self._mgmt_handle.expect_exact("Terminal ready")
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Connect NIC Console failed")
+            return False
+        self._mgmt_handle.sendline("")
+        try:
+            self._mgmt_handle.expect_exact("#")
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Connect NIC Console failed")
+            return False
 
-        if loop >= MTP_Const.NIC_CON_INIT_RETRY:
-            self.cli_log_slot_err(slot, "Set NIC Console baudrate failed")
+        self._mgmt_handle.sendline("sed -i -e 's/-p %p -e %e/-p %p -e %e -m 1/g' /nic/tools/sysinit.sh")
+        try:
+            self._mgmt_handle.expect_exact("#")
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Failed to execute command on NIC console")
+            return False
+
+        self._mgmt_handle.sendcontrol('a')
+        self._mgmt_handle.sendcontrol('x')
+        try:
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Disconnect NIC Console failed")
+            return False
+
+        self.cli_log_slot_inf(slot, "Set NIC core space complete")
+        return True
+
+
+    def mtp_mgmt_set_nic_diag_boot(self, slot):
+        if not self.mtp_nic_con_baudrate_init(slot):
             return False
 
         self.cli_log_slot_inf(slot, "Set NIC default boot with diag image")
