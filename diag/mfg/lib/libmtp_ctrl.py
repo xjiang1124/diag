@@ -1556,12 +1556,14 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Unable to setup connection to NIC")
             return None
 
-        # dump the fru
         self._mgmt_handle.sendline("{:s}cpld -r 0".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
         self._mgmt_handle.sendline("{:s}devmgr -status".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
+        self._mgmt_handle.sendline("fwupdate -r")
+        self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
 
+        # dump the fru
         self._mgmt_handle.sendline("{:s}eeutil -disp".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         self._mgmt_handle.expect_exact(nic_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY)
         match = re.findall(NAPLES_DISP_SN_FMT, self._mgmt_handle.before)
@@ -1651,7 +1653,7 @@ class mtp_ctrl():
         if match:
             month = int(match[0], 16)
         else:
-            month = "0"
+            month = 0
         self._mgmt_handle.sendline("{:s}cpld -r 35".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         try:
             self._mgmt_handle.expect_exact(nic_prompt)
@@ -1662,7 +1664,7 @@ class mtp_ctrl():
         if match:
             date = int(match[0], 16)
         else:
-            date = "0"
+            date = 0
         cpld_timestamp = "{:02d}-{:02d}".format(month, date)
 
         cmd = "exit"
@@ -1671,59 +1673,6 @@ class mtp_ctrl():
             return None
 
         return [cpld_ver, cpld_timestamp]
-
-
-    def mtp_mgmt_dump_rtc_sta(self, slot):
-        pll_sta_reg_exp = r"data=(0x[0-9a-fA-F]+)"
-
-        cmd = "turn_on_uut.sh {:d}".format(slot+1)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
-            return
-
-        cmd = "smbutil -rd -addr=0x26 -uut='UUT_{:d}' -dev=CPLD".format(slot+1)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
-            return
-
-        match = re.findall(pll_sta_reg_exp, self._mgmt_handle.before)
-        if not match:
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
-            return
-        else:
-            reg_data = int(match[0], 16)
-            self.cli_log_slot_inf(slot, "CPLD 0x26 = {:x}".format(reg_data))
-            core_pll_lock = reg_data & 0x1
-            cpu_pll_lock = reg_data & 0x2
-            flash_pll_lock = reg_data & 0x4
-            proto_mode = reg_data & 0x20
-            if not core_pll_lock:
-                self.cli_log_slot_err(slot, "Capri core pll is not locked")
-            if not cpu_pll_lock:
-                self.cli_log_slot_err(slot, "Capri cpu pll is not locked")
-            if not flash_pll_lock:
-                self.cli_log_slot_err(slot, "Capri flash pll is not locked")
-            if proto_mode:
-                self.cli_log_slot_err(slot, "Capri proto mode is set")
-                self.mtp_enter_user_ctrl()
-
-        cmd = "smbutil -rd -addr=0x28 -uut='UUT_{:d}' -dev=CPLD".format(slot+1)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
-            return
-
-        match = re.findall(pll_sta_reg_exp, self._mgmt_handle.before)
-        if not match:
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
-            return
-        else:
-            reg_data = int(match[0], 16)
-            self.cli_log_slot_inf(slot, "CPLD 0x28 = {:x}".format(reg_data))
-            pcie_pll_lock = reg_data & 0x40
-            if not pcie_pll_lock:
-                self.cli_log_slot_err(slot, "Capri pcie pll is not locked")
-        return
-
 
 
     def mtp_mgmt_dump_nic_pll_sta(self, slot):
