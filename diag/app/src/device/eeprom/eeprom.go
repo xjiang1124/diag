@@ -214,7 +214,15 @@ func UpdateMac(devName string, mac []byte) (err int) {
 //                for i := 0; i < entry.NumBytes; i++ {
 //                    entry.Value[i] = byte((mac >> uint64(48 - i * 8)) & 0xFF)
 //                }
-                break
+                continue
+            } else if entry.Name == "SERIAL_NUM" {
+                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, sn)
+                continue
+            } else if entry.Name == "HW_MAJOR_REV" {
+                major, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, major)
+                continue
             }
         }
     } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
@@ -284,7 +292,15 @@ func UpdateSn(devName string, sn []byte) (err int) {
         for _, entry := range(EepromTbl) {
             if entry.Name == "SERIAL_NUM" {
                 copy(entry.Value, sn)
-                break
+                continue
+            } else if entry.Name == "MAC_ADDR" {
+                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, mac)
+                continue
+            } else if entry.Name == "HW_MAJOR_REV" {
+                major, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, major)
+                continue
             }
         }
     } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
@@ -450,7 +466,15 @@ func UpdateMajor(devName string, major []byte) (err int) {
         for _, entry := range(EepromTbl) {
             if entry.Name == "HW_MAJOR_REV" {
                 copy(entry.Value, major)
-                break
+                continue
+            } else if entry.Name == "MAC_ADDR" {
+                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, mac)
+                continue
+            } else if entry.Name == "SERIAL_NUM" {
+                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, sn)
+                continue
             }
         }
     }

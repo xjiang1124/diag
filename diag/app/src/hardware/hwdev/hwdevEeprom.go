@@ -1,6 +1,7 @@
 package hwdev
 
 import (
+    "os"
     "strconv"
     "strings"
     "common/cli"
@@ -35,17 +36,23 @@ func EepromUpdateMac(devName string, mac string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
-    mac1 := make([]byte, 6)
 //    data, _ := strconv.Atoi(mac)
-    data, _ := strconv.ParseUint(mac, 16, 64)
-    mac1[0] = byte(data >> 40 & 0xFF)
-    mac1[1] = byte(data >> 32 & 0xFF)
-    mac1[2] = byte(data >> 24 & 0xFF)
-    mac1[3] = byte(data >> 16 & 0xFF)
-    mac1[4] = byte(data >> 8 & 0xFF)
-    mac1[5] = byte(data & 0xFF)
+    if os.Getenv("CARD_TYPE") == "MTP" {
+        mac0 := make([]byte, 12)
+        copy(mac0, []byte(mac))
+        err = eeprom.UpdateMac(devName, mac0)
+    } else {
+        mac1 := make([]byte, 6)
+        data, _ := strconv.ParseUint(mac, 16, 64)
+        mac1[0] = byte(data >> 40 & 0xFF)
+        mac1[1] = byte(data >> 32 & 0xFF)
+        mac1[2] = byte(data >> 24 & 0xFF)
+        mac1[3] = byte(data >> 16 & 0xFF)
+        mac1[4] = byte(data >> 8 & 0xFF)
+        mac1[5] = byte(data & 0xFF)
+        err = eeprom.UpdateMac(devName, mac1)
+    }
 
-    err = eeprom.UpdateMac(devName, mac1)
     if err != errType.SUCCESS {
         return
     }
