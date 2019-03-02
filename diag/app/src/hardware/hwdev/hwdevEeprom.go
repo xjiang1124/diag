@@ -158,6 +158,25 @@ func EepromUpdateDate(devName string, date string) (err int) {
     return
 }
 
+func EepromUpdateMajor(devName string, major string) (err int) {
+
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    major1 := make([]byte, 2)
+    copy(major1, []byte(major))
+    err = eeprom.UpdateMajor(devName, major1)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    err = eeprom.ProgEeprom(devName)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
 func EepromUpdate(devName string, mac string, sn string) (err int) {
 //    var i2cif i2cinfo.I2cInfo
 

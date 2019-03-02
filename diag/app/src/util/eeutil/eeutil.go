@@ -53,8 +53,9 @@ func main() {
     pnPtr      := flag.String("pn",     "",             "Part number")
     mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",          "Display specific eeprom field")
-    dumpPtr  	:= flag.Bool ("dump", 	false,          "Dump FRU")
-    uutPtr      := flag.String("uut",  "UUT_NONE", 		"Target UUT")
+    dumpPtr    := flag.Bool ("dump", 	false,          "Dump FRU")
+    uutPtr     := flag.String("uut",  "UUT_NONE", 		"Target UUT")
+    majorPtr   := flag.String("maj",     "",            "Hardware mayor reversion")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -64,6 +65,7 @@ func main() {
     date := strings.ToUpper(*mfgDatePtr)
     field := strings.ToUpper(*fieldPtr)
     uut := strings.ToUpper(*uutPtr)
+    major := strings.ToUpper(*majorPtr)
 
     lock, _ := hwinfo.PreUutSetup(uut)
     
@@ -106,6 +108,10 @@ func main() {
         }
         if date != "" {
             hwdev.EepromUpdateDate(devName, date)
+            misc.SleepInUSec(500000)
+        }
+        if major != "" {
+            hwdev.EepromUpdateMajor(devName, major)
             misc.SleepInUSec(500000)
         }
         if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {

@@ -438,6 +438,26 @@ func UpdateDate(devName string, str string) (err int) {
     return
 }
 
+func UpdateMajor(devName string, major []byte) (err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+    
+    if CardType == "MTP" {
+        for _, entry := range(EepromTbl) {
+            if entry.Name == "HW_MAJOR_REV" {
+                copy(entry.Value, major)
+                break
+            }
+        }
+    }
+    
+    return
+}
+
 func DispEeprom(devName string, field string) (err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
