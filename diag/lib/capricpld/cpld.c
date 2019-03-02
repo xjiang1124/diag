@@ -557,9 +557,10 @@ int Mdio_smi_wr(uint8_t addr, uint16_t data, uint8_t phy)
 	return mdio_smi_wr(addr, data, phy);
 }
 
-static void cap_counter(uint8_t port)
+void Cap_counter(uint8_t port)
 {
 	uint16_t data_lo, data_hi;
+	port = port + 1;
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
