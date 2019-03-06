@@ -2,13 +2,13 @@ NAPLES100:
     CPLD_FILE: "/home/diag/naples100_cpld_rev8.bin"
     VRM_FILE:  "/home/diag/naples100_vrm_rev0.bin"
     VRM_CKSUM: 0x55AA
-    QSPI_FILE: "/home/diag/naples100_diagfw_021419.tar"
+    QSPI_FILE: "/home/diag/naples_diagfw_030519.tar"
     EMMC_FILE: "/home/diag/naples100_fw_121818.tar"
 
 NAPLES25:
     CPLD_FILE: "/home/diag/naples25_cpld_rev1_02262019.bin"
     VRM_FILE:  "/home/diag/naples25_vrm_rev0.bin"
     VRM_CKSUM: 0x55AA
-    QSPI_FILE: "/home/diag/naples25_diagfw_021419.tar"
+    QSPI_FILE: "/home/diag/naples_diagfw_030519.tar"
     EMMC_FILE: "/home/diag/naples25_fw_121818.tar"
 

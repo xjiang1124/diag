@@ -295,7 +295,7 @@ class nic_con:
             else:
                 self.uart_session_cmd(session, cmd_pre)
                 self.uart_session_cmd(session, cmd_mac)
-                self.uart_session_cmd(session, "sysinit.sh classic hw", 15)
+                self.uart_session_cmd(session, "sysinit.sh classic hw diag", 15)
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)

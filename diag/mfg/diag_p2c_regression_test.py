@@ -115,7 +115,8 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
                     nic_test_err_msg_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG_RE.format(slot, sn, dsp, test)
                     err_msg_match = re.findall(nic_test_err_msg_reg_exp, buf)
                     if err_msg_match:
-                        report_body += "            [* Error Message *]: {:s}\n".format(err_msg_match[0])
+                        for err_msg in err_msg_match:
+                            report_body += "             [* Error Message *]: {:s}\n".format(err_msg)
                 report_body += "\n"
                 ret = False
 

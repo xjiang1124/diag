@@ -89,10 +89,10 @@ class MTP_Const:
     MFG_TEMP_CHECK_INTERVAL = 10
 
     # MFG moduling parameters
-    MFG_MODEL_EDVT_HIGH_FAN_SPD = 40
+    MFG_MODEL_EDVT_HIGH_FAN_SPD = 90
     MFG_MODEL_EDVT_LOW_FAN_SPD = 40
-    MFG_MODEL_EDVT_HIGH_TEMP = 22
-    MFG_MODEL_EDVT_LOW_TEMP = 0
+    MFG_MODEL_EDVT_HIGH_TEMP = 50
+    MFG_MODEL_EDVT_LOW_TEMP = 22
     MFG_MODEL_TEMP_SOAK_TIMEOUT = 1
 
 
@@ -110,6 +110,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*txt"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
+    ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
     DIAG_MFG_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"

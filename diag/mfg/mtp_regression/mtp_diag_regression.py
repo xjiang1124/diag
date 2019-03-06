@@ -266,6 +266,7 @@ def main():
                              dbg_mode = verbosity)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to connect MTP Chassis")
+        mtp_mgmt_ctrl.mtp_enter_user_ctrl()
         mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
         return
 
@@ -303,6 +304,18 @@ def main():
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Sanity Check Failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
         return
+
+    # Wait the Chamber temperature, if HT or LT is set
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
+    rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
+    if not rdy:
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Regression Test Ambient Temperature Check Failed")
+        mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
+        return
+    # get the inlet temperature info
+    env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}".format(env_temp))
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
     # load the diag test config
     naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml"
@@ -361,18 +374,6 @@ def main():
         return
     else:
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup Complete\n", level=0)
-
-    # Wait the Chamber temperature, if HT or LT is set
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
-    rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
-    if not rdy:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Regression Test Ambient Temperature Check Failed")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
-        return
-    # get the inlet temperature info
-    env_temp = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
-    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet Temperature: {:2.2f}".format(env_temp))
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
     if skip_test:
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(nic_key, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
@@ -543,6 +544,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
                 elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
+                    mtp_mgmt_ctrl.mtp_enter_user_ctrl()
                     if stop_on_err:
                         naples25_nic_list.remove(slot)
                     if nic_key not in fail_nic_list:
@@ -556,6 +558,11 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
                     if dsp == "ASIC" and test == "L1":
                         mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                        err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                        for err_msg in err_msg_list:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+                        if ret == "TIMEOUT":
+                            mtp_mgmt_ctrl.mtp_enter_user_ctrl()
                     if stop_on_err:
                         naples25_nic_list.remove(slot)
                     if nic_key not in fail_nic_list:
@@ -591,6 +598,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
                 elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
+                    mtp_mgmt_ctrl.mtp_enter_user_ctrl()
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list:
@@ -604,6 +612,11 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
                     if dsp == "ASIC" and test == "L1":
                         mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                        err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                        for err_msg in err_msg_list:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+                        if ret == "TIMEOUT":
+                            mtp_mgmt_ctrl.mtp_enter_user_ctrl()
                     if stop_on_err:
                         naples100_nic_list.remove(slot)
                     if nic_key not in fail_nic_list:

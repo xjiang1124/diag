@@ -16,6 +16,8 @@ from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
+from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
+from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
 from libmfg_cfg import MFG_NAPLES100_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_CPLD_VERSION
@@ -29,6 +31,7 @@ from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
+from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MTP_Const
 from libdefs import NIC_Status
@@ -923,8 +926,8 @@ class mtp_ctrl():
             self.cli_log_err("VRM test timeout")
             rc &= False
 
+        rc &= self.mtp_cpld_test()
         #rc &= self.mtp_inlet_sensor_test()
-
         return rc
 
 
@@ -1133,6 +1136,11 @@ class mtp_ctrl():
 
 
     def mtp_diag_init(self, naples100_test_db):
+        cmd = "rm -f {:s}".format(MTP_DIAG_Path.ONBOARD_ASIC_LOG_FILES)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to remove previous ASIC test logfile", level=0)
+            return False
+
         cmd = "cd ~/diag/python/infra/dshell"
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to Init DiagSP", level=0)
@@ -1251,6 +1259,26 @@ class mtp_ctrl():
             #    return False
         self.cli_log_inf("Soaking process complete, current inlet reading is {:2.2f}".format(inlet))
 
+        return True
+
+
+    def mtp_cpld_test(self):
+        cpld_ver_list = self.mtp_get_hw_version()
+        if not cpld_ver_list:
+            self.cli_log_err("Unable to retrieve MTP CPLD version")
+            self.cli_log_err("MTP CPLD test failed")
+            return False
+
+        if cpld_ver_list[0] != MFG_MTP_CPLD_IO_VERSION:
+            self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0]), MFG_MTP_CPLD_IO_VERSION)
+            self.cli_log_err("MTP CPLD test failed")
+            return False
+
+        if cpld_ver_list[1] != MFG_MTP_CPLD_JTAG_VERSION:
+            self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1]), MFG_MTP_CPLD_JTAG_VERSION)
+            self.cli_log_err("MTP CPLD test failed")
+            return False
+        self.cli_log_inf("MTP CPLD test passed")
         return True
 
 
@@ -1727,6 +1755,22 @@ class mtp_ctrl():
         return
 
 
+    # return list of error message
+    def mtp_mgmt_retrieve_nic_l1_err(self, sn):
+        err_msg_list = list()
+        path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
+        logfile_exp = r"cap_l1_screen_board_{:s}.*log".format(sn)
+        for filename in os.listdir(path):
+            if re.match(logfile_exp, filename):
+                with open(os.path.join(path, filename), 'r') as f:
+                    for line in f:
+                        if "ERROR ::" in line:
+                            err_msg = line.replace('\n', '')
+                            err_msg = err_msg[err_msg.find('ERROR'):]
+                            err_msg_list.append(err_msg)
+        return err_msg_list
+
+
     def mtp_init_nic_pwr_status(self, slot):
         self.cli_log_slot_inf(slot, "Check NIC Power Status")
         cmd = "inventory -ps -slot={:d}".format(slot+1)
@@ -1814,9 +1858,6 @@ class mtp_ctrl():
 
     def mtp_nic_mini_init(self, slot):
         if not self.mtp_nic_con_baudrate_init(slot):
-            return False
-
-        if not self.mtp_mgmt_set_nic_core_space(slot):
             return False
 
         if not self.mtp_nic_mgmt_init(slot):
@@ -2099,40 +2140,6 @@ class mtp_ctrl():
     def mtp_set_nic_scan_mac(self, slot, mac):
         self.cli_log_slot_inf(slot, "Set Scan MAC to {:s}".format(mac), level=0)
         self._nic_scan_mac_list[slot] = mac
-
-
-    def mtp_mgmt_set_nic_core_space(self, slot):
-        self.cli_log_slot_inf(slot, "Set NIC core file space")
-        self._mgmt_handle.sendline("con_connect.sh {:d}".format(slot+1))
-        try:
-            self._mgmt_handle.expect_exact("Terminal ready")
-        except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Connect NIC Console failed")
-            return False
-        self._mgmt_handle.sendline("")
-        try:
-            self._mgmt_handle.expect_exact("#")
-        except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Connect NIC Console failed")
-            return False
-
-        self._mgmt_handle.sendline("sed -i -e 's/-p %p -e %e/-p %p -e %e -m 1/g' /nic/tools/sysinit.sh")
-        try:
-            self._mgmt_handle.expect_exact("#")
-        except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Failed to execute command on NIC console")
-            return False
-
-        self._mgmt_handle.sendcontrol('a')
-        self._mgmt_handle.sendcontrol('x')
-        try:
-            self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Disconnect NIC Console failed")
-            return False
-
-        self.cli_log_slot_inf(slot, "Set NIC core space complete")
-        return True
 
 
     def mtp_mgmt_set_nic_diag_boot(self, slot):
