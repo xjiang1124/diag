@@ -37,7 +37,7 @@ func EepromUpdateMac(devName string, mac string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
 //    data, _ := strconv.Atoi(mac)
-    if os.Getenv("CARD_TYPE") == "MTP" {
+    if os.Getenv("CARD_TYPE") == "MTP" && eeprom.CardType == "MTP" {
         mac0 := make([]byte, 12)
         copy(mac0, []byte(mac))
         err = eeprom.UpdateMac(devName, mac0)
