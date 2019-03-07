@@ -11,7 +11,7 @@ import (
     "device/cpld/naples100Cpld"
     "device/cpld/naples25Cpld"
     "device/cpld/naplesMtpCpld"
-    "device/cpld/mtpCpld"
+//    "device/cpld/mtpCpld"
     "hardware/hwdev"
 )
 
@@ -40,7 +40,7 @@ func present() (err int) {
     var presentStr string
 
     maxUut := 10
-    prsntNoneStr := "UUT_NONE"
+//    prsntNoneStr := "UUT_NONE"
     for i := 1; i <= maxUut; i++ {
         uutName := "UUT_"+strconv.Itoa(i)
         data, present := uutPresent(uutName)
@@ -56,22 +56,23 @@ func present() (err int) {
             default:
                 presentStr = "Unknown"
             }
-        } else {
-            cli.DisableVerbose()
-            var inst uint
-            if(i > 6) {
-                inst = 1
-            } else {
-                inst = 0
-            }
-            pcs, _ := mtpCpld.MvlRead(inst, uint((i-1)%5 + 0x10), 0x1)
-            if ((pcs & 0xC000) > 0) && (pcs != 0xffff){
-                presentStr = "PRESENT"
-            } else {
-                presentStr = prsntNoneStr
-            }
-            cli.EnableVerbose()
         }
+//        else {
+//            cli.DisableVerbose()
+//            var inst uint
+//            if(i > 5) {
+//                inst = 1
+//            } else {
+//                inst = 0
+//            }
+//            pcs, _ := mtpCpld.MvlRead(inst, uint((i-1)%5 + 0x10), 0x1)
+//            if ((pcs & 0xC000) > 0) && (pcs != 0xffff){
+//                presentStr = "PRESENT"
+//            } else {
+//                presentStr = prsntNoneStr
+//            }
+//            cli.EnableVerbose()
+//        }
 
         cli.Printf("i", "UUT_%-15d     %s\n", i, presentStr)
     }
