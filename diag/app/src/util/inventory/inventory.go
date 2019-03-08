@@ -40,7 +40,7 @@ func present() (err int) {
     var presentStr string
 
     maxUut := 10
-//    prsntNoneStr := "UUT_NONE"
+    prsntNoneStr := "UUT_NONE"
     for i := 1; i <= maxUut; i++ {
         uutName := "UUT_"+strconv.Itoa(i)
         data, present := uutPresent(uutName)
@@ -56,8 +56,8 @@ func present() (err int) {
             default:
                 presentStr = "Unknown"
             }
-        }
-//        else {
+        } else {
+            presentStr = prsntNoneStr
 //            cli.DisableVerbose()
 //            var inst uint
 //            if(i > 5) {
@@ -72,7 +72,7 @@ func present() (err int) {
 //                presentStr = prsntNoneStr
 //            }
 //            cli.EnableVerbose()
-//        }
+        }
 
         cli.Printf("i", "UUT_%-15d     %s\n", i, presentStr)
     }
