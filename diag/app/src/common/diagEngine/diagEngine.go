@@ -96,7 +96,7 @@ func DspInfraInit() (err error) {
     // Init cli
     cli.Init("log_"+cardInfo.DspName+".txt", config.OutputMode)
 
-    registerDSP()
+    registerDSP(0)
 
     return err
 }
@@ -123,7 +123,7 @@ func sepArgList(argList []string, engList []string) (engArgList []string, dspArg
     return engArgList, dspArgList
 }
 
-func registerDSP () {
+func registerDSP (timeout int) {
     keyDspFmt := "EXP:DSP:%s:%s:%s"
     keyCardFmt := "EXP:CARD:%s:%s"
 
@@ -146,34 +146,11 @@ func registerDSP () {
     // Set NON-EXPIRATION keys to support missing DSP/Card 
     keyDsp = fmt.Sprintf("NON"+keyDspFmt, cardInfo.CardName, cardInfo.CardType, cardInfo.DspName)
     keyCard = fmt.Sprintf("NON"+keyCardFmt, cardInfo.CardName, cardInfo.CardType)
-    cli.Println("i", "P200", keyDsp)
 
     // Create key entries
     _, err = RedisClient.Set(keyDsp, 1, 0).Result()
     CheckRedisErr(err)
     _, err = RedisClient.Set(keyCard, 1, 0).Result()
-    CheckRedisErr(err)
-}
-
-func renewDSP (timeout int) {
-    keyDspFmt := "EXP:DSP:%s:%s:%s"
-    keyCardFmt := "EXP:CARD:%s:%s"
-
-    keyDsp := fmt.Sprintf(keyDspFmt, cardInfo.CardName, cardInfo.CardType, cardInfo.DspName)
-    keyCard := fmt.Sprintf(keyCardFmt, cardInfo.CardName, cardInfo.CardType)
-
-    // Create key entries
-    // Without this step, if key is expired for some reason, expire will not recover the key
-    _, err := RedisClient.Set(keyDsp, 1, 0).Result()
-    CheckRedisErr(err)
-    _, err = RedisClient.Set(keyCard, 1, 0).Result()
-    CheckRedisErr(err)
-
-    // Set expiration
-    tout := time.Second * time.Duration(timeout+defaultTimeout*2)
-    _, err = RedisClient.Expire(keyDsp, tout).Result()
-    CheckRedisErr(err)
-    _, err = RedisClient.Expire(keyCard, tout).Result()
     CheckRedisErr(err)
 }
 
@@ -243,7 +220,7 @@ func DspInfraMainLoop() (err error) {
         // Update queue status
         _, err = RedisClient.RPop(keyQueSts).Result()
 
-        renewDSP(0)
+        registerDSP(0)
         testID, err = RedisClient.BRPopLPush(keyQue, keyQueSts, time.Second * time.Duration(30)).Result()
         CheckRedisErr(err)
 
@@ -337,7 +314,7 @@ func DspInfraMainLoop() (err error) {
         // Support multiple iterations on test/cmd
         for ite := 0; ite < *itePtr; ite++ {
             // Renew DSP expiration based on timeout of the test
-            renewDSP(*timeoutPtr)
+            registerDSP(*timeoutPtr)
 
             cli.Println("i", "=== TEST STARTED === testID:", testID, "testName:", testName)
             cli.Println("i", "Test run #", ite)

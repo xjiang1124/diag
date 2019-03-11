@@ -101,27 +101,50 @@ fi
 # Prepare ASIC files
 echo "--------------------"
 echo "Preparing ASIC files"
-# For amd64 only
+DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
+SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
+ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$arch
+
 if [[ $arch == "amd64" ]]
 then
-    DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
     DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
-    ASIC_PATH=/vol/hw/diag/diag_repo/asic/$arch
-    #ASIC_PATH=/vol/hw/diag/diag_zmq/diag/asic/
-    SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/$arch
-    
+
     mkdir -p $DIAG_ASIC_PATH
     mkdir -p $DIAG_ASIC_IMG_PATH
-    cd $TOP_DIR/asic/$arch/
-    cd $TOP_DIR/asic/$arch/
-    rsync -r $ASIC_PATH/* $DIAG_ASIC_PATH/
-    
     mkdir -p $DIAG_ASIC_IMG_PATH
+
+    echo "Update ASIC lib"
+    rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+    
+    echo "Copy ASIC lib to $arch image"
     rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
 
+    echo "Copy snake CFG to $arch image"
     rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
 
 fi
+
+if [[ $arch == "arm64" ]]
+then
+    DIAG_ASIC_IMG_PATH=$BUILD_DIR/temp/$arch/nic_arm
+    ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/nic
+    DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
+   
+    mkdir -p $ARM_ASIC_PATH
+    mkdir -p $DIAG_ASIC_PATH
+
+    echo "Update ASIC lib"
+    rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+
+    echo "Copy ASIC lib to $arch image"
+    rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
+
+    echo "Copy snake CFG to $arch image"
+    rsync -r $SNAKE_CFG_PATH/ $DIAG_ASIC_IMG_PATH
+
+    tar czf $IMG_DIR/nic_arm.tar -C $BUILD_DIR/temp/$arch/ nic_arm/
+fi
+
 echo "ASIC file -- Done"
 
 # Prepare image
