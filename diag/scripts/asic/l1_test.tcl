@@ -24,7 +24,8 @@ puts "card type: $card_type; UUT: $uut"
 
 puts "brd_num: $brd_num; slot_id: $slot_id"
 diag_open_j2c_if 10 $slot_id
-set err_cnt [cap_l1_screen $brd_num 10 $slot_id 0 "" 0 1 1 1 1 833.0 $int_lpbk]
+
+set err_cnt [cap_l1_screen $brd_num 10 $slot_id 0 "" 0 1 1 1 1 $core_freq $int_lpbk]
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {
