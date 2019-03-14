@@ -137,10 +137,15 @@ then
     rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
 
     echo "Copy ASIC lib to $arch image"
-    rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
+    cp -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
 
     echo "Copy snake CFG to $arch image"
-    rsync -r $SNAKE_CFG_PATH/ $DIAG_ASIC_IMG_PATH
+    cp -r $SNAKE_CFG_PATH/* $DIAG_ASIC_IMG_PATH
+
+    cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    cp $TOP_DIR/diag/python/regression/arm_nic/* $DIAG_ASIC_IMG_PATH/
+    cp $TOP_DIR/diag/python/regression/scripts/nic_config.sh $DIAG_ASIC_IMG_PATH/
+    cp $TOP_DIR/diag/scripts/asic/cap_snake*arm.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
 
     tar czf $IMG_DIR/nic_arm.tar -C $BUILD_DIR/temp/$arch/ nic_arm/
 fi

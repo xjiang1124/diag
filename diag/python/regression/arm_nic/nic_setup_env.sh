@@ -4,3 +4,8 @@ export ASIC_SRC=$ASIC_LIB_BUNDLE//asic_src
 export ASIC_GEN=$ASIC_LIB_BUNDLE//asic_src
 export LD_LIBRARY_PATH=:$ASIC_LIB:$ASIC_LIB_BUNDLE/depend_libs/nic/hal/third-party/judy/aarch64/lib/:$ASIC_LIB_BUNDLE/depend_libs/tool/toolchain/asic_third_party/lib/:$ASIC_LIB_BUNDLE/depend_libs/nic/hal/third-party/zmq/aarch64/:$ASIC_LIB_BUNDLE/depend_libs/nic/hal/third-party/sknobs/aarch64/lib/
 
+source /data/nic_arm/nic_config.sh
+
+mkdir -p $ASIC_SRC/ip/cosim/library/
+cp $ASIC_LIB_BUNDLE/../init.tcl $ASIC_SRC/ip/cosim/library/
+

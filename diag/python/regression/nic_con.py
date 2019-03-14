@@ -176,15 +176,24 @@ class nic_con:
 
 
     def change_rate_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0, save=False):
+        numRetry = 3
         if orig_rate == tgt_rate:
             print "=== No need to change baud rate ==="
             return 0
 
         session = common.session_start()
-        ret = self.enter_uboot(session, slot, orig_rate)
-        if ret != 0:
+        for i in range(numRetry):
+            print "=== Enter uboot", i, " ==="
+            ret = self.enter_uboot(session, slot, orig_rate)
+
+            if ret == 0:
+                break
+
             common.session_stop(session)
-            return -1
+            if i == numRetry-1:
+                print "=== Failed to enter uboot ==="
+                return -1
+
         time.sleep(15)
 
         ret = self.change_rate_uboot_i(session, orig_rate, tgt_rate, save)
