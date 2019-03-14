@@ -327,8 +327,6 @@ def mfg_expect(session, exp_list, timeout=None):
         idx = session.expect_exact(_exp_list)
 
     if idx == len(exp_list):
-        if not GLB_CFG_MFG_TEST_MODE:
-            session.interact()
         return -1
     else:
         return idx
@@ -343,8 +341,6 @@ def mfg_expect_re(session, exp_list, timeout=None):
         idx = session.expect(_exp_list)
 
     if idx == len(exp_list):
-        if not GLB_CFG_MFG_TEST_MODE:
-            session.interact()
         return -1
     else:
         return idx

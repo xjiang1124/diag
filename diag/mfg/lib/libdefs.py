@@ -113,9 +113,12 @@ class MTP_DIAG_Logfile:
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
-    DIAG_MFG_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"
-    DIAG_MFG_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
-    DIAG_MFG_4C_LOG_DIR = "/mfg_log/NAPLES100/4C/"
+    DIAG_MFG_NAPLES100_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"
+    DIAG_MFG_NAPLES100_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
+    DIAG_MFG_NAPLES100_4C_LOG_DIR = "/mfg_log/NAPLES100/4C/"
+    DIAG_MFG_NAPLES25_DL_LOG_DIR = "/mfg_log/NAPLES25/DL/"
+    DIAG_MFG_NAPLES25_P2C_LOG_DIR = "/mfg_log/NAPLES25/P2C/"
+    DIAG_MFG_NAPLES25_4C_LOG_DIR = "/mfg_log/NAPLES25/4C/"
 
 
 class MTP_DIAG_Path:

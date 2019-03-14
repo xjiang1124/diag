@@ -208,7 +208,7 @@ def main():
 
     # Last stage, NIC will boot up with sw
     if corner == Env_Cond.LTLV:
-        default_sw_boot = False
+        default_sw_boot = True
     else:
         default_sw_boot = False
 
@@ -241,6 +241,9 @@ def main():
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
+
+    # find the mtp capability
+    mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     open_file_track_list = list()
 
@@ -356,11 +359,19 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
 
     if naples100_nic_list:
+        if not mtp_capability & 0x1:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Naples100".format(mtp_capability))
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            return
         naples_diag_cfg_show(NIC_Type.NAPLES100, naples100_test_db, mtp_mgmt_ctrl)
         naples_exec_init_cmd(naples100_test_db, mtp_mgmt_ctrl)
         naples_exec_skip_cmd(naples100_nic_list, naples100_test_db, mtp_mgmt_ctrl)
         naples_exec_param_cmd(naples100_nic_list, naples100_test_db, mtp_mgmt_ctrl)
     if naples25_nic_list:
+        if not mtp_capability & 0x2:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Naples25".format(mtp_capability))
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            return
         naples_diag_cfg_show(NIC_Type.NAPLES25, naples25_test_db, mtp_mgmt_ctrl)
         naples_exec_init_cmd(naples25_test_db, mtp_mgmt_ctrl)
         naples_exec_skip_cmd(naples25_nic_list, naples25_test_db, mtp_mgmt_ctrl)
@@ -684,17 +695,61 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP Naples25 Diag Regression Post Check Complete\n")
 
     # Set the default boot image
-    if default_sw_boot and len(naples100_nic_list + naples25_nic_list) > 0:
-        mtp_mgmt_ctrl.cli_log_inf("Set Default Boot up Image to SW", level=0)
+    if default_sw_boot and len(naples100_nic_list) > 0:
+        # get the absolute file path
+        nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
+        nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
+        naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
+
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic()
-        for slot in naples100_nic_list + naples25_nic_list:
+        for slot in naples100_nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_POST_CHECK", "SWBOOT"), level=0)
             mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
-            mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_POST_CHECK", "SWBOOT", duration), level=0)
-        mtp_mgmt_ctrl.cli_log_inf("Set Default Boot up Image to SW Complete\n", level=0)
+
+            # install EMMC
+            dsp = "DIAG_POST_CHECK"
+            test = "EMMC_PROG"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_install_nic_emmc(slot, naples100_emmc_img_file)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                if stop_on_err:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # set sw boot
+            dsp = "DIAG_POST_CHECK"
+            test = "SW_BOOT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                if stop_on_err:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
         for slot in range(len(nic_prsnt_list)):

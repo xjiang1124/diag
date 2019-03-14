@@ -17,6 +17,7 @@ MTP-001:
     PASSWORD: "lab123"
     ALIAS: "mtp001"
     SLOTS: 10
+    CAPABILITY: 0x2
 
 MTP-003:
     MODE: ""
@@ -37,6 +38,7 @@ MTP-003:
     PASSWORD: "lab123"
     ALIAS: "mtp003"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-004:
     MODE: ""
@@ -57,6 +59,7 @@ MTP-004:
     PASSWORD: "lab123"
     ALIAS: "mtp010"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-100:
     MODE: ""
@@ -77,6 +80,7 @@ MTP-100:
     PASSWORD: "lab123"
     ALIAS: "mtp100"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-101:
     MODE: ""
@@ -97,6 +101,7 @@ MTP-101:
     PASSWORD: "lab123"
     ALIAS: "mtp101"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-102:
     MODE: ""
@@ -117,6 +122,7 @@ MTP-102:
     PASSWORD: "lab123"
     ALIAS: "mtp102"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-111:
     MODE: ""
@@ -137,6 +143,7 @@ MTP-111:
     PASSWORD: "lab123"
     ALIAS: "mtp11"
     SLOTS: 111
+    CAPABILITY: 0x1
 
 MTP-112:
     MODE: ""
@@ -157,6 +164,7 @@ MTP-112:
     PASSWORD: "lab123"
     ALIAS: "mtp112"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-113:
     MODE: ""
@@ -177,6 +185,7 @@ MTP-113:
     PASSWORD: "lab123"
     ALIAS: "mtp113"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-114:
     MODE: ""
@@ -197,6 +206,7 @@ MTP-114:
     PASSWORD: "lab123"
     ALIAS: "mtp114"
     SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-115:
     MODE: ""
@@ -217,3 +227,4 @@ MTP-115:
     PASSWORD: "lab123"
     ALIAS: "mtp115"
     SLOTS: 10
+    CAPABILITY: 0x1

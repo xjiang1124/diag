@@ -11,6 +11,7 @@ import threading
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import Env_Cond
+from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -67,20 +68,21 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     local_test_log_file = "log/{:s}_{:s}_mtp_test.log".format(str(corner), mtp_id)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
 
-    sn_list = list()
     with open(local_test_log_file, 'r') as fp:
         buf = fp.read()
     nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
     nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
     fail_match = re.findall(nic_fail_reg_exp, buf)
     pass_match = re.findall(nic_pass_reg_exp, buf)
-    for slot, sn in fail_match:
-        sn_list.append(sn)
-    for slot, sn in pass_match:
-        sn_list.append(sn)
 
-    for sn in sn_list:
-        nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR + "/" + str(corner) + "/" + sn + "/"
+    for slot, nic_type, sn in fail_match + pass_match:
+        if nic_type == NIC_Type.NAPLES100:
+            nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_4C_LOG_DIR + "/" + str(corner) + "/" + sn + "/"
+        elif nic_type == NIC_Type.NAPLES25:
+            nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_4C_LOG_DIR + "/" + str(corner) + "/" + sn + "/"
+        else:
+            nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_4C_LOG_DIR + "/" + str(corner) + "/" + sn + "/"
+
         cmd = "mkdir -p {:s}".format(nic_log_dir)
         os.system(cmd)
         # copy the onboard logs
@@ -152,7 +154,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
             nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
             match = re.findall(nic_pass_reg_exp, buf)
-            for slot, sn_type, sn in match:
+            for slot, nic_type, sn in match:
                 # init the list
                 if sn not in sn_test_dict.keys():
                     sn_test_dict[sn] = list()

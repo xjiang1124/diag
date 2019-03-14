@@ -21,12 +21,18 @@ def main():
     parser = argparse.ArgumentParser(description="Diag MTP Reload", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--image", help="New MTP image file")
     parser.add_argument("--nic-image", help="New NIC image file")
+    parser.add_argument("--qspi-image", help="New QSPI image file")
+    parser.add_argument("--emmc-image", help="New EMMC image file")
+    parser.add_argument("--cpld-image", help="New CPLD image file")
     parser.add_argument("--reset-nic", help="Reset NIC boot with diag image", action='store_true')
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--mtp", help="MTP ID")
 
     skip_image_update = True
     nic_image_file = None
+    qspi_image_file = None
+    emmc_image_file = None
+    cpld_image_file = None
     apc = False
     mtp_id = None
     reset_nic = False
@@ -41,6 +47,12 @@ def main():
         skip_image_update = False
     if args.nic_image:
         nic_image_file = args.nic_image
+    if args.emmc_image:
+        emmc_image_file = args.emmc_image
+    if args.qspi_image:
+        qspi_image_file = args.qspi_image
+    if args.cpld_image:
+        cpld_image_file = args.cpld_image
     if args.reset_nic:
         reset_nic = True
 
@@ -133,6 +145,18 @@ def main():
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         mtp_mgmt_ctrl.cli_log_inf("Unpack NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)), level=0)
 
+    for image_file in [emmc_image_file, qspi_image_file, cpld_image_file]:
+        if image_file:
+            mtp_mgmt_ctrl.cli_log_inf("Copy NIC image: {:s}".format(image_file), level=0)
+            mtp_ip_addr = mtp_mgmt_cfg[0]
+            mtp_usrid = mtp_mgmt_cfg[1]
+            mtp_passwd = mtp_mgmt_cfg[2]
+            image_dir = "/home/diag/"
+            if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, image_file, image_dir):
+                libmfg_utils.sys_exit(mtp_cli_id_str + "Copy NIC image: {:s} failed".format(image_file))
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("Copy NIC image: {:s} complete".format(image_file), level=0)
+
     mtp_mgmt_ctrl.mtp_power_cycle()
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
@@ -165,8 +189,6 @@ def main():
         # init the nic diag environment
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
-                if not mtp_mgmt_ctrl.mtp_nic_mini_init(slot):
-                    continue
                 if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
                     continue
                 if not mtp_mgmt_ctrl.mtp_power_off_single_nic(slot):

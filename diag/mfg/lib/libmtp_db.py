@@ -24,6 +24,7 @@ class mtp_db():
         self._ip = dict()
         self._userid = dict()
         self._passwd = dict()
+        self._capability = dict()
         self._mtpid_list = list()
 
         mtp_cfg = libmfg_utils.load_cfg_from_yaml(mtp_cfg_file)
@@ -51,6 +52,8 @@ class mtp_db():
             self._ip[mtpid] = mtp_cfg[mtpid]["IP"]
             self._userid[mtpid] = mtp_cfg[mtpid]["USERID"]
             self._passwd[mtpid] = mtp_cfg[mtpid]["PASSWORD"]
+
+            self._capability[mtpid] = mtp_cfg[mtpid]["CAPABILITY"]
 
             self._mtpid_list.append(mtpid)
 
@@ -108,4 +111,10 @@ class mtp_db():
         mgmt_cfg.append(self._passwd[mtpid])
 
         return mgmt_cfg
+
+    def get_mtp_capability(self, mtpid):
+        if not self.mtpid_valid(mtpid):
+            libmfg_utils.sys_exit("Invalid mtpid: " + mtpid)
+
+        return self._capability[mtpid]
 
