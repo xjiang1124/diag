@@ -90,10 +90,11 @@ class nic_test:
         #session.sendline("./diag.exe cap_snake.arm.test.tcl 2>&1 > snake.log &")
         if mode == "hbm":
             print "--- hbm ---"
-            session.sendline("./diag.exe cap_snake.arm.tcl 2>&1 > snake.log &")
+            session.sendline("./diag.exe snake.h.a.tcl 2>&1 > snake.log &")
         else:
             print "--- pcie ---"
-            session.sendline("./diag.exe cap_snake.pcie.arm.tcl 2>&1 > snake.log &")
+            #session.sendline("./diag.exe cap_snake.pcie.arm.tcl 2>&1 > snake.log &")
+            session.sendline("./diag.exe snake.p.a.tcl 2>&1 > snake.log &")
 
         session.sendline("\r")
         self.nic_con.uart_session_stop(session)
