@@ -1832,7 +1832,7 @@ class mtp_ctrl():
         return err_msg_list
 
 
-    def mtp_init_nic_pwr_status(self, slot):
+    def mtp_mgmt_check_nic_pwr_status(self, slot):
         self.cli_log_slot_inf(slot, "Check NIC Power Status")
         cmd = "inventory -ps -slot={:d}".format(slot+1)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1849,6 +1849,7 @@ class mtp_ctrl():
             self.dump_err_msg(self._mgmt_handle.before)
             return False
 
+        self.cli_log_slot_inf(slot, "Check NIC Power Status passed")
         return True
 
 
@@ -1941,9 +1942,6 @@ class mtp_ctrl():
 
     def mtp_nic_diag_init(self, slot = None):
         if slot != None:
-            if not self.mtp_init_nic_pwr_status(slot):
-                return False
-
             if not self.mtp_nic_mini_init(slot):
                 return False
 
@@ -2343,6 +2341,11 @@ class mtp_ctrl():
             self._mgmt_handle.expect_exact(self._mgmt_prompt)
             match = re.findall(r"(valid bit 0x1, +error 0x00)", self._mgmt_handle.before)
             if match:
+                return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
+        elif intf == "NIC_POWER":
+            if self.mtp_mgmt_check_nic_pwr_status(slot):
                 return "SUCCESS"
             else:
                 return MTP_DIAG_Error.NIC_DIAG_FAIL

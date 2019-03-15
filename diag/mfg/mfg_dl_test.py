@@ -405,6 +405,29 @@ def main():
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             dsp = "DL_PRE_CHECK"
+            test = "NIC_POWER"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        if key in fail_nic_list:
+            continue
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) == "YES":
+            dsp = "DL_PRE_CHECK"
             test = "NIC_DIAG_BOOT"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)

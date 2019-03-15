@@ -228,3 +228,110 @@ MTP-115:
     ALIAS: "mtp115"
     SLOTS: 10
     CAPABILITY: 0x1
+
+MTP-200:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "1"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.21"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp200"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-201:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "1"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.28"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp201"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-202:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "1"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.34"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp202"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-203:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "1"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.39"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp203"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-204:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "1"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.51"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp204"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+
