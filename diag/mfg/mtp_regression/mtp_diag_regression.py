@@ -421,12 +421,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_PRE_CHECK", intf, duration), level=0)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
-                if stop_on_err:
-                    if slot in naples100_nic_list:
-                        naples100_nic_list.remove(slot)
-                if intf == "NIC_STATUS":
-                    if slot in naples100_nic_list:
-                        naples100_nic_list.remove(slot)
+                if slot in naples100_nic_list:
+                    naples100_nic_list.remove(slot)
                 if nic_key not in fail_nic_list:
                     fail_nic_list.append(nic_key)
                     fail_sn_list.append(sn)
@@ -449,12 +445,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_PRE_CHECK", intf, duration), level=0)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
-                if stop_on_err:
-                    if slot in naples25_nic_list:
-                        naples25_nic_list.remove(slot)
-                if intf == "NIC_STATUS":
-                    if slot in naples25_nic_list:
-                        naples25_nic_list.remove(slot)
+                if slot in naples25_nic_list:
+                    naples25_nic_list.remove(slot)
                 if nic_key not in fail_nic_list:
                     fail_nic_list.append(nic_key)
                     fail_sn_list.append(sn)
@@ -704,6 +696,7 @@ def main():
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic()
         for slot in naples100_nic_list:
+            nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
 

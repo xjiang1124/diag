@@ -1222,7 +1222,7 @@ class mtp_ctrl():
         # set nic voltage margin
         if vmarg != 0:
             for slot in range(self._slots):
-                if self._nic_prsnt_list[slot]:
+                if self._nic_prsnt_list[slot] and self._nic_sta_list[slot] == NIC_Status.NIC_STA_OK:
                     if not self.mtp_set_nic_vmarg(slot, vmarg):
                         self.cli_log_err("MTP chassis voltage margin set failed\n", level = 0)
                         return False
