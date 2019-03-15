@@ -28,11 +28,11 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
-        session.timeout = timeout
         # Change baud rate to 9600
         self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
 
         session = common.session_start()
+        session.timeout = timeout
         self.nic_con.uart_session_start(session, self.baud_rate)
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
         self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
@@ -58,10 +58,10 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
-        session.timeout = timeout
         self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
 
         session = common.session_start()
+        session.timeout = timeout
         self.nic_con.uart_session_start(session, self.baud_rate)
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
         self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
