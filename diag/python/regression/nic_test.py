@@ -5,6 +5,7 @@ import pexpect
 import re
 import sys
 import time
+from collections import OrderedDict
 
 sys.path.append("../lib")
 import common
@@ -21,7 +22,6 @@ class nic_test:
     def setup_env(self, slot=0, mgmt=False, timeout=30):
         print "=== Starting snake on slot {} ===".format(slot)
 
-        session = common.session_start()
 
         ret = 0
         if slot == 0 or slot > 10:
@@ -29,23 +29,16 @@ class nic_test:
             sys.exit(0)
 
         session.timeout = timeout
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
-        time.sleep(1)
-        cmd = "turn_on_slot.sh off {}".format(slot)
-        common.session_cmd(session, cmd) 
-        cmd = "turn_on_slot.sh on {}".format(slot)
-        common.session_cmd(session, cmd) 
-
-        # Wait for nic to boot
-        time.sleep(15)
-
         # Change baud rate to 9600
-        self.nic_con.change_rate(self.baud_rate_org, self.baud_rate, slot)
+        self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
 
+        session = common.session_start()
         self.nic_con.uart_session_start(session, self.baud_rate)
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
         self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
+        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
+        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
+        self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
         self.nic_con.uart_session_stop(session)
         common.session_stop(session)
 
@@ -59,7 +52,6 @@ class nic_test:
     def snake_start(self, slot=0, mode="hbm", timeout=30):
         print "=== Starting snake on slot {} ===".format(slot)
 
-        session = common.session_start()
 
         ret = 0
         if slot == 0 or slot > 10:
@@ -67,20 +59,9 @@ class nic_test:
             sys.exit(0)
 
         session.timeout = timeout
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
-        time.sleep(1)
-        cmd = "turn_on_slot.sh off {}".format(slot)
-        common.session_cmd(session, cmd) 
-        cmd = "turn_on_slot.sh on {}".format(slot)
-        common.session_cmd(session, cmd) 
+        self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
 
-        # Wait for nic to boot
-        time.sleep(15)
-
-        # Change baud rate to 9600
-        self.nic_con.change_rate(self.baud_rate_org, self.baud_rate, slot)
-
+        session = common.session_start()
         self.nic_con.uart_session_start(session, self.baud_rate)
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
         self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
@@ -135,26 +116,42 @@ class nic_test:
             print "No nic specified -- Exit"
             sys.exit(0)
 
+        test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            self.snake_start(int(slot), mode)
+            #self.snake_start(int(slot), mode)
+            test_result[slot] = "No Result"
 
         print "Wait for {}s before checking result".format(wait_time)
-        time.sleep(wait_time)
+        #time.sleep(wait_time)
 
+        done_count = 0
         for retry_idx in range(self.num_retry):
             print "Checking result:", retry_idx
             for slot in nic_list:
+                if test_result[slot] != "No Result":
+                    continue
+
                 test_sts = self.snake_check(int(slot))
-                if test_sts == 0 or test_sts == 1:
-                    nic_list.remove(slot)
                 if test_sts == 0:
                     print "=== Snake Result at Slot {}: Passed".format(slot)
+                    test_result[slot] = "PASS"
+                    done_count = done_count + 1
                 if test_sts == 1:
                     print "=== Snake Result at Slot {}: Failed".format(slot)
-            if len(nic_list) == 0:
+                    test_result[slot] = "FAIL"
+                    done_count = done_count + 1
+
+            if done_count == len(nic_list):
                 break
             time.sleep(30)
+
+        # Print result
+        print "\n====== TEST RESULT: {:<5} {:<5} ======".format("Snake", mode.upper())
+        result_fmt = "Slot {:<2}: {:<5}"
+        for slot, sts in test_result.items():
+            print result_fmt.format(slot, sts)
+        print "======================================"
 
 
 

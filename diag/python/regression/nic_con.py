@@ -32,6 +32,7 @@ class nic_con:
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Can not connect to NIC on UART!"
             return -1
+        return 0
 
     def uart_session_stop(self, session):
         session.timeout = 15
@@ -84,33 +85,40 @@ class nic_con:
             print "Invalid slot number:", slot
             sys.exit(0)
 
+        numRetry = 3
+
         session.timeout = timeout
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         time.sleep(1)
-        cmd = "turn_on_slot.sh off {}".format(slot)
-        common.session_cmd(session, cmd) 
-        cmd = "turn_on_slot.sh on {}".format(slot)
-        common.session_cmd(session, cmd) 
-        #time.sleep(2)
-        for i in range(10):
-            cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
-            session.sendline(cmd)
-            session.expect("Terminal ready")
-            #time.sleep(1)
-            session.timeout = 3
-            try:
-                print "C+C", i
-                #session.send("\r")
-                session.send(chr(3))
-                session.expect("Capri# ")
-                time.sleep(5)
-                self.uart_session_stop(session)
-                ret = 0
+        for retry in range(3):
+            print "Trying enter uboot {}".format(retry)
+            cmd = "turn_on_slot.sh off {}".format(slot)
+            common.session_cmd(session, cmd) 
+            cmd = "turn_on_slot.sh on {}".format(slot)
+            common.session_cmd(session, cmd) 
+            #time.sleep(2)
+            for i in range(10):
+                cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
+                session.sendline(cmd)
+                session.expect("Terminal ready")
+                #time.sleep(1)
+                session.timeout = 3
+                try:
+                    print "C+C", i
+                    #session.send("\r")
+                    session.send(chr(3))
+                    session.expect("Capri# ")
+                    time.sleep(5)
+                    self.uart_session_stop(session)
+                    ret = 0
+                    break
+                except pexpect.TIMEOUT:
+                    ret = -1
+                    self.uart_session_stop(session)
+            if ret == 0:
                 break
-            except pexpect.TIMEOUT:
-                ret = -1
-                self.uart_session_stop(session)
+
         if ret == -1:
             print "=== Failed to enter uboot ==="
         return ret
@@ -277,6 +285,47 @@ class nic_con:
 
         self.uart_session_stop(session)
         common.session_stop(session)
+
+    def change_rate_pw(self, orig_rate=115200, tgt_rate=9600, slot=0):
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        numRetry = 3
+
+        session = common.session_start()
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+
+        for i in range(numRetry):
+            print "=== Start Uart Session {} ===".format(i)
+            cmd = "turn_on_slot.sh off {}".format(slot)
+            common.session_cmd(session, cmd)
+            cmd = "turn_on_slot.sh on {}".format(slot)
+            common.session_cmd(session, cmd)
+
+            # Wait for nic to boot
+            time.sleep(15)
+
+            ret = self.uart_session_start(session, orig_rate)
+            if ret == 0:
+                break
+
+            # Failed
+            if ret == 2:
+                print "Failed to Start Uart Session!"
+                common.session_stop(session)
+                return -1
+
+
+        cmd = self.fmt_change_rate.format(tgt_rate)
+        session.sendline(cmd)
+        session.sendline("\r")
+
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return 0
 
     def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
         if slot == 0 or slot > 10:

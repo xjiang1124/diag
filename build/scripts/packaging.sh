@@ -145,7 +145,8 @@ then
     cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $TOP_DIR/diag/python/regression/arm_nic/* $DIAG_ASIC_IMG_PATH/
     cp $TOP_DIR/diag/python/regression/scripts/nic_config.sh $DIAG_ASIC_IMG_PATH/
-    cp $TOP_DIR/diag/scripts/asic/cap_snake*arm.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    cp $TOP_DIR/diag/scripts/asic/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    cp $TOP_DIR/diag/scripts/asic/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
 
     tar czf $IMG_DIR/nic_arm.tar -C $BUILD_DIR/temp/$arch/ nic_arm/
 fi
