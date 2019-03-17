@@ -8,6 +8,7 @@ import re
 import threading
 from datetime import datetime
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import GLB_CFG_DEBUG_MODE
 from libmfg_cfg import MFG_BYPASS_PSU_CHECK
 from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
 from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
@@ -528,7 +529,7 @@ class mtp_ctrl():
 
 
     def mtp_enter_user_ctrl(self):
-        if self._mgmt_handle and not GLB_CFG_MFG_TEST_MODE:
+        if self._mgmt_handle and GLB_CFG_DEBUG_MODE:
             self._mgmt_handle.interact()
 
 
@@ -2255,31 +2256,48 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_verify_nic_sw_boot(self, slot):
-        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw image")
-        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
-        if not nic_prompt:
-            self.cli_log_slot_err(slot, "Unable to setup connection to NIC")
+        if not self.mtp_nic_con_baudrate_init(slot):
             return False
+
+        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw image")
+        self._mgmt_handle.sendline("con_connect.sh {:d}".format(slot+1))
+        try:
+            self._mgmt_handle.expect_exact("Terminal ready")
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Connect NIC Console failed")
+            return False
+        self._mgmt_handle.sendline("")
+        try:
+            self._mgmt_handle.expect_exact("#")
+        except pexpect.TIMEOUT:
+            self.cli_log_slot_err(slot, "Connect NIC Console failed")
+            return False
+
         nic_cmd = "fwupdate -r"
         self._mgmt_handle.sendline(nic_cmd)
         try:
-            self._mgmt_handle.expect_exact("mainfwa")
+            self._mgmt_handle.expect_exact("#")
         except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(nic_cmd))
+            self.cli_log_slot_err(slot, "Connect NIC Console failed")
             return False
+
+        if "mainfwa" in self._mgmt_handle.before or "mainfwb"in self._mgmt_handle.before:
+            self.cli_log_slot_inf(slot, "Verify NIC default boot with sw complete")
+            ret = True
+        else:
+            self.cli_log_slot_err(slot, "Verify NIC default boot with sw failed")
+            self.dump_err_msg(self._mgmt_handle.before)
+            ret = False
+
+        self._mgmt_handle.sendcontrol('a')
+        self._mgmt_handle.sendcontrol('x')
         try:
-            self._mgmt_handle.expect_exact(nic_prompt)
+            self._mgmt_handle.expect_exact(self._mgmt_prompt)
         except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(nic_cmd))
+            self.cli_log_slot_err(slot, "Disconnect NIC Console failed")
             return False
 
-        cmd = "exit"
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on NIC".format(cmd))
-            return None
-        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw complete")
-
-        return True
+        return ret
 
 
     def mtp_set_nic_vmarg(self, slot, vmarg):
@@ -2289,31 +2307,17 @@ class mtp_ctrl():
             vmarg_param = "normal"
         else:
             vmarg_param = "low"
-
         self.cli_log_slot_inf(slot, "Set voltage margin to {:s}".format(vmarg_param), level=0)
 
-        nic_prompt = self.mtp_mgmt_init_nic_handle(slot)
-        if not nic_prompt:
-            self.cli_log_slot_err(slot, "Unable to setup connection to NIC")
-            return False
-
+        nic_cmd_list = list()
         nic_cmd = "vmarg.sh {:s}".format(vmarg_param)
-        self._mgmt_handle.sendline(nic_cmd)
-        try:
-            self._mgmt_handle.expect_exact(nic_prompt)
-        except pexpect.TIMEOUT:
-            self.cli_log_slot_err(slot, "Set voltage margin to {:s} failed".format(vmarg_param), level=0)
-            return False
+        nic_cmd_list.append(nic_cmd)
 
-        self._mgmt_handle.sendline("exit")
-        try:
-            self._mgmt_handle.expect_exact(self._mgmt_prompt)
-        except pexpect.TIMEOUT:
+        if not self.mtp_mgmt_exec_nic_cmds(slot, nic_cmd_list):
             self.cli_log_slot_err(slot, "Set voltage margin to {:s} failed".format(vmarg_param), level=0)
             return False
 
         self.cli_log_slot_inf(slot, "Set voltage margin to {:s} complete".format(vmarg_param), level=0)
-
         return True
 
 

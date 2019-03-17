@@ -1,4 +1,6 @@
 GLB_CFG_MFG_TEST_MODE = False
+GLB_CFG_DEBUG_MODE = False
+
 MFG_BYPASS_PSU_CHECK = True
 
 # MFG release version control
