@@ -127,6 +127,7 @@ class MTP_DIAG_Path:
     ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
     ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
     ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
+    ONBOARD_MTP_DSHELL_PATH = "/home/diag/diag/python/infra/dshell/"
 
 
 class MTP_DIAG_Report:

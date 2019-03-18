@@ -429,7 +429,7 @@ class mtp_ctrl():
                     return False
                 self._nic_handle_list[slot] = handle
                 self._nic_prompt_list[slot] = "{:s}@NIC-{:02d}:".format(userid, slot+1) + "$"
-                para_cmd = "cd ~/diag/python/infra/dshell"
+                para_cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
                 if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
                     self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
                     return False
@@ -955,8 +955,6 @@ class mtp_ctrl():
             self.cli_log_err("VRM test timeout")
             rc &= False
 
-        rc &= self.mtp_cpld_test()
-        #rc &= self.mtp_inlet_sensor_test()
         return rc
 
 
@@ -1134,7 +1132,7 @@ class mtp_ctrl():
         self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
 
         # register MTP diagsp
-        cmd = "cd ~/diag/python/infra/dshell"
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
@@ -1170,7 +1168,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to remove previous ASIC test logfile", level=0)
             return False
 
-        cmd = "cd ~/diag/python/infra/dshell"
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to Init DiagSP", level=0)
             return False
@@ -1199,6 +1197,10 @@ class mtp_ctrl():
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
+        # mtp cpld test
+        rc &= self.mtp_cpld_test()
+        # mtp sensor test
+        rc &= self.mtp_inlet_sensor_test()
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
 
@@ -1210,7 +1212,6 @@ class mtp_ctrl():
 
         # other platform init
         rc &= self.mtp_misc_init()
-
         if rc:
             self.cli_log_inf("MTP chassis sanity check passed\n", level = 0)
         else:
@@ -2454,7 +2455,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_jtag_rst(self):
         self.cli_log_inf("Reset the MTP JTAG Interface", level = 0)
-        cmd = "cd ~/diag/python/infra/dshell"
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
