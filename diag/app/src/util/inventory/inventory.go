@@ -81,16 +81,20 @@ func present() (err int) {
 
 func powerStatusCheck(slot int)  {
     devName := "CPLD"
-    addr := uint64(naples100Cpld.REG_ID)
+    addr := uint64(naples100Cpld.REG_POWER_STAT1)
     uutName := "UUT_"+strconv.Itoa(slot)
     var powerGood bool
     
     cli.DisableVerbose()
-    _, err := hwdev.NaplesCpldRd(devName, addr, uutName)
+    stat1, err := hwdev.NaplesCpldRd(devName, addr, uutName)
     if err != errType.SUCCESS {
         powerGood = false
     } else {
-        powerGood = true
+        if stat1 & 0x8 > 0 {
+            powerGood = true
+        } else {
+            powerGood = false
+        }
     }
     cli.EnableVerbose()
     
