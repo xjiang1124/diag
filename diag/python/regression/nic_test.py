@@ -49,13 +49,24 @@ class nic_test:
 
         return ret
 
-    def snake_start(self, slot=0, mode="hbm", timeout=30):
+    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30):
         print "=== Starting snake on slot {} ===".format(slot)
-
 
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
+            sys.exit(0)
+
+        if test_type == "snake" and mode == "hbm":
+            test_cmd = "./diag.exe snake.h.a.tcl 2>&1 > snake.log &"
+        elif test_type == "snake" and mode == "pcie":
+            test_cmd = "./diag.exe snake.p.a.tcl 2>&1 > snake.log &"
+        elif test_type == "prbs" and mode == "eth":
+            test_cmd = "./diag.exe prbs.e.a.tcl 2>&1 > snake.log &"
+        elif test_type == "prbs" and mode == "pcie":
+            test_cmd = "./diag.exe prbs.p.a.tcl 2>&1 > snake.log &"
+        else:
+            print "Invalid test_type {} and mdoe {}".format(test_type, mode)
             sys.exit(0)
 
         self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
@@ -68,16 +79,10 @@ class nic_test:
         self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
         self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
         self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
-        #session.sendline("./diag.exe cap_snake.arm.test.tcl 2>&1 > snake.log &")
-        if mode == "hbm":
-            print "--- hbm ---"
-            session.sendline("./diag.exe snake.h.a.tcl 2>&1 > snake.log &")
-        else:
-            print "--- pcie ---"
-            #session.sendline("./diag.exe cap_snake.pcie.arm.tcl 2>&1 > snake.log &")
-            session.sendline("./diag.exe snake.p.a.tcl 2>&1 > snake.log &")
 
+        session.sendline(test_cmd)
         session.sendline("\r")
+
         self.nic_con.uart_session_stop(session)
 
         common.session_stop(session)
@@ -86,7 +91,7 @@ class nic_test:
 
         return ret
 
-    def snake_check(self, slot=0, timeout=30):
+    def test_check(self, slot=0, test_type="snake", timeout=30):
         print "=== Checing snake result on slot {} ===".format(slot)
         session = common.session_start()
 
@@ -95,13 +100,20 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
+        if test_type == "snake":
+            exp_err_cnt = 3
+        else:
+            exp_err_cnt = 0
+
         session.timeout = timeout
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         time.sleep(1)
 
         self.nic_con.uart_session_start(session, self.baud_rate)
-        ret = self.nic_con.uart_session_cmd_sig(session, "/data/nic_arm/check_snake.sh", 3600, "\#", ["Snake Passed", "Snake Failed", "Test Not Done"])
+
+        check_cmd = "/data/nic_arm/check_snake.sh {}".format(exp_err_cnt)
+        ret = self.nic_con.uart_session_cmd_sig(session, check_cmd, 3600, "\#", ["TEST Passed", "TEST Failed", "TEST Not Done"])
         print "ret:", ret
         self.nic_con.uart_session_stop(session)
 
@@ -110,7 +122,7 @@ class nic_test:
         print "=== Checing snake result on slot {} Done ===".format(slot)
         return ret
 
-    def nic_snake(self, nic_list=[], mode="hbm", wait_time=180):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180):
         print "=== NIC Snake {} ===".format(mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -119,11 +131,11 @@ class nic_test:
         test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            #self.snake_start(int(slot), mode)
+            self.test_start(int(slot), test_type, mode)
             test_result[slot] = "No Result"
 
         print "Wait for {}s before checking result".format(wait_time)
-        #time.sleep(wait_time)
+        time.sleep(wait_time)
 
         done_count = 0
         for retry_idx in range(self.num_retry):
@@ -132,7 +144,7 @@ class nic_test:
                 if test_result[slot] != "No Result":
                     continue
 
-                test_sts = self.snake_check(int(slot))
+                test_sts = self.test_check(int(slot), test_type)
                 if test_sts == 0:
                     print "=== Snake Result at Slot {}: Passed".format(slot)
                     test_result[slot] = "PASS"
@@ -147,7 +159,7 @@ class nic_test:
             time.sleep(30)
 
         # Print result
-        print "\n====== TEST RESULT: {:<5} {:<5} ======".format("Snake", mode.upper())
+        print "\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper())
         result_fmt = "Slot {:<2}: {:<5}"
         for slot, sts in test_result.items():
             print result_fmt.format(slot, sts)
@@ -162,28 +174,46 @@ if __name__ == "__main__":
     group.add_argument("-snake_start", "--snake_start", help="Start snake", action='store_true')
     group.add_argument("-snake_check", "--snake_check", help="Check snake result", action='store_true')
     group.add_argument("-snake", "--snake", help="Run nic snake on multile nics", action='store_true')
+
+    group.add_argument("-prbs_start", "--prbs_start", help="Start prbs", action='store_true')
+    group.add_argument("-prbs_check", "--prbs_check", help="Check prbs result", action='store_true')
+    group.add_argument("-prbs", "--prbs", help="Run nic prbs on multile nics", action='store_true')
+
     group.add_argument("-setup", "--setup", help="Set up nic env", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=300)
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
-    parser.add_argument("-mode", "--mode", help="Test mode: snake: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
+    parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
 
     args = parser.parse_args()
 
     test = nic_test()
     if args.snake_start == True:
-        test.snake_start(args.slot, args.mode)
+        test.test_start(args.slot, "snake", args.mode)
         sys.exit()
 
     if args.snake_check == True:
-        test.snake_check(args.slot)
+        test.snake_check(args.slot, "snake")
         sys.exit()
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_snake(slot_list, args.mode, args.wait_time)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time)
+        sys.exit()
+
+    if args.prbs_start == True:
+        test.test_start(args.slot, "prbs", args.mode)
+        sys.exit()
+
+    if args.prbs_check == True:
+        test.prbs_check(args.slot, "prbs")
+        sys.exit()
+
+    if args.prbs == True:
+        slot_list = args.slot_list.split(',')
+        test.nic_test(slot_list, "prbs", args.mode, args.wait_time)
         sys.exit()
 
     if args.setup == True:

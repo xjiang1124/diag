@@ -299,7 +299,6 @@ class nic_con:
         time.sleep(1)
 
         for i in range(numRetry):
-            print "=== Start Uart Session {} ===".format(i)
             cmd = "turn_on_slot.sh off {}".format(slot)
             common.session_cmd(session, cmd)
             cmd = "turn_on_slot.sh on {}".format(slot)
@@ -308,9 +307,12 @@ class nic_con:
             # Wait for nic to boot
             time.sleep(15)
 
+            print "=== Start Uart Session {} ===".format(i)
             ret = self.uart_session_start(session, orig_rate)
             if ret == 0:
                 break
+
+            self.uart_session_stop(session)
 
             # Failed
             if ret == 2:
