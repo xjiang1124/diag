@@ -12,6 +12,9 @@ then
 elif [[ $cpld_id == "0x13" ]]
 then
     type="NAPLES25"
+elif [[ $cpld_id == "0x14" ]]
+then
+    type="FORIO"
 fi
 
 echo "$type Detected!"

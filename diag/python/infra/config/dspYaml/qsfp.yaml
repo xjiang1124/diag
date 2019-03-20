@@ -60,14 +60,14 @@ DSP:
     TEST#I2C:
         INFO: Test QSFP I2C bus
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES100 FORIO
         PRIORITY: NORMAL 
         PARAM:
 
     CMD#laser_en:
         INFO: Enable optical module laser
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES100 FORIO
         PRIORITY: NORMAL
         PARAM:
             mask:
@@ -78,7 +78,7 @@ DSP:
     CMD#laser_dis:
         INFO: Disnable optical module laser
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES100 FORIO
         PRIORITY: NORMAL
         PARAM:
             mask:
@@ -89,6 +89,6 @@ DSP:
     CMD#present:
         INFO: Display QSFP present status
         PLATFORM:
-            NIC: NAPLES100
+            NIC: NAPLES100 FORIO
         PARAM:
 ...

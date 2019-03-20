@@ -225,7 +225,7 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 continue
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC Address Base" {
                 copy(entry.Value, mac)
@@ -303,7 +303,7 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 continue
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Serial Number" {
                 copy(entry.Value, sn)
@@ -347,7 +347,7 @@ func UpdatePn(devName string, pn []byte) (err int) {
                 break
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Part Number" {
                 copy(entry.Value, pn)
@@ -421,7 +421,7 @@ func UpdateDate(devName string, str string) (err int) {
     
 //    CardType := os.Getenv("CARD_TYPE")
 
-    if CardType == "NAPLES100" || CardType == "NAPLES25" {
+    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Manufacturing Date/Time" {
                 const shortForm = "2006-01-02"
@@ -549,7 +549,7 @@ func DumpEeprom(devName string) (err int) {
     var data []byte
 //    CardType := os.Getenv("CARD_TYPE")
 
-    if CardType == "NAPLES100" || CardType == "NAPLES25" {
+    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
         f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
         if error != nil {
             cli.Println("e", "file create failed")

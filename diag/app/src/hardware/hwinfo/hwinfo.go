@@ -92,6 +92,21 @@ var naples25SfpTbl = []SfpInfo_t {
     SfpInfo_t {"SFP_1",  0x2,      0,       0x2,      2,         0x2,     4,      0x2,      6,     },
     SfpInfo_t {"SFP_2",  0x2,      1,       0x2,      3,         0x2,     5,      0x2,      7,     },
 }
+
+//===============================
+// Forio 
+// Status display list
+var forioDispStaList map[string]DispStaFunc
+
+// I2C hub map -- dummy
+var forioI2cHubMap map[string] I2cHubInfo
+
+// QSFP table
+var forioQsfpTbl = []QsfpInfo_t {
+    //          devName   modRstReg modRstBit lpReg lpBit prstReg prstBit intrReg intrBit prstIntReg prstIntBit rmIntReg rmIntBit
+    QsfpInfo_t {"QSFP_1", 0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
+    QsfpInfo_t {"QSFP_2", 0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
+}
 //===============================
 // MTP
 // Status display list
@@ -176,6 +191,19 @@ func init() {
     naples25I2cHubMap = make(map[string]I2cHubInfo)
 
     //===============================
+    // FORIO
+    forioDispStaList = make(map[string]DispStaFunc)
+    forioDispStaList["CAP0_CORE_DVDD"] = tps53659.DispStatus
+    forioDispStaList["CAP0_CORE_AVDD"] = tps549a20.DispStatus
+    forioDispStaList["CAP0_3V3"]       = tps549a20.DispStatus
+    forioDispStaList["CAP0_HBM"]       = tps549a20.DispStatus
+    forioDispStaList["CAP0_ARM"]       = tps53659.DispStatus
+    forioDispStaList["TSENSOR"]        = tmp42123.DispStatus
+
+    // Dummy I2C hub map
+    forioI2cHubMap = make(map[string]I2cHubInfo)
+
+    //===============================
     // MTP
     mtpDispStaList = make(map[string]DispStaFunc)
     mtpDispStaList["PSU_1"] = pet1600.DispStatus
@@ -214,10 +242,12 @@ func init() {
     naplesMtpI2cHubList := []string{"NIC_HUB"}
     naples100I2cHubList := []string{"HUB_NONE"}
     naples25I2cHubList := []string{"HUB_NONE"}
+    forioI2cHubList := []string{"HUB_NONE"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
     naples100PsuList := []string{"PSU_NONE"}
     naples25PsuList := []string{"PSU_NONE"}
+    forioPsuList := []string{"PSU_NONE"}
 
 
     //===============================
@@ -232,6 +262,7 @@ func init() {
     // Dictionaries for all platforms
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
+    dispMap["FORIO"]     = forioDispStaList
     dispMap["NAPLES100"] = naples100DispStaList
     dispMap["NAPLES25"]  = naples25DispStaList
     dispMap["NAPLES_MTP"]= naplesMtpDispStaList
@@ -251,6 +282,7 @@ func init() {
     eepromMap["NAPLES_MTP"] = naplesEepList
     eepromMap["NAPLES100"]  = naplesEepList
     eepromMap["NAPLES25"]   = naplesEepList
+    eepromMap["FORIO"]      = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -258,14 +290,16 @@ func init() {
     // MTP=MTPS
     i2cHubMap["MTPS"] = mtpI2cHubMap
     i2cHubMap["NAPLES100"] = naples100I2cHubMap
-    i2cHubMap["NAPLES25"] = naples100I2cHubMap
+    i2cHubMap["NAPLES25"]  = naples100I2cHubMap
+    i2cHubMap["FORIO"]     = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"] = mtpI2cHubList
     i2cHubListMap["MTPS"] = mtpsI2cHubList
     i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
-    i2cHubListMap["NAPLES100"] = naples100I2cHubList
-    i2cHubListMap["NAPLES25"] = naples25I2cHubList
+    i2cHubListMap["NAPLES100"]  = naples100I2cHubList
+    i2cHubListMap["NAPLES25"]   = naples25I2cHubList
+    i2cHubListMap["FORIO"]      = forioI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
@@ -273,6 +307,7 @@ func init() {
     psuListMap["MTPS"] = mtpPsuList
     psuListMap["NAPLES100"] = naples100PsuList
     psuListMap["NAPLES25"]  = naples25PsuList
+    psuListMap["FORIO"]     = forioPsuList
 
     //===============================
     // Platform specified list
@@ -298,6 +333,12 @@ func init() {
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
+    case "FORIO":
+        QsfpTbl = forioQsfpTbl
+        var t boardinfo.ForioCpld_T
+        yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)
+        CpldInfo = &t
+
     default:
         // Do nothing
     }

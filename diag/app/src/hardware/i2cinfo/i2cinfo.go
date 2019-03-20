@@ -51,8 +51,35 @@ var Naples100MtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
 }
+
 //=========================================
-// Naples100 PMBus table
+// forio I2C table on ARM
+// devAddr is 7-bit address
+var ForioTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName     HubPort 
+    I2cInfo {"CAP0_CORE_DVDD", "TPS53659",  0x2,   0x62,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_ARM",       "TPS53659",  0x2,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_3V3",       "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_HBM",       "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CAP0_CORE_AVDD", "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"TSENSOR",        "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE", 0},
+
+    I2cInfo {"QSFP_1",         "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x0,   0x51,    0x0,    "HUB_NONE", 0},
+
+    I2cInfo {"QSFP_2",         "QSFP",      0x1,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_NONE", 0},
+}
+
+// forio I2C table on MTP SMBus
+var ForioMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
+}
+//=========================================
+// NaplesMtp PMBus table
 // devAddr is 7-bit address
 var NaplesMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
@@ -144,12 +171,15 @@ func init() {
     MtpsI2cTbl   = append(MtpsI2cTbl,   MtpHubI2cTbl...)
     NaplesMtpTbl = append(NaplesMtpTbl, MtpHubI2cTbl...)
     Naples100MtpTbl = append(Naples100MtpTbl, MtpHubI2cTbl...)
-    Naples25MtpTbl = append(Naples25MtpTbl, MtpHubI2cTbl...)
+    Naples25MtpTbl  = append(Naples25MtpTbl, MtpHubI2cTbl...)
+    ForioMtpTbl     = append(ForioMtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" {
         I2cTbl = Naples100Tbl
     } else if CardType == "NAPLES25" {
         I2cTbl = Naples25Tbl
+    } else if CardType == "FORIO" {
+        I2cTbl = ForioTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -161,18 +191,6 @@ func init() {
         return
     }
     CurI2cTbl = I2cTbl
-
-    //uutType := os.Getenv("UUT_TYPE")
-    //if uutType == "NAPLES_MTP" {
-    //    UutI2cTbl = NaplesMtpTbl
-    //} else if uutType == "NAPLES100" {
-    //    UutI2cTbl = Naples100MtpTbl
-    //} else if uutType == "UUT_NONE" {
-    //    //cli.Println("i", "No need to init UUT I2C table", CardType)
-    //} else {
-    //    cli.Println("i", "UUT I2C table not intialized:", CardType, uutType)
-    //    return
-    //}
 }
 
 /**
@@ -226,6 +244,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = Naples100MtpTbl
     } else if uutType == "NAPLES25" {
         CurI2cTbl = Naples25MtpTbl
+    } else if uutType == "FORIO" {
+        CurI2cTbl = ForioMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

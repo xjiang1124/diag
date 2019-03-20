@@ -10,6 +10,7 @@ import (
     "common/errType"
     "device/cpld/naples100Cpld"
     "device/cpld/naples25Cpld"
+    "device/cpld/forioCpld"
     "device/cpld/naplesMtpCpld"
 //    "device/cpld/mtpCpld"
     "hardware/hwdev"
@@ -51,6 +52,8 @@ func present() (err int) {
                 presentStr = "NAPLES100"
             case naples25Cpld.ID:
                 presentStr = "NAPLES25"
+            case forioCpld.ID:
+                presentStr = "FORIO"
             case naplesMtpCpld.ID:
                 presentStr = "NAPLES_MTP"
             default:
