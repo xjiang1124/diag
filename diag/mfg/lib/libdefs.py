@@ -60,6 +60,7 @@ class MTP_Const:
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
     OS_SYNC_DELAY = 300
+    SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 120
     NIC_CON_CMD_DELAY = 900
     NIC_CON_INIT_RETRY = 3
@@ -123,11 +124,12 @@ class MTP_DIAG_Logfile:
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
-    ONBOARD_NIC_DIAG_PATH = "/home/diag/"
-    ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
-    ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
     ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
     ONBOARD_MTP_DSHELL_PATH = "/home/diag/diag/python/infra/dshell/"
+    ONBOARD_MTP_MTP_DIAG_PATH = "/home/diag/diag/"
+    ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
+    ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
+    ONBOARD_NIC_DIAG_PATH = "/home/diag/"
 
 
 class MTP_DIAG_Report:
@@ -142,3 +144,80 @@ class MTP_DIAG_Report:
     NIC_DIAG_REGRESSION_FAIL = "DIAG_REGRESSION_TEST_FAIL"
     NIC_DIAG_REGRESSION_PASS = "DIAG_REGRESSION_TEST_PASS"
     NIC_DIAG_REGRESSION_RSLT_RE = r"NIC-(\d{{2}}) (\w+) (\w+) {:s}"
+
+class MFG_DIAG_CMDS:
+    MTP_DIAG_VERSION_FMT = "version"
+    MTP_LOGIN_VERIFY_FMT = "whoami"
+    MTP_ASIC_VERSION_FMT = "head /home/diag/diag/asic/asic_version.txt"
+    MTP_FAN_STATUS_FMT = "devmgr -dev FAN -status"
+    MTP_FAN_SET_SPD_FMT = "devmgr -dev=fan -speed -pct={:d}"
+    MTP_VRM_TEST_FMT = "mtptest -vrm"
+    MTP_FAN_TEST_FMT = "mtptest -fanspd"
+    MTP_FAN_PRSNT_FMT = "mtptest -present"
+
+    MTP_CPLD_READ_FMT = "cpldutil -cpld-rd -addr=0x{:x}"
+
+    MTP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update"
+    MTP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d}"
+    NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
+    NIC_FRU_DISP_FMT = "{:s}eeutil -disp"
+
+    NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
+
+    NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
+    NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
+
+    NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
+    NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
+    NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
+    NIC_BOOT_DISP_FMT = "fwupdate -r"
+    NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
+    NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
+
+    NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
+    NIC_VMARG_SET_FMT = "vmarg.sh {:s}"
+
+    NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
+    NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
+    MTP_POWER_ON_NIC_FMT = "turn_on_slot.sh on all"
+    MTP_POWER_OFF_NIC_FMT = "turn_on_slot.sh off all"
+
+    MTP_SMB_CMD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
+    MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
+
+    NIC_POWER_CHECK_FMT = "inventory -ps -slot={:d}"
+    NIC_POWER_RAIL_DISP_FMT = "inventory -pw -slot={:d}"
+    NIC_PRESENT_DISP_FMT = "inventory -present"
+
+    NIC_CON_INIT_FMT = "nic_con.py -br -slot {:d}"
+    NIC_CON_ATTACH_FMT = "con_connect.sh {:d}"
+    NIC_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d}"
+    NIC_CON_MTEST_FMT = "nic_con.py -mtest -slot {:d}"
+
+    MTP_ARP_DELET_FMT = "arp -d {:s}"
+    MTP_NIC_MAC_DISP_FMT = "arp -i enp2s0"
+
+    MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
+    NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
+
+    MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"
+    MTP_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_start"
+    MTP_DSP_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_stop"
+    MTP_DSP_DISP_FMT = "/home/diag/diag/python/infra/dshell/diag -sdsp"
+    MTP_DIAG_RUN_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c {:s}"
+    MTP_DIAG_RSLT_FMT = "/home/diag/diag/python/infra/dshell/diag -sresult -c {:s}"
+
+    NIC_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c NIC{:d} -d diagmgr -t dsp_start"
+
+class MFG_DIAG_SIG:
+    MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
+    MTP_DSP_START_OK_SIG = "Test Done: MTP1:DIAGMGR:DSP_START"
+    MTP_VRM_OK_SIG = "TEST PASSED"
+    MTP_FAN_OK_SIG = "TEST PASSED"
+    MTP_FAN0_PRSNT_SIG = "Fan 0 is present"
+    MTP_FAN1_PRSNT_SIG = "Fan 1 is present"
+    MTP_FAN2_PRSNT_SIG = "Fan 2 is present"
+    NIC_CON_OK_SIG = "stty speed 9600"
+    NIC_MGMT_OK_SIG = "Management port is ready"
+    NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
+    NIC_POWER_OK_SIG = "power good"

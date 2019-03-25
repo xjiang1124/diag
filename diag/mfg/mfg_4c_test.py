@@ -227,7 +227,7 @@ def get_mtpid(mtp_cfg_db):
     return mtp_id
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
@@ -236,7 +236,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
 
@@ -318,8 +318,10 @@ def main():
 
     if verbosity:
         diag_log_filep = sys.stdout
+        diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
     else:
         diag_log_filep = None
+        diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -335,7 +337,7 @@ def main():
             libmfg_utils.sys_exit("Duplicate MTPID: {:s} is selected".format(mtp_id))
 
         mtpid_list.append(mtp_id)
-        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep)
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()

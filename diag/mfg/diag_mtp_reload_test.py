@@ -103,7 +103,7 @@ def main():
 
         pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
-        mtp_mgmt_ctrl.mtp_update_sw_image(remote_dir + os.path.basename(mtp_image_file))
+        mtp_mgmt_ctrl.mtp_update_mtp_diag_image(remote_dir + os.path.basename(mtp_image_file))
         post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver))
 

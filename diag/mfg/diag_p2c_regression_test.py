@@ -180,7 +180,7 @@ def get_mtpid_list(mtp_cfg_db):
     return sub_mtpid_list
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
@@ -189,7 +189,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
     
@@ -227,28 +227,6 @@ def mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg):
     # remove the lib config for the next run
     cmd = "rm -rf {:s}/lib {:s}/config".format(mtp_script_dir, mtp_script_dir)
     os.system(cmd)
-
-
-def mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file):
-    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    mtp_ip_addr = mtp_mgmt_cfg[0]
-    mtp_usrid = mtp_mgmt_cfg[1]
-    mtp_passwd = mtp_mgmt_cfg[2]
-    if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
-        mtp_mgmt_ctrl.cli_log_err("Copy MTP Chassis image: {:s} failed".format(mtp_image_file), level=0)
-        libmfg_utils.sys_exit("Network error")
-    else:
-        mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s} complete".format(mtp_image_file), level=0)
-    diag_pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    asic_pre_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
-    mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
-    mtp_mgmt_ctrl.mtp_update_sw_image(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + os.path.basename(mtp_image_file))
-    diag_post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    asic_post_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
-    mtp_mgmt_ctrl.cli_log_inf("Diag image update [{:s}] --> [{:s}]".format(diag_pre_ver, diag_post_ver))
-    mtp_mgmt_ctrl.cli_log_inf("ASIC image update [{:s}] --> [{:s}]".format(asic_pre_ver, asic_post_ver))
-    mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image complete", level=0)
 
 
 def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
@@ -326,7 +304,6 @@ def main():
     parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=True)
-    parser.add_argument("--image", help="MTP Chassis diag image")
     parser.add_argument("--email", help="Send report to email address")
     parser.add_argument("--error-injection", help="Randomly inject error", action='store_true')
     parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
@@ -342,7 +319,6 @@ def main():
     stop_on_err = False
     err_inj = False
     apc = False
-    skip_image_update = True
     email_to = None
     pwr_cycle = False
     skip_test = False
@@ -362,9 +338,6 @@ def main():
     if args.email:
         email_to = args.email
     iteration = args.iteration
-    if args.image:
-        mtp_image_file = args.image
-        skip_image_update = False
     if args.pwr_cycle:
         pwr_cycle = True
     if args.skip_test:
@@ -383,9 +356,11 @@ def main():
     for mtp_id in mtpid_list: 
         if verbosity:
             diag_log_filep = sys.stdout
+            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM 
         else:
             diag_log_filep = None
-        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep)
+            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM 
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     # scan and generate nic barcode config file
@@ -408,11 +383,6 @@ def main():
             return
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-    # Update the MTP image, if --image is on
-    if not skip_image_update:
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-            mtp_download_diag_image(mtp_mgmt_ctrl, mtp_image_file)
 
     # Copy script, config file on to each MTP Chassis
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 

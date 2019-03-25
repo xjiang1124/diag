@@ -55,7 +55,7 @@ def get_mtpid_list(mtp_cfg_db):
     return sub_mtpid_list
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
@@ -64,7 +64,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg, dbg_mode=True)
     return mtp_mgmt_ctrl
 
 
@@ -88,7 +88,8 @@ def main():
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     diag_log_filep = open("../log/nic_mgmt_diag.log", 'w+')
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep)
+    diag_nic_log_filep_list = [diag_log_filep] * MTP_Const.MTP_SLOT_NUM 
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
 
     if apc:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
@@ -103,35 +104,53 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
-            logfile_close(log_filep_list)
-            logfile_cleanup(log_file_list)
             return
         mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
-        # get the sw version info
+        # get the diag version info
         sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+        if not sw_ver:
+            mtp_mgmt_ctrl.cli_log_err("Get MTP SW version fails", level=0)
+            return 
         mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
 
+        # get the asic version info
+        asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
+        if not asic_ver:
+            mtp_mgmt_ctrl.cli_log_err("Get MTP ASIC version fails", level=0)
+            return 
+        mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver), level=0)
+
+
         # diag environment pre init
-        mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
+        if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+            mtp_mgmt_ctrl.cli_log_err("Init MTP Diag Environment fails", level=0)
+            return
 
         # get the hw version info
-        io_cpld_ver, jtag_cpld_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
-        mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(io_cpld_ver), str(jtag_cpld_ver)), level=0)
+        cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
+        if not cpld_ver_list:
+            mtp_mgmt_ctrl.cli_log_err("Get MTP CPLD version fails", level=0)
+            return
+        mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]), level=0)
 
-        mtp_mgmt_ctrl.mtp_init_nic_prsnt()
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        if False in nic_prsnt_list:
-            mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+        if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
+            mtp_mgmt_ctrl.cli_log_err("Init MTP HW fails", level=0)
+            return
+
         for nic_loop in range(nic_reload):
             mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
             mtp_mgmt_ctrl.cli_log_inf("####### Power cycle NIC Iter - {:2d} #######".format(nic_loop), level=0)
             mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
             mtp_mgmt_ctrl.mtp_power_off_nic()
-            time.sleep(MTP_Const.NIC_POWER_OFF_DELAY)
             mtp_mgmt_ctrl.mtp_power_on_nic()
-            if not mtp_mgmt_ctrl.mtp_nic_load_sn(False):
+            if not mtp_mgmt_ctrl.mtp_nic_init():
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=False):
+                mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+
+        if mtp_loop == mtp_reload - 1:
+            break
 
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)

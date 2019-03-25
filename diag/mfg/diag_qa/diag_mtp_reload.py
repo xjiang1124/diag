@@ -97,7 +97,7 @@ def main():
         if not mtp_apc_cfg:
             libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
-        mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+        mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, [None]*10, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     if apc:
@@ -129,7 +129,7 @@ def main():
 
             pre_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
             mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
-            mtp_mgmt_ctrl.mtp_update_sw_image(remote_dir + os.path.basename(mtp_image_file))
+            mtp_mgmt_ctrl.mtp_update_mtp_diag_image(remote_dir + os.path.basename(mtp_image_file))
             post_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
             mtp_mgmt_ctrl.cli_log_inf("Update MTP chassis image from {:s} to {:s} complete".format(pre_ver, post_ver), level=0)
 
@@ -142,18 +142,15 @@ def main():
             mtp_ip_addr = mtp_mgmt_cfg[0]
             mtp_usrid = mtp_mgmt_cfg[1]
             mtp_passwd = mtp_mgmt_cfg[2]
-            nic_image_dir = "/home/diag/nic_diag/"
-            cmd = "mkdir -p {:s}".format(nic_image_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, nic_image_dir):
+            remote_dir = "/home/diag/"
+            if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir):
                 libmfg_utils.sys_exit(mtp_cli_id_str + "Copy NIC Diag image: {:s} failed".format(nic_image_file))
             else:
                 mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s} complete".format(nic_image_file), level=0)
 
-            mtp_mgmt_ctrl.cli_log_inf("Unpack NIC Diag image: {:s}".format(os.path.basename(nic_image_file)), level=0)
-            cmd = "tar zxf {:s} -C {:s}".format(nic_image_dir+os.path.basename(nic_image_file), nic_image_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            mtp_mgmt_ctrl.cli_log_inf("Unpack NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)), level=0)
+            mtp_mgmt_ctrl.cli_log_inf("Update NIC Diag image: {:s}".format(os.path.basename(nic_image_file)), level=0)
+            mtp_mgmt_ctrl.mtp_update_nic_diag_image(remote_dir + os.path.basename(nic_image_file))
+            mtp_mgmt_ctrl.cli_log_inf("Update NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)), level=0)
 
     for image_file in [emmc_image_file, qspi_image_file, cpld_image_file]:
         if image_file:
@@ -206,9 +203,6 @@ def main():
 
     if reset_nic:
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-            # init nic present list
-            mtp_mgmt_ctrl.mtp_init_nic_prsnt()
-
             # init nic type list
             mtp_mgmt_ctrl.mtp_init_nic_type()
 

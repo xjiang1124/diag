@@ -5,6 +5,7 @@ import os
 import time
 import datetime
 import pexpect
+import threading
 import argparse
 import re
 import random
@@ -126,7 +127,7 @@ def get_mtpid_list(mtp_cfg_db):
     return sub_mtpid_list
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
@@ -135,8 +136,63 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep):
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
+
+
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, prog_fail_nic_list, prog_fail_sn_list):
+    sn = fru_cfg["SN"]
+    mac = fru_cfg["MAC"]
+    pn = fru_cfg["PN"]
+    prog_date = str(fru_cfg["TS"])
+
+    # program FRU
+    dsp = "DL_FRU"
+    test = "FRU_PROG"
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+    start_ts = datetime.datetime.now().replace(microsecond=0)
+    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
+    stop_ts = datetime.datetime.now().replace(microsecond=0)
+    duration = str(stop_ts - start_ts)
+    if not ret:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+        prog_fail_nic_list.append(slot)
+        prog_fail_sn_list.append(sn)
+        return
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+    # program CPLD
+    dsp = "DL_CPLD"
+    test = "CPLD_PROG"
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+    start_ts = datetime.datetime.now().replace(microsecond=0)
+    ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+    stop_ts = datetime.datetime.now().replace(microsecond=0)
+    duration = str(stop_ts - start_ts)
+    if not ret:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+        prog_fail_nic_list.append(slot)
+        prog_fail_sn_list.append(sn)
+        return
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+    # program QSPI
+    dsp = "DL_QSPI"
+    test = "QSPI_PROG"
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+    start_ts = datetime.datetime.now().replace(microsecond=0)
+    ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
+    stop_ts = datetime.datetime.now().replace(microsecond=0)
+    duration = str(stop_ts - start_ts)
+    if not ret:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+        prog_fail_nic_list.append(slot)
+        prog_fail_sn_list.append(sn)
+        return
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
 
 def main():
@@ -171,7 +227,16 @@ def main():
         diag_log_filep = open(diag_log_file, "w+")
         log_filep_list.append(diag_log_filep)
 
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep)
+    diag_nic_log_filep_list = list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        diag_nic_log_file = "_".join(["log/diag_dl", pro_srv_id, mtp_id, key, libmfg_utils.get_timestamp()]) + ".log"
+        log_file_list.append(diag_nic_log_file)
+        diag_nic_log_filep = open(diag_nic_log_file, "w+")
+        log_filep_list.append(diag_nic_log_filep)
+        diag_nic_log_filep_list.append(diag_nic_log_filep)
+
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list)
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
@@ -208,13 +273,8 @@ def main():
     nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
     nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
     naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
-    #naples100_vrm_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["VRM_FILE"]
-    #naples100_vrm_img_cksum = nic_fw_cfg[NIC_Type.NAPLES100]["VRM_CKSUM"]
     naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
-
     naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
-    #naples25_vrm_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["VRM_FILE"]
-    #naples25_vrm_img_cksum = nic_fw_cfg[NIC_Type.NAPLES25]["VRM_CKSUM"]
     naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
 
     # reload the barcode config file
@@ -260,10 +320,10 @@ def main():
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
         logfile_close(log_filep_list)
         return
-    mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(str(cpld_ver_list[0]), str(cpld_ver_list[1])), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]), level=0)
 
     # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(True, MTP_Const.MFG_EDVT_NORM_FAN_SPD):
+    if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
@@ -273,8 +333,22 @@ def main():
         return
 
     # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init(fru_load = False):
-        mtp_mgmt_ctrl.cli_log_err("Diag Initialize NIC Fail", level=0)
+    if not mtp_mgmt_ctrl.mtp_nic_init():
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        logfile_close(log_filep_list)
+        return
+
+    # power on all nic
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    # init nic diag env.
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg):
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
@@ -289,23 +363,6 @@ def main():
     fail_sn_list = list()
     naples100_sn_list = list()
     naples25_sn_list = list()
-
-    mtp_mgmt_ctrl.cli_log_inf("NIC SCAN Check Start", level=0)
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if mtp_mgmt_ctrl.mtp_get_nic_prsnt(slot) and str.upper(valid) != "YES":
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC is present, but barcode is not scanned", level=0)
-            mtp_mgmt_ctrl.cli_log_err("NIC SCAN Check Failed, Please Restart", level=0)
-            mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-            mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-            libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-            mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-            mtp_mgmt_ctrl.mtp_apc_pwr_off()
-            logfile_close(log_filep_list)
-            logfile_cleanup(log_file_list)
-            return
-    mtp_mgmt_ctrl.cli_log_inf("NIC SCAN Check Complete\n", level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
@@ -332,9 +389,6 @@ def main():
                     return
                 cpld_img_file = naples100_cpld_img_file
                 qspi_img_file = naples100_qspi_img_file
-                # vrm_img_file = naples100_vrm_img_file
-                # vrm_img_cksum = naples100_vrm_img_cksum
-                # emmc_img_file = naples100_emmc_img_file
                 naples100_sn_list.append(sn)
             elif card_type == NIC_Type.NAPLES25:
                 if not mtp_capability & 0x2:
@@ -349,61 +403,11 @@ def main():
                     return
                 cpld_img_file = naples25_cpld_img_file
                 qspi_img_file = naples25_qspi_img_file
-                # vrm_img_file = naples25_vrm_img_file
-                # vrm_img_cksum = naples25_vrm_img_cksum
-                # emmc_img_file = naples25_emmc_img_file
                 naples25_sn_list.append(sn)
             else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
-                mtp_mgmt_ctrl.cli_log_err("NIC PRSNT Check Failed, Please Restart", level=0)
-                mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-                mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-                libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-                mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-                mtp_mgmt_ctrl.mtp_apc_pwr_off()
-                logfile_close(log_filep_list)
-                logfile_cleanup(log_file_list)
-                return
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
 
-            mtp_mgmt_ctrl.mtp_set_nic_scan_sn(slot, sn)
-            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-            mtp_mgmt_ctrl.mtp_set_nic_scan_mac(slot, mac)
-            mtp_mgmt_ctrl.mtp_set_nic_mac(slot, mac)
-
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; DATE = {:s}".format(sn, mac_ui, prog_date))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, "VRM image: " + os.path.basename(vrm_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end", level=0)
-
-            # nic present check
-            dsp = "DL_PRE_CHECK"
-            test = "NIC_PRSNT"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check("NIC_FRU", slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-
-    # power on all nic
-    mtp_mgmt_ctrl.mtp_power_on_nic()
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        if key in fail_nic_list:
-            continue
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) == "YES":
+            # nic power status check
             dsp = "DL_PRE_CHECK"
             test = "NIC_POWER"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
@@ -421,17 +425,15 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        if key in fail_nic_list:
-            continue
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) == "YES":
+            # nic type check
             dsp = "DL_PRE_CHECK"
-            test = "NIC_DIAG_BOOT"
+            test = "NIC_TYPE"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.NAPLES25:
+                ret = True
+            else:
+                ret = False
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if not ret:
@@ -444,10 +446,69 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-    # power on all nic
-    mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; DATE = {:s}".format(sn, mac_ui, prog_date))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n", level=0)
 
+            # nic present check
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_PRSNT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # check nic init status
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_INIT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # check if nic comes up from diagfw
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_DIAG_BOOT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+    # program the NIC firmware
+    prog_fail_nic_list = list()
+    prog_fail_sn_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         if key in fail_nic_list:
@@ -455,116 +516,40 @@ def main():
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
-
-            # init nic for fw update
-            dsp = "DL_PRE_CHECK"
-            test = "NIC_INIT"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-
-            # program FRU
-            dsp = "DL_FRU"
-            test = "FRU_PROG"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
-                cpld_img_file = naples100_cpld_img_file
                 qspi_img_file = naples100_qspi_img_file
-                # vrm_img_file = naples100_vrm_img_file
-                # vrm_img_cksum = naples100_vrm_img_cksum
-                # emmc_img_file = naples100_emmc_img_file
+                cpld_img_file = naples100_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:
-                cpld_img_file = naples25_cpld_img_file
                 qspi_img_file = naples25_qspi_img_file
-                # vrm_img_file = naples25_vrm_img_file
-                # vrm_img_cksum = naples25_vrm_img_cksum
-                # emmc_img_file = naples25_emmc_img_file
+                cpld_img_file = naples25_cpld_img_file
             else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected: {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
                 continue
 
-            # program CPLD
-            dsp = "DL_CPLD"
-            test = "CPLD_PROG"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            nic_thread_list = list()
+            nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl, nic_fru_cfg[mtp_id][key], cpld_img_file, qspi_img_file, slot, prog_fail_nic_list, prog_fail_sn_list))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(2)
 
-            # program VRM
-            # dsp = "DL_VRM"
-            # test = "VRM_PROG"
-            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            # start_ts = datetime.datetime.now().replace(microsecond=0)
-            # ret = mtp_mgmt_ctrl.mtp_program_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
-            # stop_ts = datetime.datetime.now().replace(microsecond=0)
-            # duration = str(stop_ts - start_ts)
-            # if not ret:
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-            #     fail_nic_list.append(key)
-            #     fail_sn_list.append(sn)
-            #     continue
-            # else:
-            #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+    # monitor all the thread
+    while True:
+        if len(nic_thread_list) == 0:
+           break
+        for nic_thread in nic_thread_list:
+            if not nic_thread.is_alive():
+                nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+            time.sleep(5)
 
-            # program QSPI
-            dsp = "DL_QSPI"
-            test = "QSPI_PROG"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+    for slot, sn in zip(prog_fail_nic_list, prog_fail_sn_list):
+        key = libmfg_utils.nic_key(slot)
+        mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+        fail_nic_list.append(key)
+        fail_sn_list.append(sn)
 
     # power cycle MTP
     mtp_mgmt_ctrl.mtp_mgmt_poweroff()
@@ -594,8 +579,27 @@ def main():
         logfile_cleanup(log_file_list)
         return
 
-    # power on all nic
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # init all the nic.
+    if not mtp_mgmt_ctrl.mtp_nic_init():
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        logfile_close(log_filep_list)
+        return
+
+    # init nic diag env.
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=False):
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        logfile_close(log_filep_list)
+        return
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
@@ -608,12 +612,48 @@ def main():
             pn = nic_fru_cfg[mtp_id][key]["PN"]
             prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
 
-            # init nic for fw verify
+            # nic power status check
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_POWER"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # nic present check
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_PRSNT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
+                fail_nic_list.append(key)
+                fail_sn_list.append(sn)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # check nic init status
             dsp = "DL_PRE_CHECK"
             test = "NIC_INIT"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(slot)
+            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if not ret:
@@ -665,24 +705,6 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-            # verify VRM
-            # dsp = "DL_VRM"
-            # test = "VRM_VERIFY"
-            # mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            # start_ts = datetime.datetime.now().replace(microsecond=0)
-            # ret = mtp_mgmt_ctrl.mtp_verify_nic_vrm(slot, vrm_img_file, vrm_img_cksum)
-            # stop_ts = datetime.datetime.now().replace(microsecond=0)
-            # duration = str(stop_ts - start_ts)
-            # if not ret:
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-            #     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FW Update Failed\n", level=0)
-            #     fail_nic_list.append(key)
-            #     fail_sn_list.append(sn)
-            #     continue
-            # else:
-            #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-
             # verify QSPI
             dsp = "DL_QSPI"
             test = "QSPI_VERIFY"
@@ -700,9 +722,6 @@ def main():
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-
-            # update MAC address
-            # mtp_mgmt_ctrl.mtp_update_nic_mac_address(slot)
 
             pass_nic_list.append(key)
             pass_sn_list.append(sn)

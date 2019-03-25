@@ -10,6 +10,7 @@ import time
 import pexpect
 
 from libdefs import MTP_Const
+from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import * 
 
 def get_linux_prompt_list():
@@ -92,7 +93,7 @@ def diag_param_cmd(param_list):
 
 
 def diag_seq_run_cmd(card_name, dsp, test, param):
-    cmd = "./diag -r -c {:s}".format(card_name)
+    cmd = MFG_DIAG_CMDS.MTP_DIAG_RUN_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     if test:
         cmd += " -t {:s}".format(test)
@@ -102,7 +103,7 @@ def diag_seq_run_cmd(card_name, dsp, test, param):
 
 
 def diag_para_run_cmd(card_name, dsp, test, param):
-    cmd = "./diag -r -c {:s}".format(card_name)
+    cmd = MFG_DIAG_CMDS.MTP_DIAG_RUN_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     if test:
         cmd += " -t {:s}".format(test)
@@ -112,13 +113,13 @@ def diag_para_run_cmd(card_name, dsp, test, param):
 
 
 def diag_seq_errcode_cmd(card_name, dsp):
-    cmd = "./diag -sresult -c {:s}".format(card_name)
+    cmd = MFG_DIAG_CMDS.MTP_DIAG_RSLT_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     return cmd
 
 
 def diag_para_errcode_cmd(card_name, dsp):
-    cmd = "./diag -sresult -c {:s}".format(card_name)
+    cmd = MFG_DIAG_CMDS.MTP_DIAG_RSLT_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     return cmd
 
