@@ -1237,6 +1237,28 @@ class mtp_ctrl():
     def mtp_program_nic_cpld(self, slot, cpld_img):
         if MFG_NIC_CPLD_PROGRAM:
             self.cli_log_slot_inf_lock(slot, "Program NIC CPLD")
+
+            # check the current cpld version
+            nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+            if not nic_cpld_info:
+                self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
+                return False
+            cur_ver = nic_cpld_info[0]
+            cur_timestamp = nic_cpld_info[1]
+            nic_type = self.mtp_get_nic_type(slot)
+
+            if nic_type == NIC_Type.NAPLES100:
+                if cur_ver == MFG_NAPLES100_CPLD_VERSION and cur_timestamp == MFG_NAPLES100_CPLD_TIMESTAMP:
+                    self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+                    return True
+            elif nic_type == NIC_Type.NAPLES25:
+                if cur_ver == MFG_NAPLES25_CPLD_VERSION and cur_timestamp == MFG_NAPLES25_CPLD_TIMESTAMP:
+                    self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+                    return True
+            else:
+                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+                return False
+
             if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
                 self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
                 return False
@@ -1494,6 +1516,10 @@ class mtp_ctrl():
                 if self._nic_prsnt_list[slot]:
                     self.cli_log_slot_err(slot, "NIC is present, but barcode is not scanned")
                     return False
+
+            if not self.mtp_check_nic_status(slot):
+                self.cli_log_slot_err(slot, "NIC is in failure state, bypass fru validation")
+                continue
 
             # NIC sn should match
             if self._nic_scan_prsnt_list[slot] and self._nic_prsnt_list[slot]:

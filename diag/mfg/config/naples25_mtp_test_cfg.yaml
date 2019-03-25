@@ -20,7 +20,6 @@ MTP_PRE:
     NIC_POWER: True
     NIC_JTAG: True
     NIC_STATUS: True
-    NIC_FRU:  True
 
 MTP_POST:
     NIC_MEM:  True

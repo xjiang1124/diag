@@ -163,6 +163,7 @@ class nic_ctrl():
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
         if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_err_msg(self._nic_handle.before)
             info_buf = None
         else:
@@ -614,39 +615,46 @@ class nic_ctrl():
         if match:
             self._sn = match[0]
         else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = re.findall(NAPLES_DISP_MAC_FMT, fru_buf)
         if match:
             self._mac = match[0]
         else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
         if match:
             self._pn = match[0]
         else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         if self._nic_type != NIC_Type.NAPLES100:
-            cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 return False
             match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
             if match:
                 sn = match[0]
             else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             match = re.findall(NAPLES_DISP_MAC_FMT, self.nic_get_cmd_buf())
             if match:
                 mac = match[0]
             else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
             if match:
                 pn = match[0]
             else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
             if self._sn != sn or self._mac != mac or self._pn != pn:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
         return True
@@ -669,6 +677,7 @@ class nic_ctrl():
         if match:
             self._cpld_ver = match[0]
         else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         # get the month timestamp
@@ -681,6 +690,7 @@ class nic_ctrl():
         if match:
             month = int(match[0], 16)
         else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         # get the date timestamp
@@ -693,6 +703,7 @@ class nic_ctrl():
         if match:
             date = int(match[0], 16)
         else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         self._cpld_timestamp = "{:02d}-{:02d}".format(month, date)
