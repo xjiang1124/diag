@@ -895,6 +895,11 @@ class mtp_ctrl():
             upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
             lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
         else:
+            # in NT, just read the inlet temp
+            inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
+            if not inlet:
+                return False
+            self.cli_log_inf("Current Environment temperature is {:2.2f}".format(inlet))
             self.cli_log_inf("No threshold set, bypass ambient temperature check")
             return True
 
