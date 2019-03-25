@@ -270,7 +270,6 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id):
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
-    cmd += " --psu-check"
 
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
