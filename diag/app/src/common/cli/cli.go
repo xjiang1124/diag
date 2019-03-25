@@ -132,7 +132,7 @@ func DisableVerbose() {
     verbose = misc.DISABLE
 }
 
-func formatOutput(lvl string, pOutStr string) string {
+func FormatOutput(lvl string, pOutStr string) string {
     var outStr string
     // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
     // Remove the extra stuff
@@ -172,7 +172,7 @@ func Println(lvl string, a...interface{}) (err error) {
     }
 
     outStr := fmt.Sprintln(a)
-    outStr = formatOutput(lvl, outStr)
+    outStr = FormatOutput(lvl, outStr)
 
     if initStatus == INIT_DONE {
         switch lvl {
