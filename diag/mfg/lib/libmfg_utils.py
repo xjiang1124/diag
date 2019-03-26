@@ -133,6 +133,10 @@ def count_down(seconds):
         secs -= 1
 
 
+def file_exist(file_path):
+    return os.path.isfile(file_path)
+
+
 def fan_key(slot, base = 1):
     return "FAN-{:d}".format(slot + base)
 

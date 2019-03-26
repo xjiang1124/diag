@@ -757,7 +757,7 @@ class mtp_ctrl():
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY): 
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
@@ -818,7 +818,8 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_diag_init(self, naples100_test_db):
+    def mtp_diag_post_init(self, mtp_capability):
+        self.cli_log_inf("Post Diag SW Environment Init", level=0)
         cmd = "rm -f {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to remove previous ASIC test logfile", level=0)
@@ -834,6 +835,28 @@ class mtp_ctrl():
             self.cli_log_err("Dump DSP failed", level=0)
             return False
 
+        # check if firmware image exist
+        nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
+        nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
+        if mtp_capability & 0x1:
+            naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
+            naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
+            naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
+            for img_file in [naples100_cpld_img_file, naples100_qspi_img_file, naples100_emmc_img_file]:
+                if not libmfg_util.file_exist(img_file):
+                    self.cli_log_err("Firmware {:s} doesn't exist", level=0)
+                    return False
+
+        if mtp_capability & 0x2:
+            naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
+            naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
+            naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
+            for img_file in [naples25_cpld_img_file, naples25_qspi_img_file, naples25_emmc_img_file]:
+                if not libmfg_util.file_exist(img_file):
+                    self.cli_log_err("Firmware {:s} doesn't exist", level=0)
+                    return False
+
+        self.cli_log_inf("Post Diag SW Environment Init complete", level=0)
         # naples100 dsp check
 #        self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
 #        naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
@@ -1038,9 +1061,9 @@ class mtp_ctrl():
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
                     for line in f:
-                        if "ERROR ::" in line:
+                        if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
                             err_msg = line.replace('\n', '')
-                            err_msg = err_msg[err_msg.find('ERROR'):]
+                            err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
                             err_msg_list.append(err_msg)
         return err_msg_list
 
@@ -1153,7 +1176,7 @@ class mtp_ctrl():
         if proto_mode:
             self.cli_log_slot_err(slot, "Capri proto mode is set")
 
-        reg28_data = reg26_data = reg_data_list[1] 
+        reg28_data = reg_data_list[1]
         self.cli_log_slot_inf(slot, "CPLD 0x28 = {:x}".format(reg28_data))
         pcie_pll_lock = reg28_data & 0x40
         if not pcie_pll_lock:
@@ -1482,7 +1505,7 @@ class mtp_ctrl():
                             self.cli_log_slot_err_lock(slot, "Retrieve NIC FRU failed")
                         else:
                             self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0], fru_info_list[1], fru_info_list[2]))
-        
+
                     cpld_info_list = self._nic_ctrl_list[slot].nic_get_cpld()
                     if not cpld_info_list:
                         self.cli_log_slot_err(slot, "Retrieve NIC CPLD info failed")
@@ -1559,7 +1582,7 @@ class mtp_ctrl():
                 else:
                     self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
-        if fru_valid and sn_tag: 
+        if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
                 return False
 
@@ -1780,7 +1803,7 @@ class mtp_ctrl():
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd(init_cmd):
                 err_msg = self.mtp_get_cmd_buf()
-                return [MTP_DIAG_Error.NIC_DIAG_FAIL, err_msg]
+                return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
@@ -1790,10 +1813,17 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
             err_msg = self.mtp_get_cmd_buf()
-            return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, err_msg]
+            return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, [err_msg]]
 
-        # diag test ouput
-        diag_msg = self.mtp_get_cmd_buf()
+        # diag test error ouput
+        err_msg_list = list()
+        cmd_buf = self.mtp_get_cmd_buf()
+        if MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG in cmd_buf:
+            for line in cmd_buf.split('\n'):
+                if MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG in line:
+                    err_msg = line.replace('\r', '')
+                    err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG):]
+                    err_msg_list.append(err_msg)
 
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
@@ -1805,14 +1835,14 @@ class mtp_ctrl():
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd(post_cmd):
                 err_msg = self.mtp_get_cmd_buf()
-                return [MTP_DIAG_Error.NIC_DIAG_FAIL, err_msg]
+                return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
         if ret == "TIMEOUT":
             if not self.mtp_mgmt_jtag_rst():
                 self.mtp_enter_user_ctrl()
 
-        return [ret, diag_msg]
+        return [ret, err_msg_list]
 
 
     def mtp_mgmt_jtag_rst(self):
@@ -1851,7 +1881,7 @@ class mtp_ctrl():
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, init_cmd):
                 err_msg = self.mtp_get_nic_err_msg()
-                return [MTP_DIAG_Error.NIC_DIAG_FAIL, err_msg]
+                return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
@@ -1862,10 +1892,17 @@ class mtp_ctrl():
         # run diag test
         if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
             err_msg = self.mtp_get_nic_err_msg()
-            return [MTP_DIAG_Error.NIC_DIAG_FAIL, err_msg]
+            return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
-        # diag test ouput
-        diag_msg = self.mtp_get_nic_cmd_buf(slot)
+        # diag test error ouput
+        err_msg_list = list()
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        if MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG in cmd_buf:
+            for line in cmd_buf.split('\n'):
+                if MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG in line:
+                    err_msg = line.replace('\r', '')
+                    err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG):]
+                    err_msg_list.append(err_msg)
 
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
@@ -1877,10 +1914,10 @@ class mtp_ctrl():
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, post_cmd):
                 err_msg = self.mtp_get_nic_err_msg()
-                return [MTP_DIAG_Error.NIC_DIAG_FAIL, err_msg]
+                return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
-        return [ret, diag_msg]
+        return [ret, err_msg_list]
 
 
     def mtp_barcode_scan(self, present_check=True):

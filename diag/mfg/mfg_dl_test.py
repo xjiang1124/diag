@@ -309,6 +309,13 @@ def main():
         logfile_cleanup(log_file_list)
         return
 
+    # diag environment post init
+    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
+        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
+        logfile_close(log_filep_list)
+        logfile_cleanup(log_file_list)
+        return
+
     # get the hw version info
     cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
     if not cpld_ver_list:

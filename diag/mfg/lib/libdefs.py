@@ -221,3 +221,5 @@ class MFG_DIAG_SIG:
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
+    MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
+    MFG_ASIC_ERR_MSG_SIG = "ERROR ::"

@@ -118,7 +118,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
         start_ts = datetime.datetime.now().replace(microsecond=0)
-        ret, err_msg = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         stop_ts = datetime.datetime.now().replace(microsecond=0)
         duration = str(stop_ts - start_ts)
 
@@ -131,7 +131,8 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
                 return
         else:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+            for err_msg in err_msg_list:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
             nic_test_rslt_list[slot] = False
             if stop_on_err:
                 return
@@ -269,12 +270,12 @@ def main():
         return
 
     if not mtp_mgmt_ctrl.mtp_diag_pre_init(mtp_diagmgr_log_file):
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Pre-init Diag Environment Failed")
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Diag Environment Pre init failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
         return
 
-    if not mtp_mgmt_ctrl.mtp_diag_init(naples100_test_db):
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Environment Setup Fail")
+    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Diag Environment Post init Fail")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
@@ -521,7 +522,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
                 start_ts = datetime.datetime.now().replace(microsecond=0)
-                ret, err_msg = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+                ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
                 stop_ts = datetime.datetime.now().replace(microsecond=0)
                 duration = str(stop_ts - start_ts)
 
@@ -539,10 +540,12 @@ def main():
                         pass_sn_list.remove(sn)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
                     if dsp == "ASIC" and test == "L1":
                         mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                         err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                        for err_msg in err_msg_list:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+                    else:
                         for err_msg in err_msg_list:
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
                     if stop_on_err:
@@ -572,7 +575,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
                 start_ts = datetime.datetime.now().replace(microsecond=0)
-                ret, err_msg = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+                ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
                 stop_ts = datetime.datetime.now().replace(microsecond=0)
                 duration = str(stop_ts - start_ts)
 
@@ -590,10 +593,12 @@ def main():
                         pass_sn_list.remove(sn)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
                     if dsp == "ASIC" and test == "L1":
                         mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                         err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                        for err_msg in err_msg_list:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+                    else:
                         for err_msg in err_msg_list:
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
                     if stop_on_err:
