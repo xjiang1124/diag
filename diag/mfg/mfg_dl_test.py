@@ -8,7 +8,6 @@ import pexpect
 import threading
 import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -770,7 +769,6 @@ def main():
             logdir = dl_log_path + sn + "/"
             os.system("mkdir -p " + logdir)
             for logfile in log_file_list:
-                dst_logfile = "{:s}_{:s}".format(sn, os.path.basename(logfile))
                 os.system("cp {:s} {:s}".format(logfile, logdir+os.path.basename(logfile)))
 
     if len(naples25_sn_list) > 0:
@@ -779,7 +777,6 @@ def main():
             logdir = dl_log_path + sn + "/"
             os.system("mkdir -p " + logdir)
             for logfile in log_file_list:
-                dst_logfile = "{:s}_{:s}".format(sn, os.path.basename(logfile))
                 os.system("cp {:s} {:s}".format(logfile, logdir+os.path.basename(logfile)))
 
     mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)

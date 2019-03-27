@@ -3,13 +3,10 @@
 import sys
 import os
 import time
-import datetime 
 import pexpect
 import re
 import argparse
 import threading
-import Queue
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -305,7 +302,6 @@ def main():
     parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=True)
     parser.add_argument("--email", help="Send report to email address")
-    parser.add_argument("--error-injection", help="Randomly inject error", action='store_true')
     parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
     parser.add_argument("--pwr-cycle", help="Power cycle MTP before test", action='store_true')
     parser.add_argument("--skip-test", help="Test will not run", action='store_true')
@@ -317,7 +313,6 @@ def main():
 
     verbosity = False
     stop_on_err = False
-    err_inj = False
     apc = False
     email_to = None
     pwr_cycle = False
@@ -328,9 +323,6 @@ def main():
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")
         stop_on_err = True
-    if args.error_injection:
-        libmfg_utils.cli_inf("Error injection is enabled")
-        err_inj = True
     if args.apc:
         apc = True
     if args.verbosity:
@@ -428,7 +420,7 @@ def main():
             break 
         for mtp_thread in mtp_thread_list:
             if not mtp_thread.is_alive():
-                ret = mtp_thread.join()
+                mtp_thread.join()
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
     regression_stop_ts = libmfg_utils.timestamp_snapshot()

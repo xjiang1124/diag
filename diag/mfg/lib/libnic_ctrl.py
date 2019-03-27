@@ -25,7 +25,6 @@ from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
-from libmfg_cfg import MFG_NIC_VRM_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
 from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
 
@@ -500,22 +499,6 @@ class nic_ctrl():
         else:
             return False
 
-        return True
-
-
-    def nic_program_vrm(self, vrm_img, vrm_img_cksum):
-        if not self.nic_copy_image(vrm_img):
-            return False
-        img_name = os.path.basename(vrm_img)
-
-        nic_cmd_list = list()
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            return False
-
-        return True
-
-
-    def nic_verify_vrm(self, vrm_img, vrm_img_cksum):
         return True
 
 

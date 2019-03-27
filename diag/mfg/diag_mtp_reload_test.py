@@ -6,7 +6,6 @@ import time
 import pexpect
 import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils

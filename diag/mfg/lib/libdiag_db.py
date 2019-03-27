@@ -157,7 +157,7 @@ class diag_db():
         return libmfg_utils.diag_para_run_cmd(card_name, dsp, test, param)
 
 
-    def get_diag_seq_test_errcode_cmd(self, dsp, test, slot, opts):
+    def get_diag_seq_test_errcode_cmd(self, dsp, slot, opts):
         if opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:
@@ -166,7 +166,7 @@ class diag_db():
         return libmfg_utils.diag_seq_errcode_cmd(card_name, dsp)
 
 
-    def get_diag_para_test_errcode_cmd(self, dsp, test, slot, opts):
+    def get_diag_para_test_errcode_cmd(self, dsp, slot, opts):
         if opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:

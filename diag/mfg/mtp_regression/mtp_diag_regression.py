@@ -101,6 +101,216 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
     return
 
 
+def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list):
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
+    fail_list = list()
+    for intf in nic_check_list:
+        for slot in nic_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_PRE_CHECK", intf), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if ret == "SUCCESS":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_PRE_CHECK", intf, duration), level=0)
+            else:
+                fail_list.append(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Complete\n".format(nic_type), level=0)
+
+    return fail_list
+
+
+def naples_exec_post_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, stop_on_err):
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Post Check Start".format(nic_type), level=0)
+    fail_list = list()
+    for intf in nic_check_list:
+        for slot in nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_POST_CHECK", intf), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if ret == "SUCCESS":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_POST_CHECK", intf, duration), level=0)
+            else:
+                if stop_on_err:
+                    nic_list.remove(slot)
+                fail_list.append(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_POST_CHECK", intf, ret, duration), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Post Check Complete\n".format(nic_type), level=0)
+
+    return fail_list
+
+
+def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err):
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Start".format(nic_type), level=0)
+    fail_list = list()
+
+    nic_thread_list = list()
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+    for slot in nic_list:
+        nic_thread = threading.Thread(target = single_nic_diag_regression,
+                                      args = (mtp_mgmt_ctrl,
+                                              slot,
+                                              test_db,
+                                              test_list,
+                                              nic_test_rslt_list,
+                                              stop_on_err))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list:
+            if not nic_thread.is_alive():
+                ret = nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
+
+    for slot in nic_list:
+        if not nic_test_rslt_list[slot]:
+            fail_list.append(slot)
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Complete\n".format(nic_type), level=0)
+    return fail_list
+
+
+def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err):
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
+    fail_list = list()
+
+    for dsp, test in test_list:
+        test_cfg = test_db.get_diag_seq_test(dsp, test)
+        init_cmd = None
+        post_cmd = None
+        if test_cfg["INIT"] != "":
+            init_cmd = test_cfg["INIT"]
+        if test_cfg["POST"] != "":
+            post_cmd = test_cfg["POST"]
+        for slot in nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            opts = test_cfg["OPTS"]
+            diag_cmd = test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
+            rslt_cmd = test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+
+            if ret == "SUCCESS":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
+                if stop_on_err:
+                    nic_list.remove(slot)
+                fail_list.append(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
+            else:
+                if stop_on_err:
+                    nic_list.remove(slot)
+                fail_list.append(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
+                if dsp == "ASIC" and test == "L1":
+                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                    err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                    for err_msg in err_msg_list:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+                else:
+                    for err_msg in err_msg_list:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
+
+    return fail_list
+
+
+def naples_sw_install(mtp_mgmt_ctrl, nic_type, nic_list):
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Software Install Start".format(nic_type), level=0)
+    fail_list = list()
+
+    # get the absolute file path
+    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
+    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
+    naples_emmc_img_file = nic_fw_cfg[nic_type]["EMMC_FILE"]
+
+    mtp_mgmt_ctrl.mtp_power_off_nic()
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    for slot in nic_list:
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
+
+        # program EMMC
+        dsp = "DIAG_POST_CHECK"
+        test = "EMMC_PROG"
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = datetime.datetime.now().replace(microsecond=0)
+        ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, naples_emmc_img_file)
+        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            fail_list.append(slot)
+            continue
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+        # set sw boot
+        dsp = "DIAG_POST_CHECK"
+        test = "SW_BOOT_SET"
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = datetime.datetime.now().replace(microsecond=0)
+        ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
+        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            fail_list.append(slot)
+            continue
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Software Install Complete\n".format(nic_type), level=0)
+
+    return fail_list
+
+
+def naples_verify_sw_install(mtp_mgmt_ctrl, nic_type, nic_list):
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Verify Software Install Start".format(nic_type), level=0)
+    fail_list = list()
+
+    mtp_mgmt_ctrl.mtp_power_off_nic()
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
+    for slot in nic_list:
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        # verify sw boot
+        dsp = "DIAG_POST_CHECK"
+        test = "SW_BOOT_VERIFY"
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = datetime.datetime.now().replace(microsecond=0)
+        ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
+        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            fail_list.append(slot)
+            continue
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Verify Software Install Complete\n", level=0)
+
+
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err):
     for dsp, test in diag_para_test_list:
         test_cfg = diag_test_db.get_diag_para_test(dsp, test)
@@ -113,7 +323,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         opts = test_cfg["OPTS"]
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         diag_cmd = diag_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn)
-        rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, test, slot, opts)
+        rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
         nic_key = libmfg_utils.nic_key(slot)
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
@@ -140,7 +350,6 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--iteration", help="Iteration to run", type=int)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -149,7 +358,6 @@ def main():
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
-    iteration = 1
     stop_on_err = False
     verbosity = False
     skip_test = False
@@ -159,8 +367,6 @@ def main():
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
-    if args.iteration:
-        iteration = args.iteration
     if args.stop_on_error:
         stop_on_err = True
     if args.verbosity:
@@ -297,7 +503,6 @@ def main():
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]))
 
-    mtp_mgmt_ctrl.cli_log_inf("Iteration = {:3d}".format(iteration))
     mtp_mgmt_ctrl.cli_log_inf("Fan Speed = {:3d}%".format(fanspd))
     mtp_mgmt_ctrl.cli_log_inf("Voltage Margin = {:d}%".format(vmarg))
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
@@ -371,7 +576,7 @@ def main():
 
     # Fan speed, voltage margin setup
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment Setup", level=0)
-    if not mtp_mgmt_ctrl.mtp_diag_env_init(fanspd, vmarg):
+    if not mtp_mgmt_ctrl.mtp_diag_env_init(vmarg):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Regression Test Environment Setup Failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
         return
@@ -390,228 +595,153 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Pre Check Start")
-    for intf in naples100_pre_test_check_list:
-        for slot in naples100_nic_list[:]:
+    # Naples100 Diag Pre Check
+    if naples100_nic_list:
+        pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_nic_list, naples100_pre_test_check_list)
+        for slot in pre_check_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_PRE_CHECK", intf), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_PRE_CHECK", intf, duration), level=0)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
-                if slot in naples100_nic_list:
-                    naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Pre Check Complete\n")
+            if slot in naples100_nic_list:
+                naples100_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples25 Diag Regression Pre Check Start")
-    for intf in naples25_pre_test_check_list:
-        for slot in naples25_nic_list[:]:
+    # Naples25 Diag Pre Check
+    if naples25_nic_list:
+        pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_nic_list, naples25_pre_test_check_list)
+        for slot in pre_check_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_PRE_CHECK", intf), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_PRE_CHECK", intf, duration), level=0)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_PRE_CHECK", intf, ret, duration), level=0)
-                if slot in naples25_nic_list:
-                    naples25_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples25 Diag Regression Pre Check Complete\n")
+            if slot in naples25_nic_list:
+                naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-    for loop in range(iteration):
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Start".format(loop))
+    # Naples100 Parallel test
+    if naples100_nic_list:
+        diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                    NIC_Type.NAPLES100,
+                                                    naples100_nic_list,
+                                                    naples100_test_db,
+                                                    naples100_para_test_list,
+                                                    stop_on_err)
+        for slot in diag_para_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples100_nic_list and stop_on_err:
+                naples100_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-        # Naples100 Parallel test
-        nic_thread_list = list()
-        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-        for slot in naples100_nic_list[:]:
-            nic_thread = threading.Thread(target = single_nic_diag_regression, args = (mtp_mgmt_ctrl, slot, naples100_test_db, naples100_para_test_list, nic_test_rslt_list, stop_on_err))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
+    # Naples25 Parallel test
+    if naples25_nic_list:
+        diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                    NIC_Type.NAPLES25,
+                                                    naples25_nic_list,
+                                                    naples25_test_db,
+                                                    naples25_para_test_list,
+                                                    stop_on_err)
+        for slot in diag_para_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples25_nic_list and stop_on_err:
+                naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list:
-                if not nic_thread.is_alive():
-                    ret = nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
+    # Naples100 Sequential test
+    if naples100_nic_list:
+        diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+                                                  NIC_Type.NAPLES100,
+                                                  naples100_nic_list,
+                                                  naples100_test_db,
+                                                  naples100_seq_test_list,
+                                                  stop_on_err)
+        for slot in diag_seq_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples100_nic_list and stop_on_err:
+                naples100_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-        for slot in naples100_nic_list[:]:
-            if not nic_test_rslt_list[slot]:
-                nic_key = libmfg_utils.nic_key(slot)
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                if stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
+    # Naples25 Sequential test
+    if naples25_nic_list:
+        diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+                                                  NIC_Type.NAPLES25,
+                                                  naples25_nic_list,
+                                                  naples25_test_db,
+                                                  naples25_seq_test_list,
+                                                  stop_on_err)
+        for slot in diag_seq_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples25_nic_list and stop_on_err:
+                naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-        # Naples25 Parallel test
-        nic_thread_list = list()
-        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-        for slot in naples25_nic_list[:]:
-            nic_thread = threading.Thread(target = single_nic_diag_regression, args = (mtp_mgmt_ctrl, slot, naples25_test_db, naples25_para_test_list, nic_test_rslt_list, stop_on_err))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
+    # Naples100 Post Check
+    if naples100_nic_list:
+        post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
+                                                      NIC_Type.NAPLES100,
+                                                      naples100_nic_list,
+                                                      naples100_post_test_check_list,
+                                                      stop_on_err)
+        for slot in post_check_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples100_nic_list and stop_on_err:
+                naples100_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list:
-                if not nic_thread.is_alive():
-                    ret = nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in naples25_nic_list[:]:
-            if not nic_test_rslt_list[slot]:
-                nic_key = libmfg_utils.nic_key(slot)
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                if stop_on_err:
-                    naples25_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-
-        # Naples25 Sequential test
-        for dsp, test in naples25_seq_test_list:
-            test_cfg = naples25_test_db.get_diag_seq_test(dsp, test)
-            init_cmd = None
-            post_cmd = None
-            if test_cfg["INIT"] != "":
-                init_cmd = test_cfg["INIT"]
-            if test_cfg["POST"] != "":
-                post_cmd = test_cfg["POST"]
-            for slot in naples25_nic_list[:]:
-                opts = test_cfg["OPTS"]
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                diag_cmd = naples25_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
-                rslt_cmd = naples25_test_db.get_diag_seq_test_errcode_cmd(dsp, test, slot, opts)
-                nic_key = libmfg_utils.nic_key(slot)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-
-                start_ts = datetime.datetime.now().replace(microsecond=0)
-                ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-                stop_ts = datetime.datetime.now().replace(microsecond=0)
-                duration = str(stop_ts - start_ts)
-
-                if ret == "SUCCESS":
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-                elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
-                    if stop_on_err:
-                        naples25_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list:
-                        fail_nic_list.append(nic_key)
-                        fail_sn_list.append(sn)
-                    if nic_key in pass_nic_list:
-                        pass_nic_list.remove(nic_key)
-                        pass_sn_list.remove(sn)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
-                    if dsp == "ASIC" and test == "L1":
-                        mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                        err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-                        for err_msg in err_msg_list:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
-                    else:
-                        for err_msg in err_msg_list:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
-                    if stop_on_err:
-                        naples25_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list:
-                        fail_nic_list.append(nic_key)
-                        fail_sn_list.append(sn)
-                    if nic_key in pass_nic_list:
-                        pass_nic_list.remove(nic_key)
-                        pass_sn_list.remove(sn)
-
-        # Naples100 Sequential test
-        for dsp, test in naples100_seq_test_list:
-            test_cfg = naples100_test_db.get_diag_seq_test(dsp, test)
-            init_cmd = None
-            post_cmd = None
-            if test_cfg["INIT"] != "":
-                init_cmd = test_cfg["INIT"]
-            if test_cfg["POST"] != "":
-                post_cmd = test_cfg["POST"]
-            for slot in naples100_nic_list[:]:
-                opts = test_cfg["OPTS"]
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                diag_cmd = naples100_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
-                rslt_cmd = naples100_test_db.get_diag_seq_test_errcode_cmd(dsp, test, slot, opts)
-                nic_key = libmfg_utils.nic_key(slot)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-
-                start_ts = datetime.datetime.now().replace(microsecond=0)
-                ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-                stop_ts = datetime.datetime.now().replace(microsecond=0)
-                duration = str(stop_ts - start_ts)
-
-                if ret == "SUCCESS":
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-                elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp, test, duration), level=0)
-                    if stop_on_err:
-                        naples100_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list:
-                        fail_nic_list.append(nic_key)
-                        fail_sn_list.append(sn)
-                    if nic_key in pass_nic_list:
-                        pass_nic_list.remove(nic_key)
-                        pass_sn_list.remove(sn)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
-                    if dsp == "ASIC" and test == "L1":
-                        mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                        err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-                        for err_msg in err_msg_list:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
-                    else:
-                        for err_msg in err_msg_list:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
-                    if stop_on_err:
-                        naples100_nic_list.remove(slot)
-                    if nic_key not in fail_nic_list:
-                        fail_nic_list.append(nic_key)
-                        fail_sn_list.append(sn)
-                    if nic_key in pass_nic_list:
-                        pass_nic_list.remove(nic_key)
-                        pass_sn_list.remove(sn)
-
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Iteration - {:03d} Complete".format(loop))
-    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
+    # Naples25 Post Check
+    if naples25_nic_list:
+        post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
+                                                      NIC_Type.NAPLES25,
+                                                      naples25_nic_list,
+                                                      naples25_pre_test_check_list,
+                                                      stop_on_err)
+        for slot in post_check_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples25_nic_list and stop_on_err:
+                naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
     # log the diag test history
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("./diag -shist")
@@ -619,138 +749,93 @@ def main():
     if not stop_on_err:
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("./diag -chist")
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Post Check Start")
-    for intf in naples100_post_test_check_list:
-        for slot in naples100_nic_list[:]:
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
+
+    # Naples100 set the default boot image
+    if default_sw_boot and naples100_nic_list:
+        naples100_pass_nic_list = naples100_nic_list[:]
+        for slot in naples100_pass_nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            if nic_key in fail_nic_list:
+                naples100_pass_nic_list.remove(slot)
+
+        sw_install_fail_list = naples_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_pass_nic_list)
+        for slot in sw_install_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_POST_CHECK", intf), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_POST_CHECK", intf, duration), level=0)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_POST_CHECK", intf, ret, duration), level=0)
-                if stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples100 Diag Regression Post Check Complete\n")
-
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples25 Diag Regression Post Check Start")
-    for intf in naples25_post_test_check_list:
-        for slot in naples25_nic_list[:]:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "DIAG_POST_CHECK", intf), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "DIAG_POST_CHECK", intf, duration), level=0)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "DIAG_POST_CHECK", intf, ret, duration), level=0)
-                if stop_on_err:
-                    naples25_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-    mtp_mgmt_ctrl.cli_log_inf("MTP Naples25 Diag Regression Post Check Complete\n")
-
-    # Set the default boot image
-    if default_sw_boot and len(naples100_nic_list) > 0:
-        # get the absolute file path
-        nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
-        nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
-        naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
-
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic()
-        for slot in naples100_nic_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
-
-            # program EMMC
-            dsp = "DIAG_POST_CHECK"
-            test = "EMMC_PROG"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, naples100_emmc_img_file)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            if slot in naples100_nic_list:
                 naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
-            # set sw boot
-            dsp = "DIAG_POST_CHECK"
-            test = "SW_BOOT_SET"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+    # Naples25 set the default boot image
+    if default_sw_boot and naples25_nic_list:
+        naples25_pass_nic_list = naples25_nic_list[:]
+        for slot in naples25_pass_nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            if nic_key in fail_nic_list:
+                naples25_pass_nic_list.remove(slot)
 
-    if default_sw_boot and len(naples100_nic_list) > 0:
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic()
-        for slot in naples100_nic_list:
+        sw_install_fail_list = naples_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_pass_nic_list)
+        for slot in sw_install_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            # verify sw boot
-            dsp = "DIAG_POST_CHECK"
-            test = "SW_BOOT_VERIFY"
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                if stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if nic_key not in fail_nic_list:
-                    fail_nic_list.append(nic_key)
-                    fail_sn_list.append(sn)
-                if nic_key in pass_nic_list:
-                    pass_nic_list.remove(nic_key)
-                    pass_sn_list.remove(sn)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            if slot in naples25_nic_list:
+                naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
+    # Naples100 verify the default boot image
+    if default_sw_boot and naples100_nic_list:
+        naples100_pass_nic_list = naples100_nic_list[:]
+        for slot in naples100_pass_nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            if nic_key in fail_nic_list:
+                naples100_pass_nic_list.remove(slot)
+
+        sw_install_fail_list = naples_verify_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_pass_nic_list)
+        for slot in sw_install_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples100_nic_list:
+                naples100_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
+    # Naples25 verify the default boot image
+    if default_sw_boot and naples25_nic_list:
+        naples25_pass_nic_list = naples25_nic_list[:]
+        for slot in naples25_pass_nic_list[:]:
+            nic_key = libmfg_utils.nic_key(slot)
+            if nic_key in fail_nic_list:
+                naples25_pass_nic_list.remove(slot)
+
+        sw_install_fail_list = naples_verify_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_pass_nic_list)
+        for slot in sw_install_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in naples25_nic_list:
+                naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
+    # Dump failed NIC
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
         for slot in range(len(nic_prsnt_list)):
             key = libmfg_utils.nic_key(slot)
@@ -759,6 +844,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(nic_key, nic_type, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
                 break
 
+    # Dump passed NIC
     for nic_key, nic_sn in zip(pass_nic_list, pass_sn_list):
         for slot in range(len(nic_prsnt_list)):
             key = libmfg_utils.nic_key(slot)
@@ -767,6 +853,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(nic_key, nic_type, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
                 break
 
+    # Close log files
     for fp in open_file_track_list:
         fp.close()
 

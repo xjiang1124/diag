@@ -27,7 +27,6 @@ from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
-from libmfg_cfg import MFG_NIC_VRM_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
 from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
 
@@ -692,13 +691,13 @@ class mtp_ctrl():
 
 
     def mtp_nic_diag_fail_report(self, slot, sn):
-        err_msg = "SN[{:s}]".format(sn) + MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL
-        self.cli_log_slot_err(slot, err_msg)
+        msg = "SN[{:s}]".format(sn) + MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL
+        self.cli_log_slot_err(slot, msg)
 
 
     def mtp_nic_diag_pass_report(self, slot, sn):
-        err_msg = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS
-        self.cli_log_slot_inf(slot, err_msg)
+        msg = "SN[{:s}]".format(sn) + MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS
+        self.cli_log_slot_inf(slot, msg)
 
 
     def mtp_misc_init(self):
@@ -753,7 +752,7 @@ class mtp_ctrl():
 
     def mtp_diag_pre_init(self, diagmgr_logfile):
         # start the mtp diag
-        self.cli_log_inf("Init Diag SW Environment", level=0)
+        self.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
@@ -813,7 +812,7 @@ class mtp_ctrl():
             self.cli_log_err("Init NIC Connections Failed", level = 0)
             return False
 
-        self.cli_log_inf("Init Diag SW Environment complete\n", level=0)
+        self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
 
         return True
 
@@ -843,7 +842,7 @@ class mtp_ctrl():
             naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
             naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
             for img_file in [naples100_cpld_img_file, naples100_qspi_img_file, naples100_emmc_img_file]:
-                if not libmfg_util.file_exist(img_file):
+                if not libmfg_utils.file_exist(img_file):
                     self.cli_log_err("Firmware {:s} doesn't exist", level=0)
                     return False
 
@@ -852,11 +851,11 @@ class mtp_ctrl():
             naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
             naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
             for img_file in [naples25_cpld_img_file, naples25_qspi_img_file, naples25_emmc_img_file]:
-                if not libmfg_util.file_exist(img_file):
+                if not libmfg_utils.file_exist(img_file):
                     self.cli_log_err("Firmware {:s} doesn't exist", level=0)
                     return False
 
-        self.cli_log_inf("Post Diag SW Environment Init complete", level=0)
+        self.cli_log_inf("Post Diag SW Environment Init complete\n", level=0)
         # naples100 dsp check
 #        self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
 #        naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
@@ -891,7 +890,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_env_init(self, fan_speed, vmarg):
+    def mtp_diag_env_init(self, vmarg):
         # set nic voltage margin
         if vmarg != 0:
             for slot in range(self._slots):
@@ -1204,7 +1203,7 @@ class mtp_ctrl():
 
 # 4. Routines use mgmt port, can be run in parallel
     def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
+        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout)
         if not rc:
             err_msg = self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_err_msg(err_msg)
@@ -1328,24 +1327,6 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_program_nic_vrm(self, slot, vrm_img, vrm_img_cksum):
-        if MFG_NIC_VRM_PROGRAM:
-            self.cli_log_slot_inf_lock(slot, "Program NIC VRM")
-            if not self._nic_ctrl_list[slot].nic_program_vrm(vrm_img, vrm_img_cksum):
-                self.cli_log_slot_err_lock(slot, "Program NIC VRM failed")
-                return False
-            self.cli_log_slot_inf_lock(slot, "Program NIC VRM complete")
-        else:
-            self.cli_log_slot_inf_lock(slot, "Program NIC VRM bypassed")
-        return True
-
-
-    def mtp_verify_nic_vrm(self, slot, vrm_img, vrm_img_cksum):
-        if MFG_NIC_VRM_PROGRAM:
-            return True
-        return True
-
-
     def mtp_program_nic_qspi(self, slot, qspi_img):
         if MFG_NIC_QSPI_PROGRAM:
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI")
@@ -1368,6 +1349,8 @@ class mtp_ctrl():
 
             boot_image = qspi_info[0]
             kernel_timestamp = qspi_info[1]
+            nic_type = self.mtp_get_nic_type(slot)
+
             if boot_image != "diagfw":
                 self.cli_log_slot_err_lock(slot, "NIC is booted from {:s}".format(boot_image))
                 return False
@@ -1553,7 +1536,6 @@ class mtp_ctrl():
 
 
     def mtp_nic_diag_init(self, fru_valid=True, sn_tag=True, fru_cfg=None):
-        rc  = True
         self.cli_log_inf("Init NIC Diag Environment", level = 0)
         if sn_tag:
             self.mtp_nic_load_scan_fru(fru_cfg)
@@ -1773,7 +1755,7 @@ class mtp_ctrl():
             return MTP_DIAG_Error.NIC_DIAG_FAIL
 
 
-    def mtp_mgmt_get_test_result(self, cmd, test, timeout=30):
+    def mtp_mgmt_get_test_result(self, cmd, test):
         if not self.mtp_mgmt_exec_cmd(cmd):
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
 
@@ -1785,7 +1767,7 @@ class mtp_ctrl():
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
 
 
-    def mtp_mgmt_get_test_result_para(self, slot, cmd, test, timeout=30):
+    def mtp_mgmt_get_test_result_para(self, slot, cmd, test):
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.cli_log_slot_err_lock(slot, "Execute {:s} failed".format(cmd))
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
@@ -1880,7 +1862,7 @@ class mtp_ctrl():
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, init_cmd):
-                err_msg = self.mtp_get_nic_err_msg()
+                err_msg = self.mtp_get_nic_err_msg(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # log the timestamp in diag log
@@ -1891,7 +1873,7 @@ class mtp_ctrl():
 
         # run diag test
         if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
-            err_msg = self.mtp_get_nic_err_msg()
+            err_msg = self.mtp_get_nic_err_msg(slot)
             return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # diag test error ouput
@@ -1913,7 +1895,7 @@ class mtp_ctrl():
         # post command
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, post_cmd):
-                err_msg = self.mtp_get_nic_err_msg()
+                err_msg = self.mtp_get_nic_err_msg(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
