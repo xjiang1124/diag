@@ -1109,6 +1109,8 @@ class mtp_ctrl():
     def mtp_nic_mgmt_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC MGMT port")
         if not self._nic_ctrl_list[slot].nic_mgmt_init():
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+            self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
             return False
 
@@ -1118,6 +1120,17 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             return False
         time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+
+        return True
+
+
+    def mtp_nic_emmc_init(self, slot):
+        self.cli_log_slot_inf(slot, "Init NIC EMMC")
+        if not self._nic_ctrl_list[slot].nic_emmc_init():
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+            self.mtp_dump_err_msg(err_msg)
+            self.cli_log_slot_err(slot, "Init NIC EMMC failed")
+            return False
 
         return True
 
@@ -1545,6 +1558,9 @@ class mtp_ctrl():
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
                 if not self.mtp_nic_mini_init(slot):
+                    continue
+
+                if not self.mtp_nic_emmc_init(slot):
                     continue
 
                 if not self.mtp_mgmt_copy_nic_diag(slot):

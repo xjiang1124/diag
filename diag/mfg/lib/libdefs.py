@@ -130,6 +130,7 @@ class MTP_DIAG_Path:
     ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
     ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
     ONBOARD_NIC_DIAG_PATH = "/home/diag/"
+    ONBOARD_NIC_DIAG_UTIL_PATH = "/data/"
 
 
 class MTP_DIAG_Report:
@@ -167,6 +168,8 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
     NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
 
+    NIC_MOUNT_EMMC_FMT = "mount {:s} {:s}"
+    NIC_MOUNT_DISP_FMT = "mount | grep '{:s}'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
     NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
@@ -221,5 +224,6 @@ class MFG_DIAG_SIG:
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
+    NIC_MOUNT_OK_SIG = "{:s} on {:s}"
     MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
     MFG_ASIC_ERR_MSG_SIG = "ERROR ::"

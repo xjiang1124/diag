@@ -516,6 +516,32 @@ class nic_ctrl():
         return True
 
 
+    def nic_init_emmc(self):
+        nic_cmd_list = list()
+        dev = "/dev/mmcblk0p10"
+        mount_point = "/data"
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=OS_CMD_DELAY):
+            return False
+
+        # check if mount is ok
+        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT(dev)
+        mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG(dev, mount_point)
+        mount_buf = self.nic_get_info(nic_cmd)
+        if mount_buf:
+            if mount_sig in mount_buf:
+                return True
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                self.nic_set_err_msg(mount_buf)
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+
     def nic_program_emmc(self, emmc_img):
         if not self.nic_copy_image(emmc_img):
             return False
@@ -543,6 +569,12 @@ class nic_ctrl():
         for util in nic_diag_list:
             img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
             if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
+                return False
+
+        nic_diag_list = ["nic_arm", "nic_util"]
+        for util in nic_diag_list:
+            img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
+            if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
                 return False
 
         return True
