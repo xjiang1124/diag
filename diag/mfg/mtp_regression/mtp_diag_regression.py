@@ -266,20 +266,28 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     return fail_list
 
 
-def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list):
+def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC logfile for MTP Parallel tests", level=0)
 
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_power_on_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=False):
-        mtp_mgmt_ctrl.cli_log_inf("Init NIC Diag Environment failed\n", level=0)
+        mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed\n", level=0)
         return False
 
     for slot in nic_list:
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        if not mtp_mgmt_ctrl.mtp_
+        logfile_list = list()
+        if "SNAKE_HBM" in mtp_para_test_list:
+            logfile_list.append("snake_hbm.log")
+        if "SNAKE_PCIE" in mtp_para_test_list:
+            logfile_list.append("snake_pcie.log")
+        if "PRBS_ETH" in mtp_para_test_list:
+            logfile_list.append("prbs_eth.log")
 
+        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
+            mtp_mgmt_ctrl.cli_log_slot_err("Collecting NIC logfile for MTP Parallel tests failed\n")
+            continue
 
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC logfile for MTP Parallel tests complete\n", level=0)
 
@@ -759,13 +767,12 @@ def main():
                 pass_sn_list.remove(sn)
 
     # log the diag test history
-    cmd = MFG_DIAG_CMDS.MTP_DIAG_SHIST_FMT
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
 
     # clear the diag test history
     if not stop_on_err:
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_CHIST_FMT
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
+
 
     # Naples100 Post Check
     if naples100_nic_list:
@@ -813,6 +820,7 @@ def main():
                                                        naples100_nic_list,
                                                        naples100_mtp_para_test_list,
                                                        stop_on_err)
+        naples_get_mtp_para_logfile(mtp_mgmt_ctrl, naples100_nic_list, naples100_mtp_para_test_list)
         for slot in diag_para_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -833,6 +841,7 @@ def main():
                                                        naples25_nic_list,
                                                        naples25_mtp_para_test_list,
                                                        stop_on_err)
+        naples_get_mtp_para_logfile(mtp_mgmt_ctrl, naples25_nic_list, naples25_mtp_para_test_list)
         for slot in diag_para_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)

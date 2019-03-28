@@ -580,8 +580,7 @@ class nic_ctrl():
         return True
 
 
-    def nic_save_logfile(self):
-        logfile_list = ["", "", ""] 
+    def nic_save_logfile(self, logfile_list):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         for log in logfile_list:
             logfile = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR + log

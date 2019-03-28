@@ -1413,9 +1413,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_save_nic_logfile(self, slot):
+    def mtp_mgmt_save_nic_logfile(self, slot, logfile_list):
         self.cli_log_slot_inf_lock(slot, "Save NIC Logfile")
-        if not self._nic_ctrl_list[slot].nic_save_logfile():
+        if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
             return False
@@ -1751,6 +1751,24 @@ class mtp_ctrl():
 
     def mtp_check_nic_status(self, slot):
         return self._nic_ctrl_list[slot].nic_check_status()
+
+
+    # log the diag test history
+    def mtp_mgmt_diag_history_disp(self):
+        cmd = MFG_DIAG_CMDS.MTP_DIAG_SHIST_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            return False
+
+        return True
+
+
+    # clear the diag test history
+    def mtp_mgmt_diag_history_clear(self):
+        cmd = MFG_DIAG_CMDS.MTP_DIAG_CHIST_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            return False
+
+        return True
 
 
     def mtp_mgmt_pre_post_diag_check(self, intf, slot):

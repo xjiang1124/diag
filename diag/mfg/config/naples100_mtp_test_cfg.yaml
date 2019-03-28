@@ -69,14 +69,14 @@ MTP_SEQ:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-    ASIC:
-        L1:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: No
-                SN: Yes
-                SLOT: Yes
-
+                #    ASIC:
+                #        L1:
+                #            INIT: ""
+                #            POST: ""
+                #            OPTS:
+                #                NIC_NAME: No
+                #                SN: Yes
+                #                SLOT: Yes
+                #
 MTP_POST:
     NIC_MEM:  True

@@ -230,7 +230,7 @@ class MFG_DIAG_SIG:
     MTP_FAN0_PRSNT_SIG = "Fan 0 is present"
     MTP_FAN1_PRSNT_SIG = "Fan 1 is present"
     MTP_FAN2_PRSNT_SIG = "Fan 2 is present"
-    NIC_CON_OK_SIG = "stty speed 9600"
+    NIC_CON_OK_SIG = "# stty speed 9600"
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
