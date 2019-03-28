@@ -58,13 +58,13 @@ class nic_test:
             sys.exit(0)
 
         if test_type == "snake" and mode == "hbm":
-            test_cmd = "./diag.exe snake.h.a.tcl 2>&1 > snake.log &"
+            test_cmd = "./diag.exe snake.h.a.tcl 2>&1 > snake_hbm.log &"
         elif test_type == "snake" and mode == "pcie":
-            test_cmd = "./diag.exe snake.p.a.tcl 2>&1 > snake.log &"
+            test_cmd = "./diag.exe snake.p.a.tcl 2>&1 > snake_pcie.log &"
         elif test_type == "prbs" and mode == "eth":
-            test_cmd = "./diag.exe prbs.e.a.tcl 2>&1 > snake.log &"
+            test_cmd = "./diag.exe prbs.e.a.tcl 2>&1 > prbs_eth.log &"
         elif test_type == "prbs" and mode == "pcie":
-            test_cmd = "./diag.exe prbs.p.a.tcl 2>&1 > snake.log &"
+            test_cmd = "./diag.exe prbs.p.a.tcl 2>&1 > prbs_pcie.log &"
         else:
             print "Invalid test_type {} and mdoe {}".format(test_type, mode)
             sys.exit(0)
@@ -91,7 +91,7 @@ class nic_test:
 
         return ret
 
-    def test_check(self, slot=0, test_type="snake", timeout=30):
+    def test_check(self, slot=0, test_type="snake", mode="hbm", timeout=30):
         print "=== Checing snake result on slot {} ===".format(slot)
         session = common.session_start()
 
@@ -102,8 +102,16 @@ class nic_test:
 
         if test_type == "snake":
             exp_err_cnt = 3
+            if mode == "hbm":
+                log_name = "snake_hbm.log"
+            else:
+                log_name = "snake_pcie.log"
         else:
             exp_err_cnt = 0
+            if mode == "eth":
+                log_name = "prbs_eth.log"
+            else:
+                log_name = "prbs_pcie.log"
 
         session.timeout = timeout
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
@@ -112,7 +120,7 @@ class nic_test:
 
         self.nic_con.uart_session_start(session, self.baud_rate)
 
-        check_cmd = "/data/nic_arm/check_snake.sh {}".format(exp_err_cnt)
+        check_cmd = "/data/nic_arm/check_snake.sh {} {}".format(log_name, exp_err_cnt)
         ret = self.nic_con.uart_session_cmd_sig(session, check_cmd, 3600, "\#", ["TEST Passed", "TEST Failed", "TEST Not Done"])
         print "ret:", ret
         self.nic_con.uart_session_stop(session)
@@ -144,7 +152,7 @@ class nic_test:
                 if test_result[slot] != "No Result":
                     continue
 
-                test_sts = self.test_check(int(slot), test_type)
+                test_sts = self.test_check(int(slot), test_type, mode)
                 if test_sts == 0:
                     print "=== Snake Result at Slot {}: Passed".format(slot)
                     test_result[slot] = "PASS"
@@ -195,7 +203,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.snake_check == True:
-        test.snake_check(args.slot, "snake")
+        test.snake_check(args.slot, "snake", args.mode)
         sys.exit()
 
     if args.snake == True:
@@ -208,7 +216,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.prbs_check == True:
-        test.prbs_check(args.slot, "prbs")
+        test.prbs_check(args.slot, "prbs", args.mode)
         sys.exit()
 
     if args.prbs == True:
