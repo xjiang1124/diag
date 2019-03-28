@@ -1124,9 +1124,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_emmc_init(self, slot):
+    def mtp_nic_emmc_init(self, slot, emmc_format=False):
         self.cli_log_slot_inf(slot, "Init NIC EMMC")
-        if not self._nic_ctrl_list[slot].nic_init_emmc():
+        if not self._nic_ctrl_list[slot].nic_init_emmc(emmc_format):
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC EMMC failed")
@@ -1558,7 +1558,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, fru_valid=True, sn_tag=True, fru_cfg=None):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None):
         self.cli_log_inf("Init NIC Diag Environment", level = 0)
         if sn_tag:
             self.mtp_nic_load_scan_fru(fru_cfg)
@@ -1570,7 +1570,7 @@ class mtp_ctrl():
                 if not self.mtp_nic_mini_init(slot):
                     continue
 
-                if not self.mtp_nic_emmc_init(slot):
+                if not self.mtp_nic_emmc_init(slot, emmc_format):
                     continue
 
                 if not self.mtp_mgmt_copy_nic_diag(slot):

@@ -146,7 +146,7 @@ def main():
             mtp_mgmt_ctrl.mtp_power_on_nic()
             if not mtp_mgmt_ctrl.mtp_nic_init():
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=False):
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init():
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         if mtp_loop == mtp_reload - 1:

@@ -272,7 +272,7 @@ def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_power_on_nic()
 
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=False):
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed\n", level=0)
         return False
 
@@ -586,7 +586,7 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=sn_scan_tag):
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(sn_tag=sn_scan_tag):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC type, present failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return

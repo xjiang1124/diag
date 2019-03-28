@@ -516,12 +516,13 @@ class nic_ctrl():
         return True
 
 
-    def nic_init_emmc(self):
+    def nic_init_emmc(self, init = False):
         nic_cmd_list = list()
         dev = "/dev/mmcblk0p10"
         mount_point = "/data"
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
-        nic_cmd_list.append(nic_cmd)
+        if init:
+            nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+            nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):

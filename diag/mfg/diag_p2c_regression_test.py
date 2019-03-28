@@ -29,11 +29,12 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     passwd = mtp_mgmt_cfg[2]
 
     # create the log subdir
-    sub_dir = "{:s}_{:s}_iter{:d}_{:s}/".format(corner, mtp_id, loop, libmfg_utils.get_timestamp())
+    log_timestamp = libmfg_utils.get_timestamp()
+    sub_dir = "{:s}_{:s}_iter{:d}_{:s}/".format(corner, mtp_id, loop, log_timestamp)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
 
     # log pkg filename
-    log_pkg_file = "{:s}mtp_regression.{:d}.tar.gz".format(log_dir, loop)
+    log_pkg_file = "{:s}{:s}_{:s}_iter{:d}_{:s}.tar.gz".format(log_dir, corner, mtp_id, loop, log_timestamp)
 
     # need to be sync'd with cleanup.sh
     diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  

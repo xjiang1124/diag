@@ -353,7 +353,7 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic()
 
     # init nic diag env.
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg):
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
@@ -597,7 +597,7 @@ def main():
         return
 
     # init nic diag env.
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(fru_valid=True, sn_tag=False):
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
