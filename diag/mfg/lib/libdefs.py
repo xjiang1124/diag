@@ -59,6 +59,7 @@ class MTP_Const:
     MTP_OS_SHUTDOWN_DELAY = 60
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
+    MTP_PARA_TEST_DELAY = 500
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 120
@@ -112,6 +113,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
+    NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
     DIAG_MFG_NAPLES100_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"
@@ -197,6 +199,10 @@ class MFG_DIAG_CMDS:
     NIC_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d}"
     NIC_CON_MTEST_FMT = "nic_con.py -mtest -slot {:d}"
 
+    MTP_PARA_PRBS_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=240 -mode=eth"
+    MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180"
+    MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie"
+
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -i enp2s0"
 
@@ -207,8 +213,11 @@ class MFG_DIAG_CMDS:
     MTP_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_start"
     MTP_DSP_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_stop"
     MTP_DSP_DISP_FMT = "/home/diag/diag/python/infra/dshell/diag -sdsp"
+    MTP_DSP_PARAM_FMT = "/home/diag/diag/python/infra/dshell/diag -param {:s}"
     MTP_DIAG_RUN_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c {:s}"
     MTP_DIAG_RSLT_FMT = "/home/diag/diag/python/infra/dshell/diag -sresult -c {:s}"
+    MTP_DIAG_SHIST_FMT = "/home/diag/diag/python/infra/dshell/diag -shist"
+    MTP_DIAG_CHIST_FMT = "/home/diag/diag/python/infra/dshell/diag -chist"
 
     NIC_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c NIC{:d} -d diagmgr -t dsp_start"
 
@@ -217,6 +226,7 @@ class MFG_DIAG_SIG:
     MTP_DSP_START_OK_SIG = "Test Done: MTP1:DIAGMGR:DSP_START"
     MTP_VRM_OK_SIG = "TEST PASSED"
     MTP_FAN_OK_SIG = "TEST PASSED"
+    MTP_PARA_TEST_SIG = "TEST RESULT:"
     MTP_FAN0_PRSNT_SIG = "Fan 0 is present"
     MTP_FAN1_PRSNT_SIG = "Fan 1 is present"
     MTP_FAN2_PRSNT_SIG = "Fan 2 is present"

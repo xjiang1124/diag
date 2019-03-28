@@ -1,5 +1,6 @@
 import libmfg_utils
 from libdefs import Env_Cond
+from libdefs import MFG_DIAG_CMDS
 
 class diag_db():
     def __init__(self, corner, diag_cfg_file):
@@ -9,6 +10,7 @@ class diag_db():
         self._test_param_list = list()
         self._seq_test_id_list = list()
         self._pre_test_intf_list = list()
+        self._mtp_para_test_list = list()
         self._post_test_intf_list = list()
         self._para_test_id_list = list()
         self._seq_tests = dict()
@@ -65,9 +67,14 @@ class diag_db():
             for test in diag_test_cfg["MTP_SEQ"][dsp]:
                 self._seq_test_id_list.append((dsp, test))
 
+        # mtp parallel test:
+        for test in diag_test_cfg["MTP_PARA"].keys():
+            if diag_test_cfg["MTP_PARA"][test]:
+                self._mtp_para_test_list.append(test)
+
         # parallel test:
-        for dsp in diag_test_cfg["MTP_PARA"].keys():
-            for test in diag_test_cfg["MTP_PARA"][dsp]:
+        for dsp in diag_test_cfg["NIC_PARA"].keys():
+            for test in diag_test_cfg["NIC_PARA"][dsp]:
                 self._para_test_id_list.append((dsp, test))
 
         # post test interface check:
@@ -76,7 +83,7 @@ class diag_db():
                 self._post_test_intf_list.append(intf)
 
         self._seq_tests = diag_test_cfg["MTP_SEQ"]
-        self._para_tests = diag_test_cfg["MTP_PARA"]
+        self._para_tests = diag_test_cfg["NIC_PARA"]
 
 
     def get_init_cmd_list(self):
@@ -104,7 +111,7 @@ class diag_db():
     def get_test_param_cmd_list(self):
         param_list = list()
         for param in self._test_param_list:
-            cmd = "./diag -param {:s}".format(param)
+            cmd = MFG_DIAG_CMDS.MTP_DSP_PARAM_FMT.format(param)
             param_list.append(cmd)
         return param_list
 
@@ -119,6 +126,10 @@ class diag_db():
 
     def get_pre_diag_test_intf_list(self):
         return self._pre_test_intf_list
+
+
+    def get_mtp_para_test_list(self):
+        return self._mtp_para_test_list
 
 
     def get_post_diag_test_intf_list(self):

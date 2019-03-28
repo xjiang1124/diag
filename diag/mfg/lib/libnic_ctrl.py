@@ -524,12 +524,12 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
         nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=OS_CMD_DELAY):
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         # check if mount is ok
-        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT(dev)
-        mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG(dev, mount_point)
+        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT.format(dev)
+        mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG.format(dev, mount_point)
         mount_buf = self.nic_get_info(nic_cmd)
         if mount_buf:
             if mount_sig in mount_buf:
@@ -552,7 +552,7 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name)
         nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=OS_CMD_DELAY):
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         return True
@@ -575,6 +575,31 @@ class nic_ctrl():
         for util in nic_diag_list:
             img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
             if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                return False
+
+        return True
+
+
+    def nic_save_logfile(self):
+        logfile_list = ["", "", ""] 
+        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
+        for log in logfile_list:
+            logfile = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR + log
+            dst_logfile = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR + self._sn + "_" + log 
+            cmd = "scp {:s} {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, logfile, dst_logfile)
+            self._nic_handle.sendline(cmd)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            if idx < 0:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg(self._nic_handle.before)
+                return False
+
+            self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            if idx < 0:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg(self._nic_handle.before)
                 return False
 
         return True

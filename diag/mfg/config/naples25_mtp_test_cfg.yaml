@@ -21,27 +21,7 @@ MTP_PRE:
     NIC_JTAG: True
     NIC_STATUS: True
 
-MTP_POST:
-    NIC_MEM:  True
-
-MTP_SEQ:
-    MVL:
-        STUB:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: No
-                SLOT: No
-    ASIC:
-        L1:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: No
-                SN: Yes
-                SLOT: Yes
-MTP_PARA:
+NIC_PARA:
     RTC:
         RTC:
             INIT: ""
@@ -74,3 +54,31 @@ MTP_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+
+MTP_PARA:
+    SNAKE_HBM: True
+    SNAKE_PCIE: True
+    PRBS_ETH: True
+
+MTP_SEQ:
+    MVL:
+        STUB:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    ASIC:
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+
+MTP_POST:
+    NIC_MEM:  True
+
+

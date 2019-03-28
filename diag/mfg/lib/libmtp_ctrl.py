@@ -843,7 +843,7 @@ class mtp_ctrl():
             naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
             for img_file in [naples100_cpld_img_file, naples100_qspi_img_file, naples100_emmc_img_file]:
                 if not libmfg_utils.file_exist(img_file):
-                    self.cli_log_err("Firmware {:s} doesn't exist", level=0)
+                    self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     return False
 
         if mtp_capability & 0x2:
@@ -852,7 +852,7 @@ class mtp_ctrl():
             naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
             for img_file in [naples25_cpld_img_file, naples25_qspi_img_file, naples25_emmc_img_file]:
                 if not libmfg_utils.file_exist(img_file):
-                    self.cli_log_err("Firmware {:s} doesn't exist", level=0)
+                    self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     return False
 
         self.cli_log_inf("Post Diag SW Environment Init complete\n", level=0)
@@ -1126,7 +1126,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC EMMC")
-        if not self._nic_ctrl_list[slot].nic_emmc_init():
+        if not self._nic_ctrl_list[slot].nic_init_emmc():
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC EMMC failed")
@@ -1407,6 +1407,16 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Copy NIC Diag Image")
         if not self._nic_ctrl_list[slot].nic_copy_diag_img():
             self.cli_log_slot_err_lock(slot, "Copy NIC Diag Image failed")
+            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            return False
+
+        return True
+
+
+    def mtp_mgmt_save_nic_logfile(self, slot):
+        self.cli_log_slot_inf_lock(slot, "Save NIC Logfile")
+        if not self._nic_ctrl_list[slot].nic_save_logfile():
+            self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
             return False
 
@@ -1769,6 +1779,60 @@ class mtp_ctrl():
         else:
             self.cli_log_slot_err(slot, "Unknown pre diag check module")
             return MTP_DIAG_Error.NIC_DIAG_FAIL
+
+
+    def mtp_mgmt_run_test_mtp_para(self, test, nic_list):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return None
+
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
+
+        if test == "PRBS_ETH":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_TEST_FMT.format(nic_list_param)
+        elif test == "SNAKE_HBM":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param)
+        elif test == "SNAKE_PCIE":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param)
+        else:
+            self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
+            return MTP_DIAG_Error.NIC_DIAG_FAIL
+
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
+            self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
+            return MTP_DIAG_Error.NIC_DIAG_FAIL
+
+        match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
+        return match
+
+
+    def mtp_mgmt_get_nic_logfile(self, test, nic_list):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return None
+
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
+
+        if test == "PRBS_ETH":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_TEST_FMT.format(nic_list_param)
+        elif test == "SNAKE_HBM":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param)
+        elif test == "SNAKE_PCIE":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param)
+        else:
+            self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
+            return MTP_DIAG_Error.NIC_DIAG_FAIL
+
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
+            self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
+            return MTP_DIAG_Error.NIC_DIAG_FAIL
+
+        match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
+        return match
 
 
     def mtp_mgmt_get_test_result(self, cmd, test):
