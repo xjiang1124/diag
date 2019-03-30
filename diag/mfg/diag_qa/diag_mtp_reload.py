@@ -201,6 +201,9 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver), level=0)
         mtp_mgmt_ctrl.cli_log_inf("MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver), level=0)
 
+        if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
+            mtp_mgmt_ctrl.cli_log_err("Init MTP HW fails", level=0)
+
     if reset_nic:
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
             # init nic type list

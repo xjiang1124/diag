@@ -146,6 +146,7 @@ then
     cp $TOP_DIR/diag/python/regression/arm_nic/* $DIAG_ASIC_IMG_PATH/
     cp $TOP_DIR/diag/python/regression/scripts/nic_config.sh $DIAG_ASIC_IMG_PATH/
     cp $TOP_DIR/diag/python/regression/scripts/rtc_sanity.sh $DIAG_ASIC_IMG_PATH/
+    cp $TOP_DIR/diag/scripts/vmarg.sh $DIAG_ASIC_IMG_PATH/
     cp $TOP_DIR/diag/scripts/asic/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $TOP_DIR/diag/scripts/asic/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $TOP_DIR/diag/scripts/asic/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/

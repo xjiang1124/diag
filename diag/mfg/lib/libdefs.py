@@ -59,7 +59,7 @@ class MTP_Const:
     MTP_OS_SHUTDOWN_DELAY = 60
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
-    MTP_PARA_TEST_DELAY = 500
+    MTP_PARA_TEST_DELAY = 1800
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 120
@@ -69,6 +69,7 @@ class MTP_Const:
     NIC_NETCOPY_DELAY = 120
     NIC_MGMT_IP_SET_DELAY = 10
     NIC_MGMT_IP_INIT_RETRY = 1
+    NIC_SW_BOOTUP_DELAY = 120
     NIC_POWER_ON_DELAY = 30
     NIC_POWER_OFF_DELAY = 10
 
@@ -199,9 +200,9 @@ class MFG_DIAG_CMDS:
     NIC_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d}"
     NIC_CON_MTEST_FMT = "nic_con.py -mtest -slot {:d}"
 
-    MTP_PARA_PRBS_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=240 -mode=eth"
-    MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180"
-    MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie"
+    MTP_PARA_PRBS_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=240 -mode=eth -vmarg {:d}"
+    MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
+    MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -i enp2s0"
@@ -220,6 +221,9 @@ class MFG_DIAG_CMDS:
     MTP_DIAG_CHIST_FMT = "/home/diag/diag/python/infra/dshell/diag -chist"
 
     NIC_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c NIC{:d} -d diagmgr -t dsp_start"
+
+    NIC_SW_UMOUNT_FMT = "/etc/init.d/S09mount stop"
+
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

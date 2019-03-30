@@ -1,11 +1,8 @@
 import pexpect
 import time
 import os
-import sys
 import libmfg_utils
-import random
 import re
-import threading
 from datetime import datetime
 from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
 from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
@@ -325,6 +322,21 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+        # umount
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
         # detach the console connection
         if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -480,23 +492,6 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name)
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            return False
-
-        return True
-
-
-    def nic_get_cpld(self):
-        if self._nic_type == NIC_Type.NAPLES100:
-            if cpld_ver != MFG_NAPLES100_CPLD_VERSION or cpld_timestamp != MFG_NAPLES100_CPLD_TIMESTAMP:
-                return False
-            else:
-                return True
-        elif self._nic_type == NIC_Type.NAPLES25:
-            if cpld_ver != MFG_NAPLES25_CPLD_VERSION or cpld_timestamp != MFG_NAPLES25_CPLD_TIMESTAMP:
-                return False
-            else:
-                return True
-        else:
             return False
 
         return True
@@ -788,7 +783,6 @@ class nic_ctrl():
             return None
         match = re.findall(pll_sta_reg_exp, self.nic_get_cmd_buf())
         if not match:
-            self.cli_log_slot_err(slot, "Failed to run command {:s} on MTP".format(cmd))
             return None
         else:
             reg28_data = int(match[0], 16)

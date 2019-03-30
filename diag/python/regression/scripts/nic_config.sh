@@ -22,6 +22,6 @@ echo "export CARD_TYPE=\"$type\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
 
-sh /home/diag/diag/python/regression/scripts/rtc_sanity.sh
+sh /data/nic_arm/rtc_sanity.sh
 
 echo "nic_config done"

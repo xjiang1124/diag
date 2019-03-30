@@ -3,7 +3,6 @@ import time
 import os
 import sys
 import libmfg_utils
-import random
 import re
 import threading
 from datetime import datetime
@@ -841,18 +840,32 @@ class mtp_ctrl():
             naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
             naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
             naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
+            cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+                return False
+            cmd_buf = self.mtp_get_cmd_buf()
+
             for img_file in [naples100_cpld_img_file, naples100_qspi_img_file, naples100_emmc_img_file]:
-                if not libmfg_utils.file_exist(img_file):
+                if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
+                    self.mtp_dump_err_msg(cmd_buf)
                     return False
 
         if mtp_capability & 0x2:
             naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
             naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
             naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
+            cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+                return False
+            cmd_buf = self.mtp_get_cmd_buf()
+
             for img_file in [naples25_cpld_img_file, naples25_qspi_img_file, naples25_emmc_img_file]:
-                if not libmfg_utils.file_exist(img_file):
+                if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
+                    self.mtp_dump_err_msg(cmd_buf)
                     return False
 
         self.cli_log_inf("Post Diag SW Environment Init complete\n", level=0)
@@ -1064,6 +1077,30 @@ class mtp_ctrl():
                             err_msg = line.replace('\n', '')
                             err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
                             err_msg_list.append(err_msg)
+        return err_msg_list
+
+
+    # return list of error message
+    def mtp_mgmt_retrieve_mtp_para_err(self, sn, test):
+        err_msg_list = list()
+        path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
+
+        if test == "PRBS_ETH":
+            filename = "{:s}_prbs_eth.log".format(sn)
+        elif test == "SNAKE_HBM":
+            filename = "{:s}_snake_hbm.log".format(sn)
+        elif test == "SNAKE_PCIE":
+            filename = "{:s}_snake_pcie.log".format(sn)
+        else:
+            self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
+            return err_msg_list
+
+        with open(os.path.join(path, filename), 'r') as f:
+            for line in f:
+                if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
+                    err_msg = line.replace('\n', '')
+                    err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
+                    err_msg_list.append(err_msg)
         return err_msg_list
 
 
@@ -1799,7 +1836,7 @@ class mtp_ctrl():
             return MTP_DIAG_Error.NIC_DIAG_FAIL
 
 
-    def mtp_mgmt_run_test_mtp_para(self, test, nic_list):
+    def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
@@ -1809,11 +1846,11 @@ class mtp_ctrl():
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
         if test == "PRBS_ETH":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_TEST_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_TEST_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_HBM":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_PCIE":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return MTP_DIAG_Error.NIC_DIAG_FAIL
