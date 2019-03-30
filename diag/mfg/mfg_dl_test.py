@@ -596,6 +596,9 @@ def main():
         logfile_close(log_filep_list)
         return
 
+    # power on all nic
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)

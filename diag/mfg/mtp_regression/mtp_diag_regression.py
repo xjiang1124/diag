@@ -606,6 +606,8 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+
     if not mtp_mgmt_ctrl.mtp_nic_diag_init(sn_tag=sn_scan_tag):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC type, present failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -841,7 +843,7 @@ def main():
                                                        naples100_mtp_para_test_list,
                                                        vmarg,
                                                        stop_on_err)
-        for slot in diag_para_fail_list:
+        for slot in mtp_para_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if slot in naples100_nic_list and stop_on_err:
@@ -862,7 +864,7 @@ def main():
     #                                                    naples25_mtp_para_test_list,
     #                                                    vmarg,
     #                                                    stop_on_err)
-    #     for slot in diag_para_fail_list:
+    #     for slot in mtp_para_fail_list:
     #         nic_key = libmfg_utils.nic_key(slot)
     #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
     #         if slot in naples25_nic_list and stop_on_err:

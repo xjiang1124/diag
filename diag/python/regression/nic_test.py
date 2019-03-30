@@ -139,7 +139,7 @@ class nic_test:
         print "=== Checing snake result on slot {} Done ===".format(slot)
         return ret
 
-    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmarg=0):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0):
         print "=== NIC Snake {} ===".format(mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -148,7 +148,7 @@ class nic_test:
         test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            self.test_start(int(slot), test_type, mode, vmarg)
+            self.test_start(int(slot), test_type, mode, vmarg=vmargin)
             test_result[slot] = "No Result"
 
         print "Wait for {}s before checking result".format(wait_time)
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "snake", args.mode, args.wait_time, args.vmarg)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg)
         sys.exit()
 
     if args.prbs_start == True:
@@ -231,7 +231,7 @@ if __name__ == "__main__":
 
     if args.prbs == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, args.vmarg)
+        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=args.vmarg)
         sys.exit()
 
     if args.setup == True:

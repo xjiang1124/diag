@@ -1378,7 +1378,8 @@ class mtp_ctrl():
 
 
     def mtp_program_nic_qspi(self, slot, qspi_img):
-        if MFG_NIC_QSPI_PROGRAM:
+        nic_type = self.mtp_get_nic_type(slot)
+        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.NAPLES25:
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI")
             if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
                 self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
@@ -1390,7 +1391,8 @@ class mtp_ctrl():
 
 
     def mtp_verify_nic_qspi(self, slot):
-        if MFG_NIC_QSPI_PROGRAM:
+        nic_type = self.mtp_get_nic_type(slot)
+        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.NAPLES25:
             self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI")
             qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
             if not qspi_info:

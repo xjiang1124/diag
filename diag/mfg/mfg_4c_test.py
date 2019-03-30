@@ -35,7 +35,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
 
     # log pkg filename
-    log_pkg_file = "{:s}{:s}_{:s}_{:s}.tar.gz".format(log_dir, corner, mtp_id, log_timestamp)
+    log_pkg_file = "{:s}_{:s}_{:s}.tar.gz".format(corner, mtp_id, log_timestamp)
 
     # need to be sync'd with cleanup.sh
     diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
