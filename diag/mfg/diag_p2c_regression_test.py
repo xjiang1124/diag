@@ -34,7 +34,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
 
     # log pkg filename
-    log_pkg_file = "{:s}_{:s}_iter{:d}_{:s}.tar.gz".format(corner, mtp_id, loop, log_timestamp)
+    log_pkg_file = "{:s}{:s}_{:s}_iter{:d}_{:s}.tar.gz".format(log_dir, corner, mtp_id, loop, log_timestamp)
 
     # need to be sync'd with cleanup.sh
     diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  
@@ -70,9 +70,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     cmd = "mkdir -p {:s}".format(qa_log_dir)
     os.system(cmd)
     # copy the onboard logs
-    ts = libmfg_utils.get_timestamp()
     local_test_log_file = "log/{:s}_mtp_test.iter-{:d}.log".format(mtp_id, loop)
-    qa_log_pkg_file = qa_log_dir + "{:s}_{:s}_{:s}_{:s}".format(corner, mtp_id, ts, os.path.basename(log_pkg_file))
+    qa_log_pkg_file = qa_log_dir + os.path.basename(log_pkg_file)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
     # clear the onboard logs
@@ -419,7 +418,7 @@ def main():
     while True:
         if len(mtp_thread_list) == 0:
             break 
-        for mtp_thread in mtp_thread_list:
+        for mtp_thread in mtp_thread_list[:]:
             if not mtp_thread.is_alive():
                 mtp_thread.join()
                 mtp_thread_list.remove(mtp_thread)

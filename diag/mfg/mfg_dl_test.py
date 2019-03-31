@@ -543,8 +543,8 @@ def main():
     # monitor all the thread
     while True:
         if len(nic_thread_list) == 0:
-           break
-        for nic_thread in nic_thread_list:
+            break
+        for nic_thread in nic_thread_list[:]:
             if not nic_thread.is_alive():
                 nic_thread.join()
                 nic_thread_list.remove(nic_thread)

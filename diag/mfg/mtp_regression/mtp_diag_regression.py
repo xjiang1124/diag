@@ -135,6 +135,8 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     fail_slot_sn_test_list = list()
 
     for test in para_test_list:
+        # track nic without report
+        nic_no_rslt_list = nic_test_list[:]
         for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "CAPRI", test), level=0)
@@ -149,6 +151,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
         for _slot, rslt in test_rslt_list:
             slot = int(_slot) - 1
+            nic_no_rslt_list.remove(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if rslt == "PASS":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "CAPRI", test, duration), level=0)
@@ -156,7 +159,20 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                 fail_slot_sn_test_list.append((slot, sn, test))
                 if stop_on_err:
                     nic_test_list.remove(slot)
-                fail_list.append(slot)
+                if slot not in fail_list:
+                    fail_list.append(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CAPRI", test, rslt, duration), level=0)
+                mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+
+        # all the slot without report, treat as fail
+        if nic_no_rslt_list:
+            for slot in nic_no_rslt_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                fail_slot_sn_test_list.append((slot, sn, test))
+                if stop_on_err:
+                    nic_test_list.remove(slot)
+                if slot not in fail_list:
+                    fail_list.append(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CAPRI", test, rslt, duration), level=0)
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
 
@@ -220,7 +236,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     while True:
         if len(nic_thread_list) == 0:
             break
-        for nic_thread in nic_thread_list:
+        for nic_thread in nic_thread_list[:]:
             if not nic_thread.is_alive():
                 ret = nic_thread.join()
                 nic_thread_list.remove(nic_thread)
