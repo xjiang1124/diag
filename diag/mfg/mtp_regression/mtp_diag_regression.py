@@ -836,7 +836,7 @@ def main():
         post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
                                                       NIC_Type.NAPLES25,
                                                       naples25_nic_list,
-                                                      naples25_pre_test_check_list,
+                                                      naples25_post_test_check_list,
                                                       stop_on_err)
         for slot in post_check_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
