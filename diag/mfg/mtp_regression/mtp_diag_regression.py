@@ -148,21 +148,21 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
         if not test_rslt_list:
             mtp_mgmt_ctrl.cli_log_err("MTP {:s} Diag Regression MTP Parallel Test failed\n".format(nic_type), level=0)
-
-        for _slot, rslt in test_rslt_list:
-            slot = int(_slot) - 1
-            nic_no_rslt_list.remove(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if rslt == "PASS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "CAPRI", test, duration), level=0)
-            else:
-                fail_slot_sn_test_list.append((slot, sn, test))
-                if stop_on_err:
-                    nic_test_list.remove(slot)
-                if slot not in fail_list:
-                    fail_list.append(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CAPRI", test, rslt, duration), level=0)
-                mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+        else:
+            for _slot, rslt in test_rslt_list:
+                slot = int(_slot) - 1
+                nic_no_rslt_list.remove(slot)
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if rslt == "PASS":
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "CAPRI", test, duration), level=0)
+                else:
+                    fail_slot_sn_test_list.append((slot, sn, test))
+                    if stop_on_err:
+                        nic_test_list.remove(slot)
+                    if slot not in fail_list:
+                        fail_list.append(slot)
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CAPRI", test, rslt, duration), level=0)
+                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
 
         # all the slot without report, treat as fail
         if nic_no_rslt_list:
@@ -404,6 +404,8 @@ def naples_verify_sw_install(mtp_mgmt_ctrl, nic_type, nic_list):
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Verify Software Install Complete\n", level=0)
+
+    return fail_list
 
 
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err):

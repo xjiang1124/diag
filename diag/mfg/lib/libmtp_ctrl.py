@@ -1855,38 +1855,11 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
-            return MTP_DIAG_Error.NIC_DIAG_FAIL
-
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
-            self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
-            return MTP_DIAG_Error.NIC_DIAG_FAIL
-
-        match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
-        return match
-
-
-    def mtp_mgmt_get_nic_logfile(self, test, nic_list):
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
             return None
 
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
-
-        if test == "PRBS_ETH":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_TEST_FMT.format(nic_list_param)
-        elif test == "SNAKE_HBM":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param)
-        elif test == "SNAKE_PCIE":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param)
-        else:
-            self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
-            return MTP_DIAG_Error.NIC_DIAG_FAIL
-
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
-            return MTP_DIAG_Error.NIC_DIAG_FAIL
+            return None
 
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
         return match

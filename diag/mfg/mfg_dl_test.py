@@ -513,6 +513,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     # program the NIC firmware
+    nic_thread_list = list()
     prog_fail_nic_list = list()
     prog_fail_sn_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -533,7 +534,6 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
                 continue
 
-            nic_thread_list = list()
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl, nic_fru_cfg[mtp_id][key], cpld_img_file, qspi_img_file, slot, prog_fail_nic_list, prog_fail_sn_list))
             nic_thread.daemon = True
             nic_thread.start()
@@ -548,7 +548,7 @@ def main():
             if not nic_thread.is_alive():
                 nic_thread.join()
                 nic_thread_list.remove(nic_thread)
-            time.sleep(5)
+        time.sleep(5)
 
     for slot, sn in zip(prog_fail_nic_list, prog_fail_sn_list):
         key = libmfg_utils.nic_key(slot)

@@ -633,7 +633,7 @@ class nic_ctrl():
 
     def nic_set_sw_boot(self):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT
+        nic_cmd = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
