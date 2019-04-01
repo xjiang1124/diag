@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     test = nic_test()
     if args.snake_start == True:
-        test.test_start(args.slot, "snake", args.mode)
+        test.test_start(args.slot, "snake", args.mode, args.baud_rate)
         sys.exit()
 
     if args.snake_check == True:
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.prbs_start == True:
-        test.test_start(args.slot, "prbs", args.mode)
+        test.test_start(args.slot, "prbs", args.mode, args.baud_rate)
         sys.exit()
 
     if args.prbs_check == True:

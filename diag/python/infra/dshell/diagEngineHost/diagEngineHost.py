@@ -24,7 +24,10 @@ class diagEngineHost:
  
         # card key, e.g. GET EXT:CARD:CARD:NIC1:NAPLES
         self.cardKeyFmt = 'EXP:CARD:{}:{}'
-     
+  
+        # card key, e.g. GET NONEXT:CARD:CARD:NIC1:NAPLES
+        self.cardKeyNonExpFmt = 'NONEXP:CARD:{}:{}'
+    
         # DSP key, e.g. SADD/SMEMBERS DSP:NIC1:NAPLES
         self.dspKeyFmt = 'DSP:{}:{}'
           
@@ -32,10 +35,13 @@ class diagEngineHost:
         self.dspExpAllKeyFmt = 'EXP:DSP:{}:{}*'
         
         # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
-        self.dspNonexpAllKeyFmt = 'NONEXP:DSP:*'
-        
+        self.dspNonExpAllKeyFmt = 'NONEXP:DSP:*'
+         
         # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
         self.dspExpKeyFmt = 'EXP:DSP:{}:{}:{}'
+       
+        # DSP key, e.g. GET EXP:DSP:NIC1:NAPLES:PMBUS
+        self.dspNonExpKeyFmt = 'NONEXP:DSP:{}:{}:{}'
 
         # DSP TEST, e.g. SADD/SMEMBERS TEST:NAPLES:PMBUS
         self.dspTestKeyFmt = 'TEST:{}:{}'
@@ -394,8 +400,25 @@ class diagEngineHost:
         key = self.cardKeyFmt
         return self.r.exists(key.format(cardNm, cardTp))
 
+    def checkCardExistNonExp(self, cardNm):
+        key = "CARD_DICT"
+        cardTp = self.r.hget(key, cardNm)
+        key = self.cardKeyNonExpFmt
+        return self.r.exists(key.format(cardNm, cardTp))
+
     def checkDspExist(self, cardNm, dspNm):
         if self.checkCardExist(cardNm) == False:
+            return False
+
+        key = "CARD_DICT"
+        cardTp = self.r.hget(key, cardNm)
+        key = self.dspExpKeyFmt
+
+        #print "__DBG__", key.format(cardNm, cardTp, dspNm)
+        return self.r.exists(key.format(cardNm, cardTp, dspNm))
+
+    def checkDspExistNonExp(self, cardNm, dspNm):
+        if self.checkCardExistNonExp(cardNm) == False:
             return False
 
         key = "CARD_DICT"
@@ -419,6 +442,23 @@ class diagEngineHost:
                 cards.append(cardFull.split(":")[2])
         else:
             exist = self.checkCardExist(cardNm)
+            if exist != True:
+                print "_NOT_ a live card:", cardNm
+                return [], -1
+            cards = [cardNm]
+        return cards, 0
+
+    def getCardListNonExp(self, cardNm=""):
+        cardNm = cardNm.upper()
+        cards = []
+        if cardNm == "":
+            key = "NONEXP:CARD*"
+            # Get all cards
+            cardListFull = self.r.keys(key)
+            for cardFull in cardListFull:
+                cards.append(cardFull.split(":")[2])
+        else:
+            exist = self.checkCardExistNonExp(cardNm)
             if exist != True:
                 print "_NOT_ a live card:", cardNm
                 return [], -1
@@ -449,6 +489,30 @@ class diagEngineHost:
             print "_NOT_ a valid DSP name:", dspNm
             return [], -1
 
+    def getDspListNonExp(self, cardNm="", dspNm=""):
+        cardNm = cardNm.upper()
+        if self.checkCardExistNonExp(cardNm) != True:
+            print "_NOT_ a live card:", cardNm
+            return [], -1
+
+        #print fmtDsp.format("DSP_NAME", "STATUS")
+        cardTp = self.getCardTpFromDict(cardNm)
+        dspListFull = self.r.keys(self.dspNonExpAllKeyFmt.format(cardNm, cardTp))
+        dspList = []
+        for dspFull in dspListFull:
+            dspList.append(dspFull.split(":")[4])
+
+        # DSP name is empty
+        if not dspNm:
+            return dspList, 0
+
+        dspNm = dspNm.upper()
+        if dspNm in dspList:
+            return [dspNm], 0
+        else:
+            print "_NOT_ a valid DSP name:", dspNm
+            return [], -1
+
     def getTestList(self, cardNm="", dspNm="", testNm=''):
         cardNm = cardNm.upper()
         if self.checkCardExist(cardNm) != True:
@@ -457,6 +521,30 @@ class diagEngineHost:
 
         dspNm = dspNm.upper()
         if self.checkDspExist(cardNm, dspNm) != True:
+            print "_NOT_ a live dsp:", cardNm+":"+dspNm
+            return [], -1
+
+        testList = self.r.smembers(self.dspTestKeyFmt.format(self.getCardType(cardNm), dspNm))
+
+        # if given test name is empty, return whole list
+        if not testNm:
+            return testList, 0
+
+        testNm = testNm.upper()
+        if testNm in testList:
+            return [testNm], 0
+        else:
+            print "_NOT_ a valid test:", testNm
+            return [], -1
+
+    def getTestListNonExp(self, cardNm="", dspNm="", testNm=''):
+        cardNm = cardNm.upper()
+        if self.checkCardExistNonExp(cardNm) != True:
+            print "_NOT_ a live card:", cardNm
+            return [], -1
+
+        dspNm = dspNm.upper()
+        if self.checkDspExistNonExp(cardNm, dspNm) != True:
             print "_NOT_ a live dsp:", cardNm+":"+dspNm
             return [], -1
 
@@ -631,7 +719,7 @@ class diagSts(diagEngineHost):
         return
 
     def showHist (self, cardNm="", dspNm="", mode="nor"):
-        cardList, err = self.getCardList(cardNm)
+        cardList, err = self.getCardListNonExp(cardNm)
         if err != 0:
             return -1
 
@@ -641,7 +729,7 @@ class diagSts(diagEngineHost):
         for card in cardList: 
             cardNm = self.getCardTpFromDict(card)
             print fmtCard.format(card, cardNm)
-            dspList, err = self.getDspList(card)
+            dspList, err = self.getDspListNonExp(card)
             if err != 0:
                 continue
 
@@ -654,7 +742,7 @@ class diagSts(diagEngineHost):
                     continue
                 if (dsp != "ASIC") or (mode == "nor"):
                     print fmtDsp.format(dsp)
-                    testList, err = self.getTestList(card, dsp)
+                    testList, err = self.getTestListNonExp(card, dsp)
                     if err != 0:
                         continue
 
@@ -679,7 +767,7 @@ class diagSts(diagEngineHost):
                 else: # ASIC on MTP
                     for nicIdx in range(1, self.maxNumNic+1):
                         print fmtDsp.format(dsp+"_NIC"+str(nicIdx))
-                        testList, err = self.getTestList(card, dsp)
+                        testList, err = self.getTestListNonExp(card, dsp)
                         if err != 0:
                             continue
 
