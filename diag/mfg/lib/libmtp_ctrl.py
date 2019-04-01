@@ -903,23 +903,6 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_env_init(self, vmarg):
-        # set nic voltage margin
-        if vmarg != 0:
-            for slot in range(self._slots):
-                if self._nic_prsnt_list[slot]:
-                    if not self.mtp_check_nic_status(slot):
-                        self.cli_log_slot_err_lock(slot, "NIC is in failure state, bypass vmargin set", level = 0)
-                        continue
-                    if not self.mtp_set_nic_vmarg(slot, vmarg):
-                        self.cli_log_slot_err_lock("NIC vmargin set failed\n", level = 0)
-                        continue
-
-        self.set_mtp_status(MTP_Status.MTP_STA_READY)
-
-        return True
-
-
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold != None:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
@@ -1156,7 +1139,10 @@ class mtp_ctrl():
         cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             return False
-        time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+        # ping to update the arp cache
+        cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            return False
 
         return True
 
@@ -1597,7 +1583,37 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin):
+        if not self.mtp_check_nic_status(slot):
+            return
+
+        if not self.mtp_set_nic_vmarg(slot, vmargin):
+            return
+
+        if not self.mtp_nic_emmc_init(slot, emmc_format):
+            return
+
+        if not self.mtp_mgmt_copy_nic_diag(slot):
+            return
+
+        if not self.mtp_mgmt_start_nic_diag(slot):
+            return
+
+        if not self.mtp_nic_cpld_init(slot):
+            return
+
+        if fru_valid:
+            if not self.mtp_nic_fru_init(slot):
+                return
+            fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
+            self.mtp_set_nic_sn(slot, fru_info_list[0])
+        else:
+            self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
+
+        return
+
+
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0):
         self.cli_log_inf("Init NIC Diag Environment", level = 0)
         if sn_tag:
             self.mtp_nic_load_scan_fru(fru_cfg)
@@ -1609,25 +1625,28 @@ class mtp_ctrl():
                 if not self.mtp_nic_mini_init(slot):
                     continue
 
-                if not self.mtp_nic_emmc_init(slot, emmc_format):
-                    continue
+        if not self.mtp_mgmt_nic_mac_validate():
+            return False
 
-                if not self.mtp_mgmt_copy_nic_diag(slot):
-                    continue
+        nic_thread_list = list()
+        for slot in range(self._slots):
+            nic_thread = threading.Thread(target = self.mtp_single_nic_diag_init,
+                                          args = (slot,
+                                                  emmc_format,
+                                                  fru_valid,
+                                                  vmargin))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
 
-                if not self.mtp_mgmt_start_nic_diag(slot):
-                    continue
-
-                if not self.mtp_nic_cpld_init(slot):
-                    continue
-
-                if fru_valid:
-                    if not self.mtp_nic_fru_init(slot):
-                        continue
-                    fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
-                    self.mtp_set_nic_sn(slot, fru_info_list[0])
-                else:
-                    self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    ret = nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
 
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
@@ -1635,19 +1654,8 @@ class mtp_ctrl():
 
         self.mtp_nic_info_disp(fru_valid)
 
-        if not self.mtp_mgmt_nic_mac_validate():
-            return False
-
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
         return True
-
-
-        for slot, prsnt, nic_type in zip(range(self._slots), self._nic_prsnt_list, self._nic_type_list):
-            if prsnt:
-                self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
-            else:
-                self.cli_log_slot_err(slot, "NIC is Absent")
-        self.cli_log_inf("NIC Info Dump in the MTP Chassis complete\n", level = 0)
 
 
     # check if any duplicate mac address in the internal network

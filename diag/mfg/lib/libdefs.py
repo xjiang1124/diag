@@ -67,7 +67,7 @@ class MTP_Const:
     NIC_CON_INIT_RETRY = 3
     NIC_CON_INIT_DELAY = 60
     NIC_NETCOPY_DELAY = 120
-    NIC_MGMT_IP_SET_DELAY = 10
+    NIC_MGMT_IP_SET_DELAY = 3
     NIC_MGMT_IP_INIT_RETRY = 1
     NIC_SW_BOOTUP_DELAY = 120
     NIC_POWER_ON_DELAY = 30
@@ -206,6 +206,7 @@ class MFG_DIAG_CMDS:
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -i enp2s0"
+    MTP_NIC_PING_FMT = "ping -c 4 {:s}"
 
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
