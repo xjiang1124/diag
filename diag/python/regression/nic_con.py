@@ -320,14 +320,14 @@ class nic_con:
                 common.session_stop(session)
                 return -1
 
-
-        cmd = self.fmt_change_rate.format(tgt_rate)
-        session.sendline(cmd)
-        session.sendline("\r")
+        if ret == 0:
+            cmd = self.fmt_change_rate.format(tgt_rate)
+            session.sendline(cmd)
+            session.sendline("\r")
 
         self.uart_session_stop(session)
         common.session_stop(session)
-        return 0
+        return ret
 
     def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
         if slot == 0 or slot > 10:
@@ -339,11 +339,11 @@ class nic_con:
         common.session_cmd(session, cmd) 
         time.sleep(1)
 
-        self.uart_session_start(session, orig_rate)
-
-        cmd = self.fmt_change_rate.format(tgt_rate)
-        session.sendline(cmd)
-        session.sendline("\r")
+        ret = self.uart_session_start(session, orig_rate)
+        if ret == 0:
+            cmd = self.fmt_change_rate.format(tgt_rate)
+            session.sendline(cmd)
+            session.sendline("\r")
 
         self.uart_session_stop(session)
         common.session_stop(session)
