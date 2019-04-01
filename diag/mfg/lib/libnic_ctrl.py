@@ -308,10 +308,27 @@ class nic_ctrl():
             self.nic_set_err_msg(self._nic_handle.before)
             self.nic_console_detach()
             return False
-
         match = re.findall(r"(\w+fw\w?)", self._nic_handle.before)
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
+        # umount
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
         if match:
             if match[0] == "mainfwa" or match[0] == "mainfwb":
+                self.nic_console_detach()
                 return True
             else:
                 self.nic_set_err_msg(self._nic_handle.before)
@@ -321,28 +338,6 @@ class nic_ctrl():
             self.nic_set_err_msg(self._nic_handle.before)
             self.nic_console_detach()
             return False
-
-        # sync
-        self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
-        # umount
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-        return True
 
 
     def nic_boot_info_init(self):

@@ -403,7 +403,7 @@ def naples_verify_sw_install(mtp_mgmt_ctrl, nic_type, nic_list):
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Verify Software Install Complete\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Verify Software Install Complete\n".format(nic_type), level=0)
 
     return fail_list
 
