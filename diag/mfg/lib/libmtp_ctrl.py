@@ -148,7 +148,12 @@ class mtp_ctrl():
     def mtp_dump_err_msg(self, err_msg):
         self.cli_log_err("==== Error Message Start: ====")
         if err_msg:
-            self.cli_log_err(err_msg)
+            if (len(err_msg) > 512):
+                self.cli_log_err(err_msg[:256])
+                self.cli_log_err("<============================>")
+                self.cli_log_err(err_msg[-256:])
+            else:
+                self.cli_log_err(err_msg)
         self.cli_log_err("==== Error Message End: ====")
 
 
@@ -678,7 +683,7 @@ class mtp_ctrl():
         # signature match fails
         if not rc or idx < 0:
             self.mtp_dump_err_msg(self._mgmt_handle.before)
-            return rc
+            return False
         else:
             self._cmd_buf = self._mgmt_handle.before
             return True

@@ -844,41 +844,6 @@ def main():
                 pass_sn_list.remove(sn)
 
 
-    # power cycle MTP
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
-
-    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
-
-    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-
-    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
-        logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
-
-    # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
-        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
-        logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
-        return
-
-    # PSU/FAN absent, powerdown MTP
-    ret = mtp_mgmt_ctrl.mtp_hw_init(fanspd)
-    if not ret:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Sanity Check Failed")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
-        return
-
     # Naples100 MTP Parallel test
     if naples100_nic_list:
         mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
@@ -930,18 +895,19 @@ def main():
             if nic_key in fail_nic_list:
                 naples100_pass_nic_list.remove(slot)
 
-        sw_install_fail_list = naples_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_pass_nic_list)
-        for slot in sw_install_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples100_nic_list:
-                naples100_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+        if naples100_pass_nic_list:
+            sw_install_fail_list = naples_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_pass_nic_list)
+            for slot in sw_install_fail_list:
+                nic_key = libmfg_utils.nic_key(slot)
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if slot in naples100_nic_list:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
 
     # Naples25 set the default boot image
     if default_sw_boot and naples25_nic_list:
@@ -951,18 +917,19 @@ def main():
             if nic_key in fail_nic_list:
                 naples25_pass_nic_list.remove(slot)
 
-        sw_install_fail_list = naples_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_pass_nic_list)
-        for slot in sw_install_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples25_nic_list:
-                naples25_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+        if naples25_pass_nic_list:
+            sw_install_fail_list = naples_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_pass_nic_list)
+            for slot in sw_install_fail_list:
+                nic_key = libmfg_utils.nic_key(slot)
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if slot in naples25_nic_list:
+                    naples25_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
 
     # Naples100 verify the default boot image
     if default_sw_boot and naples100_nic_list:
@@ -972,18 +939,19 @@ def main():
             if nic_key in fail_nic_list:
                 naples100_pass_nic_list.remove(slot)
 
-        sw_install_fail_list = naples_verify_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_pass_nic_list)
-        for slot in sw_install_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples100_nic_list:
-                naples100_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+        if naples100_pass_nic_list:
+            sw_install_fail_list = naples_verify_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES100, naples100_pass_nic_list)
+            for slot in sw_install_fail_list:
+                nic_key = libmfg_utils.nic_key(slot)
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if slot in naples100_nic_list:
+                    naples100_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
 
     # Naples25 verify the default boot image
     if default_sw_boot and naples25_nic_list:
@@ -993,18 +961,19 @@ def main():
             if nic_key in fail_nic_list:
                 naples25_pass_nic_list.remove(slot)
 
-        sw_install_fail_list = naples_verify_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_pass_nic_list)
-        for slot in sw_install_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples25_nic_list:
-                naples25_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+        if naples25_pass_nic_list:
+            sw_install_fail_list = naples_verify_sw_install(mtp_mgmt_ctrl, NIC_Type.NAPLES25, naples25_pass_nic_list)
+            for slot in sw_install_fail_list:
+                nic_key = libmfg_utils.nic_key(slot)
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if slot in naples25_nic_list:
+                    naples25_nic_list.remove(slot)
+                if nic_key not in fail_nic_list:
+                    fail_nic_list.append(nic_key)
+                    fail_sn_list.append(sn)
+                if nic_key in pass_nic_list:
+                    pass_nic_list.remove(nic_key)
+                    pass_sn_list.remove(sn)
 
     # Dump failed NIC
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):

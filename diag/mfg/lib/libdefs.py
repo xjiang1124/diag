@@ -224,6 +224,7 @@ class MFG_DIAG_CMDS:
     NIC_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c NIC{:d} -d diagmgr -t dsp_start"
 
     NIC_SW_UMOUNT_FMT = "/etc/init.d/S09mount stop"
+    NIC_OS_SHUTDOWN_FMT = "poweroff"
 
 
 class MFG_DIAG_SIG:
@@ -239,6 +240,8 @@ class MFG_DIAG_SIG:
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
+    NIC_OS_SHUTDOWN_OK_SIG = "System halted"
     NIC_MOUNT_OK_SIG = "{:s} on {:s}"
     MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
     MFG_ASIC_ERR_MSG_SIG = "ERROR ::"
+

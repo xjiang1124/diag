@@ -327,6 +327,14 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        # poweroff
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
         if match:
             if match[0] == "mainfwa" or match[0] == "mainfwb":
                 self.nic_console_detach()
