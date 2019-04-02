@@ -181,7 +181,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
-    NIC_VMARG_SET_FMT = "vmarg.sh {:s}"
+    NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"

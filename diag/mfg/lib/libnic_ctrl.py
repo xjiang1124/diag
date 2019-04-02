@@ -42,7 +42,7 @@ class nic_ctrl():
         self._debug_mode = dbg_mode
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
-        self._nic_status = NIC_Status.NIC_STA_OK
+        self._nic_status = NIC_Status.NIC_STA_POWEROFF
         self._nic_con_prompt = "#"
 
         self._cpld_ver = None
@@ -70,6 +70,7 @@ class nic_ctrl():
 
     def nic_set_type(self, nic_type):
         self._nic_type = nic_type
+        self._nic_status = NIC_Status.NIC_STA_OK
 
 
     def nic_set_err_msg(self, err_msg):

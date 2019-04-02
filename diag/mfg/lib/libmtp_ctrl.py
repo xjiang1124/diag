@@ -975,7 +975,7 @@ class mtp_ctrl():
             return False
 
         if cpld_ver_list[1] != MFG_MTP_CPLD_JTAG_VERSION:
-            self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1]), MFG_MTP_CPLD_JTAG_VERSION)
+            self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1], MFG_MTP_CPLD_JTAG_VERSION))
             self.cli_log_err("MTP CPLD test failed")
             return False
         self.cli_log_inf("MTP CPLD test passed")
@@ -1587,9 +1587,6 @@ class mtp_ctrl():
         if not self.mtp_check_nic_status(slot):
             return
 
-        if not self.mtp_set_nic_vmarg(slot, vmargin):
-            return
-
         if not self.mtp_nic_emmc_init(slot, emmc_format):
             return
 
@@ -1609,6 +1606,9 @@ class mtp_ctrl():
             self.mtp_set_nic_sn(slot, fru_info_list[0])
         else:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
+
+        if not self.mtp_set_nic_vmarg(slot, vmargin):
+            return
 
         return
 

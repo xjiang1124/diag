@@ -843,6 +843,42 @@ def main():
                 pass_nic_list.remove(nic_key)
                 pass_sn_list.remove(sn)
 
+
+    # power cycle MTP
+    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
+    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
+    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+
+    mtp_mgmt_ctrl.mtp_apc_pwr_on()
+    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
+    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
+        logfile_close(log_filep_list)
+        logfile_cleanup(log_file_list)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
+
+    # diag environment pre init
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
+        logfile_close(log_filep_list)
+        logfile_cleanup(log_file_list)
+        return
+
+    # PSU/FAN absent, powerdown MTP
+    ret = mtp_mgmt_ctrl.mtp_hw_init(fanspd)
+    if not ret:
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Sanity Check Failed")
+        mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
+        return
+
     # Naples100 MTP Parallel test
     if naples100_nic_list:
         mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
