@@ -2041,11 +2041,11 @@ class mtp_ctrl():
         sn = self.mtp_get_nic_sn(slot)
 
         if nic_type == NIC_Type.NAPLES100:
-            vdd_avs_cmd = MTP_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MTP_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25:
-            vdd_avs_cmd = MTP_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MTP_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
