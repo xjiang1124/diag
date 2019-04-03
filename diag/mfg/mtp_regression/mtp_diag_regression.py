@@ -328,7 +328,7 @@ def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
 
 def naples_sw_install(mtp_mgmt_ctrl, nic_type, nic_list):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Software Install Start".format(nic_type), level=0)
-    fail_list = list()
+    sw_install_list = nic_list[:]
 
     # get the absolute file path
     nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
@@ -338,39 +338,28 @@ def naples_sw_install(mtp_mgmt_ctrl, nic_type, nic_list):
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_power_on_nic()
 
-    for slot in nic_list:
+    # program EMMC
+    dsp = "DIAG_POST_CHECK"
+    test = "SW_INSTALL"
+
+    for slot in sw_install_list:
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         mtp_mgmt_ctrl.mtp_nic_mini_init(slot)
-
-        # program EMMC
-        dsp = "DIAG_POST_CHECK"
-        test = "EMMC_PROG"
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-        start_ts = datetime.datetime.now().replace(microsecond=0)
-        ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, naples_emmc_img_file)
-        stop_ts = datetime.datetime.now().replace(microsecond=0)
-        duration = str(stop_ts - start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-            fail_list.append(slot)
-            continue
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-        # set sw boot
-        dsp = "DIAG_POST_CHECK"
-        test = "SW_BOOT_SET"
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-        start_ts = datetime.datetime.now().replace(microsecond=0)
-        ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
-        stop_ts = datetime.datetime.now().replace(microsecond=0)
-        duration = str(stop_ts - start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-            fail_list.append(slot)
-            continue
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+    start_ts = datetime.datetime.now().replace(microsecond=0)
+    fail_list = mtp_mgmt_ctrl.mtp_program_nic_emmc(sw_install_list, naples_emmc_img_file)
+    stop_ts = datetime.datetime.now().replace(microsecond=0)
+    duration = str(stop_ts - start_ts)
+
+    for slot in fail_list:
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+        sw_install_list.remove(slot)
+
+    for slot in sw_install_list:
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Software Install Complete\n".format(nic_type), level=0)
 

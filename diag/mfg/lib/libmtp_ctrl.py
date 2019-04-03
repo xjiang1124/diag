@@ -149,10 +149,13 @@ class mtp_ctrl():
         self.cli_log_err("==== Error Message Start: ====")
         if err_msg:
             if (len(err_msg) > 512):
-                self.cli_log_err(err_msg[:256])
+                top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
+                self.cli_log_err(top_err_msg)
                 self.cli_log_err("<============================>")
-                self.cli_log_err(err_msg[-256:])
+                bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
+                self.cli_log_err(bottom_err_msg)
             else:
+                err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
                 self.cli_log_err(err_msg)
         self.cli_log_err("==== Error Message End: ====")
 
@@ -1421,16 +1424,46 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_program_nic_emmc(self, slot, emmc_img):
-        if MFG_NIC_EMMC_PROGRAM:
-            self.cli_log_slot_inf_lock(slot, "Program NIC EMMC")
-            if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
-                self.cli_log_slot_inf_lock(slot, "Program NIC EMMC failed")
-                return False
-            self.cli_log_slot_inf_lock(slot, "Program NIC EMMC complete")
-        else:
-            self.cli_log_slot_inf_lock(slot, "Program NIC EMMC bypassed")
-        return True
+    def mtp_program_single_nic_emmc(self, slot, emmc_img, nic_rslt_list):
+        self.cli_log_slot_inf_lock(slot, "Program NIC EMMC")
+        if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
+            self.cli_log_slot_inf_lock(slot, "Program NIC EMMC failed")
+            return
+
+        if not self.mtp_mgmt_set_nic_sw_boot(slot):
+            return
+
+        self.cli_log_slot_inf_lock(slot, "Program NIC EMMC complete")
+        nic_rslt_list[slot] = True
+        return
+
+
+    def mtp_program_nic_emmc(self, nic_list, emmc_img):
+        fail_list = list()
+        nic_thread_list = list()
+        nic_rslt_list = [False] * self._slots
+
+        for slot in nic_list:
+            nic_thread = threading.Thread(target = self.mtp_program_single_nic_emmc,
+                                          args = (slot, emmc_img, nic_rslt_list))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    ret = nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        for slot in nic_list:
+            if not nic_rslt_list[slot]:
+                fail_list.append(slot)
+
+        return fail_list
 
 
     def mtp_mgmt_copy_nic_diag(self, slot):

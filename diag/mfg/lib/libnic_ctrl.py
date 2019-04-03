@@ -311,21 +311,19 @@ class nic_ctrl():
             return False
         match = re.findall(r"(\w+fw\w?)", self._nic_handle.before)
 
-        # sync
-        self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
-
-        # umount
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
+        # 1. kill all processes
+        # 2. sync
+        # 3. umount
+        nic_shutdown_cmd_list = [MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
+                                 MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
+                                 MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT]
+        for nic_cmd in nic_shutdown_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_err_msg(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
 
         # poweroff
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)

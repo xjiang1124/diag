@@ -223,6 +223,8 @@ class MFG_DIAG_CMDS:
 
     NIC_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c NIC{:d} -d diagmgr -t dsp_start"
 
+    NIC_KILL_PROCESS_FMT = "kill -9 -1"
+    NIC_SYNC_FS_FMT = "sync"
     NIC_SW_UMOUNT_FMT = "/etc/init.d/S09mount stop"
     NIC_OS_SHUTDOWN_FMT = "poweroff"
 
