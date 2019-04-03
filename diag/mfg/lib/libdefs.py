@@ -70,6 +70,7 @@ class MTP_Const:
     NIC_MGMT_IP_SET_DELAY = 3
     NIC_MGMT_IP_INIT_RETRY = 1
     NIC_SW_BOOTUP_DELAY = 120
+    NIC_AVS_SET_DELAY = 300
     NIC_POWER_ON_DELAY = 30
     NIC_POWER_OFF_DELAY = 10
 
@@ -129,6 +130,7 @@ class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
     ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
     ONBOARD_MTP_DSHELL_PATH = "/home/diag/diag/python/infra/dshell/"
+    ONBOARD_MTP_ASIC_PATH = "/home/diag/diag/scripts/asic/"
     ONBOARD_MTP_MTP_DIAG_PATH = "/home/diag/diag/"
     ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
     ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
@@ -182,6 +184,11 @@ class MFG_DIAG_CMDS:
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
+
+    NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -freq 833"
+    NAPLES100_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -freq 2000"
+    NAPLES25_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -freq 417"
+    NAPLES25_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -freq 1600"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
