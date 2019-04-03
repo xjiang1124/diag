@@ -173,7 +173,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                     nic_test_list.remove(slot)
                 if slot not in fail_list:
                     fail_list.append(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CAPRI", test, rslt, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CAPRI", test, "TIMEOUT", duration), level=0)
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
 
     # collect logfile

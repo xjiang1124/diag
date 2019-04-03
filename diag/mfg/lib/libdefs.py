@@ -70,7 +70,7 @@ class MTP_Const:
     NIC_MGMT_IP_SET_DELAY = 3
     NIC_MGMT_IP_INIT_RETRY = 1
     NIC_SW_BOOTUP_DELAY = 120
-    NIC_AVS_SET_DELAY = 300
+    NIC_AVS_SET_DELAY = 600
     NIC_POWER_ON_DELAY = 30
     NIC_POWER_OFF_DELAY = 10
 
@@ -185,10 +185,12 @@ class MFG_DIAG_CMDS:
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
 
-    NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -freq 833"
-    NAPLES100_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -freq 2000"
-    NAPLES25_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -freq 417"
-    NAPLES25_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -freq 1600"
+    # Naples100: core_freq=833 arm_freq=2000
+    NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2000"
+    NAPLES100_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2000"
+    # Naples25: core_freq=417 arm_freq=1600
+    NAPLES25_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 417 -arm_freq 1600"
+    NAPLES25_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 417 -arm_freq 1600"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
