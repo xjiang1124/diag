@@ -7,10 +7,10 @@ ASIC_REPO="/home/xguo2/workspace/asic/"
 ASIC_GEN="/vol/dump/xguo2/workspace/asic_arm64"
 
 cd $DIAG_REPO
-rsync -rd $ASIC_GEN/ip/cosim/diag/nic/asic_lib/ asic_lib/
-rsync -rd $ASIC_GEN/ip/cosim/diag/nic/asic_src/ asic_src/
-rsync -rd $ASIC_GEN/ip/cosim/diag/nic/depend_libs/ depend_libs/
-rsync -rd $ASIC_GEN/ip/cosim/diag/nic/lib/ lib/
+rsync -rd $ASIC_GEN/ip/cosim/diag/nic/fake_root_target/nic/asic_lib/ asic_lib/
+rsync -rd $ASIC_GEN/ip/cosim/diag/nic/fake_root_target/nic/asic_src/ asic_src/
+rsync -rd $ASIC_GEN/ip/cosim/diag/nic/fake_root_target/nic/depend_libs/ depend_libs/
+rsync -rd $ASIC_GEN/ip/cosim/diag/nic/fake_root_target/nic/lib/ lib/
 
 cd $ASIC_REPO
 gitVer=$(git log --name-status HEAD^..HEAD 2>&1 | head -n 6 > $DIAG_REPO/asic_version.txt.temp)

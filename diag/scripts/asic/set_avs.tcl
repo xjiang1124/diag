@@ -6,7 +6,8 @@ set parameters {
     {sn.arg         "Slotxxx"   "Serial Number"}
     {slot.arg       ""          "Slot number"}
     {arm_vdd.arg    "vdd"       "arm or vdd"}
-    {freq.arg       833         "freqency"}
+    {core_freq.arg  833         "core freqency"}
+    {arm_freq.arg   2000        "arm freqency"}
     {use_zmq.arg    0           "Use ZMQ"}
     {zmq_srv_ip.arg ""          "MTP IP"}
     {zmq_port.arg   "55000"     "ZMQ port"}
@@ -20,7 +21,8 @@ array set arg [cmdline::getoptions argv $parameters]
 set sn          $arg(sn)
 set slot        $arg(slot)
 set arm_vdd     $arg(arm_vdd)
-set freq        $arg(freq)
+set core_freq   $arg(core_freq)
+set arm_freq    $arg(arm_freq)
 set use_zmq     $arg(use_zmq)
 set zmq_srv_ip  $arg(zmq_srv_ip)
 set zmq_port    $arg(zmq_port)
@@ -36,7 +38,7 @@ if { $use_zmq != 0 } {
     }
 }
 
-puts "sn: $sn; slot: $slot; arm_vdd: $arm_vdd; freq: $freq"
+puts "sn: $sn; slot: $slot; arm_vdd: $arm_vdd; core_freq: $core_freq; arm_freq: $arm_freq"
 set zmq_conn "tcp://${arg(zmq_srv_ip)}:${arg(zmq_port)}/"
 puts "zmq_conn: $zmq_conn"
 
@@ -56,7 +58,7 @@ if { $use_zmq == 1 } {
     diag_force_close_zmq_if $zmq_conn $slot
 }
 
-set err_cnt [set_avs $sn $slot $arm_vdd $freq $use_zmq $zmq_conn $force $vout $use_pmro]
+set err_cnt [set_avs $sn $slot $arm_vdd $core_freq $arm_freq $use_zmq $zmq_conn $force $vout $use_pmro]
 
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {

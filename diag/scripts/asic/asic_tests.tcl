@@ -53,7 +53,7 @@ proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""}
 
     return $err_cnt
 }
-proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zmq 0} {zmq_conn ""} {force 0} {vout 800} {use_pmro 0}} {
+proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {core_freq 833} {arm_freq 2000} {use_zmq 0} {zmq_conn ""} {force 0} {vout 800} {use_pmro 0}} {
     global G_USE_ZMQ
     global G_ZMQ_CONN
     global G_SLOT 0
@@ -77,16 +77,16 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {freq 833} {use_zm
     } else {
         diag_open_j2c_if $j2c_port $j2c_slot
     }
-    #cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn
 
     set in_err [plog_get_err_count]
-    cap_ic_setup 2
-    sleep 2
+    #proc cap_jtag_chip_rst { j2c_port j2c_slot {use_zmq 0} {zmq_conn ""} { first_article 1 } { proto_mode 1 } {bit6_power_cycle 0} {core_freq 833} {arm_freq 2200}}
+    cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn 1 1 0 $core_freq $arm_freq
 
-    get_freq
-    cap_get_voltage
-    cap_check_plls
-    cap_check_rei_status
+    if {$arm_vdd == "vdd" } {
+        set freq $core_freq
+    } else {
+        set freq $arm_freq
+    }
 
     cap_set_avs $arm_vdd $freq $use_pmro 0 $force $vout
 
