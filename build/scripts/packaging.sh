@@ -128,7 +128,6 @@ if [[ $arch == "arm64" ]]
 then
     DIAG_ASIC_IMG_PATH=$BUILD_DIR/temp/$arch/nic_arm
     ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/nic
-    DIAG_ASIC_PATH=$TOP_DIR/asic/$arch
    
     mkdir -p $ARM_ASIC_PATH
     mkdir -p $DIAG_ASIC_PATH
