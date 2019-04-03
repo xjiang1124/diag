@@ -29,7 +29,10 @@ class nic_test:
             sys.exit(0)
 
         # Change baud rate to 9600
-        self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
+        ret = self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
+        if ret != 0:
+            print "Failed to change baud rate"
+            return -1
 
         session = common.session_start()
         session.timeout = timeout

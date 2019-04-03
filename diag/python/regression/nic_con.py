@@ -314,18 +314,12 @@ class nic_con:
 
             self.uart_session_stop(session)
 
-            # Failed
-            if ret == 2:
-                print "Failed to Start Uart Session!"
-                common.session_stop(session)
-                return -1
-
         if ret == 0:
             cmd = self.fmt_change_rate.format(tgt_rate)
             session.sendline(cmd)
             session.sendline("\r")
+            self.uart_session_stop(session)
 
-        self.uart_session_stop(session)
         common.session_stop(session)
         return ret
 
