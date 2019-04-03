@@ -8,4 +8,6 @@ source /data/nic_arm/nic_config.sh
 
 mkdir -p $ASIC_SRC/ip/cosim/library/
 cp $ASIC_LIB_BUNDLE/../init.tcl $ASIC_SRC/ip/cosim/library/
+cp $ASIC_LIB/diag_s.exe $ASIC_SRC/ip/cosim/tclsh/diag.exe
+
 
