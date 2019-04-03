@@ -2014,6 +2014,44 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_mgmt_set_nic_avs(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        self.cli_log_slot_inf(slot, "Set the NIC AVS - {:s}".format(nic_type))
+        if nic_type == NIC_Type.NAPLES100:
+        elif nic_type == NIC_Type.NAPLES25:
+        else:
+                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+                return False
+
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        cmd = "cleantcl.sh"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+        sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        self.cli_log_inf("Reset the MTP JTAG Interface complete", level = 0)
+        return True
+
     def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):
         # init command
         if init_cmd:
