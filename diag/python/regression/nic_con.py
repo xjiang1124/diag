@@ -305,7 +305,7 @@ class nic_con:
             common.session_cmd(session, cmd)
 
             # Wait for nic to boot
-            time.sleep(15)
+            time.sleep(30)
 
             print "=== Start Uart Session {} ===".format(i)
             ret = self.uart_session_start(session, orig_rate)
