@@ -2019,16 +2019,16 @@ class mtp_ctrl():
         # find the die id
         die_id_match = re.findall(r"(ASIC_DIE_ID: +0x[0-9a-fA-F]+)", buf)
         if die_id_match:
-            self.cli_log_slot_inf(slot, die_id_match[0])
+            self.cli_log_slot_inf(slot, die_id_match[0], level=1)
         osc_count_id_match = re.findall(r"(osc_count_id: +[0-9]+)", buf)
         if osc_count_id_match:
-            self.cli_log_slot_inf(slot, osc_count_id_match[0])
+            self.cli_log_slot_inf(slot, osc_count_id_match[0], level=1)
         vdd_core_offset_match = re.findall(r"(vdd_core_offset: +[0-9a-fA-F]+)", buf)
         if vdd_core_offset_match:
-            self.cli_log_slot_inf(slot, vdd_core_offset_match[0])
+            self.cli_log_slot_inf(slot, vdd_core_offset_match[0], level=1)
         vdd_arm_offset_match = re.findall(r"(vdd_arm_offset: +[0-9a-fA-F]+)", buf)
         if vdd_arm_offset_match:
-            self.cli_log_slot_inf(slot, vdd_arm_offset_match[0])
+            self.cli_log_slot_inf(slot, vdd_arm_offset_match[0], level=1)
 
 
     def mtp_mgmt_set_nic_avs(self, slot):

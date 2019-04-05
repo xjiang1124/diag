@@ -136,7 +136,7 @@ class diag_db():
         return self._post_test_intf_list
 
 
-    def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn):
+    def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn, vmarg):
         if opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:
@@ -144,9 +144,16 @@ class diag_db():
 
         param = '"'
         if opts["SN"]:
-            param += 'sn={:s} '.format(sn)
+            param += 'sn={:s}'.format(sn)
         if opts["SLOT"]:
-            param += 'slot={:d}'.format(slot+1)
+            param += ' slot={:d}'.format(slot+1)
+        if opts["VMARG"]:
+            if vmarg > 0:
+                param += ' vmarg=high'
+            elif vmarg < 0:
+                param += ' vmarg=low'
+            else:
+                param += ' vmarg=normal'
         param += '"'
 
         return libmfg_utils.diag_seq_run_cmd(card_name, dsp, test, param)

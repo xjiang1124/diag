@@ -250,7 +250,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     return fail_list
 
 
-def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err):
+def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     fail_list = list()
 
@@ -265,7 +265,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         for slot in nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             opts = test_cfg["OPTS"]
-            diag_cmd = test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn)
+            diag_cmd = test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg)
             rslt_cmd = test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
@@ -753,6 +753,7 @@ def main():
                                                   naples100_nic_list,
                                                   naples100_test_db,
                                                   naples100_seq_test_list,
+                                                  vmarg,
                                                   stop_on_err)
         for slot in diag_seq_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
@@ -773,6 +774,7 @@ def main():
                                                   naples25_nic_list,
                                                   naples25_test_db,
                                                   naples25_seq_test_list,
+                                                  vmarg,
                                                   stop_on_err)
         for slot in diag_seq_fail_list:
             nic_key = libmfg_utils.nic_key(slot)
