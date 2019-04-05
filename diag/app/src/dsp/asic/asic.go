@@ -87,6 +87,7 @@ func AsicL1_TestHdl(argList []string) {
     snPtr := fs.String("sn", "SN000001", "Serial number")
     slotPtr := fs.Uint64("slot", 1, "Slot number")
     intLpbkPtr := fs.Uint64("int_lpbk", 0, "Enable internal loopback")
+    vmargPtr := fs.String("vmarg", "normal", "Vmargin normal/high/low")
 
     errFs := fs.Parse(argList)
     if errFs != nil {
@@ -96,6 +97,7 @@ func AsicL1_TestHdl(argList []string) {
     sn := *snPtr
     slot := *slotPtr
     intLpbk := *intLpbkPtr
+    vmarg := *vmargPtr
 
     dcli.Println("i", "sn:", sn, "; slot:", strconv.Itoa(int(slot)), "int_lpbk:", strconv.Itoa(int(intLpbk)))
 
@@ -103,7 +105,7 @@ func AsicL1_TestHdl(argList []string) {
     dcli.TimeStampEnable(misc.DISABLE)
     defer dcli.TimeStampEnable(misc.ENABLE)
 
-    err = runCmd.Run("L1 TEST PASSED", "L1 TEST FAILED", "tclsh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)))
+    err = runCmd.Run("L1 TEST PASSED", "L1 TEST FAILED", "tclsh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)), vmarg)
 
     diagEngine.FuncMsgChan <- err
     return
