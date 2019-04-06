@@ -19,7 +19,7 @@ class nic_test:
         self.num_retry = 10
         self.nic_con = nic_con()
 
-    def setup_env(self, slot=0, mgmt=False, timeout=30):
+    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False):
         print "=== Starting snake on slot {} ===".format(slot)
 
 
@@ -47,7 +47,7 @@ class nic_test:
         common.session_stop(session)
 
         if mgmt == True:
-            self.nic_con.get_mgmt_rdy(self.baud_rate, slot)
+            self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
 
         print "=== Snake on slot {} env setup done ===".format(slot)
 
@@ -207,6 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
+    parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
 
     args = parser.parse_args()
 
@@ -238,6 +239,6 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.setup == True:
-        test.setup_env(args.slot, args.mgmt)
+        test.setup_env(args.slot, args.mgmt, 30, args.first_pwr_on)
         sys.exit()
 

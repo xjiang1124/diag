@@ -342,7 +342,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mnic(self, rate=9600, slot=0):
+    def enable_mnic(self, rate=9600, slot=0, first_pwr_on=False):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -357,6 +357,9 @@ class nic_con:
         cmd_mac = "echo \'00:11:22:33:44:{:02}\' > /sysconfig/config0/sysuuid"
         cmd_mac = cmd_mac.format(slot)
         #print "MAC:", cmd_mac
+        if first_pwr_on == True:
+            self.uart_session_cmd(session, "cd /nic/conf/")
+            self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
 
         try:
             session.sendline("ifconfig -a")
@@ -409,7 +412,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, rate, slot=0):
+    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
@@ -422,7 +425,7 @@ class nic_con:
         time.sleep(1)
         common.session_stop(session)
 
-        ret = self.enable_mnic(rate, slot)
+        ret = self.enable_mnic(rate, slot, first_pwr_on)
         if ret != 0:
             print "=== FAIL to enable management port! ==="
             return ret
@@ -458,6 +461,7 @@ if __name__ == "__main__":
     parser.add_argument("-old", "--old", help="New management port configure", action='store_true')
     parser.add_argument("-uboot", "--uboot", help="Uboot operations", action='store_true')
     parser.add_argument("-save", "--save", help="Save uboot settings", action='store_true')
+    parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
     args = parser.parse_args()
     
     con = nic_con()
@@ -470,7 +474,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.ena_mgmt_port == True:
-        con.get_mgmt_rdy(args.tgt_rate, args.slot)
+        con.get_mgmt_rdy(args.tgt_rate, args.slot, args.first_pwr_on)
         sys.exit()
 
     if args.mtest == True:
