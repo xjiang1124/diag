@@ -118,6 +118,7 @@ def main():
             return
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
             mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
+            mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
             mtp_ip_addr = mtp_mgmt_cfg[0]
             mtp_usrid = mtp_mgmt_cfg[1]
             mtp_passwd = mtp_mgmt_cfg[2]
@@ -139,6 +140,7 @@ def main():
             return
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
             mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s}".format(nic_image_file), level=0)
+            mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
             mtp_ip_addr = mtp_mgmt_cfg[0]
             mtp_usrid = mtp_mgmt_cfg[1]
             mtp_passwd = mtp_mgmt_cfg[2]
@@ -156,6 +158,7 @@ def main():
         if image_file:
             for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
                 mtp_mgmt_ctrl.cli_log_inf("Copy NIC image: {:s}".format(image_file), level=0)
+                mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
                 mtp_ip_addr = mtp_mgmt_cfg[0]
                 mtp_usrid = mtp_mgmt_cfg[1]
                 mtp_passwd = mtp_mgmt_cfg[2]
@@ -193,7 +196,9 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis Reload Complete", level=0)
 
         # init MTP diag environment
-        mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null")
+        if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+            mtp_mgmt_ctrl.cli_log_err("MTP Diag Pre Init failed", level=0)
+            return
 
         sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()

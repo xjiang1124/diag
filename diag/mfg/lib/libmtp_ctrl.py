@@ -650,7 +650,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_poweroff(self):
-        if not self.mtp_mgmt_exec_cmd("sync"):
+        if not self.mtp_mgmt_exec_cmd("sync", timeout=MTP_Const.OS_SYNC_DELAY):
             self.cli_log_err("Failed to execute sync command")
             return False
 
@@ -1134,9 +1134,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mgmt_init(self, slot):
+    def mtp_nic_mgmt_init(self, slot, fru_valid):
         self.cli_log_slot_inf(slot, "Init NIC MGMT port")
-        if not self._nic_ctrl_list[slot].nic_mgmt_init():
+        if not self._nic_ctrl_list[slot].nic_mgmt_init(fru_valid):
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
@@ -1166,14 +1166,14 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mini_init(self, slot):
+    def mtp_nic_mini_init(self, slot, fru_valid=True):
         if not self.mtp_nic_con_baudrate_init(slot):
             return False
 
         if not self.mtp_nic_boot_info_init(slot):
             return False
 
-        if not self.mtp_nic_mgmt_init(slot):
+        if not self.mtp_nic_mgmt_init(slot, fru_valid):
             return False
 
         return True
@@ -1660,7 +1660,7 @@ class mtp_ctrl():
 
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                if not self.mtp_nic_mini_init(slot):
+                if not self.mtp_nic_mini_init(slot, fru_valid):
                     continue
 
         if not self.mtp_mgmt_nic_mac_validate():
