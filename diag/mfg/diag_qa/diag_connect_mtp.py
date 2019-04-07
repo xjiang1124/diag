@@ -69,7 +69,7 @@ def main():
     else:
         mtp_apc_cfg = None
 
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, [None] * 10, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, [None] * 10, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg, dbg_mode=True)
 
     if apc:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
