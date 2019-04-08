@@ -47,34 +47,46 @@ def main():
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
 
     if not mtp_id:
-        mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
-    elif mtp_id not in mtpid_list:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid MTP ID: {:s}".format(mtp_id))
+        sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
+    else:
+        sub_mtpid_list = [mtp_id]
 
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
+    mtp_mgmt_ctrl_list = list()
+    for mtp_id in sub_mtpid_list:
+        if mtp_id not in mtpid_list:
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid MTP ID: {:s}".format(mtp_id))
 
-    # find the mtp management config based on the mtpid
-    mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
-    if not mtp_mgmt_cfg:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
+        mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
-    # find the apc config based on the mtpid
-    mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
-    if not mtp_apc_cfg:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
+        # find the mtp management config based on the mtpid
+        mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
+        if not mtp_mgmt_cfg:
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
 
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, [None]*10, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+        # find the apc config based on the mtpid
+        mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
+        if not mtp_apc_cfg:
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Try to connect MTP chassis")
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
-    libmfg_utils.cli_inf(mtp_cli_id_str + "MTP chassis connected")
+        mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, [None]*10, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+        mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
+
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to connect MTP chassis")
+        mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+
     libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+
+    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
 if __name__ == "__main__":

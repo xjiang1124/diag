@@ -170,17 +170,22 @@ class mtp_ctrl():
 
 
     def _mtp_single_apc_pwr_off(self, apc, userid, passwd, port_list):
+        retry = 0
         handle = pexpect.spawn("telnet " + apc)
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", pexpect.EOF, pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
+            elif idx == 2 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("telnet " + apc)
+                continue
             else:
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
@@ -205,17 +210,22 @@ class mtp_ctrl():
 
 
     def _mtp_single_apc_pwr_on(self, apc, userid, passwd, port_list):
+        retry = 0
         handle = pexpect.spawn("telnet " + apc)
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", pexpect.EOF, pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
+            elif idx == 2 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("telnet " + apc)
+                continue
             else:
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
@@ -482,6 +492,7 @@ class mtp_ctrl():
 
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout = 5)
         if idx < 0:
+            self.cli_log_err(self._mgmt_handle.before)
             self.cli_log_err("Connect to mtp failed", level = 0)
             return None
 

@@ -121,7 +121,6 @@ def main():
             return 
         mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver), level=0)
 
-
         # diag environment pre init
         if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
             mtp_mgmt_ctrl.cli_log_err("Init MTP Diag Environment fails", level=0)
