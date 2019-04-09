@@ -354,7 +354,7 @@ class nic_con:
         session.timeout = 60
 
         cmd_pre = "ulimit -c unlimited"
-        cmd_mac = "echo \'00:11:22:33:44:{:02}\' > /sysconfig/config0/sysuuid"
+        cmd_mac = "echo \'{:02}:11:22:33:44:00\' > /sysconfig/config0/sysuuid"
         cmd_mac = cmd_mac.format(slot)
         #print "MAC:", cmd_mac
         if first_pwr_on == True:
