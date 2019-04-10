@@ -50,6 +50,7 @@ var Naples100Tbl = []I2cInfo {
 var Naples100MtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
 }
 
 //=========================================

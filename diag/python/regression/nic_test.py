@@ -47,10 +47,27 @@ class nic_test:
         common.session_stop(session)
 
         if mgmt == True:
-            self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
+            ret = self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
 
         print "=== Snake on slot {} env setup done ===".format(slot)
 
+        return ret
+
+    def pwr_cycle_test(self, slot=0, iteration=1):
+        ret = 0
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        for i in range(iteration):
+            print "=== Ite {} ===".format(i)
+            ret = self.setup_env(slot, True, 30, True)
+            if ret != 0:
+                print "=== Power cycle test failed ==="
+                break
+
+        if ret == 0:
+            print "=== Power cycle test passed ==="
         return ret
 
     def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0):
@@ -200,6 +217,7 @@ if __name__ == "__main__":
     group.add_argument("-prbs", "--prbs", help="Run nic prbs on multile nics", action='store_true')
 
     group.add_argument("-setup", "--setup", help="Set up nic env", action='store_true')
+    group.add_argument("-pct", "--pwr_cycle_test", help="Power cycle test", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -208,6 +226,7 @@ if __name__ == "__main__":
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
     parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser.add_argument("-ite", "--iteration", help="Number of power cycle test iterations", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -240,5 +259,9 @@ if __name__ == "__main__":
 
     if args.setup == True:
         test.setup_env(args.slot, args.mgmt, 30, args.first_pwr_on)
+        sys.exit()
+
+    if args.pwr_cycle_test == True:
+        test.pwr_cycle_test(args.slot, args.iteration)
         sys.exit()
 
