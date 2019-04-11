@@ -453,9 +453,10 @@ class nic_ctrl():
 
 
     def nic_program_fru(self, date, sn, mac, pn):
-        cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
+        if self.nic_2nd_fru_exist(pn):
+            cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return False
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
@@ -645,6 +646,14 @@ class nic_ctrl():
         return True
 
 
+    # for the Naples100 before PP, no 2nd fru instance
+    def nic_2nd_fru_exist(self, pn):
+        for item in ["68-0003-01", "68-0003-02", "68-0003-03", "68-0004-02", "68-0004-03"]:
+            if item in pn:
+                return False
+        return True
+
+
     def nic_fru_init(self):
         nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         fru_buf = self.nic_get_info(nic_cmd)
@@ -669,31 +678,32 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
-        if match:
-            sn = match[0]
-        else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        match = re.findall(NAPLES_DISP_MAC_FMT, self.nic_get_cmd_buf())
-        if match:
-            mac = match[0]
-        else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
-        if match:
-            pn = match[0]
-        else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
+        if self.nic_2nd_fru_exist(self._pn):
+            cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return False
+            match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
+            if match:
+                sn = match[0]
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            match = re.findall(NAPLES_DISP_MAC_FMT, self.nic_get_cmd_buf())
+            if match:
+                mac = match[0]
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
+            if match:
+                pn = match[0]
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
 
-        if self._sn != sn or self._mac != mac or self._pn != pn:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
+            if self._sn != sn or self._mac != mac or self._pn != pn:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
 
         return True
 

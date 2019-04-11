@@ -40,27 +40,6 @@ MTP-003:
     SLOTS: 10
     CAPABILITY: 0x1
 
-MTP-004:
-    MODE: ""
-    TS: "192.168.74.208"
-    TS_PORT: "2008"
-    TS_USERID: "admin"
-    TS_PASSWORD: "N0isystem$"
-    APC1: ""
-    APC1_PORT: ""
-    APC1_USERID: ""
-    APC1_PASSWORD: ""
-    APC2: "192.168.75.40"
-    APC2_PORT: "2"
-    APC2_USERID: "apc"
-    APC2_PASSWORD: "apc"
-    IP: "192.168.74.20"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp010"
-    SLOTS: 10
-    CAPABILITY: 0x1
-
 MTP-020:
     MODE: ""
     TS: ""
@@ -81,6 +60,48 @@ MTP-020:
     ALIAS: "mtp010"
     SLOTS: 10
     CAPABILITY: 0x1
+
+MTP-098:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "8"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.17"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp098"
+    SLOTS: 10
+    CAPABILITY: 0x1
+
+MTP-099:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.72.137"
+    APC2_PORT: "8"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.65.26"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp099"
+    SLOTS: 10
+    CAPABILITY: 0x2
 
 MTP-100:
     MODE: ""
