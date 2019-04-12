@@ -63,11 +63,11 @@ class nic_test:
             print "=== Ite {} ===".format(i)
             ret = self.setup_env(slot, True, 30, True)
             if ret != 0:
-                print "=== Power cycle test failed ==="
+                print "=== Power cycle test failed at ite {} ===".format(i)
                 break
 
         if ret == 0:
-            print "=== Power cycle test passed ==="
+            print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
     def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0):

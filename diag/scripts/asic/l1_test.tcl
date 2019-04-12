@@ -26,6 +26,9 @@ puts "card type: $card_type; UUT: $uut"
 puts "brd_num: $brd_num; slot_id: $slot_id"
 diag_open_j2c_if 10 $slot_id
 
+# esec_l1 reboot wati time
+set ::CAP_GPIO3_PWR_OFF_DUR 5000
+
 set err_cnt [cap_l1_screen $brd_num 10 $slot_id 0 "" 0 1 1 1 1 $core_freq $int_lpbk $vmarg]
 
 # Print twice for DSP to capture signature
