@@ -268,6 +268,29 @@ class nic_ctrl():
             return True
 
 
+    def nic_mgmt_config(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # config the mgmt port
+        cmd = MFG_DIAG_CMDS.NIC_SET_MGMT_IP_FMT.format(self._slot+101)
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.after)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+
     def nic_set_diag_boot(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)

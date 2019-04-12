@@ -68,7 +68,7 @@ class MTP_Const:
     NIC_CON_INIT_DELAY = 60
     NIC_NETCOPY_DELAY = 120
     NIC_MGMT_IP_SET_DELAY = 3
-    NIC_MGMT_IP_INIT_RETRY = 1
+    NIC_MGMT_IP_INIT_RETRY = 3
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
     NIC_POWER_ON_DELAY = 30
@@ -181,6 +181,7 @@ class MFG_DIAG_CMDS:
     NIC_BOOT_DISP_FMT = "fwupdate -r"
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
+    NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"

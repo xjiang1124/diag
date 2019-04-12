@@ -907,8 +907,6 @@ class mtp_ctrl():
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # mtp cpld test
         rc &= self.mtp_cpld_test()
-        # mtp sensor test
-        rc &= self.mtp_inlet_sensor_test()
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
 
@@ -968,13 +966,18 @@ class mtp_ctrl():
             return False
         self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}".format(inlet))
 
+        # mtp sensor test, make sure two inlet sensor reading difference is less than 5
+        if not self.mtp_inlet_sensor_test():
+            self.cli_log_err("MTP temp sensor test failed")
+            return False
+
         # Soaking process
         if GLB_CFG_MFG_TEST_MODE:
             timeout = MTP_Const.MFG_TEMP_SOAK_TIMEOUT
         else:
             timeout = MTP_Const.MFG_MODEL_TEMP_SOAK_TIMEOUT
         self.cli_log_inf("Start soaking process, wait for {:d} seconds".format(timeout * MTP_Const.MFG_TEMP_CHECK_INTERVAL))
-        libmfg_utils.count_down(timeout)
+        libmfg_utils.count_down(timeout * MTP_Const.MFG_TEMP_CHECK_INTERVAL)
 
         self.cli_log_inf("Soaking process complete, current inlet reading is {:2.2f}".format(inlet))
 
@@ -1145,13 +1148,27 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_nic_mgmt_reinit(self, slot):
+        loop = 0
+        while loop < MTP_Const.NIC_MGMT_IP_INIT_RETRY:
+            loop += 1
+            time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
+            self.cli_log_slot_inf(slot, "Reinit NIC MGMT port <{:d}> try".format(loop))
+            if self._nic_ctrl_list[slot].nic_mgmt_config():
+                break
+        if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
+            return False
+
+        return True
+
+
     def mtp_nic_mgmt_init(self, slot, fru_valid):
         self.cli_log_slot_inf(slot, "Init NIC MGMT port")
         if not self._nic_ctrl_list[slot].nic_mgmt_init(fru_valid):
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
-            self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
-            return False
+            # retry
+            if not self.mtp_nic_mgmt_reinit(slot):
+                self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
+                return False
 
         # delete the arp entry
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
