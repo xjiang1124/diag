@@ -1549,6 +1549,15 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_nic_fru_reinit(self, slot):
+        self.cli_log_slot_inf_lock(slot, "Reinit NIC FRU info")
+        if not self._nic_ctrl_list[slot].nic_fru_reinit():
+            self.cli_log_slot_err_lock(slot, "Reinit NIC FRU failed")
+            return False
+
+        return True
+
+
     def mtp_nic_cpld_init(self, slot):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
         if not self._nic_ctrl_list[slot].nic_cpld_init():
@@ -1649,7 +1658,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, fru_reinit):
         if not self.mtp_check_nic_status(slot):
             return
 
@@ -1665,6 +1674,10 @@ class mtp_ctrl():
         if not self.mtp_nic_cpld_init(slot):
             return
 
+        if fru_valid and fru_reinit:
+            if not self.mtp_nic_fru_reinit(slot):
+                return
+
         if fru_valid:
             if not self.mtp_nic_fru_init(slot):
                 return
@@ -1679,7 +1692,7 @@ class mtp_ctrl():
         return
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, fru_reinit=False):
         self.cli_log_inf("Init NIC Diag Environment", level = 0)
         if sn_tag:
             self.mtp_nic_load_scan_fru(fru_cfg)
@@ -1700,7 +1713,8 @@ class mtp_ctrl():
                                           args = (slot,
                                                   emmc_format,
                                                   fru_valid,
-                                                  vmargin))
+                                                  vmargin,
+                                                  fru_reinit))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)

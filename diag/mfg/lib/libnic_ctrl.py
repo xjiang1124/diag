@@ -288,6 +288,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
+        self.nic_set_status(NIC_Status.NIC_STA_OK)
         return True
 
 
@@ -701,6 +702,23 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        # # get the program date
+        # match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
+        # if match:
+        #     date = match[0].replace('/', '')
+        # else:
+        #     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+        #     return False
+        # sn = self._sn
+        # pn = self._pn
+        # mac = self._mac.replace('-', '')
+
+        # # Program the 2nd fru for first batch of Naples100 PP
+        # if "68-0003-04" in self._pn:
+        #     cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
+        #     if not self.mtp_exec_cmd(cmd):
+        #         return False
+
         if self.nic_2nd_fru_exist(self._pn):
             cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
@@ -727,6 +745,23 @@ class nic_ctrl():
             if self._sn != sn or self._mac != mac or self._pn != pn:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
+
+        return True
+
+
+    def nic_fru_reinit(self):
+        if not self.nic_fru_init(self):
+            return False
+
+        # adjust the format
+        sn = self._sn
+        pn = self._pn
+        mac = self._mac.replace('-', '')
+        date = libmfg_utils.get_fru_date()
+
+        # Reprogram the fru
+        if not self.nic_program_fru(date, sn, mac, pn):
+            return False
 
         return True
 

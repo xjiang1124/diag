@@ -196,6 +196,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 
 def main():
     parser = argparse.ArgumentParser(description="MFG Barcode Scanner Utility", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--force-scan", help="Need to scan barcode", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
 
     args = parser.parse_args()
@@ -203,6 +204,11 @@ def main():
         verbosity = True
     else:
         verbosity = False
+
+    if args.force_scan:
+        force_scan = True
+    else:
+        force_scan = False
 
     pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
@@ -240,33 +246,40 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
-    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-    while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False)
-        if scan_rslt:
-            break;
-        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-
     pass_rslt_list = list()
     fail_rslt_list = list()
-    # print scan summary
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["NIC_VALID"]:
-            sn = scan_rslt[key]["NIC_SN"]
-            pn = scan_rslt[key]["NIC_PN"]
-            mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
-            pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
-        else:
-            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-    libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
 
-    scan_cfg_file = "_".join(["log/barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
-    scan_cfg_filep = open(scan_cfg_file, "w+")
-    mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
-    scan_cfg_filep.close()
-    log_file_list.append(scan_cfg_file)
+    if force_scan:
+        mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
+        while True:
+            scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False)
+            if scan_rslt:
+                break;
+            mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
+
+        # print scan summary
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            key = libmfg_utils.nic_key(slot)
+            nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
+            if scan_rslt[key]["NIC_VALID"]:
+                sn = scan_rslt[key]["NIC_SN"]
+                pn = scan_rslt[key]["NIC_PN"]
+                mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
+                pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
+            else:
+                fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
+        libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
+
+        scan_cfg_file = "_".join(["log/barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
+        scan_cfg_filep = open(scan_cfg_file, "w+")
+        mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
+        scan_cfg_filep.close()
+        log_file_list.append(scan_cfg_file)
+
+        # reload the barcode config file
+        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("Skip Barcode Scan Process", level=0)
 
     # get the absolute file path
     nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
@@ -275,9 +288,6 @@ def main():
     naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
     naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
     naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
-
-    # reload the barcode config file
-    nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
@@ -353,7 +363,12 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic()
 
     # init nic diag env.
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg):
+    if force_scan:
+        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
+    else:
+        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_reinit=True)
+
+    if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()
         mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
