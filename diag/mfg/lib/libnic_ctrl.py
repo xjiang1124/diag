@@ -732,23 +732,6 @@ class nic_ctrl():
         return True
 
 
-    def nic_fru_reinit(self):
-        if not self.nic_fru_init(self):
-            return False
-
-        # adjust the format
-        sn = self._sn
-        pn = self._pn
-        mac = self._mac.replace('-', '')
-        date = libmfg_utils.get_fru_date()
-
-        # Reprogram the fru
-        if not self.nic_program_fru(date, sn, mac, pn):
-            return False
-
-        return True
-
-
     def nic_get_fru(self):
         if not self._sn or not self._mac or not self._pn:
             return None

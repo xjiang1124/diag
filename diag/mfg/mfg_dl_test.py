@@ -91,19 +91,6 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
                 libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
-def get_pro_srv_id():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    return pro_srv_id
-
-
 def load_mtp_cfg():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
@@ -210,7 +197,6 @@ def main():
     else:
         force_scan = False
 
-    pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
     mtp_id = mtpid_list[0]
@@ -219,7 +205,7 @@ def main():
     # local log files
     log_file_list = list()
     log_filep_list = list()
-    test_log_file = "_".join(["log/test_dl", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".log"
+    test_log_file = "_".join(["log/test_dl", mtp_id, libmfg_utils.get_timestamp()]) + ".log"
     log_file_list.append(test_log_file)
     test_log_filep = open(test_log_file, "w+")
     log_filep_list.append(test_log_filep)
@@ -227,7 +213,7 @@ def main():
     if verbosity:
         diag_log_filep = sys.stdout
     else:
-        diag_log_file = "_".join(["log/diag_dl", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".log"
+        diag_log_file = "_".join(["log/diag_dl", mtp_id, libmfg_utils.get_timestamp()]) + ".log"
         log_file_list.append(diag_log_file)
         diag_log_filep = open(diag_log_file, "w+")
         log_filep_list.append(diag_log_filep)
@@ -235,7 +221,7 @@ def main():
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "_".join(["log/diag_dl", pro_srv_id, mtp_id, key, libmfg_utils.get_timestamp()]) + ".log"
+        diag_nic_log_file = "_".join(["log/diag_dl", mtp_id, key, libmfg_utils.get_timestamp()]) + ".log"
         log_file_list.append(diag_nic_log_file)
         diag_nic_log_filep = open(diag_nic_log_file, "w+")
         log_filep_list.append(diag_nic_log_filep)
@@ -269,9 +255,9 @@ def main():
                 fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
         libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
 
-        scan_cfg_file = "_".join(["log/barcode_cfg", pro_srv_id, mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
+        scan_cfg_file = "_".join(["log/barcode_cfg", mtp_id, libmfg_utils.get_timestamp()]) + ".yaml"
         scan_cfg_filep = open(scan_cfg_file, "w+")
-        mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
+        mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
         scan_cfg_filep.close()
         log_file_list.append(scan_cfg_file)
 
@@ -296,7 +282,6 @@ def main():
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
         logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
@@ -306,55 +291,44 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
     else:
         mtp_mgmt_ctrl.cli_log_err("Unable to retrieve diag image version info", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
         return
 
     # diag environment pre init
     if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
         mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
         return
 
     # diag environment post init
     if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
         mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
         return
 
     # get the hw version info
     cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
     if not cpld_ver_list:
         mtp_mgmt_ctrl.cli_log_err("Retrieve MTP CPLD Version Fail", level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]), level=0)
 
     # PSU/FAN absent, powerdown MTP
     if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
 
     # init all the nic.
     if not mtp_mgmt_ctrl.mtp_nic_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
 
@@ -365,15 +339,11 @@ def main():
     if force_scan:
         rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
     else:
-        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=True, fru_reinit=True)
+        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
 
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
 
@@ -384,6 +354,25 @@ def main():
     naples100_sn_list = list()
     naples25_sn_list = list()
 
+    # no tag to scan, construct the nic_fru_cfg
+    if not force_scan:
+        nic_fru_cfg = dict()
+        nic_fru_cfg[mtp_id] = dict()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            key = libmfg_utils.nic_key(slot)
+            nic_fru_cfg[mtp_id][key] = dict()
+            if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot) and mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                nic_fru_cfg[mtp_id][key]["VALID"] = "YES"
+                nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
+                nic_fru_cfg[mtp_id][key]["SN"] = nic_fru_info[0]
+                nic_fru_cfg[mtp_id][key]["MAC"] = nic_fru_info[1].replace('-', '')
+                nic_fru_cfg[mtp_id][key]["PN"] = nic_fru_info[2]
+                nic_fru_cfg[mtp_id][key]["TS"] = libmfg_utils.get_fru_date()
+            else:
+                nic_fru_cfg[mtp_id][key]["VALID"] = "NO"
+                fail_nic_list.append(key)
+                fail_sn_list.append("FLMDEADBEEF")
+
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -393,19 +382,16 @@ def main():
         if str.upper(valid) == "YES":
             sn = nic_fru_cfg[mtp_id][key]["SN"]
             mac = nic_fru_cfg[mtp_id][key]["MAC"]
+            pn = nic_fru_cfg[mtp_id][key]["PN"]
             prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
             mac_ui = libmfg_utils.mac_address_format(mac)
+
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
                 if not mtp_capability & 0x1:
                     mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples100")
-                    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-                    mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-                    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-                    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-                    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+                    mtp_mgmt_ctrl.mtp_chassis_shutdown()
                     logfile_close(log_filep_list)
-                    logfile_cleanup(log_file_list)
                     return
                 cpld_img_file = naples100_cpld_img_file
                 qspi_img_file = naples100_qspi_img_file
@@ -413,13 +399,8 @@ def main():
             elif card_type == NIC_Type.NAPLES25:
                 if not mtp_capability & 0x2:
                     mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples25")
-                    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-                    mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-                    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-                    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-                    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+                    mtp_mgmt_ctrl.mtp_chassis_shutdown()
                     logfile_close(log_filep_list)
-                    logfile_cleanup(log_file_list)
                     return
                 cpld_img_file = naples25_cpld_img_file
                 qspi_img_file = naples25_qspi_img_file
@@ -467,7 +448,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; DATE = {:s}".format(sn, mac_ui, prog_date))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n", level=0)
@@ -536,7 +517,6 @@ def main():
             continue
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
                 qspi_img_file = naples100_qspi_img_file
@@ -572,41 +552,26 @@ def main():
         fail_sn_list.append(sn)
 
     # power cycle MTP
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power off APC")
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
-
-    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
-
-    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY))
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    mtp_mgmt_ctrl.mtp_power_cycle()
 
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
         logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
     # diag environment pre init
     if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
         mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
-        logfile_cleanup(log_file_list)
         return
 
     # init all the nic.
     if not mtp_mgmt_ctrl.mtp_nic_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
 
@@ -616,11 +581,7 @@ def main():
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
 
@@ -774,11 +735,7 @@ def main():
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
 
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+    mtp_mgmt_ctrl.mtp_chassis_shutdown()
 
     for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
         for slot in range(MTP_Const.MTP_SLOT_NUM):

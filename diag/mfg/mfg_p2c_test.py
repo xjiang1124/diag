@@ -289,12 +289,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, force_scan
     cmd = "rm -rf {:s}".format(test_log_file)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-    mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
-    time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+    mtp_mgmt_ctrl.mtp_chassis_shutdown()
 
     return
 

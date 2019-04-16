@@ -672,15 +672,24 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_chassis_shutdown(self):
+        self.mtp_mgmt_poweroff()
+        self.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+        self.cli_log_inf("Power off APC", level=0)
+        self.mtp_apc_pwr_off()
+        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+
+
     def mtp_power_cycle(self):
         self.mtp_mgmt_poweroff()
-        self.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        self.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
         self.cli_log_inf("Power off APC", level=0)
         self.mtp_apc_pwr_off()
         time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
         self.mtp_apc_pwr_on()
-        self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+        self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
 
@@ -1302,6 +1311,10 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_get_nic_fru(self, slot):
+        return self._nic_ctrl_list[slot].nic_get_fru()
+
+
     def mtp_verify_nic_fru(self, slot, sn, mac, pn):
         if MFG_NIC_FRU_PROGRAM:
             self.cli_log_slot_inf_lock(slot, "Verify NIC FRU sn={:s}, mac={:s}, pn={:s}".format(sn, mac, pn))
@@ -1549,15 +1562,6 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_fru_reinit(self, slot):
-        self.cli_log_slot_inf_lock(slot, "Reinit NIC FRU info")
-        if not self._nic_ctrl_list[slot].nic_fru_reinit():
-            self.cli_log_slot_err_lock(slot, "Reinit NIC FRU failed")
-            return False
-
-        return True
-
-
     def mtp_nic_cpld_init(self, slot):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
         if not self._nic_ctrl_list[slot].nic_cpld_init():
@@ -1658,7 +1662,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, fru_reinit):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin):
         if not self.mtp_check_nic_status(slot):
             return
 
@@ -1674,10 +1678,6 @@ class mtp_ctrl():
         if not self.mtp_nic_cpld_init(slot):
             return
 
-        if fru_valid and fru_reinit:
-            if not self.mtp_nic_fru_reinit(slot):
-                return
-
         if fru_valid:
             if not self.mtp_nic_fru_init(slot):
                 return
@@ -1692,7 +1692,7 @@ class mtp_ctrl():
         return
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, fru_reinit=False):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0):
         self.cli_log_inf("Init NIC Diag Environment", level = 0)
         if sn_tag:
             self.mtp_nic_load_scan_fru(fru_cfg)
@@ -1713,8 +1713,7 @@ class mtp_ctrl():
                                           args = (slot,
                                                   emmc_format,
                                                   fru_valid,
-                                                  vmargin,
-                                                  fru_reinit))
+                                                  vmargin))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -2252,10 +2251,8 @@ class mtp_ctrl():
 
 
     # generate the local barcode config file
-    def gen_barcode_config_file(self, pro_srv_id, file_p, scan_rslt):
+    def gen_barcode_config_file(self, file_p, scan_rslt):
         config_lines = [str(scan_rslt["MTP_ID"]) + ":"]
-        tmp = "    SRV: " + pro_srv_id
-        config_lines.append(tmp)
         tmp = "    TS: " +  scan_rslt["MTP_TS"]
         config_lines.append(tmp)
         for slot in range(self._slots):
