@@ -361,17 +361,20 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             key = libmfg_utils.nic_key(slot)
             nic_fru_cfg[mtp_id][key] = dict()
-            if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot) and mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                nic_fru_cfg[mtp_id][key]["VALID"] = "YES"
-                nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
-                nic_fru_cfg[mtp_id][key]["SN"] = nic_fru_info[0]
-                nic_fru_cfg[mtp_id][key]["MAC"] = nic_fru_info[1].replace('-', '')
-                nic_fru_cfg[mtp_id][key]["PN"] = nic_fru_info[2]
-                nic_fru_cfg[mtp_id][key]["TS"] = libmfg_utils.get_fru_date()
+            if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
+                if mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    nic_fru_cfg[mtp_id][key]["VALID"] = "YES"
+                    nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
+                    nic_fru_cfg[mtp_id][key]["SN"] = nic_fru_info[0]
+                    nic_fru_cfg[mtp_id][key]["MAC"] = nic_fru_info[1].replace('-', '')
+                    nic_fru_cfg[mtp_id][key]["PN"] = nic_fru_info[2]
+                    nic_fru_cfg[mtp_id][key]["TS"] = libmfg_utils.get_fru_date()
+                else:
+                    nic_fru_cfg[mtp_id][key]["VALID"] = "NO"
+                    fail_nic_list.append(key)
+                    fail_sn_list.append("FLMDEADBEEF")
             else:
                 nic_fru_cfg[mtp_id][key]["VALID"] = "NO"
-                fail_nic_list.append(key)
-                fail_sn_list.append("FLMDEADBEEF")
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()

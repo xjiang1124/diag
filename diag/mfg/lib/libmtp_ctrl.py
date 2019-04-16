@@ -1225,13 +1225,11 @@ class mtp_ctrl():
 
 # 2. Routines that need smb bus, can not be run in parallel
     def mtp_mgmt_check_nic_pwr_status(self, slot):
-        self.cli_log_slot_inf(slot, "Check NIC Power Status")
         if not self._nic_ctrl_list[slot].nic_power_check():
             err_msg = self._nic_ctrl_list[slot].nic_get_cmd_buf()
             self.mtp_dump_err_msg(err_msg)
             return False
 
-        self.cli_log_slot_inf(slot, "Check NIC Power Status passed")
         return True
 
 
