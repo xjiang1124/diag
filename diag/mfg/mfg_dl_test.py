@@ -246,10 +246,9 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
-    pass_rslt_list = list()
-    fail_rslt_list = list()
-
     if force_scan:
+        pass_rslt_list = list()
+        fail_rslt_list = list()
         mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
         while True:
             scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False)
@@ -366,7 +365,7 @@ def main():
     if force_scan:
         rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
     else:
-        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_reinit=True)
+        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=True, fru_reinit=True)
 
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)

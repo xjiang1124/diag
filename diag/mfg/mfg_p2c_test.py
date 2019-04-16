@@ -39,9 +39,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
     log_pkg_file = "{:s}NTNV_{:s}_{:s}.tar.gz".format(log_dir, mtp_id, log_timestamp)
 
     # need to be sync'd with cleanup.sh
-    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  
-    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES 
-    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES 
+    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
+    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES
+    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
 
     # regression logs
     logfile_list = list()
@@ -72,8 +72,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
 
     with open(local_test_log_file, 'r') as fp:
         buf = fp.read()
-    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
-    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
+    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
     fail_match = re.findall(nic_fail_reg_exp, buf)
     pass_match = re.findall(nic_pass_reg_exp, buf)
 
@@ -118,8 +118,8 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
         return
 
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
+        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
         match = re.findall(nic_fail_reg_exp, buf)
         for slot, sn_type, sn in match:
             test_list = list()
@@ -141,8 +141,8 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
             else:
                 libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
+        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
         match = re.findall(nic_pass_reg_exp, buf)
         for slot, sn_type, sn in match:
             test_list = list()
@@ -212,7 +212,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
-    
+
 def mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, log_filep):
     scan_cfg_filep = open("config/{:s}.yaml".format(mtp_id), "w+")
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
@@ -266,12 +266,14 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, force_scan):
     mtp_mgmt_ctrl.cli_log_inf("Regression Test start", level=0)
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
+    if force_scan:
+        cmd += " --force-scan"
 
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
@@ -293,18 +295,22 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id):
     mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
     mtp_mgmt_ctrl.mtp_apc_pwr_off()
     time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
- 
+
     return
 
- 
+
 def main():
     parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--force-scan", help="Use SN tag to validate SN/MAC", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
     verbosity = False
+    force_scan = False
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
+    if args.force_scan:
+        force_scan = True
 
     pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
@@ -312,7 +318,7 @@ def main():
     mtp_mgmt_ctrl_list = list()
 
     # init mtp_ctrl list
-    for mtp_id in mtpid_list: 
+    for mtp_id in mtpid_list:
         if verbosity:
             diag_log_filep = sys.stdout
             diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
@@ -323,18 +329,19 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     # scan and generate nic barcode config file
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
+    if force_scan:
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
     # power on the mtp chassis
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
         mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             return
@@ -342,7 +349,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     # Copy script, config file on to each MTP Chassis
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mtp_script_dir = "mtp_regression/"
         mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
@@ -351,8 +358,8 @@ def main():
         os.system(cmd)
 
     mtp_thread_list = list()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id))
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, force_scan))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -360,7 +367,7 @@ def main():
     # monitor all the thread
     while True:
         if len(mtp_thread_list) == 0:
-            break 
+            break
         for mtp_thread in mtp_thread_list[:]:
             if not mtp_thread.is_alive():
                 mtp_thread.join()

@@ -437,6 +437,7 @@ def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
+    parser.add_argument("--force-scan", help="Use SN tag to validate fru content", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.NTNV)
 
@@ -448,6 +449,7 @@ def main():
     skip_test = False
     corner = Env_Cond.NTNV
     sn_scan_tag = False
+    force_scan = False
 
     if args.mtpid:
         mtp_id = args.mtpid
@@ -458,6 +460,8 @@ def main():
         verbosity = True
     if args.corner:
         corner = args.corner
+    if args.force_scan:
+        force_scan = True
 
     # Chamber temperature
     if corner == Env_Cond.LTLV or corner == Env_Cond.LTNV or corner == Env_Cond.LTHV:
@@ -495,7 +499,7 @@ def main():
     else:
         default_sw_boot = False
 
-    if corner == Env_Cond.NTNV:
+    if corner == Env_Cond.NTNV and force_scan:
         sn_scan_tag = True
 
     # load the mtp config
