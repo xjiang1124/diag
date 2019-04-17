@@ -941,7 +941,7 @@ class mtp_ctrl():
         else:
             # in NT, just read the inlet temp
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
-            if not inlet:
+            if inlet == None:
                 return False
             self.cli_log_inf("Current Environment temperature is {:2.2f}".format(inlet))
             self.cli_log_inf("No threshold set, bypass ambient temperature check")
@@ -950,7 +950,7 @@ class mtp_ctrl():
         timeout = MTP_Const.MFG_TEMP_WAIT_TIMEOUT
         while timeout > 0:
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
-            if not inlet:
+            if inlet == None:
                 return False
             if low_threshold != None:
                 if inlet > upper_limit:
@@ -1044,6 +1044,7 @@ class mtp_ctrl():
     def mtp_get_inlet_temp(self, low_threshold, high_threshold):
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
+            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("MTP get inlet temperature failed")
             return None
 
@@ -1191,17 +1192,6 @@ class mtp_ctrl():
         # ping to update the arp cache
         cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
         if not self.mtp_mgmt_exec_cmd(cmd):
-            return False
-
-        return True
-
-
-    def mtp_nic_emmc_init(self, slot, emmc_format=False):
-        self.cli_log_slot_inf(slot, "Init NIC EMMC")
-        if not self._nic_ctrl_list[slot].nic_init_emmc(emmc_format):
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
-            self.cli_log_slot_err(slot, "Init NIC EMMC failed")
             return False
 
         return True
@@ -1552,6 +1542,20 @@ class mtp_ctrl():
             return False
 
         self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s} complete".format(vmarg_param))
+        return True
+
+
+    def mtp_nic_emmc_init(self, slot, emmc_format=False):
+        if emmc_format:
+            self.cli_log_slot_inf_lock(slot, "Format and Init NIC EMMC")
+        else:
+            self.cli_log_slot_inf_lock(slot, "Init NIC EMMC")
+        if not self._nic_ctrl_list[slot].nic_init_emmc(emmc_format):
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+            self.mtp_dump_err_msg(err_msg)
+            self.cli_log_slot_err_lock(slot, "Init NIC EMMC failed")
+            return False
+
         return True
 
 
