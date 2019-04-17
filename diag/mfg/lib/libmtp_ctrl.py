@@ -1175,9 +1175,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mgmt_init(self, slot, fru_valid):
+    def mtp_nic_mgmt_init(self, slot, fpo):
         self.cli_log_slot_inf(slot, "Init NIC MGMT port")
-        if not self._nic_ctrl_list[slot].nic_mgmt_init(fru_valid):
+        if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
             # retry
             if not self.mtp_nic_mgmt_reinit(slot):
                 self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
@@ -1207,14 +1207,14 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mini_init(self, slot, fru_valid=True):
+    def mtp_nic_mini_init(self, slot, fpo=False):
         if not self.mtp_nic_con_baudrate_init(slot):
             return False
 
         if not self.mtp_nic_boot_info_init(slot):
             return False
 
-        if not self.mtp_nic_mgmt_init(slot, fru_valid):
+        if not self.mtp_nic_mgmt_init(slot, fpo):
             return False
 
         return True
@@ -1695,7 +1695,13 @@ class mtp_ctrl():
 
 
     def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0):
-        self.cli_log_inf("Init NIC Diag Environment", level = 0)
+        # emmc_format will be true only for the first time boot up
+        fpo = emmc_format
+        if fpo:
+            self.cli_log_inf("Init NIC Diag Environment with FPO set", level = 0)
+        else:
+            self.cli_log_inf("Init NIC Diag Environment", level = 0)
+
         if sn_tag:
             self.mtp_nic_load_scan_fru(fru_cfg)
         else:
@@ -1703,7 +1709,7 @@ class mtp_ctrl():
 
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                if not self.mtp_nic_mini_init(slot, fru_valid):
+                if not self.mtp_nic_mini_init(slot, fpo):
                     continue
 
         if not self.mtp_mgmt_nic_mac_validate():

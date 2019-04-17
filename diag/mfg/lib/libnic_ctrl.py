@@ -421,17 +421,17 @@ class nic_ctrl():
         return True
 
 
-    def nic_mgmt_init(self, fru_valid):
+    def nic_mgmt_init(self, fpo):
         # goto the nic_con dir
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        if fru_valid:
-            cmd = MFG_DIAG_CMDS.NIC_MGMT_INIT_FMT.format(self._slot+1)
+        if fpo:
+            cmd = MFG_DIAG_CMDS.NIC_FPO_MGMT_INIT_FMT.format(self._slot+1)
         else:
-            cmd = MFG_DIAG_CMDS.NIC_NO_FRU_MGMT_INIT_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS.NIC_MGMT_INIT_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False

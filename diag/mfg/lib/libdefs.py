@@ -208,7 +208,7 @@ class MFG_DIAG_CMDS:
     NIC_CON_INIT_FMT = "nic_con.py -br -slot {:d}"
     NIC_CON_ATTACH_FMT = "con_connect.sh {:d}"
     NIC_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d}"
-    NIC_NO_FRU_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d} -fpo"
+    NIC_FPO_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d} -fpo"
     NIC_CON_MTEST_FMT = "nic_con.py -mtest -slot {:d}"
 
     MTP_PARA_PRBS_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=240 -mode=eth -vmarg {:d}"
