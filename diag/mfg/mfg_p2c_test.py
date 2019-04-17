@@ -165,19 +165,6 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
                 libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
-def get_pro_srv_id():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    return pro_srv_id
-
-
 def load_mtp_cfg():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
@@ -213,7 +200,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, log_filep):
+def mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, log_filep):
     scan_cfg_filep = open("config/{:s}.yaml".format(mtp_id), "w+")
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
     while True:
@@ -234,7 +221,7 @@ def mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, log_filep):
         else:
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
     libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, log_filep)
-    mtp_mgmt_ctrl.gen_barcode_config_file(pro_srv_id, scan_cfg_filep, scan_rslt)
+    mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
     os.system("sync")
 
@@ -307,7 +294,6 @@ def main():
     if args.force_scan:
         force_scan = True
 
-    pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
     mtp_mgmt_ctrl_list = list()
@@ -326,7 +312,7 @@ def main():
     # scan and generate nic barcode config file
     if force_scan:
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_barcode_scan(pro_srv_id, mtp_id, mtp_mgmt_ctrl, sys.stdout)
+            mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
     # power on the mtp chassis

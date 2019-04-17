@@ -193,19 +193,6 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
-def get_pro_srv_id():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    return pro_srv_id
-
-
 def load_mtp_cfg():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)

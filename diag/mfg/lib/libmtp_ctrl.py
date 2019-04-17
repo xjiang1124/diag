@@ -1091,6 +1091,10 @@ class mtp_ctrl():
                             err_msg = line.replace('\n', '')
                             err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
                             err_msg_list.append(err_msg)
+                        if MFG_DIAG_SIG.MFG_ASIC_CTC_ERR_MSG_SIG in line:
+                            err_msg = line.replace('\n', '')
+                            err_msg_list.append(err_msg)
+
         return err_msg_list
 
 

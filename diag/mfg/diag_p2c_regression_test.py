@@ -142,19 +142,6 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
     return ret
 
 
-def get_pro_srv_id():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    return pro_srv_id
-
-
 def load_mtp_cfg():
     product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
     pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
@@ -302,7 +289,6 @@ def main():
     if args.corner:
         corner = args.corner
 
-    pro_srv_id = get_pro_srv_id()
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
     mtp_mgmt_ctrl_list = list()
