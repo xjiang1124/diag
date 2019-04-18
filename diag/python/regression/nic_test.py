@@ -15,7 +15,7 @@ class nic_test:
     def __init__(self):
         self.name = "nic_snake"
         self.baud_rate_org = 115200
-        self.baud_rate = 9600
+        self.baud_rate = 4800
         self.num_retry = 10
         self.nic_con = nic_con()
 
@@ -28,7 +28,7 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
-        # Change baud rate to 9600
+        # Change baud rate to 4800
         ret = self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
         if ret != 0:
             print "Failed to change baud rate"

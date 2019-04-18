@@ -139,7 +139,7 @@ class nic_con:
             ret = -1
         return ret
 
-    def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=9600, save=False):
+    def change_rate_uboot_i(self, session, orig_rate=115200, tgt_rate=4800, save=False):
         if orig_rate == tgt_rate:
             print "=== No need to change baud rate ==="
             return 0
@@ -183,7 +183,7 @@ class nic_con:
         return ret
 
 
-    def change_rate_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0, save=False):
+    def change_rate_uboot(self, orig_rate=115200, tgt_rate=4800, slot=0, save=False):
         numRetry = 3
         if orig_rate == tgt_rate:
             print "=== No need to change baud rate ==="
@@ -208,7 +208,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def mtest_uboot(self, orig_rate=115200, tgt_rate=9600, slot=0):
+    def mtest_uboot(self, orig_rate=115200, tgt_rate=4800, slot=0):
         err = 0
         numRetry = 3
         #session = common.session_start()
@@ -286,7 +286,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def change_rate_pw(self, orig_rate=115200, tgt_rate=9600, slot=0):
+    def change_rate_pw(self, orig_rate=115200, tgt_rate=4800, slot=0):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
@@ -323,7 +323,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def change_rate(self, orig_rate=115200, tgt_rate=9600, slot=0):
+    def change_rate(self, orig_rate=115200, tgt_rate=4800, slot=0):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
@@ -342,7 +342,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mnic(self, rate=9600, slot=0, first_pwr_on=False):
+    def enable_mnic(self, rate=4800, slot=0, first_pwr_on=False):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -381,7 +381,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def config_mnic(self, rate=9600, slot=0):
+    def config_mnic(self, rate=4800, slot=0):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -455,7 +455,7 @@ if __name__ == "__main__":
     group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
 
     parser.add_argument("-or", "--orig_rate", help="Original baud rate", type=int, default=115200)
-    parser.add_argument("-tr", "--tgt_rate", help="Target baud rate", type=int, default=9600)
+    parser.add_argument("-tr", "--tgt_rate", help="Target baud rate", type=int, default=4800)
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-ping", "--ping", help="Ping test before enable management port", action='store_true')
     parser.add_argument("-old", "--old", help="New management port configure", action='store_true')
