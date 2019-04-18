@@ -45,7 +45,7 @@ func AsicPcie_PrbsHdl(argList []string) {
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
     dcli.Println("i", "duration", duration, "poly", poly)
-    err := runCmd.Run("PCIE PRBS PASSED", "PCIE PRBS FAILED", "tclsh", "/home/diag/diag/scripts/asic/ext_pcie_prbs.tcl", sn, strconv.Itoa(slot), strconv.Itoa(duration), poly)
+    err := runCmd.Run("PCIE PRBS PASSED", "PCIE PRBS FAILED", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/ext_pcie_prbs.tcl", sn, strconv.Itoa(slot), strconv.Itoa(duration), poly)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -72,7 +72,8 @@ func AsicEth_PrbsHdl(argList []string) {
     // To avoid compile error: variable not used
     // Need to remove after implementing DSP handler
     dcli.Println("i", "duration", duration, "poly", poly)
-    err := runCmd.Run("ETH PRBS PASSED", "ETH PRBS FAILED", "tclsh", "/home/diag/diag/scripts/asic/ext_eth_prbs.tcl", sn, strconv.Itoa(slot), strconv.Itoa(duration), poly)
+    //err := runCmd.Run("ETH PRBS PASSED", "ETH PRBS FAILED", "tclsh", "/home/diag/diag/scripts/asic/ext_eth_prbs.tcl", sn, strconv.Itoa(slot), strconv.Itoa(duration), poly)
+    err := runCmd.Run("ETH PRBS PASSED", "ETH PRBS FAILED", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/ext_eth_prbs.tcl", sn, strconv.Itoa(slot), strconv.Itoa(duration), poly)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -105,7 +106,7 @@ func AsicL1_TestHdl(argList []string) {
     dcli.TimeStampEnable(misc.DISABLE)
     defer dcli.TimeStampEnable(misc.ENABLE)
 
-    err = runCmd.Run("L1 TEST PASSED", "L1 TEST FAILED", "tclsh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)), vmarg)
+    err = runCmd.Run("L1 TEST PASSED", "L1 TEST FAILED", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)), vmarg)
 
     diagEngine.FuncMsgChan <- err
     return
