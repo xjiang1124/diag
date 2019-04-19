@@ -801,42 +801,42 @@ def main():
 
 
     # Naples100 Post Check
-    if naples100_nic_list:
-        post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
-                                                      NIC_Type.NAPLES100,
-                                                      naples100_nic_list,
-                                                      naples100_post_test_check_list,
-                                                      stop_on_err)
-        for slot in post_check_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples100_nic_list and stop_on_err:
-                naples100_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+    # if naples100_nic_list:
+    #     post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
+    #                                                   NIC_Type.NAPLES100,
+    #                                                   naples100_nic_list,
+    #                                                   naples100_post_test_check_list,
+    #                                                   stop_on_err)
+    #     for slot in post_check_fail_list:
+    #         nic_key = libmfg_utils.nic_key(slot)
+    #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    #         if slot in naples100_nic_list and stop_on_err:
+    #             naples100_nic_list.remove(slot)
+    #         if nic_key not in fail_nic_list:
+    #             fail_nic_list.append(nic_key)
+    #             fail_sn_list.append(sn)
+    #         if nic_key in pass_nic_list:
+    #             pass_nic_list.remove(nic_key)
+    #             pass_sn_list.remove(sn)
 
     # Naples25 Post Check
-    if naples25_nic_list:
-        post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
-                                                      NIC_Type.NAPLES25,
-                                                      naples25_nic_list,
-                                                      naples25_post_test_check_list,
-                                                      stop_on_err)
-        for slot in post_check_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples25_nic_list and stop_on_err:
-                naples25_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+    # if naples25_nic_list:
+    #     post_check_fail_list = naples_exec_post_check(mtp_mgmt_ctrl,
+    #                                                   NIC_Type.NAPLES25,
+    #                                                   naples25_nic_list,
+    #                                                   naples25_post_test_check_list,
+    #                                                   stop_on_err)
+    #     for slot in post_check_fail_list:
+    #         nic_key = libmfg_utils.nic_key(slot)
+    #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    #         if slot in naples25_nic_list and stop_on_err:
+    #             naples25_nic_list.remove(slot)
+    #         if nic_key not in fail_nic_list:
+    #             fail_nic_list.append(nic_key)
+    #             fail_sn_list.append(sn)
+    #         if nic_key in pass_nic_list:
+    #             pass_nic_list.remove(nic_key)
+    #             pass_sn_list.remove(sn)
 
 
     # Naples100 MTP Parallel test

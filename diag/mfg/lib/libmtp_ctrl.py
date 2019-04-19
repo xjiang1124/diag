@@ -417,14 +417,14 @@ class mtp_ctrl():
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         handle = pexpect.spawn(ssh_cmd)
-        idx = libmfg_utils.mfg_expect(handle, ["assword:"], timeout = 5)
+        idx = libmfg_utils.mfg_expect(handle, ["assword:"])
         if idx < 0:
             self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
             return None
         else:
             handle.sendline(passwd)
 
-        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout = 5)
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list)
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
             return None
@@ -475,7 +475,7 @@ class mtp_ctrl():
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"], timeout = 5)
+            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"])
             if idx < 0:
                 if retries > 0:
                     self.cli_log_inf("Connect to mtp timeout, wait 30s and retry...", level = 0)
@@ -490,7 +490,7 @@ class mtp_ctrl():
                 self._mgmt_handle.sendline(passwd)
                 break
 
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout = 5)
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list)
         if idx < 0:
             self.cli_log_err(self._mgmt_handle.before)
             self.cli_log_err("Connect to mtp failed", level = 0)
