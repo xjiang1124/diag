@@ -1825,7 +1825,7 @@ FT_STATUS spi_wr(BYTE address, BYTE data)
 FT_STATUS spi_rd(BYTE address, BYTE* data)
 {
 	FT_STATUS       ftStatus = FT_OK;
-
+	BYTE retry = 10;
 	dwNumBytesSent = 0;
 	queue_clear(ftHandle);
 	spi_csdis();
@@ -1874,28 +1874,34 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 			printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
 			//recover
 			printf("Resend read command!\n");
-			ftHandle_close();
-			spi_init();
-			spi_csdis();
-			spi_csena();
-			ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
-			usleep(5000);
-			ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
-			if(dwNumBytesSent == 0 && !is_mdio)
+			for(int i = 0; i < retry; i++)
 			{
-				printf("SPI recover failed, %d\n", dwNumBytesSent);
-			}
-			if(dwNumBytesSent > 1 && !is_mdio)
-			{
-				printf("SPI recover got multiple bytes, return last one, %d\n", dwNumBytesSent);
-				ftStatus = FT_Read(ftHandle, OutputBuffer, dwNumBytesSent, &dwNumBytesRead);
-				*data = OutputBuffer[dwNumBytesSent - 1];
-//				for(int i = 0; i < dwNumBytesSent; i++ )
-//					printf("0x%x ", OutputBuffer[i]);
-//				printf("\n");
-			} else {
-				printf("SPI recover success, %d\n", dwNumBytesSent);
-				ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+				ftHandle_close();
+				spi_init();
+				spi_csdis();
+				spi_csena();
+				ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+				usleep(50000);
+				ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
+				if(dwNumBytesSent == 0 && !is_mdio)
+				{
+//					printf("SPI recover failed, %d\n", dwNumBytesSent);
+				}
+				if(dwNumBytesSent > 1 && !is_mdio)
+				{
+					printf("SPI recover got multiple bytes, return last one, retry %d\n", i);
+					ftStatus = FT_Read(ftHandle, OutputBuffer, dwNumBytesSent, &dwNumBytesRead);
+					*data = OutputBuffer[dwNumBytesSent - 1];
+					break;
+	//				for(int i = 0; i < dwNumBytesSent; i++ )
+	//					printf("0x%x ", OutputBuffer[i]);
+	//				printf("\n");
+				} else {
+					printf("SPI recover success, retry %d\n", i);
+					ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+					break;
+				}
+				printf("Max retry hit, SPI recover failed!\n");
 			}
 		}
 		else
