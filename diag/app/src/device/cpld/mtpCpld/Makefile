@@ -1,4 +1,4 @@
-TOP_DIR=../../../../../
+TOP_DIR=../../../../../../
 include $(TOP_DIR)/build/common.mk
 
 #BUILD_DIR = $(shell pwd)

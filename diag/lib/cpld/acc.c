@@ -1811,6 +1811,7 @@ FT_STATUS spi_wr(BYTE address, BYTE data)
 	spi_csena();
 	//send out MPSSE command to MPSSE engine
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+	if("data to send %d don't match to sent 0xd\n", dwNumBytesToSend, &dwNumBytesSent);
 //	printf("write \n");
 //	for(int i = 0; i < dwNumBytesToSend; i++ )
 //		printf("0x%x ", OutputBuffer[i]);
@@ -1851,7 +1852,7 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 //	printf("\ndwNumBytesToSend %d\n", dwNumBytesToSend);
 	spi_csena();
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
-	dwNumBytesToSend = 0;
+
 //	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
 //	ftStatus = sendJtagCommand(ftHandle, cpu_wr, sizeof cpu_wr);
 //	ftStatus = FT_Write(ftHandle, cpu_wr, dwNumBytesToSend, &dwNumBytesSent);
@@ -1871,6 +1872,31 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 		if(dwNumBytesSent != 1 && !is_mdio)
 		{
 			printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
+			//recover
+			printf("Resend read command!\n");
+			ftHandle_close();
+			spi_init();
+			spi_csdis();
+			spi_csena();
+			ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+			usleep(5000);
+			ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
+			if(dwNumBytesSent == 0 && !is_mdio)
+			{
+				printf("SPI recover failed, %d\n", dwNumBytesSent);
+			}
+			if(dwNumBytesSent > 1 && !is_mdio)
+			{
+				printf("SPI recover got multiple bytes, return last one, %d\n", dwNumBytesSent);
+				ftStatus = FT_Read(ftHandle, OutputBuffer, dwNumBytesSent, &dwNumBytesRead);
+				*data = OutputBuffer[dwNumBytesSent - 1];
+//				for(int i = 0; i < dwNumBytesSent; i++ )
+//					printf("0x%x ", OutputBuffer[i]);
+//				printf("\n");
+			} else {
+				printf("SPI recover success, %d\n", dwNumBytesSent);
+				ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+			}
 		}
 		else
 			ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
@@ -1888,6 +1914,7 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 //	printf("\n");
 	//Read 2 bytes from device receive buffer
 //	*data = (InputBuffer[0] << 8) + InputBuffer[1];
+	dwNumBytesToSend = 0;
 	return ftStatus;
 }
 
