@@ -1995,23 +1995,23 @@ class mtp_ctrl():
     def mtp_run_diag_test_seq(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):
         # init command
         if init_cmd:
-            if not self.mtp_mgmt_exec_cmd(init_cmd):
-                err_msg = self.mtp_get_cmd_buf()
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(init_cmd):
+                err_msg = self.mtp_get_nic_cmd_buf(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(test, str(start))
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self._nic_ctrl_list[slot].mtp_exec_cmd(ts_record_cmd)
 
-        if not self.mtp_mgmt_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
-            err_msg = self.mtp_get_cmd_buf()
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
+            err_msg = self.mtp_get_nic_cmd_buf(slot)
             return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, [err_msg]]
 
         # diag test error ouput
         err_msg_list = list()
-        cmd_buf = self.mtp_get_cmd_buf()
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
         if MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG in cmd_buf:
             for line in cmd_buf.split('\n'):
                 if MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG in line:
@@ -2023,12 +2023,12 @@ class mtp_ctrl():
         stop = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self._nic_ctrl_list[slot].mtp_exec_cmd(ts_record_cmd)
 
         # post command
         if post_cmd:
-            if not self.mtp_mgmt_exec_cmd(post_cmd):
-                err_msg = self.mtp_get_cmd_buf()
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(post_cmd):
+                err_msg = self.mtp_get_nic_cmd_buf(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)

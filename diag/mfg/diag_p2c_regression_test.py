@@ -204,49 +204,52 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, test_corner):
+    if test_corner == None:
+        corner_list = [Env_Cond.NTNV,Env_Cond.NTHV,Env_Cond.NTLV]
+    else:
+        corner_list = [test_corner]
+
     for loop in range(1, iteration+1):
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} start".format(loop), level=0)
-        # go to mtp_regression and Start the regression
-        cmd = "cd {:s}".format(mtp_script_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
-        #cmd += " --psu-check"
-        if stop_on_err:
-            cmd += " --stop-on-error"
-        if skip_test:
-            cmd += " --skip-test"
+        for corner in corner_list:
+            # go to mtp_regression and Start the regression
+            cmd = "cd {:s}".format(mtp_script_dir)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
+            #cmd += " --psu-check"
+            if stop_on_err:
+                cmd += " --stop-on-error"
+            if skip_test:
+                cmd += " --skip-test"
 
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-        mtp_start_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_REGRESSION_TIMEOUT)
-        mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+            mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+            mtp_start_ts = libmfg_utils.timestamp_snapshot()
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_REGRESSION_TIMEOUT)
+            mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+            mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+
+            test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
+            result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner)
+            cmd = "rm -rf {:s}".format(test_log_file)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+            if not result and stop_on_err:
+                return
+
+            mtp_mgmt_ctrl.mtp_chassis_shutdown()
+
+            mtp_mgmt_ctrl.mtp_apc_pwr_on()
+            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+            libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+                return
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
-
-        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
-        result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner)
-        cmd = "rm -rf {:s}".format(test_log_file)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-        if not result and stop_on_err:
-            return
-
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        # leave the MTP in power down state if the last loop complete
-        if loop == iteration:
-            return
-
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-            return
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     return
 
@@ -260,7 +263,7 @@ def main():
     parser.add_argument("--pwr-cycle", help="Power cycle MTP before test", action='store_true')
     parser.add_argument("--skip-test", help="Test will not run", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.NTNV)
+    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond))
 
     args = parser.parse_args()
 
@@ -270,7 +273,7 @@ def main():
     email_to = None
     pwr_cycle = False
     skip_test = False
-    corner = Env_Cond.NTNV
+    corner = None
 
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")

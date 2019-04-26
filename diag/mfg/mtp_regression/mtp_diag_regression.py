@@ -437,7 +437,6 @@ def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
-    parser.add_argument("--force-scan", help="Use SN tag to validate fru content", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.NTNV)
 
@@ -449,7 +448,6 @@ def main():
     skip_test = False
     corner = Env_Cond.NTNV
     sn_scan_tag = False
-    force_scan = False
 
     if args.mtpid:
         mtp_id = args.mtpid
@@ -460,8 +458,6 @@ def main():
         verbosity = True
     if args.corner:
         corner = args.corner
-    if args.force_scan:
-        force_scan = True
 
     # Chamber temperature
     if corner == Env_Cond.LTLV or corner == Env_Cond.LTNV or corner == Env_Cond.LTHV:
@@ -498,9 +494,6 @@ def main():
         default_sw_boot = True
     else:
         default_sw_boot = False
-
-    if corner == Env_Cond.NTNV and force_scan:
-        sn_scan_tag = True
 
     # load the mtp config
     mtp_chassis_cfg_file = "config/pensando_pro_srv1_mtp_chassis_cfg.yaml"
@@ -619,7 +612,7 @@ def main():
 
     mtp_mgmt_ctrl.mtp_power_on_nic()
 
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(sn_tag=sn_scan_tag, vmargin=vmarg):
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC type, present failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return

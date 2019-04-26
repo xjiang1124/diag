@@ -200,32 +200,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, log_filep):
-    scan_cfg_filep = open("config/{:s}.yaml".format(mtp_id), "w+")
-    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-    while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False)
-        if scan_rslt:
-            break;
-        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-    pass_rslt_list = list()
-    fail_rslt_list = list()
-    # print scan summary
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["NIC_VALID"]:
-            sn = scan_rslt[key]["NIC_SN"]
-            mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
-            pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui)
-        else:
-            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-    libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, log_filep)
-    mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
-    scan_cfg_filep.close()
-    os.system("sync")
-
-
 def mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg):
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
@@ -253,14 +227,12 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, force_scan):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id):
     mtp_mgmt_ctrl.cli_log_inf("Regression Test start", level=0)
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
-    if force_scan:
-        cmd += " --force-scan"
 
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
@@ -283,16 +255,12 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, force_scan
 
 def main():
     parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--force-scan", help="Use SN tag to validate SN/MAC", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
     verbosity = False
-    force_scan = False
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
-    if args.force_scan:
-        force_scan = True
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
@@ -308,11 +276,6 @@ def main():
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
-
-    # scan and generate nic barcode config file
-    if force_scan:
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, sys.stdout)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
     # power on the mtp chassis
@@ -340,7 +303,7 @@ def main():
 
     mtp_thread_list = list()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, force_scan))
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

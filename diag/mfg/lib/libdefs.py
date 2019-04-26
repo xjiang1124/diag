@@ -174,6 +174,7 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
 
     NIC_MOUNT_EMMC_FMT = "mount {:s} {:s}"
+    NIC_DIAG_CLEANUP_FMT = "rm -rf /data/nic*"
     NIC_MOUNT_DISP_FMT = "mount | grep '{:s}'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
