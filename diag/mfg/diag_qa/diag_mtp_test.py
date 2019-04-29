@@ -90,16 +90,20 @@ def main():
         mtp_mgmt_ctrl.cli_log_err("Init MTP Diag Environment fails", level=0)
         return
 
+    failure_count = 0
+    read_count = 0
     while True:
         time.sleep(0.05)
         # get the hw version info
         cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
+        read_count += 1
         if not cpld_ver_list:
             mtp_mgmt_ctrl.cli_log_err("Get MTP CPLD version fails", level=0)
             break
-        mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]), level=0)
+        #mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]), level=0)
         if cpld_ver_list[0] != "0x5" or cpld_ver_list[1] != "0x3":
-            break
+            failure_count += 1
+            mtp_mgmt_ctrl.cli_log_err("Read count = {:d}, failure count = {:d}".format(read_count, failure_count), level=0)
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
