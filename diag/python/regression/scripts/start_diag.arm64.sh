@@ -8,6 +8,8 @@ echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 mkdir -p $DIAG_DIR/log/
 
+echo "Killing hal"
+killall hal
 
 if [[ -f /etc/profile.bak ]]
 then
