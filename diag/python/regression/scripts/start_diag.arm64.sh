@@ -1,6 +1,7 @@
 # !/bin/bash
 arch=arm64
 
+killall hal
 
 # Set up environment
 echo "-------------------"
