@@ -206,51 +206,26 @@ class nic_ctrl():
         return True
 
 
-    def nic_console_init(self):
-        loop = 0
-        # goto the nic_con dir
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-        while loop < MTP_Const.NIC_CON_INIT_RETRY:
-            cmd = MFG_DIAG_CMDS.NIC_CON_INIT_FMT.format(self._slot+1)
-            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_INIT_DELAY):
-                loop += 1
-                continue
-
-            if MFG_DIAG_SIG.NIC_CON_OK_SIG in self.nic_get_cmd_buf():
-                break
-            else:
-                # retry
-                if not self.nic_power_cycle():
-                    self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                    return False
-                loop += 1
-                continue
-
-        if loop >= MTP_Const.NIC_CON_INIT_RETRY:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-        return True
-
-
     def nic_console_attach(self):
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             return False
 
-        # check if console prompt is shown
-        try:
-            self._nic_handle.expect_exact(self._nic_con_prompt)
-        except pexpect.TIMEOUT:
-            # if prompt is not there, just send return
-            self._nic_handle.sendline("")
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-            if idx < 0:
+        # send return
+        self._nic_handle.sendline("")
+        exp_list = [self._nic_con_prompt, "login:", "assword:"]
+        while True:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx == 0:
+                break
+            elif idx == 1:
+                self._nic_handle.sendline(NIC_MGMT_USERNAME)
+                continue
+            elif idx == 2:
+                self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+                continue
+            else:
                 self.nic_set_err_msg(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
@@ -322,56 +297,35 @@ class nic_ctrl():
 
 
     def nic_verify_sw_boot(self):
-        loop = 0
+        if not self.nic_console_attach():
+            return False
 
-        while loop < MTP_Const.NIC_CON_INIT_RETRY:
-            if not self.nic_console_attach():
-                time.sleep(1)
-                loop += 1
-                continue
+        # dump the boot up image
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_console_detach()
+            return False
+        match = re.findall(r"(\w+fw\w?)", self._nic_handle.before)
 
-            # dump the boot up image
-            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
+        # 1. remove diag utils on NIC
+        # 2. kill all processes
+        # 3. sync
+        # 4. umount
+        dev = "/dev/mmcblk0p10"
+        mount_point = "/data"
+        emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
+        nic_shutdown_cmd_list = [emmc_mount_cmd,
+                                 MFG_DIAG_CMDS.NIC_DIAG_CLEANUP_FMT,
+                                 MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
+                                 MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
+                                 MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT]
+        for nic_cmd in nic_shutdown_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_console_detach()
-                time.sleep(1)
-                loop += 1
-                continue
-
-            match = re.findall(r"(\w+fw\w?)", self._nic_handle.before)
-
-            # 1. remove diag utils on NIC
-            # 2. kill all processes
-            # 3. sync
-            # 4. umount
-            dev = "/dev/mmcblk0p10"
-            mount_point = "/data"
-            emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
-            cmd_fail_flag = False
-            nic_shutdown_cmd_list = [emmc_mount_cmd,
-                                     MFG_DIAG_CMDS.NIC_DIAG_CLEANUP_FMT,
-                                     MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
-                                     MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
-                                     MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT]
-            for nic_cmd in nic_shutdown_cmd_list:
-                self._nic_handle.sendline(nic_cmd)
-                idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-                if idx < 0:
-                    cmd_fail_flag = True
-                    break
-            # cmd fails, retry
-            if cmd_fail_flag:
-                self.nic_console_detach()
-                time.sleep(1)
-                loop += 1
-                continue
-            # cmd complete, continue shutdown
-            else:
-                break
-
-        if loop >= MTP_Const.NIC_CON_INIT_RETRY:
-            return False
+                return False
 
         # poweroff
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)

@@ -1131,15 +1131,6 @@ class mtp_ctrl():
 ########################################
 
 # 1. Routines that need console, can not be run in parallel
-    def mtp_nic_con_baudrate_init(self, slot):
-        self.cli_log_slot_inf(slot, "Init NIC console baudrate")
-        if not self._nic_ctrl_list[slot].nic_console_init():
-            self.cli_log_slot_err(slot, "Init NIC console baudrate failed")
-            return False
-
-        return True
-
-
     def mtp_nic_boot_info_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init():
@@ -1201,9 +1192,6 @@ class mtp_ctrl():
 
 
     def mtp_nic_mini_init(self, slot, fpo=False):
-        if not self.mtp_nic_con_baudrate_init(slot):
-            return False
-
         if not self.mtp_nic_boot_info_init(slot):
             return False
 
@@ -1864,9 +1852,6 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_set_nic_diag_boot(self, slot):
-        if not self.mtp_nic_con_baudrate_init(slot):
-            return False
-
         if not self._nic_ctrl_list[slot].nic_set_diag_boot():
             self.cli_log_slot_err(slot, "Set NIC default boot with diag failed")
             return False
@@ -1876,9 +1861,6 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_verify_nic_sw_boot(self, slot):
-        if not self.mtp_nic_con_baudrate_init(slot):
-            return False
-
         self.cli_log_slot_inf(slot, "Verify NIC default boot with sw image")
         if not self._nic_ctrl_list[slot].nic_verify_sw_boot():
             self.cli_log_slot_err(slot, "Verify NIC default boot with sw image failed")
