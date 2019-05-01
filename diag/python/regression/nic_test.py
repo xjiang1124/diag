@@ -14,8 +14,7 @@ from nic_con import nic_con
 class nic_test:
     def __init__(self):
         self.name = "nic_snake"
-        self.baud_rate_org = 115200
-        self.baud_rate = 4800
+        self.baud_rate = 115200
         self.num_retry = 10
         self.nic_con = nic_con()
 
@@ -29,7 +28,7 @@ class nic_test:
             sys.exit(0)
 
         # Change baud rate to 4800
-        ret = self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
+        ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
         if ret != 0:
             print "Failed to change baud rate"
             return -1
@@ -90,7 +89,7 @@ class nic_test:
             print "Invalid test_type {} and mdoe {}".format(test_type, mode)
             sys.exit(0)
 
-        self.nic_con.change_rate_pw(self.baud_rate_org, self.baud_rate, slot)
+        self.nic_con.power_cycle_uart(self.baud_rate, slot)
 
         session = common.session_start()
         session.timeout = timeout

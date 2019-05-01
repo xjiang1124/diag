@@ -32,6 +32,9 @@ child.expect("\$ ")
 child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/002")
 child.expect("\$ ")
 
+child.sendline("sudo /home/diag/diag/tools/devmem 0xfed08010 w 0x80")
+child.expect("\$ ")
+
 child.sendline("mount | grep debugfs")
 child.expect("\$ ")
 
