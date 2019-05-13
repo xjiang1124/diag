@@ -571,9 +571,11 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+    os_ver = mtp_mgmt_ctrl.mtp_get_os_version()
     asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
-    if sw_ver and asic_ver:
+    if sw_ver and asic_ver and os_ver:
         mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver))
+        mtp_mgmt_ctrl.cli_log_inf("MTP OS version: {:s}".format(os_ver))
         mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver))
     else:
         mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to retrieve diag/asic version info")

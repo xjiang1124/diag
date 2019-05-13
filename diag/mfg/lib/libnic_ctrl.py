@@ -306,7 +306,9 @@ class nic_ctrl():
         if idx < 0:
             self.nic_console_detach()
             return False
-        match = re.findall(r"(\w+fw\w?)", self._nic_handle.before)
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(\w+fw\w?)", buf)
 
         # 1. remove diag utils on NIC
         # 2. kill all processes
@@ -362,7 +364,9 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        match = re.findall(r"(\w+fw\w?)", self._nic_handle.before)
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(\w+fw\w?)", buf)
         if match:
             self._boot_image = match[0]
         else:
@@ -379,8 +383,10 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         # get kernel build timestamp
-        match = re.findall(r"SMP (.* 20\d{2})", self._nic_handle.before)
+        match = re.findall(r"SMP (.* 20\d{2})", buf)
         if match:
             kernel_ver = match[0]
         else:

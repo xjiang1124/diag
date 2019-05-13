@@ -201,9 +201,12 @@ def main():
             return
 
         sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
+        os_ver = mtp_mgmt_ctrl.mtp_get_os_version()
         asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
         cpld_io_ver, cpld_jtag_ver = mtp_mgmt_ctrl.mtp_get_hw_version()
-        mtp_mgmt_ctrl.cli_log_inf("Diag version={:s}, ASIC version={:s}".format(sw_ver,asic_ver), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag version={:s}".format(sw_ver), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP OS version={:s}".format(os_ver), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version={:s}".format(asic_ver), level=0)
         mtp_mgmt_ctrl.cli_log_inf("MTP IO CPLD version={:s}, JTAG CPLD version={:s}".format(cpld_io_ver,cpld_jtag_ver), level=0)
 
         if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):

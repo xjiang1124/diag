@@ -184,6 +184,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
+    MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
 
     # Naples100: core_freq=833 arm_freq=2000

@@ -195,6 +195,12 @@ def get_nic_ip_addr(slot):
     return "10.1.1.{:d}".format(100+slot+1)
 
 
+# remove the special character mixed with output:
+# eg: SMP Tue Ma^@r 19 11:14:41 PT 2019
+def special_char_removal(buf):
+    return re.sub(r"\^.", "", buf)
+
+
 def serial_number_validate(tmp):
     if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
         return tmp

@@ -12,7 +12,7 @@ MTP-001:
     APC2_PORT: "9"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.75.205"
+    IP: "192.168.72.178"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp001"

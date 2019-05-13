@@ -287,8 +287,10 @@ def main():
 
     # get the sw version info
     sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    if sw_ver:
+    os_ver = mtp_mgmt_ctrl.mtp_get_os_version()
+    if sw_ver and os_ver:
         mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP OS version: {:s}".format(os_ver), level=0)
     else:
         mtp_mgmt_ctrl.cli_log_err("Unable to retrieve diag image version info", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()

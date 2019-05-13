@@ -591,6 +591,19 @@ class mtp_ctrl():
         return [io_cpld_ver, jtag_cpld_ver]
 
 
+    def mtp_get_os_version(self):
+        cmd = MFG_DIAG_CMDS.MTP_IMG_VER_DISP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to get os image version", level = 0)
+            return None
+        match = re.findall(r"SMP (.* 20\d{2})", self.mtp_get_cmd_buf())
+        if match:
+            return match[0]
+        else:
+            self.cli_log_err("Failed to get os image version", level = 0)
+            return None
+
+
     def mtp_get_sw_version(self):
         cmd = MFG_DIAG_CMDS.MTP_DIAG_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
