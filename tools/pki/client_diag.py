@@ -77,13 +77,23 @@ def parse_args_diag():
         "--sku",
         default="SKU",
         help="SKU")
+    parser.add_argument(
+        "-pub_ek",
+        "--pub_ek",
+        default="pub_ek.tcl.txt",
+        help="File with public ek")
+    parser.add_argument(
+        "-signed_pub_ek",
+        "--signed_pub_ek",
+        default="signed_ek.pub.txt",
+        help="Output file with signed public ek")
 
     return parser.parse_args()
 
 args = parse_args_diag()
 hsm_client = cl.get_client(args)
 
-pub_ek_raw = open("pub_ek.tcl.txt", "r").read()
+pub_ek_raw = open(args.pub_ek, "r").read()
 
 pub_ek = cl.fix_endianness(pub_ek_raw)
 
@@ -107,6 +117,6 @@ cert = cryptography.x509.load_der_x509_certificate(
     resp.Certificate, default_backend())
 
 data=cert.public_bytes(encoding=serialization.Encoding.DER)
-newfile=open('./signed_ek.pub.txt','wb')
+newfile=open(args.signed_pub_ek,'wb')
 newfile.write(data)
 newfile.close()
