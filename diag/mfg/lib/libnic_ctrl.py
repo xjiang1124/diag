@@ -214,6 +214,10 @@ class nic_ctrl():
 
         # send return
         self._nic_handle.sendline("")
+        # TODO: Forio need another enter to connect console
+        if self._nic_type == NIC_Type.FORIO:
+            self._nic_handle.sendline("")
+
         exp_list = [self._nic_con_prompt, "login:", "assword:"]
         while True:
             idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -516,7 +520,11 @@ class nic_ctrl():
         img_name = os.path.basename(qspi_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        # TODO: Forio uboot program
+        if self._nic_type == NIC_Type.FORIO:
+            nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
+        else:
+            nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
@@ -634,6 +642,9 @@ class nic_ctrl():
 
 
     def nic_set_vmarg(self, vmarg_param):
+        # TODO: Forio vmarg
+        if self._nic_type == NIC_Type.FORIO:
+            return True
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param)
         nic_cmd_list.append(nic_cmd)

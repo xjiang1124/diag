@@ -392,7 +392,7 @@ def main():
             mac_ui = libmfg_utils.mac_address_format(mac)
 
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
                 if not mtp_capability & 0x1:
                     mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples100")
                     mtp_mgmt_ctrl.mtp_chassis_shutdown()
@@ -436,7 +436,7 @@ def main():
             test = "NIC_TYPE"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.NAPLES25:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.NAPLES25 or card_type == NIC_Type.FORIO:
                 ret = True
             else:
                 ret = False
@@ -523,7 +523,7 @@ def main():
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
                 qspi_img_file = naples100_qspi_img_file
                 cpld_img_file = naples100_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:

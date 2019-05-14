@@ -24,6 +24,9 @@ from libmfg_cfg import MFG_NAPLES100_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_CPLD_VERSION
 from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_QSPI_TIMESTAMP
+from libmfg_cfg import MFG_FORIO_CPLD_VERSION
+from libmfg_cfg import MFG_FORIO_CPLD_TIMESTAMP
+from libmfg_cfg import MFG_FORIO_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
@@ -1358,6 +1361,10 @@ class mtp_ctrl():
                 if cur_ver == MFG_NAPLES25_CPLD_VERSION and cur_timestamp == MFG_NAPLES25_CPLD_TIMESTAMP:
                     self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
                     return True
+            elif nic_type == NIC_Type.FORIO:
+                if cur_ver == MFG_FORIO_CPLD_VERSION and cur_timestamp == MFG_FORIO_CPLD_TIMESTAMP:
+                    self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+                    return True
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
                 return False
@@ -1401,6 +1408,15 @@ class mtp_ctrl():
                 else:
                     self.cli_log_slot_inf_lock(slot, "Verify NIC CPLD complete")
                     return True
+            elif nic_type == NIC_Type.FORIO:
+                if cur_ver != MFG_FORIO_CPLD_VERSION or cur_timestamp != MFG_FORIO_CPLD_TIMESTAMP:
+                    self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
+                    self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(MFG_FORIO_CPLD_VERSION, cur_ver))
+                    self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(MFG_FORIO_CPLD_TIMESTAMP, cur_timestamp))
+                    return False
+                else:
+                    self.cli_log_slot_inf_lock(slot, "Verify NIC CPLD complete")
+                    return True
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
                 return False
@@ -1410,7 +1426,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_qspi(self, slot, qspi_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.NAPLES25:
+        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.FORIO:
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI")
             if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
                 self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
@@ -1423,7 +1439,7 @@ class mtp_ctrl():
 
     def mtp_verify_nic_qspi(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.NAPLES25:
+        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.FORIO:
             self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI")
             qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
             if not qspi_info:
@@ -1450,6 +1466,14 @@ class mtp_ctrl():
                 if kernel_timestamp != MFG_NAPLES25_QSPI_TIMESTAMP:
                     self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
                     self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_NAPLES25_QSPI_TIMESTAMP, kernel_timestamp))
+                    return False
+                else:
+                    self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
+                    return True
+            elif nic_type == NIC_Type.FORIO:
+                if kernel_timestamp != MFG_FORIO_QSPI_TIMESTAMP:
+                    self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
+                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_FORIO_QSPI_TIMESTAMP, kernel_timestamp))
                     return False
                 else:
                     self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
@@ -1805,7 +1829,7 @@ class mtp_ctrl():
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
         # find present
-        match = re.findall(r"UUT_(\d+) +NAPLES\d+", self._mgmt_handle.before)
+        match = re.findall(r"UUT_(\d+) +[NAPLES\d+,FORIO]", self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
@@ -1829,6 +1853,13 @@ class mtp_ctrl():
                 slot = int(match[idx]) - 1
                 self._nic_type_list[slot] = NIC_Type.NAPLES25
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25)
+
+        match = re.findall(r"UUT_(\d+) +FORIO", self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_type_list[slot] = NIC_Type.FORIO
+                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.FORIO)
 
         return True
 
@@ -2097,6 +2128,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+        # TODO, Forio avs
+        elif nic_type == NIC_Type.FORIO:
+            return True
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False

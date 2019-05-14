@@ -3,6 +3,7 @@ from enum import Enum
 class NIC_Type:
     NAPLES100 = "NAPLES100"
     NAPLES25 = "NAPLES25"
+    FORIO = "FORIO"
     UNKNOWN = "Unknown"
 
 
@@ -176,6 +177,7 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_CLEANUP_FMT = "rm -rf /data/nic*"
     NIC_MOUNT_DISP_FMT = "mount | grep '{:s}'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
+    NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
     NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
     NIC_BOOT_DISP_FMT = "fwupdate -r"

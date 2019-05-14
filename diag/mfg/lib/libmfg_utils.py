@@ -198,7 +198,7 @@ def get_nic_ip_addr(slot):
 # remove the special character mixed with output:
 # eg: SMP Tue Ma^@r 19 11:14:41 PT 2019
 def special_char_removal(buf):
-    return re.sub(r"\^.", "", buf)
+    return re.sub(r"[\x00-\x09,\x0B-\x0C,\x0E-\x1F]", "", buf)
 
 
 def serial_number_validate(tmp):
