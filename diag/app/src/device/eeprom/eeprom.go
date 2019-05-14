@@ -141,15 +141,19 @@ func ProgEeprom(devName string) (err int) {
         if entry.Name == "Product Name" {
             if CardType == "NAPLES25" {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0})
+                updateIntChk()
             } else if CardType == "FORIO" {
                 copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0})
+                updateIntChk();
             }
         }
         if entry.Name == "Board ID" {
             if CardType == "NAPLES25" {
                 copy(entry.Value, []byte{2, 0 , 0, 0})
+                updateIntChk()
             } else if CardType == "FORIO" {
                 copy(entry.Value, []byte{4, 0 , 0, 0})
+                updateIntChk()
             }
         }
 //        if entry.Name == "Serial Number" {
@@ -267,10 +271,9 @@ func updateIntChk() () {
     cmnHeadChk = 0
     for _, entry := range(EepromTbl) {
         if (entry.Offset > 7) && (entry.Offset < 103) {
-//            brdInfoChk += entry.Value
             brdInfoChk += calcSum(entry)
+//            fmt.Printf("checksum 0x%x\n", brdInfoChk)
         } else if (entry.Offset >= 0) && (entry.Offset < 7) {
-//            intUseChk += entry.Value
             cmnHeadChk += calcSum(entry)
         }
     }
