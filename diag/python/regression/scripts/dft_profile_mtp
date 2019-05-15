@@ -22,3 +22,5 @@ export CARD_NAME="MTP1"
 export CARD_TYPE="MTP"
 export UUT_TYPE="NAPLES_MTP"
 
+export PYTHONPATH="/home/diag/diag/tools/pki/python"
+

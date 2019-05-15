@@ -64,6 +64,8 @@ cp -r $TOP_DIR/diag/util/bin/$arch/* $TEMP_DIR/util/
 if [[ $arch == "amd64" ]]
 then
     cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
+    cp -r $TOP_DIR/tools/pki/ $TEMP_DIR/tools/
+    cp -r $TOP_DIR/tools/barco/ $TEMP_DIR/tools/
 else
     cp $TOP_DIR/diag/python/regression/scripts/start_diag.arm64.sh $TEMP_DIR/..
 fi

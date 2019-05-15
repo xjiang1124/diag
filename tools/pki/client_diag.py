@@ -85,7 +85,7 @@ def parse_args_diag():
     parser.add_argument(
         "-signed_pub_ek",
         "--signed_pub_ek",
-        default="signed_ek.pub.txt",
+        default="signed_ek.pub.bin",
         help="Output file with signed public ek")
 
     return parser.parse_args()
