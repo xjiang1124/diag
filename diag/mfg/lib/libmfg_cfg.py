@@ -28,6 +28,8 @@ DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
 DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=10'"
 
+MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
+
 # please check the label specification
 # FL[M,Z,G][Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 NAPLES_SN_FMT = r"FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"

@@ -24,6 +24,7 @@ from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
 from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
+from libmfg_cfg import MFG_VALID_FW_LIST
 
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
@@ -356,55 +357,81 @@ class nic_ctrl():
 
 
     def nic_boot_info_init(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # get boot image info
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
+        loop = 0
+        while loop < MTP_Const.NIC_CON_CMD_RETRY:
+            if not self.nic_console_attach():
+                loop += 1
+                continue
 
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"(\w+fw\w?)", buf)
-        if match:
-            self._boot_image = match[0]
-        else:
+            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_console_detach()
+                loop += 1
+                continue
+
+            # remove the potential special character
+            buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            match = re.findall(r"(\w+fw\w?)", buf)
+            if match:
+                self._boot_image = match[0]
+                # check if boot image is valid
+                if self._boot_image in MFG_VALID_FW_LIST:
+                    self.nic_console_detach()
+                    break
+                else:
+                    self.nic_console_detach()
+                    loop += 1
+                    continue
+            else:
+                self.nic_console_detach()
+                loop += 1
+                continue
+
+        if loop >= MTP_Const.NIC_CON_CMD_RETRY:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
-
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         # get kernel build timestamp
-        match = re.findall(r"SMP (.* 20\d{2})", buf)
-        if match:
-            kernel_ver = match[0]
-        else:
+        loop = 0
+        while loop < MTP_Const.NIC_CON_CMD_RETRY:
+            if not self.nic_console_attach():
+                loop += 1
+                continue
+
+            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_console_detach()
+                loop += 1
+                continue
+
+            # remove the potential special character
+            buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            match = re.findall(r"SMP (.* 20\d{2})", buf)
+            if match:
+                kernel_ver = match[0]
+                # check if timestamp is valid
+                try:
+                    dt = datetime.strptime(kernel_ver, "%a %b %d %X %Z %Y")
+                    self._kernel_timestamp = dt.strftime("%m-%d-%Y")
+                    self.nic_console_detach()
+                    break
+                except ValueError:
+                    self.nic_console_detach()
+                    loop += 1
+                    continue
+            else:
+                self.nic_console_detach()
+                loop += 1
+                continue
+
+        if loop >= MTP_Const.NIC_CON_CMD_RETRY:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
             return False
-
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-        dt = datetime.strptime(kernel_ver, "%a %b %d %X %Z %Y")
-        self._kernel_timestamp = dt.strftime("%m-%d-%Y")
 
         return True
 
