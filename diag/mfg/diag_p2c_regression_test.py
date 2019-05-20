@@ -143,17 +143,8 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
 
 
 def load_mtp_cfg():
-    product_server_cfg_file = os.path.abspath("config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
-    mtp_chassis_cfg_file = os.path.abspath("config/" + filename)
+    # Pensando Lab/Debug MTP Chassis
+    mtp_chassis_cfg_file = os.path.abspath("config/qa_mtp_chassis_cfg.yaml")
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
     return mtp_cfg_db
 

@@ -548,10 +548,10 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         # TODO: Forio uboot program
-        if self._nic_type == NIC_Type.FORIO:
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
-        else:
-            nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        # if self._nic_type == NIC_Type.FORIO:
+        #     nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
+        # else:
+        nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False

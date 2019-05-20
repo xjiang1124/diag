@@ -6,8 +6,8 @@ MFG_BYPASS_PSU_CHECK = True
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
-MFG_NAPLES100_CPLD_VERSION = "0x8"
-MFG_NAPLES100_CPLD_TIMESTAMP = "02-13"
+MFG_NAPLES100_CPLD_VERSION = "0x9"
+MFG_NAPLES100_CPLD_TIMESTAMP = "05-20"
 MFG_NAPLES100_QSPI_TIMESTAMP = "03-19-2019"
 
 MFG_NAPLES25_CPLD_VERSION = "0x1"
@@ -18,7 +18,7 @@ MFG_FORIO_CPLD_VERSION = "0x4"
 MFG_FORIO_CPLD_TIMESTAMP = "04-11"
 MFG_FORIO_QSPI_TIMESTAMP = "03-19-2019"
 
-MFG_NIC_CPLD_PROGRAM = False
+MFG_NIC_CPLD_PROGRAM = True
 MFG_NIC_FRU_PROGRAM = True
 MFG_NIC_QSPI_PROGRAM = False
 MFG_NIC_EMMC_PROGRAM = True
@@ -31,8 +31,8 @@ DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/n
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
 
 # please check the label specification
-# FL[M,Z,G][Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
-NAPLES_SN_FMT = r"FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+# FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
+NAPLES_SN_FMT = r"FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]+$"
 NAPLES_PN_FMT = r"[A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2}$"
 NAPLES_DISP_SN_FMT = r"Serial Number +(FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4})"
