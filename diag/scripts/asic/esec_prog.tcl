@@ -7,7 +7,7 @@ set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
 
-source $ASIC_SRC/ip/cosim/tclsh/cmdline.tcl
+source ./cmdline.tcl
 
 
 set parameters {
