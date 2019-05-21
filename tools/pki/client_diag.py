@@ -112,11 +112,17 @@ req = certificates_pb2.EKCertificateRequest(
     SKU=args.sku,
     MTPID=args.mtp_id)
 
-resp = hsm_client.IssueEKCertificate(req)
-cert = cryptography.x509.load_der_x509_certificate(
-    resp.Certificate, default_backend())
+try:
+    resp = hsm_client.IssueEKCertificate(req)
 
-data=cert.public_bytes(encoding=serialization.Encoding.DER)
-newfile=open(args.signed_pub_ek,'wb')
-newfile.write(data)
-newfile.close()
+    cert = cryptography.x509.load_der_x509_certificate(
+        resp.Certificate, default_backend())
+    
+    data=cert.public_bytes(encoding=serialization.Encoding.DER)
+    newfile=open(args.signed_pub_ek,'wb')
+    newfile.write(data)
+    newfile.close()
+    print "SIGNING EK PASSED"
+except Exception as e:
+    print "SIGNING EK FAILED"
+

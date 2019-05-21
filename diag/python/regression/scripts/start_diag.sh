@@ -27,6 +27,7 @@ then
     /home/diag/diag/util/inventory -env
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     cat $DIAG_DIR/log/board_env.txt >> temp_profile
+    echo "export DIAG_HOME=/home/diag/" >> temp_profile
 else
     cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
 fi
