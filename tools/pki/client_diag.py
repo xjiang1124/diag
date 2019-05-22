@@ -23,8 +23,10 @@ from cryptography.hazmat.primitives import serialization
 
 import certificates_pb2
 import certificates_pb2_grpc
+import keys_pb2
+import keys_pb2_grpc
 
-#sys.path.insert(0, 'src/manufacturing/certsvc/client')
+#sys.path.insert(0, 'src/manufacturing/svc/client')
 import client as cl
 
 def parse_args_diag():
@@ -47,6 +49,12 @@ def parse_args_diag():
         "--backend-url",
         required=True,
         help="comma-separated list of backend URLs")
+    parser.add_argument(
+        "-s",
+        "--store-dir",
+        required=False,
+        help="directory where to store crypto  material")
+
     parser.add_argument(
         "-sn",
         "--sn",
@@ -77,23 +85,18 @@ def parse_args_diag():
         "--sku",
         default="SKU",
         help="SKU")
-    parser.add_argument(
-        "-pub_ek",
-        "--pub_ek",
-        default="pub_ek.tcl.txt",
-        help="File with public ek")
-    parser.add_argument(
-        "-signed_pub_ek",
-        "--signed_pub_ek",
-        default="signed_ek.pub.bin",
-        help="Output file with signed public ek")
 
     return parser.parse_args()
 
 args = parse_args_diag()
-hsm_client = cl.get_client(args)
+channel = cl.get_channel(args)
+cert_client = certificates_pb2_grpc.CertificatesStub(channel)
+keys_client = keys_pb2_grpc.KeysStub(channel)
 
-pub_ek_raw = open(args.pub_ek, "r").read()
+#hsm_client = cl.get_client(args)
+#keys_client = keys_pb2_grpc.KeysStub(
+
+pub_ek_raw = open("pub_ek.tcl.txt", "r").read()
 
 pub_ek = cl.fix_endianness(pub_ek_raw)
 
@@ -112,17 +115,21 @@ req = certificates_pb2.EKCertificateRequest(
     SKU=args.sku,
     MTPID=args.mtp_id)
 
-try:
-    resp = hsm_client.IssueEKCertificate(req)
+cert_resp = cert_client.IssueEKCertificate(req)
+cert = cryptography.x509.load_der_x509_certificate(
+    cert_resp.Certificate, default_backend())
 
-    cert = cryptography.x509.load_der_x509_certificate(
-        resp.Certificate, default_backend())
-    
-    data=cert.public_bytes(encoding=serialization.Encoding.DER)
-    newfile=open(args.signed_pub_ek,'wb')
-    newfile.write(data)
-    newfile.close()
-    print "SIGNING EK PASSED"
-except Exception as e:
-    print "SIGNING EK FAILED"
+data=cert.public_bytes(encoding=serialization.Encoding.DER)
+newfile=open('./signed_ek.pub.txt','wb')
+newfile.write(data)
+newfile.close()
+
+keys_req = keys_pb2.FetchKeySetRequest(ID="v1")
+keys_resp = keys_client.FetchKeySet(keys_req)
+print "Fetched keys"
+
+if args.store_dir != None:
+    cl.store_keys(args.store_dir, cert_resp.Certificate, keys_resp)
+
+
 

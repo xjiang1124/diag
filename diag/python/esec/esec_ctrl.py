@@ -36,24 +36,36 @@ def parse_args_diag():
         "-otp_init", "--otp_init", 
         action='store_true',
         help="OTP init")
+    group.add_argument(
+        "-esec_prog", "--esec_prog", 
+        action='store_true',
+        help="OTP init")
+    group.add_argument(
+        "-cleanup", "--cleanup", 
+        action='store_true',
+        help="Clean up")
+    group.add_argument(
+        "-check_uboot", "--check_uboot", 
+        action='store_true',
+        help="Clean up")
 
     parser.add_argument(
-        "-k", "--client-key",
+        "-k", "--client_key",
         default = "certs/client.key.pem",
         help="path to the file containing the client key")
     parser.add_argument(
         "-c",
-        "--client-cert",
+        "--client_cert",
         default = "certs/client-bundle.cert.pem",
         help="path to the file containing the client certificates")
     parser.add_argument(
         "-t",
-        "--trust-roots",
+        "--trust_roots",
         default = "certs/rootca.cert.pem",
         help="path to the file containing the trust bundle to verify server certificate")
     parser.add_argument(
         "-b",
-        "--backend-url",
+        "--backend_url",
         default = "enrico.dev.pensando.io:12267",
         help="comma-separated list of backend URLs")
 
@@ -92,16 +104,16 @@ def parse_args_diag():
         "--sku",
         default="SKU",
         help="SKU")
-    parser.add_argument(
-        "-pub_ek",
-        "--pub_ek",
-        default="pub_ek.tcl.txt",
-        help="File with public ek")
-    parser.add_argument(
-        "-signed_pub_ek",
-        "--signed_pub_ek",
-        default="signed_ek.pub.bin",
-        help="Output file with signed public ek")
+    #parser.add_argument(
+    #    "-pub_ek",
+    #    "--pub_ek",
+    #    default="pub_ek.tcl.txt",
+    #    help="File with public ek")
+    #parser.add_argument(
+    #    "-signed_pub_ek",
+    #    "--signed_pub_ek",
+    #    default="signed_ek.pub.bin",
+    #    help="Output file with signed public ek")
     
     return parser.parse_args()
 
@@ -181,8 +193,8 @@ PRIVEK <ek.sk>"""
         print "=== Creating OTP_content_CM done"
         return ret
 
-    def enroll_puf(self, slot):
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -enroll_puf -slot {}".format(slot)
+    def enroll_puf(self, sn, slot):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -enroll_puf -sn {} -slot {}".format(sn, slot)
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 120)
@@ -213,8 +225,8 @@ PRIVEK <ek.sk>"""
         print ret
         return ret
 
-    def otp_init(self, slot):
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -otp_init -slot {}".format(slot)
+    def otp_init(self, sn, slot):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -otp_init -sn {} -slot {}".format(sn, slot)
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 120)
@@ -222,6 +234,54 @@ PRIVEK <ek.sk>"""
 
         print "ret:", ret
         return ret
+
+    def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku):
+        self.create_otp_cm_fmt(sn)
+        ret = self.enroll_puf(sn, slot)
+        if ret != 0:
+            print "=== Enroll PUF failed ==="
+            return ret
+
+        ret = self.sign_ek(sn, pn, mac, brd_name, mtp)
+        if ret != 0:
+            print "=== Failed to sign pub_ek ==="
+            return ret
+
+        ret = self.gen_otp()
+        if ret != 0:
+            print "=== Failed to generate OTP binary ==="
+            return ret
+
+        ret = self.otp_init(sn, slot)
+        if ret != 0:
+            print "=== OTP init failed ==="
+            return ret
+
+        print "=== ESEC PORG PASSED ==="
+        return ret
+
+    def cleanup (self):
+        ret = 0
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -cleanup"
+        session = common.session_start()
+        ret = common.session_cmd(session, cmd)
+        common.session_stop(session)
+        return ret
+
+    def check_uboot_esec(self, slot):
+        ret = 0
+        session = common.session_start()
+        ret = self.nic_con.enter_uboot(session, slot)
+        ret = self.nic_con.conn_uboot(session)
+        if ret == -1:
+            print "=== Failed to change uboot board rate! ==="
+            print "=== MTEST FAILED ==="
+            return ret
+
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
 
 if __name__ == "__main__":
     args = parse_args_diag()
@@ -232,7 +292,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.enroll_puf == True:
-        esec_ctrl.enroll_puf(args.slot)
+        esec_ctrl.enroll_puf(args.sn, args.slot)
         sys.exit()
 
     if args.sign_ek == True:
@@ -244,6 +304,19 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.otp_init == True:
-        esec_ctrl.otp_init(args.slot)
+        esec_ctrl.otp_init(args.sn, args.slot)
+        sys.exit()
+
+    if args.esec_prog == True:
+        esec_ctrl.esec_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
+                args.sn, args.slot, args.pn, args.mac, args.brd_name, args.mtp, args.sku)
+        sys.exit()
+
+    if args.cleanup == True:
+        esec_ctrl.cleanup()
+        sys.exit()
+
+    if args.check_uboot == True:
+        esec_ctrl.check_uboot_esec(int(args.slot))
         sys.exit()
 

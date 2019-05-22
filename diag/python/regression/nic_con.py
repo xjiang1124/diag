@@ -129,22 +129,23 @@ class nic_con:
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
             #time.sleep(2)
+            cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
+            session.sendline(cmd)
+            session.expect("Terminal ready")
+
             for i in range(10):
-                cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
-                session.sendline(cmd)
-                session.expect("Terminal ready")
-                session.timeout = 3
+                session.timeout = 0.5
                 try:
                     print "C+C", i
                     session.send(chr(3))
                     session.expect("Capri# ")
-                    time.sleep(5)
-                    self.uart_session_stop(session)
+                    #time.sleep(1)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
+                    print "timeout:", i
                     ret = -1
-                    self.uart_session_stop(session)
+            self.uart_session_stop(session)
             if ret == 0:
                 break
 
@@ -160,10 +161,10 @@ class nic_con:
             cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
             session.sendline(cmd)
             session.expect("Terminal ready")
-            time.sleep(1)
-            session.send("\r")
+            session.sendline("\r")
             session.expect(exprStr)
         except pexpect.TIMEOUT:
+            print "Failed to connet uboot"
             self.uart_session_stop(session)
             ret = -1
         return ret

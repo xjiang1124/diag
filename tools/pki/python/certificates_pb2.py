@@ -16,10 +16,10 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='certificates.proto',
-  package='api',
+  package='certificates',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x12\x63\x65rtificates.proto\x12\x03\x61pi\"\xb9\x01\n\x14\x45KCertificateRequest\x12\x10\n\x08PublicEK\x18\x01 \x01(\x0c\x12\x13\n\x0bProductName\x18\x02 \x01(\t\x12\x14\n\x0cSerialNumber\x18\x03 \x01(\t\x12\x19\n\x11PrimaryMACAddress\x18\x04 \x01(\t\x12\x12\n\nPartNumber\x18\x0b \x01(\t\x12\x19\n\x11ManufacturingDate\x18\x0c \x01(\t\x12\x0b\n\x03SKU\x18\r \x01(\t\x12\r\n\x05MTPID\x18\x0e \x01(\t\"\"\n\x0b\x43\x65rtificate\x12\x13\n\x0b\x43\x65rtificate\x18\x01 \x01(\x0c\x32Q\n\x0c\x43\x65rtificates\x12\x41\n\x12IssueEKCertificate\x12\x19.api.EKCertificateRequest\x1a\x10.api.Certificateb\x06proto3')
+  serialized_pb=_b('\n\x12\x63\x65rtificates.proto\x12\x0c\x63\x65rtificates\"\xb9\x01\n\x14\x45KCertificateRequest\x12\x10\n\x08PublicEK\x18\x01 \x01(\x0c\x12\x13\n\x0bProductName\x18\x02 \x01(\t\x12\x14\n\x0cSerialNumber\x18\x03 \x01(\t\x12\x19\n\x11PrimaryMACAddress\x18\x04 \x01(\t\x12\x12\n\nPartNumber\x18\x0b \x01(\t\x12\x19\n\x11ManufacturingDate\x18\x0c \x01(\t\x12\x0b\n\x03SKU\x18\r \x01(\t\x12\r\n\x05MTPID\x18\x0e \x01(\t\"\"\n\x0b\x43\x65rtificate\x12\x13\n\x0b\x43\x65rtificate\x18\x01 \x01(\x0c\x32\x63\n\x0c\x43\x65rtificates\x12S\n\x12IssueEKCertificate\x12\".certificates.EKCertificateRequest\x1a\x19.certificates.Certificateb\x06proto3')
 )
 
 
@@ -27,62 +27,62 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _EKCERTIFICATEREQUEST = _descriptor.Descriptor(
   name='EKCertificateRequest',
-  full_name='api.EKCertificateRequest',
+  full_name='certificates.EKCertificateRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='PublicEK', full_name='api.EKCertificateRequest.PublicEK', index=0,
+      name='PublicEK', full_name='certificates.EKCertificateRequest.PublicEK', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='ProductName', full_name='api.EKCertificateRequest.ProductName', index=1,
+      name='ProductName', full_name='certificates.EKCertificateRequest.ProductName', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='SerialNumber', full_name='api.EKCertificateRequest.SerialNumber', index=2,
+      name='SerialNumber', full_name='certificates.EKCertificateRequest.SerialNumber', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='PrimaryMACAddress', full_name='api.EKCertificateRequest.PrimaryMACAddress', index=3,
+      name='PrimaryMACAddress', full_name='certificates.EKCertificateRequest.PrimaryMACAddress', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='PartNumber', full_name='api.EKCertificateRequest.PartNumber', index=4,
+      name='PartNumber', full_name='certificates.EKCertificateRequest.PartNumber', index=4,
       number=11, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='ManufacturingDate', full_name='api.EKCertificateRequest.ManufacturingDate', index=5,
+      name='ManufacturingDate', full_name='certificates.EKCertificateRequest.ManufacturingDate', index=5,
       number=12, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='SKU', full_name='api.EKCertificateRequest.SKU', index=6,
+      name='SKU', full_name='certificates.EKCertificateRequest.SKU', index=6,
       number=13, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='MTPID', full_name='api.EKCertificateRequest.MTPID', index=7,
+      name='MTPID', full_name='certificates.EKCertificateRequest.MTPID', index=7,
       number=14, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -100,20 +100,20 @@ _EKCERTIFICATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=28,
-  serialized_end=213,
+  serialized_start=37,
+  serialized_end=222,
 )
 
 
 _CERTIFICATE = _descriptor.Descriptor(
   name='Certificate',
-  full_name='api.Certificate',
+  full_name='certificates.Certificate',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='Certificate', full_name='api.Certificate.Certificate', index=0,
+      name='Certificate', full_name='certificates.Certificate.Certificate', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
@@ -131,8 +131,8 @@ _CERTIFICATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=215,
-  serialized_end=249,
+  serialized_start=224,
+  serialized_end=258,
 )
 
 DESCRIPTOR.message_types_by_name['EKCertificateRequest'] = _EKCERTIFICATEREQUEST
@@ -142,14 +142,14 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 EKCertificateRequest = _reflection.GeneratedProtocolMessageType('EKCertificateRequest', (_message.Message,), dict(
   DESCRIPTOR = _EKCERTIFICATEREQUEST,
   __module__ = 'certificates_pb2'
-  # @@protoc_insertion_point(class_scope:api.EKCertificateRequest)
+  # @@protoc_insertion_point(class_scope:certificates.EKCertificateRequest)
   ))
 _sym_db.RegisterMessage(EKCertificateRequest)
 
 Certificate = _reflection.GeneratedProtocolMessageType('Certificate', (_message.Message,), dict(
   DESCRIPTOR = _CERTIFICATE,
   __module__ = 'certificates_pb2'
-  # @@protoc_insertion_point(class_scope:api.Certificate)
+  # @@protoc_insertion_point(class_scope:certificates.Certificate)
   ))
 _sym_db.RegisterMessage(Certificate)
 
@@ -157,16 +157,16 @@ _sym_db.RegisterMessage(Certificate)
 
 _CERTIFICATES = _descriptor.ServiceDescriptor(
   name='Certificates',
-  full_name='api.Certificates',
+  full_name='certificates.Certificates',
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=251,
-  serialized_end=332,
+  serialized_start=260,
+  serialized_end=359,
   methods=[
   _descriptor.MethodDescriptor(
     name='IssueEKCertificate',
-    full_name='api.Certificates.IssueEKCertificate',
+    full_name='certificates.Certificates.IssueEKCertificate',
     index=0,
     containing_service=None,
     input_type=_EKCERTIFICATEREQUEST,

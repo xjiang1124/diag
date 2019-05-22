@@ -5,7 +5,7 @@ import certificates_pb2 as certificates__pb2
 
 
 class CertificatesStub(object):
-  """Service to issue manufacturing certificates for NAPLES cards
+  """SERVICE TO ISSUE MANUFACTURING CERTIFICATES FOR NAPLES CARDS
   A manufacturing certificate contains card identifiers and the public endorsement key (EK)
   """
 
@@ -16,14 +16,14 @@ class CertificatesStub(object):
       channel: A grpc.Channel.
     """
     self.IssueEKCertificate = channel.unary_unary(
-        '/api.Certificates/IssueEKCertificate',
+        '/certificates.Certificates/IssueEKCertificate',
         request_serializer=certificates__pb2.EKCertificateRequest.SerializeToString,
         response_deserializer=certificates__pb2.Certificate.FromString,
         )
 
 
 class CertificatesServicer(object):
-  """Service to issue manufacturing certificates for NAPLES cards
+  """SERVICE TO ISSUE MANUFACTURING CERTIFICATES FOR NAPLES CARDS
   A manufacturing certificate contains card identifiers and the public endorsement key (EK)
   """
 
@@ -44,5 +44,5 @@ def add_CertificatesServicer_to_server(servicer, server):
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
-      'api.Certificates', rpc_method_handlers)
+      'certificates.Certificates', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))

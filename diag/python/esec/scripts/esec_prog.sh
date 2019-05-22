@@ -2,7 +2,7 @@
 
 enroll_puf () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -sn slot$SLOT -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
+    tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
 }
 
 hsm_sign_ek () {
@@ -16,8 +16,9 @@ hsm_sign_ek () {
 }
 
 gen_otp () {
-    cd ~/diag/tools/barco/otp_files
-    cp ~/diag/tools/pki/signed_ek.pub.bin chipcert.der
+    cp $DIAG_HOME/diag/python/esec/OTP_content_CM.txt $DIAG_HOME/diag/tools/barco/otp_files/
+    cd $DIAG_HOME/diag/tools/barco/otp_files
+    cp $DIAG_HOME/diag/tools/pki/signed_ek.pub.bin chipcert.der
 
     python ../generate_otp.py --algo 'ecdsa_p384' --esecboot="secure" --frksize 32 --cm_input OTP_content_CM.txt --output OTP_cm
 
@@ -32,7 +33,19 @@ gen_otp () {
 
 otp_init () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -sn slot$SLOT -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+    tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+}
+
+cleanup () {
+    echo "Cleaning up"
+    rm $DIAG_HOME/diag/python/esec/OTP*txt
+    rm $DIAG_HOME/diag/tools/pki/pub_ek.tcl.txt
+    rm $DIAG_HOME/diag/tools/pki/signed_ek.pub.bin
+    rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_content_CM.txt
+    rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_.m*
+    rm $ASIC_SRC/ip/cosim/tclsh/images/OTP*hex
+
+    echo "Clean up done"
 }
 
 POSITIONAL=()
@@ -97,6 +110,11 @@ case $key in
     OTP_INIT=TRUE
     shift # past argument
     ;;
+    #-------------
+    -cleanup|--cleanup)
+    CLEANUP=TRUE
+    shift # past argument
+    ;;
 
     #-------------
     --default)
@@ -137,5 +155,10 @@ fi
 if [[ $OTP_INIT == TRUE ]]
 then
     otp_init
+fi
+
+if [[ $CLEANUP == TRUE ]]
+then
+    cleanup
 fi
 
