@@ -58,11 +58,11 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in post_test_check_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type == NIC_Type.NAPLES100:
-        mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
-        mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
-        for item in mtp_para_test_list:
-            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+    #if card_type == NIC_Type.NAPLES100:
+    #    mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
+    #    mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
+    #    for item in mtp_para_test_list:
+    #        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("MTP Sequential Test List:")
@@ -586,7 +586,7 @@ def main():
         naples_exec_param_cmd(naples25_nic_list, naples25_test_db, mtp_mgmt_ctrl)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
-    naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
+    #naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
     naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
     naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
     naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
@@ -760,24 +760,24 @@ def main():
 
 
     # Naples100 MTP Parallel test
-    if naples100_nic_list:
-        mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                       NIC_Type.NAPLES100,
-                                                       naples100_nic_list,
-                                                       naples100_mtp_para_test_list,
-                                                       vmarg,
-                                                       stop_on_err)
-        for slot in mtp_para_fail_list:
-            nic_key = libmfg_utils.nic_key(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if slot in naples100_nic_list and stop_on_err:
-                naples100_nic_list.remove(slot)
-            if nic_key not in fail_nic_list:
-                fail_nic_list.append(nic_key)
-                fail_sn_list.append(sn)
-            if nic_key in pass_nic_list:
-                pass_nic_list.remove(nic_key)
-                pass_sn_list.remove(sn)
+    # if naples100_nic_list:
+    #     mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+    #                                                    NIC_Type.NAPLES100,
+    #                                                    naples100_nic_list,
+    #                                                    naples100_mtp_para_test_list,
+    #                                                    vmarg,
+    #                                                    stop_on_err)
+    #     for slot in mtp_para_fail_list:
+    #         nic_key = libmfg_utils.nic_key(slot)
+    #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    #         if slot in naples100_nic_list and stop_on_err:
+    #             naples100_nic_list.remove(slot)
+    #         if nic_key not in fail_nic_list:
+    #             fail_nic_list.append(nic_key)
+    #             fail_sn_list.append(sn)
+    #         if nic_key in pass_nic_list:
+    #             pass_nic_list.remove(nic_key)
+    #             pass_sn_list.remove(sn)
 
 
     # Naples25 MTP Parallel test

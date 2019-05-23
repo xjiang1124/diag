@@ -271,13 +271,9 @@ def main():
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
                 naples100_sn_list.append(sn)
-                pass_nic_list.append(nic_key)
-                pass_sn_list.append(sn)
                 emmc_img_file = naples100_emmc_img_file
             elif card_type == NIC_Type.NAPLES25:
                 naples25_sn_list.append(sn)
-                pass_nic_list.append(nic_key)
-                pass_sn_list.append(sn)
                 emmc_img_file = naples25_emmc_img_file
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
