@@ -153,6 +153,30 @@ class nic_con:
             print "=== Failed to enter uboot ==="
         return ret
 
+    def enter_uboot_after_reset(self, session, slot=0, rate=115200, timeout=30,):
+        ret = -1
+	print "==== P0"
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session.timeout = timeout
+
+        for i in range(10):
+            session.timeout = 0.5
+            try:
+                print "C+C", i
+                session.send(chr(3))
+                session.expect("Capri# ")
+                #time.sleep(1)
+                ret = 0
+                break
+            except pexpect.TIMEOUT:
+                print "timeout:", i
+                ret = -1
+
+	return ret
+
     def conn_uboot(self, session, rate=115200):
         exprStr = "Capri# "
         session.timeout = 15

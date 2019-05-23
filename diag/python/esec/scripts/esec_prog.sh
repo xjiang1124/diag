@@ -9,9 +9,15 @@ hsm_sign_ek () {
     cd $DIAG_HOME/diag/tools/pki
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
-    python ./client_diag.py -k certs/client.key.pem -c certs/client-bundle.cert.pem  -t certs/rootca.cert.pem -b enrico.dev.pensando.io:12267 -sn $SN -pn $PN -mac $MAC -pdn $BRD_NAME -mid $MTP
+    python ./client_diag.py -k certs/client.key.pem -c certs/client-bundle.cert.pem  -t certs/rootca.cert.pem -b enrico.dev.pensando.io:12267 -sn $SN -pn $PN -mac $MAC -pdn $BRD_NAME -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
 
     dd if=/dev/zero of=signed_ek.pub.bin bs=1 count=1 seek=1411
+    crc32 ./signed_ek.pub.bin
+    echo "SIGNING EK PASSED"
+}
+
+sign_ek_crc () {
+    cd $DIAG_HOME/diag/tools/pki
     crc32 ./signed_ek.pub.bin
 }
 
@@ -42,7 +48,12 @@ cleanup () {
     rm $DIAG_HOME/diag/tools/pki/pub_ek.tcl.txt
     rm $DIAG_HOME/diag/tools/pki/signed_ek.pub.bin
     rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_content_CM.txt
-    rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_.m*
+    rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_cm*
+    rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_sm*
+    rm $DIAG_HOME/diag/tools/barco/otp_files/OTP_full*
+    rm $DIAG_HOME/diag/tools/barco/otp_files/*frk
+    rm $DIAG_HOME/diag/tools/barco/otp_files/*pk
+    rm $DIAG_HOME/diag/tools/barco/otp_files/chipcert.der
     rm $ASIC_SRC/ip/cosim/tclsh/images/OTP*hex
 
     echo "Clean up done"
@@ -115,6 +126,11 @@ case $key in
     CLEANUP=TRUE
     shift # past argument
     ;;
+    #-------------
+    -ek_crc|--ek_crc)
+    EK_CRC=TRUE
+    shift # past argument
+    ;;
 
     #-------------
     --default)
@@ -155,6 +171,11 @@ fi
 if [[ $OTP_INIT == TRUE ]]
 then
     otp_init
+fi
+
+if [[ $EK_CRC == TRUE ]]
+then
+    sign_ek_crc
 fi
 
 if [[ $CLEANUP == TRUE ]]

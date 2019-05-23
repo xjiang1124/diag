@@ -48,6 +48,10 @@ def parse_args_diag():
         "-check_uboot", "--check_uboot", 
         action='store_true',
         help="Clean up")
+    group.add_argument(
+        "-ek_crc", "--ek_crc", 
+        action='store_true',
+        help="Calculate CRC32 of signed EK")
 
     parser.add_argument(
         "-k", "--client_key",
@@ -214,6 +218,29 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def sign_ek_crc(self):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -ek_crc"
+        ret = 0
+
+        session = common.session_start()
+        session.sendline(cmd)
+        session.expect("diag@MTP.*\$")
+
+        ma = re.compile(r".*([a-fA-F\d]{8}).*")
+        src_str = "".join(session.before.splitlines())
+        result = ma.match(src_str)
+        if result == None:
+            print "CRC32 not found"
+            ret = -1
+        else:
+            crc32_ek = result.group(1)
+            print "CRC32 calculated:", crc32_ek
+            ret = 0
+
+        common.session_stop(session)
+
+        return [ret, crc32_ek]
+
     def gen_otp(self):
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -gen_otp"
         ret = 0
@@ -240,24 +267,48 @@ PRIVEK <ek.sk>"""
         ret = self.enroll_puf(sn, slot)
         if ret != 0:
             print "=== Enroll PUF failed ==="
+            print "=== ESEC PORG FAILED ==="
             return ret
 
         ret = self.sign_ek(sn, pn, mac, brd_name, mtp)
         if ret != 0:
             print "=== Failed to sign pub_ek ==="
+            print "=== ESEC PORG FAILED ==="
+            return ret
+
+        [ret, crc32_ek] = self.sign_ek_crc()
+        if ret != 0:
+            print "=== Failed to calculated CRC32 of signed EK ==="
+            print "=== ESEC PORG FAILED ==="
             return ret
 
         ret = self.gen_otp()
         if ret != 0:
             print "=== Failed to generate OTP binary ==="
+            print "=== ESEC PORG FAILED ==="
             return ret
 
         ret = self.otp_init(sn, slot)
         if ret != 0:
             print "=== OTP init failed ==="
+            print "=== ESEC PORG FAILED ==="
             return ret
 
-        print "=== ESEC PORG PASSED ==="
+        [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
+        if ret != 0:
+            print "=== Failed to check ESEC in uboot ==="
+            print "=== ESEC PORG FAILED ==="
+            return ret
+
+        if crc32_ek != crc32_ek_uboot:
+            print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot 
+            ret = -1
+
+        if ret == 0:
+            print "=== ESEC PORG PASSED ==="
+        else:
+            print "=== ESEC PORG FAILED ==="
+
         return ret
 
     def cleanup (self):
@@ -272,16 +323,43 @@ PRIVEK <ek.sk>"""
         ret = 0
         session = common.session_start()
         ret = self.nic_con.enter_uboot(session, slot)
+        if ret != 0:
+            print "Failed to enter uboot"
+            return ret
         ret = self.nic_con.conn_uboot(session)
-        if ret == -1:
-            print "=== Failed to change uboot board rate! ==="
-            print "=== MTEST FAILED ==="
+        if ret != 0:
+            print "Failed to connect uboot"
             return ret
 
+        #self.nic_con.uart_session_cmd(session, "esec help", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "cpldwr 0x20 7", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "cpldrd 0x20", 30, "Capri# ")
+        session.sendline("reset")
+        session.expect("U-Boot")
+
+        self.nic_con.enter_uboot_after_reset(session, slot)
+        self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "esec read_boot_status", 30, "Capri# ")
+
+        # Find CRC32
+        session.sendline("esec read_chip_cert crc32")
+        session.expect("Capri# ")
+        ma = re.compile(r".*0x([a-fA-F0-9]+).*")
+        src_str = "".join(session.before.splitlines())
+        result = ma.match(src_str)
+        if result == None:
+            print "CRC32 not found"
+            ret = -1
+        else:
+            print "EK validated"
+            crc32_ek = result.group(1)
+            ret = 0
+
+        time.sleep(1)
         self.nic_con.uart_session_stop(session)
         common.session_stop(session)
-        return ret
-
+        return [ret, crc32_ek]
 
 if __name__ == "__main__":
     args = parse_args_diag()
@@ -318,5 +396,9 @@ if __name__ == "__main__":
 
     if args.check_uboot == True:
         esec_ctrl.check_uboot_esec(int(args.slot))
+        sys.exit()
+
+    if args.ek_crc == True:
+        esec_ctrl.sign_ek_crc()
         sys.exit()
 
