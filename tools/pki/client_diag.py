@@ -120,7 +120,7 @@ cert = cryptography.x509.load_der_x509_certificate(
     cert_resp.Certificate, default_backend())
 
 data=cert.public_bytes(encoding=serialization.Encoding.DER)
-newfile=open('./signed_ek.pub.txt','wb')
+newfile=open('./signed_ek.pub.bin','wb')
 newfile.write(data)
 newfile.close()
 

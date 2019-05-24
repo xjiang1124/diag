@@ -267,37 +267,37 @@ PRIVEK <ek.sk>"""
         ret = self.enroll_puf(sn, slot)
         if ret != 0:
             print "=== Enroll PUF failed ==="
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
             return ret
 
         ret = self.sign_ek(sn, pn, mac, brd_name, mtp)
         if ret != 0:
             print "=== Failed to sign pub_ek ==="
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
             return ret
 
         [ret, crc32_ek] = self.sign_ek_crc()
         if ret != 0:
             print "=== Failed to calculated CRC32 of signed EK ==="
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
             return ret
 
         ret = self.gen_otp()
         if ret != 0:
             print "=== Failed to generate OTP binary ==="
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
             return ret
 
         ret = self.otp_init(sn, slot)
         if ret != 0:
             print "=== OTP init failed ==="
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
             return ret
 
         [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
         if ret != 0:
             print "=== Failed to check ESEC in uboot ==="
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
             return ret
 
         if crc32_ek != crc32_ek_uboot:
@@ -305,9 +305,9 @@ PRIVEK <ek.sk>"""
             ret = -1
 
         if ret == 0:
-            print "=== ESEC PORG PASSED ==="
+            print "=== ESEC PROG/VALICATION PASSED ==="
         else:
-            print "=== ESEC PORG FAILED ==="
+            print "=== ESEC PROG FAILED ==="
 
         return ret
 
