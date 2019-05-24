@@ -52,6 +52,10 @@ def parse_args_diag():
         "-ek_crc", "--ek_crc", 
         action='store_true',
         help="Calculate CRC32 of signed EK")
+    group.add_argument(
+        "-ek_check", "--ek_check", 
+        action='store_true',
+        help="Validate signed EK")
 
     parser.add_argument(
         "-k", "--client_key",
@@ -241,6 +245,25 @@ PRIVEK <ek.sk>"""
 
         return [ret, crc32_ek]
 
+    def ek_check(self):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -ek_check"
+        ret = 0
+
+        session = common.session_start()
+        session.sendline(cmd)
+        session.expect("diag@MTP.*\$")
+
+        if "Signature Algorithm: ecdsa-with-SHA384" in session.before:
+            print "Signed EK validated"
+            ret = 0
+        else:
+            print "Failed to validate signed EK"
+            ret = -1
+
+        common.session_stop(session)
+
+        return ret
+
     def gen_otp(self):
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -gen_otp"
         ret = 0
@@ -273,6 +296,12 @@ PRIVEK <ek.sk>"""
         ret = self.sign_ek(sn, pn, mac, brd_name, mtp)
         if ret != 0:
             print "=== Failed to sign pub_ek ==="
+            print "=== ESEC PROG FAILED ==="
+            return ret
+
+        ret = self.ek_check()
+        if ret != 0:
+            print "=== Failed to validate signed EK ==="
             print "=== ESEC PROG FAILED ==="
             return ret
 
@@ -400,5 +429,9 @@ if __name__ == "__main__":
 
     if args.ek_crc == True:
         esec_ctrl.sign_ek_crc()
+        sys.exit()
+
+    if args.ek_check == True:
+        esec_ctrl.ek_check()
         sys.exit()
 
