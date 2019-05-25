@@ -40,11 +40,11 @@ control_slot() {
         perst=$(( $perst & $bitPos ))
     
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        sleep 1
+        sleep 0.5
     
         echo "slot $2 turned on"
     
@@ -55,11 +55,11 @@ control_slot() {
         perst=$(( $perst | $bitPos ))
     
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 1
+        sleep 0.5
     
         echo "slot $2 turned off"
     fi
@@ -75,13 +75,13 @@ control_all() {
         echo "Turning on all slots"
         cpldutil -cpld-wr -addr=0x12 -data=0
         cpldutil -cpld-wr -addr=0x13 -data=0
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=0x10 -data=0
         cpldutil -cpld-wr -addr=0x11 -data=0
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=0x16 -data=0
         cpldutil -cpld-wr -addr=0x17 -data=0
-        sleep 1
+        sleep 0.5
     
         echo "All slots turned on"
     
@@ -89,13 +89,13 @@ control_all() {
         echo "Turning off all slots"
         cpldutil -cpld-wr -addr=0x16 -data=0xff
         cpldutil -cpld-wr -addr=0x17 -data=0xff
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=0x10 -data=0xff
         cpldutil -cpld-wr -addr=0x11 -data=0xff
-        sleep 1
+        sleep 0.5
         cpldutil -cpld-wr -addr=0x12 -data=0xff
         cpldutil -cpld-wr -addr=0x13 -data=0xff
-        sleep 1
+        sleep 0.5
     
         echo "All slots turned off"
     fi
