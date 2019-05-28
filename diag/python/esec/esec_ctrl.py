@@ -350,6 +350,7 @@ PRIVEK <ek.sk>"""
 
     def check_uboot_esec(self, slot):
         ret = 0
+        crc32_ek = ""
         session = common.session_start()
         ret = self.nic_con.enter_uboot(session, slot)
         if ret != 0:
@@ -366,6 +367,9 @@ PRIVEK <ek.sk>"""
         session.sendline("reset")
         session.expect("U-Boot")
 
+        self.nic_con.enter_uboot_after_reset(session, slot)
+        self.nic_con.uart_session_stop(session)
+        self.nic_con.uart_session_start(session)
         self.nic_con.enter_uboot_after_reset(session, slot)
         self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, "Capri# ")
@@ -385,7 +389,7 @@ PRIVEK <ek.sk>"""
             crc32_ek = result.group(1)
             ret = 0
 
-        time.sleep(1)
+        time.sleep(2)
         self.nic_con.uart_session_stop(session)
         common.session_stop(session)
         return [ret, crc32_ek]

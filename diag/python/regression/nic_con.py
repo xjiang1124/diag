@@ -133,7 +133,7 @@ class nic_con:
             session.sendline(cmd)
             session.expect("Terminal ready")
 
-            for i in range(10):
+            for i in range(40):
                 session.timeout = 0.5
                 try:
                     print "C+C", i
@@ -155,14 +155,13 @@ class nic_con:
 
     def enter_uboot_after_reset(self, session, slot=0, rate=115200, timeout=30,):
         ret = -1
-	print "==== P0"
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
 
         session.timeout = timeout
 
-        for i in range(10):
+        for i in range(40):
             session.timeout = 0.5
             try:
                 print "C+C", i

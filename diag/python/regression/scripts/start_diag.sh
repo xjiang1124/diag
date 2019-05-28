@@ -61,6 +61,7 @@ then
     cp temp_profile ~/.bash_profile
     source ~/.bash_profile
     hack_asic.sh
+    mkdir -p $ASIC_SRC/ip/cosim/tclsh/images/
 
     # Start redis if it is not running
     redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
