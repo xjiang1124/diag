@@ -48,6 +48,11 @@ otp_init () {
     tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
 }
 
+img_prog () {
+    cd $DIAG_HOME/diag/scripts/asic/
+    tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr images/esecure_fw_ptr.hex.txt -esec_1 images/esecure_firmware_packed.hex -esec_2 images/esecure_firmware_packed.hex -host_1 images/boot_nonsec_packed.hex -host_2 images/boot_nonsec_packed.hex
+}
+
 cleanup () {
     echo "Cleaning up"
     rm $DIAG_HOME/diag/python/esec/OTP*txt
@@ -143,6 +148,11 @@ case $key in
     EK_CHECK=TRUE
     shift # past argument
     ;;
+    #-------------
+    -img_prog|--img_prog)
+    IMG_PROG=TRUE
+    shift # past argument
+    ;;
 
     #-------------
     --default)
@@ -193,6 +203,11 @@ fi
 if [[ $EK_CHECK == TRUE ]]
 then
     check_sign_ek
+fi
+
+if [[ $IMG_PROG == TRUE ]]
+then
+    img_prog
 fi
 
 if [[ $CLEANUP == TRUE ]]

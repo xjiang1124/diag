@@ -56,6 +56,10 @@ def parse_args_diag():
         "-ek_check", "--ek_check", 
         action='store_true',
         help="Validate signed EK")
+    group.add_argument(
+        "-img_prog", "--img_prog", 
+        action='store_true',
+        help="Program QSPI images")
 
     parser.add_argument(
         "-k", "--client_key",
@@ -394,6 +398,22 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
         return [ret, crc32_ek]
 
+    def img_prog(self, slot):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -img_prog -slot {}".format(slot)
+        ret = 0
+        pass_sign = "ESEC PROG PASSED"
+
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 240)
+        common.session_stop(session)
+
+        if ret == 0:
+            print "IMG PROG PASSED"
+        else:
+            print "IMG PROG FAILED"
+
+        return ret
+
 if __name__ == "__main__":
     args = parse_args_diag()
     esec_ctrl = esec_ctrl()
@@ -437,5 +457,9 @@ if __name__ == "__main__":
 
     if args.ek_check == True:
         esec_ctrl.ek_check()
+        sys.exit()
+
+    if args.img_prog == True:
+        esec_ctrl.img_prog(int(args.slot))
         sys.exit()
 

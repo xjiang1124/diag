@@ -20,6 +20,11 @@ set parameters {
     {fn.arg         ""              "File name"}
     {cm_file.arg    ""              "CM file"}
     {sm_file.arg    ""              "SM file"}
+    {fw_ptr.arg     ""              "FW image pointer file"}
+    {esec_1.arg     ""              "Esecure image 1"}
+    {esec_2.arg     ""              "Esecure image 2"}
+    {host_1.arg     ""              "Host image 1"}
+    {host_2.arg     ""              "Host image 2"}
 }
 
 set usage "- Usage:"
@@ -39,6 +44,11 @@ set stage       $options(stage)
 set fn          $options(fn)
 set cm_file     $options(cm_file)
 set sm_file     $options(sm_file)
+set fw_ptr      $options(fw_ptr)
+set esec_1      $options(esec_1)
+set esec_2      $options(esec_2)
+set host_1      $options(host_1)
+set host_2      $options(host_2)
 
 puts "slot: $slot"
 
@@ -63,7 +73,7 @@ cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag
 
 proc read_pub_ek { sn slot fn } {
-    plog_start read_pub_ek_${sn}_${slot}.log
+    plog_start read_pub_ek_${sn}_slot${slot}.log
     if {$fn == ""} {
         plog_err "File name can not be empty"
         plog_stop
@@ -83,7 +93,7 @@ proc read_pub_ek { sn slot fn } {
 
 proc puf_enroll { sn slot fn } {
     puts "sn: $sn; slot: $slot; fn: $fn"
-    plog_start puf_enroll_${sn}_${slot}.log
+    plog_start puf_enroll_${sn}_slot${slot}.log
     if {$fn == ""} {
         plog_err "File name can not be empty"
         plog_stop
@@ -91,7 +101,13 @@ proc puf_enroll { sn slot fn } {
     }
     diag_open_j2c_if 10 $slot
     regrd 0 0x6a000000
-    cap_jtag_chip_rst 10 $slot
+    set card_type [cap_get_card_type]
+    if {$card_type == "NAPLES25"} {
+        set freq 417
+    } else {
+        set freq 833
+    }
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
     ssi_cpld_write 0x29 0x80
     cap_set_esec_enable_pin
     cap_power_cycle_chk 25 10 $slot
@@ -109,7 +125,7 @@ proc puf_enroll { sn slot fn } {
 
 proc otp_init { sn slot cm_file sm_file } {
     puts "sn: $sn; slot: $slot; cm_file: $cm_file; sm_file: $sm_file"
-    plog_start otp_init_cm_${sn}_${slot}.log
+    plog_start otp_init_cm_${sn}_slot${slot}.log
     if {$cm_file == "" || $sm_file == ""} {
         plog_err "File name can not be empty"
         plog_stop
@@ -128,6 +144,49 @@ proc otp_init { sn slot cm_file sm_file } {
 
     plog_stop
     return $err_cnt
+}
+
+proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
+    plog_start puf_enroll_slot${slot}.log
+
+    diag_open_j2c_if 10 $slot
+    regrd 0 0x6a000000
+    set card_type [cap_get_card_type]
+    if {$card_type == "NAPLES25"} {
+        set freq 417
+    } else {
+        set freq 833
+    }
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
+
+    set ret [cap_prog_qspi $fw_ptr 0x70010000]
+    if {$ret != 0} {
+        plog_msg "Failed to program fw_ptr"
+        return $ret
+    }
+    set ret [cap_prog_qspi $esec_1 0x70020000]
+    if {$ret != 0} {
+        plog_msg "Failed to program esec_1"
+        return $ret
+    }
+    set ret [cap_prog_qspi $esec_2 0x70040000]
+    if {$ret != 0} {
+        plog_msg "Failed to program esec_2"
+        return $ret
+    }
+    set ret [cap_prog_qspi $host_1 0x70060000]
+    if {$ret != 0} {
+        plog_msg "Failed to program host_1"
+        return $ret
+    }
+    set ret [cap_prog_qspi $host_2 0x70080000]
+    if {$ret != 0} {
+        plog_msg "Failed to program host_2"
+        return $ret
+    }
+
+    plog_stop
+    return $ret
 }
 
 if { $use_zmq == 1 } {
@@ -152,6 +211,10 @@ switch $stage {
     "OTP_INIT" {
         set ret [otp_init $sn $slot $cm_file $sm_file]
     }
+    "IMG_PROG" {
+        set ret [img_prog $slot $fw_ptr $esec_1 $esec_2 $host_1 $host_2]
+    }
+
     default {
         puts "Invalide stage: $stage"
         set ret -1
