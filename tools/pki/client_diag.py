@@ -88,48 +88,54 @@ def parse_args_diag():
 
     return parser.parse_args()
 
-args = parse_args_diag()
-channel = cl.get_channel(args)
-cert_client = certificates_pb2_grpc.CertificatesStub(channel)
-keys_client = keys_pb2_grpc.KeysStub(channel)
+try:
+    args = parse_args_diag()
+    channel = cl.get_channel(args)
+    cert_client = certificates_pb2_grpc.CertificatesStub(channel)
+    keys_client = keys_pb2_grpc.KeysStub(channel)
+    
+    #hsm_client = cl.get_client(args)
+    #keys_client = keys_pb2_grpc.KeysStub(
+    
+    pub_ek_raw = open("pub_ek.tcl.txt", "r").read()
+    
+    pub_ek = cl.fix_endianness(pub_ek_raw)
+    
+    public_key = cl.decode_ecdsa_hex_public_key(pub_ek, ec.SECP384R1())
+    der_public_key = public_key.public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo)
+    
+    req = certificates_pb2.EKCertificateRequest(
+        PublicEK=der_public_key,
+        ProductName=args.pd_name,
+        SerialNumber=args.sn,
+        PrimaryMACAddress=args.mac,
+        PartNumber=args.pn,
+        ManufacturingDate=str(datetime.utcnow()),
+        SKU=args.sku,
+        MTPID=args.mtp_id)
+    
+    cert_resp = cert_client.IssueEKCertificate(req)
+    cert = cryptography.x509.load_der_x509_certificate(
+        cert_resp.Certificate, default_backend())
+    
+    data=cert.public_bytes(encoding=serialization.Encoding.DER)
+    newfile=open('./signed_ek.pub.bin','wb')
+    newfile.write(data)
+    newfile.close()
+    
+    keys_req = keys_pb2.FetchKeySetRequest(ID="v1")
+    keys_resp = keys_client.FetchKeySet(keys_req)
+    print "Fetched keys"
+    
+    if args.store_dir != None:
+        cl.store_keys(args.store_dir, cert_resp.Certificate, keys_resp)
 
-#hsm_client = cl.get_client(args)
-#keys_client = keys_pb2_grpc.KeysStub(
+    print "PKI PASSED"
 
-pub_ek_raw = open("pub_ek.tcl.txt", "r").read()
-
-pub_ek = cl.fix_endianness(pub_ek_raw)
-
-public_key = cl.decode_ecdsa_hex_public_key(pub_ek, ec.SECP384R1())
-der_public_key = public_key.public_bytes(
-    serialization.Encoding.DER,
-    serialization.PublicFormat.SubjectPublicKeyInfo)
-
-req = certificates_pb2.EKCertificateRequest(
-    PublicEK=der_public_key,
-    ProductName=args.pd_name,
-    SerialNumber=args.sn,
-    PrimaryMACAddress=args.mac,
-    PartNumber=args.pn,
-    ManufacturingDate=str(datetime.utcnow()),
-    SKU=args.sku,
-    MTPID=args.mtp_id)
-
-cert_resp = cert_client.IssueEKCertificate(req)
-cert = cryptography.x509.load_der_x509_certificate(
-    cert_resp.Certificate, default_backend())
-
-data=cert.public_bytes(encoding=serialization.Encoding.DER)
-newfile=open('./signed_ek.pub.bin','wb')
-newfile.write(data)
-newfile.close()
-
-keys_req = keys_pb2.FetchKeySetRequest(ID="v1")
-keys_resp = keys_client.FetchKeySet(keys_req)
-print "Fetched keys"
-
-if args.store_dir != None:
-    cl.store_keys(args.store_dir, cert_resp.Certificate, keys_resp)
-
+except Exception as e:
+    print e
+    print "PKI FAILED"
 
 

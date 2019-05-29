@@ -221,9 +221,10 @@ PRIVEK <ek.sk>"""
         ret = 0
 
         session = common.session_start()
-        ret = common.session_cmd_pass(session, cmd, "SIGNING EK PASSED")
+        ret = common.session_cmd_pass_multi(session, cmd, ["PKI PASSED", "SIGNING EK PASSED"])
         common.session_stop(session)
 
+        print "ret:", ret
         return ret
 
     def sign_ek_crc(self):

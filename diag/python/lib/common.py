@@ -213,6 +213,37 @@ def session_cmd_pass(session, cmd, pass_sign="", timeout=30, ending=bash_prompt,
             return 0
         else:
             return -1
+    except pexpect.TIMEOUT:
+        print "=== TIMEOUT:", cmd, "==="
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return -2
+
+#=============================
+# Run command with provided session and get return value
+def session_cmd_pass_multi(session, cmd, pass_sign_list=["NO PASS SIGN"], timeout=30, ending=bash_prompt, sudo=False):
+    session.timeout = timeout
+    expstr = [pwd_prompt, ending]
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = ["password for diag: "] + expstr
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        #print session.before
+        if i < (len(expstr) - 1):
+            session.sendline(sudo_pwd)
+            time.sleep(0.1)
+            session.expect(bash_prompt)
+            #print session.before
+        
+        for pass_sign in pass_sign_list:
+            if pass_sign not in session.before:
+                return -1
+        return 0
 
     except pexpect.TIMEOUT:
         print "=== TIMEOUT:", cmd, "==="
