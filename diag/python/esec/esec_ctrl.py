@@ -61,6 +61,7 @@ def parse_args_diag():
         action='store_true',
         help="Program QSPI images")
 
+    #======================
     parser.add_argument(
         "-k", "--client_key",
         default = "certs/client.key.pem",
@@ -215,9 +216,10 @@ PRIVEK <ek.sk>"""
         print "ret:", ret
         return ret
 
-    def sign_ek(self, sn, pn, mac, brd_name, mtp):
-        cmd_fmt = "/home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn {} -pn {} -mac {} -brd_name {} -mtp {}"
-        cmd = cmd_fmt.format(sn, pn, mac, brd_name, mtp)
+    def sign_ek(self, sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url):
+        cmd_fmt = "/home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn {} -pn {} -mac {} -brd_name {} -mtp {} -k {} -c {} -t {} -b {}"
+        cmd = cmd_fmt.format(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
+        print cmd
         ret = 0
 
         session = common.session_start()
@@ -298,7 +300,7 @@ PRIVEK <ek.sk>"""
             print "=== ESEC PROG FAILED ==="
             return ret
 
-        ret = self.sign_ek(sn, pn, mac, brd_name, mtp)
+        ret = self.sign_ek(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
         if ret != 0:
             print "=== Failed to sign pub_ek ==="
             print "=== ESEC PROG FAILED ==="
@@ -428,7 +430,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.sign_ek == True:
-        esec_ctrl.sign_ek(args.sn, args.pn, args.mac, args.brd_name, args.mtp)
+        esec_ctrl.sign_ek(args.sn, args.pn, args.mac, args.brd_name, args.mtp, args.client_key, args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 
     if args.gen_otp == True:

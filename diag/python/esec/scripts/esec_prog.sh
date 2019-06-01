@@ -9,7 +9,8 @@ hsm_sign_ek () {
     cd $DIAG_HOME/diag/tools/pki
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
-    python ./client_diag.py -k certs/client.key.pem -c certs/client-bundle.cert.pem  -t certs/rootca.cert.pem -b enrico.dev.pensando.io:12267 -sn $SN -pn $PN -mac $MAC -pdn $BRD_NAME -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
+    python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $BRD_NAME -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
+
 
     cp signed_ek.pub.bin signed_ek.pub.org.bin
     dd if=/dev/zero of=signed_ek.pub.bin bs=1 count=1 seek=1411
@@ -114,6 +115,31 @@ case $key in
     shift # past value
     ;;
     #-------------
+    -k|--client_key)
+    CLIENT_KEY="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -c|--client_cert)
+    CLIENT_CERT="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -t|--trust_roots)
+    TRUST_ROOTS="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -b|--backend_url)
+    BACKEND_URL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+
+    #-------------
     -enroll_puf|--enroll_puf)
     ENROLL_PUF=TRUE
     shift # past argument
@@ -168,12 +194,16 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "SLOT:     ${SLOT}"
-echo "SN:       ${SN}"
-echo "PN:       ${PN}"
-echo "MAC:      ${MAC}"
-echo "BRD_NAME: ${BRD_NAME}"
-echo "MTP:      ${MTP}"
+echo "SLOT:        ${SLOT}"
+echo "SN:          ${SN}"
+echo "PN:          ${PN}"
+echo "MAC:         ${MAC}"
+echo "BRD_NAME:    ${BRD_NAME}"
+echo "MTP:         ${MTP}"
+echo "CLIENT_KEY:  ${CLIENT_KEY}"
+echo "CLIENT_CERT: ${CLIENT_CERT}"
+echo "TRUST_ROOTS: ${TRUST_ROOTS}"
+echo "BACKEND_URL: ${BACKEND_URL}"
 
 if [[ $ENROLL_PUF == TRUE ]]
 then
