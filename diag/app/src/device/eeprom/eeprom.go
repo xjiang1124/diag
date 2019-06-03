@@ -137,22 +137,39 @@ func ProgEeprom(devName string) (err int) {
     }
     defer smbus.Close()
 
+    is8g := 0
     for _, entry := range(EepromTbl) {
         if entry.Name == "Product Name" {
             if CardType == "NAPLES25" {
-                copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0})
+                copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
                 updateIntChk()
             } else if CardType == "FORIO" {
-                copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0})
+                copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
                 updateIntChk();
+            } else if CardType == "VOMERO" {
+                copy(entry.Value, []byte{0x56, 0x4F, 0x4D, 0x45, 0x52, 0x4F, 0x20, 0x20, 0x20, 0x20})
+                updateIntChk();
+            }
+        }
+        if entry.Name == "Part Number" && CardType == "NAPLES25" {
+            fmt.Printf("value 0x%x\n", entry.Value[6])
+            if entry.Value[6] == byte(0x38) {
+                 is8g = 1
             }
         }
         if entry.Name == "Board ID" {
             if CardType == "NAPLES25" {
-                copy(entry.Value, []byte{2, 0 , 0, 0})
+                if is8g == 1 {
+                    copy(entry.Value, []byte{5, 0 , 0, 0})
+                } else {
+                    copy(entry.Value, []byte{2, 0 , 0, 0})
+                }
                 updateIntChk()
             } else if CardType == "FORIO" {
                 copy(entry.Value, []byte{4, 0 , 0, 0})
+                updateIntChk()
+            } else if CardType == "VOMERO" {
+                copy(entry.Value, []byte{6, 0 , 0, 0})
                 updateIntChk()
             }
         }
@@ -238,7 +255,7 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 continue
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC Address Base" {
                 copy(entry.Value, mac)
@@ -315,7 +332,7 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 continue
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Serial Number" {
                 copy(entry.Value, sn)
@@ -359,7 +376,7 @@ func UpdatePn(devName string, pn []byte) (err int) {
                 break
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
+    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Part Number" {
                 copy(entry.Value, pn)
@@ -433,7 +450,7 @@ func UpdateDate(devName string, str string) (err int) {
     
 //    CardType := os.Getenv("CARD_TYPE")
 
-    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
+    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Manufacturing Date/Time" {
                 const shortForm = "2006-01-02"
@@ -561,7 +578,7 @@ func DumpEeprom(devName string) (err int) {
     var data []byte
 //    CardType := os.Getenv("CARD_TYPE")
 
-    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" {
+    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
         f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
         if error != nil {
             cli.Println("e", "file create failed")
