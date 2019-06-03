@@ -82,6 +82,10 @@ then
     # Load all the redis keys
     cat $DIAG_DIR/python/infra/config/OUTPUT/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
     echo "Redis keys loaded"
+
+    # ESEC images
+    cp -r $DIAG_DIR/python/esec/images/ $DIAG_DIR/asic/asic_src/ip/cosim/tclsh/
+
 fi
 
 #echo "redisFlag $redisFlag"

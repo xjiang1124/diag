@@ -79,7 +79,7 @@ def parse_args_diag():
     parser.add_argument(
         "-b",
         "--backend_url",
-        default = "enrico.dev.pensando.io:12267",
+        default = "192.168.67.213:12266#192.168.67.214:12266",
         help="comma-separated list of backend URLs")
 
     parser.add_argument(
