@@ -218,13 +218,24 @@ PRIVEK <ek.sk>"""
 
     def sign_ek(self, sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url):
         cmd_fmt = "/home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn {} -pn {} -mac {} -brd_name {} -mtp {} -k {} -c {} -t {} -b {}"
-        cmd = cmd_fmt.format(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
-        print cmd
         ret = 0
+        num_retry = 3
 
-        session = common.session_start()
-        ret = common.session_cmd_pass_multi(session, cmd, ["PKI PASSED", "SIGNING EK PASSED"])
-        common.session_stop(session)
+        url_list = backend_url.split("#")
+        for url in url_list:
+            cmd = cmd_fmt.format(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, url)
+            print cmd
+
+            for retry in range(num_retry):
+                print url, "signing EK #", retry
+                session = common.session_start()
+                ret = common.session_cmd_pass_multi(session, cmd, ["PKI PASSED", "SIGNING EK PASSED"])
+                common.session_stop(session)
+                if ret == 0:
+                    break
+                time.sleep(5)
+            if ret == 0:
+                break
 
         print "ret:", ret
         return ret
