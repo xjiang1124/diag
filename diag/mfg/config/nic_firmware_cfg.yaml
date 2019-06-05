@@ -5,5 +5,5 @@ NAPLES100:
 
 NAPLES25:
     CPLD_FILE: "/home/diag/naples25_cpld_rev2_05212019.bin"
-    QSPI_FILE: "/home/diag/naples25_diagfw_03192019.tar"
-    EMMC_FILE: "/home/diag/naples25_fw_03202019.tar"
+    QSPI_FILE: "/home/diag/naples25_diagfw_06042019.tar"
+    EMMC_FILE: "/home/diag/naples25_fw_06042019.tar"
