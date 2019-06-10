@@ -38,7 +38,7 @@ class nic_test:
         self.nic_con.uart_session_start(session, self.baud_rate)
         self.nic_con.uart_session_cmd(session, "")
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
-        self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
+        self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
         self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
         self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
         self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
@@ -96,7 +96,7 @@ class nic_test:
         self.nic_con.uart_session_start(session, self.baud_rate)
         self.nic_con.uart_session_cmd(session, "")
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
-        self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
+        self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
         if vmarg > 0:
             self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh high")
         elif vmarg < 0:
@@ -231,7 +231,7 @@ if __name__ == "__main__":
 
     test = nic_test()
     if args.snake_start == True:
-        test.test_start(args.slot, "snake", args.mode, args.baud_rate)
+        test.test_start(args.slot, "snake", args.mode)
         sys.exit()
 
     if args.snake_check == True:
@@ -244,11 +244,11 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.prbs_start == True:
-        test.test_start(args.slot, "prbs", args.mode, args.baud_rate)
+        test.test_start(args.slot, "prbs", args.mode)
         sys.exit()
 
     if args.prbs_check == True:
-        test.prbs_check(args.slot, "prbs", args.mode)
+        test.test_check(args.slot, "prbs", args.mode)
         sys.exit()
 
     if args.prbs == True:
