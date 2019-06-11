@@ -82,7 +82,7 @@ class nic_test:
         elif test_type == "snake" and mode == "pcie":
             test_cmd = "./diag.exe snake.p.a.tcl 2>&1 > snake_pcie.log &"
         elif test_type == "prbs" and mode == "eth":
-            test_cmd = "./diag.exe prbs.e.a.tcl 2>&1 > prbs_eth.log &"
+            test_cmd = "sh ./nic_prbs.sh 2>&1 > prbs_eth.log &"
         elif test_type == "prbs" and mode == "pcie":
             test_cmd = "./diag.exe prbs.p.a.tcl 2>&1 > prbs_pcie.log &"
         else:
