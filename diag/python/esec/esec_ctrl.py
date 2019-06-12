@@ -117,6 +117,12 @@ def parse_args_diag():
         "--sku",
         default="SKU",
         help="SKU")
+    parser.add_argument(
+        "-post_check",
+        "--post_check",
+        action='store_true',
+        help="Uboot post key programming check")
+
     #parser.add_argument(
     #    "-pub_ek",
     #    "--pub_ek",
@@ -366,7 +372,7 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
         return ret
 
-    def check_uboot_esec(self, slot):
+    def check_uboot_esec(self, slot, post_check=False):
         ret = 0
         crc32_ek = ""
         session = common.session_start()
@@ -379,16 +385,17 @@ PRIVEK <ek.sk>"""
             print "Failed to connect uboot"
             return ret
 
-        #self.nic_con.uart_session_cmd(session, "esec help", 30, "Capri# ")
-        self.nic_con.uart_session_cmd(session, "cpldwr 0x20 7", 30, "Capri# ")
-        self.nic_con.uart_session_cmd(session, "cpldrd 0x20", 30, "Capri# ")
-        session.sendline("reset")
-        session.expect("U-Boot")
+        if post_check == False:
+            #self.nic_con.uart_session_cmd(session, "esec help", 30, "Capri# ")
+            self.nic_con.uart_session_cmd(session, "cpldwr 0x20 7", 30, "Capri# ")
+            self.nic_con.uart_session_cmd(session, "cpldrd 0x20", 30, "Capri# ")
+            session.sendline("reset")
+            session.expect("U-Boot")
 
-        self.nic_con.enter_uboot_after_reset(session, slot)
-        self.nic_con.uart_session_stop(session)
-        self.nic_con.uart_session_start(session)
-        self.nic_con.enter_uboot_after_reset(session, slot)
+            self.nic_con.enter_uboot_after_reset(session, slot)
+            self.nic_con.uart_session_stop(session)
+            self.nic_con.uart_session_start(session)
+            self.nic_con.enter_uboot_after_reset(session, slot)
         self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_boot_status", 30, "Capri# ")
@@ -462,7 +469,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.check_uboot == True:
-        esec_ctrl.check_uboot_esec(int(args.slot))
+        esec_ctrl.check_uboot_esec(int(args.slot), args.post_check)
         sys.exit()
 
     if args.ek_crc == True:
