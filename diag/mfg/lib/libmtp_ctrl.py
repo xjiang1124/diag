@@ -57,6 +57,7 @@ class mtp_ctrl():
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
+        self._valid_type_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO]
         self._slots = 10
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
@@ -882,6 +883,7 @@ class mtp_ctrl():
         nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
         if mtp_capability & 0x1:
             naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
+            naples100_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["SEC_CPLD_FILE"]
             naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
             naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
@@ -898,6 +900,7 @@ class mtp_ctrl():
 
         if mtp_capability & 0x2:
             naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
+            naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
             naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
             naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
@@ -1375,6 +1378,51 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Program NIC CPLD complete")
         else:
             self.cli_log_slot_inf_lock(slot, "Program NIC CPLD bypassed")
+        return True
+
+
+    def mtp_program_nic_sec_cpld(self, slot, cpld_img):
+        self.cli_log_slot_inf_lock(slot, "Program NIC Secure CPLD")
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in self._valid_type_list:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
+            self.cli_log_slot_err_lock(slot, "Program NIC Secure CPLD failed")
+            return False
+
+        self.cli_log_slot_inf_lock(slot, "Program NIC Secure CPLD complete")
+        return True
+
+
+    def mtp_verify_nic_sec_cpld(self, slot):
+        self.cli_log_slot_inf(slot, "Verify NIC Secure CPLD")
+        if not self._nic_ctrl_list[slot].nic_verify_sec_cpld():
+            self.cli_log_slot_err(slot, "Verify NIC Secure CPLD failed")
+            return False
+
+        self.cli_log_slot_inf(slot, "Verify NIC Secure CPLD complete")
+        return True
+
+
+    def mtp_program_nic_sec_key(self, slot):
+        self.cli_log_slot_inf(slot, "Program NIC Secure Key")
+
+        if not self._nic_ctrl_list[slot].nic_program_sec_key_pre():
+            self.cli_log_slot_err(slot, "Pre init key programming failed")
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_program_sec_key(self._id):
+            self.cli_log_slot_err(slot, "Program NIC Secure Key failed")
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
+            self.cli_log_slot_err(slot, "Post cleanup key programming failed")
+            return False
+
+        self.cli_log_slot_inf(slot, "Program NIC Secure Key complete")
         return True
 
 

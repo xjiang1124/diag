@@ -72,6 +72,7 @@ class MTP_Const:
     NIC_MGMT_IP_INIT_RETRY = 3
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
+    NIC_ESEC_PROG_DELAY = 600
     NIC_POWER_ON_DELAY = 30
     NIC_POWER_OFF_DELAY = 10
 
@@ -133,6 +134,7 @@ class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
     ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
     ONBOARD_MTP_DSHELL_PATH = "/home/diag/diag/python/infra/dshell/"
+    ONBOARD_MTP_ESEC_PATH = "/home/diag/diag/python/esec/"
     ONBOARD_MTP_ASIC_PATH = "/home/diag/diag/scripts/asic/"
     ONBOARD_MTP_MTP_DIAG_PATH = "/home/diag/diag/"
     ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
@@ -187,6 +189,11 @@ class MFG_DIAG_CMDS:
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
+
+    NIC_ESEC_PROG_PRE_FMT = "./esec_ctrl.py -slot {:d} -img_prog"
+    NIC_ESEC_PROG_POST_FMT = "./esec_ctrl.py -cleanup"
+    NIC_ESEC_CPLD_CHECK_FMT = "./esec_ctrl.py -check_uboot -slot {:d}"
+    NIC_ESEC_PROG_FMT = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -261,6 +268,9 @@ class MFG_DIAG_SIG:
     NIC_POWER_OK_SIG = "power good"
     NIC_OS_SHUTDOWN_OK_SIG = "System halted"
     NIC_MOUNT_OK_SIG = "{:s} on {:s}"
+    NIC_ESEC_PROG_PRE_SIG = "IMG PROG PASSED"
+    NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
+    NIC_ESEC_CPLD_VERIFY_SIG = "EK validated"
     MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
     MFG_ASIC_ERR_MSG_SIG = "ERROR ::"
     MFG_ASIC_CTC_ERR_MSG_SIG = "ERROR_CTC_WRITE_READ_COMPARE_FAILURE"

@@ -58,11 +58,11 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in post_test_check_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    #if card_type == NIC_Type.NAPLES100:
-    #    mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
-    #    mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
-    #    for item in mtp_para_test_list:
-    #        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+    if card_type == NIC_Type.FORIO:
+        mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
+        mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
+        for item in mtp_para_test_list:
+            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("MTP Sequential Test List:")
@@ -441,8 +441,10 @@ def main():
     # load the diag test config
     naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml"
     naples25_test_cfg_file = "config/naples25_mtp_test_cfg.yaml"
+    forio_test_cfg_file = "config/forio_mtp_test_cfg.yaml"
     naples100_test_db = diag_db(corner, naples100_test_cfg_file)
     naples25_test_db = diag_db(corner, naples25_test_cfg_file)
+    forio_test_db = diag_db(corner, forio_test_cfg_file)
 
     # logfiles
     open_file_track_list = list()
@@ -546,6 +548,7 @@ def main():
 
     naples100_nic_list = list()
     naples25_nic_list = list()
+    forio_nic_list = list()
     pass_nic_list = list()
     pass_sn_list = list()
     fail_nic_list = list()
@@ -561,6 +564,10 @@ def main():
                 pass_sn_list.append(sn)
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25:
                 naples25_nic_list.append(slot)
+                pass_nic_list.append(nic_key)
+                pass_sn_list.append(sn)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.FORIO:
+                forio_nic_list.append(slot)
                 pass_nic_list.append(nic_key)
                 pass_sn_list.append(sn)
             else:
@@ -584,6 +591,15 @@ def main():
         naples_exec_init_cmd(naples25_test_db, mtp_mgmt_ctrl)
         naples_exec_skip_cmd(naples25_nic_list, naples25_test_db, mtp_mgmt_ctrl)
         naples_exec_param_cmd(naples25_nic_list, naples25_test_db, mtp_mgmt_ctrl)
+    if forio_nic_list:
+        if not mtp_capability & 0x1:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Forio".format(mtp_capability))
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            return
+        naples_diag_cfg_show(NIC_Type.FORIO, forio_test_db, mtp_mgmt_ctrl)
+        naples_exec_init_cmd(forio_test_db, mtp_mgmt_ctrl)
+        naples_exec_skip_cmd(forio_nic_list, forio_test_db, mtp_mgmt_ctrl)
+        naples_exec_param_cmd(forio_nic_list, forio_test_db, mtp_mgmt_ctrl)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     #naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -596,6 +612,12 @@ def main():
     naples25_para_test_list = naples25_test_db.get_diag_para_test_list()
     naples25_pre_test_check_list = naples25_test_db.get_pre_diag_test_intf_list()
     naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
+
+    forio_seq_test_list = forio_test_db.get_diag_seq_test_list()
+    forio_mtp_para_test_list = forio_test_db.get_mtp_para_test_list()
+    forio_para_test_list = forio_test_db.get_diag_para_test_list()
+    forio_pre_test_check_list = forio_test_db.get_pre_diag_test_intf_list()
+    forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
@@ -622,6 +644,21 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if slot in naples25_nic_list:
                 naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
+    # Forio Diag Pre Check
+    if forio_nic_list:
+        pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl, NIC_Type.FORIO, forio_nic_list, forio_pre_test_check_list)
+        for slot in pre_check_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in forio_nic_list:
+                forio_nic_list.remove(slot)
             if nic_key not in fail_nic_list:
                 fail_nic_list.append(nic_key)
                 fail_sn_list.append(sn)
@@ -669,6 +706,25 @@ def main():
                 pass_nic_list.remove(nic_key)
                 pass_sn_list.remove(sn)
 
+    # Forio Parallel test
+    if forio_nic_list:
+        diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                    NIC_Type.FORIO,
+                                                    forio_nic_list,
+                                                    forio_test_db,
+                                                    forio_para_test_list,
+                                                    stop_on_err)
+        for slot in diag_para_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in forio_nic_list and stop_on_err:
+                forio_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
     # Naples100 Sequential test
     if naples100_nic_list:
@@ -705,6 +761,27 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if slot in naples25_nic_list and stop_on_err:
                 naples25_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
+    # Forio Sequential test
+    if forio_nic_list:
+        diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+                                                  NIC_Type.FORIO,
+                                                  forio_nic_list,
+                                                  forio_test_db,
+                                                  forio_seq_test_list,
+                                                  vmarg,
+                                                  stop_on_err)
+        for slot in diag_seq_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in forio_nic_list and stop_on_err:
+                forio_nic_list.remove(slot)
             if nic_key not in fail_nic_list:
                 fail_nic_list.append(nic_key)
                 fail_sn_list.append(sn)
@@ -799,6 +876,26 @@ def main():
     #         if nic_key in pass_nic_list:
     #             pass_nic_list.remove(nic_key)
     #             pass_sn_list.remove(sn)
+
+    # Forio MTP Parallel test
+    if forio_nic_list:
+        mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+                                                       NIC_Type.FORIO,
+                                                       forio_nic_list,
+                                                       forio_mtp_para_test_list,
+                                                       vmarg,
+                                                       stop_on_err)
+        for slot in mtp_para_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in forio_nic_list and stop_on_err:
+                forio_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 

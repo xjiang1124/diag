@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--qspi-image", help="New QSPI image file")
     parser.add_argument("--emmc-image", help="New EMMC image file")
     parser.add_argument("--cpld-image", help="New CPLD image file")
+    parser.add_argument("--sec-cpld-image", help="New Secure CPLD image file")
     parser.add_argument("--reset-nic", help="Reset NIC boot with diag image", action='store_true')
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--mtp", help="MTP ID")
@@ -33,6 +34,7 @@ def main():
     qspi_image_file = None
     emmc_image_file = None
     cpld_image_file = None
+    sec_cpld_image_file = None
     apc = False
     mtpid = None
     reset_nic = False
@@ -53,6 +55,8 @@ def main():
         qspi_image_file = args.qspi_image
     if args.cpld_image:
         cpld_image_file = args.cpld_image
+    if args.sec_cpld_image:
+        sec_cpld_image_file = args.sec_cpld_image
     if args.reset_nic:
         reset_nic = True
 
@@ -154,7 +158,7 @@ def main():
             mtp_mgmt_ctrl.mtp_update_nic_diag_image(remote_dir + os.path.basename(nic_image_file))
             mtp_mgmt_ctrl.cli_log_inf("Update NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)), level=0)
 
-    for image_file in [emmc_image_file, qspi_image_file, cpld_image_file]:
+    for image_file in [emmc_image_file, qspi_image_file, cpld_image_file, sec_cpld_image_file]:
         if image_file:
             for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
                 mtp_mgmt_ctrl.cli_log_inf("Copy NIC image: {:s}".format(image_file), level=0)
