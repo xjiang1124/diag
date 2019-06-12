@@ -30,6 +30,7 @@ func init() {
     qsfpTestMap := make(map[string][]string)
     qsfpTestMap["NAPLES100"] = naples100QsfpList
     qsfpTestMap["FORIO"] = naples100QsfpList
+    qsfpTestMap["VOMERO"] = naples100QsfpList
 
     qsfpTestList = qsfpTestMap[cardType]
 }

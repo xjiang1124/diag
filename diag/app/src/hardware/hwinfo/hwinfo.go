@@ -263,6 +263,7 @@ func init() {
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
     dispMap["FORIO"]     = forioDispStaList
+    dispMap["VEMORO"]    = forioDispStaList
     dispMap["NAPLES100"] = naples100DispStaList
     dispMap["NAPLES25"]  = naples25DispStaList
     dispMap["NAPLES_MTP"]= naplesMtpDispStaList
@@ -283,6 +284,7 @@ func init() {
     eepromMap["NAPLES100"]  = naplesEepList
     eepromMap["NAPLES25"]   = naplesEepList
     eepromMap["FORIO"]      = naplesEepList
+    eepromMap["VOMERO"]     = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -292,6 +294,7 @@ func init() {
     i2cHubMap["NAPLES100"] = naples100I2cHubMap
     i2cHubMap["NAPLES25"]  = naples100I2cHubMap
     i2cHubMap["FORIO"]     = naples100I2cHubMap
+    i2cHubMap["VOMERO"]    = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"] = mtpI2cHubList
@@ -300,6 +303,7 @@ func init() {
     i2cHubListMap["NAPLES100"]  = naples100I2cHubList
     i2cHubListMap["NAPLES25"]   = naples25I2cHubList
     i2cHubListMap["FORIO"]      = forioI2cHubList
+    i2cHubListMap["VOMERO"]     = forioI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
@@ -308,6 +312,7 @@ func init() {
     psuListMap["NAPLES100"] = naples100PsuList
     psuListMap["NAPLES25"]  = naples25PsuList
     psuListMap["FORIO"]     = forioPsuList
+    psuListMap["VOMERO"]    = forioPsuList
 
     //===============================
     // Platform specified list
@@ -333,7 +338,7 @@ func init() {
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
-    case "FORIO":
+    case "FORIO", "VOMERO":
         QsfpTbl = forioQsfpTbl
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)
