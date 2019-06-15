@@ -18,7 +18,7 @@ class nic_test:
         self.num_retry = 10
         self.nic_con = nic_con()
 
-    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False):
+    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True):
         print "=== Starting snake on slot {} ===".format(slot)
 
 
@@ -27,11 +27,11 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
-        # Change baud rate to 4800
-        ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
-        if ret != 0:
-            print "Failed to change baud rate"
-            return -1
+        if pwr_cycle == True:
+            ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
+            if ret != 0:
+                print "Failed to change baud rate"
+                return -1
 
         session = common.session_start()
         session.timeout = timeout
@@ -226,6 +226,7 @@ if __name__ == "__main__":
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
     parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
     parser.add_argument("-ite", "--iteration", help="Number of power cycle test iterations", type=int, default=1)
+    parser.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
 
     args = parser.parse_args()
 
@@ -257,7 +258,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.setup == True:
-        test.setup_env(args.slot, args.mgmt, 30, args.first_pwr_on)
+        test.setup_env(args.slot, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle)
         sys.exit()
 
     if args.pwr_cycle_test == True:
