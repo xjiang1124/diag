@@ -427,10 +427,7 @@ def main():
             test = "NIC_TYPE"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.NAPLES25 or card_type == NIC_Type.FORIO:
-                ret = True
-            else:
-                ret = False
+            ret = mtp_mgmt_ctrl.mtp_nic_type_valid(slot)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if not ret:

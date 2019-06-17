@@ -43,6 +43,7 @@ from libdefs import MTP_Status
 from libdefs import NIC_Port_Mask
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
+from libdefs import MFG_DIAG_RE
 
 from libnic_ctrl import nic_ctrl
 
@@ -58,6 +59,7 @@ class mtp_ctrl():
         self._apc_cfg = apc_cfg
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
         self._valid_type_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO]
+        self._proto_type_list = [NIC_Type.FORIO]
         self._slots = 10
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
@@ -1389,6 +1391,10 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD program for Proto NIC")
+            return True
+
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC Secure CPLD failed")
             return False
@@ -1399,6 +1405,12 @@ class mtp_ctrl():
 
     def mtp_verify_nic_sec_cpld(self, slot):
         self.cli_log_slot_inf(slot, "Verify NIC Secure CPLD")
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD verify for Proto NIC")
+            return True
+
         if not self._nic_ctrl_list[slot].nic_verify_sec_cpld():
             self.cli_log_slot_err(slot, "Verify NIC Secure CPLD failed")
             return False
@@ -1409,6 +1421,11 @@ class mtp_ctrl():
 
     def mtp_program_nic_sec_key(self, slot):
         self.cli_log_slot_inf(slot, "Program NIC Secure Key")
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip Secure Key program for Proto NIC")
+            return True
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_pre():
             self.cli_log_slot_err(slot, "Pre init key programming failed")
@@ -1474,7 +1491,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_qspi(self, slot, qspi_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.FORIO:
+        if MFG_NIC_QSPI_PROGRAM:
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI")
             if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
                 self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
@@ -1487,7 +1504,7 @@ class mtp_ctrl():
 
     def mtp_verify_nic_qspi(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if MFG_NIC_QSPI_PROGRAM or nic_type == NIC_Type.FORIO:
+        if MFG_NIC_QSPI_PROGRAM:
             self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI")
             qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
             if not qspi_info:
@@ -1618,6 +1635,11 @@ class mtp_ctrl():
 
 
     def mtp_set_nic_vmarg(self, slot, vmarg):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip Vmargin for Proto NIC")
+            return True
+
         if vmarg > 0:
             vmarg_param = "high"
         elif vmarg == 0:
@@ -1883,42 +1905,35 @@ class mtp_ctrl():
 
 
     def mtp_init_nic_type(self):
-        self.cli_log_inf("Init NIC Present")
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to init NIC presence")
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
-        # find present
-        match = re.findall(r"UUT_(\d+) +[NAPLES\d+,FORIO]", self._mgmt_handle.before)
+
+        # find type
+        self.cli_log_inf("Init NIC Present/Type")
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
                 self._nic_prsnt_list[slot] = True
-        else:
-            self.cli_log_err("No NIC present detected")
-            return False
-
-        # find type
-        self.cli_log_inf("Init NIC Type")
-        match = re.findall(r"UUT_(\d+) +NAPLES100", self._mgmt_handle.before)
-        if match:
-            for idx in range(len(match)):
-                slot = int(match[idx]) - 1
                 self._nic_type_list[slot] = NIC_Type.NAPLES100
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100)
 
-        match = re.findall(r"UUT_(\d+) +NAPLES25", self._mgmt_handle.before)
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES25
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25)
 
-        match = re.findall(r"UUT_(\d+) +FORIO", self._mgmt_handle.before)
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_FORIO, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.FORIO
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.FORIO)
 
@@ -1935,6 +1950,10 @@ class mtp_ctrl():
 
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
+
+
+    def mtp_nic_type_valid(self, slot):
+        return self._nic_type_list[slot] in self._valid_type_list
 
 
     def mtp_get_nic_sn(self, slot):
@@ -2019,6 +2038,11 @@ class mtp_ctrl():
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
         elif intf == "NIC_STATUS":
             if self.mtp_check_nic_status(slot):
+                return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
+        elif intf == "NIC_DIAG_BOOT":
+            if self.mtp_nic_check_diag_boot(slot):
                 return "SUCCESS"
             else:
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
@@ -2189,8 +2213,8 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
-        # TODO, Forio avs
-        elif nic_type == NIC_Type.FORIO:
+        elif nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
             return True
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")

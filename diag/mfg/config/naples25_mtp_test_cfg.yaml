@@ -20,6 +20,7 @@ MTP_PRE:
     NIC_POWER: True
     NIC_JTAG: True
     NIC_STATUS: True
+    NIC_DIAG_BOOT: True
 
 NIC_PARA:
     RTC:

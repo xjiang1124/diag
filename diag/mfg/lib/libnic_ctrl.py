@@ -104,7 +104,7 @@ class nic_ctrl():
         return True
 
 
-    def nic_exec_cmds(self, nic_cmd_list, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+    def nic_exec_cmds(self, nic_cmd_list, timeout=MTP_Const.NIC_CON_CMD_DELAY, fail_sig=None):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
@@ -132,6 +132,14 @@ class nic_ctrl():
                 self.nic_set_err_msg(self._nic_handle.before)
                 ret = False
                 break
+            elif fail_sig != None:
+                if fail_sig in self._nic_handle.before:
+                    self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                    self.nic_set_err_msg(self._nic_handle.before)
+                    ret = False
+                    break
+            else:
+                pass
             time.sleep(1)
 
         cmd = "exit"
@@ -623,13 +631,10 @@ class nic_ctrl():
         img_name = os.path.basename(qspi_img)
 
         nic_cmd_list = list()
-        # TODO: Forio uboot program
-        # if self._nic_type == NIC_Type.FORIO:
-        #     nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
-        # else:
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list):
+        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
             return False
 
         return True
@@ -671,8 +676,9 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name)
+        emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
             return False
 
         return True
@@ -745,9 +751,6 @@ class nic_ctrl():
 
 
     def nic_set_vmarg(self, vmarg_param):
-        # TODO: Forio vmarg
-        if self._nic_type == NIC_Type.FORIO:
-            return True
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param)
         nic_cmd_list.append(nic_cmd)
