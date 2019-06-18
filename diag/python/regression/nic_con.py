@@ -407,6 +407,7 @@ if __name__ == "__main__":
     group.add_argument("-mgmt", "--ena_mgmt_port", help="Enable managment port", action='store_true')
     group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
     group.add_argument("-dis_pcie", "--dis_pcie", help="Disable PCIe", action='store_true')
+    group.add_argument("-ena_pcie", "--ena_pcie", help="Enable PCIe", action='store_true')
 
     parser.add_argument("-br", "--baud_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
@@ -426,4 +427,8 @@ if __name__ == "__main__":
 
     if args.dis_pcie == True:
         con.disable_pcie_uboot(args.slot)
+        sys.exit()
+
+    if args.ena_pcie == True:
+        con.enable_pcie_uboot(args.slot)
         sys.exit()
