@@ -362,12 +362,51 @@ class nic_con:
         print "=== Management port is ready ==="
         return ret
 
+    def disable_pcie_uboot(self, slot):
+        ret = 0
+        session = common.session_start()
+        ret = self.enter_uboot(session, slot)
+        if ret != 0:
+            print "Failed to enter uboot"
+            return ret
+        ret = self.conn_uboot(session)
+        if ret != 0:
+            print "Failed to connect uboot"
+            return ret
+
+        self.uart_session_cmd(session, "setenv pcie_poll_disable 1", 30, "Capri# ")
+        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
+        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
+    def enable_pcie_uboot(self, slot):
+        ret = 0
+        session = common.session_start()
+        ret = self.enter_uboot(session, slot)
+        if ret != 0:
+            print "Failed to enter uboot"
+            return ret
+        ret = self.conn_uboot(session)
+        if ret != 0:
+            print "Failed to connect uboot"
+            return ret
+
+        self.uart_session_cmd(session, "setenv pcie_poll_disable", 30, "Capri# ")
+        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
+        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
 
     group.add_argument("-mgmt", "--ena_mgmt_port", help="Enable managment port", action='store_true')
     group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
+    group.add_argument("-dis_pcie", "--dis_pcie", help="Disable PCIe", action='store_true')
 
     parser.add_argument("-br", "--baud_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
@@ -383,4 +422,8 @@ if __name__ == "__main__":
 
     if args.mtest == True:
         con.mtest_uboot(args.baud_rate, args.slot)
+        sys.exit()
+
+    if args.dis_pcie == True:
+        con.disable_pcie_uboot(args.slot)
         sys.exit()
