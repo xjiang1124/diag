@@ -15,7 +15,7 @@ class nic_test:
     def __init__(self):
         self.name = "nic_snake"
         self.baud_rate = 115200
-        self.num_retry = 10
+        self.num_retry = 30
         self.nic_con = nic_con()
 
     def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True):
@@ -197,7 +197,7 @@ class nic_test:
 
             if done_count == len(nic_list):
                 break
-            time.sleep(30)
+            time.sleep(20)
 
         # Print result
         print "\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper())
