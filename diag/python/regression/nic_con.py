@@ -34,6 +34,32 @@ class nic_con:
             return -1
         return 0
 
+    def uart_session_start_slot(self, session, baud=115200, slot=0):
+        ret = 0
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            return -1
+
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+
+        cmd = self.fmt_con_cmd.format(baud)
+        expstr = ["capri login:", "\#"]
+        try:
+            session.sendline(cmd)
+            session.expect("Terminal ready")
+            session.send("\r")
+            i = session.expect(expstr, 15)
+            if i == 0:
+                session.sendline(self.usr)
+                session.expect("assword:")
+                session.sendline(self.pwd)
+                session.expect("\#")
+        except pexpect.TIMEOUT:
+            print "=== TIMEOUT: Can not connect to NIC on UART!"
+            return -1
+        return 0
+
     def uart_session_stop(self, session):
         session.timeout = 15
         try:
@@ -107,6 +133,22 @@ class nic_con:
             self.uart_session_stop(session)
 
         self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
+
+    def power_cycle_multi(self, baud_rate=115200, slot_list=""):
+        ret = 0
+        session = common.session_start()
+
+        cmd = "turn_on_slot_multi.sh off {}".format(slot_list)
+        common.session_cmd(session, cmd)
+        cmd = "turn_on_slot_multi.sh on {}".format(slot_list)
+        common.session_cmd(session, cmd)
+
+        # Wait for nic to boot
+        time.sleep(30)
+
         common.session_stop(session)
         return ret
 

@@ -69,7 +69,7 @@ class nic_test:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
-    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0):
+    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="on"):
         print "=== Starting snake on slot {} ===".format(slot)
 
         ret = 0
@@ -89,11 +89,12 @@ class nic_test:
             print "Invalid test_type {} and mdoe {}".format(test_type, mode)
             sys.exit(0)
 
-        self.nic_con.power_cycle_uart(self.baud_rate, slot)
+        if pc == "on":
+            self.nic_con.power_cycle_uart(self.baud_rate, slot)
 
         session = common.session_start()
         session.timeout = timeout
-        self.nic_con.uart_session_start(session, self.baud_rate)
+        self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
         self.nic_con.uart_session_cmd(session, "")
         self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
         self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
@@ -164,10 +165,14 @@ class nic_test:
             print "No nic specified -- Exit"
             sys.exit(0)
 
+        slot_list = ",".join(nic_list)
+        print "slot_list:", slot_list
+        self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+
         test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            self.test_start(int(slot), test_type, mode, vmarg=vmargin)
+            self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off")
             test_result[slot] = "No Result"
 
         print "Wait for {}s before checking result".format(wait_time)
