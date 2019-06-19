@@ -71,7 +71,7 @@ class nic_con:
             print "=== TIMEOUT: Faled to stop UART session ==="
             return -1
 
-    def uart_session_cmd_sig(self, session, cmd, timeout=30, ending="\#", sig=["PASS", "FAIL"]):
+    def uart_session_cmd_sig(self, session, cmd, timeout=30, ending="\#", sig=["PASS", "FAIL"], verbose=True):
         temp = session.timeout
         session.timeout = timeout
         ret = -1
@@ -81,7 +81,8 @@ class nic_con:
             ret = i
 
         except:
-            print "=== TIMEOUT:", cmd, "==="
+            if verbose == True:
+                print "=== TIMEOUT:", cmd, "==="
             session.send(chr(3))
             time.sleep(0.05)
             session.expect(ending)

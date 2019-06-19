@@ -150,7 +150,7 @@ class nic_test:
         self.nic_con.uart_session_start(session, self.baud_rate)
 
         check_cmd = "/data/nic_arm/check_snake.sh {} {}".format(log_name, exp_err_cnt)
-        ret = self.nic_con.uart_session_cmd_sig(session, check_cmd, 3600, "\#", ["TEST Passed", "TEST Failed", "TEST Not Done"])
+        ret = self.nic_con.uart_session_cmd_sig(session, check_cmd, 15, "\#", ["TEST Passed", "TEST Failed", "TEST Not Done"], False)
         print "ret:", ret
         self.nic_con.uart_session_stop(session)
 
