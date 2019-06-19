@@ -57,9 +57,10 @@ NIC_PARA:
                 SLOT: No
 
 MTP_PARA:
-    SNAKE_HBM: True
-    SNAKE_PCIE: True
+    #SNAKE_HBM: True
+    #SNAKE_PCIE: True
     PRBS_ETH: True
+    PRBS_PCIE: True
 
 MTP_SEQ:
     MVL:

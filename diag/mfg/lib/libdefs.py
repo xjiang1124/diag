@@ -224,7 +224,10 @@ class MFG_DIAG_CMDS:
     NIC_FPO_MGMT_INIT_FMT = "nic_con.py -mgmt -slot {:d} -fpo"
     NIC_CON_MTEST_FMT = "nic_con.py -mtest -slot {:d}"
 
-    MTP_PARA_PRBS_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=240 -mode=eth -vmarg {:d}"
+    MTP_PARA_PRBS_ETH_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=eth -vmarg {:d}"
+    MTP_PARA_PRBS_PCIE_TEST_PRE_FMT = "nic_con.py -dis_pcie -slot {:d}"
+    MTP_PARA_PRBS_PCIE_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=pcie -vmarg {:d}"
+    MTP_PARA_PRBS_PCIE_TEST_POST_FMT = "nic_con.py -ena_pcie -slot {:d}"
     MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
     MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
 
@@ -272,6 +275,8 @@ class MFG_DIAG_SIG:
     NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
     NIC_ESEC_CPLD_VERIFY_SIG = "EK validated"
     NIC_FWUPDATE_FAIL_SIG = "FATAL"
+    NIC_UBOOT_PCIE_ENA_SIG = "setenv pcie_poll_disable"
+    NIC_UBOOT_PCIE_DIS_SIG = "setenv pcie_poll_disable 1"
     MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
     MFG_ASIC_ERR_MSG_SIG = "ERROR ::"
     MFG_ASIC_CTC_ERR_MSG_SIG = "ERROR_CTC_WRITE_READ_COMPARE_FAILURE"
