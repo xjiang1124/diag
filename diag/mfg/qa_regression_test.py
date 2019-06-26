@@ -132,7 +132,17 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
                     report_body += "        ---- Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
                 report_body += "\n"
 
-    report_body += "[**** QA Logfile ****]: {:s}".format(qa_log_pkg)
+    # testbed info
+    match = re.findall(r"==> (.*) <==", buf)
+    if match:
+        report_body += "[**** MTP Testbed info ****]\n"
+        for item in match:
+            report_body += "    {:s}\n".format(item)
+    report_body += "\n"
+
+    # test logfile
+    report_body += "[**** QA Logfile ****]\n".format(qa_log_pkg)
+    report_body += "    {:s}\n".format(qa_log_pkg)
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
 

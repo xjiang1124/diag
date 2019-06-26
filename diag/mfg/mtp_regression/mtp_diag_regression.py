@@ -495,26 +495,12 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
-    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
-    sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    os_ver = mtp_mgmt_ctrl.mtp_get_os_version()
-    asic_ver = mtp_mgmt_ctrl.mtp_get_asic_version()
-    if sw_ver and asic_ver and os_ver:
-        mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver))
-        mtp_mgmt_ctrl.cli_log_inf("MTP OS version: {:s}".format(os_ver))
-        mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver))
-    else:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to retrieve diag/asic version info")
+    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to retrieve MTP system info")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
         return
 
-    cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
-    if not cpld_ver_list:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Sanity Check Failed")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]))
-
+    mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
     mtp_mgmt_ctrl.cli_log_inf("Fan Speed = {:3d}%".format(fanspd))
     mtp_mgmt_ctrl.cli_log_inf("Voltage Margin = {:d}%".format(vmarg))
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)

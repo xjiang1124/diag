@@ -74,6 +74,12 @@ class mtp_ctrl():
         self._nic_thread_list = [None] * self._slots
         self._lock = threading.Lock()
 
+        self._io_cpld_ver = None
+        self._jtag_cpld_ver = None
+        self._os_ver = None
+        self._diag_ver = None
+        self._asic_ver = None
+
         self._debug_mode = dbg_mode
         self._filep = filep
         self._cmd_buf = None
@@ -89,6 +95,16 @@ class mtp_ctrl():
             libmfg_utils.cli_log_inf(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_inf(cli_id_str + indent + msg)
+
+
+    def cli_log_report_inf(self, msg, level = 0):
+        cli_id_str = libmfg_utils.id_str(mtp = self._id)
+        prefix = "==> "
+        postfix = " <=="
+        if self._filep:
+            libmfg_utils.cli_log_inf(self._filep, cli_id_str + prefix + msg + postfix)
+        else:
+            libmfg_utils.cli_inf(cli_id_str + prefix + msg + postfix)
 
 
     def cli_log_err(self, msg, level = 1):
@@ -132,6 +148,43 @@ class mtp_ctrl():
 
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
+
+
+    def mtp_sys_info_disp(self):
+        self.cli_log_inf("MTP System Info Dump:", level=0)
+
+        if not self._mgmt_cfg[0]:
+            self.cli_log_err("Unable to retrieve MTP MGMT IP")
+            return False
+        self.cli_log_report_inf("MTP Chassis IP: {:s}".format(self._mgmt_cfg[0]))
+
+        if not self._io_cpld_ver:
+            self.cli_log_err("Unable to retrieve MTP IO-CPLD Version")
+            return False
+        self.cli_log_report_inf("MTP IO-CPLD Version: {:s}".format(self._io_cpld_ver))
+
+        if not self._jtag_cpld_ver:
+            self.cli_log_err("Unable to retrieve MTP JTAG-CPLD Version")
+            return False
+        self.cli_log_report_inf("MTP JTAG-CPLD Version: {:s}".format(self._jtag_cpld_ver))
+
+        if not self._os_ver:
+            self.cli_log_err("Unable to retrieve MTP Kernel Version")
+            return False
+        self.cli_log_report_inf("MTP Kernel Version: {:s}".format(self._os_ver))
+
+        if not self._diag_ver:
+            self.cli_log_err("Unable to retrieve MTP Diag Version")
+            return False
+        self.cli_log_report_inf("MTP Diag Version: {:s}".format(self._diag_ver))
+
+        if not self._asic_ver:
+            self.cli_log_err("Unable to retrieve MTP ASIC Version")
+            return False
+        self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
+
+        self.cli_log_inf("MTP System Info Dump End\n", level=0)
+        return True
 
 
     def get_mgmt_cfg(self):
@@ -569,71 +622,86 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_get_hw_version(self):
+    def mtp_sys_info_init(self):
+        # MTP IO cpld version
         reg_addr = 0x0
         cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get MTP IO-CPLD image version info", level = 0)
-            return None
+            return False
         match = re.findall(r"addr 0x{:x} with data (0x[0-9a-fA-F]+)".format(reg_addr), self.mtp_get_cmd_buf())
         if match:
-            io_cpld_ver = match[0]
+            self._io_cpld_ver = match[0]
         else:
             self.cli_log_err("Failed to get MTP IO-CPLD image version info", level = 0)
-            return None
+            return False
 
+        # MTP JTAG cpld version
         reg_addr = 0x19
         cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level = 0)
-            return None
+            return False
         match = re.findall(r"addr 0x{:x} with data (0x[0-9a-fA-F]+)".format(reg_addr), self.mtp_get_cmd_buf())
         if match:
-            jtag_cpld_ver = match[0]
+            self._jtag_cpld_ver = match[0]
         else:
             self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level = 0)
-            return None
+            return False
 
-        return [io_cpld_ver, jtag_cpld_ver]
-
-
-    def mtp_get_os_version(self):
+        # MTP OS version
         cmd = MFG_DIAG_CMDS.MTP_IMG_VER_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get os image version", level = 0)
-            return None
+            return False
         match = re.findall(r"SMP (.* 20\d{2})", self.mtp_get_cmd_buf())
         if match:
-            return match[0]
+            self._os_ver = match[0]
         else:
             self.cli_log_err("Failed to get os image version", level = 0)
-            return None
+            return False
 
-
-    def mtp_get_sw_version(self):
+        # MTP Diag image version
         cmd = MFG_DIAG_CMDS.MTP_DIAG_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get diag image version", level = 0)
-            return None
+            return False
         match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
         if match:
-            return match[0]
+            self._diag_ver = match[0]
         else:
             self.cli_log_err("Failed to get diag image version", level = 0)
-            return None
+            return False
 
-
-    def mtp_get_asic_version(self):
+        # MTP ASIC image version
         cmd = MFG_DIAG_CMDS.MTP_ASIC_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get asic util version", level = 0)
-            return None
+            return False
         match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
         if match:
-            return match[0]
+            self._asic_ver = match[0]
         else:
             self.cli_log_err("Failed to get asic util version", level = 0)
-            return None
+            return False
+
+        return True
+
+
+    def mtp_get_hw_version(self):
+        return [self._io_cpld_ver, self._jtag_cpld_ver]
+
+
+    def mtp_get_os_version(self):
+        return self._os_ver
+
+
+    def mtp_get_sw_version(self):
+        return self._diag_ver
+
+
+    def mtp_get_asic_version(self):
+        return self._asic_ver
 
 
     def mtp_update_mtp_diag_image(self, image):
@@ -851,6 +919,10 @@ class mtp_ctrl():
             return False
 
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        if not self.mtp_sys_info_init():
+            self.cli_log_err("Failed to Init MTP system information", level=0)
+            return False
 
         self.cli_log_inf("Init NIC Connections", level = 0)
         ret = self.mtp_nic_para_session_init()

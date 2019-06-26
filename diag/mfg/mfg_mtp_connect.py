@@ -8,7 +8,7 @@ import argparse
 import re
 import random
 
-sys.path.append(os.path.relpath("../lib"))
+sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
@@ -30,29 +30,12 @@ def main():
     if args.mtp:
         mtp_id = args.mtp
 
-    # get the absolute file path
-    product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
-
-    # load the product server config
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return
-    else:
-        pro_srv_id = pro_srv_list[0]
-
-    # find the mtp config files controlled by the chosen product server
-    filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
-    mtp_chassis_cfg_file = os.path.abspath("../config/" + filename)
+    mtp_chassis_cfg_file = os.path.abspath("config/pensando_pro_srv1_mtp_chassis_cfg.yaml")
     mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
 
     if not mtp_id:
+        mtpid_list = list(mtp_cfg_db.get_mtpid_list())
         mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
-    elif mtp_id not in mtpid_list:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Invalid MTP ID: {:s}".format(mtp_id))
 
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
@@ -80,9 +63,20 @@ def main():
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
         return
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
 
-    version = mtp_mgmt_ctrl.mtp_get_sw_version()
-    mtp_mgmt_ctrl.cli_log_inf("MTP is connected, diag version = {:s}".format(version), level=0)
+    # init MTP diag environment
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+        mtp_mgmt_ctrl.cli_log_err("MTP Diag Pre Init failed", level=0)
+        return
+
+    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
+        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve system info", level=0)
+        return
+
+    if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
+        mtp_mgmt_ctrl.cli_log_err("Init MTP HW fails", level=0)
+        return
 
     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 

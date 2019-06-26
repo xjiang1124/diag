@@ -215,18 +215,6 @@ def main():
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
-    # get the sw version info
-    sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
-    os_ver = mtp_mgmt_ctrl.mtp_get_os_version()
-    if sw_ver and os_ver:
-        mtp_mgmt_ctrl.cli_log_inf("MTP SW version: {:s}".format(sw_ver), level=0)
-        mtp_mgmt_ctrl.cli_log_inf("MTP OS version: {:s}".format(os_ver), level=0)
-    else:
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve diag image version info", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
     # diag environment pre init
     if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
         mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
@@ -241,14 +229,12 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    # get the hw version info
-    cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
-    if not cpld_ver_list:
-        mtp_mgmt_ctrl.cli_log_err("Retrieve MTP CPLD Version Fail", level=0)
+    # get the sw version info
+    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
+        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
-    mtp_mgmt_ctrl.cli_log_inf("MTP IO-CPLD version: {:s}, JTAG-CPLD version: {:s}".format(cpld_ver_list[0], cpld_ver_list[1]), level=0)
 
     # PSU/FAN absent, powerdown MTP
     if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):

@@ -107,6 +107,11 @@ def main():
             return
         mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
+        # diag environment pre init
+        if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+            mtp_mgmt_ctrl.cli_log_err("Init MTP Diag Environment fails", level=0)
+            return
+
         # get the diag version info
         sw_ver = mtp_mgmt_ctrl.mtp_get_sw_version()
         if not sw_ver:
@@ -120,11 +125,6 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Get MTP ASIC version fails", level=0)
             return 
         mtp_mgmt_ctrl.cli_log_inf("MTP ASIC version: {:s}".format(asic_ver), level=0)
-
-        # diag environment pre init
-        if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
-            mtp_mgmt_ctrl.cli_log_err("Init MTP Diag Environment fails", level=0)
-            return
 
         # get the hw version info
         cpld_ver_list = mtp_mgmt_ctrl.mtp_get_hw_version()
