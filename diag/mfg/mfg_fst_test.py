@@ -28,7 +28,7 @@ def logfile_close(filep_list):
 
 def logfile_cleanup(file_list):
     for _file in file_list:
-        os.system("rm -f {:s}".format(_file))
+        os.system("rm -rf {:s}".format(_file))
 
 
 def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
@@ -169,7 +169,11 @@ def main():
     # local log files
     log_file_list = list()
     log_filep_list = list()
-    test_log_file = "_".join(["log/test_fst", mtp_id, libmfg_utils.get_timestamp()]) + ".log"
+    log_dir = "log/"
+    log_timestamp = libmfg_utils.get_timestamp()
+    log_sub_dir = "FST_{:s}_{:s}/".format(mtp_id, log_timestamp)
+    os.system("mkdir -p {:s}".format(log_dir + log_sub_dir))
+    test_log_file = log_dir + log_sub_dir + "test_fst.log"
     log_file_list.append(test_log_file)
     test_log_filep = open(test_log_file, "w+")
     log_filep_list.append(test_log_filep)
@@ -177,7 +181,7 @@ def main():
     if verbosity:
         diag_log_filep = sys.stdout
     else:
-        diag_log_file = "_".join(["log/diag_fst", mtp_id, libmfg_utils.get_timestamp()]) + ".log"
+        diag_log_file = log_dir + log_sub_dir + "diag_fst.log"
         log_file_list.append(diag_log_file)
         diag_log_filep = open(diag_log_file, "w+")
         log_filep_list.append(diag_log_filep)
@@ -185,7 +189,7 @@ def main():
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "_".join(["log/diag_fst", mtp_id, key, libmfg_utils.get_timestamp()]) + ".log"
+        diag_nic_log_file = log_dir + log_sub_dir + "diag_{:s}_fst.log".format(key)
         log_file_list.append(diag_nic_log_file)
         diag_nic_log_filep = open(diag_nic_log_file, "w+")
         log_filep_list.append(diag_nic_log_filep)
@@ -601,25 +605,28 @@ def main():
 
     logfile_close(log_filep_list)
 
+    # pkg the logfile
+    log_pkg_file = "FST_{:s}_{:s}.tar.gz".format(mtp_id, log_timestamp)
+    os.system("tar czvf {:s} -C {:s} {:s}".format(log_dir+log_pkg_file, log_dir, log_sub_dir))
+
     # move the logs to the log root dir
     if len(naples100_sn_list) > 0:
-        fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_FST_LOG_DIR
+        #fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_FST_LOG_DIR
+        fst_log_path = "/tmp/"
         for sn in naples100_sn_list:
-            logdir = fst_log_path + sn + "/"
-            os.system("mkdir -p " + logdir)
-            for logfile in log_file_list:
-                os.system("cp {:s} {:s}".format(logfile, logdir+os.path.basename(logfile)))
+            mfg_log_dir = fst_log_path + sn + "/"
+            os.system("mkdir -p " + mfg_log_dir)
+            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
     if len(naples25_sn_list) > 0:
         fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_FST_LOG_DIR
         for sn in naples25_sn_list:
-            logdir = fst_log_path + sn + "/"
-            os.system("mkdir -p " + logdir)
-            for logfile in log_file_list:
-                os.system("cp {:s} {:s}".format(logfile, logdir+os.path.basename(logfile)))
+            mfg_log_dir = fst_log_path + sn + "/"
+            os.system("mkdir -p " + mfg_log_dir)
+            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
     mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
-    logfile_cleanup(log_file_list)
+    logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
 
     return
 
