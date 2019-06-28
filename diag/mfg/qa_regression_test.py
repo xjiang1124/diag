@@ -16,6 +16,7 @@ from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
+from libdefs import MFG_DIAG_CMDS
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -30,11 +31,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
 
     # create the log subdir
     log_timestamp = libmfg_utils.get_timestamp()
-    sub_dir = "{:s}_{:s}_iter{:d}_{:s}/".format(corner, mtp_id, loop, log_timestamp)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
+    sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(corner, mtp_id, log_timestamp)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir))
 
     # log pkg filename
-    log_pkg_file = "{:s}{:s}_{:s}_iter{:d}_{:s}.tar.gz".format(log_dir, corner, mtp_id, loop, log_timestamp)
+    log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_4C_LOG_PKG_FILE.format(corner, mtp_id, log_timestamp)
 
     # need to be sync'd with cleanup.sh
     diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  
@@ -44,12 +45,14 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     # regression logs
     logfile_list = list()
     # diag onboard log files
-    cmd = "mkdir -p {:s}diag_logs/".format(log_dir+sub_dir)
+    diag_sub_dir = sub_dir + "diag_logs/"
+    asic_sub_dir = sub_dir + "asic_logs/"
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+diag_sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     # asic onboard log files
-    cmd = "mkdir -p {:s}asic_logs/".format(log_dir+sub_dir)
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+asic_sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -62,15 +65,15 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
 
     # pkg the onboard logs
-    cmd = "tar czvf {:s} -C {:s} {:s}".format(log_pkg_file, log_dir, sub_dir)
+    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     # create the log dir if not exist
     qa_log_dir = MTP_DIAG_Logfile.DIAG_QA_LOG_DIR + libmfg_utils.get_date() + "/"
-    cmd = "mkdir -p {:s}".format(qa_log_dir)
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(qa_log_dir)
     os.system(cmd)
     # copy the onboard logs
-    local_test_log_file = "log/{:s}_mtp_test.iter-{:d}.log".format(mtp_id, loop)
+    local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     qa_log_pkg_file = qa_log_dir + os.path.basename(log_pkg_file)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
     libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)

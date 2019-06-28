@@ -64,7 +64,7 @@ def main():
 
     for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
         mtp_mgmt_ctrl.cli_log_inf("Disconnect MTP chassis...", level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_disconnect():
+        mtp_mgmt_ctrl.mtp_mgmt_disconnect()
 
 if __name__ == "__main__":
     main()

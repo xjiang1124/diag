@@ -15,6 +15,8 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
+from libdefs import MFG_DIAG_CMDS
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -171,8 +173,8 @@ def main():
     log_filep_list = list()
     log_dir = "log/"
     log_timestamp = libmfg_utils.get_timestamp()
-    log_sub_dir = "FST_{:s}_{:s}/".format(mtp_id, log_timestamp)
-    os.system("mkdir -p {:s}".format(log_dir + log_sub_dir))
+    log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
+    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
     test_log_file = log_dir + log_sub_dir + "test_fst.log"
     log_file_list.append(test_log_file)
     test_log_filep = open(test_log_file, "w+")
@@ -275,7 +277,7 @@ def main():
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
-        nic_key = libmfg_utils.nic_key(slot)
+        key = libmfg_utils.nic_key(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -606,26 +608,32 @@ def main():
     logfile_close(log_filep_list)
 
     # pkg the logfile
-    log_pkg_file = "FST_{:s}_{:s}.tar.gz".format(mtp_id, log_timestamp)
-    os.system("tar czvf {:s} -C {:s} {:s}".format(log_dir+log_pkg_file, log_dir, log_sub_dir))
+    log_pkg_file = MTP_DIAG_Logfile.MFG_FST_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+    os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
     # move the logs to the log root dir
     if len(naples100_sn_list) > 0:
-        #fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_FST_LOG_DIR
-        fst_log_path = "/tmp/"
+        if GLB_CFG_MFG_TEST_MODE:
+            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_FST_LOG_DIR
+        else:
+            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES100_FST_LOG_DIR
         for sn in naples100_sn_list:
             mfg_log_dir = fst_log_path + sn + "/"
-            os.system("mkdir -p " + mfg_log_dir)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
     if len(naples25_sn_list) > 0:
-        fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_FST_LOG_DIR
+        if GLB_CFG_MFG_TEST_MODE:
+            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_FST_LOG_DIR
+        else:
+            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES25_FST_LOG_DIR
         for sn in naples25_sn_list:
             mfg_log_dir = fst_log_path + sn + "/"
-            os.system("mkdir -p " + mfg_log_dir)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
-    mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
+    if GLB_CFG_MFG_TEST_MODE:
+        mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
 
     return

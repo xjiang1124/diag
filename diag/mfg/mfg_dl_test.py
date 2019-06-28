@@ -15,6 +15,8 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
+from libdefs import MFG_DIAG_CMDS
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -173,7 +175,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MFG Barcode Scanner Utility", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--force-scan", help="Need to scan barcode", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
 
@@ -198,8 +200,8 @@ def main():
     log_filep_list = list()
     log_dir = "log/"
     log_timestamp = libmfg_utils.get_timestamp()
-    log_sub_dir = "DL_{:s}_{:s}/".format(mtp_id, log_timestamp)
-    os.system("mkdir -p {:s}".format(log_dir + log_sub_dir))
+    log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
+    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
     test_log_file = log_dir + log_sub_dir + "test_dl.log"
     log_file_list.append(test_log_file)
     test_log_filep = open(test_log_file, "w+")
@@ -738,26 +740,32 @@ def main():
     logfile_close(log_filep_list)
 
     # pkg the logfile
-    log_pkg_file = "DL_{:s}_{:s}.tar.gz".format(mtp_id, log_timestamp)
-    os.system("tar czvf {:s} -C {:s} {:s}".format(log_dir+log_pkg_file, log_dir, log_sub_dir))
+    log_pkg_file = MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+    os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
     # move the logs to the log root dir
     if len(naples100_sn_list) > 0:
-        #dl_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_DL_LOG_DIR
-        dl_log_path = "/tmp/"
+        if GLB_CFG_MFG_TEST_MODE:
+            dl_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_DL_LOG_DIR
+        else:
+            dl_log_path = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES100_DL_LOG_DIR
         for sn in naples100_sn_list:
             mfg_log_dir = dl_log_path + sn + "/"
-            os.system("mkdir -p " + mfg_log_dir)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
     if len(naples25_sn_list) > 0:
-        dl_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_DL_LOG_DIR
+        if GLB_CFG_MFG_TEST_MODE:
+            dl_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_DL_LOG_DIR
+        else:
+            dl_log_path = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES25_DL_LOG_DIR
         for sn in naples25_sn_list:
             mfg_log_dir = dl_log_path + sn + "/"
-            os.system("mkdir -p " + mfg_log_dir)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
-    mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
+    if GLB_CFG_MFG_TEST_MODE:
+        mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
 
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])

@@ -16,6 +16,8 @@ from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
+from libdefs import MFG_DIAG_CMDS
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -32,11 +34,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
 
     # create the log subdir
     log_timestamp = libmfg_utils.get_timestamp()
-    sub_dir = "NTNV_{:s}_{:s}/".format(mtp_id, log_timestamp)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(log_dir+sub_dir))
+    sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir))
 
     # log pkg filename
-    log_pkg_file = "{:s}NTNV_{:s}_{:s}.tar.gz".format(log_dir, mtp_id, log_timestamp)
+    log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_P2C_LOG_PKG_FILE.format(mtp_id, log_timestamp)
 
     # need to be sync'd with cleanup.sh
     diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
@@ -46,12 +48,14 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
     # regression logs
     logfile_list = list()
     # diag onboard log files
-    cmd = "mkdir -p {:s}diag_logs/".format(log_dir+sub_dir)
+    diag_sub_dir = sub_dir+"diag_logs/"
+    asic_sub_dir = sub_dir+"asic_logs/"
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+diag_sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     # asic onboard log files
-    cmd = "mkdir -p {:s}asic_logs/".format(log_dir+sub_dir)
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+asic_sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
     cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -64,7 +68,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
     test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
 
     # pkg the onboard logs
-    cmd = "tar czvf {:s} -C {:s} {:s}".format(log_pkg_file, log_dir, sub_dir)
+    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
@@ -78,14 +82,18 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
     pass_match = re.findall(nic_pass_reg_exp, buf)
 
     for slot, nic_type, sn in fail_match + pass_match:
-        if nic_type == NIC_Type.NAPLES100:
-            nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_P2C_LOG_DIR + sn + "/"
-        elif nic_type == NIC_Type.NAPLES25:
-            nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_P2C_LOG_DIR + sn + "/"
+        if nic_type == NIC_Type.NAPLES25:
+            if GLB_CFG_MFG_TEST_MODE:
+                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_P2C_LOG_DIR + sn + "/"
+            else:
+                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES25_P2C_LOG_DIR + sn + "/"
         else:
-            nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_P2C_LOG_DIR + sn + "/"
+            if GLB_CFG_MFG_TEST_MODE:
+                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_P2C_LOG_DIR + sn + "/"
+            else:
+                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES100_P2C_LOG_DIR + sn + "/"
 
-        cmd = "mkdir -p {:s}".format(nic_log_dir)
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(nic_log_dir)
         os.system(cmd)
         # copy the onboard logs
         ts = libmfg_utils.get_timestamp()
@@ -235,7 +243,8 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id):
     mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration:{:s}".format(mtp_stop_ts-mtp_start_ts), level=0)
 
     test_log_file = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id)
-    mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
+    if GLB_CFG_MFG_TEST_MODE:
+        mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
     cmd = "rm -rf {:s}".format(test_log_file)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 

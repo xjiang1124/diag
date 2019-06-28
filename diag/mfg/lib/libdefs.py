@@ -129,6 +129,24 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_NAPLES25_4C_LOG_DIR = "/mfg_log/NAPLES25/4C/"
     DIAG_MFG_NAPLES25_FST_LOG_DIR = "/mfg_log/NAPLES25/FST/"
 
+    DIAG_MFG_MODEL_NAPLES100_DL_LOG_DIR = "/tmp/mfg_log/NAPLES100/DL/"
+    DIAG_MFG_MODEL_NAPLES100_P2C_LOG_DIR = "/tmp/mfg_log/NAPLES100/P2C/"
+    DIAG_MFG_MODEL_NAPLES100_4C_LOG_DIR = "/tmp/mfg_log/NAPLES100/4C/"
+    DIAG_MFG_MODEL_NAPLES100_FST_LOG_DIR = "/tmp/mfg_log/NAPLES100/FST/"
+    DIAG_MFG_MODEL_NAPLES25_DL_LOG_DIR = "/tmp/mfg_log/NAPLES25/DL/"
+    DIAG_MFG_MODEL_NAPLES25_P2C_LOG_DIR = "/tmp/mfg_log/NAPLES25/P2C/"
+    DIAG_MFG_MODEL_NAPLES25_4C_LOG_DIR = "/tmp/mfg_log/NAPLES25/4C/"
+    DIAG_MFG_MODEL_NAPLES25_FST_LOG_DIR = "/tmp/mfg_log/NAPLES25/FST/"
+
+
+    MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
+    MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
+    MFG_P2C_LOG_PKG_FILE = "NTNV_{:s}_{:s}.tar.gz"
+    MFG_P2C_LOG_DIR = "NTNV_{:s}_{:s}/"
+    MFG_4C_LOG_PKG_FILE = "{:s}_{:s}_{:s}.tar.gz"
+    MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
+    MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
+    MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
@@ -255,6 +273,8 @@ class MFG_DIAG_CMDS:
     NIC_SW_UMOUNT_FMT = "/etc/init.d/S09mount stop"
     NIC_OS_SHUTDOWN_FMT = "poweroff"
 
+    MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
+    MFG_MK_DIR_FMT = "mkdir -p {:s}"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

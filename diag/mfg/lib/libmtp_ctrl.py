@@ -729,7 +729,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level = 0)
             return False
 
-        cmd = "mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level = 0)
             return False
@@ -1793,26 +1793,25 @@ class mtp_ctrl():
         for slot, prsnt, nic_type in zip(range(self._slots), self._nic_prsnt_list, self._nic_type_list):
             if prsnt:
                 self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
-                if self._nic_ctrl_list[slot].nic_check_status():
-                    boot_info_list = self._nic_ctrl_list[slot].nic_get_boot_info()
-                    if not boot_info_list:
-                        self.cli_log_slot_err(slot, "Retrieve NIC boot info failed")
+                if fru_valid:
+                    fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
+                    if not fru_info_list:
+                        self.cli_log_slot_err_lock(slot, "Retrieve NIC FRU failed")
                     else:
-                        self.cli_log_slot_inf(slot, "==> Boot image: {:s}({:s})".format(boot_info_list[0], boot_info_list[1]))
-
-                    if fru_valid:
-                        fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
-                        if not fru_info_list:
-                            self.cli_log_slot_err_lock(slot, "Retrieve NIC FRU failed")
-                        else:
-                            self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0], fru_info_list[1], fru_info_list[2]))
-
-                    cpld_info_list = self._nic_ctrl_list[slot].nic_get_cpld()
-                    if not cpld_info_list:
-                        self.cli_log_slot_err(slot, "Retrieve NIC CPLD info failed")
-                    else:
-                        self.cli_log_slot_inf(slot, "==> CPLD: {:s}({:s})".format(cpld_info_list[0], cpld_info_list[1]))
+                        self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0], fru_info_list[1], fru_info_list[2]))
+                boot_info_list = self._nic_ctrl_list[slot].nic_get_boot_info()
+                if not boot_info_list:
+                    self.cli_log_slot_err(slot, "Retrieve NIC boot info failed")
                 else:
+                    self.cli_log_slot_inf(slot, "==> Boot image: {:s}({:s})".format(boot_info_list[0], boot_info_list[1]))
+
+                cpld_info_list = self._nic_ctrl_list[slot].nic_get_cpld()
+                if not cpld_info_list:
+                    self.cli_log_slot_err(slot, "Retrieve NIC CPLD info failed")
+                else:
+                    self.cli_log_slot_inf(slot, "==> CPLD: {:s}({:s})".format(cpld_info_list[0], cpld_info_list[1]))
+
+                if not self._nic_ctrl_list[slot].nic_check_status():
                     self.cli_log_slot_err(slot, "NIC in failure state")
             else:
                 self.cli_log_slot_err(slot, "NIC is Absent")
