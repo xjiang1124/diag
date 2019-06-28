@@ -59,7 +59,7 @@ DSP:
     TEST#RTC:
         INFO: Test RTC device
         PLATFORM:
-            NIC: NAPLES100 NAPLES25 FORIO
+            NIC: NAPLES100 NAPLES25 FORIO VOMERO
         PRIORITY: NORMAL
         PARAM:
 
