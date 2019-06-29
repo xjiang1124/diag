@@ -82,22 +82,16 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id):
     pass_match = re.findall(nic_pass_reg_exp, buf)
 
     for slot, nic_type, sn in fail_match + pass_match:
-        if nic_type == NIC_Type.NAPLES25:
-            if GLB_CFG_MFG_TEST_MODE:
-                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_P2C_LOG_DIR + sn + "/"
-            else:
-                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES25_P2C_LOG_DIR + sn + "/"
+        if GLB_CFG_MFG_TEST_MODE:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_P2C_LOG_DIR_FMT.format(nic_type, sn)
         else:
-            if GLB_CFG_MFG_TEST_MODE:
-                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_P2C_LOG_DIR + sn + "/"
-            else:
-                nic_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES100_P2C_LOG_DIR + sn + "/"
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_P2C_LOG_DIR_FMT.format(nic_type, sn)
 
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(nic_log_dir)
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
         os.system(cmd)
         # copy the onboard logs
         ts = libmfg_utils.get_timestamp()
-        qa_log_pkg_file = nic_log_dir + os.path.basename(log_pkg_file)
+        qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
         mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files {:s}".format(sn, qa_log_pkg_file))
         libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
 

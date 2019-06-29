@@ -433,7 +433,7 @@ def main():
             if key in fail_nic_list:
                 continue
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO or card_type == NIC_Type.VOMERO:
                 sec_cpld_img_file = naples100_sec_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:
                 sec_cpld_img_file = naples25_sec_cpld_img_file
@@ -515,7 +515,7 @@ def main():
             if key in fail_nic_list:
                 continue
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO or card_type == NIC_Type.VOMERO:
                 emmc_img_file = naples100_emmc_img_file
             elif card_type == NIC_Type.NAPLES25:
                 emmc_img_file = naples25_emmc_img_file
@@ -612,28 +612,31 @@ def main():
     os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
     # move the logs to the log root dir
-    if len(naples100_sn_list) > 0:
-        if GLB_CFG_MFG_TEST_MODE:
-            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES100_FST_LOG_DIR
-        else:
-            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES100_FST_LOG_DIR
-        for sn in naples100_sn_list:
-            mfg_log_dir = fst_log_path + sn + "/"
-            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+    for sn in naples100_sn_list:
+        if not sn:
+            continue
 
-    if len(naples25_sn_list) > 0:
         if GLB_CFG_MFG_TEST_MODE:
-            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_NAPLES25_FST_LOG_DIR
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
         else:
-            fst_log_path = MTP_DIAG_Logfile.DIAG_MFG_MODEL_NAPLES25_FST_LOG_DIR
-        for sn in naples25_sn_list:
-            mfg_log_dir = fst_log_path + sn + "/"
-            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
+        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+
+    for sn in naples25_sn_list:
+        if not sn:
+            continue
+
+        if GLB_CFG_MFG_TEST_MODE:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES25, sn)
+        else:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES25, sn)
+        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
     if GLB_CFG_MFG_TEST_MODE:
         mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
+
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
 
     return

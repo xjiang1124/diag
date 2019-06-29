@@ -27,6 +27,9 @@ from libmfg_cfg import MFG_NAPLES25_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_FORIO_CPLD_VERSION
 from libmfg_cfg import MFG_FORIO_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_FORIO_QSPI_TIMESTAMP
+from libmfg_cfg import MFG_VOMERO_CPLD_VERSION
+from libmfg_cfg import MFG_VOMERO_CPLD_TIMESTAMP
+from libmfg_cfg import MFG_VOMERO_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
@@ -58,8 +61,8 @@ class mtp_ctrl():
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
-        self._valid_type_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO]
-        self._proto_type_list = [NIC_Type.FORIO]
+        self._valid_type_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
+        self._proto_type_list = [NIC_Type.FORIO, NIC_Type.VOMERO]
         self._slots = 10
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
@@ -1444,6 +1447,10 @@ class mtp_ctrl():
                 if cur_ver == MFG_FORIO_CPLD_VERSION and cur_timestamp == MFG_FORIO_CPLD_TIMESTAMP:
                     self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
                     return True
+            elif nic_type == NIC_Type.VOMERO:
+                if cur_ver == MFG_VOMERO_CPLD_VERSION and cur_timestamp == MFG_VOMERO_CPLD_TIMESTAMP:
+                    self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+                    return True
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
                 return False
@@ -1556,6 +1563,15 @@ class mtp_ctrl():
                 else:
                     self.cli_log_slot_inf_lock(slot, "Verify NIC CPLD complete")
                     return True
+            elif nic_type == NIC_Type.VOMERO:
+                if cur_ver != MFG_VOMERO_CPLD_VERSION or cur_timestamp != MFG_VOMERO_CPLD_TIMESTAMP:
+                    self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
+                    self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(MFG_VOMERO_CPLD_VERSION, cur_ver))
+                    self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(MFG_VOMERO_CPLD_TIMESTAMP, cur_timestamp))
+                    return False
+                else:
+                    self.cli_log_slot_inf_lock(slot, "Verify NIC CPLD complete")
+                    return True
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
                 return False
@@ -1613,6 +1629,14 @@ class mtp_ctrl():
                 if kernel_timestamp != MFG_FORIO_QSPI_TIMESTAMP:
                     self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
                     self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_FORIO_QSPI_TIMESTAMP, kernel_timestamp))
+                    return False
+                else:
+                    self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
+                    return True
+            elif nic_type == NIC_Type.VOMERO:
+                if kernel_timestamp != MFG_VOMERO_QSPI_TIMESTAMP:
+                    self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
+                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_VOMERO_QSPI_TIMESTAMP, kernel_timestamp))
                     return False
                 else:
                     self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
@@ -2009,6 +2033,14 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.FORIO
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.FORIO)
+
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
+                self._nic_type_list[slot] = NIC_Type.VOMERO
+                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO)
 
         return True
 

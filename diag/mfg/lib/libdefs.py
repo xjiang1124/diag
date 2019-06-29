@@ -4,6 +4,7 @@ class NIC_Type:
     NAPLES100 = "NAPLES100"
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
+    VOMERO = "VOMERO"
     UNKNOWN = "Unknown"
 
 
@@ -120,24 +121,15 @@ class MTP_DIAG_Logfile:
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
-    DIAG_MFG_NAPLES100_DL_LOG_DIR = "/mfg_log/NAPLES100/DL/"
-    DIAG_MFG_NAPLES100_P2C_LOG_DIR = "/mfg_log/NAPLES100/P2C/"
-    DIAG_MFG_NAPLES100_4C_LOG_DIR = "/mfg_log/NAPLES100/4C/"
-    DIAG_MFG_NAPLES100_FST_LOG_DIR = "/mfg_log/NAPLES100/FST/"
-    DIAG_MFG_NAPLES25_DL_LOG_DIR = "/mfg_log/NAPLES25/DL/"
-    DIAG_MFG_NAPLES25_P2C_LOG_DIR = "/mfg_log/NAPLES25/P2C/"
-    DIAG_MFG_NAPLES25_4C_LOG_DIR = "/mfg_log/NAPLES25/4C/"
-    DIAG_MFG_NAPLES25_FST_LOG_DIR = "/mfg_log/NAPLES25/FST/"
+    DIAG_MFG_DL_LOG_DIR_FMT = "/mfg_log/{:s}/DL/{:s}/"
+    DIAG_MFG_P2C_LOG_DIR_FMT = "/mfg_log/{:s}/P2C/{:s}/"
+    DIAG_MFG_4C_LOG_DIR_FMT = "/mfg_log/{:s}/4C/{:s}/{:s}/"
+    DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
 
-    DIAG_MFG_MODEL_NAPLES100_DL_LOG_DIR = "/tmp/mfg_log/NAPLES100/DL/"
-    DIAG_MFG_MODEL_NAPLES100_P2C_LOG_DIR = "/tmp/mfg_log/NAPLES100/P2C/"
-    DIAG_MFG_MODEL_NAPLES100_4C_LOG_DIR = "/tmp/mfg_log/NAPLES100/4C/"
-    DIAG_MFG_MODEL_NAPLES100_FST_LOG_DIR = "/tmp/mfg_log/NAPLES100/FST/"
-    DIAG_MFG_MODEL_NAPLES25_DL_LOG_DIR = "/tmp/mfg_log/NAPLES25/DL/"
-    DIAG_MFG_MODEL_NAPLES25_P2C_LOG_DIR = "/tmp/mfg_log/NAPLES25/P2C/"
-    DIAG_MFG_MODEL_NAPLES25_4C_LOG_DIR = "/tmp/mfg_log/NAPLES25/4C/"
-    DIAG_MFG_MODEL_NAPLES25_FST_LOG_DIR = "/tmp/mfg_log/NAPLES25/FST/"
-
+    DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
+    DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
+    DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
+    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -147,6 +139,7 @@ class MTP_DIAG_Logfile:
     MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
     MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
     MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
+
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
@@ -306,4 +299,5 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"UUT_(\d+) +NAPLES100"
     MFG_NIC_TYPE_NAPLES25  = r"UUT_(\d+) +NAPLES25"
     MFG_NIC_TYPE_FORIO     = r"UUT_(\d+) +FORIO"
+    MFG_NIC_TYPE_VOMERO    = r"UUT_(\d+) +VOMERO"
 

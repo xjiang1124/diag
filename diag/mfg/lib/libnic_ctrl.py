@@ -631,7 +631,10 @@ class nic_ctrl():
         img_name = os.path.basename(qspi_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        if self._nic_type = NIC_Type.VOMERO:
+            nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
+        else:
+            nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):

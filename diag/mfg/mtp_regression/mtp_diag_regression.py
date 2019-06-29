@@ -536,6 +536,7 @@ def main():
     naples100_nic_list = list()
     naples25_nic_list = list()
     forio_nic_list = list()
+    vomero_nic_list = list()
     pass_nic_list = list()
     pass_sn_list = list()
     fail_nic_list = list()
@@ -555,6 +556,10 @@ def main():
                 pass_sn_list.append(sn)
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.FORIO:
                 forio_nic_list.append(slot)
+                pass_nic_list.append(nic_key)
+                pass_sn_list.append(sn)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.VOMERO:
+                vomero_nic_list.append(slot)
                 pass_nic_list.append(nic_key)
                 pass_sn_list.append(sn)
             else:
@@ -587,6 +592,15 @@ def main():
         naples_exec_init_cmd(forio_test_db, mtp_mgmt_ctrl)
         naples_exec_skip_cmd(forio_nic_list, forio_test_db, mtp_mgmt_ctrl)
         naples_exec_param_cmd(forio_nic_list, forio_test_db, mtp_mgmt_ctrl)
+    if vomero_nic_list:
+        if not mtp_capability & 0x1:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Vomero".format(mtp_capability))
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            return
+        naples_diag_cfg_show(NIC_Type.VOMERO, vomero_test_db, mtp_mgmt_ctrl)
+        naples_exec_init_cmd(vomero_test_db, mtp_mgmt_ctrl)
+        naples_exec_skip_cmd(vomero_nic_list, vomero_test_db, mtp_mgmt_ctrl)
+        naples_exec_param_cmd(vomero_nic_list, vomero_test_db, mtp_mgmt_ctrl)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -605,6 +619,12 @@ def main():
     forio_para_test_list = forio_test_db.get_diag_para_test_list()
     forio_pre_test_check_list = forio_test_db.get_pre_diag_test_intf_list()
     forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
+
+    vomero_seq_test_list = vomero_test_db.get_diag_seq_test_list()
+    vomero_mtp_para_test_list = vomero_test_db.get_mtp_para_test_list()
+    vomero_para_test_list = vomero_test_db.get_diag_para_test_list()
+    vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
+    vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
@@ -652,6 +672,22 @@ def main():
             if nic_key in pass_nic_list:
                 pass_nic_list.remove(nic_key)
                 pass_sn_list.remove(sn)
+
+    # Vomero Diag Pre Check
+    if vomero_nic_list:
+        pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl, NIC_Type.VOMERO, vomero_nic_list, vomero_pre_test_check_list)
+        for slot in pre_check_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in vomero_nic_list:
+                vomero_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
 
     # Naples100 Parallel test
     if naples100_nic_list:
@@ -706,6 +742,26 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if slot in forio_nic_list and stop_on_err:
                 forio_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
+    # Vomero Parallel test
+    if vomero_nic_list:
+        diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                    NIC_Type.VOMERO,
+                                                    vomero_nic_list,
+                                                    vomero_test_db,
+                                                    vomero_para_test_list,
+                                                    stop_on_err)
+        for slot in diag_para_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in vomero_nic_list and stop_on_err:
+                vomero_nic_list.remove(slot)
             if nic_key not in fail_nic_list:
                 fail_nic_list.append(nic_key)
                 fail_sn_list.append(sn)
@@ -776,6 +832,28 @@ def main():
                 pass_nic_list.remove(nic_key)
                 pass_sn_list.remove(sn)
 
+    # Vomero Sequential test
+    if vomero_nic_list:
+        diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+                                                  NIC_Type.VOMERO,
+                                                  vomero_nic_list,
+                                                  vomero_test_db,
+                                                  vomero_seq_test_list,
+                                                  vmarg,
+                                                  stop_on_err)
+        for slot in diag_seq_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in vomero_nic_list and stop_on_err:
+                vomero_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
+
     # log the diag test history
     mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
 
@@ -843,7 +921,6 @@ def main():
                 pass_nic_list.remove(nic_key)
                 pass_sn_list.remove(sn)
 
-
     # Naples25 MTP Parallel test
     if naples25_nic_list:
         mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
@@ -883,6 +960,27 @@ def main():
             if nic_key in pass_nic_list:
                 pass_nic_list.remove(nic_key)
                 pass_sn_list.remove(sn)
+
+    # Vomero MTP Parallel test
+    if vomero_nic_list:
+        mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+                                                       NIC_Type.VOMERO,
+                                                       vomero_nic_list,
+                                                       vomero_mtp_para_test_list,
+                                                       vmarg,
+                                                       stop_on_err)
+        for slot in mtp_para_fail_list:
+            nic_key = libmfg_utils.nic_key(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in vomero_nic_list and stop_on_err:
+                vomero_nic_list.remove(slot)
+            if nic_key not in fail_nic_list:
+                fail_nic_list.append(nic_key)
+                fail_sn_list.append(sn)
+            if nic_key in pass_nic_list:
+                pass_nic_list.remove(nic_key)
+                pass_sn_list.remove(sn)
+
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 
