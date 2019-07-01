@@ -443,9 +443,11 @@ def main():
     naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml"
     naples25_test_cfg_file = "config/naples25_mtp_test_cfg.yaml"
     forio_test_cfg_file = "config/forio_mtp_test_cfg.yaml"
+    vomero_test_cfg_file = "config/vomero_mtp_test_cfg.yaml"
     naples100_test_db = diag_db(corner, naples100_test_cfg_file)
     naples25_test_db = diag_db(corner, naples25_test_cfg_file)
     forio_test_db = diag_db(corner, forio_test_cfg_file)
+    vomero_test_db = diag_db(corner, vomero_test_cfg_file)
 
     # logfiles
     open_file_track_list = list()

@@ -631,7 +631,7 @@ class nic_ctrl():
         img_name = os.path.basename(qspi_img)
 
         nic_cmd_list = list()
-        if self._nic_type = NIC_Type.VOMERO:
+        if self._nic_type == NIC_Type.VOMERO:
             nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
         else:
             nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
