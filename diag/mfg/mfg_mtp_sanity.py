@@ -89,6 +89,15 @@ def main():
             naples100_emmc_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"])
             v02_img_file_list.append(naples100_emmc_img_file)
 
+            vomero_cpld_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["CPLD_FILE"])
+            v02_img_file_list.append(vomero_cpld_img_file)
+            vomero_sec_cpld_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["SEC_CPLD_FILE"])
+            v02_img_file_list.append(vomero_sec_cpld_img_file)
+            vomero_qspi_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["QSPI_FILE"])
+            v02_img_file_list.append(vomero_qspi_img_file)
+            vomero_emmc_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["EMMC_FILE"])
+            v02_img_file_list.append(vomero_emmc_img_file)
+
         if mtp_capability & 0x2:
             naples25_cpld_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"])
             v03_img_file_list.append(naples25_cpld_img_file)

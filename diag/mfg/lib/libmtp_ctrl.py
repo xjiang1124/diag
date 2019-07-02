@@ -966,7 +966,23 @@ class mtp_ctrl():
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [naples100_cpld_img_file, naples100_qspi_img_file, naples100_emmc_img_file]:
+            for img_file in [naples100_cpld_img_file, naples100_sec_cpld_img_file, naples100_qspi_img_file, naples100_emmc_img_file]:
+                if not os.path.basename(img_file) in cmd_buf:
+                    self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
+                    self.mtp_dump_err_msg(cmd_buf)
+                    return False
+
+            vomero_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["CPLD_FILE"]
+            vomero_sec_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["SEC_CPLD_FILE"]
+            vomero_qspi_img_file = nic_fw_cfg[NIC_Type.VOMERO]["QSPI_FILE"]
+            vomero_emmc_img_file = nic_fw_cfg[NIC_Type.VOMERO]["EMMC_FILE"]
+            cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+                return False
+            cmd_buf = self.mtp_get_cmd_buf()
+
+            for img_file in [vomero_cpld_img_file, vomero_sec_cpld_img_file, vomero_qspi_img_file, vomero_emmc_img_file]:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -983,7 +999,7 @@ class mtp_ctrl():
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [naples25_cpld_img_file, naples25_qspi_img_file, naples25_emmc_img_file]:
+            for img_file in [naples25_cpld_img_file, naples25_sec_cpld_img_file, naples25_qspi_img_file, naples25_emmc_img_file]:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)

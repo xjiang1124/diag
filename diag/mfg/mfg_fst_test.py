@@ -207,6 +207,8 @@ def main():
     nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
     naples100_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["SEC_CPLD_FILE"]
     naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
+    vomero_sec_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["SEC_CPLD_FILE"]
+    vomero_emmc_img_file = nic_fw_cfg[NIC_Type.VOMERO]["EMMC_FILE"]
     naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
     naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
 
@@ -270,6 +272,7 @@ def main():
     fail_nic_list = list()
     fail_sn_list = list()
     naples100_sn_list = list()
+    vomero_sn_list = list()
     naples25_sn_list = list()
 
     mtp_mgmt_ctrl.cli_log_inf("Final Stage Test Started", level=0)
@@ -285,6 +288,10 @@ def main():
                 naples100_sn_list.append(sn)
                 emmc_img_file = naples100_emmc_img_file
                 sec_cpld_img_file = naples100_sec_cpld_img_file
+            elif card_type == NIC_Type.VOMERO:
+                vomero_sn_list.append(sn)
+                emmc_img_file = vomero_emmc_img_file
+                sec_cpld_img_file = vomero_sec_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:
                 naples25_sn_list.append(sn)
                 emmc_img_file = naples25_emmc_img_file
@@ -433,8 +440,10 @@ def main():
             if key in fail_nic_list:
                 continue
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO or card_type == NIC_Type.VOMERO:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
                 sec_cpld_img_file = naples100_sec_cpld_img_file
+            elif card_type == NIC_Type.VOMERO:
+                sec_cpld_img_file = vomero_sec_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:
                 sec_cpld_img_file = naples25_sec_cpld_img_file
             else:
@@ -515,8 +524,10 @@ def main():
             if key in fail_nic_list:
                 continue
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO or card_type == NIC_Type.VOMERO:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
                 emmc_img_file = naples100_emmc_img_file
+            elif card_type == NIC_Type.VOMERO:
+                emmc_img_file = vomero_emmc_img_file
             elif card_type == NIC_Type.NAPLES25:
                 emmc_img_file = naples25_emmc_img_file
             else:
@@ -620,6 +631,17 @@ def main():
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
         else:
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
+        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+
+    for sn in vomero_sn_list:
+        if not sn:
+            continue
+
+        if GLB_CFG_MFG_TEST_MODE:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.VOMERO, sn)
+        else:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.VOMERO, sn)
         os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
         os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 

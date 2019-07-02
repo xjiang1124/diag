@@ -268,6 +268,8 @@ def main():
     nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
     naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
     naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
+    vomero_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["CPLD_FILE"]
+    vomero_qspi_img_file = nic_fw_cfg[NIC_Type.VOMERO]["QSPI_FILE"]
     naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
     naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
 
@@ -338,6 +340,7 @@ def main():
     fail_sn_list = list()
     naples100_sn_list = list()
     naples25_sn_list = list()
+    vomero_sn_list = list()
 
     # no tag to scan, construct the nic_fru_cfg
     if not force_scan:
@@ -375,7 +378,7 @@ def main():
             mac_ui = libmfg_utils.mac_address_format(mac)
 
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO or card_type == NIC_Type.VOMERO:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
                 if not mtp_capability & 0x1:
                     mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples100")
                     mtp_mgmt_ctrl.mtp_chassis_shutdown()
@@ -384,6 +387,15 @@ def main():
                 cpld_img_file = naples100_cpld_img_file
                 qspi_img_file = naples100_qspi_img_file
                 naples100_sn_list.append(sn)
+            elif card_type == NIC_Type.VOMERO:
+                if not mtp_capability & 0x1:
+                    mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Vomero")
+                    mtp_mgmt_ctrl.mtp_chassis_shutdown()
+                    logfile_close(log_filep_list)
+                    return
+                cpld_img_file = vomero_cpld_img_file
+                qspi_img_file = vomero_qspi_img_file
+                vomero_sn_list.append(sn)
             elif card_type == NIC_Type.NAPLES25:
                 if not mtp_capability & 0x2:
                     mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples25")
@@ -503,9 +515,12 @@ def main():
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO or card_type == NIC_Type.VOMERO:
+            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
                 qspi_img_file = naples100_qspi_img_file
                 cpld_img_file = naples100_cpld_img_file
+            elif card_type == NIC_Type.VOMERO:
+                qspi_img_file = vomero_qspi_img_file
+                cpld_img_file = vomero_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:
                 qspi_img_file = naples25_qspi_img_file
                 cpld_img_file = naples25_cpld_img_file
@@ -751,6 +766,16 @@ def main():
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
         else:
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
+        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+
+    for sn in vomero_sn_list:
+        if not sn:
+            continue
+        if GLB_CFG_MFG_TEST_MODE:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(NIC_Type.VOMERO, sn)
+        else:
+            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(NIC_Type.VOMERO, sn)
         os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
         os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
 
