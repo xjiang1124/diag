@@ -18,18 +18,15 @@ from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
+from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
 from libmfg_cfg import MFG_NAPLES100_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES100_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NAPLES25_CPLD_VERSION
 from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES25_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_FORIO_CPLD_VERSION
 from libmfg_cfg import MFG_FORIO_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_FORIO_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_VOMERO_CPLD_VERSION
 from libmfg_cfg import MFG_VOMERO_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_VOMERO_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
@@ -766,9 +763,9 @@ class mtp_ctrl():
         self.mtp_mgmt_poweroff()
         self.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        self.cli_log_inf("Power off APC", level=0)
         self.mtp_apc_pwr_off()
-        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+        self.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
     def mtp_power_cycle(self):
@@ -1609,37 +1606,13 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "NIC is booted from {:s}".format(boot_image))
                 return False
 
-            if nic_type == NIC_Type.NAPLES100:
-                if kernel_timestamp != MFG_NAPLES100_QSPI_TIMESTAMP:
+            if nic_type in self._valid_type_list:
+                if kernel_timestamp != MFG_QSPI_TIMESTAMP:
                     self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
-                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_NAPLES100_QSPI_TIMESTAMP, kernel_timestamp))
+                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_QSPI_TIMESTAMP, kernel_timestamp))
                     return False
                 else:
                     self.cli_log_slot_inf(slot, "Verify NIC QSPI complete")
-                    return True
-            elif nic_type == NIC_Type.NAPLES25:
-                if kernel_timestamp != MFG_NAPLES25_QSPI_TIMESTAMP:
-                    self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
-                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_NAPLES25_QSPI_TIMESTAMP, kernel_timestamp))
-                    return False
-                else:
-                    self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
-                    return True
-            elif nic_type == NIC_Type.FORIO:
-                if kernel_timestamp != MFG_FORIO_QSPI_TIMESTAMP:
-                    self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
-                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_FORIO_QSPI_TIMESTAMP, kernel_timestamp))
-                    return False
-                else:
-                    self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
-                    return True
-            elif nic_type == NIC_Type.VOMERO:
-                if kernel_timestamp != MFG_VOMERO_QSPI_TIMESTAMP:
-                    self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
-                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_VOMERO_QSPI_TIMESTAMP, kernel_timestamp))
-                    return False
-                else:
-                    self.cli_log_slot_inf_lock(slot, "Verify NIC QSPI complete")
                     return True
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
@@ -2360,7 +2333,7 @@ class mtp_ctrl():
         self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_cmd_buf())
 
         if not self.mtp_mgmt_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.cli_log_slog_err(slot, "Failed to execute command {:s}".format(cmd))
+            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
             return False
         self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_cmd_buf())
 

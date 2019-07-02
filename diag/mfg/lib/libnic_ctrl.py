@@ -12,14 +12,6 @@ from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
-from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
-from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
-from libmfg_cfg import MFG_NAPLES100_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES100_QSPI_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES25_CPLD_VERSION
-from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES25_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
@@ -224,7 +216,7 @@ class nic_ctrl():
         # send return
         self._nic_handle.sendline("")
         # TODO: Forio need another enter to connect console
-        if self._nic_type == NIC_Type.FORIO:
+        if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
             self._nic_handle.sendline("")
 
         exp_list = [self._nic_con_prompt, "login:", "assword:"]
@@ -631,10 +623,7 @@ class nic_ctrl():
         img_name = os.path.basename(qspi_img)
 
         nic_cmd_list = list()
-        if self._nic_type == NIC_Type.VOMERO:
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAGFW_PROG_FMT.format(img_name)
-        else:
-            nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
