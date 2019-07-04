@@ -258,8 +258,8 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    # power on all nic
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -420,8 +420,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     # power cycle NIC
-    mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -504,8 +503,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     # power cycle NIC
-    mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -563,8 +561,7 @@ def main():
         fail_sn_list.append(sn)
 
     # power cycle NIC
-    mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Started\n", level=0)
     libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)

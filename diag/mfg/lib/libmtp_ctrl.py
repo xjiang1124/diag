@@ -774,7 +774,7 @@ class mtp_ctrl():
         libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
         self.cli_log_inf("Power off APC", level=0)
         self.mtp_apc_pwr_off()
-        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
         self.mtp_apc_pwr_on()
         self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
@@ -1988,6 +1988,16 @@ class mtp_ctrl():
         self.cli_log_inf("Power off all NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_OFF_DELAY)
         return True
+
+
+    def mtp_power_cycle_nic(self):
+        rc = self.mtp_power_off_nic()
+        if not rc:
+            return rc
+
+        rc = self.mtp_power_on_nic()
+        if not rc:
+            return rc
 
 
     def mtp_init_nic_type(self):

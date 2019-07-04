@@ -81,16 +81,16 @@ def main():
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
         # power cycle the NICs
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic()
+        mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
         # init the nic diag environment
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
                 if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
                     continue
-                if not mtp_mgmt_ctrl.mtp_power_off_single_nic(slot):
-                    continue
+
+        # power off the NICs
+        mtp_mgmt_ctrl.mtp_power_off_nic()
 
     for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
         mtp_mgmt_ctrl.mtp_mgmt_poweroff()

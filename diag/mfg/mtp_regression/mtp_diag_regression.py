@@ -304,8 +304,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
 def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC logfile for MTP Parallel tests", level=0)
 
-    mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # power cycle all the NICs
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed\n", level=0)
@@ -528,7 +528,8 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
         return
 
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # power cycle all the NIC
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
         mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC type, present failed")

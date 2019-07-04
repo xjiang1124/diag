@@ -345,7 +345,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
             mtp_mgmt_ctrl.mtp_apc_pwr_off()
 
-        time.sleep(MTP_Const.MTP_POWER_CYCLE_DELAY)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
         for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
             mtp_mgmt_ctrl.mtp_apc_pwr_on()

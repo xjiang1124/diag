@@ -108,9 +108,11 @@ def main():
             naples25_emmc_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"])
             v03_img_file_list.append(naples25_emmc_img_file)
 
-        for img_file in v02_img_file_list + v03_img_file_list:
+        # remoe redundent image file
+        img_file_list = list(set(v02_img_file_list + v03_img_file_list))
+        for img_file in img_file_list:
             if not libmfg_utils.file_exist(img_file):
-                mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort", level=0)
+                mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(img_file), level=0)
                 return
 
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image: {:s}".format(img_file), level=0)
@@ -120,7 +122,7 @@ def main():
             mtp_passwd = mtp_mgmt_cfg[2]
             image_dir = "/home/diag/"
             if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, img_file, image_dir):
-                mtp_mgmt_ctrl.cli_log_err("Copy Firmware image {:s} failed... Abort", level=0)
+                mtp_mgmt_ctrl.cli_log_err("Copy Firmware image {:s} failed... Abort".format(img_file), level=0)
                 return
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image: {:s} complete".format(img_file), level=0)
 

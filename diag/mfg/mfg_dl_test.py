@@ -319,8 +319,8 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    # power on all nic
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # init nic diag env.
     if force_scan:
@@ -575,8 +575,8 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    # power on all nic
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
