@@ -263,7 +263,7 @@ func init() {
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
     dispMap["FORIO"]     = forioDispStaList
-    dispMap["VEMORO"]    = forioDispStaList
+    dispMap["VOMERO"]    = forioDispStaList
     dispMap["NAPLES100"] = naples100DispStaList
     dispMap["NAPLES25"]  = naples25DispStaList
     dispMap["NAPLES_MTP"]= naplesMtpDispStaList
