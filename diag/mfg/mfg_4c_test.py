@@ -116,18 +116,16 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
     sn_err_dsc_dict = dict()
     sn_err_code_dict = dict()
 
-    for corner, test_log_file in zip(corner_list, test_log_file_list):
+    # track the analysis result for each corner
+    corner_count = len(corner_list)
+    logfile_valid_list = [False] * corner_count
+
+    for idx, corner, test_log_file in zip(range(corner_count), corner_list, test_log_file_list):
         with open(test_log_file, 'r') as fp:
             buf = fp.read()
 
-        # MTP related error, don't post any report
-        if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
-            cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
-            os.system(cmd)
-            continue
-
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
+            logfile_valid_list[idx] = True
             nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
             match = re.findall(nic_fail_reg_exp, buf)
             for slot, nic_type, sn in match:
@@ -155,6 +153,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
                     sn_err_code_dict[sn].append(result)
 
         if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
+            logfile_valid_list[idx] = True
             nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
             match = re.findall(nic_pass_reg_exp, buf)
             for slot, nic_type, sn in match:
@@ -179,18 +178,26 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_lis
                     sn_err_dsc_dict[sn].append(nic_cli_id_str)
                     sn_err_code_dict[sn].append(result)
 
+    # if any incomplete logfile, don't post test report
+    for logfile_valid, corner, test_log_file in zip(logfile_valid_list, corner_list, test_log_file_list):
+        if not logfile_valid:
+            libmfg_utils.cli_err(mtp_cli_id_str + "4C Test Fails @{:s}, Skip test report posting".format(corner))
+            cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
+            os.system(cmd)
+            return
+
     libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
     for sn in fail_sn_list:
         ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn_type_dict[sn], sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
         if not ret:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            libmfg_utils.cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
         else:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
     for sn in pass_sn_list:
         ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn_type_dict[sn], sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
         if not ret:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            libmfg_utils.cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
         else:
             libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 

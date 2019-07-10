@@ -147,6 +147,11 @@ def main():
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
             if not mtp_mgmt_ctrl.mtp_nic_diag_init():
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+            for slot in range(MTP_Const.MTP_SLOT_NUM):
+                if not mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
+                    mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+                if not mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot):
+                    mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         if mtp_loop == mtp_reload - 1:
             break
