@@ -7,7 +7,8 @@ import (
     "common/diagEngine"
     "common/errType"
 
-    "device/cpld/cpld"
+    //"device/cpld/cpld"
+    "common/spi"
     "device/qsfp"
 
     "hardware/i2cinfo"
@@ -76,6 +77,8 @@ func QsfpLaser_DisHdl(argList []string) {
 
 func QsfpPresentHdl(argList []string) {
     var err int
+    var regData uint32
+    var data byte
 
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
 
@@ -88,11 +91,8 @@ func QsfpPresentHdl(argList []string) {
     for _, qsfpInfo := range hwinfo.QsfpTbl {
         regAddr := qsfpInfo.PrstReg
         bitPos := qsfpInfo.PrstBit
-        data, errgo := cpld.ReadReg(byte(regAddr))
-        if errgo != errType.SUCCESS {
-            dcli.Println("f", qsfpInfo.DevName, "Failed to obtain present info")
-            err = errgo
-        }
+        spi.CpldRead(uint32(regAddr), &regData)
+        data = byte(regData)
 
         prstSts := data & (1<<byte(bitPos))
         if prstSts != 0 {

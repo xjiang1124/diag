@@ -39,7 +39,10 @@ class diagEngineHost:
 
         # DSP TEST, e.g. SADD/SMEMBERS TEST:NAPLES:PMBUS
         self.dspTestKeyFmt = 'TEST:{}:{}'
-        
+ 
+        # DSP CMD, e.g. SADD/SMEMBERS CMD:NAPLES:PMBUS
+        self.dspCmdKeyFmt = 'CMD:{}:{}'
+       
         # Param key, e.g. HSET PARAM:NAPLES:PMBUS:INTR timeout 50
         self.paramKeyFmt = 'PARAM:{}:{}:{}'
          
@@ -99,7 +102,7 @@ class diagEngineHost:
         cardType = self.r.hget(self.cardDictKeyFmt, cardNm)
         return cardType
 
-    def parseCardInfo(self, cardNm='', dspNm='', testNm=''):
+    def parseCardInfo(self, cardNm='', dspNm='', testNm='', cmdMode=False):
         # Invalid input
         messageFmt = 'Invalid input! cardNm: {}, dspNm: {}, testNm: {}'
         if (cardNm=='' and dspNm=='' and testNm=='') or \
@@ -110,7 +113,10 @@ class diagEngineHost:
     
         cardNm = cardNm.upper()
         dspNm = dspNm.upper()
-        testNm = testNm.upper()
+        if cmdMode == False:
+            testNm = testNm.upper()
+        else:
+            testNm = testNm.lower()
 
         print "P0", cardNm, dspNm, testNm
         # In ase cardNm is empty, take it as local card
@@ -149,7 +155,11 @@ class diagEngineHost:
         for dsp in dspList:
             if testNm == '':
                 # Get tests per dsp
-                testList = self.r.smembers(self.dspTestKeyFmt.format(self.getCardType(cardNm), dsp))
+                if cmdMode == False:
+                    testList = self.r.smembers(self.dspTestKeyFmt.format(self.getCardType(cardNm), dsp))
+                else:
+                    testList = self.r.smembers(self.dspCmdKeyFmt.format(self.getCardType(cardNm), dsp))
+
                 for test in testList:
                     testItem = [cardNm, dsp, test]
                     tests.append(testItem)
@@ -184,12 +194,20 @@ class diagEngineHost:
     
         return paramDict
 
-    def parseTestInfo(self, cardNm='', dspNm='', testNm='', param=dict()):
+    def parseCmdInfo(self, cardNm='', dspNm='', testNm='', param=dict()):
+        return self.parseTestInfo(cardNm, dspNm, testNm, param, True)
+
+    def parseTestInfo(self, cardNm='', dspNm='', testNm='', param=dict(), cmdMode=False):
     #def parseTestInfo(self, cardNm='', dspNm='', testNm='', **param):
         cardNm = cardNm.upper()
         dspNm = dspNm.upper()
-        testNm = testNm.upper()
-        testList, err = self.parseCardInfo(cardNm, dspNm, testNm)
+        if cmdMode == False:
+            testNm = testNm.upper()
+            print "upper"
+        else:
+            testNm = testNm.lower()
+
+        testList, err = self.parseCardInfo(cardNm, dspNm, testNm, cmdMode)
         if err == -1:
             print "Failed to parse card info!"
             return [], -1
@@ -351,6 +369,20 @@ class diagEngineHost:
     def runTest (self, cardName='', dspName='', testName='', param=dict()):
     
         testList, err = self.parseTestInfo(cardName, dspName, testName, param)
+        if err == -1:
+            print "Failed to parse test info!"
+            return -1
+    
+        self.showTestList(testList)
+
+        testList = self.dispatchTestList(testList)
+    
+        self.waitForTestFinish(testList)
+        self.showTestResult(testList)
+
+    def runCmd (self, cardName='', dspName='', testName='', param=dict()):
+    
+        testList, err = self.parseCmdInfo(cardName, dspName, testName, param)
         if err == -1:
             print "Failed to parse test info!"
             return -1

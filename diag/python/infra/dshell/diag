@@ -24,6 +24,13 @@ group.add_argument("-r",  "--runtest", action="store_true",
 Run test
 format: diag -r -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]\
 ''')
+
+group.add_argument("-rc",  "--runcmd", action="store_true", 
+        help='''\
+Run cmd
+format: diag -rc -c CARD_IDX [-d DSP] [-t TEST] [-p PARAM_LIST]\
+''')
+
 group.add_argument("-param", "--setParam", action="store_true", help="User specifies test parameters")
 group.add_argument("-skip",  "--skiptest", action="store_true",
         help='''\
@@ -130,6 +137,11 @@ def convertParam(param):
 if args.runtest == True:
     paramList = convertParam(args.parameter)
     diaghost.runTest(args.cardidx, args.dspname, args.testname, paramList)
+    sys.exit()
+
+if args.runcmd == True:
+    paramList = convertParam(args.parameter)
+    diaghost.runCmd(args.cardidx, args.dspname, args.testname, paramList)
     sys.exit()
 
 if args.stopOnErr == 0 or args.stopOnErr == 1:
