@@ -93,31 +93,38 @@ class nic_test:
             self.nic_con.power_cycle_uart(self.baud_rate, slot)
 
         session = common.session_start()
-        session.timeout = timeout
-        self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
-        self.nic_con.uart_session_cmd(session, "")
-        self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
-        self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
-        if vmarg > 0:
-            self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh high")
-        elif vmarg < 0:
-            self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh low")
-        else:
-            pass
-        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
-        self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+        try:
+            session.timeout = timeout
+            self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
+            self.nic_con.uart_session_cmd(session, "")
+            self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+            self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
+            if vmarg > 0:
+                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh high")
+            elif vmarg < 0:
+                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh low")
+            else:
+                pass
+            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
+            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
+            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
+            self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
 
-        session.sendline(test_cmd)
-        session.sendline("\r")
+            session.sendline(test_cmd)
+            session.sendline("\r")
 
-        self.nic_con.uart_session_stop(session)
+            self.nic_con.uart_session_stop(session)
+
+            print "=== Snake on slot {} started ===".format(slot)
+        except:
+            try: 
+                self.nic_con.uart_session_stop(session)
+            except:
+                pass
+            print "=== Snake on slot {} FAILED to start! ===".format(slot)
+            ret = -1
 
         common.session_stop(session)
-
-        print "=== Snake on slot {} started ===".format(slot)
-
         return ret
 
     def test_check(self, slot=0, test_type="snake", mode="hbm", timeout=30):
@@ -172,8 +179,11 @@ class nic_test:
         test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off")
-            test_result[slot] = "No Result"
+            ret = self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off")
+            if ret != 0:
+                test_result[slot] = "FAIL"
+            else:
+                test_result[slot] = "No Result"
 
         print "Wait for {}s before checking result".format(wait_time)
         time.sleep(wait_time)
