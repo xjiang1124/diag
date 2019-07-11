@@ -31,6 +31,8 @@ from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
 from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
+from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
+from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
 
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
@@ -58,8 +60,8 @@ class mtp_ctrl():
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
-        self._valid_type_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
-        self._proto_type_list = [NIC_Type.FORIO, NIC_Type.VOMERO]
+        self._valid_type_list = MFG_VALID_NIC_TYPE_LIST
+        self._proto_type_list = MFG_PROTO_NIC_TYPE_LIST
         self._slots = 10
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
@@ -2340,15 +2342,18 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         sn = self.mtp_get_nic_sn(slot)
 
-        if nic_type == NIC_Type.NAPLES100:
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
+            return True
+        elif nic_type == NIC_Type.NAPLES100:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.VOMERO:
+            vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type in self._proto_type_list:
-            self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
-            return True
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False

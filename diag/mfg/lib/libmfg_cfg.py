@@ -1,3 +1,5 @@
+from libdefs import NIC_Type
+
 GLB_CFG_MFG_TEST_MODE = True
 
 MFG_BYPASS_PSU_CHECK = True
@@ -30,6 +32,8 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=10'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
+MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
