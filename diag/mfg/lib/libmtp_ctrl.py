@@ -2335,7 +2335,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_set_nic_avs(self, slot):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
 
@@ -2358,15 +2358,15 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if not self.mtp_mgmt_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
             return False
-        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_cmd_buf())
+        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
 
-        if not self.mtp_mgmt_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(cmd))
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
             return False
-        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_cmd_buf())
+        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
 
         return True
 
