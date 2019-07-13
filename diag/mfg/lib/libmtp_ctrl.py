@@ -1220,7 +1220,7 @@ class mtp_ctrl():
 
         if test == "PRBS_ETH":
             filename = "{:s}_prbs_eth.log".format(sn)
-        if test == "PRBS_PCIE":
+        elif test == "PRBS_PCIE":
             filename = "{:s}_prbs_pcie.log".format(sn)
         elif test == "SNAKE_HBM":
             filename = "{:s}_snake_hbm.log".format(sn)

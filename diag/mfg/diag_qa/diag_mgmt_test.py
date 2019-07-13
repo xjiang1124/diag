@@ -74,6 +74,7 @@ def main():
     parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
     parser.add_argument("--mtp-reload", help="Iterations of the MTP reload", type=int, required=True)
     parser.add_argument("--nic-reload", help="Iterations of the NIC reload", type=int, required=True)
+    parser.add_argument("--vmarg", help="Voltage Margin")
 
     args = parser.parse_args()
     mtp_id = args.mtp
@@ -83,6 +84,10 @@ def main():
         apc = True
     else:
         apc = False
+    if args.vmarg:
+        vmarg = int(args.vmarg)
+    else:
+        vmarg = 0
 
     mtp_cfg_db = load_mtp_cfg()
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -137,6 +142,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Init MTP HW fails", level=0)
             return
 
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for nic_loop in range(nic_reload):
             mtp_mgmt_ctrl.cli_log_inf("##########################################", level=0)
             mtp_mgmt_ctrl.cli_log_inf("####### Power cycle NIC Iter - {:2d} #######".format(nic_loop), level=0)
@@ -145,12 +151,16 @@ def main():
             mtp_mgmt_ctrl.mtp_power_on_nic()
             if not mtp_mgmt_ctrl.mtp_nic_init():
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
                 mtp_mgmt_ctrl.mtp_enter_user_ctrl()
             for slot in range(MTP_Const.MTP_SLOT_NUM):
+                if not nic_prsnt_list[slot]:
+                    continue
                 if not mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
                     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
                 if not mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot):
+                    mtp_mgmt_ctrl.mtp_enter_user_ctrl()
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                     mtp_mgmt_ctrl.mtp_enter_user_ctrl()
 
         if mtp_loop == mtp_reload - 1:

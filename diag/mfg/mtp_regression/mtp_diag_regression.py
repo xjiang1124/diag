@@ -323,7 +323,7 @@ def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
             logfile_list.append("prbs_pcie.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
-            mtp_mgmt_ctrl.cli_log_slot_err("Collecting NIC logfile for MTP Parallel tests failed\n")
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC logfile for MTP Parallel tests failed\n")
             continue
 
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC logfile for MTP Parallel tests complete\n", level=0)
