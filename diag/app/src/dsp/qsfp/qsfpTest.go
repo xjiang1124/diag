@@ -6,7 +6,11 @@ import (
     "common/dcli"
     "common/diagEngine"
     "common/errType"
+    "common/spi"
+
     "device/qsfp"
+
+    "hardware/hwinfo"
     "hardware/i2cinfo"
 )
 
@@ -30,6 +34,9 @@ func testQsfp(devName string) (err int) {
 
 func QsfpI2CHdl(argList []string) {
     var ret int
+    var regData uint32
+    var data byte
+
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
 
     errFs := fs.Parse(argList)
@@ -37,7 +44,9 @@ func QsfpI2CHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    for _, devName := range(qsfpTestList) {
+    //for _, devName := range(qsfpTestList) {
+    for _, qsfpInfo := range hwinfo.QsfpTbl {
+        devName := qsfpInfo.DevName
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
         if err != errType.SUCCESS {
              ret =  err
@@ -45,11 +54,27 @@ func QsfpI2CHdl(argList []string) {
         }
         dcli.Println("i", "Starting testing", devName)
 
+        // Check present bits
+        regAddr := qsfpInfo.PrstReg
+        bitPos := qsfpInfo.PrstBit
+        spi.CpldRead(uint32(regAddr), &regData)
+        data = byte(regData)
+
+        prstSts := data & (1<<byte(bitPos))
+        if prstSts != 0 {
+            dcli.Println("i", qsfpInfo.DevName, "Present")
+        } else {
+            dcli.Println("i", qsfpInfo.DevName, "Not Present")
+            ret = errType.FAIL
+            break
+        }
+
         switch i2cInfo.Comp {
         case "QSFP":
             err = testQsfp(devName)
             if err != errType.SUCCESS {
                 ret = err
+                break
             }
 
         default:

@@ -6,9 +6,8 @@ import (
     "common/dcli"
     "common/diagEngine"
     "common/errType"
-
-    //"device/cpld/cpld"
     "common/spi"
+
     "device/qsfp"
 
     "hardware/i2cinfo"
