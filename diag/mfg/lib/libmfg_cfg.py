@@ -37,10 +37,12 @@ MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
-NAPLES_SN_FMT = r"FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-NAPLES_MAC_FMT = r"00AECD[A-F0-9]+$"
+FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+FLX_PENNANG_SN_FMT = "FPN\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENNANG_SN_FMT)
+NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
 NAPLES_PN_FMT = r"[A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2}$"
-NAPLES_DISP_SN_FMT = r"Serial Number +(FL[M,Z,G]\d{2}[0-5]{1}\d{1}[0-9A-F]{4})"
+NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENNANG_SN_FMT)
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 NAPLES_DISP_PN_FMT = r"Part Number +([A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2})"

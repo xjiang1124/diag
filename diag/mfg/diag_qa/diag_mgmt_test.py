@@ -93,7 +93,10 @@ def main():
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     diag_log_filep = open("../log/{:s}_nic_mgmt_diag.log".format(mtp_id), 'w+')
-    diag_nic_log_filep_list = [diag_log_filep] * MTP_Const.MTP_SLOT_NUM 
+    diag_nic_log_filep_list = list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        diag_nic_log_filep = open("../log/{:s}_NIC{:02d}_nic_mgmt_diag.log".format(mtp_id, slot+1), 'w+')
+        diag_nic_log_filep_list.append(diag_nic_log_filep)
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
 
     if apc:
