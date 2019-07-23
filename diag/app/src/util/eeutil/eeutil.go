@@ -51,29 +51,36 @@ func eepromTlbInit(uut string) {
             eeprom.EepromTbl = eeprom.MtpTbl
         } else {
             eeprom.EepromTbl = eeprom.Naples100Tbl
+            if eeprom.HpeNaples == 1 {
+                eeprom.EepromExtTbl = eeprom.HpeTbl
+            }
         }
     } else {
         // Assume now it is ARM
         cardType = os.Getenv(uut)
         eeprom.EepromTbl = eeprom.Naples100Tbl
+        if eeprom.HpeNaples == 1 {
+            eeprom.EepromExtTbl = eeprom.HpeTbl
+        }
     }
     eeprom.CardType = cardType
     fmt.Println(eeprom.CardType)
 }
 
 func main() {
-    devNamePtr := flag.String("dev",    "FRU",          "Device name")
-    infoPtr    := flag.Bool  ("info",   false,          "Display device info")
-    dispPtr    := flag.Bool  ("disp",   false,          "Display eeprom content")
-    updatePtr  := flag.Bool  ("update", false,          "Update eeprom")
-    macPtr     := flag.String("mac",    "",             "MAC address")
-    snPtr      := flag.String("sn",     "",             "Serial number")
-    pnPtr      := flag.String("pn",     "",             "Part number")
-    mfgDatePtr := flag.String("date",   "",             "Manufacturing date")
-    fieldPtr   := flag.String("field",  "all",          "Display specific eeprom field")
-    dumpPtr    := flag.Bool ("dump", 	false,          "Dump FRU")
-    uutPtr     := flag.String("uut",  "UUT_NONE", 		"Target UUT")
-    majorPtr   := flag.String("maj",     "",            "Hardware mayor reversion")
+    devNamePtr	:= flag.String("dev",    "FRU",          "Device name")
+    infoPtr		:= flag.Bool  ("info",   false,          "Display device info")
+    dispPtr		:= flag.Bool  ("disp",   false,          "Display eeprom content")
+    updatePtr	:= flag.Bool  ("update", false,          "Update eeprom")
+    macPtr		:= flag.String("mac",    "",             "MAC address")
+    snPtr		:= flag.String("sn",     "",             "Serial number")
+    pnPtr		:= flag.String("pn",     "",             "Part number")
+    mfgDatePtr	:= flag.String("date",   "",             "Manufacturing date")
+    fieldPtr	:= flag.String("field",  "all",          "Display specific eeprom field")
+    dumpPtr		:= flag.Bool ("dump", 	false,          "Dump FRU")
+    uutPtr		:= flag.String("uut",  "UUT_NONE", 		"Target UUT")
+    majorPtr	:= flag.String("maj",     "",            "Hardware mayor reversion")
+    hpePtr		:= flag.Bool  ("hpe",     false,          "HPE eeprom operation option")    
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -89,8 +96,12 @@ func main() {
     
     defer hwinfo.PostUutClean(lock)
 
-    eepromTlbInit(uut)
+    if *hpePtr == true {
+        eeprom.HpeNaples = 1
+    }
     
+    eepromTlbInit(uut)
+
     if *infoPtr == true {
         dispInfo()
         return
@@ -100,7 +111,7 @@ func main() {
         hwdev.EepromDisp(devName, field)
         return
     }
-
+    
     if *updatePtr == true {
 //        hwdev.EepromUpdate(devName, mac, sn)
         if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {
