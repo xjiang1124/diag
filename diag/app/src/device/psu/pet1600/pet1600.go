@@ -43,12 +43,12 @@ func DispStatus(devName string) (err int) {
         return
     }
 
-    dataBuf, err = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
-    outStr = string(dataBuf[:MFR_MODEL_LEN])
-    cli.Println("i", "MFR_MODEL:", outStr)
-    if err != errType.SUCCESS {
-        return
-    }
+//    dataBuf, err = pmbusCmd.ReadMfrModel(devName, MFR_MODEL_LEN)
+//    outStr = string(dataBuf[:MFR_MODEL_LEN])
+//    cli.Println("i", "MFR_MODEL:", outStr)
+//    if err != errType.SUCCESS {
+//        return
+//    }
 
     // Status
     stsTitle := []string {"STATUS", "STS_VOUT", "STS_IOUT", "STS_INPUT",
