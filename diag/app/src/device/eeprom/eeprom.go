@@ -3,6 +3,7 @@ package eeprom
 import (
     "fmt"
     "os"
+    "bytes"
 //    "strconv"
     "time"
     "common/cli"
@@ -19,6 +20,9 @@ const(
     STRING = 4
 )
 
+var SnAllZero = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var SnAllF = []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+    
 // EEPROM entry data structure
 type entry struct {
     Name     string
@@ -186,6 +190,15 @@ func ProgEeprom(devName string) (err int) {
                 updateIntChk()
             }
         }
+        if (entry.Name == "Serial Number") && (HpeNaples == 1) {
+            entry.Value = make([]byte, entry.NumBytes)
+            updateIntChk()
+        }
+        
+        if (entry.Name == "Part Number") && (HpeNaples == 1) {
+            entry.Value = make([]byte, entry.NumBytes)
+            updateIntChk()
+        }
         if entry.Name == "Product Name" {
             if CardType == "NAPLES25" {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
@@ -199,10 +212,10 @@ func ProgEeprom(devName string) (err int) {
             }
         }
         if entry.Name == "Part Number" && CardType == "NAPLES25" {
-            if HpeNaples == 1 {
-                copy(entry.Value, []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 0x30, 0x35, 0x2D, 0x30, 0x34, 0x20, 0x30, 0x31})
-                updateIntChk()
-            }
+//            if HpeNaples == 1 {
+//                copy(entry.Value, []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 0x30, 0x35, 0x2D, 0x30, 0x34, 0x20, 0x30, 0x31})
+//                updateIntChk()
+//            }
 //            fmt.Printf("value 0x%x\n", entry.Value[6])
             if entry.Value[6] == byte(0x38) {
                  is8g = 1
@@ -463,6 +476,10 @@ func UpdateSn(devName string, sn []byte) (err int) {
                     date, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, date)
                     continue
+                } else if entry.Name == "HPE Product Number" {
+                    pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, pn)
+                    continue
                 }
             }
         }
@@ -509,6 +526,27 @@ func UpdatePn(devName string, pn []byte) (err int) {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
+            }
+        }
+        
+        if HpeNaples == 1 {
+            for _, entry := range(EepromExtTbl) {
+                if entry.Name == "HPE Product Number" {
+                    copy(entry.Value, pn)
+                    continue
+                } else if entry.Name == "HPE Serial Number" {
+                    sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, sn)
+                    continue
+                } else if entry.Name == "MAC Address Base" {
+                    mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, mac)
+                    continue
+                } else if entry.Name == "Manufacture Date/Time" {
+                    date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, date)
+                    continue
+                }
             }
         }
         updateIntChk()
@@ -605,6 +643,10 @@ func UpdateDate(devName string, str string) (err int) {
                     mac, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, mac)
                     continue
+                } else if entry.Name == "HPE Product Number" {
+                    pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, pn)
+                    continue
                 } else if entry.Name == "HPE Serial Number" {
                     sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, sn)
@@ -673,11 +715,22 @@ func DispEeprom(devName string, field string) (err int) {
             }
         } else if(entry.Name == "Reserved") {
             continue
+        } else if (entry.Name == "Serial Number" || entry.Name == "Part Number") && (HpeNaples == 1) {
+            continue
         }
         data, err = readField(devName, entry.Offset, entry.NumBytes)
         if err != errType.SUCCESS {
             cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
             return
+        }
+        if(field == "SN") {
+            if(bytes.Equal(SnAllZero, data) || bytes.Equal(SnAllF, data)) {
+                data, err = readField(devName, HpeTbl[9].Offset, HpeTbl[9].NumBytes)
+                dataStr := string(data[:HpeTbl[9].NumBytes])
+                outStr = fmt.Sprintf(fmtStr, HpeTbl[9].Name, dataStr)
+                cli.Println("i", outStr)
+                return
+            }
         }
         if entry.DataType == STRING {
             dataStr := string(data[:entry.NumBytes])
