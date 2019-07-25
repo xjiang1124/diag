@@ -24,7 +24,7 @@
 #define FLASH_TRANS_SIZE				16
 #define CPLD_DATA_CACHE_START_ADDR		0x50
 #define CPLD_DATA_CACHE_END_ADDR		0x5F
-#define CFG_SIZE						(16*2175)
+#define CFG_SIZE						(16*3198)
 
 #define MDIO_CRTL_LO_REG		0x6
 #define MDIO_CRTL_HI_REG		0x7
