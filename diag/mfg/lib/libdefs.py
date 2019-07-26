@@ -8,6 +8,12 @@ class NIC_Type:
     UNKNOWN = "Unknown"
 
 
+class NIC_Vendor:
+    PENSANDO = "Pensando"
+    HPE = "HPE"
+    UNKNOWN = "Unknown"
+
+
 class Env_Cond(Enum):
     LTLV = "LTLV"
     LTNV = "LTNV"
@@ -61,6 +67,7 @@ class MTP_Const:
     MTP_OS_SHUTDOWN_DELAY = 60
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
+    MTP_FRU_UPDATE_DELAY = 1200
     MTP_PARA_TEST_DELAY = 1800
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
@@ -180,9 +187,14 @@ class MFG_DIAG_CMDS:
     MTP_CPLD_READ_FMT = "cpldutil -cpld-rd -addr=0x{:x}"
 
     MTP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update"
+    MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
     MTP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d}"
+    MTP_HP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpe"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
+    NIC_HP_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -hpe"
     NIC_FRU_DISP_FMT = "{:s}eeutil -disp"
+    NIC_HP_FRU_DISP_FMT = "{:s}eeutil -disp -hpe"
+    NIC_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn"
 
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 

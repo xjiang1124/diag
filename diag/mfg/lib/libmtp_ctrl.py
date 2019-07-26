@@ -1813,6 +1813,7 @@ class mtp_ctrl():
                     if not fru_info_list:
                         self.cli_log_slot_err_lock(slot, "Retrieve NIC FRU failed")
                     else:
+                        self.cli_log_slot_inf(slot, "==> Manufacture Vendor: {:s}".format(fru_info_list[3]))
                         self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0], fru_info_list[1], fru_info_list[2]))
                 boot_info_list = self._nic_ctrl_list[slot].nic_get_boot_info()
                 if not boot_info_list:

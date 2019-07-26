@@ -11,7 +11,7 @@ VOMERO:
     EMMC_FILE: "/home/diag/naples_fw_06042019.tar"
 
 NAPLES25:
-    CPLD_FILE: "/home/diag/naples25_cpld_rev2_06032019.bin"
-    SEC_CPLD_FILE: "/home/diag/naples25_cpld_rev82_06032019.bin"
+    CPLD_FILE: "/home/diag/naples25_cpld_rev3_07192019.bin"
+    SEC_CPLD_FILE: "/home/diag/naples25_cpld_rev83_07222019.bin"
     QSPI_FILE: "/home/diag/naples_diagfw_07012019.tar"
     EMMC_FILE: "/home/diag/naples_fw_06042019.tar"

@@ -204,6 +204,8 @@ def special_char_removal(buf):
 def serial_number_validate(tmp):
     if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
         return tmp
+    elif re.match(HP_SN_FMT, tmp) and (len(tmp) == 10):
+        return tmp
     else:
         return None
 
@@ -217,6 +219,8 @@ def mac_address_validate(tmp):
 
 def part_number_validate(tmp):
     if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13):
+        return tmp
+    if re.match(HP_PN_FMT, tmp) and (len(tmp) == 10):
         return tmp
     else:
         return None

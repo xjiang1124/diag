@@ -12,8 +12,8 @@ MFG_QSPI_TIMESTAMP = "07-01-2019"
 MFG_NAPLES100_CPLD_VERSION = "0x9"
 MFG_NAPLES100_CPLD_TIMESTAMP = "05-31"
 
-MFG_NAPLES25_CPLD_VERSION = "0x2"
-MFG_NAPLES25_CPLD_TIMESTAMP = "06-03"
+MFG_NAPLES25_CPLD_VERSION = "0x3"
+MFG_NAPLES25_CPLD_TIMESTAMP = "07-19"
 
 MFG_FORIO_CPLD_VERSION = "0x4"
 MFG_FORIO_CPLD_TIMESTAMP = "04-11"
@@ -38,14 +38,20 @@ MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-FLX_PENNANG_SN_FMT = "FPN\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENNANG_SN_FMT)
+FLX_PENANG_SN_FMT = "FPN\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
+HP_PENANG_SN_FMT = "2YU\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
+NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
+HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
-NAPLES_PN_FMT = r"[A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2}$"
-NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENNANG_SN_FMT)
+NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9]{2}$"
+HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
+NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
+HP_DISP_SN_FMT = r"HPE Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
-NAPLES_DISP_PN_FMT = r"Part Number +([A-F0-9]{2}-[A-F0-9]{4}-[A-F0-9]{2} [A-F0-9]{2})"
+NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9]{2})"
+HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 
