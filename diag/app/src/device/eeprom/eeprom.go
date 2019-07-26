@@ -190,15 +190,15 @@ func ProgEeprom(devName string) (err int) {
                 updateIntChk()
             }
         }
-        if (entry.Name == "Serial Number") && (HpeNaples == 1) {
-            entry.Value = make([]byte, entry.NumBytes)
-            updateIntChk()
-        }
-        
-        if (entry.Name == "Part Number") && (HpeNaples == 1) {
-            entry.Value = make([]byte, entry.NumBytes)
-            updateIntChk()
-        }
+//        if (entry.Name == "Serial Number") && (HpeNaples == 1) {
+//            entry.Value = make([]byte, entry.NumBytes)
+//            updateIntChk()
+//        }
+//        
+//        if (entry.Name == "Part Number") && (HpeNaples == 1) {
+//            entry.Value = make([]byte, entry.NumBytes)
+//            updateIntChk()
+//        }
         if entry.Name == "Product Name" {
             if CardType == "NAPLES25" {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
@@ -715,9 +715,9 @@ func DispEeprom(devName string, field string) (err int) {
             }
         } else if(entry.Name == "Reserved") {
             continue
-        } else if (entry.Name == "Serial Number" || entry.Name == "Part Number") && (HpeNaples == 1) {
+        } /*else if (entry.Name == "Serial Number" || entry.Name == "Part Number") && (HpeNaples == 1) {
             continue
-        }
+        }*/
         data, err = readField(devName, entry.Offset, entry.NumBytes)
         if err != errType.SUCCESS {
             cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
