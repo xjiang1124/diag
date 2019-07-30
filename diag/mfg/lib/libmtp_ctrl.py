@@ -706,6 +706,20 @@ class mtp_ctrl():
         return self._asic_ver
 
 
+    def mtp_stale_image_cleanup(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command: {:s}".format(cmd), level = 0)
+            return False
+
+        cmd = "rm -f naples* image_a*"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command: {:s}".format(cmd), level = 0)
+            return False
+
+        return True
+
+
     def mtp_update_mtp_diag_image(self, image):
         cmd = "rm -rf {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_MTP_DIAG_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):

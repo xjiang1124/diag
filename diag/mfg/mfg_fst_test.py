@@ -173,7 +173,7 @@ def main():
     log_filep_list = list()
     log_dir = "log/"
     log_timestamp = libmfg_utils.get_timestamp()
-    log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
+    log_sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
     test_log_file = log_dir + log_sub_dir + "test_fst.log"
     log_file_list.append(test_log_file)

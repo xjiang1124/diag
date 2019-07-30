@@ -301,6 +301,7 @@ def main():
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
+        time.sleep(2)
 
     # monitor all the thread
     while True:
