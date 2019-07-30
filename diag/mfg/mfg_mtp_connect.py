@@ -34,8 +34,12 @@ def main():
     if args.mtp:
         mtp_id = args.mtp
 
-    mtp_chassis_cfg_file = os.path.abspath("config/pensando_pro_srv1_mtp_chassis_cfg.yaml")
-    mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    mtp_chassis_cfg_file_list = list()
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtp_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     if not mtp_id:
         mtpid_list = list(mtp_cfg_db.get_mtpid_list())

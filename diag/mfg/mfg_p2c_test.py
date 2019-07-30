@@ -169,8 +169,11 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
 
 def load_mtp_cfg():
     # DL/P2C MTP Chassis
-    mtp_chassis_cfg_file = os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml")
-    mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    mtp_chassis_cfg_file_list = list()
+    if not GLB_CFG_MFG_TEST_MODE:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
 

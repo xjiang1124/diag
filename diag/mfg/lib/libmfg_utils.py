@@ -317,18 +317,22 @@ def multiple_select_menu(title, opt_list):
             cli_err("Invalid MTP ID: {:s}".format(scan_input))
 
 
-def load_cfg_from_yaml(yaml_file):
-    if not os.path.exists(yaml_file):
-        sys_exit("Yaml config file: " + yaml_file + " doesn't exist")
+def load_cfg_from_yaml(yaml_file_list):
+    yaml_merge_content = ""
+    for yaml_file in yaml_file_list:
+        if not os.path.exists(yaml_file):
+            sys_exit("Yaml config file: " + yaml_file + " doesn't exist")
 
-    with open(yaml_file, "r") as f:
-        cfg = yaml.load(f)
+        with open(yaml_file, "r") as f:
+            yaml_merge_content += f.read()
+
+    cfg = yaml.safe_load(yaml_merge_content)
 
     if not cfg:
-        sys_exit("Load yaml config file: " + yaml_file + " failed")
+        sys_exit("Load yaml config files failed")
 
     if len(cfg) == 0:
-        sys_exit("No content in yaml config file: " + yaml_file)
+        sys_exit("No content in yaml config files")
 
     return cfg
 

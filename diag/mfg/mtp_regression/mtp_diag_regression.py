@@ -422,8 +422,12 @@ def main():
         vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
 
     # load the mtp config
-    mtp_chassis_cfg_file = "config/pensando_pro_srv1_mtp_chassis_cfg.yaml"
-    mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    mtp_chassis_cfg_file_list = list()
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtp_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     # find the mtp management config based on the mtpid
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)

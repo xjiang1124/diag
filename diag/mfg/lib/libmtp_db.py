@@ -1,7 +1,7 @@
 import libmfg_utils
 
 class mtp_db(): 
-    def __init__(self, mtp_cfg_file):
+    def __init__(self, mtp_cfg_file_list):
         # terminal server info
         self._ts_type = dict()
         self._ts = dict()
@@ -27,11 +27,11 @@ class mtp_db():
         self._capability = dict()
         self._mtpid_list = list()
 
-        mtp_cfg = libmfg_utils.load_cfg_from_yaml(mtp_cfg_file)
+        mtp_cfg = libmfg_utils.load_cfg_from_yaml(mtp_cfg_file_list)
 
         for mtpid in mtp_cfg.keys():
             if mtpid in self._mtpid_list:
-                libmfg_utils.sys_exit("Duplicate mtpid: " + mtpid + " detected in " + mtp_cfg_file)
+                libmfg_utils.sys_exit("Duplicate mtpid: " + mtpid + " detected!")
 
             self._ts_type[mtpid] = ""
             self._ts[mtpid] = mtp_cfg[mtpid]["TS"]

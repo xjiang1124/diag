@@ -19,9 +19,14 @@ from libpro_srv_db import pro_srv_db
 
 def main():
     parser = argparse.ArgumentParser(description="Diag MTP Poweroff", formatter_class=argparse.RawTextHelpFormatter)
+    args = parser.parse_args()
 
-    mtp_chassis_cfg_file = os.path.abspath("config/pensando_pro_srv1_mtp_chassis_cfg.yaml")
-    mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    mtp_chassis_cfg_file_list = list()
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtp_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
     sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
     mtp_mgmt_ctrl_list = list()

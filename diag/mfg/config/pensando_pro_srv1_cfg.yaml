@@ -1,7 +1,0 @@
-PENSANDO-PRO-SRV1:
-    IP: "192.168.65.167"
-    USERID: "mfg"
-    PASSWORD: "pensando"
-    ALIAS: "hw-mftg-host"
-    MTP_CFG_FILE: "pensando_pro_srv1_mtp_chassis_cfg.yaml"
-    LOGPATH: "/mfg_log/"
