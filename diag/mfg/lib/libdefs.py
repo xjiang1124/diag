@@ -14,6 +14,11 @@ class NIC_Vendor:
     UNKNOWN = "Unknown"
 
 
+class FLX_Factory:
+    MILPITAS = "Milpitas"
+    PENANG = "Penang"
+
+
 class Env_Cond(Enum):
     LTLV = "LTLV"
     LTNV = "LTNV"

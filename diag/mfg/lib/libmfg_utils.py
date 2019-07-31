@@ -10,6 +10,7 @@ import time
 import pexpect
 
 from libdefs import MTP_Const
+from libdefs import FLX_Factory
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import * 
 
@@ -317,7 +318,7 @@ def multiple_select_menu(title, opt_list):
             cli_err("Invalid MTP ID: {:s}".format(scan_input))
 
 
-def load_cfg_from_yaml(yaml_file_list):
+def load_cfg_from_yaml_file_list(yaml_file_list):
     yaml_merge_content = ""
     for yaml_file in yaml_file_list:
         if not os.path.exists(yaml_file):
@@ -327,6 +328,22 @@ def load_cfg_from_yaml(yaml_file_list):
             yaml_merge_content += f.read()
 
     cfg = yaml.safe_load(yaml_merge_content)
+
+    if not cfg:
+        sys_exit("Load yaml config files failed")
+
+    if len(cfg) == 0:
+        sys_exit("No content in yaml config files")
+
+    return cfg
+
+
+def load_cfg_from_yaml(yaml_file):
+    if not os.path.exists(yaml_file):
+        sys_exit("Yaml config file: " + yaml_file + " doesn't exist")
+
+    with open(yaml_file, "r") as f:
+        cfg = yaml.safe_load(f)
 
     if not cfg:
         sys_exit("Load yaml config files failed")
@@ -499,11 +516,26 @@ def flx_soap_get_uut_info_xml(stage, sn):
            FLX_GET_UUT_INFO_XML_TAIL
 
 
-def soap_post_report(xml):
-    webservice = httplib.HTTP(FLX_WEBSERVER)
-    webservice.putrequest("POST", FLX_API_URL)
-    webservice.putheader("Content-Type", "text/xml")
-    webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
+def flx_sn_to_factory(sn):
+    if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
+        return FLX_Factory.PENANG
+    elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
+        return FLX_Factory.MILPITAS
+    else:
+        return None
+
+def soap_post_report(xml, factory=FLX_Factory.PENANG):
+    if factory == FLX_Factory.PENANG:
+        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+        webservice.putrequest("POST", FLX_PENANG_API_URL)
+        webservice.putheader("Content-Type", "text/xml")
+        webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
+    else:
+        webservice = httplib.HTTP(FLX_WEBSERVER)
+        webservice.putrequest("POST", FLX_API_URL)
+        webservice.putheader("Content-Type", "text/xml")
+        webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
+
     webservice.putheader("Content-length", "%d" % len(xml))
     webservice.endheaders()
 
@@ -521,11 +553,18 @@ def soap_post_report(xml):
         return "500"
 
 
-def soap_get_uut_info(xml):
-    webservice = httplib.HTTP(FLX_WEBSERVER)
-    webservice.putrequest("POST", FLX_API_URL)
-    webservice.putheader("Content-Type", "text/xml")
-    webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
+def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
+    if factory == FLX_Factory.PENANG:
+        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+        webservice.putrequest("POST", FLX_PENANG_API_URL)
+        webservice.putheader("Content-Type", "text/xml")
+        webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
+    else:
+        webservice = httplib.HTTP(FLX_WEBSERVER)
+        webservice.putrequest("POST", FLX_API_URL)
+        webservice.putheader("Content-Type", "text/xml")
+        webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
+
     webservice.putheader("Content-length", "%d" % len(xml))
     webservice.endheaders()
 
@@ -545,12 +584,17 @@ def soap_get_uut_info(xml):
 
 def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
     xml = flx_soap_get_uut_info_xml(stage, sn)
-    ret = soap_get_uut_info(xml) 
+    factory = flx_sn_to_factory(sn)
+    if not factory:
+        print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return False
+
+    ret = soap_get_uut_info(xml, factory)
     if int(ret) != 0:
         return False
 
     xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-    ret = soap_post_report(xml)
+    ret = soap_post_report(xml, factory)
     if int(ret) != 0:
         return False
 

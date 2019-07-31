@@ -426,7 +426,6 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     # find the mtp management config based on the mtpid

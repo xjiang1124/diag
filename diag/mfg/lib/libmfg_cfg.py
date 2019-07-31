@@ -43,6 +43,8 @@ HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HP_PENANG_SN_FMT = "2YU\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
 HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
+FLX_MILPITAS_BUILD_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT, HP_MILPITAS_SN_FMT)
+FLX_PENANG_BUILD_SN_FMT = r"{:s}|{:s}".format(FLX_PENANG_SN_FMT, HP_PENANG_SN_FMT)
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
 NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9]{2}$"
 HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
@@ -62,7 +64,13 @@ FLX_WEBSERVER = "10.20.33.140"
 FLX_API_URL = "/Pensando/fftester20.asmx"
 FLX_GET_UUT_INFO_SOAP = "http:/www.flextronics.com/FFTester20/GetUnitInfo"
 FLX_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
-FLX_GET_UUT_INFO_CODE_RE = R"<GetUnitInfoResult>(\d+)</GetUnitInfoResult>"
+
+FLX_PENANG_WEBSERVER = "10.20.33.140"
+FLX_PENANG_API_URL = "/Pensando/fftester20.asmx"
+FLX_PENANG_GET_UUT_INFO_SOAP = "http:/www.flextronics.com/FFTester20/GetUnitInfo"
+FLX_PENANG_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
+
+FLX_GET_UUT_INFO_CODE_RE = r"<GetUnitInfoResult>(\d+)</GetUnitInfoResult>"
 FLX_SAVE_UUT_RSLT_CODE_RE = r"<SaveResultResult>(\d+)</SaveResultResult>"
 
 FLX_GET_UUT_INFO_XML_HEAD = '<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \

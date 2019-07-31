@@ -27,7 +27,7 @@ class mtp_db():
         self._capability = dict()
         self._mtpid_list = list()
 
-        mtp_cfg = libmfg_utils.load_cfg_from_yaml(mtp_cfg_file_list)
+        mtp_cfg = libmfg_utils.load_cfg_from_yaml_file_list(mtp_cfg_file_list)
 
         for mtpid in mtp_cfg.keys():
             if mtpid in self._mtpid_list:
