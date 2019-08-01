@@ -94,6 +94,8 @@ class MTP_Const:
 
     DIAG_REGRESSION_TIMEOUT = 72000
     DIAG_TEST_TIMEOUT = 7200
+
+    DIAG_DL_TEST_TIMEOUT = 14400
     
     MFG_EDVT_LOW_FAN_SPD = 40
     MFG_EDVT_NORM_FAN_SPD = 40
@@ -129,6 +131,8 @@ class MTP_DIAG_Logfile:
     ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*txt"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
+    ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
+    ONBOARD_KPT_LOG_FILES = "/home/diag/mtp_kpt_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
 

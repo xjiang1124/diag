@@ -274,7 +274,6 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
     mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration @{:s}:{:s}".format(str(corner), mtp_stop_ts-mtp_start_ts), level=0)
 
     get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner)
-
     mtp_mgmt_ctrl.mtp_chassis_shutdown()
 
     return
