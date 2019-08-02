@@ -5,6 +5,7 @@ import pexpect
 import re
 import sys
 import time
+from time import sleep
 
 sys.path.append("../lib")
 import common
@@ -371,7 +372,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False):
+    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
@@ -384,10 +385,11 @@ class nic_con:
         time.sleep(1)
         common.session_stop(session)
 
-        ret = self.enable_mnic(rate, slot, first_pwr_on)
-        if ret != 0:
-            print "=== FAIL to enable management port! ==="
-            return ret
+        if skip_enable == False:
+            ret = self.enable_mnic(rate, slot, first_pwr_on)
+            if ret != 0:
+                print "=== FAIL to enable management port! ==="
+                return ret
 
         for i in range(numRetry):
             time.sleep(10)
@@ -442,6 +444,21 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
         return ret
+
+    def switch_console(self, slot=0):
+        if int(slot) > 10:
+            print "Invalide slot {}!".format(slot)
+            return -1
+
+        session = common.session_start()
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data=0"
+        common.session_cmd(session, cmd)
+        sleep(0.5)
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        sleep(0.5)
+        common.session_cmd(session, cmd)
+        return 0
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
