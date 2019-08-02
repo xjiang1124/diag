@@ -243,7 +243,7 @@ class mtp_ctrl():
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
-            elif idx == 2 and retry < 5:
+            elif idx > 1 and retry < 5:
                 retry += 1
                 handle = pexpect.spawn("telnet " + apc)
                 continue
@@ -283,7 +283,7 @@ class mtp_ctrl():
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
-            elif idx == 2 and retry < 5:
+            elif idx > 1 and retry < 5:
                 retry += 1
                 handle = pexpect.spawn("telnet " + apc)
                 continue

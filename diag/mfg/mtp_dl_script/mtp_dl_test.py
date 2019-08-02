@@ -218,9 +218,9 @@ def main():
                 tmp_fru_cfg[key]["NIC_MAC"] = nic_fru_info[1].replace('-', '')
                 tmp_fru_cfg[key]["NIC_PN"] = nic_fru_info[2]
             else:
-                tmp_fru_cfg[key]["SN"] = "DEADBEEF"
-                tmp_fru_cfg[key]["MAC"] = "DEADBEEF"
-                tmp_fru_cfg[key]["PN"] = "DEADBEEF"
+                tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
+                tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
+                tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
         else:
             tmp_fru_cfg[key]["NIC_VALID"] = False
 
