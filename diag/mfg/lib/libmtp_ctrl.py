@@ -1732,7 +1732,6 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg_param))
             return False
 
-        self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s} complete".format(vmarg_param))
         return True
 
 

@@ -33,79 +33,13 @@ def logfile_cleanup(file_list):
         os.system("rm -rf {:s}".format(_file))
 
 
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
-    duration = mtp_stop_ts - mtp_start_ts
-
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
-
-    # MTP related error, don't post any report
-    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
-        return
-
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-        match = re.findall(nic_fail_reg_exp, buf)
-        for slot, nic_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("FST", nic_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-        match = re.findall(nic_pass_reg_exp, buf)
-        for slot, nic_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("FST", nic_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-
 def load_mtp_cfg():
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/kpt_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
-
-
-def get_mtpid_list(mtp_cfg_db):
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
-    return sub_mtpid_list
 
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
@@ -121,9 +55,9 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list, prog_fail_sn_list):
+def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
     # program secure cpld
-    dsp = "FST_PROG"
+    dsp = "KPT_PROG"
     test = "SEC_CPLD_PROG"
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
     start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -133,15 +67,14 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     if not ret:
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
         prog_fail_nic_list.append(slot)
-        prog_fail_sn_list.append(sn)
         return
     else:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
 
-def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list, prog_fail_sn_list):
+def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
     # program EMMC
-    dsp = "FST_PROG"
+    dsp = "KPT_PROG"
     test = "SW_INSTALL"
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
     start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -151,51 +84,34 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
     if not ret:
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
         prog_fail_nic_list.append(slot)
-        prog_fail_sn_list.append(sn)
     else:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MFG Final Stage Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
+    parser = argparse.ArgumentParser(description="MTP Key Programming Script", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
 
     args = parser.parse_args()
-    if args.verbosity:
-        verbosity = True
-    else:
-        verbosity = False
+    if args.mtpid:
+        mtp_id = args.mtpid
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = get_mtpid_list(mtp_cfg_db)
-    mtp_id = mtpid_list[0]
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     # local log files
-    log_file_list = list()
     log_filep_list = list()
-    log_dir = "log/"
-    log_timestamp = libmfg_utils.get_timestamp()
-    log_sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
-    test_log_file = log_dir + log_sub_dir + "test_fst.log"
-    log_file_list.append(test_log_file)
+    test_log_file = "test_kpt.log"
     test_log_filep = open(test_log_file, "w+")
     log_filep_list.append(test_log_filep)
 
-    if verbosity:
-        diag_log_filep = sys.stdout
-    else:
-        diag_log_file = log_dir + log_sub_dir + "diag_fst.log"
-        log_file_list.append(diag_log_file)
-        diag_log_filep = open(diag_log_file, "w+")
-        log_filep_list.append(diag_log_filep)
+    diag_log_file = "diag_kpt.log"
+    diag_log_filep = open(diag_log_file, "w+")
+    log_filep_list.append(diag_log_filep)
 
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = log_dir + log_sub_dir + "diag_{:s}_fst.log".format(key)
-        log_file_list.append(diag_nic_log_file)
+        diag_nic_log_file = "diag_{:s}_kpt.log".format(key)
         diag_nic_log_filep = open(diag_nic_log_file, "w+")
         log_filep_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
@@ -214,10 +130,6 @@ def main():
     vomero_emmc_img_file = nic_fw_cfg[NIC_Type.VOMERO]["EMMC_FILE"]
     naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
     naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
-
-    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
@@ -271,39 +183,28 @@ def main():
         return
 
     pass_nic_list = list()
-    pass_sn_list = list()
     fail_nic_list = list()
-    fail_sn_list = list()
-    naples100_sn_list = list()
-    vomero_sn_list = list()
-    naples25_sn_list = list()
-
-    mtp_mgmt_ctrl.cli_log_inf("Final Stage Test Started", level=0)
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            pass_nic_list.append(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100:
-                naples100_sn_list.append(sn)
                 emmc_img_file = naples100_emmc_img_file
                 sec_cpld_img_file = naples100_sec_cpld_img_file
             elif card_type == NIC_Type.VOMERO:
-                vomero_sn_list.append(sn)
                 emmc_img_file = vomero_emmc_img_file
                 sec_cpld_img_file = vomero_sec_cpld_img_file
             elif card_type == NIC_Type.NAPLES25:
-                naples25_sn_list.append(sn)
                 emmc_img_file = naples25_emmc_img_file
                 sec_cpld_img_file = naples25_sec_cpld_img_file
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
 
             # nic power status check
-            dsp = "FST_PRE_CHECK"
+            dsp = "KPT_PRE_CHECK"
             test = "NIC_POWER"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -312,16 +213,14 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # nic type check
-            dsp = "FST_PRE_CHECK"
+            dsp = "KPT_PRE_CHECK"
             test = "NIC_TYPE"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -330,21 +229,14 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FST Program Matrix:", level=0)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "EMMC image: " + os.path.basename(emmc_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FST Program Matrix end\n", level=0)
-
             # nic present check
-            dsp = "FST_PRE_CHECK"
+            dsp = "KPT_PRE_CHECK"
             test = "NIC_PRSNT"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -353,16 +245,14 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # check nic init status
-            dsp = "FST_PRE_CHECK"
+            dsp = "KPT_PRE_CHECK"
             test = "NIC_INIT"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -371,16 +261,14 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
             # check if nic comes up from diagfw
-            dsp = "FST_PRE_CHECK"
+            dsp = "KPT_PRE_CHECK"
             test = "NIC_DIAG_BOOT"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -389,23 +277,25 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix:", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "EMMC image: " + os.path.basename(emmc_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix end\n", level=0)
+
     # Secure key programming
     for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
-            if key in fail_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in fail_nic_list:
                 continue
 
-            dsp = "FST_PROG"
+            dsp = "KPT_PROG"
             test = "SEC_KEY_PROG"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -414,10 +304,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -434,12 +322,10 @@ def main():
     # program the NIC Secure CPLD
     nic_thread_list = list()
     prog_fail_nic_list = list()
-    prog_fail_sn_list = list()
     for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
-            if key in fail_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in fail_nic_list:
                 continue
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
@@ -456,8 +342,7 @@ def main():
                                                                                         sec_cpld_img_file,
                                                                                         slot,
                                                                                         sn,
-                                                                                        prog_fail_nic_list,
-                                                                                        prog_fail_sn_list))
+                                                                                        prog_fail_nic_list))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -473,22 +358,18 @@ def main():
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
 
-    for slot, sn in zip(prog_fail_nic_list, prog_fail_sn_list):
-        key = libmfg_utils.nic_key(slot)
-        mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-        fail_nic_list.append(key)
-        fail_sn_list.append(sn)
+    for slot in prog_fail_nic_list:
+        fail_nic_list.append(slot)
+        pass_nic_list.remove(slot)
 
     # Secure CPLD Check
     for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
-            if key in fail_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in fail_nic_list:
                 continue
 
-            dsp = "FST_PROG"
+            dsp = "KPT_PROG"
             test = "SEC_CPLD_VERIFY"
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -497,10 +378,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -517,12 +396,10 @@ def main():
     # program the NIC EMMC image
     nic_thread_list = list()
     prog_fail_nic_list = list()
-    prog_fail_sn_list = list()
     for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
-            if key in fail_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in fail_nic_list:
                 continue
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
@@ -539,8 +416,7 @@ def main():
                                                                                     emmc_img_file,
                                                                                     slot,
                                                                                     sn,
-                                                                                    prog_fail_nic_list,
-                                                                                    prog_fail_sn_list))
+                                                                                    prog_fail_nic_list))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -556,12 +432,9 @@ def main():
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
 
-    for slot, sn in zip(prog_fail_nic_list, prog_fail_sn_list):
-        key = libmfg_utils.nic_key(slot)
-        mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC FST Update Failed\n", level=0)
-        fail_nic_list.append(key)
-        fail_sn_list.append(sn)
+    for slot in prog_fail_nic_list:
+        fail_nic_list.append(slot)
+        pass_nic_list.remove(slot)
 
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -572,95 +445,45 @@ def main():
 
     # verify the NIC EMMC
     for slot in range(len(nic_prsnt_list)):
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if nic_prsnt_list[slot]:
-            if key in fail_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if slot in fail_nic_list:
                 continue
 
-            dsp = "FST_PROG"
+            dsp = "KPT_PROG"
             test = "SW_BOOT"
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
             ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                fail_nic_list.append(key)
-                fail_sn_list.append(sn)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-                pass_nic_list.append(key)
-                pass_sn_list.append(sn)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
 
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("Final Stage Test Process Complete", level=0)
-    mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    mtp_mgmt_ctrl.cli_log_inf("MTP Key Programming Test Complete", level=0)
 
-    for nic_key, nic_sn in zip(fail_nic_list, fail_sn_list):
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            key = libmfg_utils.nic_key(slot)
-            if key == nic_key:
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(nic_key, nic_type, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-                break
-    for nic_key, nic_sn in zip(pass_nic_list, pass_sn_list):
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            key = libmfg_utils.nic_key(slot)
-            if key == nic_key:
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(nic_key, nic_type, nic_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
-                break
+    for slot in pass_nic_list:
+        key = libmfg_utils.nic_key(slot)
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+
+    for slot in fail_nic_list:
+        key = libmfg_utils.nic_key(slot)
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
     logfile_close(log_filep_list)
-
-    # pkg the logfile
-    log_pkg_file = MTP_DIAG_Logfile.MFG_FST_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
-
-    # move the logs to the log root dir
-    for sn in naples100_sn_list:
-        if not sn:
-            continue
-
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES100, sn)
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-
-    for sn in vomero_sn_list:
-        if not sn:
-            continue
-
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.VOMERO, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.VOMERO, sn)
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-
-    for sn in naples25_sn_list:
-        if not sn:
-            continue
-
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES25, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(NIC_Type.NAPLES25, sn)
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-        os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-
-    if GLB_CFG_MFG_TEST_MODE:
-        mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
-
-    logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
-
     return
 
 if __name__ == "__main__":

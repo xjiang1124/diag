@@ -96,6 +96,7 @@ class MTP_Const:
     DIAG_TEST_TIMEOUT = 7200
 
     DIAG_DL_TEST_TIMEOUT = 14400
+    DIAG_KPT_TEST_TIMEOUT = 14400
     
     MFG_EDVT_LOW_FAN_SPD = 40
     MFG_EDVT_NORM_FAN_SPD = 40
@@ -140,12 +141,12 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_DL_LOG_DIR_FMT = "/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_P2C_LOG_DIR_FMT = "/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_4C_LOG_DIR_FMT = "/mfg_log/{:s}/4C/{:s}/{:s}/"
-    DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
+    DIAG_MFG_KPT_LOG_DIR_FMT = "/mfg_log/{:s}/KPT/{:s}/"
 
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
-    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
+    DIAG_MFG_MODEL_KPT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/KPT/{:s}/"
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -153,8 +154,8 @@ class MTP_DIAG_Logfile:
     MFG_P2C_LOG_DIR = "NTNV_{:s}_{:s}/"
     MFG_4C_LOG_PKG_FILE = "{:s}_{:s}_{:s}.tar.gz"
     MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
-    MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
-    MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
+    MFG_KPT_LOG_PKG_FILE = "KPT_{:s}_{:s}.tar.gz"
+    MFG_KPT_LOG_DIR = "KPT_{:s}_{:s}/"
 
 
 class MTP_DIAG_Path:
