@@ -25,7 +25,7 @@ from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner, mtp_test_summary):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
@@ -93,6 +93,12 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
         qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
         mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files {:s}".format(sn, qa_log_pkg_file))
         libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
+
+    for slot, nic_type, sn in fail_match:
+        mtp_test_summary.append((slot, sn, nic_type, False))
+
+    for slot, nic_type, sn in pass_match:
+        mtp_test_summary.append((slot, sn, nic_type, True))
 
     # clear the onboard logs
     logfile_list.append(log_pkg_file)
@@ -257,7 +263,7 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner, mtp_test_summary):
     mtp_mgmt_ctrl.cli_log_inf("Regression Test start @{:s}".format(str(corner)), level=0)
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
@@ -273,8 +279,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner):
     mtp_mgmt_ctrl.cli_log_inf("Regression Test complete @{:s}".format(str(corner)), level=0)
     mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration @{:s}:{:s}".format(str(corner), mtp_stop_ts-mtp_start_ts), level=0)
 
-    get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner)
-    mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner, mtp_test_summary)
 
     return
 
@@ -357,8 +362,11 @@ def main():
             os.system(cmd)
 
         mtp_thread_list = list()
+        mfg_4c_summary = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner))
+            key = "{:s}-{:s}".format(corner,mtp_id)
+            mfg_4c_summary[key] = list()
+            mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner, mfg_4c_summary[key]))
             mtp_thread.daemon = True
             mtp_thread.start()
             mtp_thread_list.append(mtp_thread)
@@ -388,6 +396,27 @@ def main():
         cmd = "rm -f {:s}".format(" ".join(test_log_file_list))
         os.system(cmd)
 
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
+    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+
+    libmfg_utils.cli_inf("##########  MFG 4C Test Summary  ##########")
+    for mtp_id in mtpid_list:
+        for corner in corner_list:
+            key = "{:s}-{:s}".format(corner,mtp_id)
+            libmfg_utils.cli_inf("---------- {:s} {:s} Report: ----------".format(mtp_id, corner))
+            for slot, sn, nic_type, rc in mfg_4c_summary[key]:
+                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+                if rc:
+                    libmfg_utils.cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
+                else:
+                    libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+            libmfg_utils.cli_inf("--------- {:s} {:s} Report End --------\n".format(mtp_id, corner))
 
 if __name__ == "__main__":
     main()

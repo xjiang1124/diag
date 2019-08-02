@@ -327,6 +327,7 @@ def main():
                 libmfg_utils.cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
             else:
                 libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+        libmfg_utils.cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
 
     return
 
