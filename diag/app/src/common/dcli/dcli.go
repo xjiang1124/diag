@@ -61,37 +61,6 @@ func Println(lvl string, a...interface{}) (err error) {
         return nil
     }
 
-    //outStr := fmt.Sprintln(a)
-    //// fmt.Sprintln add "[ ]\n" at begining and end of the string. 
-    //// Remove the extra stuff
-    //outStr = misc.TrimSuffix(outStr, "]\n")
-    //outStr = misc.TrimPrefix(outStr, "[")
-
-    //switch lvl {
-    //case "debug", "d":
-    //    // Debug print, give file and line number
-    //    _, fn, line, _ := runtime.Caller(1)
-    //    fnArr := strings.Split(fn, "/")
-    //    fnOnly := fnArr[len(fnArr)-1]
-    //    outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
-    //default:
-    //}
-
-    //// Structural output
-    //if (outputMode == 1) {
-    //    var dat map[string]interface{}
-    //    outStr = cli.FmtJsonOut(outStr)
-    //    outStrByte := []byte(outStr)
-    //    json.Unmarshal(outStrByte, &dat)
-    //    //dat["CARD"] = diagEngine.CardInfo.CardType+"#"+diagEngine.CardInfo.CardName
-    //    cardInfo := diagEngine.GetCardInfo()
-    //    dat["CARD"] = cardInfo.CardType+"#"+cardInfo.CardName
-    //    b, _ := json.Marshal(dat)
-    //    outStr = fmt.Sprintln(string(b))
-    //} else {
-    //    outStr = "["+cardPre+"]"+" ["+cli.TStamp()+"] " + outStr
-    //}
-
     outStr := fmt.Sprintln(a)
     outStr = cli.FormatOutput(lvl, outStr)
 
@@ -115,8 +84,6 @@ func Println(lvl string, a...interface{}) (err error) {
 }
 
 func Printf(lvl string, format string, a ...interface{}) error {
-    cli.Printf(lvl, format, a)
-
     outStr := cli.FormatOutput1(lvl, format, a)
 
     switch lvl {
@@ -128,10 +95,20 @@ func Printf(lvl string, format string, a ...interface{}) error {
         outStr = fmt.Sprintf("[WARNING] %s", outStr)
     case "error", "e", "f":
         outStr = fmt.Sprintf("[ERROR]   %s", outStr)
-    //default:
-        // Do nothing
+    default:
+        outStr = fmt.Sprintf("[DEBUG]   %s", outStr)
 	}
-    outStr = "["+cardPre+"]" + outStr
+
+    if initStatus != INIT_NONE {
+        outStr = "["+cardPre+"]" + outStr
+    }
+
+    fmt.Printf("%s", outStr)
+
+    if initStatus == INIT_NONE {
+        return nil
+    }
+
     r.LPush("dshbuf:"+strconv.Itoa(diagEngine.DshID), outStr)
 
     return nil
