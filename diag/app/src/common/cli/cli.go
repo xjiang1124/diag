@@ -204,7 +204,7 @@ func Println(lvl string, a...interface{}) (err error) {
     return nil
 }
 
-func FormatOutput1(lvl string, format string, a []interface{}) (outStr string) {
+func FormatOutput1Pre(lvl string, format string, a []interface{}) (outStr string) {
     outStr = fmt.Sprintf(format, a...)
     switch lvl {
     case "debug", "d", "error", "e":
@@ -220,7 +220,11 @@ func FormatOutput1(lvl string, format string, a []interface{}) (outStr string) {
         outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
     default:
     }
+    return
+}
 
+func FormatOutput1(lvl string, format string, a []interface{}) (outStr string) {
+    outStr = FormatOutput1Pre(lvl, format, a)
     timeStr := TStamp()
 
     // Control output for special format

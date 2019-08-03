@@ -84,7 +84,8 @@ func Println(lvl string, a...interface{}) (err error) {
 }
 
 func Printf(lvl string, format string, a ...interface{}) error {
-    outStr := cli.FormatOutput1(lvl, format, a)
+    outStr := cli.FormatOutput1Pre(lvl, format, a)
+    cli.Printf(lvl, "%s", outStr)
 
     switch lvl {
     case "debug", "d":
@@ -102,8 +103,6 @@ func Printf(lvl string, format string, a ...interface{}) error {
     if initStatus != INIT_NONE {
         outStr = "["+cardPre+"]" + outStr
     }
-
-    fmt.Printf("%s", outStr)
 
     if initStatus == INIT_NONE {
         return nil

@@ -7,7 +7,7 @@ import (
     "strings"
 
     //"common/runCmd"
-    //"common/cli"
+    "common/cli"
     "common/dcli"
     "common/errType"
 )
@@ -32,8 +32,6 @@ func PciePrbs(poly string, duration int) (err int) {
         dcli.Println("e", "Invalid POLY:", poly)
     }
 
-    //
-    //re := regexp.MustCompile(`.*\] \[\s+:([0-9a-f]+)\s+@\s+(\d+)\.\d+\s+1\.000\s+(\d+).*`)
     re := regexp.MustCompile(`^\s+:([0-9a-f]+)\s+@\s+(\d+)\.\d+\s+1\.\d+\s+(\d+).*`)
 
     // Analyze PRBS log to determine pass/fail
@@ -66,7 +64,6 @@ func PciePrbs(poly string, duration int) (err int) {
             }
             dcli.Printf("i", "sbus: 0x%s; speed: %s; errCount: %s\n", sbus, speed, errCount)
         }
-
     }
 
     return err
