@@ -104,6 +104,21 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     else:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
+    # refresh CPLD
+    dsp = "DL_CPLD"
+    test = "CPLD_REF"
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+    start_ts = datetime.datetime.now().replace(microsecond=0)
+    ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+    stop_ts = datetime.datetime.now().replace(microsecond=0)
+    duration = str(stop_ts - start_ts)
+    if not ret:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+        return
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
@@ -233,10 +248,13 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
 
     fail_nic_list = list()
+    pass_nic_list = list()
+
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
+            pass_nic_list.append(slot)
             sn = nic_fru_cfg[mtp_id][key]["SN"]
             mac = nic_fru_cfg[mtp_id][key]["MAC"]
             pn = nic_fru_cfg[mtp_id][key]["PN"]
@@ -281,7 +299,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                fail_nic_list.append(key)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -296,7 +315,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                fail_nic_list.append(key)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -311,7 +331,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                fail_nic_list.append(key)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -326,7 +347,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                fail_nic_list.append(key)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -341,7 +363,8 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                fail_nic_list.append(key)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
                 continue
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -355,9 +378,9 @@ def main():
     # program the NIC firmware
     nic_thread_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        if key in fail_nic_list:
+        if slot in fail_nic_list:
             continue
+        key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) == "YES":
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -390,12 +413,163 @@ def main():
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
 
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+
+    # init nic diag env.
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        logfile_close(log_filep_list)
+        return
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) == "YES":
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
+            mac = nic_fru_cfg[mtp_id][key]["MAC"]
+            pn = nic_fru_cfg[mtp_id][key]["PN"]
+            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+
+            # nic power status check
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_POWER"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # nic present check
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_PRSNT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # check nic init status
+            dsp = "DL_PRE_CHECK"
+            test = "NIC_INIT"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # verify FRU
+            exp_sn = sn
+            exp_mac = "-".join(re.findall("..", mac))
+            exp_pn = pn
+            dsp = "DL_FRU"
+            test = "FRU_VERIFY"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # verify CPLD
+            dsp = "DL_CPLD"
+            test = "CPLD_VERIFY"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # verify QSPI
+            dsp = "DL_QSPI"
+            test = "QSPI_VERIFY"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+
+            # set avs at last
+            dsp = "DL_AVS"
+            test = "AVS_SET"
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            start_ts = datetime.datetime.now().replace(microsecond=0)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
+            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+
+    # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Complete", level=0)
 
-    logfile_close(log_filep_list)
+    for slot in pass_nic_list:
+        key = libmfg_utils.nic_key(slot)
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
 
+    for slot in fail_nic_list:
+        key = libmfg_utils.nic_key(slot)
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
+    logfile_close(log_filep_list)
     return
+
 
 if __name__ == "__main__":
     main()

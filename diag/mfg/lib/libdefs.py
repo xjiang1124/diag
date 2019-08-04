@@ -68,7 +68,7 @@ class MTP_Const:
     MTP_SLOT_INVALID = 10
 
     MTP_POWER_ON_DELAY = 180
-    MTP_POWER_ON_TIMEOUT = 480
+    MTP_POWER_ON_TIMEOUT = 120
     MTP_OS_SHUTDOWN_DELAY = 60
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
@@ -210,6 +210,7 @@ class MFG_DIAG_CMDS:
 
     NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
     NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
+    NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
 
     NIC_MOUNT_EMMC_FMT = "mount {:s} {:s}"
     NIC_DIAG_CLEANUP_FMT = "rm -rf /data/nic*"

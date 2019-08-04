@@ -29,7 +29,7 @@ MFG_NIC_EMMC_PROGRAM = True
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
 DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
-DIAG_SSH_OPTIONS = " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=10'"
+DIAG_SSH_OPTIONS = " -o ServerAliveInterval=2 -o ServerAliveCountMax=5 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=10'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
 MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]

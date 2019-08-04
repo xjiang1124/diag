@@ -214,7 +214,7 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_dl_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP DL Test script complete", level=0)
 
 
-def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id):
+def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Start", level=0)
     # go to mtp_dl_test and Start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
@@ -230,33 +230,12 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id):
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test complete", level=0)
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Duration:{:s}".format(mtp_stop_ts-mtp_start_ts), level=0)
 
-    return
-
-
-def single_mtp_dl_verify(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
-    mtp_mgmt_ctrl.cli_log_inf("MTP DL Verify Start", level=0)
-    # go to mtp_dl_test and Start the test
-    cmd = "cd {:s}".format(mtp_dl_script_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "./mtp_dl_verify.py --mtpid {:s}".format(mtp_id)
-
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_DL_TEST_TIMEOUT)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-
-    mtp_mgmt_ctrl.cli_log_inf("MTP DL Verify complete", level=0)
-    mtp_mgmt_ctrl.cli_log_inf("MTP DL Verify Duration:{:s}".format(mtp_stop_ts-mtp_start_ts), level=0)
-
     test_log_file = get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary)
     if GLB_CFG_MFG_TEST_MODE:
         mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
 
     cmd = "rm -rf {:s}".format(test_log_file)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    return
+    os.system(cmd)
 
 
 def main():
@@ -271,6 +250,7 @@ def main():
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
     mtp_mgmt_ctrl_list = list()
+    mtpid_fail_list = list()
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
@@ -291,9 +271,12 @@ def main():
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+            mtpid_list.remove(mtp_id)
+            mtpid_fail_list.append(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
@@ -307,49 +290,10 @@ def main():
         os.system(cmd)
 
     mtp_thread_list = list()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = single_mtp_dl_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id))
-        mtp_thread.daemon = True
-        mtp_thread.start()
-        mtp_thread_list.append(mtp_thread)
-        time.sleep(2)
-
-    # monitor all the thread
-    while True:
-        if len(mtp_thread_list) == 0:
-            break
-        for mtp_thread in mtp_thread_list[:]:
-            if not mtp_thread.is_alive():
-                mtp_thread.join()
-                mtp_thread_list.remove(mtp_thread)
-        time.sleep(5)
-
-    # power cycle the MTP
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-
-    # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-    mtp_thread_list = list()
     mfg_dl_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_dl_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_dl_verify, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mfg_dl_summary[mtp_id]))
+        mtp_thread = threading.Thread(target = single_mtp_dl_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mfg_dl_summary[mtp_id]))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -387,6 +331,8 @@ def main():
             else:
                 libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
         libmfg_utils.cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
+    for mtp_id in mtpid_fail_list:
+        libmfg_utils.cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
 
 
 if __name__ == "__main__":

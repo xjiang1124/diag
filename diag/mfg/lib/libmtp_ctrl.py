@@ -1489,6 +1489,16 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_refresh_nic_cpld(self, slot):
+        if MFG_NIC_CPLD_PROGRAM:
+            if not self._nic_ctrl_list[slot].nic_refresh_cpld():
+                self.cli_log_slot_err_lock(slot, "Refresh NIC CPLD failed")
+                return False
+        else:
+            self.cli_log_slot_inf_lock(slot, "Refresh NIC CPLD bypassed")
+        return True
+
+
     def mtp_program_nic_sec_cpld(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in self._valid_type_list:

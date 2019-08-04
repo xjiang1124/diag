@@ -249,6 +249,7 @@ def main():
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
+    mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 
     # init mtp_ctrl list
@@ -270,9 +271,12 @@ def main():
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+            mtpid_list.remove(mtp_id)
+            mtpid_fali_list.append(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
@@ -327,6 +331,8 @@ def main():
             else:
                 libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
         libmfg_utils.cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
+    for mtp_id in mtpid_fail_list:
+        libmfg_utils.cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
 
     return
 

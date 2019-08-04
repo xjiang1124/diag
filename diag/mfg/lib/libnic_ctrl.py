@@ -102,6 +102,34 @@ class nic_ctrl():
         return True
 
 
+    def nic_exec_rst_cmd(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
+        cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
+        self._nic_handle.sendline(cmd)
+        while True:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            if idx < 0:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg(self._nic_handle.before)
+                return False
+            if idx == 0:
+                self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+                continue
+            else:
+                break
+
+        self._nic_handle.sendline(nic_rst_cmd)
+        # Here ssh should disconnected automatically
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+        else:
+            return True
+
+
     def nic_exec_cmds(self, nic_cmd_list, timeout=MTP_Const.NIC_CON_CMD_DELAY, fail_sig=None):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
@@ -551,6 +579,14 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name)
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
+
+        return True
+
+
+    def nic_refresh_cpld(self):
+        nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         return True
