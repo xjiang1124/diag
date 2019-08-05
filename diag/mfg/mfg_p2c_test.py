@@ -183,12 +183,6 @@ def load_mtp_cfg():
     return mtp_cfg_db
 
 
-def get_mtpid_list(mtp_cfg_db):
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
-    return sub_mtpid_list
-
-
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
@@ -200,33 +194,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
-
-
-def mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg):
-    cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
-    os.system(cmd)
-    cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
-    os.system(cmd)
-    # remove the lib config for the next run
-    cmd = "rm -rf {:s}/lib {:s}/config".format(mtp_script_dir, mtp_script_dir)
-    os.system(cmd)
-
-
-def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
-    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Regression script: {:s}".format(mtp_script_pkg), level=0)
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
-    if not libmfg_utils.network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
-        mtp_mgmt_ctrl.cli_log_err("Download regression script onto MTP Chassis failed", level=0)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
-    cmd = "tar zxf {:s}".format(mtp_script_pkg)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
 def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
@@ -250,8 +217,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_s
         mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
 
     cmd = "rm -rf {:s}".format(test_log_file)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
+    os.system(cmd)
     return
 
 
@@ -265,7 +231,7 @@ def main():
         verbosity = True
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = get_mtpid_list(mtp_cfg_db)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 
@@ -298,13 +264,17 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     # Copy script, config file on to each MTP Chassis
-    mtp_script_dir = "mtp_regression/"
+    mtp_p2c_script_dir = "mtp_regression/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-        mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
-        mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg)
-        cmd = "rm -f {:s}".format(mtp_script_pkg)
-        os.system(cmd)
+        mtp_p2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP P2C Test script", level=0)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_p2c_script_dir, mtp_p2c_script_pkg):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP P2C Test script failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtpid_fail_list.append(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP P2C Test script complete", level=0)
 
     mtp_thread_list = list()
     mfg_p2c_summary = dict()

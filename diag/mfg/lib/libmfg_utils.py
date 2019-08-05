@@ -10,6 +10,7 @@ import time
 import pexpect
 
 from libdefs import MTP_Const
+from libdefs import MTP_DIAG_Path
 from libdefs import FLX_Factory
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import * 
@@ -472,6 +473,38 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
     else:
         cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
         return False
+
+
+def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg):
+    cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
+    os.system(cmd)
+    cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
+    os.system(cmd)
+    # remove the lib config for the next run
+    cmd = "rm -rf {:s}/lib {:s}/config".format(mtp_script_dir, mtp_script_dir)
+    os.system(cmd)
+
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    ipaddr = mtp_mgmt_cfg[0]
+    userid = mtp_mgmt_cfg[1]
+    passwd = mtp_mgmt_cfg[2]
+    if not network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
+        mtp_mgmt_ctrl.cli_log_err("Copy Test script failed... Abort")
+        return False
+    cmd = "tar zxf {:s}".format(mtp_script_pkg)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
+        return False
+
+    cmd = "rm -f {:s}".format(mtp_script_pkg)
+    os.system(cmd)
+    return True
+
+
+def mtpid_list_select(mtp_cfg_db):
+    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
+    sub_mtpid_list = multiple_select_menu("Select MTP Chassis", mtpid_list)
+    return sub_mtpid_list
 
 
 def email_report(email_to, title, body = None):
