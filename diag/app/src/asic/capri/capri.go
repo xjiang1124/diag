@@ -6,8 +6,8 @@ import (
     "regexp"
     "strings"
 
-    //"common/runCmd"
-    "common/cli"
+    "common/runCmd"
+    //"common/cli"
     "common/dcli"
     "common/errType"
 )
@@ -32,13 +32,21 @@ func PciePrbs(poly string, duration int) (err int) {
         dcli.Println("e", "Invalid POLY:", poly)
     }
 
+    cmd := "/data/aapl/aapl_prbs.sh"
+    passSign := "AAPL PRBS DONE"
+    failSign := "AAPL PRBS FAIL"
+
+    err = runCmd.Run(passSign, failSign, cmd, "")
+    dcli.Println("d", cmd, "done")
+
     re := regexp.MustCompile(`^\s+:([0-9a-f]+)\s+@\s+(\d+)\.\d+\s+1\.\d+\s+(\d+).*`)
 
     // Analyze PRBS log to determine pass/fail
-    logFn := "./" + prbsLogFn
+    logFn := "/data/aapl/" + prbsLogFn
 
     file, errCode := os.Open(logFn)
     if errCode != nil {
+        dcli.Println("e", "Failed to open log file", logFn)
         err = errType.FAIL
         return
     }
