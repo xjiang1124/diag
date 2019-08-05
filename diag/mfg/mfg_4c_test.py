@@ -338,7 +338,7 @@ def main():
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             key = "{:s}-{:s}".format(corner,mtp_id)
             mfg_4c_summary[key] = list()
-            mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner, mfg_4c_summary[key]))
+            mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_4c_script_dir, mtp_mgmt_ctrl, mtp_id, corner, mfg_4c_summary[key]))
             mtp_thread.daemon = True
             mtp_thread.start()
             mtp_thread_list.append(mtp_thread)

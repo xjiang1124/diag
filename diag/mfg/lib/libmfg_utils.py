@@ -10,7 +10,10 @@ import time
 import pexpect
 
 from libdefs import MTP_Const
+from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
+from libdefs import MTP_DIAG_Logfile
+from libdefs import MTP_DIAG_Report
 from libdefs import FLX_Factory
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import * 
@@ -507,6 +510,24 @@ def mtpid_list_select(mtp_cfg_db):
     return sub_mtpid_list
 
 
+def mtpid_list_poweron(mtp_mgmt_ctrl_list):
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.mtp_apc_pwr_on()
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+    count_down(MTP_Const.MTP_POWER_ON_DELAY)
+
+
+def mtpid_list_poweroff(mtp_mgmt_ctrl_list):
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+    count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
+    count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+
+
 def email_report(email_to, title, body = None):
     if not email_to:
         return
@@ -632,3 +653,218 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         return False
 
     return True
+
+
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    ipaddr = mtp_mgmt_cfg[0]
+    userid = mtp_mgmt_cfg[1]
+    passwd = mtp_mgmt_cfg[2]
+
+    mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files started".format(stage), level=0)
+
+    log_timestamp = get_timestamp()
+    if stage == FF_Stage.FF_DL:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DL_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}test_dl.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_test_dl.log".format(mtp_id)
+    elif stage == FF_Stage.FF_P2C:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_P2C_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    elif stage == FF_Stage.FF_KPT:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_KPT_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_KPT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_KPT_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}test_kpt.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_test_kpt.log".format(mtp_id)
+    else:
+        mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
+        return None
+
+    # temperary dir for log files
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
+    # move onboard log files
+    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
+
+    # for P2C/4C test, extra logfiles are needed
+    if stage in [FF_Stage.FF_P2C, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L]:
+        diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
+        asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES
+        diag_sub_dir = sub_dir+"diag_logs/"
+        asic_sub_dir = sub_dir+"asic_logs/"
+        # create extra subdir
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+diag_sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+asic_sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        # move the extra logfile
+        cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        # clean up logfiles for the next run
+        cmd = "cleanup.sh"
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+
+    logfile_list = list()
+    # pkg the onboard logs
+    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
+
+    if not network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file):
+        mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test summary file {:}".format(test_log_file), level=0)
+        return None
+
+    # analyze test summary logfile
+    with open(local_test_log_file, 'r') as fp:
+        buf = fp.read()
+    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
+    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
+    fail_match = re.findall(nic_fail_reg_exp, buf)
+    pass_match = re.findall(nic_pass_reg_exp, buf)
+
+    for slot, nic_type, sn in fail_match + pass_match:
+        if stage == FF_Stage.FF_DL:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_P2C:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_P2C_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_P2C_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_KPT:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_KPT_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_KPT_LOG_DIR_FMT.format(nic_type, sn)
+        else:
+            pass
+
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
+        os.system(cmd)
+        # copy the onboard logs
+        qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
+        mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files {:s}".format(sn, qa_log_pkg_file))
+        if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
+            mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(log_pkg_file), level=0)
+            continue
+
+    for slot, nic_type, sn in fail_match:
+        mtp_test_summary.append((slot, sn, nic_type, False))
+
+    for slot, nic_type, sn in pass_match:
+        mtp_test_summary.append((slot, sn, nic_type, True))
+
+    # clear the onboard logs
+    logfile_list.append(log_pkg_file)
+    logfile_list.append(log_dir+sub_dir)
+    cmd = "rm -rf {:s}".format(" ".join(logfile_list))
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
+
+    mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files complete".format(stage), level=0)
+
+    return local_test_log_file
+
+
+def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
+    mtp_cli_id_str = id_str(mtp = mtp_id)
+    duration = mtp_stop_ts - mtp_start_ts
+
+    with open(test_log_file, 'r') as fp:
+        buf = fp.read()
+
+    # MTP related error, don't post any report
+    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
+        cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
+        cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
+        os.system(cmd)
+        return
+
+    cli_inf(mtp_cli_id_str + "Start posting test report")
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
+        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
+        match = re.findall(nic_fail_reg_exp, buf)
+        for slot, sn_type, sn in match:
+            test_list = list()
+            test_rslt_list = list()
+            err_dsc_list = list()
+            err_code_list = list()
+            nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
+            # find all test status
+            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+            for dsp, test, result in sub_match:
+                test_list.append("{:s}-{:s}".format(dsp, test))
+                test_rslt_list.append(result)
+                err_dsc_list.append(nic_cli_id_str)
+                err_code_list.append(result)
+            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            if not ret:
+                cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            else:
+                cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
+        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
+        match = re.findall(nic_pass_reg_exp, buf)
+        for slot, sn_type, sn in match:
+            test_list = list()
+            test_rslt_list = list()
+            err_dsc_list = list()
+            err_code_list = list()
+            nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
+            # find all test status
+            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+            for dsp, test, result in sub_match:
+                test_list.append("{:s}-{:s}".format(dsp, test))
+                test_rslt_list.append(result)
+                err_dsc_list.append(nic_cli_id_str)
+                err_code_list.append(result)
+            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            if not ret:
+                cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            else:
+                cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))

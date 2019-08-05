@@ -12,6 +12,7 @@ sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
+from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -22,140 +23,6 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
-
-
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary):
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
-
-    mtp_mgmt_ctrl.cli_log_inf("Collecting log files started", level=0)
-
-    # create the log subdir
-    log_timestamp = libmfg_utils.get_timestamp()
-    sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir))
-
-    # log pkg filename
-    log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-
-    # need to be sync'd with cleanup.sh
-    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DL_LOG_FILES
-
-    # dl test logs
-    logfile_list = list()
-    # diag onboard log files
-    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    # all the test logs
-    test_log_file = "{:s}test_dl.log".format(log_dir+sub_dir)
-
-    # pkg the onboard logs
-    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    local_test_log_file = "log/{:s}_test_dl.log".format(mtp_id)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
-
-    with open(local_test_log_file, 'r') as fp:
-        buf = fp.read()
-    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-    fail_match = re.findall(nic_fail_reg_exp, buf)
-    pass_match = re.findall(nic_pass_reg_exp, buf)
-
-    for slot, nic_type, sn in fail_match + pass_match:
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
-        os.system(cmd)
-        # copy the onboard logs
-        ts = libmfg_utils.get_timestamp()
-        qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
-        mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files {:s}".format(sn, qa_log_pkg_file))
-        libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
-
-    for slot, nic_type, sn in fail_match:
-        mtp_test_summary.append((slot, sn, nic_type, False))
-
-    for slot, nic_type, sn in pass_match:
-        mtp_test_summary.append((slot, sn, nic_type, True))
-
-    # clear the onboard logs
-    logfile_list.append(log_pkg_file)
-    logfile_list.append(log_dir+sub_dir)
-    cmd = "rm -rf {:s}".format(" ".join(logfile_list))
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    mtp_mgmt_ctrl.cli_log_inf("Collecting log files complete", level=0)
-
-    return local_test_log_file
-
-
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file):
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
-    duration = mtp_stop_ts - mtp_start_ts
-
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
-
-    # MTP related error, don't post any report
-    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        libmfg_utils.cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
-        cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
-        os.system(cmd)
-        return
-
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-        match = re.findall(nic_fail_reg_exp, buf)
-        for slot, sn_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("DL", sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-        match = re.findall(nic_pass_reg_exp, buf)
-        for slot, sn_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = libmfg_utils.flx_web_srv_post_uut_report("DL", sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
 def load_mtp_cfg():
@@ -181,7 +48,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-
 def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Start", level=0)
     # go to mtp_dl_test and Start the test
@@ -198,9 +64,13 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test complete", level=0)
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Duration:{:s}".format(mtp_stop_ts-mtp_start_ts), level=0)
 
-    test_log_file = get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_DL)
+    if not test_log_file:
+        mtp_mgmt_ctrl.cli_log_err("MTP Collect DL Test result failed", level=0)
+        return
+
     if GLB_CFG_MFG_TEST_MODE:
-        mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file)
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_DL)
 
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
@@ -232,19 +102,17 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
+
     # power on the mtp chassis
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
-            mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
@@ -284,14 +152,8 @@ def main():
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
 
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     libmfg_utils.cli_inf("##########  MFG DL Test Summary  ##########")
     for mtp_id in mfg_dl_summary.keys():

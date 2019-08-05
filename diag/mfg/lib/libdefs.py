@@ -19,6 +19,15 @@ class FLX_Factory:
     PENANG = "Penang"
 
 
+class FF_Stage:
+    FF_DL = "DL"
+    FF_P2C = "P2C"
+    FF_4C_H = "4C-H"
+    FF_4C_L = "4C-L"
+    FF_KPT = "KPT"
+    FF_FST = "FST"
+
+
 class Env_Cond(Enum):
     LTLV = "LTLV"
     LTNV = "LTNV"
