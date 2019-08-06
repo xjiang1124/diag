@@ -102,11 +102,9 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
+
     # power on the mtp chassis
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
@@ -153,14 +151,8 @@ def main():
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
 
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     libmfg_utils.cli_inf("##########  MFG P2C Test Summary  ##########")
     for mtp_id in mfg_p2c_summary.keys():

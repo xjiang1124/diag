@@ -303,36 +303,33 @@ def main():
         libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
         libmfg_utils.action_confirm("close chamber and set chamber temperature to {:d} degree centigrade".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
 
+    # power on the mtp chassis
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+
+    # Connect to MTP
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
+    # Copy script, config file on to each MTP Chassis
+    mtp_4c_script_dir = "mtp_regression/"
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_4c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 4C Test script", level=0)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP 4C Test script failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtpid_fail_list.append(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 4C Test script complete", level=0)
+
     for corner in corner_list:
-        # Power on the MTP
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-
-        # Connect to MTP
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-        # Copy script, config file on to each MTP Chassis
-        mtp_4c_script_dir = "mtp_regression/"
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_4c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-            mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 4C Test script", level=0)
-            if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg):
-                mtp_mgmt_ctrl.cli_log_err("Deploy MTP 4C Test script failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtpid_fail_list.append(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 4C Test script complete", level=0)
-
         mtp_thread_list = list()
         mfg_4c_summary = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -368,14 +365,8 @@ def main():
         cmd = "rm -f {:s}".format(" ".join(test_log_file_list))
         os.system(cmd)
 
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     libmfg_utils.cli_inf("##########  MFG 4C Test Summary  ##########")
     for mtp_id in mtpid_list:
