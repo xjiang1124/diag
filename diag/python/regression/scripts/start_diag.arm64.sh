@@ -1,7 +1,7 @@
 # !/bin/bash
 arch=arm64
 
-killall hal
+#killall hal
 
 # Set up environment
 echo "-------------------"
@@ -9,8 +9,8 @@ echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 mkdir -p $DIAG_DIR/log/
 
-echo "Killing hal"
-killall hal
+#echo "Killing hal"
+#killall hal
 
 if [[ -f /etc/profile.bak ]]
 then

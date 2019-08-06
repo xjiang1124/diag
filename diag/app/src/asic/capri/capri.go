@@ -4,16 +4,14 @@ import (
     "bufio"
     "os"
     "regexp"
+    "strconv"
     "strings"
 
     "common/runCmd"
-    //"common/cli"
     "common/dcli"
     "common/errType"
 )
 
-//var aaplPath = "/data/aapl"
-//var prbsLogFn = "aapl.a.log"
 var prbsLogFn = "aapl.log"
 
 func PciePrbs(poly string, duration int) (err int) {
@@ -21,7 +19,14 @@ func PciePrbs(poly string, duration int) (err int) {
     var speed string
     var errCount string
 
+    var targetSpeed string
+    var sbusList []uint64
+
+    var sbusListNaples100 = []uint64{2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32}
+    var sbusIdx = 0
+
     err = errType.SUCCESS
+    cardType := os.Getenv("CARD_TYPE")
 
     poly = strings.ToUpper(poly)
 
@@ -32,17 +37,22 @@ func PciePrbs(poly string, duration int) (err int) {
         dcli.Println("e", "Invalid POLY:", poly)
     }
 
-    cmd := "/data/aapl/aapl_prbs.sh"
+    cmd := "/data/nic_arm/aapl/aapl_prbs.sh"
     passSign := "AAPL PRBS DONE"
     failSign := "AAPL PRBS FAIL"
 
     err = runCmd.Run(passSign, failSign, cmd, "")
     dcli.Println("d", cmd, "done")
 
+    if err != errType.SUCCESS {
+        dcli.Println("e", "PRBS Test Failed!")
+        return
+    }
+
     re := regexp.MustCompile(`^\s+:([0-9a-f]+)\s+@\s+(\d+)\.\d+\s+1\.\d+\s+(\d+).*`)
 
     // Analyze PRBS log to determine pass/fail
-    logFn := "/data/aapl/" + prbsLogFn
+    logFn := "/data/nic_arm/aapl/" + prbsLogFn
 
     file, errCode := os.Open(logFn)
     if errCode != nil {
@@ -51,6 +61,20 @@ func PciePrbs(poly string, duration int) (err int) {
         return
     }
     defer file.Close()
+
+    // Check result
+    targetSpeed = "16"
+    if cardType == "NAPLES100" {
+        sbusList = make([]uint64, 16)
+        sbusList = sbusListNaples100[:]
+    } else if cardType == "NAPLES25" {
+        sbusList = make([]uint64, 16)
+        sbusList = sbusListNaples100[8:]
+    } else {
+        sbusList = make([]uint64, 16)
+        sbusList = sbusListNaples100[:]
+    }
+    dcli.Println("i", sbusList, targetSpeed)
 
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
@@ -71,6 +95,25 @@ func PciePrbs(poly string, duration int) (err int) {
                 errCount = element[3]
             }
             dcli.Printf("i", "sbus: 0x%s; speed: %s; errCount: %s\n", sbus, speed, errCount)
+
+            sbusUint64, _ := strconv.ParseUint(sbus, 16, 64)
+            if sbusUint64 != sbusList[sbusIdx] {
+                dcli.Println("e", "Sbus index mismatch! Expected", sbusList[sbusIdx], "read", sbusUint64)
+                err = errType.FAIL
+            }
+
+            if speed != targetSpeed {
+                dcli.Println("e", "Sbus", sbusUint64, "Speed mismatch! Expected", targetSpeed, "read", speed)
+                err = errType.FAIL
+            }
+
+            if errCount != "0" {
+                dcli.Println("e", "Sbus", sbusUint64, "PRBS error found!", errCount)
+                err = errType.FAIL
+            }
+
+            sbusIdx = sbusIdx + 1
+
         }
     }
 

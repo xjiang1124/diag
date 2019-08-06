@@ -33,6 +33,7 @@ AMD64_C_SRC_DIR=		\
 ARM64_SRC_DIR=			\
 	util/ledutil 		\
 	util/emmc 			\
+	dsp/nic_asic		\
 	dsp/i2c 			\
 	dsp/mvl    			\
 	dsp/qsfp    		\

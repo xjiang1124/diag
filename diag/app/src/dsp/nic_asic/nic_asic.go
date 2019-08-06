@@ -1,0 +1,65 @@
+package main
+
+import (
+    "flag"
+
+    "asic/capri"
+    "common/diagEngine"
+    "common/dcli"
+    "common/errType"
+    "config"
+)
+
+//========================================================
+// Constant definition
+const (
+    // Each DSP should know it own name
+    dspName = "NIC_ASIC"
+)
+
+func Nic_AsicPcie_PrbsHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 60, "test time")
+    polyPtr := fs.String("poly", "PRBS31", "PRBS polynomial")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    err := capri.PciePrbs(*polyPtr, *durationPtr)
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+func Nic_AsicEth_PrbsHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", )
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.SUCCESS
+    return
+}
+
+func main() {
+    diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
+    diagEngine.FuncMap["PCIE_PRBS"] = Nic_AsicPcie_PrbsHdl
+    diagEngine.FuncMap["ETH_PRBS"] = Nic_AsicEth_PrbsHdl
+
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
+    diagEngine.CardInfoInit(dspName)
+    diagEngine.DspInfraInit()
+    diagEngine.DspInfraMainLoop()
+}
