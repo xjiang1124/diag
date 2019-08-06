@@ -190,8 +190,12 @@ class nic_test:
             self.nic_con.uart_session_cmd(session, "sysinit.sh classic hw diag")
             time.sleep(20)
 
-        #self.nic_con.uart_session_cmd(session, "killall pciemgrd")
-        #sleep(0.5)
+        # Disable link manager
+        self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+        self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+        self.nic_con.uart_session_cmd(session, "halctl show port status")
+        sleep(0.5)
+
         self.nic_con.uart_session_cmd(session, "halctl debug port aacs-server-start --server-port 9000")
         sleep(2)
         for i in range(numRetry):
