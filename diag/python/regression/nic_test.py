@@ -188,7 +188,8 @@ class nic_test:
 
         if skip == False:
             self.nic_con.uart_session_cmd(session, "sysinit.sh classic hw diag")
-            time.sleep(20)
+            print "Sleep 30 sec"
+            time.sleep(30)
 
         # Disable link manager
         self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")

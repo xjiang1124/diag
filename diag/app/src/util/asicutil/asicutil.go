@@ -19,12 +19,17 @@ func myUsage() {
 func main() {
     flag.Usage = myUsage
 
-    chkLogPtr  := flag.Bool("chklog", false, "Check test log")
+    prbsPtr  := flag.Bool("prbs", false, "PRBS Test")
+
+    modePtr := flag.String("mode", "ETH",    "PRBS mode: PCIe/ETH")
+    polyPtr := flag.String("poly", "PRBS31", "PRBS polynomial")
+    duraPtr := flag.Int(   "dura", 60,       "PRBS duration")
+
     //------------------------
     flag.Parse()
 
-    if *chkLogPtr == true {
-        capri.PciePrbs("PRBS31", 5)
+    if *prbsPtr == true {
+        capri.Prbs(*modePtr, *polyPtr, *duraPtr)
         return
     }
 

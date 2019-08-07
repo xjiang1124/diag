@@ -62,6 +62,10 @@ DSP:
             NIC: ALL
         PRIORITY: NORMAL 
         PARAM:
+            timeout:
+                VALUE:
+                    ALL: 400
+                INFO: Test timeout setting
             duration:
                 VALUE:
                     ALL: 60
@@ -74,28 +78,20 @@ DSP:
     TEST#ETH_PRBS:
         INFO: Ethernet port PRBS test
         PLATFORM:
-            NIC:
+            NIC: ALL
         PRIORITY: NORMAL
         PARAM:
             timeout:
                 VALUE:
                     ALL: 400
                 INFO: Test timeout setting
-            sn:
-                VALUE:
-                    ALL: "SN000001"
-                INFO: NIC slot number
-            slot:
-                VALUE:
-                    ALL: 1
-                INFO: NIC slot number
             duration:
                 VALUE:
                     ALL: 60
                 INFO: test time
             poly:
                 VALUE:
-                    ALL: prbs31
+                    ALL: PRBS31
                 INFO: PRBS polynomial
 
 ...

@@ -6,7 +6,7 @@ import (
     "asic/capri"
     "common/diagEngine"
     "common/dcli"
-    "common/errType"
+    //"common/errType"
     "config"
 )
 
@@ -27,7 +27,7 @@ func Nic_AsicPcie_PrbsHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    err := capri.PciePrbs(*polyPtr, *durationPtr)
+    err := capri.Prbs("PCIE", *polyPtr, *durationPtr)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -37,19 +37,19 @@ func Nic_AsicPcie_PrbsHdl(argList []string) {
 
 func Nic_AsicEth_PrbsHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 60, "test time")
+    polyPtr := fs.String("poly", "PRBS31", "PRBS polynomial")
 
     errFs := fs.Parse(argList)
     if errFs != nil {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    // To avoid compile error: variable not used
-    // Need to remove after implementing DSP handler
-    dcli.Println("i", )
+    err := capri.Prbs("ETH", *polyPtr, *durationPtr)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.SUCCESS
+    diagEngine.FuncMsgChan <- err
     return
 }
 
