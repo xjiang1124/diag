@@ -411,6 +411,10 @@ def main():
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
+    elif corner == Env_Cond.MFG_RDT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        low_temp_threshold = None
+        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
     else:
         if GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
@@ -842,69 +846,69 @@ def main():
         if not stop_on_err:
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-        # Naples100 MTP Parallel test
-        if naples100_nic_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.NAPLES100,
-                                                           naples100_nic_list,
-                                                           naples100_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in naples100_nic_list and stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # # Naples100 MTP Parallel test
+        # if naples100_nic_list:
+        #     mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+        #                                                    NIC_Type.NAPLES100,
+        #                                                    naples100_nic_list,
+        #                                                    naples100_mtp_para_test_list,
+        #                                                    vmarg,
+        #                                                    stop_on_err)
+        #     for slot in mtp_para_fail_list:
+        #         if slot in naples100_nic_list and stop_on_err:
+        #             naples100_nic_list.remove(slot)
+        #         if slot not in fail_nic_list:
+        #             fail_nic_list.append(slot)
+        #         if slot in pass_nic_list:
+        #             pass_nic_list.remove(slot)
 
-        # Naples25 MTP Parallel test
-        if naples25_nic_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.NAPLES25,
-                                                           naples25_nic_list,
-                                                           naples25_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in naples25_nic_list and stop_on_err:
-                    naples25_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # # Naples25 MTP Parallel test
+        # if naples25_nic_list:
+        #     mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+        #                                                    NIC_Type.NAPLES25,
+        #                                                    naples25_nic_list,
+        #                                                    naples25_mtp_para_test_list,
+        #                                                    vmarg,
+        #                                                    stop_on_err)
+        #     for slot in mtp_para_fail_list:
+        #         if slot in naples25_nic_list and stop_on_err:
+        #             naples25_nic_list.remove(slot)
+        #         if slot not in fail_nic_list:
+        #             fail_nic_list.append(slot)
+        #         if slot in pass_nic_list:
+        #             pass_nic_list.remove(slot)
 
-        # Forio MTP Parallel test
-        if forio_nic_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.FORIO,
-                                                           forio_nic_list,
-                                                           forio_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in forio_nic_list and stop_on_err:
-                    forio_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # # Forio MTP Parallel test
+        # if forio_nic_list:
+        #     mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+        #                                                    NIC_Type.FORIO,
+        #                                                    forio_nic_list,
+        #                                                    forio_mtp_para_test_list,
+        #                                                    vmarg,
+        #                                                    stop_on_err)
+        #     for slot in mtp_para_fail_list:
+        #         if slot in forio_nic_list and stop_on_err:
+        #             forio_nic_list.remove(slot)
+        #         if slot not in fail_nic_list:
+        #             fail_nic_list.append(slot)
+        #         if slot in pass_nic_list:
+        #             pass_nic_list.remove(slot)
 
-        # Vomero MTP Parallel test
-        if vomero_nic_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.VOMERO,
-                                                           vomero_nic_list,
-                                                           vomero_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in vomero_nic_list and stop_on_err:
-                    vomero_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # # Vomero MTP Parallel test
+        # if vomero_nic_list:
+        #     mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+        #                                                    NIC_Type.VOMERO,
+        #                                                    vomero_nic_list,
+        #                                                    vomero_mtp_para_test_list,
+        #                                                    vmarg,
+        #                                                    stop_on_err)
+        #     for slot in mtp_para_fail_list:
+        #         if slot in vomero_nic_list and stop_on_err:
+        #             vomero_nic_list.remove(slot)
+        #         if slot not in fail_nic_list:
+        #             fail_nic_list.append(slot)
+        #         if slot in pass_nic_list:
+        #             pass_nic_list.remove(slot)
 
         if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
             diag_sub_dir = "/lv_diag_logs/"

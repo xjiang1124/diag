@@ -839,6 +839,7 @@ class nic_ctrl():
             self._vendor = NIC_Vendor.HPE
             return True
 
+        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
         return False
 
 
@@ -852,6 +853,7 @@ class nic_ctrl():
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         fru_buf = self.nic_get_info(nic_cmd)
         if not fru_buf:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         # retrieve card serial number
@@ -891,6 +893,7 @@ class nic_ctrl():
             else:
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary SN
             if self._vendor == NIC_Vendor.HPE:
