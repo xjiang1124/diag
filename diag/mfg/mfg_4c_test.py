@@ -12,6 +12,7 @@ sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import Env_Cond
 from libdefs import NIC_Type
+from libdefs import FF_Stage
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -230,29 +231,34 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, corner, mtp_test_summary):
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test start @{:s}".format(str(corner)), level=0)
+def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_summary):
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, str(corner))
 
+    mtp_mgmt_ctrl.cli_log_inf("MFG 4C Test Start @{:s}".format(stage), level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_REGRESSION_TIMEOUT)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+    if stage == FF_Stage.FF_4C_H:
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, Env_Cond.MFG_HT)
+    else:
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, Env_Cond.MFG_LT)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_4C_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+    mtp_mgmt_ctrl.cli_log_inf("MFG Test Complete @{:s}".format(stage), level=0)
 
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test complete @{:s}".format(str(corner)), level=0)
-    mtp_mgmt_ctrl.cli_log_inf("Regression Test Duration @{:s}:{:s}".format(str(corner), mtp_stop_ts-mtp_start_ts), level=0)
-
-    get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner, mtp_test_summary)
-
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
+    if not test_log_file:
+        mtp_mgmt_ctrl.cli_log_err("MTP Collect P2C Test result failed", level=0)
+        return
+    if GLB_CFG_MFG_TEST_MODE:
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
+    cmd = "rm -rf {:s}".format(test_log_file)
+    os.system(cmd)
     return
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diagnostics 4C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="MFG 4C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
@@ -261,15 +267,6 @@ def main():
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
-    if args.high_temp:
-        corner_list = [Env_Cond.HTHV, Env_Cond.HTLV]
-        flex_station = "4C-H"
-    elif args.low_temp:
-        corner_list = [Env_Cond.LTHV, Env_Cond.LTLV]
-        flex_station = "4C-L"
-    else:
-        corner_list = [Env_Cond.HTHV, Env_Cond.HTLV, Env_Cond.LTHV, Env_Cond.LTLV]
-        flex_station = "4C"
 
     if verbosity:
         diag_log_filep = sys.stdout
@@ -296,12 +293,17 @@ def main():
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
 
+    # wait operator set chamber temperature
     if args.high_temp:
         libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
         libmfg_utils.action_confirm("Close Chamber and set chamber temperature to {:d} degree centigrade".format(MTP_Const.MFG_EDVT_HIGH_TEMP), "STOP")
+        stage = FF_Stage.FF_4C_H
     elif args.low_temp:
         libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
-        libmfg_utils.action_confirm("close chamber and set chamber temperature to {:d} degree centigrade".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
+        libmfg_utils.action_confirm("Close chamber and set chamber temperature to {:d} degree centigrade".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
+        stage = FF_Stage.FF_4C_L
+    else:
+        libmfg_utils.sys_exit("Unknown 4C Corner... Abort")
 
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
@@ -329,58 +331,42 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 4C Test script complete", level=0)
 
-    for corner in corner_list:
-        mtp_thread_list = list()
-        mfg_4c_summary = dict()
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            key = "{:s}-{:s}".format(corner,mtp_id)
-            mfg_4c_summary[key] = list()
-            mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_4c_script_dir, mtp_mgmt_ctrl, mtp_id, corner, mfg_4c_summary[key]))
-            mtp_thread.daemon = True
-            mtp_thread.start()
-            mtp_thread_list.append(mtp_thread)
-            time.sleep(2)
+    mtp_thread_list = list()
+    mfg_4c_summary = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mfg_4c_summary[mtp_id] = list()
+        mtp_thread = threading.Thread(target = single_mtp_4c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_4c_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mfg_4c_summary[mtp_id]))
+        mtp_thread.daemon = True
+        mtp_thread.start()
+        mtp_thread_list.append(mtp_thread)
+        time.sleep(2)
 
-        # monitor all the thread
-        while True:
-            if len(mtp_thread_list) == 0:
-                break
-            for mtp_thread in mtp_thread_list[:]:
-                if not mtp_thread.is_alive():
-                    mtp_thread.join()
-                    mtp_thread_list.remove(mtp_thread)
-            time.sleep(5)
+    # monitor all the thread
+    while True:
+        if len(mtp_thread_list) == 0:
+            break
+        for mtp_thread in mtp_thread_list[:]:
+            if not mtp_thread.is_alive():
+                mtp_thread.join()
+                mtp_thread_list.remove(mtp_thread)
+        time.sleep(5)
 
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
-
-    # mfg report
-    for mtp_id in mtpid_list:
-        test_log_file_list = list()
-        for corner in corner_list:
-            test_log_file_list.append("log/{:s}_{:s}_mtp_test.log".format(str(corner), mtp_id))
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_report(mtp_id, regression_start_ts, regression_stop_ts, test_log_file_list, corner_list, flex_station)
-
-        cmd = "rm -f {:s}".format(" ".join(test_log_file_list))
-        os.system(cmd)
+    libmfg_utils.cli_inf("MFG 4C Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     libmfg_utils.cli_inf("##########  MFG 4C Test Summary  ##########")
-    for mtp_id in mtpid_list:
-        for corner in corner_list:
-            key = "{:s}-{:s}".format(corner,mtp_id)
-            libmfg_utils.cli_inf("---------- {:s} {:s} Report: ----------".format(mtp_id, corner))
-            for slot, sn, nic_type, rc in mfg_4c_summary[key]:
-                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                if rc:
-                    libmfg_utils.cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
-                else:
-                    libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
-            libmfg_utils.cli_inf("--------- {:s} {:s} Report End --------\n".format(mtp_id, corner))
-
+    for mtp_id in mfg_4c_summary.keys():
+        libmfg_utils.cli_inf("---------- {:s} Report: ----------".format(mtp_id))
+        for slot, sn, nic_type, rc in mfg_4c_summary[mtp_id]:
+            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+            if rc:
+                libmfg_utils.cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
+            else:
+                libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+        libmfg_utils.cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtpid_fail_list:
         libmfg_utils.cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
 

@@ -9,7 +9,7 @@ import argparse
 import re
 import random
 
-sys.path.append(os.path.relpath("../lib"))
+sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
@@ -20,32 +20,14 @@ from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
 
 
-def get_pro_srv_id():
-    product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    return pro_srv_id
-
-
 def load_mtp_cfg():
-    product_server_cfg_file = os.path.abspath("../config/pensando_pro_srv1_cfg.yaml")
-    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
-    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
-    if len(pro_srv_list) > 1:
-        pro_srv_id = libmfg_utils.single_select_menu("Select Product Server", pro_srv_list)
-        if not pro_srv_id:
-            return None
-    else:
-        pro_srv_id = pro_srv_list[0]
-    filename = pro_srv_cfg_db.get_pro_srv_mtp_chassis_cfg_file(pro_srv_id)
-    mtp_chassis_cfg_file = os.path.abspath("../config/" + filename)
-    mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    mtp_chassis_cfg_file_list = list()
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/kpt_mtp_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
+
     return mtp_cfg_db
 
 
@@ -92,10 +74,10 @@ def main():
     mtp_cfg_db = load_mtp_cfg()
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
-    diag_log_filep = open("../log/{:s}_nic_mgmt_diag.log".format(mtp_id), 'w+')
+    diag_log_filep = open("log/{:s}_nic_diag_reload.log".format(mtp_id), 'w+')
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        diag_nic_log_filep = open("../log/{:s}_NIC{:02d}_nic_mgmt_diag.log".format(mtp_id, slot+1), 'w+')
+        diag_nic_log_filep = open("log/{:s}_NIC{:02d}_nic_diag_reload.log".format(mtp_id, slot+1), 'w+')
         diag_nic_log_filep_list.append(diag_nic_log_filep)
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
 

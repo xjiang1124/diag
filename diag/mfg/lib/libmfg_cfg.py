@@ -1,6 +1,6 @@
 from libdefs import NIC_Type
 
-GLB_CFG_MFG_TEST_MODE = False
+GLB_CFG_MFG_TEST_MODE = True
 
 MFG_BYPASS_PSU_CHECK = True
 

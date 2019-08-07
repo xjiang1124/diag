@@ -15,8 +15,8 @@ MTP-111:
     IP: "192.168.1.119"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtp11"
-    SLOTS: 111
+    ALIAS: "mtp111"
+    SLOTS: 10
     CAPABILITY: 0x1
 
 MTP-112:

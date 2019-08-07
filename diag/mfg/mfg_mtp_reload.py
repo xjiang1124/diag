@@ -67,10 +67,8 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     if apc:
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        # power on the mtp chassis
+        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
         mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
@@ -117,23 +115,11 @@ def main():
             mtp_mgmt_ctrl.mtp_update_nic_diag_image(remote_dir + os.path.basename(nic_image_file))
             mtp_mgmt_ctrl.cli_log_inf("Update NIC Diag image {:s} complete".format(os.path.basename(nic_image_file)), level=0)
 
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC\n".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
-    libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-        mtp_mgmt_ctrl.mtp_apc_pwr_off()
-
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
-
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    # power on the mtp chassis
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
         mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)

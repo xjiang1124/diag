@@ -49,29 +49,23 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
-    mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Start", level=0)
-    # go to mtp_dl_test and Start the test
+    # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "./mtp_dl_test.py --mtpid {:s}".format(mtp_id)
 
+    mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
+    cmd = "./mtp_dl_test.py --mtpid {:s}".format(mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_DL_TEST_TIMEOUT)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-
-    mtp_mgmt_ctrl.cli_log_inf("MTP DL Test complete", level=0)
-    mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Duration:{:s}".format(mtp_stop_ts-mtp_start_ts), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Complete", level=0)
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_DL)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect DL Test result failed", level=0)
         return
-
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_DL)
-
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
 

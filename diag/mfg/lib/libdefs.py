@@ -29,16 +29,11 @@ class FF_Stage:
 
 
 class Env_Cond(Enum):
-    LTLV = "LTLV"
-    LTNV = "LTNV"
-    LTHV = "LTHV"
-    NTLV = "NTLV"
-    NTNV = "NTNV"
-    NTHV = "NTHV"
-    HTLV = "HTLV"
-    HTNV = "HTNV"
-    HTHV = "HTHV"
-    
+    MFG_LT = "LT"
+    MFG_NT = "NT"
+    MFG_HT = "HT"
+    MFG_RDT = "RDT"
+
     def __str__(self):
         return self.value
 
@@ -101,9 +96,14 @@ class MTP_Const:
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
 
-    DIAG_REGRESSION_TIMEOUT = 72000
-    DIAG_TEST_TIMEOUT = 7200
+    # more than 12 hours
+    DIAG_P2C_TIMEOUT = 48000
+    # more than 24 hours
+    DIAG_4C_TIMEOUT = 96000
+    # single test, 1.5 hours
+    DIAG_TEST_TIMEOUT = 5400
 
+    # 4 hours
     DIAG_DL_TEST_TIMEOUT = 14400
     DIAG_KPT_TEST_TIMEOUT = 14400
     
@@ -159,8 +159,8 @@ class MTP_DIAG_Logfile:
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
-    MFG_P2C_LOG_PKG_FILE = "NTNV_{:s}_{:s}.tar.gz"
-    MFG_P2C_LOG_DIR = "NTNV_{:s}_{:s}/"
+    MFG_P2C_LOG_PKG_FILE = "NT_{:s}_{:s}.tar.gz"
+    MFG_P2C_LOG_DIR = "NT_{:s}_{:s}/"
     MFG_4C_LOG_PKG_FILE = "{:s}_{:s}_{:s}.tar.gz"
     MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
     MFG_KPT_LOG_PKG_FILE = "KPT_{:s}_{:s}.tar.gz"

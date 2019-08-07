@@ -491,14 +491,21 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg):
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
+    # download the test script pkg
     if not network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
         mtp_mgmt_ctrl.cli_log_err("Copy Test script failed... Abort")
         return False
+    # remove the stale test script
+    cmd = "rm -rf {:s}".format(mtp_script_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
+        return False
+    # unpack the test script pkg
     cmd = "tar zxf {:s}".format(mtp_script_pkg)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
         return False
-
+    # remove the test script pkg
     cmd = "rm -f {:s}".format(mtp_script_pkg)
     os.system(cmd)
     return True
@@ -686,6 +693,17 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(stage, mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_4C_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_KPT:
         # log subdir
         sub_dir = MTP_DIAG_Logfile.MFG_KPT_LOG_DIR.format(mtp_id, log_timestamp)
@@ -713,34 +731,44 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         return None
 
     # for P2C/4C test, extra logfiles are needed
-    if stage in [FF_Stage.FF_P2C, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L]:
-        diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
-        asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES
-        diag_sub_dir = sub_dir+"diag_logs/"
-        asic_sub_dir = sub_dir+"asic_logs/"
-        # create extra subdir
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+diag_sub_dir)
+    if stage == FF_Stage.FF_P2C:
+        diag_log_dir = log_dir + "diag_logs/"
+        asic_log_dir = log_dir + "asic_logs/"
+        # move the extra logfile
+        cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+asic_sub_dir)
+        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+        hv_diag_log_dir = log_dir + "hv_diag_logs/"
+        hv_asic_log_dir = log_dir + "hv_asic_logs/"
+        lv_diag_log_dir = log_dir + "lv_diag_logs/"
+        lv_asic_log_dir = log_dir + "lv_asic_logs/"
+        # move the extra logfile
+        cmd = "mv {:s} {:s}".format(hv_diag_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        cmd = "mv {:s} {:s}".format(hv_asic_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
         # move the extra logfile
-        cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(lv_diag_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(lv_asic_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        # clean up logfiles for the next run
-        cmd = "cleanup.sh"
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
+    # for DL/KPT, no extra logfiles
+    else:
+        pass
 
     logfile_list = list()
     # pkg the onboard logs
@@ -772,6 +800,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_P2C_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_P2C_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
         elif stage == FF_Stage.FF_KPT:
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_KPT_LOG_DIR_FMT.format(nic_type, sn)

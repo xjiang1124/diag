@@ -40,27 +40,6 @@ MTP-101:
     SLOTS: 10
     CAPABILITY: 0x1
 
-MTP-102:
-    MODE: ""
-    TS: "192.168.74.208"
-    TS_PORT: "2003"
-    TS_USERID: "admin"
-    TS_PASSWORD: "N0isystem$"
-    APC1: "192.168.1.114"
-    APC1_PORT: "13"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
-    APC2: "192.168.1.114"
-    APC2_PORT: "14"
-    APC2_USERID: "apc"
-    APC2_PASSWORD: "apc"
-    IP: "192.168.1.117"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp102"
-    SLOTS: 10
-    CAPABILITY: 0x1
-
 MTP-202:
     MODE: ""
     TS: ""

@@ -29,59 +29,93 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
 
-    # create the log subdir
     log_timestamp = libmfg_utils.get_timestamp()
+    # log subdir
     sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(corner, mtp_id, log_timestamp)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir))
-
     # log pkg filename
     log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_4C_LOG_PKG_FILE.format(corner, mtp_id, log_timestamp)
-
-    # need to be sync'd with cleanup.sh
-    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES  
-    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES 
-    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES 
-
-    # regression logs
-    logfile_list = list()
-    # diag onboard log files
-    diag_sub_dir = sub_dir + "diag_logs/"
-    asic_sub_dir = sub_dir + "asic_logs/"
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+diag_sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    # asic onboard log files
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+asic_sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "cleanup.sh"
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    # all the test logs
+    # onboard log files
+    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
+    # test summary logfile
     test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+    # local copy of summary logfile
+    local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+
+    # temperary dir for log files
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
+    # move onboard log files
+    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
+
+    if corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_RDT:
+        diag_log_dir = log_dir + "diag_logs/"
+        asic_log_dir = log_dir + "asic_logs/"
+        # move the extra logfile
+        cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+    else:
+        hv_diag_log_dir = log_dir + "hv_diag_logs/"
+        hv_asic_log_dir = log_dir + "hv_asic_logs/"
+        lv_diag_log_dir = log_dir + "lv_diag_logs/"
+        lv_asic_log_dir = log_dir + "lv_asic_logs/"
+        # move the extra logfile
+        cmd = "mv {:s} {:s}".format(hv_diag_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        cmd = "mv {:s} {:s}".format(hv_asic_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        # move the extra logfile
+        cmd = "mv {:s} {:s}".format(lv_diag_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+        cmd = "mv {:s} {:s}".format(lv_asic_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
 
     # pkg the onboard logs
     cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
 
     # create the log dir if not exist
     qa_log_dir = MTP_DIAG_Logfile.DIAG_QA_LOG_DIR + libmfg_utils.get_date() + "/"
     cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(qa_log_dir)
     os.system(cmd)
-    # copy the onboard logs
-    local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     qa_log_pkg_file = qa_log_dir + os.path.basename(log_pkg_file)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
+
+    if not libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file):
+        mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test summary file {:}".format(test_log_file), level=0)
+        return None
+
+    if not libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
+        mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(log_pkg_file), level=0)
+        return None
+
     # clear the onboard logs
+    logfile_list = list()
     logfile_list.append(log_pkg_file)
     logfile_list.append(log_dir+sub_dir)
     cmd = "rm -rf {:s}".format(" ".join(logfile_list))
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return None
 
     return [local_test_log_file, qa_log_pkg_file]
 
@@ -157,8 +191,12 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
 
 def load_mtp_cfg():
     # Pensando Lab/Debug MTP Chassis
-    mtp_chassis_cfg_file = os.path.abspath("config/qa_mtp_chassis_cfg.yaml")
-    mtp_cfg_db = mtp_db(mtp_cfg_file = mtp_chassis_cfg_file)
+    mtp_chassis_cfg_file_list = list()
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
+
     return mtp_cfg_db
 
 
@@ -208,49 +246,44 @@ def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
     mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, test_corner):
-    if test_corner == None:
-        corner_list = [Env_Cond.NTNV,Env_Cond.NTHV,Env_Cond.NTLV]
-    else:
-        corner_list = [test_corner]
-
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner):
     for loop in range(1, iteration+1):
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} start".format(loop), level=0)
-        for corner in corner_list:
-            # go to mtp_regression and Start the regression
-            cmd = "cd {:s}".format(mtp_script_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
-            #cmd += " --psu-check"
-            if stop_on_err:
-                cmd += " --stop-on-error"
-            if skip_test:
-                cmd += " --skip-test"
+        # go to mtp_regression and Start the regression
+        cmd = "cd {:s}".format(mtp_script_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        #cmd += " --psu-check"
 
-            mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-            mtp_start_ts = libmfg_utils.timestamp_snapshot()
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_REGRESSION_TIMEOUT)
-            mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-            mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
+        if stop_on_err:
+            cmd += " --stop-on-error"
+        if skip_test:
+            cmd += " --skip-test"
 
-            test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
-            result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner)
-            cmd = "rm -rf {:s}".format(test_log_file)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+        mtp_start_ts = libmfg_utils.timestamp_snapshot()
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_P2C_TIMEOUT)
+        mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
-            if not result and stop_on_err:
-                return
+        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
+        result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner)
+        cmd = "rm -rf {:s}".format(test_log_file)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-            mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        if not result and stop_on_err:
+            return
 
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-            libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-                return
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+
+        mtp_mgmt_ctrl.mtp_apc_pwr_on()
+        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+            return
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
@@ -277,7 +310,7 @@ def main():
     email_to = None
     pwr_cycle = False
     skip_test = False
-    corner = None
+    corner = Env_Cond.MFG_NT
 
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")
