@@ -18,7 +18,7 @@ var Naples25Tbl = []I2cInfo {
 // Naples25 I2C table on MTP SMBus
 var Naples25MtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
-    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE", 0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
 }
 
