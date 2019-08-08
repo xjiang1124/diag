@@ -262,11 +262,11 @@ func ReadStatusWord(devName string, page byte) (data uint16, err int) {
 
 func ReadMfrId(devName string, numBytes int) (dataBuf []byte, err int) {
     dataBuf = make([]byte, numBytes)
-    retLen, err := smbus.ReadBlock(devName, MFR_ID, dataBuf)
+    _, err = smbus.ReadBlock(devName, MFR_ID, dataBuf)
     if err == errType.SUCCESS {
-        if retLen != numBytes {
-            err = errType.PMBUS_NUM_BYTE_MISMATCH
-        }
+//        if retLen != numBytes {
+//            err = errType.PMBUS_NUM_BYTE_MISMATCH
+//        }
     }
     return
 }

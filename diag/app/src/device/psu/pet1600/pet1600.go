@@ -121,7 +121,7 @@ func DispStatus(devName string) (err int) {
     cli.Println("i", outStr)
 
     // Temp and fan speed
-    vrmTitle = []string {"TEMP-1", "TEMP-2", "TEMP-3", "FAN-1", "FAN-2"}
+    vrmTitle = []string {"TEMP-1", "TEMP-2", "TEMP-3", "FAN-1"}
     outStr = fmt.Sprintf(fmtNameStr, "NAME")
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
@@ -131,12 +131,12 @@ func DispStatus(devName string) (err int) {
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    funcs = make([]func(string, byte)(uint64, uint64, int), 5)
+    funcs = make([]func(string, byte)(uint64, uint64, int), 4)
     funcs[0] = pmbusCmd.ReadTemp1Lnr
     funcs[1] = pmbusCmd.ReadTemp2Lnr
     funcs[2] = pmbusCmd.ReadTemp3Lnr
     funcs[3] = pmbusCmd.ReadFanSpd1Lnr
-    funcs[4] = pmbusCmd.ReadFanSpd2Lnr
+//    funcs[4] = pmbusCmd.ReadFanSpd2Lnr
 
     for _, rfunc := range(funcs) {
         dig, frac, err = rfunc(devName, pmbusCmd.PAGE_NONE)
