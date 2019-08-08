@@ -17,6 +17,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libmfg_cfg import DIAG_NIGHTLY_REPORT_RECEIPIENT
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libpro_srv_db import pro_srv_db
@@ -133,9 +134,9 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
         report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, MTP Setup Failed".format(corner, loop)
         ret = False
     else:
-        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf: 
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
             report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, NIC Test Failed".format(corner, loop)
-            nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL) 
+            nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
             match = re.findall(nic_fail_reg_exp, buf)
             for slot, nic_type, sn in match:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
@@ -154,10 +155,10 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
                 report_body += "\n"
                 ret = False
 
-        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf: 
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
             if report_title == "":
                 report_title = mtp_cli_id_str + "Diag Regression {:s} Test Iteration - {:d}, NIC Test Passed".format(corner, loop)
-            nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS) 
+            nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
             match = re.findall(nic_pass_reg_exp, buf)
             for slot, nic_type, sn in match:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
@@ -182,7 +183,6 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
     report_body += "    {:s}\n".format(qa_log_pkg)
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
-
 
     # clean the logfile
     os.system("rm -f {:s}".format(test_log_file))
@@ -217,33 +217,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
     return mtp_mgmt_ctrl
-
-    
-def mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg):
-    cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
-    os.system(cmd)
-    cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
-    os.system(cmd)
-    # remove the lib config for the next run
-    cmd = "rm -rf {:s}/lib {:s}/config".format(mtp_script_dir, mtp_script_dir)
-    os.system(cmd)
-
-
-def mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg):
-    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Regression script: {:s}".format(mtp_script_pkg), level=0)
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
-    if not libmfg_utils.network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
-        mtp_mgmt_ctrl.cli_log_err("Download regression script onto MTP Chassis failed", level=0)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
-    cmd = "tar zxf {:s}".format(mtp_script_pkg)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("Unpack MTP Regression script: {:s} complete".format(mtp_script_pkg), level=0)
 
 
 def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner):
@@ -290,7 +263,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
 
     return
 
- 
+
 def main():
     parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
@@ -307,7 +280,7 @@ def main():
     verbosity = False
     stop_on_err = False
     apc = False
-    email_to = None
+    email_to = DIAG_NIGHTLY_REPORT_RECEIPIENT
     pwr_cycle = False
     skip_test = False
     corner = Env_Cond.MFG_NT
@@ -331,77 +304,73 @@ def main():
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
+    mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 
     # init mtp_ctrl list
-    for mtp_id in mtpid_list: 
+    for mtp_id in mtpid_list:
         if verbosity:
             diag_log_filep = sys.stdout
-            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM 
+            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
         else:
             diag_log_filep = None
-            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM 
+            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    regression_start_ts = libmfg_utils.timestamp_snapshot()
     # power on the mtp chassis, if --apc is set
     if apc:
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-
+        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
     # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-            return
+            mtpid_list.remove(mtp_id)
+            mtpid_fail_list.append(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
-    # Copy script, config file on to each MTP Chassis
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_script_dir = "mtp_regression/"
-        mtp_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-        mtp_script_pkg_init(mtp_script_dir, mtp_script_pkg)
-        mtp_download_test_script(mtp_mgmt_ctrl, mtp_script_pkg)
-        cmd = "rm -f {:s}".format(mtp_script_pkg)
-        os.system(cmd)
-
     if pwr_cycle:
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-            mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-            mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-            mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-            mtp_mgmt_ctrl.mtp_apc_pwr_off()
+        libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
-
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list: 
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_connect():
                 mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-                return
+                mtpid_list.remove(mtp_id)
+                mtpid_fail_list.append(mtp_id)
+                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             else:
                 mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
+    regression_start_ts = libmfg_utils.timestamp_snapshot()
+
+    # Copy script, config file on to each MTP Chassis
+    mtp_regression_script_dir = "mtp_regression/"
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_regression_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP Regression Test script", level=0)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_regression_script_dir, mtp_regression_script_pkg):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP Regression Test script failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtpid_fail_list.append(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP Regression Test script complete", level=0)
+
     mtp_thread_list = list()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list): 
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner))
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_regression_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
+        time.sleep(2)
 
     # monitor all the thread
     while True:
         if len(mtp_thread_list) == 0:
-            break 
+            break
         for mtp_thread in mtp_thread_list[:]:
             if not mtp_thread.is_alive():
                 mtp_thread.join()

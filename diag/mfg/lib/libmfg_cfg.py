@@ -8,7 +8,7 @@ MFG_BYPASS_PSU_CHECK = True
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
-MFG_QSPI_TIMESTAMP = "08-05-2019"
+MFG_QSPI_TIMESTAMP = "08-08-2019"
 MFG_NAPLES100_CPLD_VERSION = "0x9"
 MFG_NAPLES100_CPLD_TIMESTAMP = "05-31"
 
@@ -28,8 +28,9 @@ MFG_NIC_EMMC_PROGRAM = True
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
+DIAG_NIGHTLY_REPORT_RECEIPIENT = "ps-diag@pensando.io"
 DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
-DIAG_SSH_OPTIONS = " -o ServerAliveInterval=2 -o ServerAliveCountMax=5 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=10'"
+DIAG_SSH_OPTIONS = " -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
 MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]

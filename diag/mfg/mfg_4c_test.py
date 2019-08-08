@@ -26,189 +26,6 @@ from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner, mtp_test_summary):
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
-
-    # create the log subdir
-    log_timestamp = libmfg_utils.get_timestamp()
-    sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(corner, mtp_id, log_timestamp)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir))
-
-    # log pkg filename
-    log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_4C_LOG_PKG_FILE.format(corner, mtp_id, log_timestamp)
-
-    # need to be sync'd with cleanup.sh
-    diag_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES
-    asic_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES
-    test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-
-    # regression logs
-    logfile_list = list()
-    # diag onboard log files
-    diag_sub_dir = sub_dir + "diag_logs/"
-    asic_sub_dir = sub_dir + "asic_logs/"
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+diag_sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}diag_logs/".format(diag_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    # asic onboard log files
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+asic_sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}asic_logs/".format(asic_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    cmd = "cleanup.sh"
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    # all the test logs
-    test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-
-    # pkg the onboard logs
-    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    local_test_log_file = "log/{:s}_{:s}_mtp_test.log".format(str(corner), mtp_id)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file)
-
-    with open(local_test_log_file, 'r') as fp:
-        buf = fp.read()
-    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-    fail_match = re.findall(nic_fail_reg_exp, buf)
-    pass_match = re.findall(nic_pass_reg_exp, buf)
-
-    for slot, nic_type, sn in fail_match + pass_match:
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR_FMT.format(nic_type, corner, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_4C_LOG_DIR_FMT.format(nic_type, corner, sn)
-
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
-        os.system(cmd)
-        # copy the onboard logs
-        ts = libmfg_utils.get_timestamp()
-        qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
-        mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files {:s}".format(sn, qa_log_pkg_file))
-        libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file)
-
-    for slot, nic_type, sn in fail_match:
-        mtp_test_summary.append((slot, sn, nic_type, False))
-
-    for slot, nic_type, sn in pass_match:
-        mtp_test_summary.append((slot, sn, nic_type, True))
-
-    # clear the onboard logs
-    logfile_list.append(log_pkg_file)
-    logfile_list.append(log_dir+sub_dir)
-    cmd = "rm -rf {:s}".format(" ".join(logfile_list))
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-    mtp_mgmt_ctrl.cli_log_inf("Collecting log files complete", level=0)
-
-    return local_test_log_file
-
-
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file_list, corner_list, flex_station):
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
-    duration = mtp_stop_ts - mtp_start_ts
-
-    pass_sn_list = list()
-    fail_sn_list = list()
-    sn_test_dict = dict()
-    sn_type_dict = dict()
-    sn_test_rslt_dict = dict()
-    sn_err_dsc_dict = dict()
-    sn_err_code_dict = dict()
-
-    # track the analysis result for each corner
-    corner_count = len(corner_list)
-    logfile_valid_list = [False] * corner_count
-
-    for idx, corner, test_log_file in zip(range(corner_count), corner_list, test_log_file_list):
-        with open(test_log_file, 'r') as fp:
-            buf = fp.read()
-
-        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
-            logfile_valid_list[idx] = True
-            nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-            match = re.findall(nic_fail_reg_exp, buf)
-            for slot, nic_type, sn in match:
-                # init the list
-                if sn not in sn_test_dict.keys():
-                    sn_test_dict[sn] = list()
-                    sn_test_rslt_dict[sn] = list()
-                    sn_type_dict[sn] = nic_type
-                    sn_err_dsc_dict[sn] = list()
-                    sn_err_code_dict[sn] = list()
-
-                if sn not in fail_sn_list:
-                    fail_sn_list.append(sn)
-                if sn in pass_sn_list:
-                    pass_sn_list.remove(sn)
-
-                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                # find all test status
-                nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-                sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-                for dsp, test, result in sub_match:
-                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(str(corner), dsp, test))
-                    sn_test_rslt_dict[sn].append(result)
-                    sn_err_dsc_dict[sn].append(nic_cli_id_str)
-                    sn_err_code_dict[sn].append(result)
-
-        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
-            logfile_valid_list[idx] = True
-            nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-            match = re.findall(nic_pass_reg_exp, buf)
-            for slot, nic_type, sn in match:
-                # init the list
-                if sn not in sn_test_dict.keys():
-                    sn_test_dict[sn] = list()
-                    sn_test_rslt_dict[sn] = list()
-                    sn_type_dict[sn] = nic_type
-                    sn_err_dsc_dict[sn] = list()
-                    sn_err_code_dict[sn] = list()
-
-                if sn not in fail_sn_list and sn not in pass_sn_list:
-                    pass_sn_list.append(sn)
-
-                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-                # find all test status
-                nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-                sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-                for dsp, test, result in sub_match:
-                    sn_test_dict[sn].append("{:s}-{:s}-{:s}".format(str(corner), dsp, test))
-                    sn_test_rslt_dict[sn].append(result)
-                    sn_err_dsc_dict[sn].append(nic_cli_id_str)
-                    sn_err_code_dict[sn].append(result)
-
-    # if any incomplete logfile, don't post test report
-    for logfile_valid, corner, test_log_file in zip(logfile_valid_list, corner_list, test_log_file_list):
-        if not logfile_valid:
-            libmfg_utils.cli_err(mtp_cli_id_str + "4C Test Fails @{:s}, Skip test report posting".format(corner))
-            cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
-            os.system(cmd)
-            return
-
-    libmfg_utils.cli_inf(mtp_cli_id_str + "Start posting test report")
-    for sn in fail_sn_list:
-        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn_type_dict[sn], sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
-        if not ret:
-            libmfg_utils.cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-        else:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-    for sn in pass_sn_list:
-        ret = libmfg_utils.flx_web_srv_post_uut_report(flex_station, sn_type_dict[sn], sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, sn_test_dict[sn], sn_test_rslt_dict[sn], sn_err_dsc_dict[sn], sn_err_code_dict[sn])
-        if not ret:
-            libmfg_utils.cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-        else:
-            libmfg_utils.cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-
 def load_mtp_cfg():
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
@@ -322,14 +139,14 @@ def main():
     mtp_4c_script_dir = "mtp_regression/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mtp_4c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 4C Test script", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
         if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP 4C Test script failed", level=0)
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             mtpid_list.remove(mtp_id)
             mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
         else:
-            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 4C Test script complete", level=0)
+            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
 
     mtp_thread_list = list()
     mfg_4c_summary = dict()
@@ -352,24 +169,13 @@ def main():
         time.sleep(5)
 
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG 4C Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
+    libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, regression_stop_ts - regression_start_ts))
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
-    libmfg_utils.cli_inf("##########  MFG 4C Test Summary  ##########")
-    for mtp_id in mfg_4c_summary.keys():
-        libmfg_utils.cli_inf("---------- {:s} Report: ----------".format(mtp_id))
-        for slot, sn, nic_type, rc in mfg_4c_summary[mtp_id]:
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            if rc:
-                libmfg_utils.cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
-            else:
-                libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
-        libmfg_utils.cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
-    for mtp_id in mtpid_fail_list:
-        libmfg_utils.cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
-
+    # dump the summary
+    libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)
 
 if __name__ == "__main__":
     main()

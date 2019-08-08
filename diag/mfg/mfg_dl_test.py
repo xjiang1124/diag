@@ -149,18 +149,8 @@ def main():
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
-    libmfg_utils.cli_inf("##########  MFG DL Test Summary  ##########")
-    for mtp_id in mfg_dl_summary.keys():
-        libmfg_utils.cli_inf("---------- {:s} Report: ----------".format(mtp_id))
-        for slot, sn, nic_type, rc in mfg_dl_summary[mtp_id]:
-            nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
-            if rc:
-                libmfg_utils.cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
-            else:
-                libmfg_utils.cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
-        libmfg_utils.cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
-    for mtp_id in mtpid_fail_list:
-        libmfg_utils.cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+    # dump the summary
+    libmfg_utils.mfg_summary_disp(FF_Stage.FF_DL, mfg_dl_summary, mtpid_fail_list)
 
 
 if __name__ == "__main__":

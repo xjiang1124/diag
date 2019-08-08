@@ -917,3 +917,18 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
                 cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+
+
+def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
+    cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
+    for mtp_id in summary_dict.keys():
+        cli_inf("---------- {:s} Report: ----------".format(mtp_id))
+        for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+            nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
+            if rc:
+                cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
+            else:
+                cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+        cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
+    for mtp_id in mtp_fail_list:
+        cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
