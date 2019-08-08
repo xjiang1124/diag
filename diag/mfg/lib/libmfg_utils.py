@@ -16,7 +16,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import FLX_Factory
 from libdefs import MFG_DIAG_CMDS
-from libmfg_cfg import * 
+from libmfg_cfg import *
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -93,7 +93,7 @@ def diag_param_cmd(param_list):
     test = param_list[2]
     param = param_list[3]
 
-    cmd = " -c {:s} -d {:s} -t {:s} -p '{:s}'".format(card, dsp, test, param) 
+    cmd = " -c {:s} -d {:s} -t {:s} -p '{:s}'".format(card, dsp, test, param)
     return cmd
 
 
@@ -442,7 +442,7 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
     session = pexpect.spawn(cmd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_SYNC_DELAY)
 
-    cmd = "md5sum " + local_file 
+    cmd = "md5sum " + local_file
     session = pexpect.spawn(cmd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
@@ -558,7 +558,7 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
     for test, test_rslt, err_dsc, err_code in zip(test_list, test_rslt_list, err_dsc_list, err_code_list):
         # (test, status, value, description, failure code)
         value = ""
-        test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code) 
+        test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code)
 
     #(stage, SN, start_ts, duration, stop_ts, result)
     save_uut_rslt_entry = FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage, sn, str(start_ts), str(duration), str(stop_ts), rslt, nic_type, duration, rslt)
@@ -571,7 +571,7 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
 
 
 def flx_soap_get_uut_info_xml(stage, sn):
-    get_uut_info_entry = FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) 
+    get_uut_info_entry = FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage)
     return FLX_GET_UUT_INFO_XML_HEAD + \
            get_uut_info_entry + \
            FLX_GET_UUT_INFO_XML_TAIL
@@ -789,7 +789,12 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     fail_match = re.findall(nic_fail_reg_exp, buf)
     pass_match = re.findall(nic_pass_reg_exp, buf)
 
+    log_hard_copy_flag = True
+    log_relative_link = None
     for slot, nic_type, sn in fail_match + pass_match:
+        # report doesn't have valid serial number
+        if sn == "None":
+            continue
         if stage == FF_Stage.FF_DL:
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
@@ -815,12 +820,23 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
 
         cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
         os.system(cmd)
-        # copy the onboard logs
-        qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
-        mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files {:s}".format(sn, qa_log_pkg_file))
-        if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
-            mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(log_pkg_file), level=0)
-            continue
+        # copy the onboard logs only once
+        if log_hard_copy_flag:
+            qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
+            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, qa_log_pkg_file))
+            if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
+                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(log_pkg_file), level=0)
+                continue
+            log_hard_copy_flag = False
+            # relative link is ../sn/log_pkg_file
+            log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
+        # create hard link
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Create link log file {:s}".format(sn, log_relative_link))
+            chdir_cmd = "cd {:s}".format(mfg_log_dir)
+            ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
+            cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
+            os.system(cmd)
 
     for slot, nic_type, sn in fail_match:
         mtp_test_summary.append((slot, sn, nic_type, False))

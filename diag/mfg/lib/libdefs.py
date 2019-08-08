@@ -303,6 +303,7 @@ class MFG_DIAG_CMDS:
 
     MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
     MFG_MK_DIR_FMT = "mkdir -p {:s}"
+    MFG_LOG_LINK_FMT = "ln {:s} {:s}"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
