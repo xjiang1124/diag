@@ -63,11 +63,11 @@ class nic_test:
         return ret
 
     def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
-        numRetry = 5
+        numRetry = 1
         nic_list_remain = nic_list[:]
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
-            ret, nic_list_remain = self.setup_env_multi_1(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl)
+            ret, nic_list_remain = self.setup_env_multi_2(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl)
             if ret == 0:
                 break
         if ret != 0:
@@ -111,6 +111,80 @@ class nic_test:
 
             if ret1 == 0:
                 nic_list_remain.remove(slot)
+
+        if ret != 0:
+            print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
+        else:
+            print "===  setup_env_multi Passed ==="
+
+        return ret, nic_list_remain
+
+    def setup_env_multi_2(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        nic_list_remain = nic_list[:]
+        slot_list = ",".join(nic_list)
+        print "slot_list:", slot_list
+
+        if pwr_cycle == True:
+            self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+
+        for slot in nic_list:
+            ret = self.setup_env(int(slot), False, 30, False, False, False)
+
+        if mgmt == True:
+            for slot in nic_list:
+                self.nic_con.switch_console(slot)
+                set = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+        elif aapl == True and mgmt == False:
+            for slot in nic_list:
+                self.nic_con.switch_console(slot)
+
+                session = common.session_start()
+                self.nic_con.uart_session_start(session)
+
+                self.nic_con.uart_session_cmd(session, "sysinit.sh classic hw diag")
+
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+
+        if mgmt == True or aapl == True:
+                self.nic_con.switch_console(slot)
+                session = common.session_start()
+                self.nic_con.uart_session_start(session)
+
+                print "Sleep 30 sec"
+                time.sleep(30)
+
+                # Disable link manager
+                self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+                self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+                self.nic_con.uart_session_cmd(session, "halctl show port status")
+                sleep(0.5)
+
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+
+        if aapl == True:
+            for slot in nic_list:
+                ret = self.aapl_setup(self.baud_rate, int(slot), True)
+                if ret != 0:
+                    ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+        if mgmt == True:
+            for slot in nic_list:
+                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True)
+                if ret != 0:
+                    ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 0:
+                nic_list_remain.remove(slot)
+            ret = ret + ret_list[int(slot)-1]
 
         if ret != 0:
             print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
@@ -191,11 +265,11 @@ class nic_test:
             print "Sleep 30 sec"
             time.sleep(30)
 
-        # Disable link manager
-        self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-        self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-        self.nic_con.uart_session_cmd(session, "halctl show port status")
-        sleep(0.5)
+            # Disable link manager
+            self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+            self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+            self.nic_con.uart_session_cmd(session, "halctl show port status")
+            sleep(0.5)
 
         self.nic_con.uart_session_cmd(session, "halctl debug port aacs-server-start --server-port 9000")
         sleep(2)
