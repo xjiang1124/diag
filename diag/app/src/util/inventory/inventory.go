@@ -26,9 +26,9 @@ func uutPresent(uutName string) (data byte, present bool) {
     addr := uint64(naples100Cpld.REG_ID)
 
     cli.DisableVerbose()
-    data, err := hwdev.NaplesCpldRd(devName, addr, uutName)
+    data, err := hwdev.NaplesCpldRdBlind(devName, addr, uutName)
     if err != errType.SUCCESS {
-        data, err = hwdev.NaplesCpldRd("CPLD_ALT", addr, uutName)
+        data, err = hwdev.NaplesCpldRdBlind("CPLD_ALT", addr, uutName)
         if err != errType.SUCCESS {
             present = false
         } else {
