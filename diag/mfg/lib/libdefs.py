@@ -33,6 +33,8 @@ class Env_Cond(Enum):
     MFG_NT = "NT"
     MFG_HT = "HT"
     MFG_RDT = "RDT"
+    MFG_EDVT_HT = "EDVT_HT"
+    MFG_EDVT_LT = "EDVT_LT"
 
     def __str__(self):
         return self.value

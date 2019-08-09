@@ -398,8 +398,14 @@ def main():
     if args.corner:
         corner = args.corner
 
-    # Chamber temperature
-    if corner == Env_Cond.MFG_LT:
+    # Normal temperature, no voltage corner
+    if corner == Env_Cond.MFG_NT:
+        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
+        low_temp_threshold = None
+        high_temp_threshold = None
+        vmarg_list = [0]
+    # Low temperature, two voltage corner
+    elif corner == Env_Cond.MFG_LT:
         if GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
             low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
@@ -407,15 +413,9 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
             low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
         high_temp_threshold = None
-    elif corner == Env_Cond.MFG_NT:
-        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
-        low_temp_threshold = None
-        high_temp_threshold = None
-    elif corner == Env_Cond.MFG_RDT:
-        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-        low_temp_threshold = None
-        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
-    else:
+        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+    # High temperature, two voltage corner
+    elif corner == Env_Cond.MFG_HT:
         if GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
             high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
@@ -423,12 +423,27 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
             high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
         low_temp_threshold = None
-
-    # Voltage margin
-    if corner == Env_Cond.MFG_LT or corner == Env_Cond.MFG_HT:
+        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+    # RDT runs @high temperature, no voltage corner
+    elif corner == Env_Cond.MFG_RDT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
+        low_temp_threshold = None
+        vmarg_list = [0]
+    # EDVT, high temperature, two voltage corner
+    elif corner == Env_Cond.MFG_EDVT_HT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
+        low_temp_threshold = None
+        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+    # EDVT, low temperature, two voltage corner
+    elif corner == Env_Cond.MFG_EDVT_LT:
+        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
+        high_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
     else:
-        vmarg_list = [0]
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
 
     # load the mtp config
     mtp_chassis_cfg_file_list = list()
@@ -441,7 +456,6 @@ def main():
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
-        return
 
     # find the apc config based on the mtpid
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
@@ -522,7 +536,8 @@ def main():
 
     # Wait the Chamber temperature, if HT or LT is set
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
-    if corner == Env_Cond.MFG_RDT:
+    # RDT/EDVT, don't wait soaking time
+    if corner == Env_Cond.MFG_RDT or corner == Env_Cond.MFG_EDVT_HT or corner == Env_Cond.MFG_EDVT_LT:
         rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(None, None)
     else:
         rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
