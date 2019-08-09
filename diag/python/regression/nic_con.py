@@ -379,11 +379,7 @@ class nic_con:
             print "Invalid slot number:", slot
             return -1
 
-        session = common.session_start()
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
-        time.sleep(1)
-        common.session_stop(session)
+        self.switch_console(slot)
 
         if skip_enable == False:
             ret = self.enable_mnic(rate, slot, first_pwr_on)
@@ -392,7 +388,6 @@ class nic_con:
                 return ret
 
         for i in range(numRetry):
-            time.sleep(10)
             ret = self.config_mnic(rate, slot)
             if ret == -1:
                 print "=== FAIL to enable management port! ==="
@@ -400,12 +395,14 @@ class nic_con:
             elif ret == 0:
                 break
 
-            if i == (numRetry-1):
-                print "=== FAIL to enable management port! Max retry reached!"
-                return -1
+            time.sleep(10)
 
-        print "=== Management port is ready ==="
-        return ret
+        if ret != 0:
+            print "=== FAIL to enable management port! Max retry reached!"
+            return -1
+        else:
+            print "=== Management port is ready ==="
+            return ret
 
     def disable_pcie_uboot(self, slot):
         ret = 0
