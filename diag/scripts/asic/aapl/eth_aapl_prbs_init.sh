@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo $CARD_TYPE
 
 SERVER_IP=localhost
@@ -12,3 +14,5 @@ do
     #sleep 0.5
     aapl  serdes-init -server $SERVER_IP -port $PORT -addr $sbus -div 165 -width 40 -elb -disable-signal-ok
 done
+
+echo "AAPL ETH SERDES INIT DONE"

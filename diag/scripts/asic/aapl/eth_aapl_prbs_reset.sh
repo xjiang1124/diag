@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo $CARD_TYPE
 
 SERVER_IP=localhost
@@ -11,3 +13,4 @@ do
     #sleep 0.5
 done
 
+echo "AAPL ETH SERDES RESET DONE"

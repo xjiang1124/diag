@@ -66,6 +66,7 @@ function do_prbs() {
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -error-reset
     done
     
+    echo "Sleep $DURATION sec"
     sleep $DURATION
     
     #for sbus in $sbus_list
@@ -78,5 +79,5 @@ function do_prbs() {
     echo "AAPL PRBS DONE"
 }
 
-#do_prbs | tee /data/nic_arm/aapl/aapl.log
-do_prbs
+do_prbs | tee /data/nic_arm/aapl/aapl.log
+#do_prbs
