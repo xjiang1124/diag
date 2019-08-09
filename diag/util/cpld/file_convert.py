@@ -6,7 +6,7 @@ bin_array = array('B')
 #filename = "MTP_IO_BB_impl1.jed"
 filename = sys.argv[1]
 
-max_row = 2175
+max_row = 3198
 
 with open (filename) as f:
     lines = f.readlines()
