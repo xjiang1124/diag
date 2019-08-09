@@ -63,7 +63,7 @@ class nic_test:
         return ret
 
     def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
-        numRetry = 1
+        numRetry = 5
         nic_list_remain = nic_list[:]
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
@@ -140,6 +140,7 @@ class nic_test:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
                 set = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+
         elif aapl == True and mgmt == False:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
@@ -153,21 +154,21 @@ class nic_test:
                 common.session_stop(session)
 
         if mgmt == True or aapl == True:
-                self.nic_con.switch_console(slot)
-                session = common.session_start()
-                self.nic_con.uart_session_start(session)
+             print "Sleep 30 sec"
+             time.sleep(30)
+             for slot in nic_list:
+                 self.nic_con.switch_console(slot)
+                 session = common.session_start()
+                 self.nic_con.uart_session_start(session)
 
-                print "Sleep 30 sec"
-                time.sleep(30)
+                 # Disable link manager
+                 self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+                 self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+                 self.nic_con.uart_session_cmd(session, "halctl show port status")
+                 sleep(0.5)
 
-                # Disable link manager
-                self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-                self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-                self.nic_con.uart_session_cmd(session, "halctl show port status")
-                sleep(0.5)
-
-                self.nic_con.uart_session_stop(session)
-                common.session_stop(session)
+                 self.nic_con.uart_session_stop(session)
+                 common.session_stop(session)
 
         if aapl == True:
             for slot in nic_list:
