@@ -93,6 +93,7 @@ var NaplesMtpTbl = []I2cInfo {
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "NIC_HUB",    2},
     I2cInfo {"TSENSOR",        "TMP421",    0x0,   0x4C,    0x0,    "NIC_HUB",    2},
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "NIC_HUB",    2},
+    I2cInfo {"CPLD_ALT",       "CPLD",      0x0,   0x4A,    0x0,    "NIC_HUB",    2},
 
     I2cInfo {"QSFP_1_A0",      "QSFP",      0x0,   0x50,    0x0,    "NIC_HUB",    1},
     I2cInfo {"QSFP_1_A2",      "QSFP",      0x0,   0x51,    0x0,    "NIC_HUB",    1},
