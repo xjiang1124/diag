@@ -628,9 +628,9 @@ def main():
     for vmarg in vmarg_list:
         inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
-        mtp_mgmt_ctrl.cli_log_inf("Fan Speed = {:3d}%".format(fanspd))
-        mtp_mgmt_ctrl.cli_log_inf("Inlet temp = {:2.2f}".format(inlet))
-        mtp_mgmt_ctrl.cli_log_inf("Voltage Margin = {:d}%".format(vmarg))
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Fan Speed = {:3d}%".format(fanspd))
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
+        mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
         # power cycle all the NIC
