@@ -365,7 +365,7 @@ class nic_con:
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to enable management port ==="
+            print "=== TIMEOUT: Faled to config management port ==="
             ret = -1
 
         self.uart_session_stop(session)

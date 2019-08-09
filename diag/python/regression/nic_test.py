@@ -67,13 +67,15 @@ class nic_test:
         nic_list_remain = nic_list[:]
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
+            print "slot_list", nic_list_remain
             ret, nic_list_remain = self.setup_env_multi_2(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl)
             if ret == 0:
                 break
+
         if ret != 0:
             print "=== Setup env top failed!", ",".join(nic_list_remain)
         else:
-            print "=== Setup env top done ==="
+            print "=== Setup env top done #", retry, "==="
 
         return ret
 
@@ -178,6 +180,8 @@ class nic_test:
 
         if mgmt == True:
             for slot in nic_list:
+                if ret_list[int(slot)-1] != 0:
+                    continue
                 ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
