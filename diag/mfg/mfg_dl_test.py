@@ -53,12 +53,14 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     cmd = "cd {:s}".format(mtp_dl_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
+    mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     cmd = "./mtp_dl_test.py --mtpid {:s}".format(mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_DL_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Complete", level=0)
+    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_DL)
     if not test_log_file:

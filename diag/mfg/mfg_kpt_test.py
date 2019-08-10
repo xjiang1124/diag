@@ -52,12 +52,14 @@ def single_mtp_kpt_test(mtp_kpt_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     cmd = "cd {:s}".format(mtp_kpt_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
+    mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG KPT Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     cmd = "./mtp_kpt_test.py --mtpid {:s}".format(mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_KPT_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG KPT Test Complete", level=0)
+    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_kpt_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_KPT)
     if not test_log_file:

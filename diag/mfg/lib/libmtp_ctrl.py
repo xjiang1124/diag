@@ -1105,6 +1105,10 @@ class mtp_ctrl():
             self.cli_log_err("MTP temp sensor test failed")
             return False
 
+        return True
+
+
+    def mtp_wait_soaking(self):
         # Soaking process
         if GLB_CFG_MFG_TEST_MODE:
             timeout = MTP_Const.MFG_TEMP_SOAK_TIMEOUT
@@ -1113,7 +1117,7 @@ class mtp_ctrl():
         self.cli_log_inf("Start soaking process, wait for {:d} seconds".format(timeout * MTP_Const.MFG_TEMP_CHECK_INTERVAL))
         libmfg_utils.count_down(timeout * MTP_Const.MFG_TEMP_CHECK_INTERVAL)
 
-        self.cli_log_inf("Soaking process complete, current inlet reading is {:2.2f}".format(inlet))
+        self.cli_log_inf("Soaking process complete")
 
         return True
 

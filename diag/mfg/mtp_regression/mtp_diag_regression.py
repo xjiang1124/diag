@@ -536,15 +536,14 @@ def main():
 
     # Wait the Chamber temperature, if HT or LT is set
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
-    # RDT/EDVT, don't wait soaking time
-    if corner == Env_Cond.MFG_RDT or corner == Env_Cond.MFG_EDVT_HT or corner == Env_Cond.MFG_EDVT_LT:
-        rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(None, None)
-    else:
-        rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
+    rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
     if not rdy:
         mtp_mgmt_ctrl.mtp_diag_fail_report("Diag Regression Test Ambient Temperature Check Failed")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
         return
+    # only MFG HT/LT need soaking process
+    if corner == Env_Cond.MFG_HT or corner == Env_Cond.MFG_LT:
+        mtp_mgmt_ctrl.mtp_wait_soaking()
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
     naples100_nic_list = list()
