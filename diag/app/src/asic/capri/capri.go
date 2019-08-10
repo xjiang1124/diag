@@ -59,7 +59,6 @@ func Prbs(mode string, poly string, duration int) (err int) {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples100[:]
         }
-        cmd = "/data/nic_arm/aapl/aapl_prbs.sh"
     } else if mode == "ETH" {
         targetSpeed = "26"
         if cardType == "NAPLES100" {
@@ -72,25 +71,23 @@ func Prbs(mode string, poly string, duration int) (err int) {
             sbusList = make([]uint64, 16)
             sbusList = sbusEthListNaples100[:]
         }
-        cmd = "/data/nic_arm/aapl/eth_aapl_prbs.sh"
     } else {
         dcli.Println("e", "Invalid mode:", mode)
         err = errType.INVALID_PARAM
         return
     }
+    cmd = "/data/nic_arm/aapl/aapl_prbs_all.sh"
 
     // For Eth PRBS, need to re-init serdes
     dcli.Println("d", "Eth reset")
     if mode == "ETH" {
-        cmd1 := "/data/nic_arm/aapl/eth_aapl_prbs_reset.sh"
-        err = runCmd.Run("AAPL ETH SERDES RESET DONE", "AAPL ETH SERDES RESET FAILED", cmd1, poly)
+        err = runCmd.Run("AAPL ETH SERDES RESET DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "RESET")
         if err != errType.SUCCESS {
             dcli.Println("e", "Failed to reset Eth serdes!")
             return
         }
 
-        cmd2 := "/data/nic_arm/aapl/eth_aapl_prbs_init.sh"
-        err = runCmd.Run("AAPL ETH SERDES INIT DONE", "AAPL ETH SERDES INIT FAILED", cmd2)
+        err = runCmd.Run("AAPL ETH SERDES INIT DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "INIT")
         if err != errType.SUCCESS {
             dcli.Println("e", "Failed to init Eth serdes!")
             return
@@ -100,7 +97,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     passSign := "AAPL PRBS DONE"
     failSign := "AAPL PRBS FAIL"
 
-    err = runCmd.Run(passSign, failSign, cmd, poly, strconv.Itoa(duration))
+    err = runCmd.Run(passSign, failSign, cmd, mode, "PRBS", poly, strconv.Itoa(duration))
 
     if err != errType.SUCCESS {
         dcli.Println("e", "PRBS Test Failed!")
