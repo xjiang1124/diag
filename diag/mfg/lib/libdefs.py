@@ -273,9 +273,9 @@ class MFG_DIAG_CMDS:
     NIC_CON_MTEST_FMT = "nic_con.py -mtest -slot {:d}"
 
     MTP_PARA_PRBS_ETH_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=eth -vmarg {:d}"
-    MTP_PARA_PRBS_PCIE_TEST_PRE_FMT = "nic_con.py -dis_pcie -slot {:d}"
     MTP_PARA_PRBS_PCIE_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=pcie -vmarg {:d}"
-    MTP_PARA_PRBS_PCIE_TEST_POST_FMT = "nic_con.py -ena_pcie -slot {:d}"
+    MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT = "nic_con.py -dis_pcie -slot {:d}"
+    MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT = "nic_con.py -ena_pcie -slot {:d}"
     MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
     MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
 

@@ -91,8 +91,15 @@ class nic_ctrl():
             return False
 
 
-    def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+    def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
         self._nic_handle.sendline(cmd)
+        for sig in sig_list:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [sig], timeout)
+            if idx < 0:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg(self._nic_handle.before)
+                return False
+
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)

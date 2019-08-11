@@ -235,7 +235,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
 
         mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
         mtp_start_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_P2C_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_4C_TIMEOUT)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 

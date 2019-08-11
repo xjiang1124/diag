@@ -1397,8 +1397,8 @@ class mtp_ctrl():
 
 
 # 4. Routines use mgmt port, can be run in parallel
-    def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout)
+    def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
+        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout, sig_list)
         if not rc:
             err_msg = self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_err_msg(err_msg)
@@ -2162,24 +2162,22 @@ class mtp_ctrl():
             return MTP_DIAG_Error.NIC_DIAG_FAIL
 
 
-    def mtp_mgmt_run_test_mtp_para_pre(self, test, nic_list):
-        # disable pcie poll in uboot
-        if test == "PRBS_PCIE":
-            for slot in nic_list:
-                sig_list = [MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG]
-                cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_PCIE_TEST_PRE_FMT.format(slot+1)
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
-                    self.cli_log_err("Execute command {:s} failed".format(cmd))
+    def mtp_nic_pcie_poll_enable(self, slot, enable=True):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
 
-
-    def mtp_mgmt_run_test_mtp_para_post(self, test, nic_list):
-        # enable pcie poll in uboot
-        if test == "PRBS_PCIE":
-            for slot in nic_list:
-                sig_list = [MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG]
-                cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_PCIE_TEST_POST_FMT.format(slot+1)
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
-                    self.cli_log_err("Execute command {:s} failed".format(cmd))
+        if enable:
+            sig_list = [MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG]
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT.format(slot+1)
+        else:
+            sig_list = [MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG]
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(slot+1)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, MTP_Const.MTP_PARA_TEST_DELAY, sig_list):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+        return True
 
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
@@ -2187,9 +2185,6 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return None
-
-        # mtp parallel test setup
-        self.mtp_mgmt_run_test_mtp_para_pre(test, nic_list)
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
@@ -2211,9 +2206,6 @@ class mtp_ctrl():
             return None
 
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
-
-        # mtp parallel test cleanup
-        self.mtp_mgmt_run_test_mtp_para_post(test, nic_list)
 
         return match
 

@@ -55,10 +55,10 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in pre_test_check_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    post_test_check_list = naples_test_db.get_post_diag_test_intf_list()
-    mtp_mgmt_ctrl.cli_log_inf("Post Diag Test Check List:")
-    for item in post_test_check_list:
-        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+    # post_test_check_list = naples_test_db.get_post_diag_test_intf_list()
+    # mtp_mgmt_ctrl.cli_log_inf("Post Diag Test Check List:")
+    # for item in post_test_check_list:
+    #     mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
     mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
@@ -618,25 +618,25 @@ def main():
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
     naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
     naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
-    naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
+    # naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
 
     naples25_seq_test_list = naples25_test_db.get_diag_seq_test_list()
     naples25_mtp_para_test_list = naples25_test_db.get_mtp_para_test_list()
     naples25_para_test_list = naples25_test_db.get_diag_para_test_list()
     naples25_pre_test_check_list = naples25_test_db.get_pre_diag_test_intf_list()
-    naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
+    # naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
 
     forio_seq_test_list = forio_test_db.get_diag_seq_test_list()
     forio_mtp_para_test_list = forio_test_db.get_mtp_para_test_list()
     forio_para_test_list = forio_test_db.get_diag_para_test_list()
     forio_pre_test_check_list = forio_test_db.get_pre_diag_test_intf_list()
-    forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
+    # forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
 
     vomero_seq_test_list = vomero_test_db.get_diag_seq_test_list()
     vomero_mtp_para_test_list = vomero_test_db.get_mtp_para_test_list()
     vomero_para_test_list = vomero_test_db.get_diag_para_test_list()
     vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
-    vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
+    # vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
     for vmarg in vmarg_list:
