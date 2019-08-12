@@ -379,7 +379,11 @@ func DspInfraMainLoop() (err error) {
 
         // Inform Host test is done
         keyResult := fmt.Sprintf(keyResultFmt, testID)
-        RedisClient.Set(keyResult, retValHost, 0)
+        statusCmd := RedisClient.Set(keyResult, retValHost, 0)
+        val, rErr := statusCmd.Result()
+        if rErr != nil {
+            cli.Println("e", "val:", val, "; Err:", rErr)
+        }
 
         // Close function message channel after it is done
         close(FuncMsgChan)
