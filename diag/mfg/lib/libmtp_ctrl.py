@@ -1301,13 +1301,19 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mgmt_init(self, slot, fpo):
-        self.cli_log_slot_inf(slot, "Init NIC MGMT port")
-        if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
-            # retry
-            if not self.mtp_nic_mgmt_reinit(slot):
-                self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
+    def mtp_nic_mgmt_init(self, slot, fpo, aapl):
+        if aapl:
+            self.cli_log_slot_inf(slot, "Init NIC MGMT/AAPL port")
+            if not self._nic_ctrl_list[slot].nic_aapl_init():
+                self.cli_log_slot_err(slot, "Init NIC MGMT/AAPL port failed")
                 return False
+        else:
+            self.cli_log_slot_inf(slot, "Init NIC MGMT port")
+            if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
+                # retry
+                if not self.mtp_nic_mgmt_reinit(slot):
+                    self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
+                    return False
 
         # delete the arp entry
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
@@ -1322,11 +1328,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mini_init(self, slot, fpo=False):
+    def mtp_nic_mini_init(self, slot, fpo=False, aapl=False):
         if not self.mtp_nic_boot_info_init(slot):
             return False
 
-        if not self.mtp_nic_mgmt_init(slot, fpo):
+        if not self.mtp_nic_mgmt_init(slot, fpo, aapl):
             return False
 
         return True
@@ -1902,7 +1908,7 @@ class mtp_ctrl():
         return
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False):
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -1917,7 +1923,7 @@ class mtp_ctrl():
 
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
-                if not self.mtp_nic_mini_init(slot, fpo):
+                if not self.mtp_nic_mini_init(slot, fpo, aapl):
                     continue
 
         if not self.mtp_mgmt_nic_mac_validate():
@@ -2186,6 +2192,12 @@ class mtp_ctrl():
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return None
 
+        # disable PCIE Poll
+        if test == "PRBS_PCIE":
+            for slot in nic_list:
+                if not self.mtp_nic_pcie_poll_enable(slot, False):
+                    self.cli_log_slot_err(slot, "Unable to disable pcie poll")
+
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
@@ -2206,6 +2218,12 @@ class mtp_ctrl():
             return None
 
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
+
+        # enable PCIE Poll
+        if test == "PRBS_PCIE":
+            for slot in nic_list:
+                if not self.mtp_nic_pcie_poll_enable(slot, True):
+                    self.cli_log_slot_err(slot, "Unable to enable pcie poll")
 
         return match
 

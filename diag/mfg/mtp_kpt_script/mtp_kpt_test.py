@@ -56,36 +56,45 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
-    # program secure cpld
     dsp = "KPT"
-    test = "SEC_CPLD_PROG"
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-    start_ts = datetime.datetime.now().replace(microsecond=0)
-    ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
-    stop_ts = datetime.datetime.now().replace(microsecond=0)
-    duration = str(stop_ts - start_ts)
-    if not ret:
-        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-        prog_fail_nic_list.append(slot)
-        return
-    else:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+    for test in ["SEC_CPLD_PROG"]:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = datetime.datetime.now().replace(microsecond=0)
+        # program secure cpld
+        if test == "SEC_CPLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
+            continue
+        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            prog_fail_nic_list.append(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
-    # program EMMC
     dsp = "KPT"
-    test = "SW_INSTALL"
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-    start_ts = datetime.datetime.now().replace(microsecond=0)
-    ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
-    stop_ts = datetime.datetime.now().replace(microsecond=0)
-    duration = str(stop_ts - start_ts)
-    if not ret:
-        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-        prog_fail_nic_list.append(slot)
-    else:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+    for test in ["SW_INSTALL"]:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = datetime.datetime.now().replace(microsecond=0)
+        # program sw image onto EMMC
+        if test == "SW_INSTALL":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
+            continue
+        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            prog_fail_nic_list.append(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
 
 def main():
@@ -212,7 +221,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix end\n", level=0)
 
-        for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]: 
+        for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
             # nic power status check
@@ -250,7 +259,8 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["PCIE_ENA", "SEC_KEY_PROG"]:
+        #for test in ["PCIE_ENA", "SEC_KEY_PROG"]:
+        for test in ["SEC_KEY_PROG"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
             # disable PCIE Poll
@@ -336,7 +346,7 @@ def main():
         for test in ["SEC_CPLD_VERIFY"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
-            if test === "SEC_CPLD_VERIFY":
+            if test == "SEC_CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_sec_cpld(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))

@@ -501,6 +501,27 @@ class nic_ctrl():
         return True
 
 
+    def nic_aapl_init(self):
+        # goto the nic_con dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_AAPL_INIT_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if MFG_DIAG_SIG.NIC_AAPL_OK_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+
     def nic_test_mem(self):
         # goto the nic_con dir
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)

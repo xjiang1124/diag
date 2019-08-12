@@ -55,7 +55,6 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-
 MTP_PARA:
     #SNAKE_HBM: True
     #SNAKE_PCIE: True
