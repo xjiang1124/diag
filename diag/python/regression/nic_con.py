@@ -333,7 +333,6 @@ class nic_con:
                 self.uart_session_cmd(session, "sysinit.sh classic hw diag", 15)
 
         except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
             print "=== TIMEOUT: Faled to enable management port ==="
             ret = -1
 

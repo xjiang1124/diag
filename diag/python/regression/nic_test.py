@@ -29,36 +29,42 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
-        if pwr_cycle == True:
-            ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
-            if ret != 0:
-                print "Failed to change baud rate"
-                return -1
 
-        self.nic_con.switch_console(int(slot))
+        try:
+            if pwr_cycle == True:
+                ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
+                if ret != 0:
+                    print "Failed to change baud rate"
+                    return -1
 
-        session = common.session_start()
-        session.timeout = timeout
-        self.nic_con.uart_session_start(session, self.baud_rate)
-        self.nic_con.uart_session_cmd(session, "")
-        self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
-        self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
-        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
-        self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
-        self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
-        self.nic_con.uart_session_stop(session)
-        common.session_stop(session)
+            self.nic_con.switch_console(int(slot))
 
-        if aapl == True:
-            ret = self.aapl_setup(self.baud_rate, slot)
-            if ret != 0:
-                return ret
+            session = common.session_start()
+            session.timeout = timeout
+            self.nic_con.uart_session_start(session, self.baud_rate)
+            self.nic_con.uart_session_cmd(session, "")
+            self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+            self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
+            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
+            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
+            self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+            self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
 
-        if mgmt == True:
-            ret = self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
+            if aapl == True:
+                ret = self.aapl_setup(self.baud_rate, slot)
+                if ret != 0:
+                    return ret
 
-        print "=== Setup env on slot {} env setup done ===".format(slot)
+            if mgmt == True:
+                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
+
+            print "=== Setup env on slot {} env setup done ===".format(slot)
+
+        except pexpect.TIMEOUT:
+            print "=== TIMEOUT: Failed to set up env slot {} ===".format(slot)
+            ret = -1
 
         return ret
 
@@ -137,11 +143,21 @@ class nic_test:
 
         for slot in nic_list:
             ret = self.setup_env(int(slot), False, 30, False, False, False)
+            ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] != 0:
+                nic_list.remove(slot)
 
         if mgmt == True:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
                 set = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+            for slot in nic_list:
+                if ret_list[int(slot)-1] != 0:
+                    nic_list.remove(slot)
 
         elif aapl == True and mgmt == False:
             for slot in nic_list:
@@ -156,7 +172,7 @@ class nic_test:
                 common.session_stop(session)
 
         if mgmt == True or aapl == True:
-             print "Sleep 30 sec"
+             print "Sleep 30 sec P0"
              time.sleep(30)
              for slot in nic_list:
                  self.nic_con.switch_console(slot)
@@ -189,7 +205,9 @@ class nic_test:
         for slot in nic_list:
             if ret_list[int(slot)-1] == 0:
                 nic_list_remain.remove(slot)
-            ret = ret + ret_list[int(slot)-1]
+
+        for slot_ret in ret_list:
+            ret = ret + slot_ret
 
         if ret != 0:
             print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
