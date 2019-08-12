@@ -2187,18 +2187,25 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
+        nic_test_list = nic_list[:]
+        nic_fail_list = list()
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return None
+            return nic_list[:]
 
         # disable PCIE Poll
         if test == "PRBS_PCIE":
-            for slot in nic_list:
+            for slot in nic_test_list[:]:
                 if not self.mtp_nic_pcie_poll_enable(slot, False):
+                    if slot in nic_test_list:
+                        nic_test_list.remove(slot)
+                    if slot not in nic_fail_list:
+                        nic_fail_list.append(slot)
                     self.cli_log_slot_err(slot, "Unable to disable pcie poll")
 
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        nic_list_param = ",".join(str(slot+1) for slot in nic_test_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
         if test == "PRBS_ETH":
@@ -2211,21 +2218,32 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
-            return None
+            return nic_list[:]
 
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
-            return None
+            return nic_list[:]
 
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
+        for _slot, rslt in match:
+            slot = int(_slot) - 1
+            if rslt != "PASS":
+                if slot in nic_test_list:
+                    nic_test_list.remove(slot)
+                if slot not in nic_fail_list:
+                    nic_fail_list.append(slot)
 
         # enable PCIE Poll
         if test == "PRBS_PCIE":
-            for slot in nic_list:
+            for slot in nic_test_list[:]:
                 if not self.mtp_nic_pcie_poll_enable(slot, True):
                     self.cli_log_slot_err(slot, "Unable to enable pcie poll")
+                    if slot in nic_test_list:
+                        nic_test_list.remove(slot)
+                    if slot not in nic_fail_list:
+                        nic_fail_list.append(slot)
 
-        return match
+        return nic_fail_list
 
 
     def mtp_mgmt_get_test_result(self, cmd, test):

@@ -140,7 +140,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
     fail_list = list()
     nic_test_list = nic_list[:]
-    fail_slot_sn_test_list = list()
+    fail_slot_test_list = list()
 
     if vmarg > 0:
         dsp = "HV_CAPRI"
@@ -150,57 +150,44 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         dsp = "CAPRI"
 
     for test in para_test_list:
-        # track nic without report
-        nic_no_rslt_list = nic_test_list[:]
         for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
         start_ts = datetime.datetime.now().replace(microsecond=0)
-        test_rslt_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list[:], vmarg)
+        test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
         stop_ts = datetime.datetime.now().replace(microsecond=0)
         duration = str(stop_ts - start_ts)
 
-        if not test_rslt_list:
-            mtp_mgmt_ctrl.cli_log_err("MTP {:s} Diag Regression MTP Parallel Test failed\n".format(nic_type), level=0)
-        else:
-            for _slot, rslt in test_rslt_list:
-                slot = int(_slot) - 1
-                nic_no_rslt_list.remove(slot)
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                if rslt == "PASS":
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-                else:
-                    fail_slot_sn_test_list.append((slot, sn, test))
-                    if stop_on_err:
-                        nic_test_list.remove(slot)
-                    if slot not in fail_list:
-                        fail_list.append(slot)
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, rslt, duration), level=0)
-                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+        # failed nic display
+        for slot in test_fail_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+            if stop_on_err:
+                nic_test_list.remove(slot)
+            if slot not in fail_list:
+                fail_list.append(slot)
+            fail_slot_test_list.append((slot, test))
 
-        # all the slot without report, treat as fail
-        if nic_no_rslt_list:
-            for slot in nic_no_rslt_list:
+        # passed nic display
+        for slot in nic_test_list:
+            if slot not in test_fail_list:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                fail_slot_sn_test_list.append((slot, sn, test))
-                if stop_on_err:
-                    nic_test_list.remove(slot)
-                if slot not in fail_list:
-                    fail_list.append(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "TIMEOUT", duration), level=0)
-                mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
     # stop on error, don't collect logfile
-    if not stop_on_error:
+    if fail_list and stop_on_err:
+        pass
+    else:
         naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, para_test_list)
         # extract error message if test fail
-        if fail_slot_sn_test_list:
-            for slot, sn, test in fail_slot_sn_test_list:
-                err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
-                if err_msg_list:
-                    for err_msg in err_msg_list:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+        for slot, test in fail_slot_test_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
+            if err_msg_list:
+                for err_msg in err_msg_list:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Complete\n".format(nic_type), level=0)
 
@@ -866,8 +853,9 @@ def main():
         if not stop_on_err:
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
+        skip_corner_list = [Env_Cond.MFG_RDT, Env_Cond.MFG_EDVT_LT, Env_Cond.MFG_EDVT_HT]
         # Naples100 MTP Parallel test
-        if naples100_nic_list:
+        if naples100_nic_list and corner not in skip_corner_list:
             mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
                                                            NIC_Type.NAPLES100,
                                                            naples100_nic_list,
@@ -883,7 +871,7 @@ def main():
                     pass_nic_list.remove(slot)
 
         # Naples25 MTP Parallel test
-        if naples25_nic_list:
+        if naples25_nic_list and corner not in skip_corner_list:
             mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
                                                            NIC_Type.NAPLES25,
                                                            naples25_nic_list,
@@ -899,7 +887,7 @@ def main():
                     pass_nic_list.remove(slot)
 
         # Forio MTP Parallel test
-        if forio_nic_list:
+        if forio_nic_list and corner not in skip_corner_list:
             mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
                                                            NIC_Type.FORIO,
                                                            forio_nic_list,
@@ -915,7 +903,7 @@ def main():
                     pass_nic_list.remove(slot)
 
         # Vomero MTP Parallel test
-        if vomero_nic_list:
+        if vomero_nic_list and corner not in skip_corner_list:
             mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
                                                            NIC_Type.VOMERO,
                                                            vomero_nic_list,
