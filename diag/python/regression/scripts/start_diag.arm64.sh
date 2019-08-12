@@ -7,7 +7,12 @@ arch=arm64
 echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
-mkdir -p $DIAG_DIR/log/
+
+#mkdir -p $DIAG_DIR/log/
+mkdir -p /data/nic_arm/log/
+mkdir -p $DIAG_DIR/dsp/
+cd $DIAG_DIR/dsp/
+ln -s /data/nic_arm/log/
 
 #echo "Killing hal"
 #killall hal
