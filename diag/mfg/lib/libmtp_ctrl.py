@@ -1403,8 +1403,8 @@ class mtp_ctrl():
 
 
 # 4. Routines use mgmt port, can be run in parallel
-    def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
-        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout, sig_list)
+    def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout)
         if not rc:
             err_msg = self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_err_msg(err_msg)
@@ -2171,19 +2171,23 @@ class mtp_ctrl():
     def mtp_nic_pcie_poll_enable(self, slot, enable=True):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
 
         if enable:
-            sig_list = [MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG]
+            sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG
             cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT.format(slot+1)
         else:
-            sig_list = [MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG]
+            sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG
             cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(slot+1)
-        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, MTP_Const.MTP_PARA_TEST_DELAY, sig_list):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, MTP_Const.MTP_PARA_TEST_DELAY):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
-        return True
+
+        if sig in self.mtp_get_nic_cmd_buf(slot):
+            return True
+        else:
+            return False
 
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
@@ -2227,19 +2231,14 @@ class mtp_ctrl():
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
         for _slot, rslt in match:
             slot = int(_slot) - 1
-            if rslt != "PASS":
-                if slot in nic_test_list:
-                    nic_test_list.remove(slot)
-                if slot not in nic_fail_list:
-                    nic_fail_list.append(slot)
+            if rslt != "PASS" and slot not in nic_fail_list:
+                nic_fail_list.append(slot)
 
         # enable PCIE Poll
         if test == "PRBS_PCIE":
             for slot in nic_test_list[:]:
                 if not self.mtp_nic_pcie_poll_enable(slot, True):
                     self.cli_log_slot_err(slot, "Unable to enable pcie poll")
-                    if slot in nic_test_list:
-                        nic_test_list.remove(slot)
                     if slot not in nic_fail_list:
                         nic_fail_list.append(slot)
 

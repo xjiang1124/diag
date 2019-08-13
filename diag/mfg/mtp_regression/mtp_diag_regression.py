@@ -184,10 +184,11 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         # extract error message if test fail
         for slot, test in fail_slot_test_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if not sn:
+                continue
             err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
-            if err_msg_list:
-                for err_msg in err_msg_list:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+            for err_msg in err_msg_list:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Complete\n".format(nic_type), level=0)
 
@@ -627,6 +628,9 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
     for vmarg in vmarg_list:
+        # stop the next vmarg corner if stop_on_err is set and some nic fails
+        if fail_nic_list and stop_on_err:
+            break
         inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
         if vmarg > 0:
