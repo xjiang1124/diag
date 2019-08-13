@@ -64,11 +64,13 @@ for a, b in slot_bus_pair:
                 print("slot"+str(a), b, "Speed and Width check pass")
             else:
                 print("slot"+str(a), b, "Speed and Width are failed")
+                print(new_str)
         else:
             if "8GT/s" in new_str and "x16" in new_str:
                 print("slot"+str(a), b, "Speed and Width check pass")
             else:
                 print("slot"+str(a), b, "Speed and Width are failed")
+                print(new_str)
         print(fru["status"]["fru"]["serial-number"], fru["status"]["fru"]["product-name"].replace(" ", ""))
         print(firmware["running-fw"]+":", firmware["running-fw-version"])
         print("uboot:", firmware["running-uboot"])
