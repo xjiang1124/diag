@@ -31,11 +31,12 @@ AMD64_C_SRC_DIR=		\
 	util/jtag
 
 ARM64_SRC_DIR=			\
+	util/asicutil 		\
 	util/ledutil 		\
 	util/emmc 			\
-	dsp/nic_asic		\
 	dsp/i2c 			\
 	dsp/mvl    			\
+	dsp/nic_asic		\
 	dsp/qsfp    		\
 	dsp/rtc				\
 	dsp/sfp 

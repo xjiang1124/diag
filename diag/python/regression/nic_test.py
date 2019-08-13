@@ -299,10 +299,10 @@ class nic_test:
         for i in range(numRetry):
             try:
                 # PRBS init
-                self.nic_con.uart_session_cmd(session, "/data/nic_arm/aapl/aapl_prbs_reset.sh")
+                self.nic_con.uart_session_cmd(session, "/data/nic_arm/aapl/aapl_prbs_all.sh PCIE RESET")
                 time.sleep(1)
 
-                session.sendline("/data/nic_arm/aapl/aapl_prbs_init.sh")
+                session.sendline("/data/nic_arm/aapl/aapl_prbs_all.sh PCIE INIT")
                 session.expect("\#")
                 if "ERROR" in session.before or "WARNING" in session.before:
                     continue
