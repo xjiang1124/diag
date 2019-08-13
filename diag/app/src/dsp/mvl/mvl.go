@@ -101,6 +101,8 @@ func Mvl_StubHdl(argList []string) {
         misc.SleepInSec(5)
 	}
 	
+	dcli.Println("i", "MVL stub test cleanup")
+	
     if err == 1 {
 	    dcli.Println("e", "MVL stub test failed!")
 	    diagEngine.FuncMsgChan <- errType.FAIL
