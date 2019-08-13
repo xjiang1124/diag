@@ -45,8 +45,20 @@ function get_card_config() {
     declare -a atten_list_naples100_eth=("0" "0" "0" "0" "0" "0" "0" "0")
     declare -a pre_list_naples100_eth=("2" "2" "2" "2" "2" "2" "2" "2")
     declare -a post_list_naples100_eth=("12" "12" "12" "12" "12" "12" "12" "12")
+    declare -a tx_inv_list_naples100_eth=("0" "0" "0" "0" "0" "0" "0" "0")
+    declare -a rx_inv_list_naples100_eth=("0" "0" "0" "0" "0" "0" "0" "0")
 
     declare -a sbus_list_naples100_pcie=("2" "4" "6" "8" "10" "12" "14" "16" "18" "20" "22" "24" "26" "28" "30" "32")
+
+    # Naples25
+    declare -a sbus_list_naples25_eth=("34" "38")
+    declare -a atten_list_naples25_eth=("0" "0")
+    declare -a pre_list_naples25_eth=("2" "2")
+    declare -a post_list_naples25_eth=("12" "12")
+    declare -a tx_inv_list_naples25_eth=("1" "0")
+    declare -a rx_inv_list_naples25_eth=("0" "1")
+
+    declare -a sbus_list_naples25_pcie=("18" "20" "22" "24" "26" "28" "30" "32")
 
     if [ $card_type = "NAPLES100" ]
     then
@@ -56,11 +68,47 @@ function get_card_config() {
             atten_list=("${atten_list_naples100_eth[@]}") 
             pre_list=("${pre_list_naples100_eth[@]}") 
             post_list=("${post_list_naples100_eth[@]}") 
+            tx_inv_list=("${tx_inv_list_naples100_eth[@]}") 
+            rx_inv_list=("${rx_inv_list_naples100_eth[@]}") 
         elif [ $INF = "PCIE" ]
         then
             sbus_list=("${sbus_list_naples100_pcie[@]}") 
         else
-            echo "xxx"
+            echo "Wrong INF $INF"
+            exit 1
+        fi
+    elif [ $card_type = "NAPLES25" ]
+    then
+        if [ $INF = "ETH" ]
+        then
+            sbus_list=("${sbus_list_naples25_eth[@]}") 
+            atten_list=("${atten_list_naples25_eth[@]}") 
+            pre_list=("${pre_list_naples25_eth[@]}") 
+            post_list=("${post_list_naples25_eth[@]}") 
+            tx_inv_list=("${tx_inv_list_naples25_eth[@]}") 
+            rx_inv_list=("${rx_inv_list_naples25_eth[@]}") 
+        elif [ $INF = "PCIE" ]
+        then
+            sbus_list=("${sbus_list_naples25_pcie[@]}") 
+        else
+            echo "Wrong INF $INF"
+            exit 1
+        fi
+    else
+        if [ $INF = "ETH" ]
+        then
+            sbus_list=("${sbus_list_naples100_eth[@]}") 
+            atten_list=("${atten_list_naples100_eth[@]}") 
+            pre_list=("${pre_list_naples100_eth[@]}") 
+            post_list=("${post_list_naples100_eth[@]}") 
+            tx_inv_list=("${tx_inv_list_naples100_eth[@]}") 
+            rx_inv_list=("${rx_inv_list_naples100_eth[@]}") 
+        elif [ $INF = "PCIE" ]
+        then
+            sbus_list=("${sbus_list_naples100_pcie[@]}") 
+        else
+            echo "Wrong INF $INF"
+            exit 1
         fi
     fi
 
@@ -105,11 +153,13 @@ function do_prbs() {
         atten=${atten_list[$idx]}
         pre=${pre_list[$idx]}
         post=${post_list[$idx]}
+        tx_inv=${tx_inv_list[$idx]}
+        rx_inv=${rx_inv_list[$idx]}
 
         echo "=== $SERVER_IP:$PORT sbus $sbus atten $atten pre $pre post $post ==="
         if [ $INF = "ETH" ]
         then
-            aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -atten 0 -pre $pre -post $post
+            aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -atten 0 -pre $pre -post $post -tx-invert $tx_inv -rx-invert $rx_inv
         fi
 
         aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -pcal-tune
