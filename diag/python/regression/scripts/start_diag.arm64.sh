@@ -10,8 +10,8 @@ DIAG_DIR=/home/diag/diag
 
 #mkdir -p $DIAG_DIR/log/
 mkdir -p /data/nic_arm/log/
-mkdir -p $DIAG_DIR/dsp/
-cd $DIAG_DIR/dsp/
+mkdir -p $DIAG_DIR
+cd $DIAG_DIR
 ln -s /data/nic_arm/log/
 
 #echo "Killing hal"
