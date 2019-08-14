@@ -7,9 +7,10 @@ import (
     "strconv"
     "strings"
 
-    "common/runCmd"
     "common/dcli"
     "common/errType"
+    "common/misc"
+    "common/runCmd"
 )
 
 var prbsLogFn = "aapl.log"
@@ -19,7 +20,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     var speed string
     var errCount string
 
-    var targetSpeed string
+    var targetSpeedList []string
     var sbusList []uint64
     var cmd string
 
@@ -48,7 +49,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
 
     // Check result
     if mode == "PCIE" {
-        targetSpeed = "16"
+        targetSpeedList = []string{"15", "16", "17"}
         if cardType == "NAPLES100" {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples100[:]
@@ -60,7 +61,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
             sbusList = sbusPcieListNaples100[:]
         }
     } else if mode == "ETH" {
-        targetSpeed = "26"
+        targetSpeedList = []string{"25", "26", "27"}
         if cardType == "NAPLES100" {
             sbusList = make([]uint64, 16)
             sbusList = sbusEthListNaples100[:]
@@ -116,7 +117,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
         return
     }
     defer file.Close()
-    dcli.Println("i", sbusList, targetSpeed)
+    dcli.Println("i", sbusList, targetSpeedList)
 
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
@@ -144,8 +145,9 @@ func Prbs(mode string, poly string, duration int) (err int) {
                 err = errType.FAIL
             }
 
-            if speed != targetSpeed {
-                dcli.Println("e", "Sbus", sbusUint64, "Speed mismatch! Expected", targetSpeed, "read", speed)
+            speedMatch := misc.StringInSlice(speed, targetSpeedList)
+            if speedMatch == false {
+                dcli.Println("e", "Sbus", sbusUint64, "Speed mismatch! Expected", targetSpeedList, "read", speed)
                 err = errType.FAIL
             }
 
