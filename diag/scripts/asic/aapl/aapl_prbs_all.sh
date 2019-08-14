@@ -119,7 +119,7 @@ function get_card_config() {
         width="40"
     elif [ $INF = "PCIE" ]
     then
-        rom_file="/data/nic_arm/aapl/serdes.0x1094_2347.rom"
+        rom_file="/data/nic_arm/aapl/serdes.0x10A0_2347.rom"
         div="160"
         width="40"
     else
