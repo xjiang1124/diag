@@ -43,6 +43,8 @@ class nic_ctrl():
         self._nic_status = NIC_Status.NIC_STA_POWEROFF
         self._nic_con_prompt = "#"
 
+        self._diag_ver = None
+        self._diag_util_ver = None
         self._cpld_ver = None
         self._cpld_timestamp = None
         self._sn = None
@@ -55,7 +57,6 @@ class nic_ctrl():
         self._nic_type = None
         self._nic_handle = None
         self._nic_prompt = None
-        self._nic_sn = None
         self._err_msg = None
         self._cmd_buf = None
 
@@ -869,6 +870,24 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
+        # get emmc nic utils version
+        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT
+        cmd_buf = self.nic_get_info(nic_cmd)
+        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        if match:
+            self._diag_util_ver = match[0]
+        else:
+            return False
+
+        # get nic diag version
+        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_VERSION_FMT
+        cmd_buf = self.nic_get_info(nic_cmd)
+        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        if match:
+            self._diag_ver = match[0]
+        else:
+            return False
+
         return True
 
 
@@ -1065,6 +1084,13 @@ class nic_ctrl():
             return None
         else:
             return [self._cpld_ver, self._cpld_timestamp]
+
+
+    def nic_get_diag(self):
+        if not self._diag_ver or not self._diag_util_ver:
+            return None
+        else:
+            return [self._diag_ver, self._diag_util_ver]
 
 
     def nic_get_boot_info(self):

@@ -110,6 +110,7 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
 
 def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vmarg):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
+    nic_test_list = nic_list[:]
     fail_list = list()
     if vmarg > 0:
         dsp = "HV_PRE_CHECK"
@@ -119,7 +120,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
         dsp = "PRE_CHECK"
 
     for intf in nic_check_list:
-        for slot in nic_list:
+        for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf), level=0)
             start_ts = datetime.datetime.now().replace(microsecond=0)
@@ -130,6 +131,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, intf, duration), level=0)
             else:
                 fail_list.append(slot)
+                nic_test_list.remove(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, intf, ret, duration), level=0)
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Complete\n".format(nic_type), level=0)
 
@@ -227,6 +229,12 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
         if not nic_test_rslt_list[slot]:
             fail_list.append(slot)
 
+    # Collect NIC onboard logfiles
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Collecting NIC onboard diag logfiles...")
+    for slot in nic_list:
+        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot):
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Complete\n".format(nic_type), level=0)
     return fail_list
 
@@ -251,7 +259,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             init_cmd = test_cfg["INIT"]
         if test_cfg["POST"] != "":
             post_cmd = test_cfg["POST"]
-        for slot in nic_list[:]:
+        for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             opts = test_cfg["OPTS"]
             diag_cmd = test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg)
@@ -267,15 +275,17 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
             elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
                 if stop_on_err:
-                    nic_list.remove(slot)
-                fail_list.append(slot)
+                    nic_test_list.remove(slot)
+                if slot not in fail_list:
+                    fail_list.append(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp_disp, test, duration), level=0)
                 if dsp == "ASIC" and test == "L1":
                     mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
             else:
                 if stop_on_err:
-                    nic_list.remove(slot)
-                fail_list.append(slot)
+                    nic_test_list.remove(slot)
+                if slot not in fail_list:
+                    fail_list.append(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
                 if dsp == "ASIC" and test == "L1":
                     mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
@@ -315,7 +325,6 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
 
 
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err, vmarg):
-
     for dsp, test in diag_para_test_list:
         if vmarg > 0:
             dsp_disp = "HV_" + dsp
@@ -361,12 +370,6 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
         if ret != "SUCCESS" and stop_on_err:
             break
-
-    # Collect NIC onboard logfiles
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Collecting NIC onboard diag logfiles...")
-    if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot):
-        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
-    return
 
 
 def main():

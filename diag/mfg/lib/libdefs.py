@@ -226,6 +226,11 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
 
+    # onboard diag utils version
+    NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"
+    # copied diag version
+    NIC_DIAG_VERSION_FMT = "head /home/diag/diag/scripts/version.txt"
+
     NIC_MOUNT_EMMC_FMT = "mount /dev/mmcblk0p10 /data"
     NIC_FSCK_EMMC_FMT = "fsck -y /dev/mmcblk0p10"
     NIC_DIAG_CLEANUP_FMT = "rm -rf /data/nic*"

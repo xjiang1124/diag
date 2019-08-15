@@ -1853,6 +1853,13 @@ class mtp_ctrl():
                 else:
                     self.cli_log_slot_inf(slot, "==> CPLD: {:s}({:s})".format(cpld_info_list[0], cpld_info_list[1]))
 
+                diag_info_list = self._nic_ctrl_list[slot].nic_get_diag()
+                if not diag_info_list:
+                    self.cli_log_slot_err(slot, "Retrieve NIC Diag info failed")
+                else:
+                    self.cli_log_slot_inf(slot, "==> Diag version: {:s}".format(diag_info_list[0]))
+                    self.cli_log_slot_inf(slot, "==> EMMC Util version: {:s}".format(diag_info_list[1]))
+
                 if not self._nic_ctrl_list[slot].nic_check_status():
                     self.cli_log_slot_err(slot, "NIC in failure state")
             else:
@@ -2421,7 +2428,7 @@ class mtp_ctrl():
         self._test_lock.acquire()
 
 
-    def mtp_run_diag_test_para_lock(self):
+    def mtp_run_diag_test_para_unlock(self):
         self._test_lock.release()
 
 
