@@ -74,7 +74,10 @@ class mtp_ctrl():
         self._nic_scan_sn_list = [None] * self._slots
 
         self._nic_thread_list = [None] * self._slots
+        # lock for nic cli
         self._lock = threading.Lock()
+        # lock for parallel test run sequentially
+        self._test_lock = threading.Lock()
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
@@ -1705,9 +1708,12 @@ class mtp_ctrl():
 #        return fail_list
 
 
-    def mtp_mgmt_copy_nic_diag(self, slot):
-        self.cli_log_slot_inf_lock(slot, "Copy NIC Diag Image")
-        if not self._nic_ctrl_list[slot].nic_copy_diag_img():
+    def mtp_mgmt_copy_nic_diag(self, slot, nic_utils=False):
+        if nic_utils:
+            self.cli_log_slot_inf_lock(slot, "Copy NIC Diag/Utils Image")
+        else:
+            self.cli_log_slot_inf_lock(slot, "Copy NIC Diag Image only")
+        if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "Copy NIC Diag Image failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
             return False
@@ -1719,6 +1725,16 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Save NIC Logfile")
         if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
+            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            return False
+
+        return True
+
+
+    def mtp_mgmt_save_nic_diag_logfile(self, slot):
+        self.cli_log_slot_inf_lock(slot, "Save NIC Diag Logfile")
+        if not self._nic_ctrl_list[slot].nic_save_diag_logfile():
+            self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
             return False
 
@@ -1885,7 +1901,7 @@ class mtp_ctrl():
         if not self.mtp_nic_emmc_init(slot, emmc_format):
             return
 
-        if not self.mtp_mgmt_copy_nic_diag(slot):
+        if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
             return
 
         if not self.mtp_mgmt_start_nic_diag(slot):
@@ -1906,6 +1922,30 @@ class mtp_ctrl():
             return
 
         return
+
+
+    # pre setup for the diag test
+    def mtp_nic_diag_init_pre(self):
+        fail_list = list()
+        self.cli_log_inf("NIC Diag Setup started", level = 0)
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                if not self.mtp_nic_pcie_poll_enable(slot, False):
+                    fail_list.append(slot)
+        self.cli_log_inf("NIC Diag Setup complete\n", level = 0)
+        return fail_list
+
+
+    # cleanup for the diag test
+    def mtp_nic_diag_init_post(self):
+        fail_list = list()
+        self.cli_log_inf("NIC Diag Cleanup started", level = 0)
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                if not self.mtp_nic_pcie_poll_enable(slot, True):
+                    fail_list.append(slot)
+        self.cli_log_inf("NIC Diag Cleanup complete\n", level = 0)
+        return fail_list
 
 
     def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False):
@@ -2169,25 +2209,19 @@ class mtp_ctrl():
 
 
     def mtp_nic_pcie_poll_enable(self, slot, enable=True):
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
-            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
-            return False
-
         if enable:
-            sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT.format(slot+1)
+            self.cli_log_slot_inf(slot, "Enable NIC PCIE Polling")
         else:
-            sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(slot+1)
-        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, MTP_Const.MTP_PARA_TEST_DELAY):
-            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            self.cli_log_slot_inf(slot, "Disable NIC PCIE Polling")
+
+        if not self._nic_ctrl_list[slot].nic_pcie_poll_enable(enable):
+            if enable:
+                self.cli_log_slot_err(slot, "Enable NIC PCIE Polling failed")
+            else:
+                self.cli_log_slot_err(slot, "Disable NIC PCIE Polling failed")
             return False
 
-        if sig in self.mtp_get_nic_cmd_buf(slot):
-            return True
-        else:
-            return False
+        return True
 
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
@@ -2199,23 +2233,11 @@ class mtp_ctrl():
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return nic_list[:]
 
-        # disable PCIE Poll
-        if test == "PRBS_PCIE":
-            for slot in nic_test_list[:]:
-                if not self.mtp_nic_pcie_poll_enable(slot, False):
-                    if slot in nic_test_list:
-                        nic_test_list.remove(slot)
-                    if slot not in nic_fail_list:
-                        nic_fail_list.append(slot)
-                    self.cli_log_slot_err(slot, "Unable to disable pcie poll")
-
         nic_list_param = ",".join(str(slot+1) for slot in nic_test_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
         if test == "PRBS_ETH":
             cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, vmarg)
-        elif test == "PRBS_PCIE":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_PCIE_TEST_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_HBM":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_PCIE":
@@ -2233,14 +2255,6 @@ class mtp_ctrl():
             slot = int(_slot) - 1
             if rslt != "PASS" and slot not in nic_fail_list:
                 nic_fail_list.append(slot)
-
-        # enable PCIE Poll
-        if test == "PRBS_PCIE":
-            for slot in nic_test_list[:]:
-                if not self.mtp_nic_pcie_poll_enable(slot, True):
-                    self.cli_log_slot_err(slot, "Unable to enable pcie poll")
-                    if slot not in nic_fail_list:
-                        nic_fail_list.append(slot)
 
         return nic_fail_list
 
@@ -2401,6 +2415,14 @@ class mtp_ctrl():
         self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
 
         return True
+
+
+    def mtp_run_diag_test_para_lock(self):
+        self._test_lock.acquire()
+
+
+    def mtp_run_diag_test_para_lock(self):
+        self._test_lock.release()
 
 
     def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):

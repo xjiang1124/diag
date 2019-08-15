@@ -353,10 +353,10 @@ class nic_ctrl():
         # 2. kill all processes
         # 3. sync
         # 4. umount
-        dev = "/dev/mmcblk0p10"
-        mount_point = "/data"
-        emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
-        nic_shutdown_cmd_list = [emmc_mount_cmd,
+        emmc_fsck_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
+        emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        nic_shutdown_cmd_list = [emmc_fsck_cmd,
+                                 emmc_mount_cmd,
                                  MFG_DIAG_CMDS.NIC_DIAG_CLEANUP_FMT,
                                  MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
                                  MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
@@ -468,6 +468,29 @@ class nic_ctrl():
             return False
 
         return True
+
+
+    def nic_pcie_poll_enable(self, enable):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if enable:
+            sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT.format(self._slot+1)
+        else:
+            sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, MTP_Const.NIC_CON_CMD_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if sig in self.nic_get_cmd_buf():
+            return True
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
 
 
     def nic_mgmt_init(self, fpo):
@@ -706,19 +729,19 @@ class nic_ctrl():
 
     def nic_init_emmc(self, init = False):
         nic_cmd_list = list()
-        dev = "/dev/mmcblk0p10"
-        mount_point = "/data"
         if init:
             nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
             nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT.format(dev, mount_point)
+        nic_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         # check if mount is ok
-        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT.format(dev)
-        mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG.format(dev, mount_point)
+        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT
+        mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG
         mount_buf = self.nic_get_info(nic_cmd)
         if mount_buf:
             if mount_sig in mount_buf:
@@ -748,7 +771,7 @@ class nic_ctrl():
         return True
 
 
-    def nic_copy_diag_img(self):
+    def nic_copy_diag_img(self, emmc_utils=False):
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
         nic_cmd_list.append(nic_cmd)
@@ -761,11 +784,12 @@ class nic_ctrl():
             if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
                 return False
 
-        nic_diag_list = ["nic_arm", "nic_util"]
-        for util in nic_diag_list:
-            img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
-            if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-                return False
+        if emmc_utils:
+            nic_diag_list = ["nic_arm", "nic_util"]
+            for util in nic_diag_list:
+                img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
+                if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                    return False
 
         return True
 
@@ -793,6 +817,37 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_err_msg(self._nic_handle.before)
                 return False
+
+        return True
+
+
+    def nic_save_diag_logfile(self):
+        if not self._sn:
+            return False
+
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
+        nic_sub_dir = "NIC-{:d}".format(self._slot+1)
+        dst_logfile = MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR + nic_sub_dir
+        logfile = MTP_DIAG_Logfile.NIC_ONBOARD_DIAG_LOG_DIR
+        cmd = "scp {:s} -r {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, logfile, dst_logfile)
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        if idx < 0:
+            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
 
         return True
 

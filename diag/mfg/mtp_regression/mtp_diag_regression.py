@@ -180,7 +180,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     if fail_list and stop_on_err:
         pass
     else:
-        naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, para_test_list)
+        naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, para_test_list)
         # extract error message if test fail
         for slot, test in fail_slot_test_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -234,6 +234,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     fail_list = list()
+    nic_test_list = nic_list[:]
 
     for dsp, test in test_list:
         if vmarg > 0:
@@ -290,16 +291,15 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     return fail_list
 
 
-def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
-    mtp_mgmt_ctrl.cli_log_inf("Collecting NIC logfile for MTP Parallel tests", level=0)
-
+def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
     # power cycle all the NICs
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
-        mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed\n", level=0)
+        mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed", level=0)
         return False
 
+    mtp_mgmt_ctrl.cli_log_inf("Collecting MTP parallel test logfiles....", level=0)
     for slot in nic_list:
         logfile_list = list()
         if "SNAKE_HBM" in mtp_para_test_list:
@@ -308,17 +308,14 @@ def naples_get_mtp_para_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
             logfile_list.append("snake_pcie.log")
         if "PRBS_ETH" in mtp_para_test_list:
             logfile_list.append("prbs_eth.log")
-        if "PRBS_PCIE" in mtp_para_test_list:
-            logfile_list.append("prbs_pcie.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC logfile for MTP Parallel tests failed\n")
-            continue
-
-    mtp_mgmt_ctrl.cli_log_inf("Collecting NIC logfile for MTP Parallel tests complete\n", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
+    return
 
 
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err, vmarg):
+
     for dsp, test in diag_para_test_list:
         if vmarg > 0:
             dsp_disp = "HV_" + dsp
@@ -338,8 +335,11 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         diag_cmd = diag_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn)
         rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
 
+        if dsp == "MVL" and test == "STUB":
+            mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
+
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
         start_ts = datetime.datetime.now().replace(microsecond=0)
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         stop_ts = datetime.datetime.now().replace(microsecond=0)
@@ -350,15 +350,23 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp_disp, test, duration), level=0)
             nic_test_rslt_list[slot] = False
-            if stop_on_err:
-                return
         else:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
             for err_msg in err_msg_list:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
             nic_test_rslt_list[slot] = False
-            if stop_on_err:
-                return
+
+        if dsp == "MVL" and test == "STUB":
+            mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
+
+        if ret != "SUCCESS" and stop_on_err:
+            break
+
+    # Collect NIC onboard logfiles
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Collecting NIC onboard diag logfiles...")
+    if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot):
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+    return
 
 
 def main():
@@ -627,6 +635,7 @@ def main():
     # vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
+    diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
     for vmarg in vmarg_list:
         # stop the next vmarg corner if stop_on_err is set and some nic fails
         if fail_nic_list and stop_on_err:
@@ -647,7 +656,7 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
@@ -924,15 +933,20 @@ def main():
 
         if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
             diag_sub_dir = "/lv_diag_logs/"
+            nic_sub_dir = "/lv_nic_logs/"
             asic_sub_dir = "/lv_asic_logs/"
         elif vmarg == MTP_Const.MFG_EDVT_HIGH_VOLT:
             diag_sub_dir = "/hv_diag_logs/"
+            nic_sub_dir = "/hv_nic_logs/"
             asic_sub_dir = "/hv_asic_logs/"
         else:
             diag_sub_dir = "/diag_logs/"
+            nic_sub_dir = "/nic_logs/"
             asic_sub_dir = "/asic_logs/"
         # create log dir
         cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + diag_sub_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + nic_sub_dir)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -941,9 +955,19 @@ def main():
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         # clean up logfiles for the next run
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
+    # failed enable pcie poll, fail the card
+    for slot in diag_post_fail_list:
+        if slot not in fail_nic_list:
+            fail_nic_list.append(slot)
+        if slot in pass_nic_list:
+            pass_nic_list.remove(slot)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 

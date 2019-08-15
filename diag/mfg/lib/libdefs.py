@@ -140,13 +140,16 @@ class MTP_DIAG_Error:
 
 
 class MTP_DIAG_Logfile:
-    ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*txt"
+    ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
+    ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
     ONBOARD_KPT_LOG_FILES = "/home/diag/mtp_kpt_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
+    ONBOARD_NIC_LOG_DIR = "/home/diag/diag/nic_log/"
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
+    NIC_ONBOARD_DIAG_LOG_DIR = "/home/diag/diag/log/"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
     DIAG_MFG_DL_LOG_DIR_FMT = "/mfg_log/{:s}/DL/{:s}/"
@@ -223,9 +226,10 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
 
-    NIC_MOUNT_EMMC_FMT = "mount {:s} {:s}"
+    NIC_MOUNT_EMMC_FMT = "mount /dev/mmcblk0p10 /data"
+    NIC_FSCK_EMMC_FMT = "fsck -y /dev/mmcblk0p10"
     NIC_DIAG_CLEANUP_FMT = "rm -rf /data/nic*"
-    NIC_MOUNT_DISP_FMT = "mount | grep '{:s}'"
+    NIC_MOUNT_DISP_FMT = "mount | grep '/dev/mmcblk0p10'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
@@ -276,7 +280,6 @@ class MFG_DIAG_CMDS:
 
     NIC_AAPL_INIT_FMT = "nic_test.py -setup_multi -mgmt -aapl -slot_list {:d}"
     MTP_PARA_PRBS_ETH_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=eth -vmarg {:d}"
-    MTP_PARA_PRBS_PCIE_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=pcie -vmarg {:d}"
     MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
     MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
 
@@ -323,7 +326,7 @@ class MFG_DIAG_SIG:
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
     NIC_OS_SHUTDOWN_OK_SIG = "System halted"
-    NIC_MOUNT_OK_SIG = "{:s} on {:s}"
+    NIC_MOUNT_OK_SIG = "/dev/mmcblk0p10 on /data"
     NIC_ESEC_PROG_PRE_SIG = "IMG PROG PASSED"
     NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
     NIC_ESEC_CPLD_VERIFY_SIG = "EK validated"
