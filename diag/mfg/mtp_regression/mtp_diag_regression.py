@@ -273,28 +273,22 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
 
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
-            elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
-                if stop_on_err:
-                    nic_test_list.remove(slot)
-                if slot not in fail_list:
-                    fail_list.append(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp_disp, test, duration), level=0)
-                if dsp == "ASIC" and test == "L1":
-                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
             else:
                 if stop_on_err:
                     nic_test_list.remove(slot)
                 if slot not in fail_list:
                     fail_list.append(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
-                if dsp == "ASIC" and test == "L1":
+
+            if dsp == "ASIC" and test == "L1":
+                if ret != "SUCCESS":
                     mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                    err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-                    for err_msg in err_msg_list:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
-                else:
-                    for err_msg in err_msg_list:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
+                pass_count, err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                inf_msg = "ASIC L1 Passed {:d} sub tests".format(pass_count)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, inf_msg), level=0)
+
+            for err_msg in err_msg_list:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
 
@@ -576,43 +570,6 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
 
-    if naples100_nic_list:
-        if not mtp_capability & 0x1:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Naples100".format(mtp_capability))
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-            return
-        naples_diag_cfg_show(NIC_Type.NAPLES100, naples100_test_db, mtp_mgmt_ctrl)
-        naples_exec_init_cmd(naples100_test_db, mtp_mgmt_ctrl)
-        naples_exec_skip_cmd(naples100_nic_list, naples100_test_db, mtp_mgmt_ctrl)
-        naples_exec_param_cmd(naples100_nic_list, naples100_test_db, mtp_mgmt_ctrl)
-    if naples25_nic_list:
-        if not mtp_capability & 0x2:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Naples25".format(mtp_capability))
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-            return
-        naples_diag_cfg_show(NIC_Type.NAPLES25, naples25_test_db, mtp_mgmt_ctrl)
-        naples_exec_init_cmd(naples25_test_db, mtp_mgmt_ctrl)
-        naples_exec_skip_cmd(naples25_nic_list, naples25_test_db, mtp_mgmt_ctrl)
-        naples_exec_param_cmd(naples25_nic_list, naples25_test_db, mtp_mgmt_ctrl)
-    if forio_nic_list:
-        if not mtp_capability & 0x1:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Forio".format(mtp_capability))
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-            return
-        naples_diag_cfg_show(NIC_Type.FORIO, forio_test_db, mtp_mgmt_ctrl)
-        naples_exec_init_cmd(forio_test_db, mtp_mgmt_ctrl)
-        naples_exec_skip_cmd(forio_nic_list, forio_test_db, mtp_mgmt_ctrl)
-        naples_exec_param_cmd(forio_nic_list, forio_test_db, mtp_mgmt_ctrl)
-    if vomero_nic_list:
-        if not mtp_capability & 0x1:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support Vomero".format(mtp_capability))
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-            return
-        naples_diag_cfg_show(NIC_Type.VOMERO, vomero_test_db, mtp_mgmt_ctrl)
-        naples_exec_init_cmd(vomero_test_db, mtp_mgmt_ctrl)
-        naples_exec_skip_cmd(vomero_nic_list, vomero_test_db, mtp_mgmt_ctrl)
-        naples_exec_param_cmd(vomero_nic_list, vomero_test_db, mtp_mgmt_ctrl)
-
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
     naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
@@ -637,8 +594,41 @@ def main():
     vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
     # vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
 
+    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
+    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list]
+
+    # check if MTP support present NIC
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
+    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+        if nic_type == NIC_Type.NAPLES100:
+            mtp_exp_capability = 0x1
+            test_db = naples100_test_db
+        elif nic_type == NIC_Type.NAPLES25:
+            mtp_exp_capability = 0x2
+            test_db = naples25_test_db
+        elif nic_type == NIC_Type.FORIO:
+            mtp_exp_capability = 0x1
+            test_db = forio_test_db
+        elif nic_type == NIC_Type.VOMERO:
+            mtp_exp_capability = 0x1
+            test_db = vomero_test_db
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+
+        if nic_list:
+            if not mtp_capability & mtp_exp_capability:
+                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support {:s}".format(mtp_capability, nic_type))
+                mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                return
+            naples_diag_cfg_show(nic_type, test_db, mtp_mgmt_ctrl)
+            naples_exec_init_cmd(test_db, mtp_mgmt_ctrl)
+            naples_exec_skip_cmd(nic_list, test_db, mtp_mgmt_ctrl)
+            naples_exec_param_cmd(nic_list, test_db, mtp_mgmt_ctrl)
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check complete\n", level=0)
+
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
     diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
+
     for vmarg in vmarg_list:
         # stop the next vmarg corner if stop_on_err is set and some nic fails
         if fail_nic_list and stop_on_err:
@@ -664,203 +654,98 @@ def main():
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
 
-        # Naples100 Diag Pre Check
-        if naples100_nic_list:
-            pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
-                                                        NIC_Type.NAPLES100,
-                                                        naples100_nic_list,
-                                                        naples100_pre_test_check_list,
-                                                        vmarg)
-            for slot in pre_check_fail_list:
-                if slot in naples100_nic_list:
-                    naples100_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # Diag Pre Check
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES100:
+                pre_test_check_list = naples100_pre_test_check_list
+            elif nic_type == NIC_Type.NAPLES25:
+                pre_test_check_list = naples25_pre_test_check_list
+            elif nic_type == NIC_Type.FORIO:
+                pre_test_check_list = forio_pre_test_check_list
+            elif nic_type == NIC_Type.VOMERO:
+                pre_test_check_list = vomero_pre_test_check_list
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
-        # Naples25 Diag Pre Check
-        if naples25_nic_list:
-            pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
-                                                        NIC_Type.NAPLES25,
-                                                        naples25_nic_list,
-                                                        naples25_pre_test_check_list,
-                                                        vmarg)
-            for slot in pre_check_fail_list:
-                if slot in naples25_nic_list:
-                    naples25_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+            if nic_list:
+                pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
+                                                            nic_type,
+                                                            nic_list,
+                                                            pre_test_check_list,
+                                                            vmarg)
+                for slot in pre_check_fail_list:
+                    if slot in nic_list:
+                        nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
-        # Forio Diag Pre Check
-        if forio_nic_list:
-            pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
-                                                        NIC_Type.FORIO,
-                                                        forio_nic_list,
-                                                        forio_pre_test_check_list,
-                                                        vmarg)
-            for slot in pre_check_fail_list:
-                if slot in forio_nic_list:
-                    forio_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # NIC Parallel test
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES100:
+                nic_para_test_list = naples100_para_test_list
+                test_db = naples100_test_db
+            elif nic_type == NIC_Type.NAPLES25:
+                nic_para_test_list = naples25_para_test_list
+                test_db = naples25_test_db
+            elif nic_type == NIC_Type.FORIO:
+                nic_para_test_list = forio_para_test_list
+                test_db = forio_test_db
+            elif nic_type == NIC_Type.VOMERO:
+                nic_para_test_list = vomero_para_test_list
+                test_db = vomero_test_db
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
-        # Vomero Diag Pre Check
-        if vomero_nic_list:
-            pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
-                                                        NIC_Type.VOMERO,
-                                                        vomero_nic_list,
-                                                        vomero_pre_test_check_list,
-                                                        vmarg)
-            for slot in pre_check_fail_list:
-                if slot in vomero_nic_list:
-                    vomero_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+            if nic_list:
+                diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                            nic_type,
+                                                            nic_list,
+                                                            test_db,
+                                                            nic_para_test_list,
+                                                            stop_on_err,
+                                                            vmarg)
+                for slot in diag_para_fail_list:
+                    if slot in nic_list and stop_on_err:
+                        nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
+        # NIC Sequential test
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES100:
+                nic_seq_test_list = naples100_seq_test_list
+                test_db = naples100_test_db
+            elif nic_type == NIC_Type.NAPLES25:
+                nic_seq_test_list = naples25_seq_test_list
+                test_db = naples25_test_db
+            elif nic_type == NIC_Type.FORIO:
+                nic_seq_test_list = forio_seq_test_list
+                test_db = forio_test_db
+            elif nic_type == NIC_Type.VOMERO:
+                nic_seq_test_list = vomero_seq_test_list
+                test_db = vomero_test_db
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
-        # Naples100 Parallel test
-        if naples100_nic_list:
-            diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
-                                                        NIC_Type.NAPLES100,
-                                                        naples100_nic_list,
-                                                        naples100_test_db,
-                                                        naples100_para_test_list,
-                                                        stop_on_err,
-                                                        vmarg)
-            for slot in diag_para_fail_list:
-                if slot in naples100_nic_list and stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Naples25 Parallel test
-        if naples25_nic_list:
-            diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
-                                                        NIC_Type.NAPLES25,
-                                                        naples25_nic_list,
-                                                        naples25_test_db,
-                                                        naples25_para_test_list,
-                                                        stop_on_err,
-                                                        vmarg)
-            for slot in diag_para_fail_list:
-                if slot in naples25_nic_list and stop_on_err:
-                    naples25_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Forio Parallel test
-        if forio_nic_list:
-            diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
-                                                        NIC_Type.FORIO,
-                                                        forio_nic_list,
-                                                        forio_test_db,
-                                                        forio_para_test_list,
-                                                        stop_on_err,
-                                                        vmarg)
-            for slot in diag_para_fail_list:
-                if slot in forio_nic_list and stop_on_err:
-                    forio_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Vomero Parallel test
-        if vomero_nic_list:
-            diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
-                                                        NIC_Type.VOMERO,
-                                                        vomero_nic_list,
-                                                        vomero_test_db,
-                                                        vomero_para_test_list,
-                                                        stop_on_err,
-                                                        vmarg)
-            for slot in diag_para_fail_list:
-                if slot in vomero_nic_list and stop_on_err:
-                    vomero_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Naples100 Sequential test
-        if naples100_nic_list:
-            diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
-                                                      NIC_Type.NAPLES100,
-                                                      naples100_nic_list,
-                                                      naples100_test_db,
-                                                      naples100_seq_test_list,
-                                                      vmarg,
-                                                      stop_on_err)
-            for slot in diag_seq_fail_list:
-                if slot in naples100_nic_list and stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Naples25 Sequential test
-        if naples25_nic_list:
-            diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
-                                                      NIC_Type.NAPLES25,
-                                                      naples25_nic_list,
-                                                      naples25_test_db,
-                                                      naples25_seq_test_list,
-                                                      vmarg,
-                                                      stop_on_err)
-            for slot in diag_seq_fail_list:
-                if slot in naples25_nic_list and stop_on_err:
-                    naples25_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Forio Sequential test
-        if forio_nic_list:
-            diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
-                                                      NIC_Type.FORIO,
-                                                      forio_nic_list,
-                                                      forio_test_db,
-                                                      forio_seq_test_list,
-                                                      vmarg,
-                                                      stop_on_err)
-            for slot in diag_seq_fail_list:
-                if slot in forio_nic_list and stop_on_err:
-                    forio_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Vomero Sequential test
-        if vomero_nic_list:
-            diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
-                                                      NIC_Type.VOMERO,
-                                                      vomero_nic_list,
-                                                      vomero_test_db,
-                                                      vomero_seq_test_list,
-                                                      vmarg,
-                                                      stop_on_err)
-            for slot in diag_seq_fail_list:
-                if slot in vomero_nic_list and stop_on_err:
-                    vomero_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
+            if nic_list:
+                diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+                                                          nic_type,
+                                                          nic_list,
+                                                          test_db,
+                                                          nic_seq_test_list,
+                                                          vmarg,
+                                                          stop_on_err)
+                for slot in diag_seq_fail_list:
+                    if slot in nic_list and stop_on_err:
+                        nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
         # log the diag test history
         mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
@@ -869,70 +754,33 @@ def main():
         if not stop_on_err:
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-        skip_corner_list = [Env_Cond.MFG_RDT, Env_Cond.MFG_EDVT_LT, Env_Cond.MFG_EDVT_HT]
-        # Naples100 MTP Parallel test
-        if naples100_nic_list and corner not in skip_corner_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.NAPLES100,
-                                                           naples100_nic_list,
-                                                           naples100_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in naples100_nic_list and stop_on_err:
-                    naples100_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        # NIC MTP Parallel test
+        # for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+        #     if nic_type == NIC_Type.NAPLES100:
+        #         mtp_para_test_list = naples100_mtp_para_test_list
+        #     elif nic_type == NIC_Type.NAPLES25:
+        #         mtp_para_test_list = naples25_mtp_para_test_list
+        #     elif nic_type == NIC_Type.FORIO:
+        #         mtp_para_test_list = forio_mtp_para_test_list
+        #     elif nic_type == NIC_Type.VOMERO:
+        #         mtp_para_test_list = vomero_mtp_para_test_list
+        #     else:
+        #         mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
-        # Naples25 MTP Parallel test
-        if naples25_nic_list and corner not in skip_corner_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.NAPLES25,
-                                                           naples25_nic_list,
-                                                           naples25_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in naples25_nic_list and stop_on_err:
-                    naples25_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Forio MTP Parallel test
-        if forio_nic_list and corner not in skip_corner_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.FORIO,
-                                                           forio_nic_list,
-                                                           forio_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in forio_nic_list and stop_on_err:
-                    forio_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Vomero MTP Parallel test
-        if vomero_nic_list and corner not in skip_corner_list:
-            mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-                                                           NIC_Type.VOMERO,
-                                                           vomero_nic_list,
-                                                           vomero_mtp_para_test_list,
-                                                           vmarg,
-                                                           stop_on_err)
-            for slot in mtp_para_fail_list:
-                if slot in vomero_nic_list and stop_on_err:
-                    vomero_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        #     if nic_list:
+        #         mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+        #                                                        nic_type,
+        #                                                        nic_list,
+        #                                                        mtp_para_test_list,
+        #                                                        vmarg,
+        #                                                        stop_on_err)
+        #         for slot in mtp_para_fail_list:
+        #             if slot in nic_list and stop_on_err:
+        #                 nic_list.remove(slot)
+        #             if slot not in fail_nic_list:
+        #                 fail_nic_list.append(slot)
+        #             if slot in pass_nic_list:
+        #                 pass_nic_list.remove(slot)
 
         if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
             diag_sub_dir = "/lv_diag_logs/"

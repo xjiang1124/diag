@@ -1214,6 +1214,7 @@ class mtp_ctrl():
     # return list of error message
     def mtp_mgmt_retrieve_nic_l1_err(self, sn):
         err_msg_list = list()
+        pass_count = 0
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
         logfile_exp = r"cap_l1_screen_board_{:s}.*log".format(sn)
         for filename in os.listdir(path):
@@ -1230,8 +1231,10 @@ class mtp_ctrl():
                         if MFG_DIAG_SIG.MFG_ASIC_PCIE_MAPPING_MSG_SIG in line:
                             err_msg = line.replace('\n', '')
                             err_msg_list.append(err_msg)
+                        if MFG_DIAG_SIG.MFG_ASIC_PASS_MSG_SIG in line:
+                            pass_count += 1
 
-        return err_msg_list
+        return pass_count, err_msg_list
 
 
     # return list of error message
