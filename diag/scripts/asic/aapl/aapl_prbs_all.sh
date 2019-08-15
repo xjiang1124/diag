@@ -164,12 +164,19 @@ function do_prbs() {
 
         aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -pcal-tune
         aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -start-adaptive
+        #aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -display
+    done
+
+    echo "Wait for DFE done"
+    sleep 20
+    for idx in "${!sbus_list[@]}"
+    do
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -display
     done
-    
+
     for sbus in ${sbus_list[@]}
     do
-        echo "=== $SERVER_IP:$PORT $sbus ==="
+        echo "=== PRBS preset $SERVER_IP:$PORT $sbus ==="
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -tx-data-sel $POLY -rx-mode $POLY
     done
     
@@ -177,7 +184,7 @@ function do_prbs() {
     #for sbus in $sbus_list
     for sbus in ${sbus_list[@]}
     do
-        echo "=== $SERVER_IP:$PORT $sbus ==="
+        echo "=== PRBS started $SERVER_IP:$PORT $sbus ==="
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -error-reset
     done
     
