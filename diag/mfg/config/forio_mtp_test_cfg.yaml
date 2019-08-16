@@ -47,6 +47,21 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    NIC_ASIC:
+        PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        ETH_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
 
 MTP_PARA:
         #    SNAKE_HBM: True

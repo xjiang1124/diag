@@ -136,7 +136,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
     return [local_test_log_file, qa_log_pkg_file]
 
 
-def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
+def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner, duration):
     ret = True
     mtp_cli_id_str = libmfg_utils.id_str(mtp=mtp_id)
     report_title = ""
@@ -191,6 +191,7 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner):
         report_body += "[**** MTP Testbed info ****]\n"
         for item in match:
             report_body += "    {:s}\n".format(item)
+    report_body += "    Test Time: {:s}\n".format(duration)
     report_body += "\n"
 
     # test logfile
@@ -252,10 +253,11 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_start_ts = libmfg_utils.timestamp_snapshot()
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_4C_TIMEOUT)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+        mtp_test_time = mtp_stop_ts-mtp_start_ts
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
         test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
-        result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner)
+        result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner, mtp_test_time)
         cmd = "rm -rf {:s}".format(test_log_file)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
@@ -274,7 +276,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
-        mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_stop_ts-mtp_start_ts), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_test_time), level=0)
 
     return
 

@@ -294,6 +294,7 @@ class MFG_DIAG_CMDS:
 
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
+    NIC_DIAG_FINI_FMT = "rm -r /data/debug*"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"
     MTP_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_start"

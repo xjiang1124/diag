@@ -271,6 +271,18 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             stop_ts = datetime.datetime.now().replace(microsecond=0)
             duration = str(stop_ts - start_ts)
 
+            # double check the L1 test even it pass
+            if dsp == "ASIC" and test == "L1":
+                pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+                # L1 sub test count is 14, err_msg_list should be empty
+                if pass_count != 14:
+                    err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
+                    ret = "FAIL"
+
+                if log_err_msg_list:
+                    err_msg_list += log_err_msg_list
+                    ret = "FAIL"
+
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
             else:
@@ -283,11 +295,14 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             if dsp == "ASIC" and test == "L1":
                 if ret != "SUCCESS":
                     mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                pass_count, err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-                inf_msg = "ASIC L1 Passed {:d} sub tests".format(pass_count)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, inf_msg), level=0)
 
-            for err_msg in err_msg_list:
+            # only display first 3 and last 3 error messages
+            if len(err_msg_list) < 6:
+                err_msg_disp_list = err_msg_list
+            else:
+                err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+
+            for err_msg in err_msg_disp_list:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
@@ -350,9 +365,6 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
         if ret == "SUCCESS":
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
-        elif ret == MTP_DIAG_Error.NIC_DIAG_TIMEOUT:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_TIMEOUT.format(sn, dsp_disp, test, duration), level=0)
-            nic_test_rslt_list[slot] = False
         else:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
             for err_msg in err_msg_list:
@@ -569,6 +581,7 @@ def main():
                 pass_nic_list.append(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
+                continue
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -614,6 +627,7 @@ def main():
             test_db = vomero_test_db
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+            continue
 
         if nic_list:
             if not mtp_capability & mtp_exp_capability:
@@ -649,7 +663,12 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True):
+        # TODO: EDVT/RDT, don't init aapl for NIC_ASIC tests
+        if corner in [Env_Cond.MFG_RDT, Env_Cond.MFG_EDVT_LT, Env_Cond.MFG_EDVT_HT]:
+            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg)
+        else:
+            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
+        if not ret:
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
@@ -666,6 +685,7 @@ def main():
                 pre_test_check_list = vomero_pre_test_check_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+                continue
 
             if nic_list:
                 pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
@@ -684,21 +704,26 @@ def main():
         # NIC Parallel test
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_type == NIC_Type.NAPLES100:
-                nic_para_test_list = naples100_para_test_list
+                nic_para_test_list = naples100_para_test_list[:]
                 test_db = naples100_test_db
             elif nic_type == NIC_Type.NAPLES25:
-                nic_para_test_list = naples25_para_test_list
+                nic_para_test_list = naples25_para_test_list[:]
                 test_db = naples25_test_db
             elif nic_type == NIC_Type.FORIO:
-                nic_para_test_list = forio_para_test_list
+                nic_para_test_list = forio_para_test_list[:]
                 test_db = forio_test_db
             elif nic_type == NIC_Type.VOMERO:
-                nic_para_test_list = vomero_para_test_list
+                nic_para_test_list = vomero_para_test_list[:]
                 test_db = vomero_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+                continue
 
             if nic_list:
+                # TODO: EDVT/RDT, don't run NIC_ASIC Tests
+                if corner in [Env_Cond.MFG_RDT, Env_Cond.MFG_EDVT_LT, Env_Cond.MFG_EDVT_HT]:
+                    nic_para_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
+                    nic_para_test_list.remove(("NIC_ASIC","ETH_PRBS"))
                 diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
                                                             nic_type,
                                                             nic_list,
@@ -730,6 +755,7 @@ def main():
                 test_db = vomero_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+                continue
 
             if nic_list:
                 diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,

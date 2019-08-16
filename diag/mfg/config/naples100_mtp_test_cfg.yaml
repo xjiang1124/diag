@@ -55,7 +55,6 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-
         STUB:
             INIT: ""
             POST: ""
@@ -72,7 +71,6 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-
         ETH_PRBS:
             INIT: ""
             POST: ""
