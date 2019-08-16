@@ -1,5 +1,15 @@
 #!/bin/bash
 
+function usage() {
+    echo "aapl_prbs_all.sh PCIE/ETH PRBS PRBS7/9/15/31 DURATION"
+}
+
+if [ $# -eq 0 ]
+then
+    usage
+    exit 0
+fi
+
 if [ $# -ge 1 ]
 then
     INF=$1
@@ -146,7 +156,7 @@ function do_init() {
     echo "AAPL ETH SERDES INIT DONE"
 }
 
-function do_prbs() {
+function set_si() {
     for idx in "${!sbus_list[@]}"
     do
         sbus=${sbus_list[$idx]}
@@ -156,47 +166,101 @@ function do_prbs() {
         tx_inv=${tx_inv_list[$idx]}
         rx_inv=${rx_inv_list[$idx]}
 
-        echo "=== $SERVER_IP:$PORT sbus $sbus atten $atten pre $pre post $post ==="
+        echo "=== Setting SI $SERVER_IP:$PORT sbus $sbus atten $atten pre $pre post $post ==="
         if [ $INF = "ETH" ]
         then
             aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -atten 0 -pre $pre -post $post -tx-invert $tx_inv -rx-invert $rx_inv
         fi
+    done
+}
 
-        aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -pcal-tune
-        aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -start-adaptive
-        #aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -display
+function do_dfe() {
+    for idx in "${!sbus_list[@]}"
+    do
+        sbus=${sbus_list[$idx]}
+
+        echo "=== DFE $SERVER_IP:$PORT sbus $sbus atten $atten pre $pre post $post ==="
+
+        aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -ical-tune
+        #aapl dfe -server $SERVER_IP -port $PORT -addr $sbus -start-adaptive
     done
 
     echo "Wait for DFE done"
-    sleep 20
-    for idx in "${!sbus_list[@]}"
+    sleep 5
+    echo "DFE done"
+}
+
+function serdes_display() {
+    for sbus in "${sbus_list[@]}"
     do
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -display
     done
+}
 
+function prbs_preset() {
     for sbus in ${sbus_list[@]}
     do
         echo "=== PRBS preset $SERVER_IP:$PORT $sbus ==="
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -tx-data-sel $POLY -rx-mode $POLY
     done
-    
-    
+}
+
+function prbs_start() {
     #for sbus in $sbus_list
     for sbus in ${sbus_list[@]}
     do
         echo "=== PRBS started $SERVER_IP:$PORT $sbus ==="
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -error-reset
     done
-    
-    echo "Sleep $DURATION sec"
-    sleep $DURATION
-    
+}
+
+function prbs_check() {
     #for sbus in $sbus_list
     for sbus in ${sbus_list[@]}
     do
         echo "=== $SERVER_IP:$PORT $sbus ==="
         aapl serdes -server $SERVER_IP -port $PORT -addr $sbus -ber -ber-dwell 1
     done
+
+}
+
+function do_prbs() {
+    echo "do prbs"
+    echo $1
+    
+    if [ $1 == "SET_SI" ]
+    then
+        set_si
+    elif [ $1 == "DFE" ]
+    then
+        do_dfe
+    elif [ $1 == "DISP" ]
+    then
+        serdes_display        
+    elif [ $1 == "PRBS_PRE" ]
+    then
+        prbs_preset
+    elif [ $1 == "PRBS_START" ]
+    then
+        prbs_start
+    elif [ $1 == "PRBS_CHECK" ]
+    then
+        prbs_check
+    elif [ $1 == "PRBS" ]
+    then
+        # Do all prbs stuff
+        set_si
+        prbs_preset
+        do_dfe
+        serdes_display
+        prbs_preset
+        prbs_start
+        echo "Sleep $DURATION"
+        sleep $DURATION
+        prbs_check
+    else
+        echo "Invalid stage $1"
+    fi
 
     echo "AAPL PRBS DONE"
 }
@@ -209,10 +273,7 @@ then
 elif [ $STAGE = "INIT" ]
 then
     do_init
-elif [ $STAGE = "PRBS" ]
-then
-    do_prbs | tee /data/nic_arm/aapl/aapl.log
 else
-    echo "Invalid stage $STAGE"
+    do_prbs $STAGE | tee /data/nic_arm/aapl/aapl.log
 fi
 

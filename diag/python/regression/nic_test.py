@@ -42,7 +42,7 @@ class nic_test:
             session = common.session_start()
             session.timeout = timeout
             self.nic_con.uart_session_start(session, self.baud_rate)
-            self.nic_con.uart_session_cmd(session, "")
+            self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
             self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
             self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
             self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
@@ -368,7 +368,7 @@ class nic_test:
         try:
             session.timeout = timeout
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
-            self.nic_con.uart_session_cmd(session, "")
+            self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
             self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
             self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
             if vmarg > 0:
