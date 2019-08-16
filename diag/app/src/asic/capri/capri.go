@@ -80,14 +80,8 @@ func Prbs(mode string, poly string, duration int) (err int) {
     cmd = "/data/nic_arm/aapl/aapl_prbs_all.sh"
 
     // For Eth PRBS, need to re-init serdes
-    dcli.Println("d", "Eth reset")
+    dcli.Println("d", "Eth init")
     if mode == "ETH" {
-        err = runCmd.Run("AAPL ETH SERDES RESET DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "RESET")
-        if err != errType.SUCCESS {
-            dcli.Println("e", "Failed to reset Eth serdes!")
-            return
-        }
-
         err = runCmd.Run("AAPL ETH SERDES INIT DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "INIT")
         if err != errType.SUCCESS {
             dcli.Println("e", "Failed to init Eth serdes!")
