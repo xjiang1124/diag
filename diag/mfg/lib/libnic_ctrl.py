@@ -850,6 +850,12 @@ class nic_ctrl():
             self.nic_set_err_msg(self._nic_handle.before)
             return False
 
+        nic_cmd_list = list()
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_FINI_FMT
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
+
         return True
 
 
