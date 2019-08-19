@@ -33,8 +33,16 @@ func Mvl_AccHdl(argList []string) {
 	spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
     cli.Printf("d", "cpld 0x%x", data)
 	if (data >> 4) != MVL_ID {
-	    dcli.Println("e", "MVL acc test failed!")
-	    diagEngine.FuncMsgChan <- errType.FAIL
+	    //retry: read one more time to avoid hal conflict
+	    spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
+	    cli.Printf("d", "cpld the 2nd 0x%x", data)
+	    if (data >> 4) != MVL_ID {
+	        dcli.Println("e", "MVL acc test failed!")
+    	    diagEngine.FuncMsgChan <- errType.FAIL
+	    } else {
+	        diagEngine.FuncMsgChan <- errType.SUCCESS
+	        dcli.Println("i", "MVL acc test passed!")
+	    }
 	} else {
 	    diagEngine.FuncMsgChan <- errType.SUCCESS
 	    dcli.Println("i", "MVL acc test passed!")
