@@ -826,15 +826,14 @@ class nic_ctrl():
         if not self._sn:
             return False
 
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR)
+        dst_log_dir = MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR + "NIC-{:02d}/".format(self._slot+1)
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(dst_log_dir)
         if not self.mtp_exec_cmd(cmd):
             return False
 
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
-        nic_sub_dir = "NIC-{:d}".format(self._slot+1)
-        dst_logfile = MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR + nic_sub_dir
-        logfile = MTP_DIAG_Logfile.NIC_ONBOARD_DIAG_LOG_DIR
-        cmd = "scp {:s} -r {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, logfile, dst_logfile)
+        logfile = MTP_DIAG_Logfile.NIC_ONBOARD_DIAG_LOG_FILES
+        cmd = "scp {:s} {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, logfile, dst_log_dir)
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
         if idx < 0:
@@ -851,7 +850,7 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        cmd = MFG_DIAG_CMDS.NIC_DIAG_FINI_FMT
+        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_FINI_FMT
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
@@ -863,6 +862,9 @@ class nic_ctrl():
         # setup diag env on nic
         nic_cmd_list = list()
 
+        time_str = str(libmfg_utils.timestamp_snapshot())
+        nic_cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(time_str)
+        nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_INIT_FMT.format(self._slot+1)
         nic_cmd_list.append(nic_cmd)
         nic_cmd = "source /etc/profile"

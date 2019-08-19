@@ -141,6 +141,7 @@ class MTP_DIAG_Error:
 
 class MTP_DIAG_Logfile:
     ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
+    NIC_ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
@@ -149,7 +150,6 @@ class MTP_DIAG_Logfile:
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
     ONBOARD_NIC_LOG_DIR = "/home/diag/diag/nic_log/"
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
-    NIC_ONBOARD_DIAG_LOG_DIR = "/home/diag/diag/log/"
 
     DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
     DIAG_MFG_DL_LOG_DIR_FMT = "/mfg_log/{:s}/DL/{:s}/"
@@ -243,6 +243,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
+    NIC_DATE_SET_FMT = "date --set='{:s}'"
 
     NIC_ESEC_PROG_PRE_FMT = "./esec_ctrl.py -slot {:d} -img_prog"
     NIC_ESEC_PROG_POST_FMT = "./esec_ctrl.py -cleanup"

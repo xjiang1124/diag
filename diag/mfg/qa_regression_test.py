@@ -256,7 +256,9 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_test_time = mtp_stop_ts-mtp_start_ts
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
+        mtp_mgmt_ctrl.cli_log_inf("Collecting Regression Test Iteration-{:03d} logfiles....".format(loop), level=0)
         test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
+        mtp_mgmt_ctrl.cli_log_inf("Sending Regression Test Iteration-{:03d} report....".format(loop), level=0)
         result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner, mtp_test_time)
         cmd = "rm -rf {:s}".format(test_log_file)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)

@@ -1391,7 +1391,7 @@ class mtp_ctrl():
 
 # 3. Routines that need spi bus, can not be run in parallel
     def mtp_power_on_single_nic(self, slot):
-        self.cli_log_slot_inf(slot, "Power on NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
+        self.cli_log_slot_inf(slot, "Power on NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
         if not self._nic_ctrl_list[slot].nic_power_on():
             self.cli_log_slot_err(slot, "Failed to power on NIC")
             return False
@@ -1400,7 +1400,7 @@ class mtp_ctrl():
 
 
     def mtp_power_off_single_nic(self, slot):
-        self.cli_log_slot_inf(slot, "Power off NIC, wait {:03d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY))
+        self.cli_log_slot_inf(slot, "Power off NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY))
         if not self._nic_ctrl_list[slot].nic_power_off():
             self.cli_log_slot_err(slot, "Failed to power off NIC")
             return False
@@ -2037,7 +2037,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to power on NIC")
             return False
 
-        self.cli_log_inf("Power on all NIC, wait {:03d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
+        self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
         return True
 
