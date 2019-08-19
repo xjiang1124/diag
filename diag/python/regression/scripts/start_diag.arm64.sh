@@ -14,8 +14,8 @@ mkdir -p $DIAG_DIR
 cd $DIAG_DIR
 ln -s /data/nic_arm/log/
 
-echo "Killing hal"
-killall hal
+#echo "Killing hal"
+#killall hal
 
 if [[ -f /etc/profile.bak ]]
 then
