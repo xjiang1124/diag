@@ -155,6 +155,17 @@ func Prbs(mode string, poly string, duration int) (err int) {
         }
     }
 
+    if sbusIdx < len(sbusList) {
+        dcli.Println("e", "Did not find all sbus! expect", len(sbusList), "; found", sbusIdx)
+        err = errType.FAIL
+    }
+
+    if err == errType.SUCCESS {
+        dcli.Println("i", "MODE", "PRBS PASSED")
+    } else {
+        dcli.Println("i", "MODE", "PRBS FAILED")
+    }
+
     return err
 }
 
