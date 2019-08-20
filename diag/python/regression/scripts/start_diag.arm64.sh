@@ -17,13 +17,13 @@ ln -s /data/nic_arm/log/
 #echo "Killing hal"
 #killall hal
 
-if [[ -f /etc/profile.bak ]]
-then
-    echo "Skip back up profile"
-else
-    cp /etc/profile /etc/profile.bak
-fi
-cat /etc/profile.bak $DIAG_DIR/python/regression/scripts/dft_profile_nic > /etc/profile
+#if [[ -f /etc/profile.bak ]]
+#then
+#    echo "Skip back up profile"
+#else
+#    cp /etc/profile /etc/profile.bak
+#fi
+
 source /etc/profile
 
 if [[ $# -eq 1 ]]
@@ -39,12 +39,11 @@ echo "nic_name: $nic_name"
 echo "export $nic_name" >> /etc/profile
 
 source /etc/profile
-sh $DIAG_DIR/python/regression/scripts/nic_config.sh
-sh $DIRG_DIR/python/regression/scripts/rtc_sanity.sh
+#sh $DIAG_DIR/python/regression/scripts/nic_config.sh
+#sh $DIRG_DIR/python/regression/scripts/rtc_sanity.sh
+sh /data/nic_arm/rtc_sanity.sh
 
 echo "Preparing diag environment -- Done"
-
-source /etc/profile
 
 num="$(ps -elf | grep diagmgr | wc | awk -F " " '{print $1}')"
 echo "num $num"

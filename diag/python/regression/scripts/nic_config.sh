@@ -1,3 +1,15 @@
+NIC_ARM_DIR=/data/nic_arm/
+
+if [[ -f /etc/profile.bak ]]
+then
+    echo "Skip back up profile"
+else
+    cp /etc/profile /etc/profile.bak
+fi
+cat /etc/profile.bak $NIC_ARM_DIR/dft_profile_nic > /etc/profile
+source /etc/profile
+
+
 PATH=$PATH:/data/nic_util/
 PATH=$PATH:/data/nic_arm/
 
@@ -27,6 +39,5 @@ echo "export CARD_TYPE=\"$type\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
 
-sh /data/nic_arm/rtc_sanity.sh
 
 echo "nic_config done"
