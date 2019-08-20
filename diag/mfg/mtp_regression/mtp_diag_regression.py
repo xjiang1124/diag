@@ -487,6 +487,30 @@ def main():
     forio_test_db = diag_db(corner, forio_test_cfg_file)
     vomero_test_db = diag_db(corner, vomero_test_cfg_file)
 
+    naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
+    naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
+    naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
+    naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
+    # naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
+
+    naples25_seq_test_list = naples25_test_db.get_diag_seq_test_list()
+    naples25_mtp_para_test_list = naples25_test_db.get_mtp_para_test_list()
+    naples25_para_test_list = naples25_test_db.get_diag_para_test_list()
+    naples25_pre_test_check_list = naples25_test_db.get_pre_diag_test_intf_list()
+    # naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
+
+    forio_seq_test_list = forio_test_db.get_diag_seq_test_list()
+    forio_mtp_para_test_list = forio_test_db.get_mtp_para_test_list()
+    forio_para_test_list = forio_test_db.get_diag_para_test_list()
+    forio_pre_test_check_list = forio_test_db.get_pre_diag_test_intf_list()
+    # forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
+
+    vomero_seq_test_list = vomero_test_db.get_diag_seq_test_list()
+    vomero_mtp_para_test_list = vomero_test_db.get_mtp_para_test_list()
+    vomero_para_test_list = vomero_test_db.get_diag_para_test_list()
+    vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
+    # vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
+
     # logfiles
     open_file_track_list = list()
 
@@ -519,31 +543,10 @@ def main():
                              mgmt_cfg = mtp_mgmt_cfg,
                              apc_cfg = mtp_apc_cfg,
                              dbg_mode = verbosity)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to connect MTP Chassis")
+
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
-        return
-
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init(mtp_diagmgr_log_file):
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Diag Environment Pre init failed")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
-        return
-
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Diag Environment Post init Fail")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-        return
-
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to retrieve MTP system info")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
-        return
-
-    # PSU/FAN absent, powerdown MTP
-    ret = mtp_mgmt_ctrl.mtp_hw_init(fanspd)
-    if not ret:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP Sanity Check Failed")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_HW_SANITY, open_file_track_list)
         return
 
     # Wait the Chamber temperature, if HT or LT is set
@@ -565,13 +568,7 @@ def main():
     pass_nic_list = list()
     fail_nic_list = list()
 
-    if not mtp_mgmt_ctrl.mtp_nic_init():
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC type, present failed")
-        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-        return
-
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-
     for slot in range(len(nic_prsnt_list)):
         if nic_prsnt_list[slot]:
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES100:
@@ -589,30 +586,6 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
                 continue
-
-    naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
-    naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
-    naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
-    naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
-    # naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
-
-    naples25_seq_test_list = naples25_test_db.get_diag_seq_test_list()
-    naples25_mtp_para_test_list = naples25_test_db.get_mtp_para_test_list()
-    naples25_para_test_list = naples25_test_db.get_diag_para_test_list()
-    naples25_pre_test_check_list = naples25_test_db.get_pre_diag_test_intf_list()
-    # naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
-
-    forio_seq_test_list = forio_test_db.get_diag_seq_test_list()
-    forio_mtp_para_test_list = forio_test_db.get_mtp_para_test_list()
-    forio_para_test_list = forio_test_db.get_diag_para_test_list()
-    forio_pre_test_check_list = forio_test_db.get_pre_diag_test_intf_list()
-    # forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
-
-    vomero_seq_test_list = vomero_test_db.get_diag_seq_test_list()
-    vomero_mtp_para_test_list = vomero_test_db.get_mtp_para_test_list()
-    vomero_para_test_list = vomero_test_db.get_diag_para_test_list()
-    vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
-    # vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
 
     nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
     nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list]

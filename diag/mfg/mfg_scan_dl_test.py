@@ -190,45 +190,8 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
-        logfile_close(log_filep_list)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
-
-    # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
-        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
-        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # get the mtp system info
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
-        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init():
-        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
 
@@ -283,6 +246,8 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(card_type))
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
             logfile_close(log_filep_list)
+            # cleanup the log dir
+            logfile_cleanup([log_dir+log_sub_dir])
             return
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)

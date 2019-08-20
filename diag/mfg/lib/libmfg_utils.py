@@ -535,6 +535,45 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
+def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD):
+    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
+
+    # diag environment pre init
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        return False
+
+    # diag environment post init
+    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
+        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        return False
+
+    # get the mtp system info
+    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
+        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        return False
+
+    # PSU/FAN absent, powerdown MTP
+    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd):
+        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        return False
+
+    # init all the nic.
+    if not mtp_mgmt_ctrl.mtp_nic_init():
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        return False
+    return True
+
+
 def email_report(email_to, title, body = None):
     if not email_to:
         return

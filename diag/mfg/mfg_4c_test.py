@@ -114,12 +114,12 @@ def main():
 
     # wait operator set chamber temperature
     if args.high_temp:
-        libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
-        libmfg_utils.action_confirm("Close Chamber and set chamber temperature to {:d} degree centigrade".format(MTP_Const.MFG_EDVT_HIGH_TEMP), "STOP")
+        libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
+        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE IS SET", "STOP")
         stage = FF_Stage.FF_4C_H
     elif args.low_temp:
-        libmfg_utils.cli_inf("PLEASE CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
-        libmfg_utils.action_confirm("Close chamber and set chamber temperature to {:d} degree centigrade".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
+        libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
+        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE IS SET", "STOP")
         stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit("Unknown 4C Corner... Abort")

@@ -135,45 +135,8 @@ def main():
     naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
     naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
 
-    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
-        logfile_close(log_filep_list)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
-
-    # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
-        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
-        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # get the sw version info
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(MTP_Const.MFG_EDVT_NORM_FAN_SPD):
-        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init():
-        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
 
