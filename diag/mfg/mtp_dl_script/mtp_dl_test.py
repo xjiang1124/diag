@@ -65,7 +65,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     dsp = "DL"
     for test in ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-        start_ts = datetime.datetime.now().replace(microsecond=0)
+        start_ts = libmfg_utils.timestamp_snapshot()
         # program FRU
         if test == "FRU_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
@@ -81,7 +81,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
@@ -228,7 +228,6 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
             continue
 
-        pass_nic_list.append(slot)
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
         pn = nic_fru_cfg[mtp_id][key]["PN"]
@@ -237,32 +236,26 @@ def main():
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
-            if not mtp_capability & 0x1:
-                mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples100")
-                mtp_mgmt_ctrl.mtp_chassis_shutdown()
-                logfile_close(log_filep_list)
-                return
+            mtp_exp_capability = 0x1
             cpld_img_file = naples100_cpld_img_file
             qspi_img_file = naples100_qspi_img_file
         elif card_type == NIC_Type.VOMERO:
-            if not mtp_capability & 0x1:
-                mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Vomero")
-                mtp_mgmt_ctrl.mtp_chassis_shutdown()
-                logfile_close(log_filep_list)
-                return
+            mtp_exp_capability = 0x1
             cpld_img_file = vomero_cpld_img_file
             qspi_img_file = vomero_qspi_img_file
         elif card_type == NIC_Type.NAPLES25:
-            if not mtp_capability & 0x2:
-                mtp_mgmt_ctrl.cli_log_err("MTP doesn't support Naples25")
-                mtp_mgmt_ctrl.mtp_chassis_shutdown()
-                logfile_close(log_filep_list)
-                return
+            mtp_exp_capability = 0x2
             cpld_img_file = naples25_cpld_img_file
             qspi_img_file = naples25_qspi_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
+
+        if not mtp_capability & mtp_exp_capability:
+            mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(card_type))
+            mtp_mgmt_ctrl.mtp_chassis_shutdown()
+            logfile_close(log_filep_list)
+            return
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
@@ -270,9 +263,11 @@ def main():
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n", level=0)
 
+        pass_nic_list.append(slot)
+
         for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
+            start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
@@ -291,7 +286,7 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
                 continue
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
@@ -309,26 +304,28 @@ def main():
             continue
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) == "YES":
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
-                qspi_img_file = naples100_qspi_img_file
-                cpld_img_file = naples100_cpld_img_file
-            elif card_type == NIC_Type.VOMERO:
-                qspi_img_file = vomero_qspi_img_file
-                cpld_img_file = vomero_cpld_img_file
-            elif card_type == NIC_Type.NAPLES25:
-                qspi_img_file = naples25_qspi_img_file
-                cpld_img_file = naples25_cpld_img_file
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
-                continue
+        if str.upper(valid) != "YES":
+            continue
 
-            nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl, nic_fru_cfg[mtp_id][key], cpld_img_file, qspi_img_file, slot))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
+            qspi_img_file = naples100_qspi_img_file
+            cpld_img_file = naples100_cpld_img_file
+        elif card_type == NIC_Type.VOMERO:
+            qspi_img_file = vomero_qspi_img_file
+            cpld_img_file = vomero_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25:
+            qspi_img_file = naples25_qspi_img_file
+            cpld_img_file = naples25_cpld_img_file
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
+            continue
+
+        nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl, nic_fru_cfg[mtp_id][key], cpld_img_file, qspi_img_file, slot))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+        time.sleep(2)
 
     # monitor all the thread
     while True:
@@ -369,9 +366,9 @@ def main():
         exp_pn = pn
 
         #for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET", "PCIE_DIS"]:
-        for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]:
+        for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
+            start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
@@ -381,6 +378,8 @@ def main():
             # nic status check
             elif test == "NIC_INIT":
                 ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
+            elif test == "NIC_DIAG_BOOT":
+                ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
             # verify FRU
             elif test == "FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn)
@@ -399,7 +398,7 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
                 continue
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)

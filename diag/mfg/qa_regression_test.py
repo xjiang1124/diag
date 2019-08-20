@@ -302,7 +302,7 @@ def main():
     email_to = DIAG_NIGHTLY_REPORT_RECEIPIENT
     pwr_cycle = False
     skip_test = False
-    corner = Env_Cond.MFG_NT
+    corner = Env_Cond.MFG_QA
 
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")

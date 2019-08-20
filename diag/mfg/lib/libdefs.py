@@ -29,6 +29,7 @@ class FF_Stage:
 
 
 class Env_Cond(Enum):
+    MFG_QA = "QA"
     MFG_LT = "LT"
     MFG_NT = "NT"
     MFG_HT = "HT"
@@ -230,6 +231,8 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"
     # copied diag version
     NIC_DIAG_VERSION_FMT = "head /home/diag/diag/scripts/version.txt"
+    # NIC HAL process
+    NIC_HAL_RUNNING_FMT = "ps | grep hal"
 
     NIC_MOUNT_EMMC_FMT = "mount /dev/mmcblk0p10 /data"
     NIC_FSCK_EMMC_FMT = "fsck -y /dev/mmcblk0p10"
@@ -330,6 +333,7 @@ class MFG_DIAG_SIG:
     NIC_CON_OK_SIG = "# stty speed 4800"
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_AAPL_OK_SIG = "AAPL setup done"
+    NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
     NIC_OS_SHUTDOWN_OK_SIG = "System halted"

@@ -896,6 +896,12 @@ class nic_ctrl():
         else:
             return False
 
+        # # check if hal is running
+        # nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
+        # cmd_buf = self.nic_get_info(nic_cmd)
+        # if MFG_DIAG_SIG.NIC_HAL_RUNNING_SIG in cmd_buf:
+        #     return False
+
         return True
 
 

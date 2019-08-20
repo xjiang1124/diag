@@ -123,9 +123,9 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
         for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf), level=0)
-            start_ts = datetime.datetime.now().replace(microsecond=0)
+            start_ts = libmfg_utils.timestamp_snapshot()
             ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, intf, duration), level=0)
@@ -156,9 +156,9 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
-        start_ts = datetime.datetime.now().replace(microsecond=0)
+        start_ts = libmfg_utils.timestamp_snapshot()
         test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
-        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
 
         # failed nic display
@@ -266,9 +266,9 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             rslt_cmd = test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
 
-            start_ts = datetime.datetime.now().replace(microsecond=0)
+            start_ts = libmfg_utils.timestamp_snapshot()
             ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-            stop_ts = datetime.datetime.now().replace(microsecond=0)
+            stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
 
             # double check the L1 test even it pass
@@ -359,9 +359,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
 
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
-        start_ts = datetime.datetime.now().replace(microsecond=0)
+        start_ts = libmfg_utils.timestamp_snapshot()
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-        stop_ts = datetime.datetime.now().replace(microsecond=0)
+        stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
 
         if ret == "SUCCESS":
@@ -410,6 +410,12 @@ def main():
         low_temp_threshold = None
         high_temp_threshold = None
         vmarg_list = [0]
+    # QA test, normal temperature, two voltage corner
+    elif corner == Env_Cond.MFG_QA:
+        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
+        low_temp_threshold = None
+        high_temp_threshold = None
+        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
     # Low temperature, two voltage corner
     elif corner == Env_Cond.MFG_LT:
         if GLB_CFG_MFG_TEST_MODE:
@@ -642,7 +648,10 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check complete\n", level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
-    diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
+
+    # TODO: disable PCIe poll only for QA tests
+    if corner == Env_Cond.MFG_QA:
+        diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
 
     for vmarg in vmarg_list:
         # stop the next vmarg corner if stop_on_err is set and some nic fails
@@ -664,11 +673,11 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        # TODO: EDVT/RDT, don't init aapl for NIC_ASIC tests
-        if corner in [Env_Cond.MFG_RDT, Env_Cond.MFG_EDVT_LT, Env_Cond.MFG_EDVT_HT]:
-            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg)
-        else:
+        # TODO: only init aapl for QA tests
+        if corner == Env_Cond.MFG_QA:
             ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
+        else:
+            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg)
         if not ret:
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -721,8 +730,8 @@ def main():
                 continue
 
             if nic_list:
-                # TODO: EDVT/RDT, don't run NIC_ASIC Tests
-                if corner in [Env_Cond.MFG_RDT, Env_Cond.MFG_EDVT_LT, Env_Cond.MFG_EDVT_HT]:
+                # TODO: run NIC_ASIC Tests only for QA test
+                if corner != Env_Cond.MFG_QA:
                     nic_para_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
                     nic_para_test_list.remove(("NIC_ASIC","ETH_PRBS"))
                 diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
@@ -743,22 +752,25 @@ def main():
         # NIC Sequential test
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_type == NIC_Type.NAPLES100:
-                nic_seq_test_list = naples100_seq_test_list
+                nic_seq_test_list = naples100_seq_test_list[:]
                 test_db = naples100_test_db
             elif nic_type == NIC_Type.NAPLES25:
-                nic_seq_test_list = naples25_seq_test_list
+                nic_seq_test_list = naples25_seq_test_list[:]
                 test_db = naples25_test_db
             elif nic_type == NIC_Type.FORIO:
-                nic_seq_test_list = forio_seq_test_list
+                nic_seq_test_list = forio_seq_test_list[:]
                 test_db = forio_test_db
             elif nic_type == NIC_Type.VOMERO:
-                nic_seq_test_list = vomero_seq_test_list
+                nic_seq_test_list = vomero_seq_test_list[:]
                 test_db = vomero_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
 
             if nic_list:
+                # TODO: skip ASIC L1 for QA test
+                if corner == Env_Cond.MFG_QA:
+                    nic_seq_test_list.remove(("ASIC","L1"))
                 diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
                                                           nic_type,
                                                           nic_list,
@@ -839,13 +851,15 @@ def main():
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
-    # failed enable pcie poll, fail the card
-    for slot in diag_post_fail_list:
-        if slot not in fail_nic_list:
-            fail_nic_list.append(slot)
-        if slot in pass_nic_list:
-            pass_nic_list.remove(slot)
+    # TODO: enable PCIe poll only for QA tests
+    if corner == Env_Cond.MFG_QA:
+        diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
+        # failed enable pcie poll, fail the card
+        for slot in diag_post_fail_list:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 
