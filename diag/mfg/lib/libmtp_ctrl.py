@@ -523,7 +523,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_connect(self):
+    def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None):
         retries = self._mgmt_timeout / 30
         if not self._mgmt_cfg:
             self.cli_log_err("management port config is empty")
@@ -571,6 +571,17 @@ class mtp_ctrl():
         # set logfile
         self._mgmt_handle.logfile_read = self._diag_filep
         self._mgmt_handle.logfile_send = self._diag_cmd_filep
+        if prompt_cfg:
+            # config the prompt
+            if prompt_id:
+                userid = prompt_id
+            else:
+                userid = self._mgmt_cfg[1]
+            if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
+                self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+                return None
+            self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
+
         return self._mgmt_prompt
 
 
@@ -582,12 +593,18 @@ class mtp_ctrl():
             return False
 
         if slot != None:
-            handle.sendline("PS1='\u@NIC-{:02d}:{:s} '".format(slot+1, prompt))
+            handle.sendline("PS1='{:s}@NIC-{:02d}:{:s} '".format(userid, slot+1, prompt))
         else:
-            handle.sendline("PS1='\u@MTP:{:s} '".format(prompt))
+            handle.sendline("PS1='{:s}@MTP:{:s} '".format(userid, prompt))
         idx = libmfg_utils.mfg_expect_re(handle, [r"{:s}.*{:s}".format(userid, prompt)])
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
+            return False
+        # refresh
+        cmd = "uname"
+        sig_list = ["Linux"]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+            self.cli_log_err("Refresh mtp mgmt port failed", level = 0)
             return False
 
         return True
@@ -609,10 +626,12 @@ class mtp_ctrl():
         self._mgmt_handle.sendline("sudo -k " + cmd)
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, [userid + ":"])
         if idx < 0:
-            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
-            return False
-
+            self._mgmt_handle.logfile_read = None
+            self._mgmt_handle.logfile_send = None
+            self.mtp_mgmt_disconnect()
+            return True
         self._mgmt_handle.sendline(passwd)
+
         if cmd == "reboot" or cmd == "poweroff":
             self._mgmt_handle.expect_exact(pexpect.EOF)
             self._mgmt_handle.logfile_read = None

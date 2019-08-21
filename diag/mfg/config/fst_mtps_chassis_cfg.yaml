@@ -1,0 +1,20 @@
+MTPS-100:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.72.137"
+    APC1_PORT: "23"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.65.115"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps100"
+    SLOTS: 4
+    CAPABILITY: 0x3

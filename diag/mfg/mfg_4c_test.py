@@ -115,11 +115,11 @@ def main():
     # wait operator set chamber temperature
     if args.high_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
-        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE IS SET", "STOP")
+        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE RISE TO {:d}".format(MTP_Const.MFG_EDVT_HIGH_TEMP), "STOP")
         stage = FF_Stage.FF_4C_H
     elif args.low_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
-        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE IS SET", "STOP")
+        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE DROP TO {:d}".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
         stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit("Unknown 4C Corner... Abort")
@@ -129,7 +129,7 @@ def main():
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="4C-SSH"):
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)

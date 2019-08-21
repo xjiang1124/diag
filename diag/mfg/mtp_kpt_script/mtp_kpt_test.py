@@ -409,7 +409,6 @@ def main():
 
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MTP Key Programming Test Complete", level=0)
 
     for slot in pass_nic_list:

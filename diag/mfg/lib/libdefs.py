@@ -74,6 +74,8 @@ class MTP_Const:
     MTP_SLOT_NUM = 10
     MTP_SLOT_INVALID = 10
 
+    MTPS_SLOT_NUM = 4
+
     MTP_POWER_ON_DELAY = 180
     MTP_POWER_ON_TIMEOUT = 120
     MTP_OS_SHUTDOWN_DELAY = 60
@@ -110,6 +112,9 @@ class MTP_Const:
     # 4 hours
     DIAG_DL_TEST_TIMEOUT = 14400
     DIAG_KPT_TEST_TIMEOUT = 14400
+
+    # 1 hour
+    DIAG_FST_TEST_TIMEOUT = 3600
     
     MFG_EDVT_LOW_FAN_SPD = 40
     MFG_EDVT_NORM_FAN_SPD = 40
@@ -149,6 +154,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
     ONBOARD_KPT_LOG_FILES = "/home/diag/mtp_kpt_script/*log"
+    ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
     ONBOARD_NIC_LOG_DIR = "/home/diag/diag/nic_log/"
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
@@ -158,11 +164,13 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_P2C_LOG_DIR_FMT = "/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_4C_LOG_DIR_FMT = "/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_KPT_LOG_DIR_FMT = "/mfg_log/{:s}/KPT/{:s}/"
+    DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
 
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_MODEL_KPT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/KPT/{:s}/"
+    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -172,6 +180,8 @@ class MTP_DIAG_Logfile:
     MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
     MFG_KPT_LOG_PKG_FILE = "KPT_{:s}_{:s}.tar.gz"
     MFG_KPT_LOG_DIR = "KPT_{:s}_{:s}/"
+    MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
+    MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
 
 
 class MTP_DIAG_Path:
@@ -324,6 +334,8 @@ class MFG_DIAG_CMDS:
     MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
     MFG_MK_DIR_FMT = "mkdir -p {:s}"
     MFG_LOG_LINK_FMT = "ln {:s} {:s}"
+
+    FST_DIAG_CMD_FMT = "/home/diag/mtp_fst_script/diag_fst_test.py"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

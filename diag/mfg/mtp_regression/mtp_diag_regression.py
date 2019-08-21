@@ -286,11 +286,9 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 if pass_count != 14:
                     err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                     ret = "FAIL"
-
                 if log_err_msg_list:
                     err_msg_list += log_err_msg_list
-                # TODO:
-                #     ret = "FAIL"
+                    ret = "FAIL"
 
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
