@@ -1307,19 +1307,13 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mgmt_init(self, slot, fpo, aapl):
-        if aapl:
-            self.cli_log_slot_inf(slot, "Init NIC MGMT/AAPL port")
-            if not self._nic_ctrl_list[slot].nic_aapl_init():
-                self.cli_log_slot_err(slot, "Init NIC MGMT/AAPL port failed")
+    def mtp_nic_mgmt_init(self, slot, fpo):
+        self.cli_log_slot_inf(slot, "Init NIC MGMT port")
+        if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
+            # retry
+            if not self.mtp_nic_mgmt_reinit(slot):
+                self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
                 return False
-        else:
-            self.cli_log_slot_inf(slot, "Init NIC MGMT port")
-            if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
-                # retry
-                if not self.mtp_nic_mgmt_reinit(slot):
-                    self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
-                    return False
 
         # delete the arp entry
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
@@ -1334,11 +1328,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_mini_init(self, slot, fpo=False, aapl=False):
+    def mtp_nic_mini_init(self, slot, fpo=False):
         if not self.mtp_nic_boot_info_init(slot):
             return False
 
-        if not self.mtp_nic_mgmt_init(slot, fpo, aapl):
+        if not self.mtp_nic_mgmt_init(slot, fpo):
             return False
 
         return True
@@ -1734,9 +1728,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_save_nic_diag_logfile(self, slot):
+    def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
         self.cli_log_slot_inf_lock(slot, "Save NIC Diag Logfile")
-        if not self._nic_ctrl_list[slot].nic_save_diag_logfile():
+        if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
             self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
             return False
@@ -1744,10 +1738,14 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_start_nic_diag(self, slot):
-        self.cli_log_slot_inf_lock(slot, "Start NIC Diag")
-        if not self._nic_ctrl_list[slot].nic_start_diag():
-            self.cli_log_slot_err_lock(slot, "Start NIC Diag failed")
+    def mtp_mgmt_start_nic_diag(self, slot, aapl):
+        if aapl:
+            msg_inf = "Start NIC Diag with HAL"
+        else:
+            msg_inf = "Start NIC Diag without HAL"
+        self.cli_log_slot_inf_lock(slot, msg_inf)
+        if not self._nic_ctrl_list[slot].nic_start_diag(aapl):
+            self.cli_log_slot_err_lock(slot, "{:s} failed".format(msf_inf))
             return False
 
         return True
@@ -1904,7 +1902,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl):
         if not self.mtp_check_nic_status(slot):
             return
 
@@ -1914,7 +1912,7 @@ class mtp_ctrl():
         if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
             return
 
-        if not self.mtp_mgmt_start_nic_diag(slot):
+        if not self.mtp_mgmt_start_nic_diag(slot, aapl):
             return
 
         if not self.mtp_nic_cpld_init(slot):
@@ -1958,6 +1956,42 @@ class mtp_ctrl():
         return fail_list
 
 
+    def mtp_nic_mgmt_seq_init(self, fpo):
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                self.mtp_nic_mini_init(slot, fpo)
+
+
+    def mtp_nic_mgmt_para_init(self, aapl):
+        nic_list = list()
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                self.mtp_nic_boot_info_init(slot)
+                nic_list.append(slot)
+
+        # parallel init mgmt/aapl
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        if aapl:
+            for slot in nic_list:
+                self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT(nic_list_param)
+        else:
+            for slot in nic_list:
+                self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_FMT(nic_list_param)
+
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+
+        return True
+
+
     def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False):
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
@@ -1971,10 +2005,10 @@ class mtp_ctrl():
         else:
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
-        for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_nic_mini_init(slot, fpo, aapl):
-                    continue
+        if aapl:
+            self.mtp_nic_mgmt_para_init(aapl)
+        else:
+            self.mtp_nic_mgmt_seq_init(fpo)
 
         if not self.mtp_mgmt_nic_mac_validate():
             return False
@@ -1985,7 +2019,8 @@ class mtp_ctrl():
                                           args = (slot,
                                                   emmc_format,
                                                   fru_valid,
-                                                  vmargin))
+                                                  vmargin,
+                                                  aapl))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)

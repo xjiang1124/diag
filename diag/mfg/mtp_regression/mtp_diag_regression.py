@@ -197,8 +197,16 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     return fail_list
 
 
-def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg):
+def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Start".format(nic_type), level=0)
+    sub_test_list = test_list[:]
+
+    if aapl:
+        sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
+    else:
+        sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
+        sub_test_list.remove(("NIC_ASIC","ETH_PRBS"))
+
     fail_list = list()
 
     nic_thread_list = list()
@@ -208,7 +216,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
                                       args = (mtp_mgmt_ctrl,
                                               slot,
                                               test_db,
-                                              test_list,
+                                              sub_test_list,
                                               nic_test_rslt_list,
                                               stop_on_err,
                                               vmarg))
@@ -232,7 +240,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     # Collect NIC onboard logfiles
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC onboard diag logfiles...", level=0)
     for slot in nic_list:
-        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot):
+        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot, aapl):
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Complete\n".format(nic_type), level=0)
@@ -646,12 +654,7 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        # TODO: only init aapl for QA tests
-        if corner == Env_Cond.MFG_QA:
-            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
-        else:
-            ret = mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg)
-        if not ret:
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
@@ -703,17 +706,15 @@ def main():
                 continue
 
             if nic_list:
-                # TODO: run NIC_ASIC Tests only for QA test
-                if corner != Env_Cond.MFG_QA:
-                    nic_para_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
-                    nic_para_test_list.remove(("NIC_ASIC","ETH_PRBS"))
+                # first round, non-aapl tests
                 diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
                                                             nic_type,
                                                             nic_list,
                                                             test_db,
                                                             nic_para_test_list,
                                                             stop_on_err,
-                                                            vmarg)
+                                                            vmarg,
+                                                            False)
                 for slot in diag_para_fail_list:
                     if slot in nic_list and stop_on_err:
                         nic_list.remove(slot)
@@ -721,6 +722,25 @@ def main():
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
+
+                # second round, aapl tests
+                if corner == Env_Cond.MFG_QA:
+                    mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
+                    diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                                nic_type,
+                                                                nic_list,
+                                                                test_db,
+                                                                nic_para_test_list,
+                                                                stop_on_err,
+                                                                vmarg,
+                                                                True)
+                    for slot in diag_para_fail_list:
+                        if slot in nic_list and stop_on_err:
+                            nic_list.remove(slot)
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        if slot in pass_nic_list:
+                            pass_nic_list.remove(slot)
 
         # NIC Sequential test
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):

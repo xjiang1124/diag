@@ -81,6 +81,7 @@ class MTP_Const:
     MTP_NETCOPY_DELAY = 600
     MTP_FRU_UPDATE_DELAY = 1200
     MTP_PARA_TEST_DELAY = 1800
+    MTP_PARA_AAPL_INIT_DELAY = 900
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 120
@@ -287,7 +288,8 @@ class MFG_DIAG_CMDS:
     MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT = "nic_con.py -dis_pcie -slot {:d}"
     MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT = "nic_con.py -ena_pcie -slot {:d}"
 
-    NIC_AAPL_INIT_FMT = "nic_test.py -setup_multi -mgmt -aapl -slot_list {:d}"
+    MTP_PARA_MGMT_INIT_FMT = "nic_test.py -setup_multi -mgmt -slot_list {:s}"
+    MTP_PARA_MGMT_AAPL_FMT = "nic_test.py -setup_multi -mgmt -aapl -slot_list {:s}"
     MTP_PARA_PRBS_ETH_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=eth -vmarg {:d}"
     MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
     MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
@@ -299,6 +301,8 @@ class MFG_DIAG_CMDS:
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
     NIC_DIAG_FINI_FMT = "rm -r /data/debug*"
+    NIC_DIAG_STOP_HAL_FMT = "killall hal"
+    NIC_DIAG_CONFIG_FMT = "source /data/nic_arm/nic_config.sh"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"
     MTP_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_start"

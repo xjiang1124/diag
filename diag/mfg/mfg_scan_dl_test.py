@@ -397,7 +397,7 @@ def main():
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_chassis_shutdown()
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
+    libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mtp_stop_ts - mtp_start_ts))
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
