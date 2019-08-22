@@ -21,7 +21,6 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
@@ -44,7 +43,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
 
@@ -57,7 +56,7 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary)
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_P2C_TIMEOUT)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_P2C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -98,7 +97,7 @@ def main():
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    regression_start_ts = libmfg_utils.timestamp_snapshot()
+    mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
@@ -108,21 +107,21 @@ def main():
         if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="P2C-SSH"):
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
-            mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     # Copy script, config file on to each MTP Chassis
     mtp_p2c_script_dir = "mtp_regression/"
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_p2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP P2C Test script", level=0)
         if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_p2c_script_dir, mtp_p2c_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP P2C Test script failed", level=0)
             mtpid_list.remove(mtp_id)
-            mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP P2C Test script complete", level=0)
 
@@ -130,7 +129,10 @@ def main():
     mfg_p2c_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_p2c_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_p2c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_p2c_script_dir, mtp_mgmt_ctrl, mtp_id, mfg_p2c_summary[mtp_id]))
+        mtp_thread = threading.Thread(target = single_mtp_p2c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_p2c_script_dir,
+                                                                            mtp_mgmt_ctrl,
+                                                                            mtp_id,
+                                                                            mfg_p2c_summary[mtp_id]))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -145,8 +147,8 @@ def main():
                 mtp_thread.join()
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
-    regression_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG P2C Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
+    mfg_p2c_stop_ts = libmfg_utils.timestamp_snapshot()
+    libmfg_utils.cli_inf("MFG P2C Test Duration:{:s}".format(mfg_p2c_stop_ts - mfg_p2c_start_ts))
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)

@@ -55,10 +55,10 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in pre_test_check_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    # post_test_check_list = naples_test_db.get_post_diag_test_intf_list()
-    # mtp_mgmt_ctrl.cli_log_inf("Post Diag Test Check List:")
-    # for item in post_test_check_list:
-    #     mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+    post_test_check_list = naples_test_db.get_post_diag_test_intf_list()
+    mtp_mgmt_ctrl.cli_log_inf("Post Diag Test Check List:")
+    for item in post_test_check_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
     mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
@@ -122,17 +122,17 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     for intf in nic_check_list:
         for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf))
             start_ts = libmfg_utils.timestamp_snapshot()
             ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, intf, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, intf, duration))
             else:
                 fail_list.append(slot)
                 nic_test_list.remove(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, intf, ret, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, intf, ret, duration))
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Complete\n".format(nic_type), level=0)
 
     return fail_list
@@ -154,7 +154,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     for test in para_test_list:
         for slot in nic_test_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
 
         start_ts = libmfg_utils.timestamp_snapshot()
         test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
@@ -164,7 +164,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         # failed nic display
         for slot in test_fail_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
             if stop_on_err:
                 nic_test_list.remove(slot)
@@ -176,7 +176,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         for slot in nic_test_list:
             if slot not in test_fail_list:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # stop on error, don't collect logfile
     if fail_list and stop_on_err:
@@ -190,7 +190,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                 continue
             err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
             for err_msg in err_msg_list:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg))
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Complete\n".format(nic_type), level=0)
 
@@ -272,7 +272,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             opts = test_cfg["OPTS"]
             diag_cmd = test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg)
             rslt_cmd = test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
             start_ts = libmfg_utils.timestamp_snapshot()
             ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
@@ -291,13 +291,13 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                     ret = "FAIL"
 
             if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
             else:
                 if stop_on_err:
                     nic_test_list.remove(slot)
                 if slot not in fail_list:
                     fail_list.append(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
 
             if dsp == "ASIC" and test == "L1":
                 if ret != "SUCCESS":
@@ -310,7 +310,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
 
             for err_msg in err_msg_disp_list:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
 
@@ -364,18 +364,18 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if dsp == "MVL" and test == "STUB":
             mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
 
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
 
         if ret == "SUCCESS":
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
         else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
             for err_msg in err_msg_list:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
             nic_test_rslt_list[slot] = False
 
         if dsp == "MVL" and test == "STUB":
@@ -386,7 +386,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Single MTP Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="Single MTP Diagnostics Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -461,7 +461,7 @@ def main():
         high_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
     else:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
 
     # load the mtp config
     mtp_chassis_cfg_file_list = list()
@@ -497,25 +497,25 @@ def main():
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
     naples100_para_test_list = naples100_test_db.get_diag_para_test_list()
     naples100_pre_test_check_list = naples100_test_db.get_pre_diag_test_intf_list()
-    # naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
+    naples100_post_test_check_list = naples100_test_db.get_post_diag_test_intf_list()
 
     naples25_seq_test_list = naples25_test_db.get_diag_seq_test_list()
     naples25_mtp_para_test_list = naples25_test_db.get_mtp_para_test_list()
     naples25_para_test_list = naples25_test_db.get_diag_para_test_list()
     naples25_pre_test_check_list = naples25_test_db.get_pre_diag_test_intf_list()
-    # naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
+    naples25_post_test_check_list = naples25_test_db.get_post_diag_test_intf_list()
 
     forio_seq_test_list = forio_test_db.get_diag_seq_test_list()
     forio_mtp_para_test_list = forio_test_db.get_mtp_para_test_list()
     forio_para_test_list = forio_test_db.get_diag_para_test_list()
     forio_pre_test_check_list = forio_test_db.get_pre_diag_test_intf_list()
-    # forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
+    forio_post_test_check_list = forio_test_db.get_post_diag_test_intf_list()
 
     vomero_seq_test_list = vomero_test_db.get_diag_seq_test_list()
     vomero_mtp_para_test_list = vomero_test_db.get_mtp_para_test_list()
     vomero_para_test_list = vomero_test_db.get_diag_para_test_list()
     vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
-    # vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
+    vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
 
     # logfiles
     open_file_track_list = list()
@@ -590,7 +590,7 @@ def main():
                 vomero_nic_list.append(slot)
                 pass_nic_list.append(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
 
     nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]

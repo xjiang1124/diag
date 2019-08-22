@@ -4,9 +4,7 @@ import sys
 import os
 import time
 import pexpect
-import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -14,13 +12,9 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diag MTP Poweroff", formatter_class=argparse.RawTextHelpFormatter)
-    args = parser.parse_args()
-
     mtp_chassis_cfg_file_list = list()
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))

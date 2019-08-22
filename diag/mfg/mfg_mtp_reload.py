@@ -6,7 +6,6 @@ import time
 import pexpect
 import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -14,7 +13,6 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def main():
@@ -22,18 +20,14 @@ def main():
     parser.add_argument("--image", help="New MTP image file")
     parser.add_argument("--nic-image", help="New NIC image file")
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
-    parser.add_argument("--mtp", help="MTP ID")
 
     skip_image_update = True
     nic_image_file = None
     apc = False
-    mtpid = None
 
     args = parser.parse_args()
     if args.apc:
         apc = True
-    if args.mtp:
-        mtpid = args.mtp
     if args.image:
         mtp_image_file = args.image
         skip_image_update = False
@@ -45,6 +39,7 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/kpt_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
     sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)

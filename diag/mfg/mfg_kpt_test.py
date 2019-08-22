@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import threading
 import argparse
@@ -22,7 +21,6 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def load_mtp_cfg():
@@ -43,7 +41,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
 
@@ -56,7 +54,7 @@ def single_mtp_kpt_test(mtp_kpt_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     mtp_mgmt_ctrl.cli_log_inf("MFG KPT Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     cmd = "./mtp_kpt_test.py --mtpid {:s}".format(mtp_id)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_KPT_TEST_TIMEOUT)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_KPT_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG KPT Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -108,21 +106,21 @@ def main():
         if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="KPT-SSH"):
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
-            mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     # Copy script, config file on to each MTP Chassis
     mtp_kpt_script_dir = "mtp_kpt_script/"
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_kpt_script_pkg = "mtp_kpt_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP KPT Test script", level=0)
         if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_kpt_script_dir, mtp_kpt_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP KPT Test script failed", level=0)
             mtpid_list.remove(mtp_id)
-            mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP KPT Test script complete", level=0)
 
@@ -130,7 +128,10 @@ def main():
     mfg_kpt_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_kpt_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_kpt_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_kpt_script_dir, mtp_mgmt_ctrl, mtp_id, mfg_kpt_summary[mtp_id]))
+        mtp_thread = threading.Thread(target = single_mtp_kpt_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_kpt_script_dir,
+                                                                            mtp_mgmt_ctrl,
+                                                                            mtp_id,
+                                                                            mfg_kpt_summary[mtp_id]))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -159,4 +160,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

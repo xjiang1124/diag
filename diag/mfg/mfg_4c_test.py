@@ -22,7 +22,6 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
@@ -44,7 +43,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
 
@@ -60,14 +59,14 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, Env_Cond.MFG_HT)
     else:
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, Env_Cond.MFG_LT)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_4C_TIMEOUT)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG Test Complete @{:s}".format(stage), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG 4C Test Complete @{:s}".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect P2C Test result failed", level=0)
+        mtp_mgmt_ctrl.cli_log_err("MTP Collect 4C Test result failed", level=0)
         return
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
@@ -110,8 +109,6 @@ def main():
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    regression_start_ts = libmfg_utils.timestamp_snapshot()
-
     # wait operator set chamber temperature
     if args.high_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
@@ -123,6 +120,8 @@ def main():
         stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit("Unknown 4C Corner... Abort")
+
+    mfg_4c_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
@@ -139,14 +138,14 @@ def main():
 
     # Copy script, config file on to each MTP Chassis
     mtp_4c_script_dir = "mtp_regression/"
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_4c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
         if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             mtpid_list.remove(mtp_id)
-            mtpid_fail_list.append(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
 
@@ -154,7 +153,11 @@ def main():
     mfg_4c_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_4c_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_4c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_4c_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mfg_4c_summary[mtp_id]))
+        mtp_thread = threading.Thread(target = single_mtp_4c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_4c_script_dir,
+                                                                           mtp_mgmt_ctrl,
+                                                                           mtp_id,
+                                                                           stage,
+                                                                           mfg_4c_summary[mtp_id]))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -170,8 +173,8 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
-    regression_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, regression_stop_ts - regression_start_ts))
+    mfg_4c_stop_ts = libmfg_utils.timestamp_snapshot()
+    libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, mfg_4c_stop_ts - mfg_4c_start_ts))
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)

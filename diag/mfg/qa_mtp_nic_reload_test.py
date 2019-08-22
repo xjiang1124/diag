@@ -3,11 +3,9 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -17,7 +15,6 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def load_mtp_cfg():
@@ -29,12 +26,6 @@ def load_mtp_cfg():
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     return mtp_cfg_db
-
-
-def get_mtpid_list(mtp_cfg_db):
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
-    return sub_mtpid_list
 
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
@@ -72,7 +63,6 @@ def main():
         vmarg = 0
 
     mtp_cfg_db = load_mtp_cfg()
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     diag_log_filep = open("log/{:s}_nic_diag_reload.log".format(mtp_id), 'w+')
     diag_nic_log_filep_list = list()

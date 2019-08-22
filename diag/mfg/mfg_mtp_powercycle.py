@@ -4,9 +4,7 @@ import sys
 import os
 import time
 import pexpect
-import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -14,13 +12,9 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diag MTP Power Cycle", formatter_class=argparse.RawTextHelpFormatter)
-    args = parser.parse_args()
-
     libmfg_utils.cli_inf("!!! Only use this command when mtp can not connected, console is stuck!!!")
     if not libmfg_utils.double_confirm("to continue"):
         return
@@ -30,6 +24,7 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/kpt_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
     sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)

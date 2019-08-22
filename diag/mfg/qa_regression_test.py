@@ -20,11 +20,10 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import DIAG_NIGHTLY_REPORT_RECEIPIENT
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 from libdiag_db import diag_db
 
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, loop, corner):
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
@@ -251,13 +250,13 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
 
         mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
         mtp_start_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.DIAG_4C_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
         mtp_test_time = mtp_stop_ts-mtp_start_ts
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
 
         mtp_mgmt_ctrl.cli_log_inf("Collecting Regression Test Iteration-{:03d} logfiles....".format(loop), level=0)
-        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, loop, corner)
+        test_log_file, qa_log_pkg = get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, corner)
         mtp_mgmt_ctrl.cli_log_inf("Sending Regression Test Iteration-{:03d} report....".format(loop), level=0)
         result = test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner, mtp_test_time)
         cmd = "rm -rf {:s}".format(test_log_file)

@@ -102,19 +102,18 @@ class MTP_Const:
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
 
-    # more than 12 hours
-    DIAG_P2C_TIMEOUT = 48000
-    # more than 24 hours
-    DIAG_4C_TIMEOUT = 96000
     # single test, 1.5 hours
     DIAG_TEST_TIMEOUT = 5400
 
+    # more than 12 hours
+    MFG_P2C_TEST_TIMEOUT = 48000
+    # more than 24 hours
+    MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
-    DIAG_DL_TEST_TIMEOUT = 14400
-    DIAG_KPT_TEST_TIMEOUT = 14400
-
+    MFG_DL_TEST_TIMEOUT = 14400
+    MFG_KPT_TEST_TIMEOUT = 14400
     # 1 hour
-    DIAG_FST_TEST_TIMEOUT = 3600
+    MFG_FST_TEST_TIMEOUT = 3600
     
     MFG_EDVT_LOW_FAN_SPD = 40
     MFG_EDVT_NORM_FAN_SPD = 40

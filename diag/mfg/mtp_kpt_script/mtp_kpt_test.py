@@ -19,7 +19,6 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def logfile_close(filep_list):
@@ -46,14 +45,14 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
     dsp = "KPT"
     for test in ["SEC_CPLD_PROG"]:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program secure cpld
         if test == "SEC_CPLD_PROG":
@@ -64,17 +63,17 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
         if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
             break
         else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
     dsp = "KPT"
     for test in ["SW_INSTALL"]:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program sw image onto EMMC
         if test == "SW_INSTALL":
@@ -85,11 +84,11 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
         if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
             break
         else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
 def main():
@@ -172,15 +171,15 @@ def main():
             emmc_img_file = naples25_emmc_img_file
             sec_cpld_img_file = naples25_sec_cpld_img_file
         else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type", level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix:", level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix:")
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "EMMC image: " + os.path.basename(emmc_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix end\n", level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "KPT Program Matrix end\n")
 
         for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
             if test == "NIC_POWER":
@@ -198,17 +197,17 @@ def main():
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown KPT Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # Secure key programming
     for slot in range(len(nic_prsnt_list)):
@@ -220,7 +219,7 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         #for test in ["PCIE_ENA", "SEC_KEY_PROG"]:
         for test in ["SEC_KEY_PROG"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             # disable PCIE Poll
             if test == "PCIE_ENA":
@@ -228,17 +227,17 @@ def main():
             elif test == "SEC_KEY_PROG":
                 ret = mtp_mgmt_ctrl.mtp_program_nic_sec_key(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown KPT Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -303,22 +302,22 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         for test in ["SEC_CPLD_VERIFY"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SEC_CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_sec_cpld(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown KPT Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -390,22 +389,22 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         for test in ["SW_BOOT"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SW_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown KPT Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()

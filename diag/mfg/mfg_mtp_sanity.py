@@ -6,7 +6,6 @@ import time
 import pexpect
 import argparse
 import re
-import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -14,7 +13,6 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def main():

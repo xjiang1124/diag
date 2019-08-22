@@ -50,6 +50,7 @@ class nic_ctrl():
         self._sn = None
         self._mac = None
         self._pn = None
+        self._date = None
         self._img_timestamp = None
         self._boot_image = None
         self._vendor = None
@@ -980,6 +981,13 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        # retrieve program date if it is valid
+        match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
+        if match:
+            self._date = match[0].replace('/','')
+        else:
+            self._date = None
+
         # retrieve card PN
         if self._vendor == NIC_Vendor.HPE:
             match = re.findall(HP_DISP_PN_FMT, fru_buf)
@@ -1017,6 +1025,12 @@ class nic_ctrl():
             else:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
+            # secondary date
+            match = re.findall(NAPLES_DISP_DATE_FMT, self.nic_get_cmd_buf())
+            if match:
+                date = match[0].replace('/','')
+            else:
+                date = None
             # secondary PN
             if self._vendor == NIC_Vendor.HPE:
                 match = re.findall(HP_DISP_PN_FMT, self.nic_get_cmd_buf())
@@ -1028,7 +1042,7 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            if self._sn != sn or self._mac != mac or self._pn != pn:
+            if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
@@ -1039,7 +1053,7 @@ class nic_ctrl():
         if not self._sn or not self._mac or not self._pn or not self._vendor:
             return None
         else:
-            return [self._sn, self._mac, self._pn, self._vendor]
+            return [self._sn, self._mac, self._pn, self._date, self._vendor]
 
 
     def nic_cpld_init(self):

@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import threading
 import argparse
@@ -13,13 +12,13 @@ sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
+from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libpro_srv_db import pro_srv_db
 
 
 def logfile_close(filep_list):
@@ -43,12 +42,6 @@ def load_mtp_cfg():
     return mtp_cfg_db
 
 
-def get_mtpid_list(mtp_cfg_db):
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
-    return sub_mtpid_list
-
-
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
@@ -58,7 +51,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
 
@@ -70,7 +63,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 
     dsp = "DL"
     for test in ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program FRU
         if test == "FRU_PROG":
@@ -90,10 +83,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
         if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             break
         else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
 def main():
@@ -107,9 +100,8 @@ def main():
         verbosity = False
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = get_mtpid_list(mtp_cfg_db)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtp_id = mtpid_list[0]
-    mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
 
     # local log files
     log_file_list = list()
@@ -207,7 +199,7 @@ def main():
         return
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
+    mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
     dsp = "DL"
     pass_nic_list = list()
@@ -222,7 +214,6 @@ def main():
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
         pn = nic_fru_cfg[mtp_id][key]["PN"]
-        prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
         mac_ui = libmfg_utils.mac_address_format(mac)
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -250,17 +241,17 @@ def main():
             logfile_cleanup([log_dir+log_sub_dir])
             return
 
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:", level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n", level=0)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
 
         pass_nic_list.append(slot)
 
         # DL precheck
         for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
@@ -273,17 +264,17 @@ def main():
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # program the NIC firmware
     nic_thread_list = list()
@@ -309,7 +300,11 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
 
-        nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl, nic_fru_cfg[mtp_id][key], cpld_img_file, qspi_img_file, slot))
+        nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
+                                                                              nic_fru_cfg[mtp_id][key],
+                                                                              cpld_img_file,
+                                                                              qspi_img_file,
+                                                                              slot))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -350,10 +345,11 @@ def main():
         exp_sn = sn
         exp_mac = "-".join(re.findall("..", mac))
         exp_pn = pn
+        exp_date = prog_date
 
         # nic power status check
         for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
@@ -366,7 +362,7 @@ def main():
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
             # verify fru
             elif test == "FRU_VERIFY":
-                ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn)
+                ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, exp_date)
             # verify cpld
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
@@ -380,24 +376,24 @@ def main():
             elif test == "PCIE_DIS":
                 ret = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(slot, False)
             else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_chassis_shutdown()
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mtp_stop_ts - mtp_start_ts))
+    mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
+    libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
@@ -443,7 +439,7 @@ def main():
             os.system(cmd)
 
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_DL)
+        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, FF_Stage.FF_DL)
 
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
