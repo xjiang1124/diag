@@ -30,7 +30,7 @@ def logfile_close(filep_list):
 def load_mtp_cfg():
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
-        mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtps_chassis_cfg.yaml"))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
@@ -87,26 +87,43 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTPS chassis connected", level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Start", level=0)
+    start_ts = libmfg_utils.timestamp_snapshot()
     cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
         mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
         logfile_close(log_filep_list)
         return
+    stop_ts = libmfg_utils.timestamp_snapshot()
+    duration = str(stop_ts - start_ts)
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Complete", level=0)
 
     result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
     # find the regexp for pass slot only:
     # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
-    reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
-    match = re.findall(reg_exp, result)
+    pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
+    fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
+    pass_match = re.findall(pass_reg_exp, result)
+    fail_match = re.findall(fail_reg_exp, result)
     dsp = "FST"
-    for _slot, _sn, _nic_type in match:
-        for test in ["PCIE_LINK"]:
-            slot = int(_slot) - 1
-            sn = _sn.strip()
-            duration = "0:00:00" 
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
-    for _slot, _sn, _nic_type in match:
+    test = "PCIE_LINK"
+
+    for _slot, _sn, _nic_type in fail_match:
+        slot = int(_slot) - 1
+        sn = _sn.strip()
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+
+    for _slot, _sn, _nic_type in pass_match:
+        slot = int(_slot) - 1
+        sn = _sn.strip()
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    for _slot, _sn, _nic_type in fail_match:
+        key = libmfg_utils.nic_key(int(_slot), base=0)
+        nic_type = _nic_type.strip()
+        sn = _sn.strip()
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
+    for _slot, _sn, _nic_type in pass_match:
         key = libmfg_utils.nic_key(int(_slot), base=0)
         nic_type = _nic_type.strip()
         sn = _sn.strip()

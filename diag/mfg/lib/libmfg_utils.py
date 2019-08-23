@@ -847,8 +847,13 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         return None
 
     # analyze test summary logfile
-    with open(local_test_log_file, 'r') as fp:
-        buf = fp.read()
+    try:
+        with open(local_test_log_file, 'r') as fp:
+            buf = fp.read()
+    except:
+        mtp_mgmt_ctrl.cli_log_err("Unable to open MTP test summary file {:}".format(test_log_file), level=0)
+        return None
+
     nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
     nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
     fail_match = re.findall(nic_fail_reg_exp, buf)
