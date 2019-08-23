@@ -1717,11 +1717,12 @@ class mtp_ctrl():
 
     def mtp_mgmt_copy_nic_diag(self, slot, nic_utils=False):
         if nic_utils:
-            self.cli_log_slot_inf_lock(slot, "Copy NIC Diag/Utils Image")
+            msg = "Copy NIC Diag/Utils Image"
         else:
-            self.cli_log_slot_inf_lock(slot, "Copy NIC Diag Image only")
+            msg = "Copy NIC Diag Image"
+        self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
-            self.cli_log_slot_err_lock(slot, "Copy NIC Diag Image failed")
+            self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
             return False
 
@@ -1784,22 +1785,27 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_init(self, slot, emmc_format=False):
         if emmc_format:
-            self.cli_log_slot_inf_lock(slot, "Format and Init NIC EMMC")
+            msg = "Format and Init NIC EMMC"
         else:
-            self.cli_log_slot_inf_lock(slot, "Init NIC EMMC")
+            msg = "Init NIC EMMC"
+        self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_init_emmc(emmc_format):
+            self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
-            self.cli_log_slot_err_lock(slot, "Init NIC EMMC failed")
             return False
 
         return True
 
 
-    def mtp_nic_fru_init(self, slot):
-        self.cli_log_slot_inf_lock(slot, "Init NIC FRU info")
-        if not self._nic_ctrl_list[slot].nic_fru_init():
-            self.cli_log_slot_err_lock(slot, "Init NIC FRU failed")
+    def mtp_nic_fru_init(self, slot, init_date=True):
+        if init_date:
+            msg = "Init NIC FRU info with date"
+        else:
+            msg = "Init NIC FRU info without date"
+        self.cli_log_slot_inf_lock(slot, msg)
+        if not self._nic_ctrl_list[slot].nic_fru_init(init_date):
+            self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             return False
 
         return True
@@ -1931,7 +1937,11 @@ class mtp_ctrl():
             return
 
         if fru_valid:
-            if not self.mtp_nic_fru_init(slot):
+            if emmc_format:
+                init_date = False
+            else:
+                init_date = True
+            if not self.mtp_nic_fru_init(slot, init_date):
                 return
             fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
             self.mtp_set_nic_sn(slot, fru_info_list[0])

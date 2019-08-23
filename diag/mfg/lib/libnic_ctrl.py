@@ -949,7 +949,7 @@ class nic_ctrl():
         return False
 
 
-    def nic_fru_init(self):
+    def nic_fru_init(self, init_date=True):
         if not self.nic_vendor_init():
             return False
 
@@ -982,9 +982,13 @@ class nic_ctrl():
             return False
 
         # retrieve program date if it is valid
-        match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
-        if match:
-            self._date = match[0].replace('/','')
+        if init_date:
+            match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
+            if match:
+                self._date = match[0].replace('/','')
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
         else:
             self._date = None
 
@@ -1026,9 +1030,13 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary date
-            match = re.findall(NAPLES_DISP_DATE_FMT, self.nic_get_cmd_buf())
-            if match:
-                date = match[0].replace('/','')
+            if init_date:
+                match = re.findall(NAPLES_DISP_DATE_FMT, self.nic_get_cmd_buf())
+                if match:
+                    date = match[0].replace('/','')
+                else:
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
             else:
                 date = None
             # secondary PN
