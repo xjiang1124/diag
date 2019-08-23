@@ -54,6 +54,11 @@ img_prog () {
     tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr images/esecure_fw_ptr.hex.txt -esec_1 images/esecure_firmware_packed.hex -esec_2 images/esecure_firmware_packed.hex -host_1 images/boot_nonsec_packed.hex -host_2 images/boot_nonsec_packed.hex
 }
 
+efuse_test () {
+    cd $DIAG_HOME/diag/scripts/asic/
+    tclsh ./esec_prog.tcl -stage EFUSE_TEST -slot $SLOT
+}
+
 cleanup () {
     echo "Cleaning up"
     rm $DIAG_HOME/diag/python/esec/OTP*txt
@@ -179,6 +184,11 @@ case $key in
     IMG_PROG=TRUE
     shift # past argument
     ;;
+    #-------------
+    -efuse_test|--efuse_test)
+    EFUSE_TEST=TRUE
+    shift # past argument
+    ;;
 
     #-------------
     --default)
@@ -238,6 +248,11 @@ fi
 if [[ $IMG_PROG == TRUE ]]
 then
     img_prog
+fi
+
+if [[ $EFUSE_TEST == TRUE ]]
+then
+    efuse_test
 fi
 
 if [[ $CLEANUP == TRUE ]]

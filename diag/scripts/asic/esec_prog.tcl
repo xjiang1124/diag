@@ -92,7 +92,7 @@ proc read_pub_ek { sn slot fn } {
 }
 
 proc puf_enroll { sn slot fn } {
-    puts "sn: $sn; slot: $slot; fn: $fn"
+    plog_msg "sn: $sn; slot: $slot; fn: $fn"
     plog_start puf_enroll_${sn}_slot${slot}.log
     if {$fn == ""} {
         plog_err "File name can not be empty"
@@ -124,7 +124,7 @@ proc puf_enroll { sn slot fn } {
 }
 
 proc otp_init { sn slot cm_file sm_file } {
-    puts "sn: $sn; slot: $slot; cm_file: $cm_file; sm_file: $sm_file"
+    plog_msg "sn: $sn; slot: $slot; cm_file: $cm_file; sm_file: $sm_file"
     plog_start otp_init_cm_${sn}_slot${slot}.log
     if {$cm_file == "" || $sm_file == ""} {
         plog_err "File name can not be empty"
@@ -189,6 +189,37 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     return $ret
 }
 
+proc efuse_test {slot} {
+    set ret 0
+    set bit_loc 127
+
+    diag_open_j2c_if 10 $slot
+    regrd 0 0x6a000000
+    set card_type [cap_get_card_type]
+    if {$card_type == "NAPLES25"} {
+        set freq 417
+    } else {
+        set freq 833
+    }
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
+
+    cpu_force_global_flags 1
+    set bit_read_back [cap_efuse_get_bit $bit_loc]
+    if {$bit_read_back == 1} {
+        plog_msg "Efuse bit $bit_loc is already programmed; read back $bit_read_back"
+    }
+
+    cap_efuse_set_bit $bit_loc
+    set bit_read_back [cap_efuse_get_bit $bit_loc]
+    if {$bit_read_back != 1} {
+        plog_err "Failed to valid efuse bit; read back $bit_read_back"
+        set ret -1
+    }
+    diag_close_j2c_if 10 $slot
+    return $ret
+}
+
+
 if { $use_zmq == 1 } {
     set ::SSI_OPERATION_TIMEOUT_S 10
     diag_zmq_lock_release $zmq_conn $slot
@@ -200,7 +231,7 @@ if { $use_zmq == 1 } {
 }
 
 set stage [string toupper $stage]
-puts "stage: $stage"
+plog_msg "stage: $stage"
 switch $stage {
     "PUF_ENROLL" {
         set ret [puf_enroll $sn $slot $fn]
@@ -214,9 +245,12 @@ switch $stage {
     "IMG_PROG" {
         set ret [img_prog $slot $fw_ptr $esec_1 $esec_2 $host_1 $host_2]
     }
+    "EFUSE_TEST" {
+        set ret [efuse_test $slot]
+    }
 
     default {
-        puts "Invalide stage: $stage"
+        plog_msg "Invalide stage: $stage"
         set ret -1
     }
 }
@@ -230,10 +264,10 @@ if { $use_zmq == 1 } {
 
 # Print twice for DSP to capture signature
 if {$ret == 0} {
-    puts "ESEC PROG PASSED"
-    puts "ESEC PROG PASSED"
+    plog_msg "ESEC PROG PASSED"
+    plog_msg "ESEC PROG PASSED"
 } else {
-    puts "ESEC PROG FAILED"
-    puts "ESEC PROG FAILED"
+    plog_msg "ESEC PROG FAILED"
+    plog_msg "ESEC PROG FAILED"
 }
 

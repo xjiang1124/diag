@@ -60,6 +60,10 @@ def parse_args_diag():
         "-img_prog", "--img_prog", 
         action='store_true',
         help="Program QSPI images")
+    group.add_argument(
+        "-efuse_test", "--efuse_test", 
+        action='store_true',
+        help="Test efuse by burning bit[127]")
 
     #======================
     parser.add_argument(
@@ -355,7 +359,13 @@ PRIVEK <ek.sk>"""
 
         if crc32_ek != crc32_ek_uboot:
             print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot 
-            ret = -1
+            print "=== ESEC PROG FAILED ==="
+            return -1
+
+        ret = self.efuse_test(int(slot))
+        if ret != 0:
+            print "=== Efuse test failed ==="
+
 
         if ret == 0:
             print "=== ESEC PROG/VALICATION PASSED ==="
@@ -435,6 +445,24 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def efuse_test(self, slot):
+        self.nic_con.power_cycle_multi(115200, str(slot), 5)
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_test -slot {}".format(slot)
+        ret = 0
+
+        pass_sign = "ESEC PROG PASSED"
+
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 180)
+        common.session_stop(session)
+
+        if ret == 0:
+            print "EFUSE TEST PASSED"
+        else:
+            print "EFUSE TEST FAILED"
+
+        return ret
+
 if __name__ == "__main__":
     args = parse_args_diag()
     esec_ctrl = esec_ctrl()
@@ -482,5 +510,9 @@ if __name__ == "__main__":
 
     if args.img_prog == True:
         esec_ctrl.img_prog(int(args.slot))
+        sys.exit()
+
+    if args.efuse_test == True:
+        esec_ctrl.efuse_test(int(args.slot))
         sys.exit()
 

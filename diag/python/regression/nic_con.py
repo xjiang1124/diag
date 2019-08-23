@@ -139,7 +139,7 @@ class nic_con:
         return ret
 
 
-    def power_cycle_multi(self, baud_rate=115200, slot_list=""):
+    def power_cycle_multi(self, baud_rate=115200, slot_list="", wtime=30):
         ret = 0
         session = common.session_start()
 
@@ -149,7 +149,7 @@ class nic_con:
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
-        time.sleep(30)
+        time.sleep(wtime)
 
         common.session_stop(session)
         return ret
