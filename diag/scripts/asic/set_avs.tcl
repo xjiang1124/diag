@@ -14,7 +14,7 @@ set parameters {
     {diag_dir.arg   "/home/diag/" "Diag home directory"}
     {force.arg      0           "Change force"}
     {vout.arg       800         "Target vout"}
-    {use_pmro.arg   1           "0: not use pmro; 1: use pmro"}
+    {use_pmro.arg   0           "0: not use pmro; 1: use pmro"}
 }
 
 array set arg [cmdline::getoptions argv $parameters]
