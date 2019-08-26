@@ -205,7 +205,7 @@ class nic_con:
 
         session.timeout = timeout
 
-        for i in range(60)
+        for i in range(60):
             session.timeout = 0.3
             try:
                 print "C+C", i
