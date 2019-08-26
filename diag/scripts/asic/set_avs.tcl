@@ -7,7 +7,7 @@ set parameters {
     {slot.arg       ""          "Slot number"}
     {arm_vdd.arg    "vdd"       "arm or vdd"}
     {core_freq.arg  833         "core freqency"}
-    {arm_freq.arg   2000        "arm freqency"}
+    {arm_freq.arg   1600        "arm freqency"}
     {use_zmq.arg    0           "Use ZMQ"}
     {zmq_srv_ip.arg ""          "MTP IP"}
     {zmq_port.arg   "55000"     "ZMQ port"}
