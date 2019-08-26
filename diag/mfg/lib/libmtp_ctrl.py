@@ -27,7 +27,6 @@ from libmfg_cfg import MFG_FORIO_CPLD_VERSION
 from libmfg_cfg import MFG_FORIO_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_VOMERO_CPLD_VERSION
 from libmfg_cfg import MFG_VOMERO_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_NIC_FRU_PROGRAM
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
 from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
@@ -1439,13 +1438,10 @@ class mtp_ctrl():
 
 
     def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
-        if MFG_NIC_FRU_PROGRAM:
-            self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
-            if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn):
-                self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
-                return False
-        else:
-            self.cli_log_slot_inf_lock(slot, "Program NIC FRU bypassed")
+        self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
+        if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn):
+            self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
+            return False
         return True
 
 
@@ -1454,33 +1450,30 @@ class mtp_ctrl():
 
 
     def mtp_verify_nic_fru(self, slot, sn, mac, pn, date):
-        if MFG_NIC_FRU_PROGRAM:
-            self.cli_log_slot_inf_lock(slot, "Verify NIC FRU sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
-            nic_fru_info = self._nic_ctrl_list[slot].nic_get_fru()
-            if not nic_fru_info:
-                self.cli_log_slot_err_lock(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
-                return False
+        self.cli_log_slot_inf_lock(slot, "Verify NIC FRU sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
+        nic_fru_info = self._nic_ctrl_list[slot].nic_get_fru()
+        if not nic_fru_info:
+            self.cli_log_slot_err_lock(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
+            return False
 
-            nic_sn = nic_fru_info[0]
-            nic_mac = nic_fru_info[1]
-            nic_pn = nic_fru_info[2]
-            nic_date = nic_fru_info[3]
-            if nic_sn != sn:
-                self.cli_log_slot_err_lock(slot, "SN Verify Failed, get {:s}, expect {:s}".format(nic_sn, sn))
-                return False
-            if nic_mac != mac:
-                self.cli_log_slot_err_lock(slot, "MAC Verify Failed, get {:s}, expect {:s}".format(nic_mac, mac))
-                return False
-            if nic_pn != pn:
-                self.cli_log_slot_err_lock(slot, "PN Verify Failed, get {:s}, expect {:s}".format(nic_pn, pn))
-                return False
-            if nic_date != date:
-                self.cli_log_slot_err_lock(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
-                return False
+        nic_sn = nic_fru_info[0]
+        nic_mac = nic_fru_info[1]
+        nic_pn = nic_fru_info[2]
+        nic_date = nic_fru_info[3]
+        if nic_sn != sn:
+            self.cli_log_slot_err_lock(slot, "SN Verify Failed, get {:s}, expect {:s}".format(nic_sn, sn))
+            return False
+        if nic_mac != mac:
+            self.cli_log_slot_err_lock(slot, "MAC Verify Failed, get {:s}, expect {:s}".format(nic_mac, mac))
+            return False
+        if nic_pn != pn:
+            self.cli_log_slot_err_lock(slot, "PN Verify Failed, get {:s}, expect {:s}".format(nic_pn, pn))
+            return False
+        if nic_date != date:
+            self.cli_log_slot_err_lock(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
+            return False
 
-            return True
-        else:
-            return True
+        return True
 
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
