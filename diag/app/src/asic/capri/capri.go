@@ -2,10 +2,15 @@ package capri
 
 import (
     "bufio"
+    "fmt"
+    "io/ioutil"
     "os"
+    "os/exec"
     "regexp"
     "strconv"
     "strings"
+
+    "gopkg.in/yaml.v2"
 
     "common/dcli"
     "common/errType"
@@ -169,8 +174,250 @@ func Prbs(mode string, poly string, duration int) (err int) {
     return err
 }
 
+func Snake(mode string, duration int) (err int) {
+    var logFn string
+    var resultStr string
+    var filename string
+    var errGo error
 
-func Eth_Prbs(poly string, duration int) (err int) {
-    return Prbs("ETH", poly, duration)
+    mode = strings.ToUpper(mode)
+
+    if (mode != "PCIE_LB") && (mode != "HBM_LB") {
+        dcli.Println("e", "Invalid snake mode:", mode)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    if mode == "PCIE_LB" {
+        logFn = "snake_pcie.log"
+    } else {
+        logFn = "snake_hbm.log"
+    }
+
+    errGo = os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", errGo)
+        return
+    }
+
+    filename = "result.yaml"
+    errGo = os.Remove(filename)
+    if errGo != nil {
+        dcli.Println("i", errGo)
+    } else {
+        dcli.Println("i", "Yaml file deleted")
+    }
+
+    cmd := "./diag.exe"
+    passSign := "Snake Done"
+    failSign := "Snake Failed"
+    err = runCmd.Run(passSign, failSign, cmd, "snake_all.tcl", mode, strconv.Itoa(duration))
+
+    if err != errType.SUCCESS {
+        dcli.Println("e", "Snake Test Failed!")
+        return
+    }
+
+    // Parse log file
+    // Two erros are expected
+    // ERROR :: cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1
+    // ERROR :: Unexpected int set: cap0.ms.em
+    logFn = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/" + logFn
+
+    file, errGo := os.Open(logFn)
+    if errGo != nil {
+        dcli.Println("e", "Failed to open log file", logFn, errGo)
+        err = errType.FAIL
+        return
+    }
+    defer file.Close()
+
+    expErr1 := "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
+    expErr2 := "Unexpected int set: cap0.ms.em"
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+
+        if errCode := scanner.Err(); errCode != nil {
+            err = errType.FAIL
+            break
+        }
+
+        readLine := scanner.Text()
+        if strings.Contains(readLine, "ERROR ::") {
+            expErr := strings.SplitAfter(readLine, ":: ")
+            if strings.Contains(readLine, expErr1) ||
+               strings.Contains(readLine, expErr2) {
+                dcli.Println("i", "Expected Error Found ::", expErr[1])
+                continue
+            } else {
+                dcli.Println("e", "ERROR ::", expErr[1])
+                err = errType.FAIL
+            }
+        }
+    }
+
+    if err == errType.SUCCESS {
+        dcli.Println("i", "SNAKE TEST PASSED")
+        resultStr = "SUCCESS"
+    } else {
+        dcli.Println("i", "SNAKE TEST FAILED")
+        resultStr = "FAIL"
+    }
+
+    f, errGo := os.Create("result.yaml")
+    if errGo != nil {
+        dcli.Println("e", "Failed to open yaml file!")
+    }
+    defer f.Close()
+
+    resultStr = fmt.Sprintf("SNAKE_RESULT: %s", resultStr)
+    _, errGo = f.Write([]byte(resultStr))
+    if errGo != nil {
+        dcli.Println("e", "Failed to open log file", logFn, errGo)
+        err = errType.FAIL
+        return
+    }
+    f.Sync()
+
+    dcli.Println("i", "Result in YAML file")
+    return
 }
 
+type TResult struct {
+    SnakeResult string `yaml:"SNAKE_RESULT"`
+}
+
+func SnakeCheck() (err int) {
+    var c TResult
+
+    errGo := os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", "Failed to change dir!")
+        return
+    }
+
+    yamlFile, errGo := ioutil.ReadFile("result.yaml")
+    if errGo != nil {
+        dcli.Printf("i", "%v \n", errGo)
+        dcli.Println("i", "SNAKE RUNNING")
+        err = errType.FAIL
+        return
+    }
+    errGo = yaml.Unmarshal(yamlFile, &c)
+    if errGo != nil {
+        dcli.Printf("e", "Unmarshal: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+
+    //c.getConf()
+    dcli.Println("i", c.SnakeResult)
+    return errType.SUCCESS
+}
+
+func Snake1(mode string, duration int) (err int) {
+    var logFn string
+    var resultStr string
+    var filename string
+    var errGo error
+
+    mode = strings.ToUpper(mode)
+    //logFn = "snake.log"
+
+    if (mode != "PCIE_LB") && (mode != "HBM_LB") {
+        dcli.Println("e", "Invalid snake mode:", mode)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    errGo = os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", errGo)
+        return
+    }
+
+    filename = "result.yaml"
+    errGo = os.Remove(filename)
+    if errGo != nil {
+        dcli.Println("i", errGo)
+    } else {
+        dcli.Println("i", "Yaml file deleted")
+    }
+
+    cmdStr := "./diag.exe"
+    cmd := exec.Command(cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration))
+    errGo = cmd.Run()
+
+    if err != errType.SUCCESS {
+        dcli.Println("e", "Snake Test Failed!")
+        return
+    }
+    dcli.Println("i", "Snake Done")
+
+    // Parse log file
+    // Two erros are expected
+    // ERROR :: cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1
+    // ERROR :: Unexpected int set: cap0.ms.em
+    dcli.Println("i", "Aanlyzing snake result")
+    logFn = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/" + logFn
+
+    file, errGo := os.Open(logFn)
+    if errGo != nil {
+        dcli.Println("e", "Failed to open log file", logFn, errGo)
+        err = errType.FAIL
+        return
+    }
+    defer file.Close()
+
+    expErr1 := "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
+    expErr2 := "Unexpected int set: cap0.ms.em"
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+
+        if errCode := scanner.Err(); errCode != nil {
+            err = errType.FAIL
+            break
+        }
+
+        readLine := scanner.Text()
+        if strings.Contains(readLine, "ERROR ::") {
+            expErr := strings.SplitAfter(readLine, ":: ")
+            if strings.Contains(readLine, expErr1) ||
+               strings.Contains(readLine, expErr2) {
+                dcli.Println("i", "Expected Error Found ::", expErr[1])
+                continue
+            } else {
+                dcli.Println("e", "ERROR ::", expErr[1])
+                err = errType.FAIL
+            }
+        }
+    }
+
+    if err == errType.SUCCESS {
+        dcli.Println("i", "SNAKE TEST PASSED")
+        resultStr = "SUCCESS"
+    } else {
+        dcli.Println("i", "SNAKE TEST FAILED")
+        resultStr = "FAIL"
+    }
+
+    f, errGo := os.Create("result.yaml")
+    if errGo != nil {
+        dcli.Println("e", "Failed to open yaml file!")
+    }
+    defer f.Close()
+
+    resultStr = fmt.Sprintf("SNAKE_RESULT: %s", resultStr)
+    _, errGo = f.Write([]byte(resultStr))
+    if errGo != nil {
+        dcli.Println("e", "Failed to open log file", logFn, errGo)
+        err = errType.FAIL
+        return
+    }
+    f.Sync()
+
+    dcli.Println("i", "Result in YAML file")
+    return
+
+    return
+}

@@ -19,10 +19,13 @@ func myUsage() {
 func main() {
     flag.Usage = myUsage
 
-    prbsPtr  := flag.Bool("prbs", false, "PRBS Test")
+    prbsPtr     := flag.Bool("prbs",  false, "PRBS Test")
+    snakePtr    := flag.Bool("snake", false, "SNAKE Test")
+    snakeChkPtr := flag.Bool("snake_chk", false, "SNAKE Test check")
 
-    modePtr := flag.String("mode", "ETH",    "PRBS mode: PCIe/ETH")
+    modePtr := flag.String("mode", "ETH",    "PRBS mode: PCIe/ETH; Snake mode: PCIE_LB/HBM_LB")
     polyPtr := flag.String("poly", "PRBS31", "PRBS polynomial")
+
     duraPtr := flag.Int(   "dura", 60,       "PRBS duration")
 
     //------------------------
@@ -32,6 +35,16 @@ func main() {
         capri.Prbs(*modePtr, *polyPtr, *duraPtr)
         return
     }
+
+    if *snakePtr == true {
+        capri.Snake1(*modePtr, *duraPtr)
+        return
+    }
+
+   if *snakeChkPtr == true {
+       capri.SnakeCheck()
+       return
+   }
 
     myUsage()
 }
