@@ -83,7 +83,7 @@ class nic_test:
         else:
             print "=== Setup env top done #", retry, "==="
 
-        return ret
+        return ret, nic_list_remain
 
     def setup_env_multi_1(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
         if len(nic_list) == 0:
@@ -341,7 +341,7 @@ class nic_test:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
-    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="on"):
+    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off"):
         print "=== Starting snake on slot {} ===".format(slot)
 
         ret = 0
@@ -350,13 +350,9 @@ class nic_test:
             sys.exit(0)
 
         if test_type == "snake" and mode == "hbm":
-            test_cmd = "./diag.exe snake.h.a.tcl 2>&1 > snake_hbm.log &"
+            test_cmd = "/data/nic_util/asicutil -snake -mode hbm_lb 2>&1 >  asicutil_hbm.log &"
         elif test_type == "snake" and mode == "pcie":
-            test_cmd = "./diag.exe snake.p.a.tcl 2>&1 > snake_pcie.log &"
-        elif test_type == "prbs" and mode == "eth":
-            test_cmd = "sh ./nic_prbs.sh 2>&1 > prbs_eth.log &"
-        elif test_type == "prbs" and mode == "pcie":
-            test_cmd = "./diag.exe prbs.p.a.tcl 2>&1 > prbs_pcie.log &"
+            test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > asicutil_pcie.log &"
         else:
             print "Invalid test_type {} and mdoe {}".format(test_type, mode)
             sys.exit(0)
@@ -368,19 +364,12 @@ class nic_test:
         try:
             session.timeout = timeout
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
-            self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
-            self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
-            self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
             if vmarg > 0:
                 self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh high")
             elif vmarg < 0:
                 self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh low")
             else:
                 pass
-            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
-            self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
 
             session.sendline(test_cmd)
             session.sendline("\r")
@@ -401,40 +390,29 @@ class nic_test:
 
     def test_check(self, slot=0, test_type="snake", mode="hbm", timeout=30):
         print "=== Checing snake result on slot {} ===".format(slot)
-        session = common.session_start()
 
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
 
+        self.nic_con.switch_console(slot)
+        session = common.session_start()
+        self.nic_con.uart_session_start(session)
+
         if test_type == "snake":
-            exp_err_cnt = 3
             if mode == "hbm":
-                log_name = "snake_hbm.log"
+                 test_mode= "hbm_lb"
             else:
-                log_name = "snake_pcie.log"
-        else:
-            exp_err_cnt = 0
-            if mode == "eth":
-                log_name = "prbs_eth.log"
-            else:
-                log_name = "prbs_pcie.log"
+                 test_mode= "pcie_lb"
 
-        session.timeout = timeout
-        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
-        common.session_cmd(session, cmd) 
-        time.sleep(1)
-
-        self.nic_con.uart_session_start(session, self.baud_rate)
-
-        check_cmd = "/data/nic_arm/check_snake.sh {} {}".format(log_name, exp_err_cnt)
-        ret = self.nic_con.uart_session_cmd_sig(session, check_cmd, 15, "\#", ["TEST Passed", "TEST Failed", "TEST Not Done"], False)
-        print "ret:", ret
+        cmd = "/data/nic_util/asicutil -snake_chk"
+        ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
         self.nic_con.uart_session_stop(session)
 
         common.session_stop(session)
 
+        print "check_result:", ret
         print "=== Checing snake result on slot {} Done ===".format(slot)
         return ret
 
@@ -444,9 +422,10 @@ class nic_test:
             print "No nic specified -- Exit"
             sys.exit(0)
 
-        slot_list = ",".join(nic_list)
+        #slot_list = ",".join(nic_list)
         print "slot_list:", slot_list
-        self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+        #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+        self.setup_env_multi_top(slot_list, False, 30, False, True, False)
 
         test_result = OrderedDict()
         # Start snake
@@ -455,7 +434,7 @@ class nic_test:
             if ret != 0:
                 test_result[slot] = "FAIL"
             else:
-                test_result[slot] = "No Result"
+                test_result[slot] = "NO RESULT"
 
         print "Wait for {}s before checking result".format(wait_time)
         time.sleep(wait_time)
@@ -464,7 +443,83 @@ class nic_test:
         for retry_idx in range(self.num_retry):
             print "Checking result:", retry_idx
             for slot in nic_list:
-                if test_result[slot] != "No Result":
+                if test_result[slot] != "NO RESULT":
+                    continue
+
+                test_sts = self.test_check(int(slot), test_type, mode)
+                if test_sts == 0:
+                    print "=== Snake Result at Slot {}: Passed".format(slot)
+                    test_result[slot] = "PASS"
+                    done_count = done_count + 1
+                if test_sts == 1:
+                    print "=== Snake Result at Slot {}: Failed".format(slot)
+                    test_result[slot] = "FAIL"
+                    done_count = done_count + 1
+
+            if done_count == len(nic_list):
+                break
+            time.sleep(20)
+
+        # Print result
+        print "\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper())
+        result_fmt = "Slot {:<2}: {:<5}"
+        for slot, sts in test_result.items():
+            print result_fmt.format(slot, sts)
+        print "======================================"
+
+    def ena_dis_uboot_pcie(self, nic_list=[], enable=True):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        slot_list = ",".join(nic_list)
+        print "slot_list:", slot_list
+
+        for slot in nic_list:
+            if enable == True:
+                ret = self.nic_con.enable_pcie_uboot(int(slot))
+            else:
+                ret = self.nic_con.disable_pcie_uboot(int(slot))
+
+            if ret != 0:
+                print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
+
+    def nic_test1(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0):
+        print "=== NIC {} {} ===".format(test_type, mode)
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        # Initialization
+        test_result = OrderedDict()
+        for slot in nic_list:
+            test_result[slot] = "NO RESULT"
+
+        ret, nic_test_remain = self.setup_env_multi_top(nic_list, False, 30, False, True, False)
+
+        for slot in nic_list_remain:
+            test_result[slot] = "FAIL"
+            nic_list.remove(slot)
+
+        print "NIC list after init:", nic_list
+
+        # Start snake
+        for slot in nic_list:
+            ret = self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off")
+            if ret != 0:
+                test_result[slot] = "FAIL"
+                nic_list.remove(slot)
+
+        print "NIC list after test start:", nic_list
+
+        print "Wait for {}s before checking result".format(wait_time)
+        time.sleep(wait_time)
+
+        done_count = 0
+        for retry_idx in range(self.num_retry):
+            print "Checking result:", retry_idx
+            for slot in nic_list:
+                if test_result[slot] != "NO RESULT":
                     continue
 
                 test_sts = self.test_check(int(slot), test_type, mode)
@@ -550,7 +605,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.snake_check == True:
-        test.snake_check(args.slot, "snake", args.mode)
+        test.test_check(args.slot, "snake", args.mode)
         sys.exit()
 
     if args.snake == True:
