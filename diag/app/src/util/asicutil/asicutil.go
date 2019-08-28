@@ -37,7 +37,7 @@ func main() {
     }
 
     if *snakePtr == true {
-        capri.Snake1(*modePtr, *duraPtr)
+        capri.Snake(*modePtr, *duraPtr)
         return
     }
 
