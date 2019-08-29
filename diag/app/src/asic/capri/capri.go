@@ -187,6 +187,7 @@ func SnakeCheck() (err int) {
     errGo := os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
     if errGo != nil {
         dcli.Println("e", "Failed to change dir!")
+        err = errType.FAIL
         return
     }
 
@@ -255,15 +256,10 @@ func SnakeCheck() (err int) {
 }
 
 func Snake(mode string, duration int, verbose bool) (err int) {
-    var logFn string
-    var resultStr string
     var filename string
     var errGo error
 
-    testDone := false
-
     mode = strings.ToUpper(mode)
-    //logFn = "snake.log"
 
     if (mode != "PCIE_LB") && (mode != "HBM_LB") {
         dcli.Println("e", "Invalid snake mode:", mode)
@@ -300,15 +296,51 @@ func Snake(mode string, duration int, verbose bool) (err int) {
 
 	    if err != errType.SUCCESS {
 	        dcli.Println("e", "Snake Test Failed!")
-	        return
 	    }
     }
 
     if err != errType.SUCCESS {
         dcli.Println("e", "Snake Test Failed!")
+    }
+
+    if err != errType.SUCCESS {
+        updateYaml("FAIL")
         return
     }
+
     dcli.Println("i", "Snake Done")
+
+    err = SnakePost(mode)
+    return
+}
+
+func SnakePost(mode string) (err int) {
+    var logFn string
+    var resultStr string
+    var errGo error
+
+    testDone := false
+
+    mode = strings.ToUpper(mode)
+    //logFn = "snake.log"
+
+    if (mode != "PCIE_LB") && (mode != "HBM_LB") {
+        dcli.Println("e", "Invalid snake mode:", mode)
+        err = errType.INVALID_PARAM
+        return
+    }
+
+    if mode == "PCIE_LB" {
+        logFn = "snake_pcie.log"
+    } else {
+        logFn = "snake_hbm.log"
+    }
+
+    errGo = os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", errGo)
+        return
+    }
 
     // Parse log file
     // Two erros are expected
@@ -321,6 +353,7 @@ func Snake(mode string, duration int, verbose bool) (err int) {
     if errGo != nil {
         dcli.Println("e", "Failed to open log file", logFn, errGo)
         err = errType.FAIL
+        updateYaml("FAIL")
         return
     }
     defer file.Close()
@@ -366,16 +399,32 @@ func Snake(mode string, duration int, verbose bool) (err int) {
         }
     }
 
+    err = updateYaml(resultStr)
+    dcli.Println("i", "YAML file updated")
+    return
+}
+
+func updateYaml (resultStr string) (err int) {
+
+    errGo := os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", "Failed to change dir!")
+        err = errType.FAIL
+        return
+    }
+
     f, errGo := os.Create("result.yaml")
     if errGo != nil {
         dcli.Println("e", "Failed to open yaml file!")
+        err = errType.FAIL
+        return
     }
     defer f.Close()
 
     resultStr = fmt.Sprintf("SNAKE_RESULT: %s", resultStr)
     _, errGo = f.Write([]byte(resultStr))
     if errGo != nil {
-        dcli.Println("e", "Failed to open log file", logFn, errGo)
+        dcli.Println("e", "Failed to open yaml file", errGo)
         err = errType.FAIL
         return
     }
@@ -384,5 +433,5 @@ func Snake(mode string, duration int, verbose bool) (err int) {
     dcli.Println("i", "Result in YAML file")
     return
 
-    return
 }
+
