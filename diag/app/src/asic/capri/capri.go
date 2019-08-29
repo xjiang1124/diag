@@ -9,6 +9,7 @@ import (
     "regexp"
     "strconv"
     "strings"
+    "syscall"
 
     "gopkg.in/yaml.v2"
 
@@ -181,12 +182,57 @@ func Prbs(mode string, poly string, duration int) (err int) {
 
 func SnakeCheck() (err int) {
     var c TResult
+    var pid string
 
     errGo := os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
     if errGo != nil {
         dcli.Println("e", "Failed to change dir!")
         return
     }
+
+	//cmdStr := "ps | grep asicutil"
+	cmdStr := "ps | grep asicutil"
+    out, errGo := exec.Command("bash", "-c", cmdStr).Output()
+    if errGo != nil {
+        dcli.Println("e", errGo)
+    }
+    outStr := string(out)
+
+    // Get PID
+    re := regexp.MustCompile(`^\s*(\d+)\sroot.*`)
+    scanner := bufio.NewScanner(strings.NewReader(outStr))
+    for scanner.Scan() {
+        if strings.Contains(scanner.Text(), "_lb") {
+            match := re.MatchString(scanner.Text())
+            if match == true {
+                submatchall := re.FindAllStringSubmatch(scanner.Text(), -1)
+                for _, element := range submatchall {
+                    pid = element[1]
+                    dcli.Println("i", "PID:", pid)
+                }
+                pidInt, _ := strconv.Atoi(string(pid))
+                process, errGo := os.FindProcess(pidInt)
+                if errGo != nil {
+                    dcli.Printf("e", "Failed to find process: %s\n", errGo)
+                    dcli.Println("i", "SNAKE FAILED")
+                    err = errType.FAIL
+                    return
+                } else {
+                    errGo = process.Signal(syscall.Signal(0))
+                    if errGo != nil {
+                        dcli.Printf("i", "process.Signal on pid %d returned: %v\n", pid, errGo)
+                        dcli.Println("i", "SNAKE FAILED")
+                        err = errType.FAIL
+                        return
+                    }
+                }
+                dcli.Println("i", "SNAKE RUNNING")
+                return
+            }
+        }
+    }
+
+    dcli.Println("i", "Snake test has finished")
 
     yamlFile, errGo := ioutil.ReadFile("result.yaml")
     if errGo != nil {
@@ -195,6 +241,7 @@ func SnakeCheck() (err int) {
         err = errType.FAIL
         return
     }
+
     errGo = yaml.Unmarshal(yamlFile, &c)
     if errGo != nil {
         dcli.Printf("e", "Unmarshal: %v", errGo)
@@ -204,14 +251,16 @@ func SnakeCheck() (err int) {
 
     //c.getConf()
     dcli.Println("i", c.SnakeResult)
-    return errType.SUCCESS
+    return
 }
 
-func Snake(mode string, duration int) (err int) {
+func Snake(mode string, duration int, verbose bool) (err int) {
     var logFn string
     var resultStr string
     var filename string
     var errGo error
+
+    testDone := false
 
     mode = strings.ToUpper(mode)
     //logFn = "snake.log"
@@ -238,7 +287,22 @@ func Snake(mode string, duration int) (err int) {
 
     cmdStr := "./diag.exe"
     cmd := exec.Command(cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration))
-    errGo = cmd.Run()
+    if verbose == false {
+        errGo = cmd.Run()
+        if errGo != nil {
+            dcli.Println("e", "Snake failed", errGo)
+            return
+        }
+    } else {
+	    passSign := "Snake Done"
+	    failSign := "Snake Failed"
+	    err = runCmd.Run(passSign, failSign, cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration))
+
+	    if err != errType.SUCCESS {
+	        dcli.Println("e", "Snake Test Failed!")
+	        return
+	    }
+    }
 
     if err != errType.SUCCESS {
         dcli.Println("e", "Snake Test Failed!")
@@ -283,14 +347,23 @@ func Snake(mode string, duration int) (err int) {
                 err = errType.FAIL
             }
         }
+
+        if strings.Contains(readLine, "Snake Done") {
+            testDone = true
+        }
     }
 
-    if err == errType.SUCCESS {
-        dcli.Println("i", "SNAKE TEST PASSED")
-        resultStr = "SUCCESS"
-    } else {
-        dcli.Println("i", "SNAKE TEST FAILED")
+    if testDone == false {
+        dcli.Println("e", "Snake test did not finish: no ending signature found")
         resultStr = "FAIL"
+    } else {
+        if err == errType.SUCCESS {
+            dcli.Println("i", "SNAKE TEST PASSED")
+            resultStr = "SUCCESS"
+        } else {
+            dcli.Println("i", "SNAKE TEST FAILED")
+            resultStr = "FAIL"
+        }
     }
 
     f, errGo := os.Create("result.yaml")

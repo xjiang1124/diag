@@ -138,6 +138,15 @@ function get_card_config() {
     fi
 }
 
+function disp_eye() {
+    for sbus in ${sbus_list[@]}
+    do
+        echo "=== DISP EYE;  sbus $sbus; $SERVER_IP:$PORT"
+        aapl eye -server $SERVER_IP -port $PORT -addr $sbus -min-dwell 1e6 -max-dwell 1e8 -x-res 64 -y-points 512 -print-vbtc -print-hbtc
+    done
+    echo "AAPL DISP EYE DONE"
+}
+
 function do_reset() {
     for sbus in ${sbus_list[@]}
     do
@@ -237,6 +246,9 @@ function do_prbs() {
     elif [ $1 == "DISP" ]
     then
         serdes_display        
+    elif [ $1 == "EYE" ]
+    then
+        disp_eye        
     elif [ $1 == "PRBS_PRE" ]
     then
         prbs_preset

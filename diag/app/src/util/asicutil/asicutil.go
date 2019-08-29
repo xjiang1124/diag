@@ -28,6 +28,7 @@ func main() {
 
     duraPtr := flag.Int(   "dura", 60,       "PRBS duration")
 
+    verbosePtr    := flag.Bool("verbose", false, "Turn on verbose")
     //------------------------
     flag.Parse()
 
@@ -37,7 +38,7 @@ func main() {
     }
 
     if *snakePtr == true {
-        capri.Snake(*modePtr, *duraPtr)
+        capri.Snake(*modePtr, *duraPtr, *verbosePtr)
         return
     }
 

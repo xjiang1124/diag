@@ -491,7 +491,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
-    parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=300)
+    parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=180)
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)

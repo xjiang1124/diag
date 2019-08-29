@@ -41,6 +41,8 @@ plog_msg "SNAKE_NUM: $SNAKE_NUM; INT_LB: $INT_LB; CORE_CLK: $CORE_CLK; DURATION:
 cap_snake_test_mtp $SNAKE_NUM 8000 $INT_LB 1600 1 $CORE_CLK 1 $DURATION 0 105 $MAC_SPEED 1
 
 plog_msg "Snake Done"
+plog_msg "Snake Done"
+plog_msg "Snake Done"
 
 plog_stop
 

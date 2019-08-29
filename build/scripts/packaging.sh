@@ -159,6 +159,7 @@ then
     cp $TOP_DIR/diag/scripts/asic/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $TOP_DIR/diag/scripts/asic/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
 
     tar czf $IMG_DIR/nic_arm.tar -C $BUILD_DIR/temp/$arch/ nic_arm/
