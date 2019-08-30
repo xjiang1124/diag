@@ -18,7 +18,7 @@ class nic_test:
     def __init__(self):
         self.name = "nic_snake"
         self.baud_rate = 115200
-        self.num_retry = 30
+        self.num_retry = 5
         self.nic_con = nic_con()
 
     def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
@@ -257,7 +257,7 @@ class nic_test:
         elif test_type == "snake" and mode == "pcie":
             test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > asicutil_pcie.log &"
         else:
-            print "Invalid test_type {} and mdoe {}".format(test_type, mode)
+            print "Invalid test_type {} and mode {}".format(test_type, mode)
             sys.exit(0)
 
         if pc == "on":
