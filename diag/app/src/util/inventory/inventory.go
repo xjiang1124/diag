@@ -10,6 +10,7 @@ import (
     "common/errType"
     "device/cpld/naples100Cpld"
     "device/cpld/naples25Cpld"
+    "device/cpld/naples25swmCpld"
     "device/cpld/forioCpld"
     "device/cpld/naplesMtpCpld"
     "device/cpld/vomeroCpld"
@@ -57,6 +58,8 @@ func present() (err int) {
                 presentStr = "NAPLES100"
             case naples25Cpld.ID:
                 presentStr = "NAPLES25"
+            case naples25swmCpld.ID:
+                presentStr = "NAPLES25SWM"
             case forioCpld.ID:
                 presentStr = "FORIO"
             case vomeroCpld.ID:
@@ -139,10 +142,12 @@ func sysDetect() (err int) {
                 presentStr = "NAPLES100"
             case naples25Cpld.ID:
                 presentStr = "NAPLES25"
+            case naples25swmCpld.ID:
+                presentStr = "NAPLES25SWM"
             case forioCpld.ID:
                 presentStr = "FORIO"
             case vomeroCpld.ID:
-                presentStr = "VOMERO"    
+                presentStr = "VOMERO"
             case naplesMtpCpld.ID:
                 presentStr = "NAPLES_MTP"
             default:

@@ -333,7 +333,7 @@ func init() {
         var t boardinfo.Naples100Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples100Cpld), &t)
         CpldInfo = &t
-    case "NAPLES25":
+    case "NAPLES25", "NAPLES25SWM":
         SfpTbl = naples25SfpTbl
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)

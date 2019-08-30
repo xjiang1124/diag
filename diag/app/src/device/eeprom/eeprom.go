@@ -47,85 +47,85 @@ var MtpTbl = []entry {
 }
 
 var Naples100Tbl = []entry {
-    entry{"Common Format Version",      			INT8,		0,		1,	[]byte{1}},
-    entry{"Internal Use Area Offset",   			INT8,		1,		1,	[]byte{0}},
-    entry{"Chassis Area Offset",   					INT8,		2,		1,	[]byte{0}},
-    entry{"Board Info Offset",   					INT8,		3,		1,	[]byte{1}},
-    entry{"Product Area Offset",     				INT8,		4,		1,	[]byte{0}},
-    entry{"Multi-Record Area Offset",   			INT8,		5,		1,	[]byte{0}},
-    entry{"PAD",  									INT8, 		6,		1,	[]byte{0}},
-    entry{"Common Header Checksum",     			INT8,	 	7,		1,  []byte{0}},
+    entry{"Common Format Version",                  INT8,        0,        1,    []byte{1}},
+    entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0}},
+    entry{"Chassis Area Offset",                       INT8,        2,        1,    []byte{0}},
+    entry{"Board Info Offset",                       INT8,        3,        1,    []byte{1}},
+    entry{"Product Area Offset",                     INT8,        4,        1,    []byte{0}},
+    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0}},
+    entry{"PAD",                                      INT8,         6,        1,    []byte{0}},
+    entry{"Common Header Checksum",                 INT8,         7,        1,  []byte{0}},
     
     
-    entry{"Board Info Format Version",				INT8, 		8,		1,  []byte{1}},
-    entry{"Board Area Length",       				INT8,		9,		1,	[]byte{0xC}},
-    entry{"Language Code",     						INT8,		10, 	1,  []byte{0x19}},
-    entry{"Manufacturing Date/Time", 				INT8,		11, 	3,  []byte{0, 0, 0}},
-    entry{"Manufacturing Type/Length", 				INT8,		14, 	1,  []byte{0xD5}},
-    entry{"Manufacturer",     						STRING,		15, 	21, []byte{0x50, 0x45, 0x4E, 0x53, 
+    entry{"Board Info Format Version",                INT8,         8,        1,  []byte{1}},
+    entry{"Board Area Length",                       INT8,        9,        1,    []byte{0xC}},
+    entry{"Language Code",                             INT8,        10,     1,  []byte{0x19}},
+    entry{"Manufacturing Date/Time",                 INT8,        11,     3,  []byte{0, 0, 0}},
+    entry{"Manufacturing Type/Length",                 INT8,        14,     1,  []byte{0xD5}},
+    entry{"Manufacturer",                             STRING,        15,     21, []byte{0x50, 0x45, 0x4E, 0x53, 
         0x41, 0x4E, 0x44, 0x4F, 0x20, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4D, 0x53, 0x20, 0x49, 0x4E, 0x43, 0x2E}},
-    entry{"Product Name Type/Length",     			INT8,		36, 	1,  []byte{0xD0}},
-    entry{"Product Name",     						STRING,		37, 	10, []byte{0x4E, 0x41, 0x50, 0x4C, 
+    entry{"Product Name Type/Length",                 INT8,        36,     1,  []byte{0xD0}},
+    entry{"Product Name",                             STRING,        37,     10, []byte{0x4E, 0x41, 0x50, 0x4C, 
         0x45, 0x53, 0x20, 0x31, 0x30, 0x30}},
-    entry{"Reserved",     							STRING,		47, 	6, 	[]byte{0x20, 0x20, 0x20, 0x20, 
+    entry{"Reserved",                                 STRING,        47,     6,     []byte{0x20, 0x20, 0x20, 0x20, 
         0x20, 0x20}},
-    entry{"Serial Number Type/Length",     			INT8,		53, 	1,  []byte{0xCB}},
-    entry{"Serial Number",     						STRING,		54, 	11, []byte{0x30, 0x30, 0x30, 0x30, 
+    entry{"Serial Number Type/Length",                 INT8,        53,     1,  []byte{0xCB}},
+    entry{"Serial Number",                             STRING,        54,     11, []byte{0x30, 0x30, 0x30, 0x30, 
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
-    entry{"Part Number Type/Length",     			INT8,		65, 	1,  []byte{0xCD}},
-    entry{"Part Number",     						STRING,		66, 	13, []byte{0x36, 0x38, 0x2D, 0x30, 
+    entry{"Part Number Type/Length",                 INT8,        65,     1,  []byte{0xCD}},
+    entry{"Part Number",                             STRING,        66,     13, []byte{0x36, 0x38, 0x2D, 0x30, 
         0x30, 0x30, 0x33, 0x2D, 0x30, 0x32, 0x20, 0x30, 0x31}},
-    entry{"FRU File ID Type/Length",     			INT8,		79, 	1,  []byte{0xC0}},
-    entry{"Board ID Type/Length",     				INT8,		80, 	1,  []byte{4}},
-    entry{"Board ID",     							INT8,		81, 	4,  []byte{1, 0 , 0, 0}},
-    entry{"Engineering Change Level Type/Length",	INT8,		85, 	1,  []byte{0xC2}},
-    entry{"Engineering Change Level",     			INT8,		86, 	2,  []byte{0, 0}},
-    entry{"Number of MAC Address Type/Length",     	INT8,		88, 	1,  []byte{2}},
-    entry{"Number of MAC Address",     				INT8,		89, 	2,  []byte{0x18, 0x0}},
-    entry{"MAC Address Base Type/Length",     		INT8,		91, 	1,  []byte{6}},
-    entry{"MAC Address Base",     					INT8,		92, 	6,  []byte{0, 0xAE, 0xCD, 0, 0, 0}},
-    entry{"End of Field",				     		INT8,	 	98,		1,  []byte{0xC1}},
-    entry{"PAD",     								INT8,		99, 	4,  []byte{0, 0, 0, 0}},
-    entry{"Board Info Area Checksum",     			INT8,	 	103,	1,  []byte{0}},
+    entry{"FRU File ID Type/Length",                 INT8,        79,     1,  []byte{0xC0}},
+    entry{"Board ID Type/Length",                     INT8,        80,     1,  []byte{4}},
+    entry{"Board ID",                                 INT8,        81,     4,  []byte{1, 0 , 0, 0}},
+    entry{"Engineering Change Level Type/Length",    INT8,        85,     1,  []byte{0xC2}},
+    entry{"Engineering Change Level",                 INT8,        86,     2,  []byte{0, 0}},
+    entry{"Number of MAC Address Type/Length",         INT8,        88,     1,  []byte{2}},
+    entry{"Number of MAC Address",                     INT8,        89,     2,  []byte{0x18, 0x0}},
+    entry{"MAC Address Base Type/Length",             INT8,        91,     1,  []byte{6}},
+    entry{"MAC Address Base",                         INT8,        92,     6,  []byte{0, 0xAE, 0xCD, 0, 0, 0}},
+    entry{"End of Field",                             INT8,         98,        1,  []byte{0xC1}},
+    entry{"PAD",                                     INT8,        99,     4,  []byte{0, 0, 0, 0}},
+    entry{"Board Info Area Checksum",                 INT8,         103,    1,  []byte{0}},
 }
 
 var HpeTbl = []entry {
-    entry{"Board Info Format Version",     			INT8,		128,		1,	[]byte{1}},
-    entry{"Board Area Length",     		 			INT8,		129,		1,	[]byte{0xF}},
-    entry{"Language Code",			      			INT8,		130,		1,	[]byte{0x19}},
-    entry{"Manufacture Date/Time",     		 		INT8,		131,		3,	[]byte{0, 0, 0}},
-    entry{"Manufacturer Name Type/Length",      	INT8,		134,		1,	[]byte{0xC2}},
-    entry{"Manufacturer",      						STRING,		135,		2,	[]byte{0x48, 0x50}},
-    entry{"Product Name Type/Length",     			INT8,		137,		1,	[]byte{0xF2}},
-    entry{"Product Name",     						STRING,		138,		50,	[]byte{
+    entry{"Board Info Format Version",                 INT8,        128,        1,    []byte{1}},
+    entry{"Board Area Length",                          INT8,        129,        1,    []byte{0xF}},
+    entry{"Language Code",                              INT8,        130,        1,    []byte{0x19}},
+    entry{"Manufacture Date/Time",                      INT8,        131,        3,    []byte{0, 0, 0}},
+    entry{"Manufacturer Name Type/Length",          INT8,        134,        1,    []byte{0xC2}},
+    entry{"Manufacturer",                              STRING,        135,        2,    []byte{0x48, 0x50}},
+    entry{"Product Name Type/Length",                 INT8,        137,        1,    []byte{0xF2}},
+    entry{"Product Name",                             STRING,        138,        50,    []byte{
             0x48, 0x50, 0x45, 0x20, 0x53, 0x6D, 0x61, 0x72, 0x74, 0x4E, 0x49, 0x43,
             0x20, 0x31, 0x30, 0x2F, 0x32, 0x35, 0x47, 0x62, 0x20, 0x32, 0x2D, 0x70,
             0x6F, 0x72, 0x74, 0x20, 0x36, 0x39, 0x31, 0x53, 0x46, 0x50, 0x32, 0x38,
             0x20, 0x41, 0x64, 0x61, 0x70, 0x74, 0x65, 0x72, 0x20, 0x20, 0x20, 0x20,
             0x20, 0x20}},
-    entry{"PCA Serial Number Type/Length", 			INT8,		188,		1,	[]byte{0xCA}},
-    entry{"HPE Serial Number",     					STRING,		189, 		10, []byte{0x30, 0x30, 0x30, 0x30, 
+    entry{"PCA Serial Number Type/Length",             INT8,        188,        1,    []byte{0xCA}},
+    entry{"HPE Serial Number",                         STRING,        189,         10, []byte{0x30, 0x30, 0x30, 0x30, 
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
-    entry{"PCA Product Number Type/Length",			INT8,		199,		1,	[]byte{0xCA}},
-    entry{"HPE Product Number",						STRING,		200,		10,	[]byte{0x50, 0x31, 0x38, 0x36,
+    entry{"PCA Product Number Type/Length",            INT8,        199,        1,    []byte{0xCA}},
+    entry{"HPE Product Number",                        STRING,        200,        10,    []byte{0x50, 0x31, 0x38, 0x36,
         0x36, 0x39, 0x2D, 0x30, 0x30, 0x31}},
-    entry{"FRU File ID Type/Length",     		 	INT8,		210,		1,	[]byte{0xC8}},
-    entry{"FRU ID",		     		 				STRING,		211,		8,	[]byte{0x30, 0x36, 0x2F, 0x32,
+    entry{"FRU File ID Type/Length",                  INT8,        210,        1,    []byte{0xC8}},
+    entry{"FRU ID",                                      STRING,        211,        8,    []byte{0x30, 0x36, 0x2F, 0x32,
         0x34, 0x2F, 0x31, 0x39}},
-    entry{"OEM Revision Type/Length",     		 	INT8,		219,		1,	[]byte{0x3}},
-    entry{"HP OEM Record ID",		     		 	INT8,		220,		1,	[]byte{0xD2}},
-    entry{"Revision Code",     		 				STRING,		221,		2,	[]byte{0x30, 0x41}},
-    entry{"Board ID Type/Length",     		 		INT8,		223,		1,	[]byte{0x4}},
-    entry{"Board ID",				     		 	INT8,		224,		4,	[]byte{0x2, 0x0, 0x0, 0x0}},
-    entry{"Engineering Change Level Type/Length",   INT8,		228,		1,	[]byte{0xC2}},
-    entry{"Engineering Change Level",     		 	INT8,		229,		2,	[]byte{0x0, 0x0}},
-    entry{"Number of MAC Address Type/Length",     	INT8,		231,		1,	[]byte{0x2}},
-    entry{"Total Number of MAC Address",     		INT8,		232,		2,	[]byte{0x18, 0x0}},
-    entry{"MAC Address Base Type/Length",     		INT8,		234,		1,	[]byte{0x6}},
-    entry{"MAC Address Base",     		 			INT8,		235,		6,	[]byte{0, 0xAE, 0xCD, 0, 0, 0}},
-    entry{"End of Field",     						INT8,		241,		1,	[]byte{0xC1}},
-    entry{"PAD",     								INT8,		242, 		5,  []byte{0, 0, 0, 0, 0}},
-    entry{"HPE Multi-Record Area Checksum",     	INT8,	 	247,		1,  []byte{0}},
+    entry{"OEM Revision Type/Length",                  INT8,        219,        1,    []byte{0x3}},
+    entry{"HP OEM Record ID",                          INT8,        220,        1,    []byte{0xD2}},
+    entry{"Revision Code",                              STRING,        221,        2,    []byte{0x30, 0x41}},
+    entry{"Board ID Type/Length",                      INT8,        223,        1,    []byte{0x4}},
+    entry{"Board ID",                                  INT8,        224,        4,    []byte{0x2, 0x0, 0x0, 0x0}},
+    entry{"Engineering Change Level Type/Length",   INT8,        228,        1,    []byte{0xC2}},
+    entry{"Engineering Change Level",                  INT8,        229,        2,    []byte{0x0, 0x0}},
+    entry{"Number of MAC Address Type/Length",         INT8,        231,        1,    []byte{0x2}},
+    entry{"Total Number of MAC Address",             INT8,        232,        2,    []byte{0x18, 0x0}},
+    entry{"MAC Address Base Type/Length",             INT8,        234,        1,    []byte{0x6}},
+    entry{"MAC Address Base",                          INT8,        235,        6,    []byte{0, 0xAE, 0xCD, 0, 0, 0}},
+    entry{"End of Field",                             INT8,        241,        1,    []byte{0xC1}},
+    entry{"PAD",                                     INT8,        242,         5,  []byte{0, 0, 0, 0, 0}},
+    entry{"HPE Multi-Record Area Checksum",         INT8,         247,        1,  []byte{0}},
 }
 
 var EepromTbl []entry
@@ -200,7 +200,7 @@ func ProgEeprom(devName string) (err int) {
 //            updateIntChk()
 //        }
         if entry.Name == "Product Name" {
-            if CardType == "NAPLES25" {
+            if (CardType == "NAPLES25") || (CardType == "NAPLES25SWM") {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
                 updateIntChk()
             } else if CardType == "FORIO" {
@@ -211,7 +211,7 @@ func ProgEeprom(devName string) (err int) {
                 updateIntChk();
             }
         }
-        if entry.Name == "Part Number" && CardType == "NAPLES25" {
+        if entry.Name == "Part Number" && ((CardType == "NAPLES25") || (CardType == "NAPLES25SWM")) {
 //            if HpeNaples == 1 {
 //                copy(entry.Value, []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 0x30, 0x35, 0x2D, 0x30, 0x34, 0x20, 0x30, 0x31})
 //                updateIntChk()
@@ -222,7 +222,8 @@ func ProgEeprom(devName string) (err int) {
             }
         }
         if entry.Name == "Board ID" {
-            if CardType == "NAPLES25" {
+            if (CardType == "NAPLES25") ||
+               (CardType == "NAPLES25SWM") {
                 if is8g == 1 {
                     copy(entry.Value, []byte{5, 0 , 0, 0})
                 } else {
@@ -341,7 +342,7 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 continue
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
+    } else {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC Address Base" {
                 copy(entry.Value, mac)
@@ -443,7 +444,7 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 continue
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
+    } else {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Serial Number" {
                 copy(entry.Value, sn)
@@ -462,7 +463,7 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 continue
             }
         }
-        
+
         if HpeNaples == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Serial Number" {
@@ -483,7 +484,6 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 }
             }
         }
-        
         updateIntChk()
     }
     return
@@ -494,13 +494,13 @@ func UpdatePn(devName string, pn []byte) (err int) {
         cli.Println("f", "SN too long: ", pn)
         return
     }
-    
+
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    
+
 //    CardType := os.Getenv("CARD_TYPE")
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
@@ -509,7 +509,7 @@ func UpdatePn(devName string, pn []byte) (err int) {
                 break
             }
         }
-    } else if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
+    } else {
         for _, entry := range(EepromTbl) {
             if entry.Name == "Part Number" {
                 copy(entry.Value, pn)
@@ -528,7 +528,7 @@ func UpdatePn(devName string, pn []byte) (err int) {
                 continue
             }
         }
-        
+
         if HpeNaples == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Product Number" {
@@ -601,61 +601,64 @@ func UpdateDate(devName string, str string) (err int) {
         return
     }
     defer smbus.Close()
-    
-//    CardType := os.Getenv("CARD_TYPE")
 
-    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
-        data := make([]byte, 3)
-        for _, entry := range(EepromTbl) {
-            if entry.Name == "Manufacturing Date/Time" {
-                const shortForm = "2006-01-02"
-                date := fmt.Sprintf("%s%s%s%s%s%s", "20", string(str[4:6]), "-", string(str[0:2]), "-", string(str[2:4]))
-            	start, _ := time.Parse(shortForm, "1996-01-01")
-            	end, _ := time.Parse(shortForm, date)
-            	difference := end.Sub(start)
-//            	data := make([]byte, 3)
-            	data[0] = byte(int(difference.Minutes()) & 0xFF)
-            	data[1] = byte((int(difference.Minutes()) >> 8) & 0xFF)
-            	data[2] = byte((int(difference.Minutes()) >> 16) & 0xFF)
-            	copy(entry.Value, data)
+//    CardType := os.Getenv("CARD_TYPE")
+    if CardType == "MTP" {
+        cli.Println("e", "This feature does not support MTP!")
+        err = errType.FAIL
+        return
+    }
+
+    data := make([]byte, 3)
+    for _, entry := range(EepromTbl) {
+        if entry.Name == "Manufacturing Date/Time" {
+            const shortForm = "2006-01-02"
+            date := fmt.Sprintf("%s%s%s%s%s%s", "20", string(str[4:6]), "-", string(str[0:2]), "-", string(str[2:4]))
+            start, _ := time.Parse(shortForm, "1996-01-01")
+            end, _ := time.Parse(shortForm, date)
+            difference := end.Sub(start)
+//            data := make([]byte, 3)
+            data[0] = byte(int(difference.Minutes()) & 0xFF)
+            data[1] = byte((int(difference.Minutes()) >> 8) & 0xFF)
+            data[2] = byte((int(difference.Minutes()) >> 16) & 0xFF)
+            copy(entry.Value, data)
+            continue
+        } else if entry.Name == "MAC Address Base" {
+            mac, _ := readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, mac)
+            continue
+        } else if entry.Name == "Part Number" {
+            pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, pn)
+            continue
+        } else if entry.Name == "Serial Number" {
+            sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, sn)
+            continue
+        }
+    }
+
+    if HpeNaples == 1 {
+        for _, entry := range(EepromExtTbl) {
+            if entry.Name == "Manufacture Date/Time" {
+                copy(entry.Value, data)
                 continue
             } else if entry.Name == "MAC Address Base" {
                 mac, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, mac)
                 continue
-            } else if entry.Name == "Part Number" {
+            } else if entry.Name == "HPE Product Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
                 continue
-            } else if entry.Name == "Serial Number" {
+            } else if entry.Name == "HPE Serial Number" {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
             }
         }
-        
-        if HpeNaples == 1 {
-            for _, entry := range(EepromExtTbl) {
-                if entry.Name == "Manufacture Date/Time" {
-                    copy(entry.Value, data)
-                    continue
-                } else if entry.Name == "MAC Address Base" {
-                    mac, _ := readField(devName, entry.Offset, entry.NumBytes)
-                    copy(entry.Value, mac)
-                    continue
-                } else if entry.Name == "HPE Product Number" {
-                    pn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                    copy(entry.Value, pn)
-                    continue
-                } else if entry.Name == "HPE Serial Number" {
-                    sn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                    copy(entry.Value, sn)
-                    continue
-                }
-            }
-        }
-        updateIntChk()
     }
+    updateIntChk()
     return
 }
 
@@ -666,7 +669,7 @@ func UpdateMajor(devName string, major []byte) (err int) {
         return
     }
     defer smbus.Close()
-    
+
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "HW_MAJOR_REV" {
@@ -683,7 +686,7 @@ func UpdateMajor(devName string, major []byte) (err int) {
             }
         }
     }
-    
+
     return
 }
 
@@ -751,7 +754,7 @@ func DispEeprom(devName string, field string) (err int) {
         }
         cli.Println("i", outStr)
     }
-    
+
     if HpeNaples == 1 {
         fmt.Println()
         for _, entry := range(EepromExtTbl) {

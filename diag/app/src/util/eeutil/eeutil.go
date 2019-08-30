@@ -29,21 +29,6 @@ func dispInfo() {
 }
 
 func eepromTlbInit(uut string) {
-    //if os.Getenv("CARD_TYPE") == "NAPLES100" {
-    //    eeprom.CardType = "NAPLES100"
-    //    eeprom.EepromTbl = eeprom.Naples100Tbl
-    //    fmt.Println("NAPLES100")
-    //} else if os.Getenv("CARD_TYPE") == "NAPLES25" || uut != "UUT_NONE" {
-    //    eeprom.CardType = "NAPLES25"
-    //    eeprom.EepromTbl = eeprom.Naples100Tbl
-    //    fmt.Println("NAPLES25")
-    //} else if uut == "UUT_NONE" {
-    //    eeprom.CardType = "MTP"
-    //    eeprom.EepromTbl = eeprom.MtpTbl
-    //    fmt.Println("MTP")
-    //} else {
-    //    fmt.Println("Unsupported UUT and card type")
-    //}
     var cardType string
     if (uut == "UUT_NONE") {
         cardType = os.Getenv("CARD_TYPE")

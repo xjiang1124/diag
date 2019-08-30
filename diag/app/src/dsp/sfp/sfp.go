@@ -30,6 +30,7 @@ func init() {
 
     sfpTestMap := make(map[string][]string)
     sfpTestMap["NAPLES25"] = naples25SfpList
+    sfpTestMap["NAPLES25SWM"] = naples25SfpList
 
     sfpTestList = sfpTestMap[cardType]
 }

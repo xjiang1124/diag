@@ -181,6 +181,8 @@ func init() {
         I2cTbl = Naples100Tbl
     } else if CardType == "NAPLES25" {
         I2cTbl = Naples25Tbl
+    } else if CardType == "NAPLES25SWM" {
+        I2cTbl = Naples25Tbl
     } else if CardType == "FORIO" {
         I2cTbl = ForioTbl
     } else if CardType == "VOMERO" {
@@ -248,6 +250,8 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "NAPLES100" {
         CurI2cTbl = Naples100MtpTbl
     } else if uutType == "NAPLES25" {
+        CurI2cTbl = Naples25MtpTbl
+    } else if uutType == "NAPLES25SWM" {
         CurI2cTbl = Naples25MtpTbl
     } else if uutType == "FORIO" {
         CurI2cTbl = ForioMtpTbl
