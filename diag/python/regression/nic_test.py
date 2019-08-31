@@ -18,7 +18,7 @@ class nic_test:
     def __init__(self):
         self.name = "nic_snake"
         self.baud_rate = 115200
-        self.num_retry = 5
+        self.num_retry = 3
         self.nic_con = nic_con()
 
     def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):

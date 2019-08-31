@@ -14,7 +14,7 @@ class nic_con:
     def __init__(self):
         self.usr = "root"
         self.pwd = "pen123"
-        self.fmt_con_cmd = "picocom -b {} -f h /dev/ttyS1"
+        self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
         self.fmt_change_rate = "stty speed {}"
 
     def uart_session_start(self, session, baud=115200):
@@ -22,7 +22,7 @@ class nic_con:
         expstr = ["capri login:", "\#"]
         try:
             session.sendline(cmd)
-            session.expect("Terminal ready")
+            #session.expect("Terminal ready")
             session.send("\r")
             i = session.expect(expstr, 15)
             if i == 0:
@@ -48,7 +48,7 @@ class nic_con:
         expstr = ["capri login:", "\#"]
         try:
             session.sendline(cmd)
-            session.expect("Terminal ready")
+            #session.expect("Terminal ready")
             session.send("\r")
             i = session.expect(expstr, 15)
             if i == 0:
@@ -173,9 +173,9 @@ class nic_con:
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
             #time.sleep(2)
-            cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
+            cmd = self.fmt_con_cmd.format(baud)
             session.sendline(cmd)
-            session.expect("Terminal ready")
+            #session.expect("Terminal ready")
 
             for i in range(40):
                 session.timeout = 0.5
@@ -225,9 +225,9 @@ class nic_con:
         session.timeout = 15
         ret = 0
         try:
-            cmd = "picocom -b {} -f h /dev/ttyS1".format(rate)
+            cmd = self.fmt_con_cmd.format(baud)
             session.sendline(cmd)
-            session.expect("Terminal ready")
+            #session.expect("Terminal ready")
             session.sendline("\r")
             session.expect(exprStr)
         except pexpect.TIMEOUT:
@@ -250,10 +250,10 @@ class nic_con:
         mtest_cmd = "mtest {} {} 0xaaaaaaaa 1"
         session.timeout = 30
         try:
-            cmd = "picocom -b {} -f h /dev/ttyS1".format(baud_rate)
-            session.sendline(cmd)
-            session.expect("Terminal ready")
-            time.sleep(1)
+            cmd = self.fmt_con_cmd.format(baud)
+            #session.sendline(cmd)
+            #session.expect("Terminal ready")
+            #time.sleep(1)
             session.send("\r")
             session.expect(exprStr)
 
