@@ -592,18 +592,20 @@ class mtp_ctrl():
             return False
 
         if slot != None:
-            handle.sendline("PS1='{:s}@NIC-{:02d}:{:s} '".format(userid, slot+1, prompt))
+            prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
-            handle.sendline("PS1='{:s}@MTP:{:s} '".format(userid, prompt))
-        idx = libmfg_utils.mfg_expect_re(handle, [r"{:s}.*{:s}".format(userid, prompt)])
-        if idx < 0:
-            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
-            return False
+            prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
+        handle.sendline("PS1='{:s}'".format(prompt_str))
+
         # refresh
-        cmd = "uname"
-        sig_list = ["Linux"]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
-            self.cli_log_err("Refresh mtp mgmt port failed", level = 0)
+        handle.sendline("uname")
+        idx = libmfg_utils.mfg_expect(handle, ["Linux"])
+        if idx < 0:
+            self.cli_log_err("Refresh mtp mgmt timeout", level = 0)
+            return False
+        idx = libmfg_utils.mfg_expect(handle, [prompt_str])
+        if idx < 0:
+            self.cli_log_err("Refresh mtp mgmt timeout", level = 0)
             return False
 
         return True
@@ -1994,7 +1996,7 @@ class mtp_ctrl():
         if aapl:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT(nic_list_param)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param)
         else:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")

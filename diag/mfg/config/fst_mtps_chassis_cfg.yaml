@@ -1,4 +1,4 @@
-MTPS-100:
+MTPS-400:
     MODE: ""
     TS: ""
     TS_PORT: ""
@@ -15,6 +15,6 @@ MTPS-100:
     IP: "192.168.65.115"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtps100"
+    ALIAS: "mtps400"
     SLOTS: 4
     CAPABILITY: 0x3
