@@ -340,7 +340,7 @@ def main():
     if apc:
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
     # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
@@ -353,7 +353,7 @@ def main():
         libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_mgmt_connect():
                 mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
                 mtpid_list.remove(mtp_id)
@@ -364,9 +364,20 @@ def main():
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
 
+    # Sync timestamp to server
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+
     # Copy script, config file on to each MTP Chassis
     mtp_regression_script_dir = "mtp_regression/"
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_regression_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP Regression Test script", level=0)
         if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_regression_script_dir, mtp_regression_script_pkg):

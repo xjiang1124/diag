@@ -647,6 +647,15 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_mgmt_set_date(self, timestamp_str):
+        cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_err("Unable to set MTP date")
+            return False
+
+        return True
+
+
     def mtp_sys_info_init(self):
         # MTP IO cpld version
         reg_addr = 0x0
@@ -2006,6 +2015,17 @@ class mtp_ctrl():
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
 
+        # delete the arp entry
+        for slot in nic_list:
+            ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+            cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
+            if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+                return False
+            # ping to update the arp cache
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                return False
+
         return True
 
 
@@ -2072,12 +2092,12 @@ class mtp_ctrl():
 
         match = re.findall(mac_addr_reg_exp, self.mtp_get_cmd_buf())
         if match:
-            if len(match) != len(list(set(match))):
-                self.cli_log_err("NIC MAC address validate failed - duplicate entry found")
-                return False
-            else:
-                self.cli_log_inf("NIC MAC address validate complete - {:d} entries found".format(len(match)))
-                return True
+            for mac in match:
+                if match.count(mac) > 1:
+                    self.cli_log_err("NIC MAC address validate failed - duplicate entry: {:s}".format(mac))
+                    return False
+            self.cli_log_inf("NIC MAC address validate complete - {:d} entries found".format(len(match)))
+            return True
         else:
             self.cli_log_err("NIC MAC address validate failed - 0 entry found")
             return False
