@@ -173,7 +173,7 @@ class nic_con:
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
             #time.sleep(2)
-            cmd = self.fmt_con_cmd.format(baud)
+            cmd = self.fmt_con_cmd.format(rate)
             session.sendline(cmd)
             #session.expect("Terminal ready")
 
@@ -225,7 +225,7 @@ class nic_con:
         session.timeout = 15
         ret = 0
         try:
-            cmd = self.fmt_con_cmd.format(baud)
+            cmd = self.fmt_con_cmd.format(rate)
             session.sendline(cmd)
             #session.expect("Terminal ready")
             session.sendline("\r")
@@ -250,7 +250,7 @@ class nic_con:
         mtest_cmd = "mtest {} {} 0xaaaaaaaa 1"
         session.timeout = 30
         try:
-            cmd = self.fmt_con_cmd.format(baud)
+            cmd = self.fmt_con_cmd.format(baud_rate)
             #session.sendline(cmd)
             #session.expect("Terminal ready")
             #time.sleep(1)
