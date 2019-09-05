@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import datetime
 import pexpect
 import re
 import sys
@@ -74,6 +75,7 @@ class nic_test:
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
+            print "timestamp", datetime.datetime.now().time()
             ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl)
             if ret == 0:
                 break
@@ -83,6 +85,7 @@ class nic_test:
         else:
             print "=== Setup env top done #", retry, "==="
 
+        print "timestamp", datetime.datetime.now().time()
         return ret, nic_list_remain
 
     def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
@@ -172,6 +175,7 @@ class nic_test:
         else:
             print "===  setup_env_multi Passed ==="
 
+        print "timestamp", datetime.datetime.now().time()
         return ret, nic_list_remain
 
     def aapl_setup(self, rate, slot=0, skip=False):
