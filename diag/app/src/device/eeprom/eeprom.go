@@ -22,7 +22,7 @@ const(
 
 var SnAllZero = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var SnAllF = []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
-    
+
 // EEPROM entry data structure
 type entry struct {
     Name     string
@@ -133,6 +133,7 @@ var EepromExtTbl []entry
 var CardType string
 var brdInfoChk, cmnHeadChk, mraChk uint
 var HpeNaples uint
+var Erase bool
 
 func max(x, y int) (m int) {
     if x > y {
@@ -183,121 +184,137 @@ func ProgEeprom(devName string) (err int) {
     defer smbus.Close()
 
     is8g := 0
-    for _, entry := range(EepromTbl) {
-        if entry.Name == "Multi-Record Area Offset" {
-            if HpeNaples == 1 {
-                copy(entry.Value, []byte{0x10})
-                updateIntChk()
-            }
-        }
-//        if (entry.Name == "Serial Number") && (HpeNaples == 1) {
-//            entry.Value = make([]byte, entry.NumBytes)
-//            updateIntChk()
-//        }
-//        
-//        if (entry.Name == "Part Number") && (HpeNaples == 1) {
-//            entry.Value = make([]byte, entry.NumBytes)
-//            updateIntChk()
-//        }
-        if entry.Name == "Product Name" {
-            if (CardType == "NAPLES25") || (CardType == "NAPLES25SWM") {
-                copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
-                updateIntChk()
-            } else if CardType == "FORIO" {
-                copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
-                updateIntChk();
-            } else if CardType == "VOMERO" {
-                copy(entry.Value, []byte{0x56, 0x4F, 0x4D, 0x45, 0x52, 0x4F, 0x20, 0x20, 0x20, 0x20})
-                updateIntChk();
-            }
-        }
-        if entry.Name == "Part Number" && ((CardType == "NAPLES25") || (CardType == "NAPLES25SWM")) {
-//            if HpeNaples == 1 {
-//                copy(entry.Value, []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 0x30, 0x35, 0x2D, 0x30, 0x34, 0x20, 0x30, 0x31})
-//                updateIntChk()
-//            }
-//            fmt.Printf("value 0x%x\n", entry.Value[6])
-            if entry.Value[6] == byte(0x38) {
-                 is8g = 1
-            }
-        }
-        if entry.Name == "Board ID" {
-            if (CardType == "NAPLES25") ||
-               (CardType == "NAPLES25SWM") {
-                if is8g == 1 {
-                    copy(entry.Value, []byte{5, 0 , 0, 0})
-                } else {
-                    copy(entry.Value, []byte{2, 0 , 0, 0})
+    if Erase == true {
+        for _, entry := range(EepromTbl) {
+            if entry.Name != "MAC Address Base" && entry.Name != "Serial Number" &&
+            entry.Name != "Part Number" {
+                for i := range entry.Value {
+                    entry.Value[i] = 0xFF
                 }
-                updateIntChk()
-            } else if CardType == "FORIO" {
-                copy(entry.Value, []byte{4, 0 , 0, 0})
-                updateIntChk()
-            } else if CardType == "VOMERO" {
-                copy(entry.Value, []byte{6, 0 , 0, 0})
-                updateIntChk()
+            }
+            err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Program main FRU failed")
+                return
             }
         }
-//        if entry.Name == "Serial Number" {
-//            dftArray := []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
-//            if bytes.Equal(entry.Value, dftArray) {
-//                cli.Println("i", "skip sn")
-//                continue
-//            }
-//        } else if entry.Name == "Manufacturing Date" {
-//            dftArray := []byte{0, 0, 0}
-//            if bytes.Equal(entry.Value, dftArray) {
-//                cli.Println("i", "skip date")
-//                continue
-//            }
-//        } else if entry.Name == "MAC Address Base" {
-//            dftArray := []byte{0, 0, 0, 0, 0, 0}
-//            if bytes.Equal(entry.Value, dftArray) {
-//            cli.Println("i", "skip mac")
-//            continue
-//            }
-//        }
-        
-        if entry.Name == "Board Info Area Checksum" {
-            entry.Value[0] = byte(0x100 - brdInfoChk % 0x100)
-//            binary.Write(entry.Value, binary.LittleEndian, (0x100 - brdInfoChk % 0x100))
-//            entry.Value = []byte(strconv.FormatUint(uint64(0x100 - brdInfoChk % 0x100), 16))
+    } else {
+        for _, entry := range(EepromTbl) {
+            if entry.Name == "Multi-Record Area Offset" {
+                if HpeNaples == 1 {
+                    copy(entry.Value, []byte{0x10})
+                    updateIntChk()
+                }
+            }
+    //        if (entry.Name == "Serial Number") && (HpeNaples == 1) {
+    //            entry.Value = make([]byte, entry.NumBytes)
+    //            updateIntChk()
+    //        }
+    //        
+    //        if (entry.Name == "Part Number") && (HpeNaples == 1) {
+    //            entry.Value = make([]byte, entry.NumBytes)
+    //            updateIntChk()
+    //        }
+            if entry.Name == "Product Name" {
+                if (CardType == "NAPLES25") || (CardType == "NAPLES25SWM") {
+                    copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
+                    updateIntChk()
+                } else if CardType == "FORIO" {
+                    copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
+                    updateIntChk();
+                } else if CardType == "VOMERO" {
+                    copy(entry.Value, []byte{0x56, 0x4F, 0x4D, 0x45, 0x52, 0x4F, 0x20, 0x20, 0x20, 0x20})
+                    updateIntChk();
+                }
+            }
+            if entry.Name == "Part Number" && ((CardType == "NAPLES25") || (CardType == "NAPLES25SWM")) {
+    //            if HpeNaples == 1 {
+    //                copy(entry.Value, []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 0x30, 0x35, 0x2D, 0x30, 0x34, 0x20, 0x30, 0x31})
+    //                updateIntChk()
+    //            }
+    //            fmt.Printf("value 0x%x\n", entry.Value[6])
+                if entry.Value[6] == byte(0x38) {
+                     is8g = 1
+                }
+            }
+            if entry.Name == "Board ID" {
+                if (CardType == "NAPLES25") ||
+                   (CardType == "NAPLES25SWM") {
+                    if is8g == 1 {
+                        copy(entry.Value, []byte{5, 0 , 0, 0})
+                    } else {
+                        copy(entry.Value, []byte{2, 0 , 0, 0})
+                    }
+                    updateIntChk()
+                } else if CardType == "FORIO" {
+                    copy(entry.Value, []byte{4, 0 , 0, 0})
+                    updateIntChk()
+                } else if CardType == "VOMERO" {
+                    copy(entry.Value, []byte{6, 0 , 0, 0})
+                    updateIntChk()
+                }
+            }
+    //        if entry.Name == "Serial Number" {
+    //            dftArray := []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
+    //            if bytes.Equal(entry.Value, dftArray) {
+    //                cli.Println("i", "skip sn")
+    //                continue
+    //            }
+    //        } else if entry.Name == "Manufacturing Date" {
+    //            dftArray := []byte{0, 0, 0}
+    //            if bytes.Equal(entry.Value, dftArray) {
+    //                cli.Println("i", "skip date")
+    //                continue
+    //            }
+    //        } else if entry.Name == "MAC Address Base" {
+    //            dftArray := []byte{0, 0, 0, 0, 0, 0}
+    //            if bytes.Equal(entry.Value, dftArray) {
+    //            cli.Println("i", "skip mac")
+    //            continue
+    //            }
+    //        }
             
-        } else if entry.Name == "Common Header Checksum" {
-            entry.Value[0] = byte(0x100 - cmnHeadChk % 0x100)
-        }
-        
-//        if entry.DataType == STRING {
-//            data := make([]byte, entry.NumBytes)
-//            copy(data, entry.Value)
-//            cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
-//        } else {
-//            outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
-//            cli.Println("i", outStr)
-//        }
-        err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
-        if err != errType.SUCCESS {
-            cli.Println("e", "Program main FRU failed")
-            return
-        }
-        
-        if HpeNaples == 1 {
-            for _, entry := range(EepromExtTbl) {
-                if entry.Name == "HPE Multi-Record Area Checksum" {
-                    entry.Value[0] = byte(0x100 - mraChk % 0x100)
-                }
-//                if entry.DataType == STRING {
-//                    data := make([]byte, entry.NumBytes)
-//                    copy(data, entry.Value)
-//                    cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
-//                } else {
-//                    outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
-//                    cli.Println("i", outStr)
-//                }
-                err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
-                if err != errType.SUCCESS {
-                    cli.Println("e", "Program extension FRU failed")
-                    return
+            if entry.Name == "Board Info Area Checksum" {
+                entry.Value[0] = byte(0x100 - brdInfoChk % 0x100)
+    //            binary.Write(entry.Value, binary.LittleEndian, (0x100 - brdInfoChk % 0x100))
+    //            entry.Value = []byte(strconv.FormatUint(uint64(0x100 - brdInfoChk % 0x100), 16))
+                
+            } else if entry.Name == "Common Header Checksum" {
+                entry.Value[0] = byte(0x100 - cmnHeadChk % 0x100)
+            }
+            
+    //        if entry.DataType == STRING {
+    //            data := make([]byte, entry.NumBytes)
+    //            copy(data, entry.Value)
+    //            cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
+    //        } else {
+    //            outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
+    //            cli.Println("i", outStr)
+    //        }
+            err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Program main FRU failed")
+                return
+            }
+            
+            if HpeNaples == 1 {
+                for _, entry := range(EepromExtTbl) {
+                    if entry.Name == "HPE Multi-Record Area Checksum" {
+                        entry.Value[0] = byte(0x100 - mraChk % 0x100)
+                    }
+    //                if entry.DataType == STRING {
+    //                    data := make([]byte, entry.NumBytes)
+    //                    copy(data, entry.Value)
+    //                    cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
+    //                } else {
+    //                    outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
+    //                    cli.Println("i", outStr)
+    //                }
+                    err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
+                    if err != errType.SUCCESS {
+                        cli.Println("e", "Program extension FRU failed")
+                        return
+                    }
                 }
             }
         }

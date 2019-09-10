@@ -65,7 +65,8 @@ func main() {
     dumpPtr		:= flag.Bool ("dump", 	false,          "Dump FRU")
     uutPtr		:= flag.String("uut",  "UUT_NONE", 		"Target UUT")
     majorPtr	:= flag.String("maj",     "",            "Hardware mayor reversion")
-    hpePtr		:= flag.Bool  ("hpe",     false,          "HPE eeprom operation option")    
+    hpePtr		:= flag.Bool  ("hpe",     false,          "HPE eeprom operation option")
+    erasePtr	:= flag.Bool  ("erase",   false,          "Erase all fields") 
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -97,7 +98,13 @@ func main() {
         return
     }
     
-    if *updatePtr == true {
+    if *erasePtr == true {
+        eeprom.Erase = true
+    } else {
+        eeprom.Erase = false
+    }
+    
+    if *updatePtr == true || eeprom.Erase == true {
 //        hwdev.EepromUpdate(devName, mac, sn)
         if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {
             fmt.Println("on MTP")
