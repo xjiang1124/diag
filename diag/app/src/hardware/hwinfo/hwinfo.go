@@ -208,7 +208,8 @@ func init() {
     mtpDispStaList = make(map[string]DispStaFunc)
     mtpDispStaList["PSU_1"] = pet1600.DispStatus
     mtpDispStaList["PSU_2"] = pet1600.DispStatus
-    mtpDispStaList["DC"]    = tps549a20.DispStatus
+    mtpDispStaList["DC_1"]  = tps549a20.DispStatus
+    mtpDispStaList["DC_2"]  = tps549a20.DispStatus
     mtpDispStaList["FAN"]   = adt7462.DispStatus
 
     //===============================

@@ -187,13 +187,20 @@ func fanAlertTest() (err int) {
 
 
 func vrmTest() (err int) {
-    vrm := "DC"
+    vrm := "DC_1"
+    err = hwdev.DispStatus(vrm, "UUT_NONE")
+    if err != errType.SUCCESS {
+        cli.Println("e", "#####", vrm, "TEST FAILED! #####")
+        return
+    }    
+    vrm = "DC_2"
     err = hwdev.DispStatus(vrm, "UUT_NONE")
     if err != errType.SUCCESS {
         cli.Println("e", "#####", vrm, "TEST FAILED! #####")
     } else {
         cli.Println("i", "#####", vrm, "TEST PASSED! #####")
     }
+
     return
 }
 
