@@ -1161,7 +1161,7 @@ class mtp_ctrl():
             self.cli_log_err("MTP CPLD test failed")
             return False
 
-        if cpld_ver_list[0] != MFG_MTP_CPLD_IO_VERSION:
+        if int(cpld_ver_list[0],16) < int(MFG_MTP_CPLD_IO_VERSION,16):
             self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], MFG_MTP_CPLD_IO_VERSION))
             self.cli_log_err("MTP CPLD test failed")
             return False
