@@ -18,22 +18,34 @@ class nic_con:
         self.fmt_change_rate = "stty speed {}"
 
     def uart_session_start(self, session, baud=115200):
+        ret = 0
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "\#"]
-        try:
-            session.sendline(cmd)
-            #session.expect("Terminal ready")
-            session.send("\r")
-            i = session.expect(expstr, 15)
-            if i == 0:
-                session.sendline(self.usr)
-                session.expect("assword:")
-                session.sendline(self.pwd)
-                session.expect("\#")
-        except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Can not connect to NIC on UART!"
-            return -1
-        return 0
+        for ite in range(2):
+            print "ite: ", ite
+            if ite == 2:
+                # Vomero case, may need two tims
+                timeout = 30
+                print "Last try to connenct UART, wait for", timeout, "sec"
+            else:
+                timeout = 1
+
+            try:
+                session.sendline(cmd)
+                #session.expect("Terminal ready")
+                session.send("\r")
+                i = session.expect(expstr, timeout)
+                if i == 0:
+                    session.sendline(self.usr)
+                    session.expect("assword:")
+                    session.sendline(self.pwd)
+                    session.expect("\#")
+                ret = 0
+                break
+            except pexpect.TIMEOUT:
+                print "=== TIMEOUT: Can not connect to NIC on UART!"
+                ret = -1
+        return ret
 
     def uart_session_start_slot(self, session, baud=115200, slot=0):
         ret = 0

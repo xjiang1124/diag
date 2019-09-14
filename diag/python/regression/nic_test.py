@@ -42,14 +42,15 @@ class nic_test:
 
             session = common.session_start()
             session.timeout = timeout
-            self.nic_con.uart_session_start(session, self.baud_rate)
-            self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
-            self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
-            self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
-            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-            self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
-            self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
-            self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
+            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            if ret == 0:
+                self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
+                self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+                self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
+                self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+                self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
@@ -97,7 +98,6 @@ class nic_test:
 
         nic_list_remain = nic_list[:]
         slot_list = ",".join(nic_list)
-        print "slot_list:", slot_list
 
         if pwr_cycle == True:
             self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
@@ -113,7 +113,7 @@ class nic_test:
         if mgmt == True:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
-                set = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+                ret = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
             for slot in nic_list:
@@ -133,9 +133,11 @@ class nic_test:
                 common.session_stop(session)
 
         if mgmt == True or aapl == True:
-             print "Sleep 30 sec P0"
-             time.sleep(30)
-             for slot in nic_list:
+            if len(nic_list) != 0:
+                 print "Sleep 30 sec"
+                 time.sleep(30)
+
+            for slot in nic_list:
                  self.nic_con.switch_console(slot)
                  session = common.session_start()
                  self.nic_con.uart_session_start(session)
@@ -162,7 +164,6 @@ class nic_test:
                 ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
-
         for slot in nic_list:
             if ret_list[int(slot)-1] == 0:
                 nic_list_remain.remove(slot)
