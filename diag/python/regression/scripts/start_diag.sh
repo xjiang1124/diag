@@ -86,6 +86,12 @@ then
     # ESEC images
     cp -r $DIAG_DIR/python/esec/images/ $DIAG_DIR/asic/asic_src/ip/cosim/tclsh/
 
+    # Duplicate 5 asic DSPs
+    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic1
+    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic2
+    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic3
+    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic4
+    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
 fi
 
 #echo "redisFlag $redisFlag"

@@ -505,6 +505,30 @@ class diagEngineHost:
             print "_NOT_ a valid test:", testNm
             return [], -1
 
+    def getCmdList(self, cardNm="", dspNm="", testNm=''):
+        cardNm = cardNm.upper()
+        if self.checkCardExist(cardNm) != True:
+            print "_NOT_ a live card:", cardNm
+            return [], -1
+
+        dspNm = dspNm.upper()
+        if self.checkDspExist(cardNm, dspNm) != True:
+            print "_NOT_ a live dsp:", cardNm+":"+dspNm
+            return [], -1
+
+        testList = self.r.smembers(self.dspCmdKeyFmt.format(self.getCardType(cardNm), dspNm))
+
+        # if given test name is empty, return whole list
+        if not testNm:
+            return testList, 0
+
+        testNm = testNm.upper()
+        if testNm in testList:
+            return [testNm], 0
+        else:
+            print "_NOT_ a valid test:", testNm
+            return [], -1
+
 
     def checkIfSkipped(self, cardTp, dspNm, testNm):
         return self.r.sismember(self.skiplistKey, cardTp+":"+dspNm+":"+testNm)
@@ -620,6 +644,46 @@ class diagSts(diagEngineHost):
                     sts = "active"
 
                 print fmtDsp.format(dsp, sts)
+        return
+
+    def showCmd (self, cardNm="", dspNm=""):
+        dspNm = dspNm.upper()
+        cards, err = self.getCardList(cardNm)
+        if err != 0:
+            return
+
+        fmtCard = "============ {}:{} ============"
+        fmtDsp = "-------- {} --------"
+        fmtTest = "{:<20}{}"
+        # Display DSPs
+        for card in cards:
+            cardTp = self.getCardTpFromDict(card)
+            print fmtCard.format(card, cardTp)
+            dspList, err = self.getDspList(card)
+            if err != 0:
+                return
+            for dsp in dspList:
+                # Skip DIAGMGR
+                if dsp == "DIAGMGR":
+                    continue
+                print fmtDsp.format(dsp)
+                testList, err = self.getCmdList(card, dsp)
+                if err != 0:
+                    continue
+                # Get DSP status
+                testQueStsKey = self.testQueStsKeyFmt.format(card, dsp)
+                queSts = self.r.llen(testQueStsKey)
+
+                for test in testList:
+                    sts = "idle"
+                    if queSts > 0:
+                        testId = self.r.lindex(testQueStsKey, -1)
+                        testStr = self.testKeyFmt.format(card, dsp, testId)
+                        testNm = self.r.get(testStr)
+                        if test == testNm:
+                            sts = "active"
+
+                    print fmtTest.format(test, sts)
         return
 
     def showTest (self, cardNm="", dspNm=""):

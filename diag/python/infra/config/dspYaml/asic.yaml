@@ -136,4 +136,24 @@ DSP:
                     ALL: "normal"
                 INFO: Vmargin setting; normal/high/low
 
+    CMD#start_zmq:
+        INFO: Start ZMQ server
+        PLATFORM:
+            NIC: MTP
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 30
+                INFO: Cmd timeout setting
+
+    CMD#stop_zmq:
+        INFO: Terminate ZMQ server
+        PLATFORM:
+            NIC: MTP
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 30
+                INFO: Cmd timeout setting
+
 ...

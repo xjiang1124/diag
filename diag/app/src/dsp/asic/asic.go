@@ -4,14 +4,16 @@ import (
     //"bufio"
     "flag"
     //"io"
-    //"os/exec"
+    "os"
+    "os/exec"
+    "path/filepath"
     "strconv"
     //"sync"
 
-    "common/diagEngine"
     //"common/cli"
+    "common/diagEngine"
     "common/dcli"
-    //"common/errType"
+    "common/errType"
     "common/misc"
     "common/runCmd"
     "config"
@@ -24,6 +26,8 @@ const (
     // Each DSP should know it own name
     dspName = "ASIC"
 )
+
+var zmqCmdHdl *exec.Cmd
 
 func AsicPcie_PrbsHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
@@ -112,14 +116,84 @@ func AsicL1_TestHdl(argList []string) {
     return
 }
 
+
+func AsicStop_ZmqHdl(argList []string) {
+    var err int
+
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errGo := fs.Parse(argList)
+    if errGo != nil {
+        dcli.Println("e", "Parse failed", errGo)
+        err = errType.FAIL
+        diagEngine.FuncMsgChan <- errType.SUCCESS
+        return
+    }
+
+    errGo = zmqCmdHdl.Process.Kill()
+    if errGo != nil {
+        dcli.Println("F", "Error stop Cmd", errGo)
+        err = errType.FAIL
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    //cmd :=exec.Command("/bin/bash", "killall diag_zma_server.exe")
+    cmd := exec.Command("killall", "diag_zmq_server.exe")
+    errGo = cmd.Run()
+    if errGo != nil {
+        dcli.Println("F", "Failed to kill zmq server", errGo)
+        err = errType.FAIL
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.SUCCESS
+    return
+}
+
+func AsicStart_ZmqHdl(argList []string) {
+    var err int
+
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errGo := fs.Parse(argList)
+    if errGo != nil {
+        dcli.Println("e", "Parse failed", errGo)
+        err = errType.FAIL
+        diagEngine.FuncMsgChan <- errType.SUCCESS
+        return
+    }
+
+    cmd := exec.Command("/bin/bash", "/home/diag/diag/scripts/start_zmq.sh")
+    //cmd := exec.Command("/home/diag/diag/asic//asic_lib/diag_zmq_server.exe", "-connect tcp://127.0.0.1:55000/", "+if_name=j2c", "+if_port=10")
+    errGo = cmd.Start()
+    if errGo != nil {
+        dcli.Println("F", "Error starting Cmd", errGo)
+        err = errType.FAIL
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+    zmqCmdHdl = cmd
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- errType.SUCCESS
+    return
+}
+
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
     diagEngine.FuncMap["PCIE_PRBS"] = AsicPcie_PrbsHdl
     diagEngine.FuncMap["ETH_PRBS"] = AsicEth_PrbsHdl
-    //diagEngine.FuncMap["TRF"] = AsicTrfHdl
     diagEngine.FuncMap["L1"] = AsicL1_TestHdl
+    diagEngine.FuncMap["start_zmq"] = AsicStart_ZmqHdl
+    diagEngine.FuncMap["stop_zmq"] = AsicStop_ZmqHdl
 
-    dcli.Init("log_"+dspName+".txt", config.OutputMode)
+    pName := filepath.Base(os.Args[0])
+    dcli.Init("log_"+pName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
     diagEngine.DspInfraInit()
     diagEngine.DspInfraMainLoop()

@@ -39,6 +39,15 @@ func getDspList() []string {
     // Remove diagmgr from the list
     dspList = misc.RmStrFromSlice(dspList, "DIAGMGR")
 
+    if misc.StringInSlice("ASIC", dspList) {
+        dspList = misc.RmStrFromSlice(dspList, "ASIC")
+        dspList = append(dspList, "ASIC1")
+        dspList = append(dspList, "ASIC2")
+        dspList = append(dspList, "ASIC3")
+        dspList = append(dspList, "ASIC4")
+        dspList = append(dspList, "ASIC5")
+    }
+
     return dspList
 }
 
@@ -46,6 +55,7 @@ func startDsp(dspList []string, path string) int {
     for _, dsp := range dspList {
         dcli.Println("i", "Starting DSP:", dsp)
         filename := path+strings.ToLower(dsp)
+
         cmd := exec.Command(filename)
         //cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
