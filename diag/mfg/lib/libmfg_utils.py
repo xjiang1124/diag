@@ -223,7 +223,7 @@ def mac_address_validate(tmp):
 
 
 def part_number_validate(tmp):
-    if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13):
+    if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13 or len(tmp) == 12):
         return tmp
     if re.match(HP_PN_FMT, tmp) and (len(tmp) == 10):
         return tmp

@@ -445,7 +445,7 @@ class nic_ctrl():
 
             # remove the potential special character
             buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-            match = re.findall(r"SMP (.* 20\d{2})", buf)
+            match = re.findall(r"SMP(?: PREEMPT)? (.* 20\d{2})", buf)
             if match:
                 kernel_ver = match[0]
                 # check if timestamp is valid
@@ -764,12 +764,11 @@ class nic_ctrl():
             if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
                 return False
 
-        if emmc_utils:
-            nic_diag_list = ["nic_arm", "nic_util"]
-            for util in nic_diag_list:
-                img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
-                if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-                    return False
+        nic_diag_list = ["nic_arm", "nic_util"]
+        for util in nic_diag_list:
+            img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
+            if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                return False
 
         return True
 

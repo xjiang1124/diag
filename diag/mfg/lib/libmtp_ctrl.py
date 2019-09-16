@@ -29,6 +29,7 @@ from libmfg_cfg import MFG_VOMERO_CPLD_VERSION
 from libmfg_cfg import MFG_VOMERO_CPLD_TIMESTAMP
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
+from libmfg_cfg import MFG_NIC_AVS_PROGRAM
 from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
@@ -1620,6 +1621,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp))
                 return False
             else:
+                self.cli_log_slot_inf_lock(slot, "Verify NIC CPLD Passed, version: {:s}({:s})".format(cur_ver, cur_timestamp))
                 return True
 
         return True
@@ -2002,6 +2004,7 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if aapl:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
@@ -2011,7 +2014,7 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param)
 
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
 
@@ -2042,10 +2045,7 @@ class mtp_ctrl():
         else:
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
-        if aapl:
-            self.mtp_nic_mgmt_para_init(aapl)
-        else:
-            self.mtp_nic_mgmt_seq_init(fpo)
+        self.mtp_nic_mgmt_para_init(aapl)
 
         if not self.mtp_mgmt_nic_mac_validate():
             return False
@@ -2462,39 +2462,42 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_set_nic_avs(self, slot):
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
-            self.cli_log_err("Failed to execute command {:s}".format(cmd))
-            return False
+        if MFG_NIC_AVS_PROGRAM:
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd))
+                return False
 
-        nic_type = self.mtp_get_nic_type(slot)
-        sn = self.mtp_get_nic_sn(slot)
+            nic_type = self.mtp_get_nic_type(slot)
+            sn = self.mtp_get_nic_sn(slot)
 
-        if nic_type in self._proto_type_list:
-            self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
-            return True
-        elif nic_type == NIC_Type.NAPLES100:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.VOMERO:
-            vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.NAPLES25:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            if nic_type in self._proto_type_list:
+                self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
+                return True
+            elif nic_type == NIC_Type.NAPLES100:
+                vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
+                arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
+            elif nic_type == NIC_Type.VOMERO:
+                vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
+                arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
+            elif nic_type == NIC_Type.NAPLES25:
+                vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+                arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            else:
+                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+                return False
+
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
+                return False
+            self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
+
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
+                return False
+            self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
         else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-            return False
-
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
-            return False
-        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
-
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
-            return False
-        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
+            self.cli_log_slot_inf_lock(slot, "Bypass AVS for NIC")
 
         return True
 

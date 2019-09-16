@@ -83,7 +83,7 @@ class MTP_Const:
     MTP_NETCOPY_DELAY = 600
     MTP_FRU_UPDATE_DELAY = 1200
     MTP_PARA_TEST_DELAY = 1800
-    MTP_PARA_AAPL_INIT_DELAY = 1200
+    MTP_PARA_AAPL_INIT_DELAY = 1800
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 120
@@ -348,6 +348,7 @@ class MFG_DIAG_SIG:
     NIC_CON_OK_SIG = "# stty speed 4800"
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_AAPL_OK_SIG = "AAPL setup done"
+    NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
