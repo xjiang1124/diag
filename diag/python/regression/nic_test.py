@@ -189,7 +189,12 @@ class nic_test:
         self.nic_con.switch_console(slot)
 
         session = common.session_start()
-        self.nic_con.uart_session_start(session)
+        ret = self.nic_con.uart_session_start(session)
+        if ret != 0:
+            print "=== AAPL setup failed; slot {} ===".format(slot)
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+            return ret
 
         if skip == False:
             self.nic_con.uart_session_cmd(session, "sysinit.sh classic hw diag")
