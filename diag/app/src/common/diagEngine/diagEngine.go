@@ -12,7 +12,7 @@ import (
     "common/cli"
     "common/errType"
     "common/misc"
-    "config"
+    //"config"
 
     "github.com/go-redis/redis"
 )
@@ -94,7 +94,7 @@ func DspInfraInit() (err error) {
     CheckRedisErr(err)
 
     // Init cli
-    cli.Init("log_"+cardInfo.DspName+".txt", config.OutputMode)
+    //cli.Init("log_"+cardInfo.DspName+".txt", config.OutputMode)
 
     registerDSP(0)
 

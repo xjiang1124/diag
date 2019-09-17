@@ -135,6 +135,10 @@ DSP:
                 VALUE:
                     ALL: "normal"
                 INFO: Vmargin setting; normal/high/low
+            zmq_en:
+                VALUE:
+                    ALL: 0
+                INFO: Enable ZMQ mode
 
     CMD#start_zmq:
         INFO: Start ZMQ server
