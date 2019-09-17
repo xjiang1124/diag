@@ -21,6 +21,7 @@ class nic_con:
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "\#"]
+        session.sendline(cmd)
         for ite in range(2):
             print "ite: ", ite
             if ite == 2:
@@ -31,9 +32,9 @@ class nic_con:
                 timeout = 1
 
             try:
-                session.sendline(cmd)
                 #session.expect("Terminal ready")
                 session.send("\r")
+
                 i = session.expect(expstr, timeout)
                 if i == 0:
                     session.sendline(self.usr)
