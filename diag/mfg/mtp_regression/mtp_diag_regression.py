@@ -722,67 +722,22 @@ def main():
                         pass_nic_list.remove(slot)
 
                 # second round, aapl tests
-                if corner == Env_Cond.MFG_QA:
-                    mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
-                    diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
-                                                                nic_type,
-                                                                nic_list,
-                                                                test_db,
-                                                                nic_para_test_list,
-                                                                stop_on_err,
-                                                                vmarg,
-                                                                True)
-                    for slot in diag_para_fail_list:
-                        if slot in nic_list and stop_on_err:
-                            nic_list.remove(slot)
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        if slot in pass_nic_list:
-                            pass_nic_list.remove(slot)
-
-        # NIC Sequential test
-        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-            if nic_type == NIC_Type.NAPLES100:
-                nic_seq_test_list = naples100_seq_test_list[:]
-                test_db = naples100_test_db
-            elif nic_type == NIC_Type.NAPLES25:
-                nic_seq_test_list = naples25_seq_test_list[:]
-                test_db = naples25_test_db
-            elif nic_type == NIC_Type.FORIO:
-                nic_seq_test_list = forio_seq_test_list[:]
-                test_db = forio_test_db
-            elif nic_type == NIC_Type.VOMERO:
-                nic_seq_test_list = vomero_seq_test_list[:]
-                test_db = vomero_test_db
-            else:
-                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
-                continue
-
-            if nic_list:
-                # TODO: skip ASIC L1 for QA test
-                if corner == Env_Cond.MFG_QA:
-                    nic_seq_test_list.remove(("ASIC","L1"))
-                diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
-                                                          nic_type,
-                                                          nic_list,
-                                                          test_db,
-                                                          nic_seq_test_list,
-                                                          vmarg,
-                                                          stop_on_err)
-                for slot in diag_seq_fail_list:
+                mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
+                diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                            nic_type,
+                                                            nic_list,
+                                                            test_db,
+                                                            nic_para_test_list,
+                                                            stop_on_err,
+                                                            vmarg,
+                                                            True)
+                for slot in diag_para_fail_list:
                     if slot in nic_list and stop_on_err:
                         nic_list.remove(slot)
                     if slot not in fail_nic_list:
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
-
-        # log the diag test history
-        mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
-
-        # clear the diag test history
-        if not stop_on_err:
-            mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
         # NIC MTP Parallel test
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
@@ -811,6 +766,47 @@ def main():
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
+
+        # NIC Sequential test
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES100:
+                nic_seq_test_list = naples100_seq_test_list[:]
+                test_db = naples100_test_db
+            elif nic_type == NIC_Type.NAPLES25:
+                nic_seq_test_list = naples25_seq_test_list[:]
+                test_db = naples25_test_db
+            elif nic_type == NIC_Type.FORIO:
+                nic_seq_test_list = forio_seq_test_list[:]
+                test_db = forio_test_db
+            elif nic_type == NIC_Type.VOMERO:
+                nic_seq_test_list = vomero_seq_test_list[:]
+                test_db = vomero_test_db
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+                continue
+
+            if nic_list:
+                diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+                                                          nic_type,
+                                                          nic_list,
+                                                          test_db,
+                                                          nic_seq_test_list,
+                                                          vmarg,
+                                                          stop_on_err)
+                for slot in diag_seq_fail_list:
+                    if slot in nic_list and stop_on_err:
+                        nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+
+        # log the diag test history
+        mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
+
+        # clear the diag test history
+        if not stop_on_err:
+            mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
         if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
             diag_sub_dir = "/lv_diag_logs/"

@@ -51,12 +51,14 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
     dsp = "KPT"
-    for test in ["SEC_CPLD_PROG"]:
+    for test in ["SEC_CPLD_PROG", "SEC_CPLD_REF"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program secure cpld
         if test == "SEC_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
+        elif test == "SEC_CPLD_REF":
+            ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
             continue
@@ -72,12 +74,14 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
     dsp = "KPT"
-    for test in ["SW_INSTALL"]:
+    for test in ["SEC_CPLD_VERIFY", "SW_INSTALL"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program sw image onto EMMC
         if test == "SW_INSTALL":
             ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
+        elif test == "SEC_CPLD_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown KPT Test: {:s}, Ignore".format(test))
             continue

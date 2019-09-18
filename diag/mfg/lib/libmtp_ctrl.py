@@ -19,14 +19,7 @@ from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES100_CPLD_VERSION
-from libmfg_cfg import MFG_NAPLES100_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_NAPLES25_CPLD_VERSION
-from libmfg_cfg import MFG_NAPLES25_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_FORIO_CPLD_VERSION
-from libmfg_cfg import MFG_FORIO_CPLD_TIMESTAMP
-from libmfg_cfg import MFG_VOMERO_CPLD_VERSION
-from libmfg_cfg import MFG_VOMERO_CPLD_TIMESTAMP
+from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
 from libmfg_cfg import MFG_NIC_AVS_PROGRAM
@@ -1500,17 +1493,17 @@ class mtp_ctrl():
             nic_type = self.mtp_get_nic_type(slot)
 
             if nic_type == NIC_Type.NAPLES100:
-                exp_ver = MFG_NAPLES100_CPLD_VERSION
-                exp_timestamp = MFG_NAPLES100_CPLD_TIMESTAMP
+                exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
             elif nic_type == NIC_Type.NAPLES25:
-                exp_ver = MFG_NAPLES25_CPLD_VERSION
-                exp_timestamp = MFG_NAPLES25_CPLD_TIMESTAMP
+                exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
             elif nic_type == NIC_Type.FORIO:
-                exp_ver = MFG_FORIO_CPLD_VERSION
-                exp_timestamp = MFG_FORIO_CPLD_TIMESTAMP
+                exp_ver = NIC_CPLD_Version.FORIO_VERSION
+                exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
             elif nic_type == NIC_Type.VOMERO:
-                exp_ver = MFG_VOMERO_CPLD_VERSION
-                exp_timestamp = MFG_VOMERO_CPLD_TIMESTAMP
+                exp_ver = NIC_CPLD_Version.VOMERO_VERSION
+                exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
                 return False
@@ -1588,7 +1581,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_verify_nic_cpld(self, slot):
+    def mtp_verify_nic_cpld(self, slot, sec_cpld=False):
         if MFG_NIC_CPLD_PROGRAM:
             nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
             if not nic_cpld_info:
@@ -1600,17 +1593,29 @@ class mtp_ctrl():
             nic_type = self.mtp_get_nic_type(slot)
 
             if nic_type == NIC_Type.NAPLES100:
-                exp_ver = MFG_NAPLES100_CPLD_VERSION
-                exp_timestamp = MFG_NAPLES100_CPLD_TIMESTAMP
+                if sec_cpld:
+                    exp_ver = NIC_CPLD_Version.NAPLES100_SEC_VERSION
+                    exp_timestamp = NIC_CPLD_Version.NAPLES100_SEC_TIMESTAMP
+                else:
+                    exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
+                    exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
             elif nic_type == NIC_Type.NAPLES25:
-                exp_ver = MFG_NAPLES25_CPLD_VERSION
-                exp_timestamp = MFG_NAPLES25_CPLD_TIMESTAMP
+                if sec_cpld:
+                    exp_ver = NIC_CPLD_Version.NAPLES25_SEC_VERSION
+                    exp_timestamp = NIC_CPLD_Version.NAPLES25_SEC_TIMESTAMP
+                else:
+                    exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
+                    exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
             elif nic_type == NIC_Type.FORIO:
-                exp_ver = MFG_FORIO_CPLD_VERSION
-                exp_timestamp = MFG_FORIO_CPLD_TIMESTAMP
+                exp_ver = NIC_CPLD_Version.FORIO_VERSION
+                exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
             elif nic_type == NIC_Type.VOMERO:
-                exp_ver = MFG_VOMERO_CPLD_VERSION
-                exp_timestamp = MFG_VOMERO_CPLD_TIMESTAMP
+                if sec_cpld:
+                    exp_ver = NIC_CPLD_Version.VOMERO_SEC_VERSION
+                    exp_timestamp = NIC_CPLD_Version.VOMERO_SEC_TIMESTAMP
+                else:
+                    exp_ver = NIC_CPLD_Version.VOMERO_VERSION
+                    exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
             else:
                 self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
                 return False
