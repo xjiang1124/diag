@@ -219,6 +219,7 @@ class nic_test:
                 session.sendline("/data/nic_arm/aapl/aapl_prbs_all.sh PCIE INIT")
                 session.expect("AAPL OP DONE")
                 if "ERROR" in session.before or "WARNING" in session.before:
+                    ret = -1
                     continue
                 else:
                     ret = 0
