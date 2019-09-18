@@ -352,9 +352,10 @@ func SnakePost(mode string) (err int) {
     }
 
     // Parse log file
-    // Two erros are expected
+    // Three erros are expected
     // ERROR :: cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1
     // ERROR :: Unexpected int set: cap0.ms.em
+    // ERROR :: NX:: EOS:: interrupt-non-zero for reg:MS_M_AM_STS: 0x80
     dcli.Println("i", "Aanlyzing snake result")
     logFn = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/" + logFn
 
@@ -369,6 +370,7 @@ func SnakePost(mode string) (err int) {
 
     expErr1 := "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
     expErr2 := "Unexpected int set: cap0.ms.em"
+    expErr3 := "interrupt-non-zero for reg:MS_M_AM_STS: 0x80"
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
 
@@ -381,7 +383,8 @@ func SnakePost(mode string) (err int) {
         if strings.Contains(readLine, "ERROR ::") {
             expErr := strings.SplitAfter(readLine, ":: ")
             if strings.Contains(readLine, expErr1) ||
-               strings.Contains(readLine, expErr2) {
+               strings.Contains(readLine, expErr2) ||
+               strings.Contains(readLine, expErr3) {
                 dcli.Println("i", "Expected Error Found ::", expErr[1])
                 continue
             } else {
