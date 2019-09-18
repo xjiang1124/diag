@@ -785,32 +785,32 @@ def main():
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
         # NIC MTP Parallel test
-        # for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-        #     if nic_type == NIC_Type.NAPLES100:
-        #         mtp_para_test_list = naples100_mtp_para_test_list
-        #     elif nic_type == NIC_Type.NAPLES25:
-        #         mtp_para_test_list = naples25_mtp_para_test_list
-        #     elif nic_type == NIC_Type.FORIO:
-        #         mtp_para_test_list = forio_mtp_para_test_list
-        #     elif nic_type == NIC_Type.VOMERO:
-        #         mtp_para_test_list = vomero_mtp_para_test_list
-        #     else:
-        #         mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES100:
+                mtp_para_test_list = naples100_mtp_para_test_list
+            elif nic_type == NIC_Type.NAPLES25:
+                mtp_para_test_list = naples25_mtp_para_test_list
+            elif nic_type == NIC_Type.FORIO:
+                mtp_para_test_list = forio_mtp_para_test_list
+            elif nic_type == NIC_Type.VOMERO:
+                mtp_para_test_list = vomero_mtp_para_test_list
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
-        #     if nic_list:
-        #         mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
-        #                                                        nic_type,
-        #                                                        nic_list,
-        #                                                        mtp_para_test_list,
-        #                                                        vmarg,
-        #                                                        stop_on_err)
-        #         for slot in mtp_para_fail_list:
-        #             if slot in nic_list and stop_on_err:
-        #                 nic_list.remove(slot)
-        #             if slot not in fail_nic_list:
-        #                 fail_nic_list.append(slot)
-        #             if slot in pass_nic_list:
-        #                 pass_nic_list.remove(slot)
+            if nic_list:
+                mtp_para_fail_list = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
+                                                               nic_type,
+                                                               nic_list,
+                                                               mtp_para_test_list,
+                                                               vmarg,
+                                                               stop_on_err)
+                for slot in mtp_para_fail_list:
+                    if slot in nic_list and stop_on_err:
+                        nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
         if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
             diag_sub_dir = "/lv_diag_logs/"

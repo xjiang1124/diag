@@ -1189,8 +1189,8 @@ class mtp_ctrl():
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
             inlet_diff = abs(inlet_1 - inlet_2)
-            # if the difference is more than 5, something is wrong, relay on any inlet near the threshold
-            if inlet_diff > 5.0:
+            # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
+            if inlet_diff > 10.0:
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
                 self.cli_log_err("MTP Inlet sensor test failed")
                 return False
@@ -2045,7 +2045,10 @@ class mtp_ctrl():
         else:
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
-        self.mtp_nic_mgmt_para_init(aapl)
+        if fpo:
+            self.mtp_nic_mgmt_seq_init(fpo)
+        else:
+            self.mtp_nic_mgmt_para_init(aapl)
 
         if not self.mtp_mgmt_nic_mac_validate():
             return False
