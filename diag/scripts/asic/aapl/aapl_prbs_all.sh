@@ -290,3 +290,5 @@ else
     do_prbs $STAGE | tee /data/nic_arm/aapl/aapl.log
 fi
 
+echo "AAPL OP DONE"
+

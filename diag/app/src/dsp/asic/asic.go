@@ -112,7 +112,8 @@ func AsicL1_TestHdl(argList []string) {
     dcli.TimeStampEnable(misc.DISABLE)
     defer dcli.TimeStampEnable(misc.ENABLE)
 
-    err = runCmd.Run("L1 TEST PASSED", "L1 TEST FAILED", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)))
+    dcli.Println("i", "RunVerbose")
+    err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)))
 
     diagEngine.FuncMsgChan <- err
     return

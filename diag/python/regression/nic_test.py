@@ -212,11 +212,12 @@ class nic_test:
         for i in range(numRetry):
             try:
                 # PRBS init
-                self.nic_con.uart_session_cmd(session, "/data/nic_arm/aapl/aapl_prbs_all.sh PCIE RESET")
-                time.sleep(1)
+                session.sendline("/data/nic_arm/aapl/aapl_prbs_all.sh PCIE RESET")
+                session.expect("AAPL OP DONE")
+                time.sleep(5)
 
                 session.sendline("/data/nic_arm/aapl/aapl_prbs_all.sh PCIE INIT")
-                session.expect("\#")
+                session.expect("AAPL OP DONE")
                 if "ERROR" in session.before or "WARNING" in session.before:
                     continue
                 else:
@@ -225,6 +226,7 @@ class nic_test:
 
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Failed to set up AAPL ==="
+                ret = -1
                 break;
             
         self.nic_con.uart_session_stop(session)
