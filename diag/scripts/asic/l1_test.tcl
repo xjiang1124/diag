@@ -43,7 +43,7 @@ set ::CAP_GPIO3_PWR_OFF_DUR 5000
 if {$use_zmq == 0} {
     puts "Regular L1"
     diag_open_j2c_if 10 $slot
-    #set err_cnt [cap_l1_screen $brd_num 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg]
+    set err_cnt [cap_l1_screen $brd_num 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg]
     set err_cnt 0
 
     diag_close_j2c_if 10 $slot
