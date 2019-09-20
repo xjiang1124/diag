@@ -2,8 +2,9 @@ package main
 
 import (
     //"bufio"
+	"bytes"
     "flag"
-    //"io"
+    "io"
     "os"
     "os/exec"
     "path/filepath"
@@ -26,8 +27,6 @@ const (
     // Each DSP should know it own name
     dspName = "ASIC"
 )
-
-var zmqCmdHdl *exec.Cmd
 
 func AsicPcie_PrbsHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
@@ -133,7 +132,6 @@ func AsicStop_ZmqHdl(argList []string) {
         return
     }
 
-    //cmd :=exec.Command("/bin/bash", "killall diag_zma_server.exe")
     cmd := exec.Command("killall", "diag_zmq_server.exe")
     errGo = cmd.Run()
     if errGo != nil {
@@ -143,13 +141,23 @@ func AsicStop_ZmqHdl(argList []string) {
         return
     }
 
-    errGo = zmqCmdHdl.Process.Kill()
-    if errGo != nil {
-        dcli.Println("F", "Error stop Cmd", errGo)
-        err = errType.FAIL
-        diagEngine.FuncMsgChan <- err
-        return
-    }
+    // Check if zmq is running
+    c1 := exec.Command("ps", "-elf")
+    c2 := exec.Command("grep", "zmq")
+
+    r, w := io.Pipe()
+    c1.Stdout = w
+    c2.Stdin = r
+
+    var b2 bytes.Buffer
+    c2.Stdout = &b2
+
+    c1.Start()
+    c2.Start()
+    c1.Wait()
+    w.Close()
+    c2.Wait()
+    dcli.Println("i", b2.String())
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -170,7 +178,7 @@ func AsicStart_ZmqHdl(argList []string) {
         return
     }
 
-    cmd := exec.Command("/bin/bash", "/home/diag/diag/scripts/start_zmq.sh")
+    cmd := exec.Command("/bin/bash", "/home/diag/diag/scripts/asic/start_zmq.sh")
     //cmd := exec.Command("/home/diag/diag/asic//asic_lib/diag_zmq_server.exe", "-connect tcp://127.0.0.1:55000/", "+if_name=j2c", "+if_port=10")
     errGo = cmd.Start()
     if errGo != nil {
@@ -179,7 +187,26 @@ func AsicStart_ZmqHdl(argList []string) {
         diagEngine.FuncMsgChan <- err
         return
     }
-    zmqCmdHdl = cmd
+
+    misc.SleepInSec(1)
+
+    // Check if zmq is running
+    c1 := exec.Command("ps", "-elf")
+    c2 := exec.Command("grep", "zmq")
+
+    r, w := io.Pipe()
+    c1.Stdout = w
+    c2.Stdin = r
+
+    var b2 bytes.Buffer
+    c2.Stdout = &b2
+
+    c1.Start()
+    c2.Start()
+    c1.Wait()
+    w.Close()
+    c2.Wait()
+    dcli.Println("i", b2.String())
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
