@@ -179,7 +179,6 @@ func AsicStart_ZmqHdl(argList []string) {
     }
 
     cmd := exec.Command("/bin/bash", "/home/diag/diag/scripts/asic/start_zmq.sh")
-    //cmd := exec.Command("/home/diag/diag/asic//asic_lib/diag_zmq_server.exe", "-connect tcp://127.0.0.1:55000/", "+if_name=j2c", "+if_port=10")
     errGo = cmd.Start()
     if errGo != nil {
         dcli.Println("F", "Error starting Cmd", errGo)
