@@ -316,6 +316,8 @@ class MFG_DIAG_CMDS:
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"
     MTP_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_start"
     MTP_DSP_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_stop"
+    MTP_ZMQ_START_FMT = "/home/diag/diag/python/infra/dshell/diag -rc -c MTP1 -d ASIC -t start_zmq"
+    MTP_ZMQ_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -rc -c MTP1 -d ASIC -t stop_zmq"
     MTP_DSP_DISP_FMT = "/home/diag/diag/python/infra/dshell/diag -sdsp"
     MTP_DSP_PARAM_FMT = "/home/diag/diag/python/infra/dshell/diag -param {:s}"
     MTP_DIAG_RUN_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c {:s}"
@@ -339,6 +341,7 @@ class MFG_DIAG_CMDS:
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
     MTP_DSP_START_OK_SIG = "Test Done: MTP1:DIAGMGR:DSP_START"
+    MTP_ZMQ_OK_SIG = "SUCCESS"
     MTP_VRM_OK_SIG = "TEST PASSED"
     MTP_FAN_OK_SIG = "TEST PASSED"
     MTP_PARA_TEST_SIG = "TEST RESULT:"

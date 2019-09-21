@@ -2,7 +2,7 @@ NAPLES100:
     CPLD_FILE: "/home/diag/naples100_cpld_rev9_05312019.bin"
     SEC_CPLD_FILE: "/home/diag/naples100_cpld_rev89_06032019.bin"
     QSPI_FILE: "/home/diag/naples_diagfw_08082019.tar"
-    EMMC_FILE: "/home/diag/naples_fw_08282019.tar"
+    EMMC_FILE: "/home/diag/naples_fw_09162019.tar"
 
 VOMERO:
     CPLD_FILE: "/home/diag/naples100_cpld_rev9_05312019.bin"

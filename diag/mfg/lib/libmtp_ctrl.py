@@ -977,6 +977,40 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_diag_zmq_init(self):
+        self.cli_log_inf("Init Diag ZMQ Environment", level=0)
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to Init Diag ZMQ Environment", level=0)
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_ZMQ_START_FMT
+        sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+            self.cli_log_err("Failed to Init Diag ZMQ Environment", level=0)
+            return False
+
+        self.cli_log_inf("Init Diag ZMQ Environment complete\n", level=0)
+        return True
+
+
+    def mtp_diag_zmq_stop(self):
+        self.cli_log_inf("Stop Diag ZMQ Environment", level=0)
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to Stop Diag ZMQ Environment", level=0)
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_ZMQ_STOP_FMT
+        sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+            self.cli_log_err("Failed to Stop Diag ZMQ Environment", level=0)
+            return False
+
+        self.cli_log_inf("Stop Diag ZMQ Environment complete\n", level=0)
+        return True
+
+
     def mtp_diag_post_init(self, mtp_capability):
         self.cli_log_inf("Post Diag SW Environment Init", level=0)
         cmd = "rm -f {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
@@ -2413,10 +2447,11 @@ class mtp_ctrl():
                 err_msg = self.mtp_get_nic_cmd_buf(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
-        ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
+        ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
         if ret == "TIMEOUT":
-            if not self.mtp_mgmt_jtag_rst():
-                self.mtp_enter_user_ctrl()
+            self.mtp_run_diag_test_para_lock()
+            self.mtp_mgmt_jtag_rst()
+            self.mtp_run_diag_test_para_unlock()
 
         return [ret, err_msg_list]
 

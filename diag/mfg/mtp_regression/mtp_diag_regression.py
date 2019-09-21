@@ -250,70 +250,78 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     fail_list = list()
-    nic_test_list = nic_list[:]
 
-    for dsp, test in test_list:
-        if vmarg > 0:
-            dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
-            dsp_disp = "LV_" + dsp
-        else:
-            dsp_disp = dsp
+    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
+        fail_list = nic_list[:]
+        return fail_list
 
-        test_cfg = test_db.get_diag_seq_test(dsp, test)
-        init_cmd = None
-        post_cmd = None
-        if test_cfg["INIT"] != "":
-            init_cmd = test_cfg["INIT"]
-        if test_cfg["POST"] != "":
-            post_cmd = test_cfg["POST"]
-        for slot in nic_test_list[:]:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            opts = test_cfg["OPTS"]
-            diag_cmd = test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg)
-            rslt_cmd = test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
+    if len(nic_list) <= 5:
+        nic_top_test_list = nic_list[:]
+        nic_bottom_test_list = []
+    # split test nic list into half & half
+    else:
+        nic_split = len(nic_list)/2
+        nic_top_test_list = nic_list[:nic_split]
+        nic_bottom_test_list = nic_list[nic_split:]
 
-            start_ts = libmfg_utils.timestamp_snapshot()
-            ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
+    nic_thread_list = list()
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
 
-            # double check the L1 test even it pass
-            if dsp == "ASIC" and test == "L1":
-                pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-                # L1 sub test count is 14, err_msg_list should be empty
-                if pass_count != 14:
-                    err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
-                    ret = "FAIL"
-                if log_err_msg_list:
-                    err_msg_list += log_err_msg_list
-                    ret = "FAIL"
+    # top half of the NICs
+    for slot in nic_top_test_list[:]:
+        nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
+                                      args = (mtp_mgmt_ctrl,
+                                              slot,
+                                              test_db,
+                                              test_list,
+                                              nic_test_rslt_list,
+                                              stop_on_err,
+                                              vmarg))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
 
-            if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
-            else:
-                if stop_on_err:
-                    nic_test_list.remove(slot)
-                if slot not in fail_list:
-                    fail_list.append(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                ret = nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
 
-            if dsp == "ASIC" and test == "L1":
-                if ret != "SUCCESS":
-                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+    # bottom half of the NICs
+    for slot in nic_bottom_test_list[:]:
+        nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
+                                      args = (mtp_mgmt_ctrl,
+                                              slot,
+                                              test_db,
+                                              test_list,
+                                              nic_test_rslt_list,
+                                              stop_on_err,
+                                              vmarg))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
 
-            # only display first 3 and last 3 error messages
-            if len(err_msg_list) < 6:
-                err_msg_disp_list = err_msg_list
-            else:
-                err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                ret = nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
 
-            for err_msg in err_msg_disp_list:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
+    for slot in nic_list:
+        if not nic_test_rslt_list[slot]:
+            fail_list.append(slot)
+
+    if not mtp_mgmt_ctrl.mtp_diag_zmq_stop():
+        fail_list = nic_list[:]
+        return fail_list
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
-
     return fail_list
 
 
@@ -338,6 +346,63 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
     return
+
+
+def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg):
+    for dsp, test in diag_seq_test_list:
+        if vmarg > 0:
+            dsp_disp = "HV_" + dsp
+        elif vmarg < 0:
+            dsp_disp = "LV_" + dsp
+        else:
+            dsp_disp = dsp
+
+        test_cfg = diag_test_db.get_diag_seq_test(dsp, test)
+        init_cmd = None
+        post_cmd = None
+        if test_cfg["INIT"] != "":
+            init_cmd = test_cfg["INIT"]
+        if test_cfg["POST"] != "":
+            post_cmd = test_cfg["POST"]
+
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        opts = test_cfg["OPTS"]
+        diag_cmd = diag_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg)
+        rslt_cmd = diag_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
+
+        start_ts = libmfg_utils.timestamp_snapshot()
+        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+
+        # double check the L1 test even it pass
+        if dsp == "ASIC" and test == "L1":
+            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+            # L1 sub test count is 11, err_msg_list should be empty
+            if pass_count != 9:
+                err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
+                ret = "FAIL"
+
+        if ret == "SUCCESS":
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
+        else:
+            nic_test_rslt_list[slot] = False
+            if dsp == "ASIC" and test == "L1" and ret != "SUCCESS":
+                mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
+                mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
+            # only display first 3 and last 3 error messages
+            if len(err_msg_list) < 6:
+                err_msg_disp_list = err_msg_list
+            else:
+                err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+            for err_msg in err_msg_disp_list:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
+
+            if stop_on_err:
+                break;
 
 
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err, vmarg):

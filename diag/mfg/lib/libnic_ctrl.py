@@ -169,9 +169,10 @@ class nic_ctrl():
                 pass
             time.sleep(1)
 
-        cmd = "exit"
-        if not self.mtp_exec_cmd(cmd):
-            return False
+        if ret:
+            cmd = "exit"
+            if not self.mtp_exec_cmd(cmd):
+                return False
 
         return ret
 
