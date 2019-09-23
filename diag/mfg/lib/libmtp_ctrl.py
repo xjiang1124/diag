@@ -977,7 +977,32 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_diagmgr_reinit(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+        sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        self.cli_log_inf("Reinit MTP Diagmgr Complete", level = 0)
+
+        return True;
+
+
     def mtp_diag_zmq_init(self):
+        self.mtp_diagmgr_reinit()
         self.cli_log_inf("Init Diag ZMQ Environment", level=0)
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):

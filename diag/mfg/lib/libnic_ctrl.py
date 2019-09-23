@@ -155,6 +155,7 @@ class nic_ctrl():
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout)
             if idx < 0:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt])
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_err_msg(self._nic_handle.before)
                 ret = False

@@ -290,6 +290,11 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
 
+    # reinit the diagmgr for next half zmq test
+    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
+        fail_list = nic_list[:]
+        return fail_list
+
     # bottom half of the NICs
     for slot in nic_bottom_test_list[:]:
         nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
