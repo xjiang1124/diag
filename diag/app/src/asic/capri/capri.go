@@ -370,7 +370,7 @@ func SnakePost(mode string) (err int) {
 
     expErr1 := "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
     expErr2 := "Unexpected int set: cap0.ms.em"
-    expErr3 := "interrupt-non-zero for reg:MS_M_AM_STS: 0x80"
+    expErr3 := "interrupt-non-zero for reg:MS_M_AM_STS:"
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
 
