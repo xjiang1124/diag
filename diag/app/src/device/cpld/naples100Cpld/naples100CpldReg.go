@@ -22,6 +22,11 @@ const (
     REG_ASIC_GPIO_0        = 0x13
     REG_ASIC_GPIO_1        = 0x14
     REG_ASIC_PSST          = 0x20
+    REG_ASIC_PIN_STAT_0    = 0x26
+    REG_ASIC_PIN_STAT_1    = 0x27
+    REG_ASIC_PIN_STAT_2    = 0x28
+    REG_PUFF_ERR_LMT       = 0x29
+    REG_PUFF_ERR_CNT       = 0x2A
     REG_POWER_POST         = 0x30
     REG_POWER_STAT0        = 0x31
     REG_POWER_STAT1        = 0x32

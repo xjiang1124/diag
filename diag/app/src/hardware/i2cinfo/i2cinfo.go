@@ -236,6 +236,11 @@ func SwitchI2cTbl(uutName string) (err int) {
         return
     }
 
+    if uutName == "UUT_NONE" {
+        CurI2cTbl = I2cTbl
+        return
+    }
+
     uutType, err := FindUutType(uutName)
     if err != errType.SUCCESS {
         return

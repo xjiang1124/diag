@@ -17,8 +17,8 @@ import (
     "hardware/hwdev"
 )
 
-var powerStatName = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc", 
-                            "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok"} 
+var powerStatName = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc",
+                            "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok"}
 func init() {
 }
 
@@ -97,7 +97,7 @@ func powerStatusCheck(slot int)  {
     addr := uint64(naples100Cpld.REG_POWER_STAT1)
     uutName := "UUT_"+strconv.Itoa(slot)
     var powerGood bool
-    
+
     cli.DisableVerbose()
     stat1, err := hwdev.NaplesCpldRd(devName, addr, uutName)
     if err != errType.SUCCESS {
@@ -110,14 +110,14 @@ func powerStatusCheck(slot int)  {
         }
     }
     cli.EnableVerbose()
-    
+
     if powerGood {
         cli.Printf("i", "UUT_%-15d     power good\n", slot)
     } else {
         cli.Printf("i", "UUT_%-15d     power failure\n", slot)
     }
 
-    return   
+    return
 }
 
 func sysDetect() (err int) {
@@ -169,7 +169,7 @@ func powerStatusDump(slot int)  {
     stat0, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT0), uutName)
     stat1, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT1), uutName)
     cli.EnableVerbose()
-    
+
     for i := 0; i < 12; i++ {
         if(i < 8) {
             cli.Printf("i","%-15s%d\n", powerStatName[i], (stat0 >> uint(i)) & 1)
@@ -177,7 +177,26 @@ func powerStatusDump(slot int)  {
             cli.Printf("i","%-15s%d\n", powerStatName[i], (stat1 >> uint(i - 8)) & 1)
         }
     }
-    
+
+    return
+}
+
+func esecureStatusDump(slot int)  {
+    devName := "CPLD"
+    uutName := "UUT_"+strconv.Itoa(slot)
+
+    //cli.DisableVerbose()
+    esecStat, _     := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_ASIC_PSST), uutName)
+    esecLiveStat, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_ASIC_PIN_STAT_0), uutName)
+    //puffErrLmt, _   := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_PUFF_ERR_LMT), uutName)
+    puffErrCnt, _   := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_PUFF_ERR_CNT), uutName)
+    cli.EnableVerbose()
+
+    cli.Printf("i", "%-15s0x%x\n", "ESEC Setting:", esecStat)
+    cli.Printf("i", "%-15s0x%x\n", "ESEC Live Status:", esecLiveStat)
+    //cli.Printf("i", "%-15s0x%x\n", "Puff Err Limit:", puffErrLmt)
+    cli.Printf("i", "%-15s0x%x\n", "Puff Err Cnt:", puffErrCnt)
+
     return
 }
 
@@ -189,14 +208,15 @@ func myUsage() {
 func main() {
     flag.Usage = myUsage
 
-    presentPtr  := flag.Bool("present", false, "Show UUT present status")
-    envPtr  	:= flag.Bool("env", false, "Detect/set environment")
-    psPtr  		:= flag.Bool("ps", false, "Power Status")
-    slotPtr  	:= flag.Int("slot", 0, "Slot Number")
-    powDumpPtr  := flag.Bool("pw", false, "Power state dump")
-    
+    presentPtr := flag.Bool("present", false, "Show UUT present status")
+    envPtr     := flag.Bool("env", false, "Detect/set environment")
+    psPtr      := flag.Bool("ps", false, "Power Status")
+    slotPtr     := flag.Int("slot", 0, "Slot Number")
+    powDumpPtr := flag.Bool("pw", false, "Power state dump")
+    esecPtr    := flag.Bool("esec", false, "Escure status dump")
+
     flag.Parse()
-    
+
     slot := *slotPtr
 
     if *presentPtr == true {
@@ -208,14 +228,19 @@ func main() {
         sysDetect()
         return
     }
-    
+
     if *psPtr == true {
         powerStatusCheck(slot)
         return
     }
-    
+
     if *powDumpPtr == true {
         powerStatusDump(slot)
+        return
+    }
+
+    if *esecPtr == true {
+        esecureStatusDump(slot)
         return
     }
 
