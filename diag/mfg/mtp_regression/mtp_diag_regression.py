@@ -292,7 +292,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
 
     # reinit the diagmgr for next half zmq test
     if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
-        fail_list = nic_list[:]
+        fail_list = nic_bottom_test_list[:]
         return fail_list
 
     # bottom half of the NICs
@@ -321,10 +321,6 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     for slot in nic_list:
         if not nic_test_rslt_list[slot]:
             fail_list.append(slot)
-
-    if not mtp_mgmt_ctrl.mtp_diag_zmq_stop():
-        fail_list = nic_list[:]
-        return fail_list
 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
     return fail_list

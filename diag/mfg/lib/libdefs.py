@@ -318,6 +318,7 @@ class MFG_DIAG_CMDS:
     MTP_DSP_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_stop"
     MTP_ZMQ_START_FMT = "/home/diag/diag/python/infra/dshell/diag -rc -c MTP1 -d ASIC -t start_zmq"
     MTP_ZMQ_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -rc -c MTP1 -d ASIC -t stop_zmq"
+    MTP_DSP_CLEANUP_FMT = "/home/diag/diag/python/infra/dshell/diag -csys"
     MTP_DSP_DISP_FMT = "/home/diag/diag/python/infra/dshell/diag -sdsp"
     MTP_DSP_PARAM_FMT = "/home/diag/diag/python/infra/dshell/diag -param {:s}"
     MTP_DIAG_RUN_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c {:s}"

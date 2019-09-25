@@ -977,18 +977,33 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_diagmgr_reinit(self):
+    def mtp_diag_zmq_init(self):
+        self.cli_log_inf("Init Diag ZMQ Environment ...", level=0)
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
 
+        # 1. stop ZMQ
+        cmd = MFG_DIAG_CMDS.MTP_ZMQ_STOP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        # 2. stop MTP DSP
         cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
+        # 3. sys cleanup
+        cmd = MFG_DIAG_CMDS.MTP_DSP_CLEANUP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        # 4. start MTP DSP
         cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
@@ -996,19 +1011,7 @@ class mtp_ctrl():
             return False
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
-        self.cli_log_inf("Reinit MTP Diagmgr Complete", level = 0)
-
-        return True;
-
-
-    def mtp_diag_zmq_init(self):
-        self.mtp_diagmgr_reinit()
-        self.cli_log_inf("Init Diag ZMQ Environment", level=0)
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to Init Diag ZMQ Environment", level=0)
-            return False
-
+        # 5. start ZMQ
         cmd = MFG_DIAG_CMDS.MTP_ZMQ_START_FMT
         sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -1016,24 +1019,8 @@ class mtp_ctrl():
             return False
 
         self.cli_log_inf("Init Diag ZMQ Environment complete\n", level=0)
-        return True
 
-
-    def mtp_diag_zmq_stop(self):
-        self.cli_log_inf("Stop Diag ZMQ Environment", level=0)
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to Stop Diag ZMQ Environment", level=0)
-            return False
-
-        cmd = MFG_DIAG_CMDS.MTP_ZMQ_STOP_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Stop Diag ZMQ Environment", level=0)
-            return False
-
-        self.cli_log_inf("Stop Diag ZMQ Environment complete\n", level=0)
-        return True
+        return True;
 
 
     def mtp_diag_post_init(self, mtp_capability):
@@ -2472,7 +2459,15 @@ class mtp_ctrl():
                 err_msg = self.mtp_get_nic_cmd_buf(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
-        ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
+        # for zmq, get result at the test end instead of sresult.
+        zmq_l1_result_re = r"MTP1 +ASIC +L1 +(\w+)"
+        match = re.findall(zmq_l1_result_re, cmd_buf)
+        if match:
+            ret = match[0]
+        else:
+            ret = "TIMEOUT"
+
+        # ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
         if ret == "TIMEOUT":
             self.mtp_run_diag_test_para_lock()
             self.mtp_mgmt_jtag_rst()
