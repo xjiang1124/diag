@@ -251,6 +251,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     fail_list = list()
 
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+
     if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
         fail_list = nic_list[:]
         return fail_list
@@ -383,7 +385,10 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             # L1 sub test count is 11, err_msg_list should be empty
             if pass_count != 9:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
-                ret = "FAIL"
+                if ret == "SUCCESS":
+                    ret = "FAIL"
+            if log_err_msg_list:
+                err_msg_list += log_err_msg_list
 
         if ret == "SUCCESS":
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))

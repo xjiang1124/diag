@@ -978,48 +978,54 @@ class mtp_ctrl():
 
 
     def mtp_diag_zmq_init(self):
-        self.cli_log_inf("Init Diag ZMQ Environment ...", level=0)
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
 
-        # 1. stop ZMQ
-        cmd = MFG_DIAG_CMDS.MTP_ZMQ_STOP_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to execute command {:s}".format(cmd))
-            return False
+        retry = 0
 
-        # 2. stop MTP DSP
-        cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to execute command {:s}".format(cmd))
-            return False
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+        while retry < 3:
+            retry += 1
+            self.cli_log_inf("Init Diag ZMQ Environment <{:d}>...".format(retry), level=0)
+            # 1. stop ZMQ
+            cmd = MFG_DIAG_CMDS.MTP_ZMQ_STOP_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd))
+                return False
 
-        # 3. sys cleanup
-        cmd = MFG_DIAG_CMDS.MTP_DSP_CLEANUP_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to execute command {:s}".format(cmd))
-            return False
+            # 2. stop MTP DSP
+            cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd))
+                return False
+            time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
-        # 4. start MTP DSP
-        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
-            self.cli_log_err("Failed to execute command {:s}".format(cmd))
-            return False
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+            # 3. sys cleanup
+            cmd = MFG_DIAG_CMDS.MTP_DSP_CLEANUP_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd))
+                return False
 
-        # 5. start ZMQ
-        cmd = MFG_DIAG_CMDS.MTP_ZMQ_START_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+            # 4. start MTP DSP
+            cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+            sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
+            if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+                self.cli_log_err("Failed to execute command {:s}".format(cmd))
+                return False
+            time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+            # 5. start ZMQ
+            cmd = MFG_DIAG_CMDS.MTP_ZMQ_START_FMT
+            sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
+            if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+                continue
+
+        if retry >= 3:
             self.cli_log_err("Failed to Init Diag ZMQ Environment", level=0)
             return False
 
         self.cli_log_inf("Init Diag ZMQ Environment complete\n", level=0)
-
         return True;
 
 
@@ -1290,14 +1296,17 @@ class mtp_ctrl():
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
                     for line in f:
-                        if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
-                            err_msg = line.replace('\n', '')
-                            err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
-                            err_msg_list.append(err_msg)
-                        if MFG_DIAG_SIG.MFG_ASIC_CTC_ERR_MSG_SIG in line:
-                            err_msg = line.replace('\n', '')
-                            err_msg_list.append(err_msg)
-                        if MFG_DIAG_SIG.MFG_ASIC_PCIE_MAPPING_MSG_SIG in line:
+                        #if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
+                        #    err_msg = line.replace('\n', '')
+                        #    err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
+                        #    err_msg_list.append(err_msg)
+                        #if MFG_DIAG_SIG.MFG_ASIC_CTC_ERR_MSG_SIG in line:
+                        #    err_msg = line.replace('\n', '')
+                        #    err_msg_list.append(err_msg)
+                        #if MFG_DIAG_SIG.MFG_ASIC_PCIE_MAPPING_MSG_SIG in line:
+                        #    err_msg = line.replace('\n', '')
+                        #    err_msg_list.append(err_msg)
+                        if MFG_DIAG_SIG.MFG_ASIC_FAIL_MSG_SIG in line:
                             err_msg = line.replace('\n', '')
                             err_msg_list.append(err_msg)
                         if MFG_DIAG_SIG.MFG_ASIC_PASS_MSG_SIG in line:

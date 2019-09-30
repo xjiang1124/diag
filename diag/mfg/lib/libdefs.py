@@ -258,6 +258,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
     NIC_DATE_SET_FMT = "date --set='{:s}'"
 
+    NIC_ESEC_ERR_CHECK_FMT = "inventory -esec -slot {:d}"
     NIC_ESEC_PROG_PRE_FMT = "./esec_ctrl.py -slot {:d} -img_prog"
     NIC_ESEC_PROG_POST_FMT = "./esec_ctrl.py -cleanup"
     NIC_ESEC_CPLD_CHECK_FMT = "./esec_ctrl.py -check_uboot -slot {:d}"
@@ -367,6 +368,7 @@ class MFG_DIAG_SIG:
     MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
     MFG_ASIC_ERR_MSG_SIG = "ERROR ::"
     MFG_ASIC_PASS_MSG_SIG = "#PASS#"
+    MFG_ASIC_FAIL_MSG_SIG = "#FAIL#"
     MFG_ASIC_CTC_ERR_MSG_SIG = "ERROR_CTC_WRITE_READ_COMPARE_FAILURE"
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
 

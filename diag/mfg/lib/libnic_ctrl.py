@@ -629,8 +629,16 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
+        # save result buffer
+        cmd_buf = self.nic_get_cmd_buf()
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_ERR_CHECK_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         # check signature
-        if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in self.nic_get_cmd_buf():
+        if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
