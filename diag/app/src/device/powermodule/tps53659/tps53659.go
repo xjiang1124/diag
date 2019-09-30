@@ -4,7 +4,7 @@ import (
     "bufio"
     "encoding/hex"
     "fmt"
-    "math"
+    //"math"
     "os"
     "reflect"
     "sort"
@@ -470,7 +470,7 @@ func SetVMargin(devName string, pct int) (err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
-    var sign int
+    //var sign int
     //pctList := make([]int, 0, 2)
     var pctList []int
 
@@ -486,17 +486,18 @@ func SetVMargin(devName string, pct int) (err int) {
     }
 
     // Create vmargin step sequence
-    if pct < 0 {
-        sign = -1
-    } else {
-        sign = 1
-    }
+    //if pct < 0 {
+    //    sign = -1
+    //} else {
+    //    sign = 1
+    //}
 
-    if math.Abs(float64(pct)) > 3 {
-        pctList = []int{sign*3, pct}
-    } else {
-        pctList = []int{pct}
-    }
+    //if math.Abs(float64(pct)) > 3 {
+    //    pctList = []int{sign*3, pct}
+    //} else {
+    //    pctList = []int{pct}
+    //}
+    pctList = []int{pct}
 
     // Write page register
     pmbus.WriteByte(devName, pmbus.PAGE, page)

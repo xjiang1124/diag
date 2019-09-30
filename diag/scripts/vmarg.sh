@@ -3,7 +3,7 @@
 if [ "$1" == "normal" ]
 then
     percent=0
-    for dev in CAP0_CORE_DVDD CAP0_ARM CAP0_HBM CAP0_CORE_AVDD
+    for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
     do
         devmgr -dev=$dev -margin -pct=$percent
     done
@@ -15,7 +15,7 @@ else
         percent5=-5
 	for percent in $percent3 $percent4 $percent5
 	do
-	    for dev in CAP0_CORE_DVDD CAP0_ARM CAP0_HBM CAP0_CORE_AVDD
+	    for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
             do
                 devmgr -dev=$dev -margin -pct=$percent
             done
@@ -27,7 +27,7 @@ else
         percent5=5
 	for percent in $percent3 $percent4 $percent5
         do
-            for dev in CAP0_CORE_DVDD CAP0_ARM CAP0_HBM CAP0_CORE_AVDD
+            for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
             do
                 devmgr -dev=$dev -margin -pct=$percent
             done
