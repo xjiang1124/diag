@@ -209,7 +209,7 @@ func AsicStart_ZmqHdl(argList []string) {
     c2.Wait()
     dcli.Println("i", b2.String())
 
-    if strings.Contains(b2.String(), "diag_zmq_server.exe" ) {
+    if strings.Contains(b2.String(), "diag_zmq_server.exe") == false {
         dcli.Println("e", "ZMQ server failed to start")
         err = errType.FAIL
     }
