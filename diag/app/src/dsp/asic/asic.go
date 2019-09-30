@@ -9,6 +9,7 @@ import (
     "os/exec"
     "path/filepath"
     "strconv"
+    "strings"
     //"sync"
 
     //"common/cli"
@@ -167,6 +168,7 @@ func AsicStop_ZmqHdl(argList []string) {
 
 func AsicStart_ZmqHdl(argList []string) {
     var err int
+    err = errType.SUCCESS
 
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
 
@@ -187,7 +189,7 @@ func AsicStart_ZmqHdl(argList []string) {
         return
     }
 
-    misc.SleepInSec(1)
+    misc.SleepInSec(2)
 
     // Check if zmq is running
     c1 := exec.Command("ps", "-elf")
@@ -207,9 +209,14 @@ func AsicStart_ZmqHdl(argList []string) {
     c2.Wait()
     dcli.Println("i", b2.String())
 
+    if strings.Contains(b2.String(), "diag_zmq_server.exe" ) {
+        dcli.Println("e", "ZMQ server failed to start")
+        err = errType.FAIL
+    }
+
     // Inform diag engine that test handler is done
     // Use chan to return error code
-    diagEngine.FuncMsgChan <- errType.SUCCESS
+    diagEngine.FuncMsgChan <- err
     return
 }
 
