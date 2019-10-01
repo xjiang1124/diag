@@ -61,7 +61,7 @@ func Init(fileName string, mode int) {
     if fileName != "" {
         //file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
         os.Remove(path+fileName)
-        file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0666)
+        file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_SYNC|os.O_APPEND, 0666)
         if err != nil {
             log.Fatal("Open file failed!", path, fileName)
         }
