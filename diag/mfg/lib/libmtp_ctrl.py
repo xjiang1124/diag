@@ -1020,6 +1020,8 @@ class mtp_ctrl():
             sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
                 continue
+            else:
+                break
 
         if retry >= 3:
             self.cli_log_err("Failed to Init Diag ZMQ Environment", level=0)
