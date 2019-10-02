@@ -25,6 +25,7 @@ class FF_Stage:
     FF_4C_H = "4C-H"
     FF_4C_L = "4C-L"
     FF_KPT = "KPT"
+    FF_SW = "SW"
     FF_FST = "FST"
 
 
