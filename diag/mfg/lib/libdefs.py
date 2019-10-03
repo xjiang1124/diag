@@ -248,6 +248,7 @@ class MFG_DIAG_CMDS:
     NIC_MOUNT_EMMC_FMT = "mount /dev/mmcblk0p10 /data"
     NIC_FSCK_EMMC_FMT = "fsck -y /dev/mmcblk0p10"
     NIC_DIAG_CLEANUP_FMT = "rm -rf /data/nic*"
+    NIC_EMMC_LS_FMT = "ls -al /data/"
     NIC_MOUNT_DISP_FMT = "mount | grep '/dev/mmcblk0p10'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
@@ -340,6 +341,7 @@ class MFG_DIAG_CMDS:
     MFG_LOG_LINK_FMT = "ln {:s} {:s}"
 
     FST_DIAG_CMD_FMT = "/home/diag/mtp_fst_script/diag_fst_test.py"
+    NIC_SW_PROFILE_CMD_FMT = "/nic_profile.py"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
@@ -366,6 +368,7 @@ class MFG_DIAG_SIG:
     NIC_FWUPDATE_FAIL_SIG = "FATAL"
     NIC_UBOOT_PCIE_ENA_SIG = "setenv pcie_poll_disable"
     NIC_UBOOT_PCIE_DIS_SIG = "setenv pcie_poll_disable 1"
+    NIC_SW_PROFILE_FAIL_SIG = "ERROR"
     MFG_DIAG_ERR_MSG_SIG = "[ERROR]"
     MFG_ASIC_ERR_MSG_SIG = "ERROR ::"
     MFG_ASIC_PASS_MSG_SIG = "#PASS#"

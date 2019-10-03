@@ -1373,6 +1373,10 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_nic_sw_profile(self, slot):
+        return self._nic_ctrl_list[slot].nic_sw_profile()
+
+
     def mtp_nic_mgmt_reinit(self, slot):
         loop = 0
         while loop < MTP_Const.NIC_MGMT_IP_INIT_RETRY:
@@ -1381,6 +1385,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf(slot, "Reinit NIC MGMT port <{:d}> try".format(loop))
             if self._nic_ctrl_list[slot].nic_mgmt_config():
                 break
+            time.sleep(10)
         if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
             return False
 

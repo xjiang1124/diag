@@ -361,6 +361,7 @@ class nic_ctrl():
         nic_shutdown_cmd_list = [emmc_fsck_cmd,
                                  emmc_mount_cmd,
                                  MFG_DIAG_CMDS.NIC_DIAG_CLEANUP_FMT,
+                                 MFG_DIAG_CMDS.NIC_EMMC_LS_FMT,
                                  MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
                                  MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
                                  MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT]
@@ -591,6 +592,20 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        return True
+
+
+    def nic_sw_profile(self):
+        if not self.nic_copy_image("/home/diag/mtp_sw_script/nic_profile.py"):
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT
+        fail_sig = MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=fail_sig):
             return False
 
         return True

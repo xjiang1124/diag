@@ -251,10 +251,6 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     fail_list = list()
 
-    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
-        fail_list = nic_list[:]
-        return fail_list
-
     if len(nic_list) <= 5:
         nic_top_test_list = nic_list[:]
         nic_bottom_test_list = []
@@ -267,56 +263,60 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     nic_thread_list = list()
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
 
-    # top half of the NICs
-    for slot in nic_top_test_list[:]:
-        nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
-                                      args = (mtp_mgmt_ctrl,
-                                              slot,
-                                              test_db,
-                                              test_list,
-                                              nic_test_rslt_list,
-                                              stop_on_err,
-                                              vmarg))
-        nic_thread.daemon = True
-        nic_thread.start()
-        nic_thread_list.append(nic_thread)
+    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
+        for slot in nic_top_test_list:
+            nic_test_rslt_list[slot] = False
+    else:
+        # top half of the NICs
+        for slot in nic_top_test_list[:]:
+            nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
+                                          args = (mtp_mgmt_ctrl,
+                                                  slot,
+                                                  test_db,
+                                                  test_list,
+                                                  nic_test_rslt_list,
+                                                  stop_on_err,
+                                                  vmarg))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
 
-    while True:
-        if len(nic_thread_list) == 0:
-            break
-        for nic_thread in nic_thread_list[:]:
-            if not nic_thread.is_alive():
-                ret = nic_thread.join()
-                nic_thread_list.remove(nic_thread)
-        time.sleep(5)
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    ret = nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
 
     # reinit the diagmgr for next half zmq test
     if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
-        fail_list = nic_bottom_test_list[:]
-        return fail_list
+        for slot in nic_bottom_test_list:
+            nic_test_rslt_list[slot] = False
+    else:
+        # bottom half of the NICs
+        for slot in nic_bottom_test_list[:]:
+            nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
+                                          args = (mtp_mgmt_ctrl,
+                                                  slot,
+                                                  test_db,
+                                                  test_list,
+                                                  nic_test_rslt_list,
+                                                  stop_on_err,
+                                                  vmarg))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
 
-    # bottom half of the NICs
-    for slot in nic_bottom_test_list[:]:
-        nic_thread = threading.Thread(target = single_nic_zmq_diag_regression,
-                                      args = (mtp_mgmt_ctrl,
-                                              slot,
-                                              test_db,
-                                              test_list,
-                                              nic_test_rslt_list,
-                                              stop_on_err,
-                                              vmarg))
-        nic_thread.daemon = True
-        nic_thread.start()
-        nic_thread_list.append(nic_thread)
-
-    while True:
-        if len(nic_thread_list) == 0:
-            break
-        for nic_thread in nic_thread_list[:]:
-            if not nic_thread.is_alive():
-                ret = nic_thread.join()
-                nic_thread_list.remove(nic_thread)
-        time.sleep(5)
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    ret = nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
 
     for slot in nic_list:
         if not nic_test_rslt_list[slot]:
