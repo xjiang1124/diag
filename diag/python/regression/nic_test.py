@@ -89,6 +89,51 @@ class nic_test:
         print "timestamp", datetime.datetime.now().time()
         return ret, nic_list_remain
 
+    def setup_env_multi_mainfw(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        nic_list_remain = nic_list[:]
+        slot_list = ",".join(nic_list)
+
+        if pwr_cycle == True:
+            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 60)
+
+        if mgmt == True:
+            for slot in nic_list:
+                self.nic_con.switch_console(slot)
+                ret = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+            if ret != 0:
+                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+            for slot in nic_list:
+                if ret_list[int(slot)-1] != 0:
+                    nic_list.remove(slot)
+
+        if mgmt == True:
+            for slot in nic_list:
+                if ret_list[int(slot)-1] != 0:
+                    continue
+                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True)
+                if ret != 0:
+                    ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+        for slot_ret in ret_list:
+            ret = ret + slot_ret
+
+        if ret != 0:
+            print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
+        else:
+            print "===  setup_env_multi Passed ==="
+
+        print "timestamp", datetime.datetime.now().time()
+        return ret, nic_list_remain
+
+
     def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
@@ -512,6 +557,7 @@ if __name__ == "__main__":
     parser.add_argument("-ite", "--iteration", help="Number of power cycle test iterations", type=int, default=1)
     parser.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
     parser.add_argument("-aapl", "--aapl", help="Setup AAPL", action='store_true')
+    parser.add_argument("-mainfw", "--mainfw", help="Setup for mainfw", action='store_true')
 
     args = parser.parse_args()
 
@@ -548,7 +594,10 @@ if __name__ == "__main__":
 
     if args.setup_multi == True:
         slot_list = args.slot_list.split(',')
-        test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl)
+        if args.mainfw == True:
+            test.setup_env_multi_mainfw(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle)
+        else: 
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl)
         sys.exit()
 
     if args.pwr_cycle_test == True:

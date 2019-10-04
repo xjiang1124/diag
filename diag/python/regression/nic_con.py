@@ -162,6 +162,7 @@ class nic_con:
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
+        print "Wait", wtime, "after power cycle"
         time.sleep(wtime)
 
         common.session_stop(session)
