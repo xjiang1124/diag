@@ -603,9 +603,9 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT
-        fail_sig = MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG
+        profile_sig = MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=fail_sig):
+        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=profile_sig):
             return False
 
         return True

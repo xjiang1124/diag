@@ -114,6 +114,7 @@ class MTP_Const:
     MFG_DL_TEST_TIMEOUT = 14400
     MFG_KPT_TEST_TIMEOUT = 14400
     # 1 hour
+    MFG_SW_TEST_TIMEOUT = 3600
     MFG_FST_TEST_TIMEOUT = 3600
     
     MFG_EDVT_LOW_FAN_SPD = 40
@@ -154,6 +155,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
     ONBOARD_KPT_LOG_FILES = "/home/diag/mtp_kpt_script/*log"
+    ONBOARD_SW_LOG_FILES = "/home/diag/mtp_sw_script/*log"
     ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
     ONBOARD_NIC_LOG_DIR = "/home/diag/diag/nic_log/"
@@ -164,12 +166,14 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_P2C_LOG_DIR_FMT = "/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_4C_LOG_DIR_FMT = "/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_KPT_LOG_DIR_FMT = "/mfg_log/{:s}/KPT/{:s}/"
+    DIAG_MFG_SW_LOG_DIR_FMT = "/mfg_log/{:s}/SW/{:s}/"
     DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
 
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_MODEL_KPT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/KPT/{:s}/"
+    DIAG_MFG_MODEL_SW_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SW/{:s}/"
     DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
@@ -180,6 +184,8 @@ class MTP_DIAG_Logfile:
     MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
     MFG_KPT_LOG_PKG_FILE = "KPT_{:s}_{:s}.tar.gz"
     MFG_KPT_LOG_DIR = "KPT_{:s}_{:s}/"
+    MFG_SW_LOG_PKG_FILE = "SW_{:s}_{:s}.tar.gz"
+    MFG_SW_LOG_DIR = "SW_{:s}_{:s}/"
     MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
     MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
 
@@ -263,7 +269,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_ERR_CHECK_FMT = "inventory -esec -slot {:d}"
     NIC_ESEC_PROG_PRE_FMT = "./esec_ctrl.py -slot {:d} -img_prog"
     NIC_ESEC_PROG_POST_FMT = "./esec_ctrl.py -cleanup"
-    NIC_ESEC_CPLD_CHECK_FMT = "./esec_ctrl.py -check_uboot -slot {:d}"
+    NIC_ESEC_CPLD_CHECK_FMT = "./esec_ctrl.py -check_uboot -slot {:d} -post_check"
     NIC_ESEC_PROG_FMT = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"

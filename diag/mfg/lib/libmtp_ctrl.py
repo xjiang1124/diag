@@ -2085,16 +2085,24 @@ class mtp_ctrl():
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
 
+        if not self.mtp_nic_mgmt_mac_refresh():
+            return False
+
+        return True
+
+
+    def mtp_nic_mgmt_mac_refresh(self):
         # delete the arp entry
-        for slot in nic_list:
-            ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-            cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
-            if not self.mtp_mgmt_exec_sudo_cmd(cmd):
-                return False
-            # ping to update the arp cache
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-            if not self.mtp_mgmt_exec_cmd(cmd):
-                return False
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+                cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
+                if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+                    return False
+                # ping to update the arp cache
+                cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    return False
 
         return True
 
