@@ -75,10 +75,13 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
 def main():
     parser = argparse.ArgumentParser(description="MTP Software Install Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
+    parser.add_argument("--image", help="NIC eMMC image", required=True)
 
     args = parser.parse_args()
     if args.mtpid:
         mtp_id = args.mtpid
+    if args.image:
+        img_file = args.image
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -106,11 +109,7 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     # get the absolute file path
-    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
-    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
-    naples100_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["EMMC_FILE"]
-    vomero_emmc_img_file = nic_fw_cfg[NIC_Type.VOMERO]["EMMC_FILE"]
-    naples25_emmc_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["EMMC_FILE"]
+    emmc_img_file = "/home/diag/{:s}".format(img_file)
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
@@ -138,16 +137,6 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         pass_nic_list.append(slot)
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
-            emmc_img_file = naples100_emmc_img_file
-        elif card_type == NIC_Type.VOMERO:
-            emmc_img_file = vomero_emmc_img_file
-        elif card_type == NIC_Type.NAPLES25:
-            emmc_img_file = naples25_emmc_img_file
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
-            continue
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "EMMC image: " + os.path.basename(emmc_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
@@ -193,17 +182,6 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
-            emmc_img_file = naples100_emmc_img_file
-        elif card_type == NIC_Type.VOMERO:
-            emmc_img_file = vomero_emmc_img_file
-        elif card_type == NIC_Type.NAPLES25:
-            emmc_img_file = naples25_emmc_img_file
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
-            continue
-
         nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
                                                                                 emmc_img_file,
                                                                                 slot,

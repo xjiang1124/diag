@@ -273,6 +273,11 @@ def action_confirm(msg, action):
         tmp = raw_input("Operator Confirm " + msg + ":")
 
 
+def sku_scan():
+    tmp = raw_input("Scan the SKU: ")
+    return tmp;
+
+
 def single_select_menu(title, opt_list):
     menu = "+-" + "-"*len(title) + "-+\n"
     menu += "| " + title + " |\n"
