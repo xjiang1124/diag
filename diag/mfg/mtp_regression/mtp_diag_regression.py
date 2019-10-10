@@ -263,9 +263,12 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     nic_thread_list = list()
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
 
-    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
-        for slot in nic_top_test_list:
-            nic_test_rslt_list[slot] = False
+    lock = threading.Lock()
+#    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
+#        for slot in nic_top_test_list:
+#            nic_test_rslt_list[slot] = False
+    if False:
+        pass
     else:
         # top half of the NICs
         for slot in nic_top_test_list[:]:
@@ -276,7 +279,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                                                   test_list,
                                                   nic_test_rslt_list,
                                                   stop_on_err,
-                                                  vmarg))
+                                                  vmarg,
+                                                  lock))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -291,9 +295,11 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             time.sleep(5)
 
     # reinit the diagmgr for next half zmq test
-    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
-        for slot in nic_bottom_test_list:
-            nic_test_rslt_list[slot] = False
+#    if not mtp_mgmt_ctrl.mtp_diag_zmq_init():
+#        for slot in nic_bottom_test_list:
+#            nic_test_rslt_list[slot] = False
+    if False:
+        pass
     else:
         # bottom half of the NICs
         for slot in nic_bottom_test_list[:]:
@@ -304,7 +310,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                                                   test_list,
                                                   nic_test_rslt_list,
                                                   stop_on_err,
-                                                  vmarg))
+                                                  vmarg,
+                                                  lock))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -349,7 +356,9 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
     return
 
 
-def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg):
+def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock):
+    if lock:
+        lock.acquire()
     for dsp, test in diag_seq_test_list:
         if vmarg > 0:
             dsp_disp = "HV_" + dsp
@@ -407,6 +416,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
 
             if stop_on_err:
                 break;
+    if lock:
+        lock.release()
 
 
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err, vmarg):

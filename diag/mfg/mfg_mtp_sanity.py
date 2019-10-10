@@ -138,6 +138,8 @@ def main():
             v02_img_file_list.append(naples100_sec_cpld_img_file)
             naples100_qspi_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"])
             v02_img_file_list.append(naples100_qspi_img_file)
+            naples100_gold_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES100]["GOLD_FILE"])
+            v02_img_file_list.append(naples100_gold_img_file)
 
             vomero_cpld_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["CPLD_FILE"])
             v02_img_file_list.append(vomero_cpld_img_file)
@@ -145,6 +147,8 @@ def main():
             v02_img_file_list.append(vomero_sec_cpld_img_file)
             vomero_qspi_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["QSPI_FILE"])
             v02_img_file_list.append(vomero_qspi_img_file)
+            vomero_gold_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.VOMERO]["GOLD_FILE"])
+            v02_img_file_list.append(vomero_gold_img_file)
 
         if mtp_capability & 0x2:
             naples25_cpld_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"])
@@ -153,6 +157,8 @@ def main():
             v03_img_file_list.append(naples25_sec_cpld_img_file)
             naples25_qspi_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"])
             v03_img_file_list.append(naples25_qspi_img_file)
+            naples25_gold_img_file = "release/" + os.path.basename(nic_fw_cfg[NIC_Type.NAPLES25]["GOLD_FILE"])
+            v02_img_file_list.append(naples25_gold_img_file)
 
         # clean up the stale images
         mtp_mgmt_ctrl.cli_log_inf("Clean up stale firmware images...", level=0)

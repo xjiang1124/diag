@@ -1055,13 +1055,14 @@ class mtp_ctrl():
             naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
             naples100_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["SEC_CPLD_FILE"]
             naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
+            naples100_gold_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["GOLD_FILE"]
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [naples100_cpld_img_file, naples100_sec_cpld_img_file, naples100_qspi_img_file]:
+            for img_file in [naples100_cpld_img_file, naples100_sec_cpld_img_file, naples100_qspi_img_file, naples100_gold_img_file]:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -1070,13 +1071,14 @@ class mtp_ctrl():
             vomero_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["CPLD_FILE"]
             vomero_sec_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["SEC_CPLD_FILE"]
             vomero_qspi_img_file = nic_fw_cfg[NIC_Type.VOMERO]["QSPI_FILE"]
+            vomero_gold_img_file = nic_fw_cfg[NIC_Type.VOMERO]["GOLD_FILE"]
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [vomero_cpld_img_file, vomero_sec_cpld_img_file, vomero_qspi_img_file]:
+            for img_file in [vomero_cpld_img_file, vomero_sec_cpld_img_file, vomero_qspi_img_file, vomero_gold_img_file]:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -1086,13 +1088,14 @@ class mtp_ctrl():
             naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
             naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
             naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
+            naples25_gold_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["GOLD_FILE"]
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [naples25_cpld_img_file, naples25_sec_cpld_img_file, naples25_qspi_img_file]:
+            for img_file in [naples25_cpld_img_file, naples25_sec_cpld_img_file, naples25_qspi_img_file, naples25_gold_img_file]:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -1701,6 +1704,18 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_program_nic_gold(self, slot, gold_img):
+        if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
+            self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
+            return False
+
+        if not self.mtp_mgmt_set_nic_gold_boot(slot):
+            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
+            return False
+
+        return True
+
+
     def mtp_verify_nic_qspi(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if MFG_NIC_QSPI_PROGRAM:
@@ -1896,6 +1911,15 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
             return False
         self.cli_log_slot_inf_lock(slot, "Set NIC default sw boot complete")
+        return True
+
+
+    def mtp_mgmt_set_nic_gold_boot(self, slot):
+        self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
+        if not self._nic_ctrl_list[slot].nic_set_sw_boot():
+            self.cli_log_slot_err_lock(slot, "Set NIC default gold boot failed")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot complete")
         return True
 
 
@@ -2307,6 +2331,18 @@ class mtp_ctrl():
             return False
 
         self.cli_log_slot_inf(slot, "Verify NIC default boot with sw complete")
+        return True
+
+
+    def mtp_mgmt_verify_nic_gold_boot(self, slot):
+        self.cli_log_slot_inf(slot, "Verify NIC default boot with goldfw")
+        if not self._nic_ctrl_list[slot].nic_verify_gold_boot():
+            self.cli_log_slot_err(slot, "Verify NIC default boot with gold image failed")
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+            self.mtp_dump_err_msg(err_msg)
+            return False
+
+        self.cli_log_slot_inf(slot, "Verify NIC default boot with goldfw complete")
         return True
 
 

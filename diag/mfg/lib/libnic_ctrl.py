@@ -338,19 +338,71 @@ class nic_ctrl():
         return True
 
 
-    def nic_verify_sw_boot(self):
-        if not self.nic_console_attach():
+    def nic_verify_gold_boot(self):
+        # get boot image info
+        loop = 0
+        while loop < MTP_Const.NIC_CON_CMD_RETRY:
+            if not self.nic_console_attach():
+                return False
+
+            # dump the boot up image
+            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_console_detach()
+                return False
+            # remove the potential special character
+            buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            match = re.findall(r"(\w+fw\w?)", buf)
+            if not match:
+                self.nic_console_detach()
+                loop += 1
+                continue
+
+        if loop >= MTP_Const.NIC_CON_CMD_RETRY:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
             return False
 
-        # dump the boot up image
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
+        if match[0] == "goldfw":
+            self.nic_console_detach()
+            return True
+        else:
+            self.nic_set_err_msg(self._nic_handle.before)
             self.nic_console_detach()
             return False
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"(\w+fw\w?)", buf)
+
+
+    def nic_verify_sw_boot(self):
+        # get boot image info
+        loop = 0
+        while loop < MTP_Const.NIC_CON_CMD_RETRY:
+            if not self.nic_console_attach():
+                return False
+
+            # dump the boot up image
+            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_console_detach()
+                return False
+            # remove the potential special character
+            buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            match = re.findall(r"(\w+fw\w?)", buf)
+            if not match:
+                self.nic_console_detach()
+                loop += 1
+                continue
+
+        if loop >= MTP_Const.NIC_CON_CMD_RETRY:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        if match[0] != "mainfwa" and match[0] != "mainfwb":
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
 
         # 1. remove diag utils on NIC
         # 2. kill all processes
@@ -380,18 +432,8 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        if match:
-            if match[0] == "mainfwa" or match[0] == "mainfwb":
-                self.nic_console_detach()
-                return True
-            else:
-                self.nic_set_err_msg(self._nic_handle.before)
-                self.nic_console_detach()
-                return False
-        else:
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
+        self.nic_console_detach()
+        return True
 
 
     def nic_boot_info_init(self):
@@ -732,6 +774,21 @@ class nic_ctrl():
         return True
 
 
+    def nic_program_gold(self, gold_img):
+        if not self.nic_copy_image(gold_img):
+            return False
+        img_name = os.path.basename(gold_img)
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_GOLD_PROG_FMT.format(img_name)
+        gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
+            return False
+
+        return True
+
+
     def nic_init_emmc(self, init = False):
         nic_cmd_list = list()
         if init:
@@ -936,6 +993,16 @@ class nic_ctrl():
     def nic_set_sw_boot(self):
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list):
+            return False
+
+        return True
+
+
+    def nic_set_gold_boot(self):
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False

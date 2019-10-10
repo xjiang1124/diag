@@ -2,13 +2,16 @@ NAPLES100:
     CPLD_FILE: "/home/diag/naples100_cpld_rev9_05312019.bin"
     SEC_CPLD_FILE: "/home/diag/naples100_cpld_rev89_06032019.bin"
     QSPI_FILE: "/home/diag/naples_diagfw_08082019.tar"
+    GOLD_FILE: "/home/diag/naples_goldfw_09182019.tar"
 
 VOMERO:
     CPLD_FILE: "/home/diag/naples100_cpld_rev9_05312019.bin"
     SEC_CPLD_FILE: "/home/diag/naples100_cpld_rev89_06032019.bin"
     QSPI_FILE: "/home/diag/naples_diagfw_08082019.tar"
+    GOLD_FILE: "/home/diag/naples_goldfw_09182019.tar"
 
 NAPLES25:
     CPLD_FILE: "/home/diag/naples25_cpld_rev4_08082019.bin"
     SEC_CPLD_FILE: "/home/diag/naples25_cpld_rev84_08082019.bin"
     QSPI_FILE: "/home/diag/naples_diagfw_08082019.tar"
+    GOLD_FILE: "/home/diag/naples_goldfw_09182019.tar"
