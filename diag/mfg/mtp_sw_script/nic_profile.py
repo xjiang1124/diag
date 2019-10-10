@@ -40,7 +40,7 @@ for item in profiles:
     if item["meta"]["name"] == "new_naples_profile":
         # print(item["spec"]["default-port-admin"])
         if item["spec"]["default-port-admin"] == "PORT_ADMIN_STATE_DISABLE":
-            print("PASS Profile disable port successfully")
+            print("PASS Netapp Profile disable port successfully")
         else:
-            print("ERROR Profile disable port failed")
+            print("ERROR Netapp Profile disable port failed")
             cleanup()
