@@ -697,9 +697,8 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
-    # TODO: disable PCIe poll only for QA tests
-    if corner == Env_Cond.MFG_QA:
-        diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
+    # Disable PCIe poll
+    diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
 
     for vmarg in vmarg_list:
         # stop the next vmarg corner if stop_on_err is set and some nic fails
@@ -907,15 +906,14 @@ def main():
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    # TODO: enable PCIe poll only for QA tests
-    if corner == Env_Cond.MFG_QA:
-        diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
-        # failed enable pcie poll, fail the card
-        for slot in diag_post_fail_list:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
+    # Enable PCIe poll
+    diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
+    # failed enable pcie poll, fail the card
+    for slot in diag_post_fail_list:
+        if slot not in fail_nic_list:
+            fail_nic_list.append(slot)
+        if slot in pass_nic_list:
+            pass_nic_list.remove(slot)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 

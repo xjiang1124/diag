@@ -33,7 +33,7 @@ MTP-004:
     APC2_PORT: "23"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.73.180"
+    IP: "192.168.74.164"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp004"
@@ -54,7 +54,7 @@ MTP-002:
     APC2_PORT: "8"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.68.201"
+    IP: "192.168.70.235"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp002"
@@ -143,7 +143,7 @@ MTP-099:
     PASSWORD: "lab123"
     ALIAS: "mtp099"
     SLOTS: 10
-    CAPABILITY: 0x2
+    CAPABILITY: 0x3
 
 MTPS-001:
     MODE: ""
