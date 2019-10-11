@@ -7,8 +7,11 @@ set slot     [lindex $argv 1]
 set int_lpbk [lindex $argv 2]
 set vmarg    [lindex $argv 3]
 set use_zmq  [lindex $argv 4]
+set offload  [lindex $argv 5]
+set esecEn   [lindex $argv 6]
 
-puts "brd_num: $brd_num; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq"
+puts "brd_num: $brd_num; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn"
+set err_cnt 0
 
 set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
@@ -43,14 +46,14 @@ set ::CAP_GPIO3_PWR_OFF_DUR 5000
 if {$use_zmq == 0} {
     puts "Regular L1"
     diag_open_j2c_if 10 $slot
-    set err_cnt [cap_l1_screen $brd_num 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg]
+    set err_cnt [cap_l1_screen_diag $brd_num 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn]
     set err_cnt 0
 
     diag_close_j2c_if 10 $slot
 } else {
     puts "ZMQ L1"
     diag_open_zmq_if $zmq_conn $slot
-    set err_cnt [cap_l1_screen_diag $brd_num 10 $slot 1 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg 1 1]
+    set err_cnt [cap_l1_screen_diag $brd_num 10 $slot 1 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn]
 
     diag_close_zmq_if
     diag_zmq_lock_release $zmq_conn $slot

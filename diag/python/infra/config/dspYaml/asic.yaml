@@ -139,6 +139,14 @@ DSP:
                 VALUE:
                     ALL: 0
                 INFO: Enable ZMQ mode
+            offload:
+                VALUE:
+                    ALL: 0
+                INFO: Offload flag for legacy L1
+            esec_en:
+                VALUE:
+                    ALL: 1
+                INFO: Enable esecure test in L1
 
     CMD#start_zmq:
         INFO: Start ZMQ server
