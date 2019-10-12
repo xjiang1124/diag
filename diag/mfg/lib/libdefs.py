@@ -25,7 +25,7 @@ class FF_Stage:
     FF_4C_H = "4C-H"
     FF_4C_L = "4C-L"
     FF_KPT = "KPT"
-    FF_SW = "SW"
+    FF_SW = "SWI"
     FF_FST = "FST"
 
 
@@ -350,7 +350,7 @@ class MFG_DIAG_CMDS:
     MFG_LOG_LINK_FMT = "ln {:s} {:s}"
 
     FST_DIAG_CMD_FMT = "/home/diag/mtp_fst_script/diag_fst_test.py"
-    NIC_SW_PROFILE_CMD_FMT = "/nic_profile.py"
+    NIC_SW_PROFILE_CMD_FMT = "/{:s}"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

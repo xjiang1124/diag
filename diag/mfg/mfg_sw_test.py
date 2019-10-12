@@ -45,7 +45,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_sw_test(mtp_sw_script_dir, emmc_img_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
+def single_mtp_sw_test(mtp_sw_script_dir, emmc_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
     # go to mtp_sw_script and start the test
     cmd = "cd {:s}".format(mtp_sw_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -53,7 +53,10 @@ def single_mtp_sw_test(mtp_sw_script_dir, emmc_img_file, mtp_mgmt_ctrl, mtp_id, 
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_sw_test.py --image {:s} --mtpid {:s}".format(emmc_img_file, mtp_id)
+    if profile_cfg_file:
+        cmd = "./mtp_sw_test.py --image {:s} --profile {:s} --mtpid {:s}".format(emmc_img_file, profile_cfg_file, mtp_id)
+    else:
+        cmd = "./mtp_sw_test.py --image {:s} --mtpid {:s}".format(emmc_img_file, mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_SW_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
@@ -80,13 +83,6 @@ def main():
     else:
         verbosity = False
 
-    # get sw image name based on the sku
-    sw_image = libmfg_utils.sku_scan()
-    emmc_img_file = "release/{:s}".format(sw_image);
-    if not libmfg_utils.file_exist(emmc_img_file):
-        mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(emmc_img_file), level=0)
-        return
-
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtpid_fail_list = list()
@@ -102,6 +98,20 @@ def main():
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+
+    # get sw image name based on the sku
+    sw_image = libmfg_utils.sku_scan()
+    emmc_img_file = "release/{:s}".format(sw_image);
+    profile_cfg_file = "release/profile_{:s}.py".format(sw_image);
+    if not libmfg_utils.file_exist(emmc_img_file):
+        mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(emmc_img_file), level=0)
+        return
+
+    if not libmfg_utils.file_exist(profile_cfg_file):
+        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to SKU: {:s}".format(sw_image), level=0)
+        profile_cfg_file = None
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("Profile will apply to SKU: {:s}".format(sw_image), level=0)
 
     mfg_sw_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -134,7 +144,7 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_sw_script_pkg = "mtp_sw_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP SW Install Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_sw_script_dir, mtp_sw_script_pkg):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_sw_script_dir, mtp_sw_script_pkg, profile_cfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP SW Install Test script failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -161,6 +171,7 @@ def main():
         mfg_sw_summary[mtp_id] = list()
         mtp_thread = threading.Thread(target = single_mtp_sw_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_sw_script_dir,
                                                                            sw_image,
+                                                                           profile_cfg_file,
                                                                            mtp_mgmt_ctrl,
                                                                            mtp_id,
                                                                            mfg_sw_summary[mtp_id]))

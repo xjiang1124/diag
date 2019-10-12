@@ -1373,8 +1373,48 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_sw_profile(self, slot):
-        return self._nic_ctrl_list[slot].nic_sw_profile()
+    def mtp_mgmt_verify_nic_gold_boot(self, slot):
+        if not self.mtp_nic_boot_info_init(slot):
+            self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            return False
+
+        gold_info = self._nic_ctrl_list[slot].nic_get_boot_info()
+        if not gold_info:
+            self.cli_log_slot_err(slot, "Fail to retrieve NIC boot info")
+            return False
+
+        boot_image = gold_info[0]
+        kernel_timestamp = gold_info[1]
+        if boot_image != "goldfw":
+            self.cli_log_slot_err_lock(slot, "Goldfw boot failed, NIC is booted from {:s}".format(boot_image))
+            return False
+
+        self.cli_log_slot_inf(slot, "NIC boot from {:s}({:s})".format(boot_image, kernel_timestamp))
+        return True
+
+
+    def mtp_mgmt_verify_nic_sw_boot(self, slot):
+        if not self.mtp_nic_boot_info_init(slot):
+            self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            return False
+
+        sw_info = self._nic_ctrl_list[slot].nic_get_boot_info()
+        if not sw_info:
+            self.cli_log_slot_err(slot, "Fail to retrieve NIC boot info")
+            return False
+
+        boot_image = sw_info[0]
+        kernel_timestamp = sw_info[1]
+        if boot_image not in ["mainfwa", "mainfwb"]:
+            self.cli_log_slot_err_lock(slot, "SW boot failed, NIC is booted from {:s}".format(boot_image))
+            return False
+
+        self.cli_log_slot_inf(slot, "NIC default boot from {:s}({:s})".format(boot_image, kernel_timestamp))
+        return True
+
+
+    def mtp_nic_sw_profile(self, slot, profile):
+        return self._nic_ctrl_list[slot].nic_sw_profile(profile)
 
 
     def mtp_nic_mgmt_reinit(self, slot):
@@ -1906,20 +1946,18 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_set_nic_sw_boot(self, slot):
-        self.cli_log_slot_inf_lock(slot, "Set NIC default sw boot")
         if not self._nic_ctrl_list[slot].nic_set_sw_boot():
             self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
             return False
-        self.cli_log_slot_inf_lock(slot, "Set NIC default sw boot complete")
+        self.cli_log_slot_inf_lock(slot, "Set NIC default sw boot")
         return True
 
 
     def mtp_mgmt_set_nic_gold_boot(self, slot):
-        self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
-        if not self._nic_ctrl_list[slot].nic_set_sw_boot():
+        if not self._nic_ctrl_list[slot].nic_set_gold_boot():
             self.cli_log_slot_err_lock(slot, "Set NIC default gold boot failed")
             return False
-        self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot complete")
+        self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
         return True
 
 
@@ -2318,31 +2356,17 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Set NIC default boot with diag failed")
             return False
 
-        self.cli_log_slot_inf(slot, "Set NIC default boot with diag complete")
+        self.cli_log_slot_inf(slot, "Set NIC default diag boot")
         return True
 
 
-    def mtp_mgmt_verify_nic_sw_boot(self, slot):
-        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw image")
-        if not self._nic_ctrl_list[slot].nic_verify_sw_boot():
-            self.cli_log_slot_err(slot, "Verify NIC default boot with sw image failed")
+    def mtp_mgmt_nic_sw_shutdown(self, slot):
+        if not self._nic_ctrl_list[slot].nic_sw_shutdown():
+            self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             return False
 
-        self.cli_log_slot_inf(slot, "Verify NIC default boot with sw complete")
-        return True
-
-
-    def mtp_mgmt_verify_nic_gold_boot(self, slot):
-        self.cli_log_slot_inf(slot, "Verify NIC default boot with goldfw")
-        if not self._nic_ctrl_list[slot].nic_verify_gold_boot():
-            self.cli_log_slot_err(slot, "Verify NIC default boot with gold image failed")
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
-            return False
-
-        self.cli_log_slot_inf(slot, "Verify NIC default boot with goldfw complete")
         return True
 
 
@@ -2393,6 +2417,11 @@ class mtp_ctrl():
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
         elif intf == "NIC_DIAG_BOOT":
             if self.mtp_nic_check_diag_boot(slot):
+                return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
+        elif intf == "NIC_CPLD":
+            if self.mtp_verify_nic_cpld(slot):
                 return "SUCCESS"
             else:
                 return MTP_DIAG_Error.NIC_DIAG_FAIL

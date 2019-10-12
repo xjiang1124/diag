@@ -50,13 +50,13 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
-    dsp = "SW"
+    dsp = "SWI"
     for test in ["SEC_CPLD_VERIFY", "GOLD_PROG"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         if test == "SEC_CPLD_VERIFY":
             ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
-        elif test == "SW_GOLD":
+        elif test == "GOLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
@@ -72,7 +72,7 @@ def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_ni
 
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
-    dsp = "SW"
+    dsp = "SWI"
     for test in ["SW_INSTALL"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -96,12 +96,16 @@ def main():
     parser = argparse.ArgumentParser(description="MTP Software Install Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--image", help="NIC eMMC image", required=True)
+    parser.add_argument("--profile", help="NIC Profile")
 
+    nic_profile = None
     args = parser.parse_args()
     if args.mtpid:
         mtp_id = args.mtpid
     if args.image:
         img_file = args.image
+    if args.profile:
+        nic_profile = args.profile
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -151,7 +155,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    dsp = "SW"
+    dsp = "SWI"
     pass_nic_list = list()
     fail_nic_list = list()
 
@@ -360,7 +364,32 @@ def main():
     libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
     mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped\n", level=0)
 
-    # verify the NIC EMMC
+    # Init the sw mgmt port
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+
+        if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
+            pass_nic_list.remove(slot)
+            fail_nic_list.append(slot)
+
+    if not mtp_mgmt_ctrl.mtp_nic_mgmt_mac_refresh():
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP mac address refresh failed, test abort...")
+        logfile_close(log_filep_list)
+        return
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP detect duplicate mac address, test abort...")
+        logfile_close(log_filep_list)
+        return
+
+    # Verify the NIC Software boot
+    if nic_profile:
+        sw_test_list = ["SW_BOOT", "SW_PROFILE", "SW_SHUTDOWN"]
+    else:
+        sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
             continue
@@ -368,11 +397,15 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["SW_BOOT"]:
+        for test in sw_test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SW_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
+            elif test == "SW_PROFILE"and nic_profile:
+                ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
+            elif test == "SW_SHUTDOWN":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
                 continue

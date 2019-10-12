@@ -483,12 +483,18 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
         return False
 
 
-def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg):
+def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=None):
+    if extra_script:
+        cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
+        os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
     os.system(cmd)
     # remove the lib config for the next run
+    if extra_script:
+        cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
+        os.system(cmd)
     cmd = "rm -rf {:s}/lib {:s}/config".format(mtp_script_dir, mtp_script_dir)
     os.system(cmd)
 

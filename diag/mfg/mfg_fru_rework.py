@@ -42,10 +42,11 @@ def main():
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
 
     log_filep_list = list()
-    diag_log_filep = open("log/{:s}_fru_rework.log".format(mtp_id), 'w+')
+    log_timestamp = libmfg_utils.get_timestamp()
+    diag_log_filep = open("log/fru_rework_{:s}_{:s}.log".format(mtp_id, log_timestamp), 'w+')
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "log/{:s}_{:s}_fru_rework.log".format(mtp_id, key)
+        diag_nic_log_file = "log/fru_rework_{:s}_{:s}_{:s}.log".format(mtp_id, log_timestamp, key)
         diag_nic_log_filep = open(diag_nic_log_file, "w+")
         log_filep_list.append(diag_nic_log_filep)
 
@@ -100,8 +101,8 @@ def main():
             sn, mac, pn, date, vendor = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
             if pn == "68-0005-04 A":
                 pn = "68-0005-04 A0"
-                mac = mac.replace('-', '')
                 mtp_mgmt_ctrl.cli_log_inf("Update PN from '68-0005-04 A' to '68-0005-04 A0'")
+            mac = mac.replace('-', '')
             mtp_mgmt_ctrl.mtp_program_nic_fru(slot, date, sn, mac, pn)
             fru_info_dict[slot] = (sn, mac, pn, date)
 
@@ -114,7 +115,6 @@ def main():
             exp_sn, exp_mac, exp_pn, exp_date = fru_info_dict[slot]
             exp_mac = "-".join(re.findall("..", exp_mac))
             mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, date)
-            mtp_mgmt_ctrl.mtp_mgmt_set_nic_sw_boot(slot)
 
     # power off the NICs
     mtp_mgmt_ctrl.mtp_power_off_nic()
