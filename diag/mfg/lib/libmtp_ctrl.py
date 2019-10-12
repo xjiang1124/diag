@@ -19,6 +19,7 @@ from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
 from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
@@ -1385,8 +1386,8 @@ class mtp_ctrl():
 
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
-        if boot_image != "goldfw":
-            self.cli_log_slot_err_lock(slot, "Goldfw boot failed, NIC is booted from {:s}".format(boot_image))
+        if boot_image != "goldfw" or kernel_timestamp != MFG_GOLD_TIMESTAMP:
+            self.cli_log_slot_err(slot, "goldfw verify failed, NIC is booted from {:s}({:s})".format(boot_image, kernel_timestamp))
             return False
 
         self.cli_log_slot_inf(slot, "NIC boot from {:s}({:s})".format(boot_image, kernel_timestamp))
@@ -1406,7 +1407,7 @@ class mtp_ctrl():
         boot_image = sw_info[0]
         kernel_timestamp = sw_info[1]
         if boot_image not in ["mainfwa", "mainfwb"]:
-            self.cli_log_slot_err_lock(slot, "SW boot failed, NIC is booted from {:s}".format(boot_image))
+            self.cli_log_slot_err(slot, "SW boot failed, NIC is booted from {:s}".format(boot_image))
             return False
 
         self.cli_log_slot_inf(slot, "NIC default boot from {:s}({:s})".format(boot_image, kernel_timestamp))
