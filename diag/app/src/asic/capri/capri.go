@@ -127,18 +127,24 @@ func Prbs(mode string, poly string, duration int) (err int) {
                 }
                 if (strings.Contains(scanner.Text(), "ERROR")) {
                     ethInitDone = false
+                    break
                 }
-                break
             }
 
             file.Close()
 
             if (ethInitDone == true) {
-                dcli.Println("i", "Eth PRBS init done")
+                dcli.Println("i", "Eth PRBS init done", retry)
                 break
             }
         }
 
+    }
+
+    if ethInitDone == false {
+        err = errType.FAIL
+        dcli.Println("e", "Eth PRBS init failed")
+        return
     }
 
     passSign := "AAPL PRBS DONE"
