@@ -16,9 +16,6 @@ from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
-from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
-from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
-from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
 from libmfg_cfg import MFG_VALID_FW_LIST
 
 from libdefs import NIC_Type

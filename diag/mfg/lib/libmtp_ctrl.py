@@ -21,10 +21,6 @@ from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
-from libmfg_cfg import MFG_NIC_CPLD_PROGRAM
-from libmfg_cfg import MFG_NIC_QSPI_PROGRAM
-from libmfg_cfg import MFG_NIC_AVS_PROGRAM
-from libmfg_cfg import MFG_NIC_EMMC_PROGRAM
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
 
@@ -1558,7 +1554,6 @@ class mtp_ctrl():
 
 
     def mtp_verify_nic_fru(self, slot, sn, mac, pn, date):
-        self.cli_log_slot_inf_lock(slot, "Verify NIC FRU sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
         nic_fru_info = self._nic_ctrl_list[slot].nic_get_fru()
         if not nic_fru_info:
             self.cli_log_slot_err_lock(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
@@ -1580,56 +1575,57 @@ class mtp_ctrl():
         if nic_date != date:
             self.cli_log_slot_err_lock(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
             return False
+        self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
 
         return True
 
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
-        if MFG_NIC_CPLD_PROGRAM:
-            # check the current cpld version
-            nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
-            if not nic_cpld_info:
-                self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
-                return False
-            cur_ver = nic_cpld_info[0]
-            cur_timestamp = nic_cpld_info[1]
-            nic_type = self.mtp_get_nic_type(slot)
+        # check the current cpld version
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
+            return False
+        cur_ver = nic_cpld_info[0]
+        cur_timestamp = nic_cpld_info[1]
+        nic_type = self.mtp_get_nic_type(slot)
 
-            if nic_type == NIC_Type.NAPLES100:
-                exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
-            elif nic_type == NIC_Type.NAPLES25:
-                exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
-            elif nic_type == NIC_Type.FORIO:
-                exp_ver = NIC_CPLD_Version.FORIO_VERSION
-                exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
-            elif nic_type == NIC_Type.VOMERO:
-                exp_ver = NIC_CPLD_Version.VOMERO_VERSION
-                exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
-            else:
-                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-                return False
-
-            if cur_ver == exp_ver and cur_timestamp == exp_timestamp:
-                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
-                return True
-
-            if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
-                self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
-                return False
+        if nic_type == NIC_Type.NAPLES100:
+            exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
+            exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25:
+            exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
+            exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
+        elif nic_type == NIC_Type.FORIO:
+            exp_ver = NIC_CPLD_Version.FORIO_VERSION
+            exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO:
+            exp_ver = NIC_CPLD_Version.VOMERO_VERSION
+            exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
         else:
-            self.cli_log_slot_inf_lock(slot, "Program NIC CPLD bypassed")
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
+            return True
+
+        if cur_ver == exp_ver and cur_timestamp == exp_timestamp:
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+            return True
+
+        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
+            return False
+
         return True
 
 
     def mtp_refresh_nic_cpld(self, slot):
-        if MFG_NIC_CPLD_PROGRAM:
-            if not self._nic_ctrl_list[slot].nic_refresh_cpld():
-                self.cli_log_slot_err_lock(slot, "Refresh NIC CPLD failed")
-                return False
-        else:
-            self.cli_log_slot_inf_lock(slot, "Refresh NIC CPLD bypassed")
+        if not self._nic_ctrl_list[slot].nic_refresh_cpld():
+            self.cli_log_slot_err_lock(slot, "Refresh NIC CPLD failed")
+            return False
+
         return True
 
 
@@ -1685,63 +1681,57 @@ class mtp_ctrl():
 
 
     def mtp_verify_nic_cpld(self, slot, sec_cpld=False):
-        if MFG_NIC_CPLD_PROGRAM:
-            nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
-            if not nic_cpld_info:
-                self.cli_log_slot_err_lock(slot, "Verify NIC CPLD failed, can not retrieve CPLD info")
-                return False
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Verify NIC CPLD failed, can not retrieve CPLD info")
+            return False
 
-            cur_ver = nic_cpld_info[0]
-            cur_timestamp = nic_cpld_info[1]
-            nic_type = self.mtp_get_nic_type(slot)
+        cur_ver = nic_cpld_info[0]
+        cur_timestamp = nic_cpld_info[1]
+        nic_type = self.mtp_get_nic_type(slot)
 
-            if nic_type == NIC_Type.NAPLES100:
-                if sec_cpld:
-                    exp_ver = NIC_CPLD_Version.NAPLES100_SEC_VERSION
-                    exp_timestamp = NIC_CPLD_Version.NAPLES100_SEC_TIMESTAMP
-                else:
-                    exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
-                    exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
-            elif nic_type == NIC_Type.NAPLES25:
-                if sec_cpld:
-                    exp_ver = NIC_CPLD_Version.NAPLES25_SEC_VERSION
-                    exp_timestamp = NIC_CPLD_Version.NAPLES25_SEC_TIMESTAMP
-                else:
-                    exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
-                    exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
-            elif nic_type == NIC_Type.FORIO:
-                exp_ver = NIC_CPLD_Version.FORIO_VERSION
-                exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
-            elif nic_type == NIC_Type.VOMERO:
-                if sec_cpld:
-                    exp_ver = NIC_CPLD_Version.VOMERO_SEC_VERSION
-                    exp_timestamp = NIC_CPLD_Version.VOMERO_SEC_TIMESTAMP
-                else:
-                    exp_ver = NIC_CPLD_Version.VOMERO_VERSION
-                    exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
+        if nic_type == NIC_Type.NAPLES100:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.NAPLES100_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES100_SEC_TIMESTAMP
             else:
-                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-                return False
-
-            if cur_ver != exp_ver or cur_timestamp != exp_timestamp:
-                self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
-                self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
-                self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp))
-                return False
+                exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.NAPLES25_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25_SEC_TIMESTAMP
             else:
-                self.cli_log_slot_inf_lock(slot, "Verify NIC CPLD Passed, version: {:s}({:s})".format(cur_ver, cur_timestamp))
-                return True
+                exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
+        elif nic_type == NIC_Type.FORIO:
+            exp_ver = NIC_CPLD_Version.FORIO_VERSION
+            exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.VOMERO_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.VOMERO_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.VOMERO_VERSION
+                exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
+        else:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        if cur_ver != exp_ver or cur_timestamp != exp_timestamp:
+            self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
+            self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
+            self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp))
+            return False
 
         return True
 
 
     def mtp_program_nic_qspi(self, slot, qspi_img):
-        if MFG_NIC_QSPI_PROGRAM:
-            if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
-                self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
-                return False
-        else:
-            self.cli_log_slot_inf_lock(slot, "Program NIC QSPI bypassed")
+        if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
+            self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
+            return False
+
         return True
 
 
@@ -1759,30 +1749,23 @@ class mtp_ctrl():
 
     def mtp_verify_nic_qspi(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if MFG_NIC_QSPI_PROGRAM:
-            qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
-            if not qspi_info:
-                self.cli_log_slot_err_lock(slot, "Fail to retrieve NIC boot info")
-                return False
+        qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
+        if not qspi_info:
+            self.cli_log_slot_err_lock(slot, "Fail to retrieve NIC boot info")
+            return False
 
-            boot_image = qspi_info[0]
-            kernel_timestamp = qspi_info[1]
-            nic_type = self.mtp_get_nic_type(slot)
+        boot_image = qspi_info[0]
+        kernel_timestamp = qspi_info[1]
+        nic_type = self.mtp_get_nic_type(slot)
 
-            if boot_image != "diagfw":
-                self.cli_log_slot_err_lock(slot, "NIC is booted from {:s}".format(boot_image))
-                return False
+        if nic_type not in self._valid_type_list:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
 
-            if nic_type in self._valid_type_list:
-                if kernel_timestamp != MFG_QSPI_TIMESTAMP:
-                    self.cli_log_slot_err_lock(slot, "Verify NIC QSPI Failed")
-                    self.cli_log_slot_err_lock(slot, "Expect: {:s}, get: {:s}".format(MFG_QSPI_TIMESTAMP, kernel_timestamp))
-                    return False
-                else:
-                    return True
-            else:
-                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-                return False
+        if boot_image != "diagfw" or kernel_timestamp != MFG_QSPI_TIMESTAMP:
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NIC is booted from {:s}".format(boot_image))
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}, get: {:s}".format(MFG_QSPI_TIMESTAMP, kernel_timestamp))
+            return False
 
         return True
 
@@ -2612,42 +2595,39 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_set_nic_avs(self, slot):
-        if MFG_NIC_AVS_PROGRAM:
-            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
-            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
-                self.cli_log_err("Failed to execute command {:s}".format(cmd))
-                return False
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
 
-            nic_type = self.mtp_get_nic_type(slot)
-            sn = self.mtp_get_nic_sn(slot)
+        nic_type = self.mtp_get_nic_type(slot)
+        sn = self.mtp_get_nic_sn(slot)
 
-            if nic_type in self._proto_type_list:
-                self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
-                return True
-            elif nic_type == NIC_Type.NAPLES100:
-                vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
-                arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
-            elif nic_type == NIC_Type.VOMERO:
-                vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
-                arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
-            elif nic_type == NIC_Type.NAPLES25:
-                vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-                arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
-            else:
-                self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-                return False
-
-            if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
-                return False
-            self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
-
-            if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
-                return False
-            self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
+            return True
+        elif nic_type == NIC_Type.NAPLES100:
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.VOMERO:
+            vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.NAPLES25:
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         else:
-            self.cli_log_slot_inf_lock(slot, "Bypass AVS for NIC")
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
+            return False
+        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
+
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
+            return False
+        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
 
         return True
 

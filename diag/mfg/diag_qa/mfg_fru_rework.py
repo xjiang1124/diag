@@ -26,6 +26,7 @@ def main():
 
     mtp_chassis_cfg_file_list = list()
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
     mtp_id = libmfg_utils.single_select_menu("Select MTP Chassis", mtpid_list)
@@ -99,6 +100,7 @@ def main():
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if nic_prsnt_list[slot]:
             sn, mac, pn, date, vendor = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
+            date = libmfg_utils.get_fru_date()
             if pn == "68-0005-04 A":
                 pn = "68-0005-04 A0"
                 mtp_mgmt_ctrl.cli_log_inf("Update PN from '68-0005-04 A' to '68-0005-04 A0'")
@@ -114,7 +116,7 @@ def main():
         if nic_prsnt_list[slot]:
             exp_sn, exp_mac, exp_pn, exp_date = fru_info_dict[slot]
             exp_mac = "-".join(re.findall("..", exp_mac))
-            mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, date)
+            mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, exp_date)
 
     # power off the NICs
     mtp_mgmt_ctrl.mtp_power_off_nic()
