@@ -29,6 +29,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     var sbus string
     var speed string
     var errCount string
+    var ethInitDone bool
 
     var targetSpeedList []string
     var sbusList []uint64
@@ -100,12 +101,44 @@ func Prbs(mode string, poly string, duration int) (err int) {
 
     // For Eth PRBS, need to re-init serdes
     dcli.Println("d", "Eth init")
+    logFn := "/data/nic_arm/aapl/aapl_init.log"
     if mode == "ETH" {
-        err = runCmd.Run("AAPL ETH SERDES INIT DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "INIT")
-        if err != errType.SUCCESS {
-            dcli.Println("e", "Failed to init Eth serdes!")
-            return
+        for retry := 0; retry < 3; retry++ {
+            err = runCmd.Run("AAPL ETH SERDES INIT DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "INIT")
+            if err != errType.SUCCESS {
+                dcli.Println("e", "Failed to init Eth serdes!")
+                return
+            }
+
+            // Check whether Eth init is good
+            ethInitDone = true
+            file, errCode := os.Open(logFn)
+            if errCode != nil {
+                dcli.Println("e", "Failed to open log file", logFn)
+                err = errType.FAIL
+                return
+            }
+            scanner := bufio.NewScanner(file)
+            for scanner.Scan() {
+                if errCode := scanner.Err(); errCode != nil {
+                    dcli.Println("e", errCode)
+                    err = errType.FAIL
+                    break
+                }
+                if (strings.Contains(scanner.Text(), "ERROR")) {
+                    ethInitDone = false
+                }
+                break
+            }
+
+            file.Close()
+
+            if (ethInitDone == true) {
+                dcli.Println("i", "Eth PRBS init done")
+                break
+            }
         }
+
     }
 
     passSign := "AAPL PRBS DONE"
@@ -121,7 +154,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     re := regexp.MustCompile(`^\s+:([0-9a-f]+)\s+@\s+(\d+)\.\d+\s+1\.\d+\s+(\d+).*`)
 
     // Analyze PRBS log to determine pass/fail
-    logFn := "/data/nic_arm/aapl/" + prbsLogFn
+    logFn = "/data/nic_arm/aapl/" + prbsLogFn
 
     file, errCode := os.Open(logFn)
     if errCode != nil {

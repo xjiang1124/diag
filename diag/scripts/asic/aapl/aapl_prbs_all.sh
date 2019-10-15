@@ -285,7 +285,7 @@ then
     do_reset
 elif [ $STAGE = "INIT" ]
 then
-    do_init
+    do_init | tee /data/nic_arm/aapl/aapl_init.log
 else
     do_prbs $STAGE | tee /data/nic_arm/aapl/aapl.log
 fi
