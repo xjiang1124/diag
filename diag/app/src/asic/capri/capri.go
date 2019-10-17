@@ -29,7 +29,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     var sbus string
     var speed string
     var errCount string
-    var ethInitDone bool
+    ethInitDone := true
 
     var targetSpeedList []string
     var sbusList []uint64
