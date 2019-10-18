@@ -161,6 +161,21 @@ func sysDetect() (err int) {
     return
 }
 
+func statusDump(slot int)  {
+    devName := "CPLD"
+    uutName := "UUT_"+strconv.Itoa(slot)
+
+    cpldRegList := []uint64{0, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x20, 0x21, 0x26, 0x27, 0x28, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x30, 0x31, 0x32}
+
+    cli.Println("i", "Dumping CPLD registers for slot", slot)
+    for _, cpldReg := range cpldRegList {
+        val, _ := hwdev.NaplesCpldRd(devName, cpldReg, uutName)
+        cli.Printf("i", "Addr: 0x%02x; Value: 0x%02x\n", cpldReg, val)
+    }
+
+    return
+}
+
 func powerStatusDump(slot int)  {
     devName := "CPLD"
     uutName := "UUT_"+strconv.Itoa(slot)
@@ -214,6 +229,7 @@ func main() {
     slotPtr     := flag.Int("slot", 0, "Slot Number")
     powDumpPtr := flag.Bool("pw", false, "Power state dump")
     esecPtr    := flag.Bool("esec", false, "Escure status dump")
+    stsPtr    := flag.Bool("sts", false, "Entire status dump")
 
     flag.Parse()
 
@@ -241,6 +257,11 @@ func main() {
 
     if *esecPtr == true {
         esecureStatusDump(slot)
+        return
+    }
+
+    if *stsPtr == true {
+        statusDump(slot)
         return
     }
 
