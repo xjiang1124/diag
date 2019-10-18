@@ -472,7 +472,6 @@ func SetVMargin(devName string, pct int) (err int) {
     var dacStep uint64
     //var sign int
     //pctList := make([]int, 0, 2)
-    var pctList []int
 
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
@@ -485,20 +484,6 @@ func SetVMargin(devName string, pct int) (err int) {
         return
     }
 
-    // Create vmargin step sequence
-    //if pct < 0 {
-    //    sign = -1
-    //} else {
-    //    sign = 1
-    //}
-
-    //if math.Abs(float64(pct)) > 3 {
-    //    pctList = []int{sign*3, pct}
-    //} else {
-    //    pctList = []int{pct}
-    //}
-    pctList = []int{pct}
-
     // Write page register
     pmbus.WriteByte(devName, pmbus.PAGE, page)
 
@@ -509,65 +494,65 @@ func SetVMargin(devName string, pct int) (err int) {
         return
     }
 
-    for _, pctItem := range pctList {
-
-        if pctItem == 0 {
-            marginCmd = MARGIN_NONE_CMD
-        } else if pctItem > 0 {
-            marginCmd = MARGIN_HIGH_CMD
-            marginReg = pmbus.VOUT_MARGIN_HIGH
-        } else {
-            marginCmd = MARGIN_LOW_CMD
-            marginReg = pmbus.VOUT_MARGIN_LOW
-        }
-
-        dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
-
-        if dacStepRegVal == DAC_STEP_5MV {
-            dacStep = 5
-        } else {
-            dacStep = 10
-        }
-
-        data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
-
-        integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
-        voltMv := integer *1000 + dec
-        voltMvTemp := voltMv * uint64(100+pctItem)
-        voltMvTgt := voltMvTemp / 100
-
-        cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
-        if (voltMv < 650 || voltMv > 1000) {
-            cli.Printf("e", "Invalid VOUT!! VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
-            err = errType.FAIL
-            return
-        }
-
-        // Update VOUT_MARGIN_HIGH/HOW with target VID
-        vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
-
-        if pctItem != 0 {
-            err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
-            if err != errType.SUCCESS {
-                cli.Println("e", "VMargin failed!")
-                return
-            }
-        }
-        // Set to PMBus control
-        err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
-        if err != errType.SUCCESS {
-            cli.Println("e", "VMargin failed!")
-            return
-        }
-
-        // Enable Vmargin
-        err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
-        if err != errType.SUCCESS {
-            cli.Println("e", "VMargin failed!")
-            return
-        }
-        misc.SleepInUSec(500000)
+    if pct == 0 {
+        marginCmd = MARGIN_NONE_CMD
+    } else if pct > 0 {
+        marginCmd = MARGIN_HIGH_CMD
+        marginReg = pmbus.VOUT_MARGIN_HIGH
+    } else {
+        marginCmd = MARGIN_LOW_CMD
+        marginReg = pmbus.VOUT_MARGIN_LOW
     }
+
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+
+    data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
+
+    integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
+    voltMv := integer *1000 + dec
+    voltMvTemp := voltMv * uint64(100+pct)
+    voltMvTgt := voltMvTemp / 100
+
+    cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
+    if (voltMv < 650 || voltMv > 1000) {
+        cli.Printf("e", "Invalid VOUT!! VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
+        err = errType.FAIL
+        return
+    }
+
+    // Update VOUT_MARGIN_HIGH/HOW with target VID
+    vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
+    cli.Printf("i", "Target VID: 0x%x\n", vidTgt)
+
+    if pct != 0 {
+        err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+        if err != errType.SUCCESS {
+            cli.Println("e", "VMargin failed!")
+            return
+        }
+    }
+    // Set to PMBus control
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    // Enable Vmargin
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    } else {
+        cli.Println("i", "New vmargin enabled")
+    }
+    misc.SleepInSec(1)
 
     return
 }
