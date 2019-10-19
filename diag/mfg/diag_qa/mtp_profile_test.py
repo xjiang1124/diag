@@ -123,7 +123,7 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
             if test == "PROFILE":
-                ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot)
+                ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, "profile_90-0001-0001.py")
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
                 continue

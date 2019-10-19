@@ -103,27 +103,6 @@ MTP-115:
     SLOTS: 10
     CAPABILITY: 0x1
 
-MTP-116:
-    MODE: ""
-    TS: ""
-    TS_PORT: ""
-    TS_USERID: ""
-    TS_PASSWORD: ""
-    APC1: "192.168.1.121"
-    APC1_PORT: "5"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
-    APC2: "192.168.1.121"
-    APC2_PORT: "6"
-    APC2_USERID: "apc"
-    APC2_PASSWORD: "apc"
-    IP: "192.168.1.117"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp116"
-    SLOTS: 10
-    CAPABILITY: 0x1
-
 MTP-200:
     MODE: ""
     TS: ""
