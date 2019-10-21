@@ -134,7 +134,7 @@ def main():
     naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
     naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="DL"):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -359,9 +359,6 @@ def main():
             # set avs
             elif test == "AVS_SET":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
-            # disable PCIE Poll
-            elif test == "PCIE_DIS":
-                ret = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(slot, False)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue

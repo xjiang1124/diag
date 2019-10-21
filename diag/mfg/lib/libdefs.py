@@ -300,6 +300,7 @@ class MFG_DIAG_CMDS:
     NIC_POWER_CHECK_FMT = "inventory -ps -slot={:d}"
     NIC_POWER_RAIL_DISP_FMT = "inventory -pw -slot={:d}"
     NIC_PRESENT_DISP_FMT = "inventory -present"
+    NIC_AVS_POST_FMT = "inventory -sts -slot {:d}"
 
     NIC_CON_INIT_FMT = "nic_con.py -br -slot {:d}"
     NIC_CON_ATTACH_FMT = "con_connect.sh {:d}"

@@ -1028,7 +1028,16 @@ class mtp_ctrl():
         return True;
 
 
-    def mtp_diag_post_init(self, mtp_capability):
+    def mtp_diag_get_img_files(self):
+        cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        return cmd_buf
+
+
+    def mtp_diag_post_init(self, mtp_capability, stage):
         self.cli_log_inf("Post Diag SW Environment Init", level=0)
         cmd = "rm -f {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1059,7 +1068,16 @@ class mtp_ctrl():
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [naples100_cpld_img_file, naples100_sec_cpld_img_file, naples100_qspi_img_file, naples100_gold_img_file]:
+            if stage == "DL":
+                img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
+            elif stage == "KPT":
+                img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
+            elif stage == "SWI":
+                img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
+            else:
+                img_list = []
+
+            for img_file in img_list:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -1075,7 +1093,16 @@ class mtp_ctrl():
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [vomero_cpld_img_file, vomero_sec_cpld_img_file, vomero_qspi_img_file, vomero_gold_img_file]:
+            if stage == "DL":
+                img_list = [vomero_cpld_img_file, vomero_qspi_img_file]
+            elif stage == "KPT":
+                img_list = [vomero_sec_cpld_img_file, vomero_gold_img_file]
+            elif stage == "SWI":
+                img_list = [vomero_sec_cpld_img_file, vomero_gold_img_file]
+            else:
+                img_list = []
+
+            for img_file in img_list:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -1092,7 +1119,16 @@ class mtp_ctrl():
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            for img_file in [naples25_cpld_img_file, naples25_sec_cpld_img_file, naples25_qspi_img_file, naples25_gold_img_file]:
+            if stage == "DL":
+                img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
+            elif stage == "KPT":
+                img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
+            elif stage == "SWI":
+                img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
+            else:
+                img_list = []
+
+            for img_file in img_list:
                 if not os.path.basename(img_file) in cmd_buf:
                     self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                     self.mtp_dump_err_msg(cmd_buf)
@@ -2620,16 +2656,24 @@ class mtp_ctrl():
             return False
 
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+            self.mtp_mgmt_set_nic_avs_post(slot)
             self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
             return False
         self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
 
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+            self.mtp_mgmt_set_nic_avs_post(slot)
             self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
             return False
         self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
+        self.mtp_mgmt_set_nic_avs_post(slot)
 
         return True
+
+
+    def mtp_mgmt_set_nic_avs_post(self, slot):
+        cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
+        self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
 
     def mtp_run_diag_test_para_lock(self):

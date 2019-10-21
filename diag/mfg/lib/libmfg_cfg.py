@@ -25,6 +25,21 @@ class NIC_CPLD_Version:
     FORIO_TIMESTAMP = "04-11"
 
 
+# MFG release images
+class MFG_IMAGE_FILES:
+    MTP_AMD64_IMAGE = "image_amd64_10182019.tar"
+    MTP_ARM64_IMAGE = "image_arm64_10182019.tar"
+
+    NIC_DIAGFW_IMAGE = "naples_diagfw_08082019.tar"
+    NIC_GOLDFW_IMAGE = "naples_goldfw_09182019.tar"
+
+    NAPLES25_CPLD_IMAGE = "naples25_cpld_rev4_08082019.bin"
+    NAPLES25_SEC_CPLD_IMAGE = "naples25_cpld_rev84_08082019.bin"
+
+    NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
+    NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"
+
+
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 

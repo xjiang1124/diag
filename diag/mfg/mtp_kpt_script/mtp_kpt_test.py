@@ -112,7 +112,7 @@ def main():
     vomero_sec_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["SEC_CPLD_FILE"]
     naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="KPT"):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return

@@ -141,7 +141,7 @@ def main():
     # get the absolute file path
     emmc_img_file = "/home/diag/{:s}".format(img_file)
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="SWI"):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return

@@ -19,6 +19,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import MFG_IMAGE_FILES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
@@ -109,8 +110,19 @@ def main():
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
+        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
+        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+        if not libmfg_utils.mtp_update_diag_image(mtp_cfg_db, mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
     # Sync timestamp to server
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

@@ -546,7 +546,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD):
+def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None):
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
@@ -560,7 +560,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         return False
 
     # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability):
+    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability, stage):
         mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -582,6 +582,86 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
+    return True
+
+
+def mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, image_list, image_on_mtp):
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    mtp_ip_addr = mtp_mgmt_cfg[0]
+    mtp_usrid = mtp_mgmt_cfg[1]
+    mtp_passwd = mtp_mgmt_cfg[2]
+    image_dir = "/home/diag/"
+
+    for image in image_list:
+        if image not in image_on_mtp:
+            image_rel_path = "release/{:s}".format(image)
+            if not file_exist(image_rel_path):
+                mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(image_rel_path), level=0)
+                return False
+
+            mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image: {:s}".format(image), level=0)
+            if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, image_rel_path, image_dir):
+                mtp_mgmt_ctrl.cli_log_err("Copy Firmware image {:s} failed... Abort".format(image), level=0)
+                return False
+            mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s} complete".format(image), level=0)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("Firmware image: {:s} on MTP is up-to-date".format(image), level=0)
+
+    return True
+
+
+def mtp_update_diag_image(mtp_cfg_db, mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
+    if mtp_image in image_on_mtp and nic_image in image_on_mtp:
+        mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
+        return True
+
+    # cleanup the stale diag images
+    cmd = "rm -f /home/diag/image_a*.tar"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    if "amd64" not in mtp_image:
+        mtp_mgmt_ctrl.cli_log_err("Wrong MTP image: {:s}".format(mtp_image), level=0)
+        return False
+    if "arm64" not in nic_image:
+        mtp_mgmt_ctrl.cli_log_err("Wrong NIC image: {:s}".format(nic_image), level=0)
+        return False
+
+    mtp_image_file = "release/{:s}".format(mtp_image)
+    if not file_exist(mtp_image_file):
+        mtp_mgmt_ctrl.cli_log_err("MTP Diag image {:s} doesn't exist... Abort".format(mtp_image_file), level=0)
+        return False
+    nic_image_file = "release/{:s}".format(nic_image)
+    if not file_exist(nic_image_file):
+        mtp_mgmt_ctrl.cli_log_err("NIC Diag image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    mtp_ip_addr = mtp_mgmt_cfg[0]
+    mtp_usrid = mtp_mgmt_cfg[1]
+    mtp_passwd = mtp_mgmt_cfg[2]
+    remote_dir = "/home/diag/"
+
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy MTP Chassis image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
+    if not mtp_mgmt_ctrl.mtp_update_mtp_diag_image(remote_dir + os.path.basename(mtp_image_file)):
+        mtp_mgmt_ctrl.cli_log_err("Update MTP Chassis image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image complete\n", level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s}".format(nic_image_file), level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy NIC Diag image failed... Abort", level=0)
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Update NIC Diag image: {:s}".format(os.path.basename(nic_image_file)), level=0)
+    if not mtp_mgmt_ctrl.mtp_update_nic_diag_image(remote_dir + os.path.basename(nic_image_file)):
+        mtp_mgmt_ctrl.cli_log_err("Update NIC Diag image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update NIC Diag image complete\n", level=0)
+
     return True
 
 

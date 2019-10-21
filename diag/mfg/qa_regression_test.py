@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import DIAG_NIGHTLY_REPORT_RECEIPIENT
+from libmfg_cfg import MFG_IMAGE_FILES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
