@@ -18,3 +18,45 @@ MTPS-400:
     ALIAS: "mtps400"
     SLOTS: 4
     CAPABILITY: 0x3
+
+MTPS-900:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.13"
+    APC1_PORT: "4"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.2.90"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps900"
+    SLOTS: 4
+    CAPABILITY: 0x3
+
+MTPS-901:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.2.91"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps901"
+    SLOTS: 4
+    CAPABILITY: 0x3

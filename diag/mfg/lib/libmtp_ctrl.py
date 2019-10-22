@@ -2209,6 +2209,8 @@ class mtp_ctrl():
 
         nic_thread_list = list()
         for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
             nic_thread = threading.Thread(target = self.mtp_single_nic_diag_init,
                                           args = (slot,
                                                   emmc_format,
