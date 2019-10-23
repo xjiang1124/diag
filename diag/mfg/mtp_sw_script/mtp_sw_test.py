@@ -17,6 +17,8 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -50,7 +52,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
-    dsp = "SWI"
+    dsp = FF_Stage.FF_SWI
     for test in ["SEC_CPLD_VERIFY", "GOLD_PROG"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -72,7 +74,7 @@ def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_ni
 
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
-    dsp = "SWI"
+    dsp = FF_Stage.FF_SWI
     for test in ["SW_INSTALL"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -132,16 +134,13 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
-    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
-    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
-    naples100_gold_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["GOLD_FILE"]
-    vomero_gold_img_file = nic_fw_cfg[NIC_Type.VOMERO]["GOLD_FILE"]
-    naples25_gold_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["GOLD_FILE"]
-
     # get the absolute file path
-    emmc_img_file = "/home/diag/{:s}".format(img_file)
+    naples100_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    naples25_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    vomero_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    emmc_img_file = ONBOARD_MTP_DIAG_PATH + img_file
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="SWI"):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -155,7 +154,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    dsp = "SWI"
+    dsp = FF_Stage.FF_SWI
     pass_nic_list = list()
     fail_nic_list = list()
 

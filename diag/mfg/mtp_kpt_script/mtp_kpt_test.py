@@ -17,6 +17,8 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -50,7 +52,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
-    dsp = "KPT"
+    dsp = FF_Stage.KPT
     for test in ["SEC_CPLD_PROG", "SEC_CPLD_REF"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -106,13 +108,11 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     # get the absolute file path
-    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
-    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
-    naples100_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["SEC_CPLD_FILE"]
-    vomero_sec_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["SEC_CPLD_FILE"]
-    naples25_sec_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["SEC_CPLD_FILE"]
+    naples100_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
+    naples25_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
+    vomero_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="KPT"):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.KPT):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -126,7 +126,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    dsp = "KPT"
+    dsp = FF_Stage.KPT
     pass_nic_list = list()
     fail_nic_list = list()
 
@@ -191,14 +191,10 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        #for test in ["PCIE_ENA", "SEC_KEY_PROG"]:
         for test in ["SEC_KEY_PROG"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
-            # disable PCIE Poll
-            if test == "PCIE_ENA":
-                ret = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(slot, True)
-            elif test == "SEC_KEY_PROG":
+            if test == "SEC_KEY_PROG":
                 ret = mtp_mgmt_ctrl.mtp_program_nic_sec_key(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown KPT Test: {:s}, Ignore".format(test))

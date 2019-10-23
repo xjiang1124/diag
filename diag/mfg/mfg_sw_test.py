@@ -63,12 +63,12 @@ def single_mtp_sw_test(mtp_sw_script_dir, emmc_img_file, profile_cfg_file, mtp_m
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_sw_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_SW)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_sw_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_SWI)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect SW Install Test result failed", level=0)
         return
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_SW)
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_SWI)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
     return
@@ -225,7 +225,7 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_disp(FF_Stage.FF_SW, mfg_sw_summary, mtpid_fail_list)
+    libmfg_utils.mfg_summary_disp(FF_Stage.FF_SWI, mfg_sw_summary, mtpid_fail_list)
 
     return
 

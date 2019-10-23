@@ -17,6 +17,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -104,7 +105,7 @@ def main():
     fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
     pass_match = re.findall(pass_reg_exp, result)
     fail_match = re.findall(fail_reg_exp, result)
-    dsp = "FST"
+    dsp = FF_Stage.FST
     test = "PCIE_LINK"
 
     for _slot, _sn, _nic_type in fail_match:

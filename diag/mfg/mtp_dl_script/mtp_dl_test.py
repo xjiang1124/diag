@@ -17,6 +17,8 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -61,7 +63,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
 
-    dsp = "DL"
+    dsp = FF_Stage.DL
     for test in ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -125,16 +127,14 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     # get the absolute file path
-    nic_firmware_cfg_file = os.path.abspath("config/nic_firmware_cfg.yaml")
-    nic_fw_cfg = libmfg_utils.load_cfg_from_yaml(nic_firmware_cfg_file)
-    naples100_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["CPLD_FILE"]
-    naples100_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES100]["QSPI_FILE"]
-    vomero_cpld_img_file = nic_fw_cfg[NIC_Type.VOMERO]["CPLD_FILE"]
-    vomero_qspi_img_file = nic_fw_cfg[NIC_Type.VOMERO]["QSPI_FILE"]
-    naples25_cpld_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["CPLD_FILE"]
-    naples25_qspi_img_file = nic_fw_cfg[NIC_Type.NAPLES25]["QSPI_FILE"]
+    naples100_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
+    naples100_qspi_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples25_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
+    naples25_qspi_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    vomero_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
+    vomero_qspi_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="DL"):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.DL):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -149,7 +149,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    dsp = "DL"
+    dsp = FF_Stage.DL
     # construct nic fru config file
     tmp_fru_cfg = dict()
     tmp_fru_cfg["MTP_ID"] = mtp_id
