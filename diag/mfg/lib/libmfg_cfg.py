@@ -39,6 +39,9 @@ class MFG_IMAGE_FILES:
     NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
     NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"
 
+    VOMERO_CPLD_IMAGE = "vomero_cpld_rev1_06032019.bin"
+    VOMERO_SEC_CPLD_IMAGE = "vomero_cpld_rev81_09182019.bin"
+
 
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
@@ -86,7 +89,7 @@ FLX_API_URL = "/Pensando/fftester20.asmx"
 FLX_GET_UUT_INFO_SOAP = "http:/www.flextronics.com/FFTester20/GetUnitInfo"
 FLX_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
 
-FLX_PENANG_WEBSERVER = "172.30.178.5"
+FLX_PENANG_WEBSERVER = "10.192.155.61"
 FLX_PENANG_API_URL = "/FFTesterWS_PENSANDO/FFTesterWS.asmx"
 FLX_PENANG_GET_UUT_INFO_SOAP = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
 FLX_PENANG_SAVE_UUT_RSLT_SOAP = "http://www.flextronics.com/FFTesterWS/SaveResult"
