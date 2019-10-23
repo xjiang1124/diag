@@ -693,18 +693,40 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
     #(stage, SN, start_ts, duration, stop_ts, result)
     save_uut_rslt_entry = FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage, sn, str(start_ts), str(duration), str(stop_ts), rslt, nic_type, duration, rslt)
 
-    return FLX_SAVE_UUT_RSLT_XML_HEAD + \
-           save_uut_rslt_entry + \
-           test_xml + \
-           FLX_SAVE_UUT_RSLT_ENTRY_END + \
-           FLX_SAVE_UUT_RSLT_XML_TAIL
+    factory = flx_sn_to_factory(sn)
+    if not factory:
+        print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return None
+
+    if factory == FLX_Factory.PENANG:
+        return FLX_SAVE_UUT_RSLT_XML_HEAD.format(FLX_PENANG_SOAP) + \
+               save_uut_rslt_entry + \
+               test_xml + \
+               FLX_SAVE_UUT_RSLT_ENTRY_END + \
+               FLX_SAVE_UUT_RSLT_XML_TAIL
+    else:
+        return FLX_SAVE_UUT_RSLT_XML_HEAD.format(FLX_MILPITAS_SOAP) + \
+               save_uut_rslt_entry + \
+               test_xml + \
+               FLX_SAVE_UUT_RSLT_ENTRY_END + \
+               FLX_SAVE_UUT_RSLT_XML_TAIL
 
 
 def flx_soap_get_uut_info_xml(stage, sn):
+    factory = flx_sn_to_factory(sn)
+    if not factory:
+        print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return None
+
     get_uut_info_entry = FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage)
-    return FLX_GET_UUT_INFO_XML_HEAD + \
-           get_uut_info_entry + \
-           FLX_GET_UUT_INFO_XML_TAIL
+    if factory == FLX_Factory.PENANG:
+        return FLX_GET_UUT_INFO_XML_HEAD.format(FLX_PENANG_SOAP) + \
+               get_uut_info_entry + \
+               FLX_GET_UUT_INFO_XML_TAIL
+    else:
+        return FLX_GET_UUT_INFO_XML_HEAD.format(FLX_MILPITAS_SOAP) + \
+               get_uut_info_entry + \
+               FLX_GET_UUT_INFO_XML_TAIL
 
 
 def flx_sn_to_factory(sn):
@@ -774,10 +796,13 @@ def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
 
 
 def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
-    xml = flx_soap_get_uut_info_xml(stage, sn)
     factory = flx_sn_to_factory(sn)
     if not factory:
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return False
+
+    xml = flx_soap_get_uut_info_xml(stage, sn)
+    if not xml:
         return False
 
     ret = soap_get_uut_info(xml, factory)
@@ -785,6 +810,9 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         return False
 
     xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+    if not xml:
+        return False
+
     ret = soap_post_report(xml, factory)
     if int(ret) != 0:
         return False
