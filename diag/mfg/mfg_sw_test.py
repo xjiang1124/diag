@@ -100,8 +100,8 @@ def main():
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    # get sw image name based on the sku
-    sw_image = libmfg_utils.sku_scan()
+    # get sw image name based on the sw pn
+    sw_image = libmfg_utils.sw_pn_scan()
     emmc_img_file = "release/{:s}".format(sw_image);
     profile_cfg_file = "release/profile_{:s}.py".format(sw_image);
     if not libmfg_utils.file_exist(emmc_img_file):
@@ -109,10 +109,10 @@ def main():
         return
 
     if not libmfg_utils.file_exist(profile_cfg_file):
-        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to SKU: {:s}".format(sw_image), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to software PN: {:s}".format(sw_image), level=0)
         profile_cfg_file = None
     else:
-        mtp_mgmt_ctrl.cli_log_inf("Profile will apply to SKU: {:s}".format(sw_image), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Profile will apply to software PN: {:s}".format(sw_image), level=0)
 
     mfg_sw_start_ts = libmfg_utils.timestamp_snapshot()
 

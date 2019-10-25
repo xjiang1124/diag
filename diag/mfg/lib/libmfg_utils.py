@@ -273,8 +273,8 @@ def action_confirm(msg, action):
         tmp = raw_input("Operator Confirm " + msg + ":")
 
 
-def sku_scan():
-    tmp = raw_input("Scan the SKU: ")
+def sw_pn_scan():
+    tmp = raw_input("Scan the Software PN: ")
     return tmp;
 
 
@@ -691,7 +691,6 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code)
 
     #(stage, SN, start_ts, duration, stop_ts, result)
-    save_uut_rslt_entry = FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage, sn, str(start_ts), str(duration), str(stop_ts), rslt, nic_type, duration, rslt)
 
     factory = flx_sn_to_factory(sn)
     if not factory:
@@ -699,14 +698,14 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         return None
 
     if factory == FLX_Factory.PENANG:
-        return FLX_SAVE_UUT_RSLT_XML_HEAD.format(FLX_PENANG_SOAP) + \
-               save_uut_rslt_entry + \
+        return FLX_PENANG_SAVE_UUT_RSLT_XML_HEAD + \
+               FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT.format(stage,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
                test_xml + \
                FLX_SAVE_UUT_RSLT_ENTRY_END + \
                FLX_SAVE_UUT_RSLT_XML_TAIL
     else:
-        return FLX_SAVE_UUT_RSLT_XML_HEAD.format(FLX_MILPITAS_SOAP) + \
-               save_uut_rslt_entry + \
+        return FLX_SAVE_UUT_RSLT_XML_HEAD + \
+               FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
                test_xml + \
                FLX_SAVE_UUT_RSLT_ENTRY_END + \
                FLX_SAVE_UUT_RSLT_XML_TAIL
@@ -718,14 +717,13 @@ def flx_soap_get_uut_info_xml(stage, sn):
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return None
 
-    get_uut_info_entry = FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage)
     if factory == FLX_Factory.PENANG:
-        return FLX_GET_UUT_INFO_XML_HEAD.format(FLX_PENANG_SOAP) + \
-               get_uut_info_entry + \
+        return FLX_PENANG_GET_UUT_INFO_XML_HEAD + \
+               FLX_PENANG_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) + \
                FLX_GET_UUT_INFO_XML_TAIL
     else:
-        return FLX_GET_UUT_INFO_XML_HEAD.format(FLX_MILPITAS_SOAP) + \
-               get_uut_info_entry + \
+        return FLX_GET_UUT_INFO_XML_HEAD + \
+               FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) + \
                FLX_GET_UUT_INFO_XML_TAIL
 
 
