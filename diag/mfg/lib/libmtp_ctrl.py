@@ -23,6 +23,7 @@ from libmfg_cfg import MFG_GOLD_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
+from libmfg_cfg import MFG_IMAGE_FILES
 
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
@@ -36,6 +37,7 @@ from libdefs import NIC_Port_Mask
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
+from libdefs import FF_Stage
 
 from libnic_ctrl import nic_ctrl
 
@@ -1056,15 +1058,15 @@ class mtp_ctrl():
 
         # check if firmware image exist
         if mtp_capability & 0x1:
-            naples100_qspi_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            naples100_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-            naples100_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
-            naples100_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
+            naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+            naples100_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+            naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
+            naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
 
-            vomero_qspi_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            vomero_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-            vomero_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
-            vomero_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
+            vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+            vomero_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+            vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
+            vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
 
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1072,13 +1074,13 @@ class mtp_ctrl():
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            if stage == FF_Stage.DL:
+            if stage == FF_Stage.FF_DL:
                 img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
                 img_list += [vomero_cpld_img_file, vomero_qspi_img_file]
-            if stage == FF_Stage.KPT:
+            if stage == FF_Stage.FF_KPT:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
-            if stage == FF_Stage.SWI:
+            if stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
             else:
@@ -1091,21 +1093,21 @@ class mtp_ctrl():
                     return False
 
         if mtp_capability & 0x2:
-            naples25_qspi_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            naples25_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-            naples25_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
-            naples25_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
+            naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+            naples25_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+            naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
+            naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
                 return False
             cmd_buf = self.mtp_get_cmd_buf()
 
-            if stage == FF_Stage.DL:
+            if stage == FF_Stage.FF_DL:
                 img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
-            elif stage == FF_Stage.KPT:
+            elif stage == FF_Stage.FF_KPT:
                 img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
-            elif stage == FF_Stage.SWI:
+            elif stage == FF_Stage.FF_SWI:
                 img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
             else:
                 img_list = []

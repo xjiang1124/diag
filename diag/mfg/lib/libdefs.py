@@ -29,6 +29,16 @@ class FF_Stage:
     FF_FST = "FST"
 
 
+class FPN_FF_Stage:
+    FF_DL = "PSO-DOWNLOAD_AUTO_L39A"
+    FF_P2C = "PSO-P2C_AUTO_L39A"
+    FF_4C_H = "PSO-4C-H_AUTO_L39A"
+    FF_4C_L = "PSO-4C-L_AUTO_L39A"
+    FF_KPT = "PSO-KPT_AUTO_L39A"
+    FF_SWI = "PSO-SWI_AUTO_L39A"
+    FF_FST = "PSO-FST_AUTO_L39A"
+
+
 class Env_Cond(Enum):
     MFG_QA = "QA"
     MFG_LT = "LT"

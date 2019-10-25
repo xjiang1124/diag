@@ -11,6 +11,7 @@ import pexpect
 
 from libdefs import MTP_Const
 from libdefs import FF_Stage
+from libdefs import FPN_FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
@@ -698,8 +699,9 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         return None
 
     if factory == FLX_Factory.PENANG:
+        ff_pn = flx_stage_to_penang(stage)
         return FLX_PENANG_SAVE_UUT_RSLT_XML_HEAD + \
-               FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT.format(stage,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
+               FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT.format(ff_pn,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
                test_xml + \
                FLX_SAVE_UUT_RSLT_ENTRY_END + \
                FLX_SAVE_UUT_RSLT_XML_TAIL
@@ -718,8 +720,9 @@ def flx_soap_get_uut_info_xml(stage, sn):
         return None
 
     if factory == FLX_Factory.PENANG:
+        ff_pn = flx_stage_to_penang(stage)
         return FLX_PENANG_GET_UUT_INFO_XML_HEAD + \
-               FLX_PENANG_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) + \
+               FLX_PENANG_GET_UUT_INFO_ENTRY_FMT.format(sn, ff_pn) + \
                FLX_GET_UUT_INFO_XML_TAIL
     else:
         return FLX_GET_UUT_INFO_XML_HEAD + \
@@ -733,6 +736,26 @@ def flx_sn_to_factory(sn):
     elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
         return FLX_Factory.MILPITAS
     else:
+        return None
+
+
+def flx_stage_to_penang(stage):
+    if stage == FF_Stage.FF_DL:
+        return FPN_FF_Stage.FF_DL
+    elif stage == FF_Stage.FF_P2C:
+        return FPN_FF_Stage.FF_P2C
+    elif stage == FF_Stage.FF_4C_H:
+        return FPN_FF_Stage.FF_4C_H
+    elif stage == FF_Stage.FF_4C_L:
+        return FPN_FF_Stage.FF_4C_L
+    elif stage == FF_Stage.FF_KPT:
+        return FPN_FF_Stage.FF_KPT
+    elif stage == FF_Stage.FF_SWI:
+        return FPN_FF_Stage.FF_SWI
+    elif stage == FF_Stage.FF_FST:
+        return FPN_FF_Stage.FF_FST
+    else:
+        print("Unknown Flex Flow Stage: {:s}".format(stage))
         return None
 
 def soap_post_report(xml, factory=FLX_Factory.PENANG):
