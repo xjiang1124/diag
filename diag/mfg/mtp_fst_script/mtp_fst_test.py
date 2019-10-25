@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import threading
 import argparse
@@ -15,9 +14,10 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
+from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -105,7 +105,7 @@ def main():
     fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
     pass_match = re.findall(pass_reg_exp, result)
     fail_match = re.findall(fail_reg_exp, result)
-    dsp = FF_Stage.FST
+    dsp = FF_Stage.FF_FST
     test = "PCIE_LINK"
 
     for _slot, _sn, _nic_type in fail_match:

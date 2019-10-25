@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import threading
 import argparse
@@ -15,10 +14,11 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
+from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -52,7 +52,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
-    dsp = FF_Stage.KPT
+    dsp = FF_Stage.FF_KPT
     for test in ["SEC_CPLD_PROG", "SEC_CPLD_REF"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -108,11 +108,11 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     # get the absolute file path
-    naples100_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
-    naples25_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
-    vomero_sec_cpld_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
+    naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
+    naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
+    vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.KPT):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_KPT):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -126,7 +126,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    dsp = FF_Stage.KPT
+    dsp = FF_Stage.FF_KPT
     pass_nic_list = list()
     fail_nic_list = list()
 

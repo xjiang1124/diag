@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-import datetime
 import pexpect
 import threading
 import argparse
@@ -15,10 +14,11 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
+from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -135,10 +135,10 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     # get the absolute file path
-    naples100_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-    naples25_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-    vomero_gold_img_file = ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-    emmc_img_file = ONBOARD_MTP_DIAG_PATH + img_file
+    naples100_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    naples25_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    vomero_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
