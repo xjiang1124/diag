@@ -134,6 +134,7 @@ def main():
         mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
         if (mtp_capability & 0x1):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE)
         if (mtp_capability & 0x2):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE)
 
