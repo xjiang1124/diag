@@ -281,3 +281,50 @@ func I2c16_ReadWrite(rws string, devName string, regAddr uint64, data uint16, mo
     return
 }
 
+func I2c16_ReadWriteBlk(rws string, devName string, regAddr uint64, data uint64, numByte uint64) (err int) {
+    dataBuf := make([]byte, numByte)
+    var byteCnt int
+
+    iInfo, err := i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to obtain I2C info of", devName)
+        return
+    }
+
+    err = smbusNew.Open(devName, iInfo.Bus, iInfo.DevAddr)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbusNew.Close()
+
+    switch rws {
+    case "READ_BLK":
+        byteCnt, err = smbusNew.I2C16ReadBlock(devName, uint16(regAddr), dataBuf)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to read block device", devName, "at addr=", regAddr, "err code=", err)
+        } else {
+            cli.Printf("i", "Read block device %s at addr 0x%x with %d bytes\n", devName, regAddr, byteCnt)
+            cli.Printf("i", "0x%x\n", dataBuf)
+            for i:=0; i<len(dataBuf); i++ {
+                cli.Printf("i", "data[%d] = 0x%x\n", i, dataBuf[i])
+            }
+        }
+    case "WRITE_BLK":
+        if numByte > 8 {
+            cli.Println("f", "Maximun 8 bytes of block write is allowed! Reveived request of ", numByte, "bytes")
+            return errType.FAIL
+        }
+        for i:=0; uint64(i) < numByte; i++ {
+            dataBuf[i] = byte((data >> (8*uint64(i))) & 0xFF)
+            cli.Printf("d", "data[%d]=0x%x", i, dataBuf[i])
+        }
+        err = smbusNew.I2C16WriteBlock(devName, uint16(regAddr), dataBuf)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to write block device", devName, "at", regAddr)
+        } else {
+            cli.Printf("i", "Write block device %s at addr 0x%x with %d bytes\n", devName, regAddr, byteCnt)
+        }
+    }
+    return
+}
+

@@ -58,6 +58,16 @@ func main() {
             utillib.I2c16_ReadWrite("WRITE", devName, addr, uint16(data), mode)
         }
 
+        if *readBlkPtr == true {
+            utillib.I2c16_ReadWriteBlk("READ_BLK", devName, addr, data, numByte)
+            return
+        }
+
+        if *writeBlkPtr == true {
+            utillib.I2c16_ReadWriteBlk("WRITE_BLK", devName, addr, data, numByte)
+            return
+        }
+
         return
     }
 
