@@ -33,7 +33,8 @@ func main() {
     numBytePtr  := flag.Uint64("nb",   0,    "Number of bytes")
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     phyPtr      := flag.Uint64("phy", 0,    "Phy addr")
-    smiPtr     	:= flag.Bool(  "smi", false, "Switch smi access")
+    smiPtr      := flag.Bool(  "smi", false, "Switch smi access")
+    i2c16Ptr    := flag.Bool(  "i2c16", false, "16-bit addressing I2C mode")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -46,6 +47,18 @@ func main() {
 
     if uut != "UUT_NONE" {
         i2cinfo.SwitchI2cTbl(uut)
+    }
+
+    // 16-bit internal addressing I2C
+    if *i2c16Ptr == true {
+        if *readPtr == true {
+            utillib.I2c16_ReadWrite("READ", devName, addr, uint16(data), mode)
+        }
+        if *writePtr == true {
+            utillib.I2c16_ReadWrite("WRITE", devName, addr, uint16(data), mode)
+        }
+
+        return
     }
 
     if *readPtr == true {
