@@ -263,10 +263,8 @@ func I2C16ReadByte(devName string, offset uint16) (data byte, err int) {
 func I2C16WriteBlock(devName string, offset uint16, buf []byte) (err int) {
     wData := make([]byte, 1)
     wData[0] = byte(offset & 0xFF)
-    wData = append([]byte{}, buf...)
+    wData = append(wData, buf...)
     wOffset := byte((offset& 0xFF00) >> 8)
-
-    cli.Println("i", "wData", wData)
 
     _, errgo := smbInfo.smb.Write_i2c_block_data(wOffset, wData)
     if errgo != nil {
@@ -283,7 +281,6 @@ func I2C16ReadBlock(devName string, offset uint16, buf []byte) (byteCnt int, err
     wData[0] = byte(offset & 0xFF)
     wOffset := byte((offset& 0xFF00) >> 8)
 
-    cli.Println("i", "wData", wData)
     _, errgo := smbInfo.smb.Write_i2c_block_data(wOffset, wData)
     if errgo != nil {
         cli.Println("f", errgo)
