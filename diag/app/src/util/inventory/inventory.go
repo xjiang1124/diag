@@ -4,10 +4,13 @@ import (
     "fmt"
     "flag"
     "os"
+    "os/exec"
+    "regexp"
     "strconv"
 
     "common/cli"
     "common/errType"
+    "common/misc"
     "device/cpld/naples100Cpld"
     "device/cpld/naples25Cpld"
     "device/cpld/naples25swmCpld"
@@ -120,11 +123,45 @@ func powerStatusCheck(slot int)  {
     return
 }
 
+func mtpIdentify() (err int) {
+    var rev string
+    var fmtStr string = "export MTP_REV=\"REV_%s\"\n"
+
+    out, errGo := exec.Command("/home/diag/diag/util/eeutil", "-dev=fru", "-disp").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+    }
+    outStr := string(out)
+    re :=regexp.MustCompile(`.*HW_MAJOR_REV\s+(\d+).*`)
+    match :=re.MatchString(outStr)
+    if match == true {
+        submatchall := re.FindAllStringSubmatch(outStr, -1)
+        for _, element := range submatchall {
+            rev  = element[1]
+        }
+    } else {
+        rev = "NONE"
+    }
+    cli.Println("i", "Rev:", rev)
+
+    file, errGo := os.OpenFile("/home/diag/diag/log/board_env.txt", os.O_CREATE|os.O_WRONLY|os.O_SYNC|os.O_APPEND, 0666)
+    if errGo != nil {
+        cli.Println("e", "Cannot create file", err)
+    }
+    defer file.Close()
+
+    fmt.Fprintf(file, fmtStr, rev)
+
+    return
+}
+
 func sysDetect() (err int) {
     var presentStr string
     var fmtStr string = "export UUT_%d=\"%s\"\n"
 
-    file, err1 := os.Create("/home/diag/diag/log/board_env.txt")
+    //file, err1 := os.Create("/home/diag/diag/log/board_env.txt")
+    file, err1 := os.OpenFile("/home/diag/diag/log/board_env.txt", os.O_CREATE|os.O_WRONLY|os.O_SYNC|os.O_APPEND, 0666)
     if err1 != nil {
         cli.Println("e", "Cannot create file", err)
     }
@@ -226,10 +263,11 @@ func main() {
     presentPtr := flag.Bool("present", false, "Show UUT present status")
     envPtr     := flag.Bool("env", false, "Detect/set environment")
     psPtr      := flag.Bool("ps", false, "Power Status")
-    slotPtr     := flag.Int("slot", 0, "Slot Number")
+    slotPtr    := flag.Int("slot", 0, "Slot Number")
     powDumpPtr := flag.Bool("pw", false, "Power state dump")
     esecPtr    := flag.Bool("esec", false, "Escure status dump")
-    stsPtr    := flag.Bool("sts", false, "Entire status dump")
+    stsPtr     := flag.Bool("sts", false, "Entire status dump")
+    mtpIdPtr   := flag.Bool("mtpid", false, "Identify MTP reversion")
 
     flag.Parse()
 
@@ -242,6 +280,8 @@ func main() {
 
     if *envPtr == true {
         sysDetect()
+        misc.SleepInSec(1)
+        mtpIdentify()
         return
     }
 
@@ -262,6 +302,11 @@ func main() {
 
     if *stsPtr == true {
         statusDump(slot)
+        return
+    }
+
+    if *mtpIdPtr == true {
+        mtpIdentify()
         return
     }
 
