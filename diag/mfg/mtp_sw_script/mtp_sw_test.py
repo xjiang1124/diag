@@ -159,9 +159,9 @@ def main():
 
     # get the absolute file path
     naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
-    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
     naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
     vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
