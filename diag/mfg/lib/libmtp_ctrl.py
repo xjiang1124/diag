@@ -1077,10 +1077,7 @@ class mtp_ctrl():
             if stage == FF_Stage.FF_DL:
                 img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
                 img_list += [vomero_cpld_img_file, vomero_qspi_img_file]
-            if stage == FF_Stage.FF_KPT:
-                img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
-                img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
-            if stage == FF_Stage.FF_SWI:
+            elif stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
             else:
@@ -1105,8 +1102,6 @@ class mtp_ctrl():
 
             if stage == FF_Stage.FF_DL:
                 img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
-            elif stage == FF_Stage.FF_KPT:
-                img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
             else:
@@ -1687,16 +1682,20 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_pre():
             self.cli_log_slot_err(slot, "Pre init key programming failed")
+            self.mtp_mgmt_set_nic_avs_post(slot)
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key(self._id):
             self.cli_log_slot_err(slot, "Program NIC Secure Key failed")
+            self.mtp_mgmt_set_nic_avs_post(slot)
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
             self.cli_log_slot_err(slot, "Post cleanup key programming failed")
+            self.mtp_mgmt_set_nic_avs_post(slot)
             return False
 
+        self.mtp_mgmt_set_nic_avs_post(slot)
         return True
 
 

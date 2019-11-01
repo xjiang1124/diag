@@ -617,7 +617,7 @@ def main():
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         nic_key = libmfg_utils.nic_key(slot)
         diag_nic_log_file = mtp_script_dir + "/mtp_{:s}_diag.log".format(nic_key)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+")
+        diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 

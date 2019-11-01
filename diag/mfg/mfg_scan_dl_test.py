@@ -114,7 +114,7 @@ def main():
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
     test_log_file = log_dir + log_sub_dir + "test_dl.log"
     log_file_list.append(test_log_file)
-    test_log_filep = open(test_log_file, "w+")
+    test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
     if verbosity:
@@ -122,7 +122,7 @@ def main():
     else:
         diag_log_file = log_dir + log_sub_dir + "diag_dl.log"
         log_file_list.append(diag_log_file)
-        diag_log_filep = open(diag_log_file, "w+")
+        diag_log_filep = open(diag_log_file, "w+", buffering=0)
         log_filep_list.append(diag_log_filep)
 
     diag_nic_log_filep_list = list()
@@ -130,7 +130,7 @@ def main():
         key = libmfg_utils.nic_key(slot)
         diag_nic_log_file = log_dir + log_sub_dir + "diag_{:s}_dl.log".format(key)
         log_file_list.append(diag_nic_log_file)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+")
+        diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
         log_filep_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 

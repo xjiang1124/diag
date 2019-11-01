@@ -1,3 +1,24 @@
+MTP-300:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.125"
+    APC1_PORT: "1"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.1.125"
+    APC2_PORT: "2"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.1.140"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp300"
+    SLOTS: 10
+    CAPABILITY: 0x3
+
 MTP-310:
     MODE: ""
     TS: ""
@@ -16,5 +37,26 @@ MTP-310:
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp310"
+    SLOTS: 10
+    CAPABILITY: 0x3
+
+MTP-800:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.11"
+    APC1_PORT: "4"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.11"
+    APC2_PORT: "5"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.80"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp800"
     SLOTS: 10
     CAPABILITY: 0x3

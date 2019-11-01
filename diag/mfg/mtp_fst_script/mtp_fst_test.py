@@ -63,11 +63,11 @@ def main():
     # local log files
     log_filep_list = list()
     test_log_file = "test_fst.log"
-    test_log_filep = open(test_log_file, "w+")
+    test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
     diag_log_file = "diag_fst.log"
-    diag_log_filep = open(diag_log_file, "w+")
+    diag_log_filep = open(diag_log_file, "w+", buffering=0)
     log_filep_list.append(diag_log_filep)
 
     diag_nic_log_filep_list = list()

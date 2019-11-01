@@ -24,7 +24,6 @@ class FF_Stage:
     FF_P2C = "P2C"
     FF_4C_H = "4C-H"
     FF_4C_L = "4C-L"
-    FF_KPT = "KPT"
     FF_SWI = "SWI"
     FF_FST = "FST"
 
@@ -34,7 +33,6 @@ class FPN_FF_Stage:
     FF_P2C = "PSO-P2C_AUTO_L39A"
     FF_4C_H = "PSO-4C-H_AUTO_L39A"
     FF_4C_L = "PSO-4C-L_AUTO_L39A"
-    FF_KPT = "PSO-KPT_AUTO_L39A"
     FF_SWI = "PSO-SWI_AUTO_L39A"
     FF_FST = "PSO-FST_AUTO_L39A"
 
@@ -122,9 +120,9 @@ class MTP_Const:
     MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
     MFG_DL_TEST_TIMEOUT = 14400
-    MFG_KPT_TEST_TIMEOUT = 14400
+    # 2.5 hour
+    MFG_SW_TEST_TIMEOUT = 9000
     # 1 hour
-    MFG_SW_TEST_TIMEOUT = 3600
     MFG_FST_TEST_TIMEOUT = 3600
     
     MFG_EDVT_LOW_FAN_SPD = 40
@@ -164,7 +162,6 @@ class MTP_DIAG_Logfile:
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
-    ONBOARD_KPT_LOG_FILES = "/home/diag/mtp_kpt_script/*log"
     ONBOARD_SWI_LOG_FILES = "/home/diag/mtp_sw_script/*log"
     ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
@@ -175,14 +172,12 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_DL_LOG_DIR_FMT = "/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_P2C_LOG_DIR_FMT = "/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_4C_LOG_DIR_FMT = "/mfg_log/{:s}/4C/{:s}/{:s}/"
-    DIAG_MFG_KPT_LOG_DIR_FMT = "/mfg_log/{:s}/KPT/{:s}/"
     DIAG_MFG_SWI_LOG_DIR_FMT = "/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
 
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
-    DIAG_MFG_MODEL_KPT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/KPT/{:s}/"
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
 
@@ -192,8 +187,6 @@ class MTP_DIAG_Logfile:
     MFG_P2C_LOG_DIR = "NT_{:s}_{:s}/"
     MFG_4C_LOG_PKG_FILE = "{:s}_{:s}_{:s}.tar.gz"
     MFG_4C_LOG_DIR = "{:s}_{:s}_{:s}/"
-    MFG_KPT_LOG_PKG_FILE = "KPT_{:s}_{:s}.tar.gz"
-    MFG_KPT_LOG_DIR = "KPT_{:s}_{:s}/"
     MFG_SWI_LOG_PKG_FILE = "SWI_{:s}_{:s}.tar.gz"
     MFG_SWI_LOG_DIR = "SWI_{:s}_{:s}/"
     MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
