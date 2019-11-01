@@ -159,7 +159,7 @@ MTPS-001:
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.66.167"
+    IP: "192.168.73.102"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps001"
