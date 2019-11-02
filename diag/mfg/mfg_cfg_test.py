@@ -4,9 +4,9 @@ import sys
 import os
 import time
 import pexpect
-import threading
-import argparse
 import re
+import argparse
+import threading
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -22,13 +22,15 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+from libdiag_db import diag_db
 
 
 def load_mtp_cfg():
+    # DL/P2C MTP Chassis
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/swi_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
@@ -46,48 +48,44 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_swi_test(mtp_swi_script_dir, emmc_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
-    # go to mtp_swi_script and start the test
-    cmd = "cd {:s}".format(mtp_swi_script_dir)
+def single_mtp_cfg_test(mtp_cfg_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
+    # go to mtp_cfg_script and start the test
+    cmd = "cd {:s}".format(mtp_cfg_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Start", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG CFG Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    if profile_cfg_file:
-        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s}".format(emmc_img_file, profile_cfg_file, mtp_id)
-    else:
-        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s}".format(emmc_img_file, mtp_id)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_SW_TEST_TIMEOUT)
+    cmd = "./mtp_cfg_test.py --mtpid {:s}".format(mtp_id)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_CFG_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG CFG Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_SWI)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_cfg_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_CFG)
     if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect SW Install Test result failed", level=0)
+        mtp_mgmt_ctrl.cli_log_err("MTP Collect CFG Test result failed", level=0)
         return
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_SWI)
+    # if GLB_CFG_MFG_TEST_MODE:
+    #     libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_CFG)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
-    return
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MFG Software Install Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
+    parser = argparse.ArgumentParser(description="MFG MTP CFG Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 
+    fru_cfg_file = "fru_cfg.yaml"
+    verbosity = False
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
-    else:
-        verbosity = False
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
-    mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
+    mtpid_fail_list = list()
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
@@ -100,46 +98,36 @@ def main():
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    # get sw image name based on the sw pn
-    sw_image = libmfg_utils.sw_pn_scan()
-    emmc_img_file = "release/{:s}".format(sw_image);
-    profile_cfg_file = "release/profile_{:s}.py".format(sw_image);
-    if not libmfg_utils.file_exist(emmc_img_file):
-        mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(emmc_img_file), level=0)
+    if not libmfg_utils.file_exist(fru_cfg_file):
+        libmfg_utils.cli_err("Unable to locate fru config file: {:s}".format(fru_cfg_file))
         return
 
-    if not libmfg_utils.file_exist(profile_cfg_file):
-        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to software PN: {:s}".format(sw_image), level=0)
-        profile_cfg_file = None
-    else:
-        mtp_mgmt_ctrl.cli_log_inf("Profile will apply to software PN: {:s}".format(sw_image), level=0)
-
-    mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
+    mfg_cfg_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="SW-SSH"):
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="CFG-SSH"):
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
+            continue
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         # Check if image updated is needed
-        mtp_swi_image_list = list()
+        mtp_cfg_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
         if (mtp_capability & 0x1):
-            mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE)
-            mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE)
+            mtp_cfg_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
+            mtp_cfg_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
         if (mtp_capability & 0x2):
-            mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE)
+            mtp_cfg_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
+        if not libmfg_utils.mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, mtp_cfg_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -169,41 +157,26 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
     # Copy script, config file on to each MTP Chassis
-    mtp_swi_script_dir = "mtp_swi_script/"
+    mtp_cfg_script_dir = "mtp_cfg_script/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_swi_script_pkg = "mtp_swi_script.{:s}.tar".format(mtp_id)
-        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP SW Install Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_swi_script_pkg, profile_cfg_file):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP SW Install Test script failed", level=0)
+        mtp_cfg_script_pkg = "mtp_cfg_script.{:s}.tar".format(mtp_id)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP CFG Test script", level=0)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_cfg_script_dir, mtp_cfg_script_pkg, fru_cfg_file):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP CFG Test script failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
         else:
-            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP SW Install Test script complete", level=0)
-
-    # Copy emmc image:
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_mgmt_ctrl.cli_log_inf("Copy Software image: {:s}".format(emmc_img_file), level=0)
-        mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-        mtp_ip_addr = mtp_mgmt_cfg[0]
-        mtp_usrid = mtp_mgmt_cfg[1]
-        mtp_passwd = mtp_mgmt_cfg[2]
-        image_dir = "/home/diag/"
-        if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, emmc_img_file, image_dir):
-            mtp_mgmt_ctrl.cli_log_err("Copy Software image failed... Abort", level=0)
-            return
-        mtp_mgmt_ctrl.cli_log_inf("Copy Software images complete\n", level=0)
+            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP CFG Test script complete", level=0)
 
     mtp_thread_list = list()
-    mfg_swi_summary = dict()
+    mfg_cfg_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mfg_swi_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_swi_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_swi_script_dir,
-                                                                            sw_image,
-                                                                            profile_cfg_file,
+        mfg_cfg_summary[mtp_id] = list()
+        mtp_thread = threading.Thread(target = single_mtp_cfg_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_cfg_script_dir,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
-                                                                            mfg_swi_summary[mtp_id]))
+                                                                            mfg_cfg_summary[mtp_id]))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -219,16 +192,15 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
-    mfg_swi_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG MTP Software Install Test Duration:{:s}".format(mfg_swi_stop_ts - mfg_swi_start_ts))
+    mfg_cfg_stop_ts = libmfg_utils.timestamp_snapshot()
+    libmfg_utils.cli_inf("MFG MTP CFG Test Duration:{:s}".format(mfg_cfg_stop_ts - mfg_cfg_start_ts))
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_disp(FF_Stage.FF_SWI, mfg_swi_summary, mtpid_fail_list)
+    libmfg_utils.mfg_summary_disp(FF_Stage.FF_CFG, mfg_cfg_summary, mtpid_fail_list)
 
-    return
 
 if __name__ == "__main__":
     main()

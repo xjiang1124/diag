@@ -576,7 +576,7 @@ class nic_ctrl():
 
 
     def nic_sw_profile(self, profile):
-        if not self.nic_copy_image("/home/diag/mtp_sw_script/{:s}".format(profile)):
+        if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
             return False
 
         nic_cmd_list = list()

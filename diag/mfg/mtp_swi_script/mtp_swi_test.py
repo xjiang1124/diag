@@ -136,18 +136,18 @@ def main():
 
     # local log files
     log_filep_list = list()
-    test_log_file = "test_sw.log"
+    test_log_file = "test_swi.log"
     test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
-    diag_log_file = "diag_sw.log"
+    diag_log_file = "diag_swi.log"
     diag_log_filep = open(diag_log_file, "w+", buffering=0)
     log_filep_list.append(diag_log_filep)
 
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "diag_{:s}_sw.log".format(key)
+        diag_nic_log_file = "diag_{:s}_swi.log".format(key)
         diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
         log_filep_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)

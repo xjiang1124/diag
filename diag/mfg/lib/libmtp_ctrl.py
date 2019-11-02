@@ -1077,6 +1077,9 @@ class mtp_ctrl():
             if stage == FF_Stage.FF_DL:
                 img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
                 img_list += [vomero_cpld_img_file, vomero_qspi_img_file]
+            elif stage == FF_Stage.FF_CFG:
+                img_list = [naples100_cpld_img_file]
+                img_list += [vomero_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
@@ -1102,6 +1105,8 @@ class mtp_ctrl():
 
             if stage == FF_Stage.FF_DL:
                 img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
+            elif stage == FF_Stage.FF_CFG:
+                img_list = [naples25_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
             else:
