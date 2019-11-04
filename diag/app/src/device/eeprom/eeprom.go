@@ -206,15 +206,6 @@ func ProgEeprom(devName string) (err int) {
                     updateIntChk()
                 }
             }
-    //        if (entry.Name == "Serial Number") && (HpeNaples == 1) {
-    //            entry.Value = make([]byte, entry.NumBytes)
-    //            updateIntChk()
-    //        }
-    //        
-    //        if (entry.Name == "Part Number") && (HpeNaples == 1) {
-    //            entry.Value = make([]byte, entry.NumBytes)
-    //            updateIntChk()
-    //        }
             if entry.Name == "Product Name" {
                 if (CardType == "NAPLES25") || (CardType == "NAPLES25SWM") {
                     copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
@@ -254,62 +245,24 @@ func ProgEeprom(devName string) (err int) {
                     updateIntChk()
                 }
             }
-    //        if entry.Name == "Serial Number" {
-    //            dftArray := []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
-    //            if bytes.Equal(entry.Value, dftArray) {
-    //                cli.Println("i", "skip sn")
-    //                continue
-    //            }
-    //        } else if entry.Name == "Manufacturing Date" {
-    //            dftArray := []byte{0, 0, 0}
-    //            if bytes.Equal(entry.Value, dftArray) {
-    //                cli.Println("i", "skip date")
-    //                continue
-    //            }
-    //        } else if entry.Name == "MAC Address Base" {
-    //            dftArray := []byte{0, 0, 0, 0, 0, 0}
-    //            if bytes.Equal(entry.Value, dftArray) {
-    //            cli.Println("i", "skip mac")
-    //            continue
-    //            }
-    //        }
-            
+
             if entry.Name == "Board Info Area Checksum" {
                 entry.Value[0] = byte(0x100 - brdInfoChk % 0x100)
-    //            binary.Write(entry.Value, binary.LittleEndian, (0x100 - brdInfoChk % 0x100))
-    //            entry.Value = []byte(strconv.FormatUint(uint64(0x100 - brdInfoChk % 0x100), 16))
-                
             } else if entry.Name == "Common Header Checksum" {
                 entry.Value[0] = byte(0x100 - cmnHeadChk % 0x100)
             }
-            
-    //        if entry.DataType == STRING {
-    //            data := make([]byte, entry.NumBytes)
-    //            copy(data, entry.Value)
-    //            cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
-    //        } else {
-    //            outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
-    //            cli.Println("i", outStr)
-    //        }
+
             err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
             if err != errType.SUCCESS {
                 cli.Println("e", "Program main FRU failed")
                 return
             }
-            
+
             if HpeNaples == 1 {
                 for _, entry := range(EepromExtTbl) {
                     if entry.Name == "HPE Multi-Record Area Checksum" {
                         entry.Value[0] = byte(0x100 - mraChk % 0x100)
                     }
-    //                if entry.DataType == STRING {
-    //                    data := make([]byte, entry.NumBytes)
-    //                    copy(data, entry.Value)
-    //                    cli.Println("i", "program " + entry.Name + " value " + string(data) + " len ", len(entry.Value))
-    //                } else {
-    //                    outStr := fmt.Sprintf("%s 0x%x len %d", entry.Name, entry.Value, len(entry.Value))
-    //                    cli.Println("i", outStr)
-    //                }
                     err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
                     if err != errType.SUCCESS {
                         cli.Println("e", "Program extension FRU failed")
@@ -340,14 +293,11 @@ func UpdateMac(devName string, mac []byte) (err int) {
         return
     }
     defer smbus.Close()
-    
+
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC_ADDR" {
                 copy(entry.Value, mac)
-//                for i := 0; i < entry.NumBytes; i++ {
-//                    entry.Value[i] = byte((mac >> uint64(48 - i * 8)) & 0xFF)
-//                }
                 continue
             } else if entry.Name == "SERIAL_NUM" {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
@@ -363,10 +313,6 @@ func UpdateMac(devName string, mac []byte) (err int) {
         for _, entry := range(EepromTbl) {
             if entry.Name == "MAC Address Base" {
                 copy(entry.Value, mac)
-//                for i := 0; i < entry.NumBytes; i++ {
-//                    entry.Value[i] = byte((mac >> uint64(40 - i * 8)) & 0xFF)
-//                    cli.Println("i", "mac ", i, " ", entry.Value[i], "  ", (mac >> uint64(40 - i * 8)) & 0xFF)
-//                }
                 continue
             } else if entry.Name == "Serial Number" {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
@@ -415,7 +361,6 @@ func updateIntChk() () {
             cmnHeadChk += calcSum(entry)
         }
     }
-    
     if HpeNaples == 1 {
         for _, entry := range(EepromExtTbl) {
             if (entry.Offset > 127) && (entry.Offset < 247) {
@@ -438,13 +383,11 @@ func UpdateSn(devName string, sn []byte) (err int) {
         cli.Println("f", "SN too long: ", sn)
         return
     }
-    
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
-    
 //    CardType := os.Getenv("CARD_TYPE")
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
@@ -570,43 +513,6 @@ func UpdatePn(devName string, pn []byte) (err int) {
     }
     return
 }
-
-//func UpdateDate(devName string, date []byte) (err int) {
-////    if len(date) != 3 {
-////        cli.Println("f", "Date format is invalid: ", date)
-////        return
-////    }
-//    err = smbus.Open(devName)
-//    if err != errType.SUCCESS {
-//        return
-//    }
-//    defer smbus.Close()
-//    
-//    CardType := os.Getenv("CARD_TYPE")
-//
-//    if CardType == "NAPLES100" {
-//        for _, entry := range(EepromTbl) {
-//            if entry.Name == "Manufacturing Date" {
-//                copy(entry.Value, date)
-////                for i := 0; i < entry.NumBytes; i++ {
-////                    entry.Value[i] = byte((date >> uint64(16 - i * 8)) & 0xFF)
-////                    fmt.Printf("%d\n", entry.Value[i])
-////                }
-//                continue
-//            } else if entry.Name == "MAC Address Base" {
-//                mac, _ := readField(devName, entry.Offset, entry.NumBytes)
-//                copy(entry.Value, mac)
-//                continue
-//            } else if entry.Name == "Serial Number" {
-//                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
-//                copy(entry.Value, sn)
-//                continue
-//            }
-//        }
-//        updateIntChk()
-//    }
-//    return
-//}
 
 func UpdateDate(devName string, str string) (err int) {
 //    if len(date) != 3 {
