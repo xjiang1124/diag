@@ -586,7 +586,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
     return True
 
 
-def mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, image_list, image_on_mtp):
+def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     mtp_ip_addr = mtp_mgmt_cfg[0]
     mtp_usrid = mtp_mgmt_cfg[1]
@@ -611,7 +611,7 @@ def mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, image_list, image_on_mtp):
     return True
 
 
-def mtp_update_diag_image(mtp_cfg_db, mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
+def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
     if mtp_image in image_on_mtp and nic_image in image_on_mtp:
         mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
         return True

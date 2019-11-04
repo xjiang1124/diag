@@ -53,14 +53,14 @@ def single_mtp_cfg_test(mtp_cfg_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     cmd = "cd {:s}".format(mtp_cfg_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
+    #mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG CFG Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     cmd = "./mtp_cfg_test.py --mtpid {:s}".format(mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_CFG_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG CFG Test Complete", level=0)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+    #mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_cfg_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_CFG)
     if not test_log_file:
@@ -127,7 +127,7 @@ def main():
             mtp_cfg_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, mtp_cfg_image_list, onboard_image_files):
+        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_cfg_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -137,7 +137,7 @@ def main():
 
         mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
         nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if not libmfg_utils.mtp_update_diag_image(mtp_cfg_db, mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)

@@ -1,4 +1,3 @@
-import pexpect
 import time
 import os
 import libmfg_utils

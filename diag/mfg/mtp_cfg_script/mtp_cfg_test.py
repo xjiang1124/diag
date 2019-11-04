@@ -241,10 +241,10 @@ def main():
         pn = nic_fru_cfg[mac]["PN"]
         pre_pn = nic_fru_cfg[mac]["PRE_PN"]
         if pre_sn != nic_fru_info[0]:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FRU SN mismatch, Onbard: {:s}, CFG: {:s}".format(nic_fru_info[0], pre_sn))
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FRU SN mismatch, Onboard: {:s}, CFG: {:s}".format(nic_fru_info[0], pre_sn))
             continue
         if pre_pn != nic_fru_info[2]:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FRU PN mismatch, Onbard: {:s}, CFG: {:s}".format(nic_fru_info[2], pre_pn))
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FRU PN mismatch, Onboard: {:s}, CFG: {:s}".format(nic_fru_info[2], pre_pn))
             continue
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FRU Config Matrix:")
@@ -319,6 +319,9 @@ def main():
         # CFG Verify process
         nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
         mac = nic_fru_info[1].replace('-', '')
+        if mac not in nic_fru_cfg.keys():
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "No config entry found for mac {:s}\n".format(mac))
+            continue
 
         exp_sn = nic_fru_cfg[mac]["SN"]
         exp_mac = nic_fru_info[1]

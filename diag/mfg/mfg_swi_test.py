@@ -46,7 +46,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_swi_test(mtp_swi_script_dir, emmc_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
+def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
     # go to mtp_swi_script and start the test
     cmd = "cd {:s}".format(mtp_swi_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -55,9 +55,9 @@ def single_mtp_swi_test(mtp_swi_script_dir, emmc_img_file, profile_cfg_file, mtp
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     if profile_cfg_file:
-        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s}".format(emmc_img_file, profile_cfg_file, mtp_id)
+        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s}".format(nic_sw_img_file, profile_cfg_file, mtp_id)
     else:
-        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s}".format(emmc_img_file, mtp_id)
+        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s}".format(nic_sw_img_file, mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_SW_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
@@ -101,18 +101,20 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     # get sw image name based on the sw pn
-    sw_image = libmfg_utils.sw_pn_scan()
-    emmc_img_file = "release/{:s}".format(sw_image);
-    profile_cfg_file = "release/profile_{:s}.py".format(sw_image);
-    if not libmfg_utils.file_exist(emmc_img_file):
-        mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(emmc_img_file), level=0)
+    sw_pn = libmfg_utils.sw_pn_scan()
+    nic_sw_link_file = "release/{:s}".format(sw_pn)
+    if not libmfg_utils.file_exist(nic_sw_link_file):
+        mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
         return
+    nic_sw_img_file = os.readlink(nic_sw_link_file)
 
-    if not libmfg_utils.file_exist(profile_cfg_file):
-        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to software PN: {:s}".format(sw_image), level=0)
+    profile_link_cfg_file = "release/profile_{:s}.py".format(sw_pn)
+    if not libmfg_utils.file_exist(profile_link_cfg_file):
+        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to PN: {:s}".format(sw_pn), level=0)
         profile_cfg_file = None
     else:
-        mtp_mgmt_ctrl.cli_log_inf("Profile will apply to software PN: {:s}".format(sw_image), level=0)
+        profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
+        mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
 
     mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -132,6 +134,7 @@ def main():
         mtp_swi_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
+        mtp_swi_image_list.append(nic_sw_img_file)
         if (mtp_capability & 0x1):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE)
@@ -139,7 +142,7 @@ def main():
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_cfg_db, mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
+        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -149,7 +152,7 @@ def main():
 
         mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
         nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if not libmfg_utils.mtp_update_diag_image(mtp_cfg_db, mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -181,25 +184,12 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP SW Install Test script complete", level=0)
 
-    # Copy emmc image:
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_mgmt_ctrl.cli_log_inf("Copy Software image: {:s}".format(emmc_img_file), level=0)
-        mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-        mtp_ip_addr = mtp_mgmt_cfg[0]
-        mtp_usrid = mtp_mgmt_cfg[1]
-        mtp_passwd = mtp_mgmt_cfg[2]
-        image_dir = "/home/diag/"
-        if not libmfg_utils.network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, emmc_img_file, image_dir):
-            mtp_mgmt_ctrl.cli_log_err("Copy Software image failed... Abort", level=0)
-            return
-        mtp_mgmt_ctrl.cli_log_inf("Copy Software images complete\n", level=0)
-
     mtp_thread_list = list()
     mfg_swi_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_swi_summary[mtp_id] = list()
         mtp_thread = threading.Thread(target = single_mtp_swi_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_swi_script_dir,
-                                                                            sw_image,
+                                                                            nic_sw_img_file,
                                                                             profile_cfg_file,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,

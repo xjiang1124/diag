@@ -165,6 +165,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
+    ONBOARD_CFG_LOG_FILES = "/home/diag/mtp_cfg_script/*log /home/diag/mtp_cfg_script/*yaml"
     ONBOARD_SWI_LOG_FILES = "/home/diag/mtp_swi_script/*log"
     ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
@@ -180,6 +181,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
 
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
+    DIAG_MFG_MODEL_CFG_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/CFG/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
