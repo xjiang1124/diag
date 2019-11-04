@@ -185,8 +185,9 @@ func ProgEeprom(devName string) (err int) {
     is8g := 0
     if Erase == true {
         for _, entry := range(EepromTbl) {
-            if entry.Name != "MAC Address Base" && entry.Name != "Serial Number" &&
-            entry.Name != "Part Number" {
+            if entry.Name != "MAC Address Base" &&
+               entry.Name != "Serial Number" &&
+               entry.Name != "Part Number" {
                 for i := range entry.Value {
                     entry.Value[i] = 0xFF
                 }
@@ -202,27 +203,18 @@ func ProgEeprom(devName string) (err int) {
             if entry.Name == "Multi-Record Area Offset" {
                 if HpeNaples == 1 {
                     copy(entry.Value, []byte{0x10})
-                    updateIntChk()
                 }
             }
             if entry.Name == "Product Name" {
                 if (CardType == "NAPLES25") || (CardType == "NAPLES25SWM") {
                     copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
-                    updateIntChk()
                 } else if CardType == "FORIO" {
                     copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
-                    updateIntChk();
                 } else if CardType == "VOMERO" {
                     copy(entry.Value, []byte{0x56, 0x4F, 0x4D, 0x45, 0x52, 0x4F, 0x20, 0x20, 0x20, 0x20})
-                    updateIntChk();
                 }
             }
             if entry.Name == "Part Number" && ((CardType == "NAPLES25") || (CardType == "NAPLES25SWM")) {
-    //            if HpeNaples == 1 {
-    //                copy(entry.Value, []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 0x30, 0x35, 0x2D, 0x30, 0x34, 0x20, 0x30, 0x31})
-    //                updateIntChk()
-    //            }
-    //            fmt.Printf("value 0x%x\n", entry.Value[6])
                 if entry.Value[6] == byte(0x38) {
                      is8g = 1
                 }
@@ -235,19 +227,18 @@ func ProgEeprom(devName string) (err int) {
                     } else {
                         copy(entry.Value, []byte{2, 0 , 0, 0})
                     }
-                    updateIntChk()
                 } else if CardType == "FORIO" {
                     copy(entry.Value, []byte{4, 0 , 0, 0})
-                    updateIntChk()
                 } else if CardType == "VOMERO" {
                     copy(entry.Value, []byte{6, 0 , 0, 0})
-                    updateIntChk()
                 }
             }
 
             if entry.Name == "Board Info Area Checksum" {
+                updateIntChk()
                 entry.Value[0] = byte(0x100 - brdInfoChk % 0x100)
             } else if entry.Name == "Common Header Checksum" {
+                updateIntChk()
                 entry.Value[0] = byte(0x100 - cmnHeadChk % 0x100)
             }
 
@@ -256,17 +247,18 @@ func ProgEeprom(devName string) (err int) {
                 cli.Println("e", "Program main FRU failed")
                 return
             }
+        }
 
-            if HpeNaples == 1 {
-                for _, entry := range(EepromExtTbl) {
-                    if entry.Name == "HPE Multi-Record Area Checksum" {
-                        entry.Value[0] = byte(0x100 - mraChk % 0x100)
-                    }
-                    err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
-                    if err != errType.SUCCESS {
-                        cli.Println("e", "Program extension FRU failed")
-                        return
-                    }
+        if HpeNaples == 1 {
+            for _, entry := range(EepromExtTbl) {
+                if entry.Name == "HPE Multi-Record Area Checksum" {
+                    updateIntChk()
+                    entry.Value[0] = byte(0x100 - mraChk % 0x100)
+                }
+                err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
+                if err != errType.SUCCESS {
+                    cli.Println("e", "Program extension FRU failed")
+                    return
                 }
             }
         }
@@ -326,20 +318,20 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 copy(entry.Value, date)
                 continue
             }
-            if HpeNaples == 1 {
-                for _, entry := range(EepromExtTbl) {
-                    if entry.Name == "MAC Address Base" {
-                        copy(entry.Value, mac)
-                        continue;
-                    } else if entry.Name == "HPE Serial Number" {
-                        sn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                        copy(entry.Value, sn)
-                        continue
-                    } else if entry.Name == "Manufacture Date/Time" {
-                        date, _ := readField(devName, entry.Offset, entry.NumBytes)
-                        copy(entry.Value, date)
-                        continue
-                    }
+        }
+        if HpeNaples == 1 {
+            for _, entry := range(EepromExtTbl) {
+                if entry.Name == "MAC Address Base" {
+                    copy(entry.Value, mac)
+                    continue;
+                } else if entry.Name == "HPE Serial Number" {
+                    sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, sn)
+                    continue
+                } else if entry.Name == "Manufacture Date/Time" {
+                    date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, date)
+                    continue
                 }
             }
         }
@@ -514,10 +506,6 @@ func UpdatePn(devName string, pn []byte) (err int) {
 }
 
 func UpdateDate(devName string, str string) (err int) {
-//    if len(date) != 3 {
-//        cli.Println("f", "Date format is invalid: ", date)
-//        return
-//    }
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
@@ -539,7 +527,6 @@ func UpdateDate(devName string, str string) (err int) {
             start, _ := time.Parse(shortForm, "1996-01-01")
             end, _ := time.Parse(shortForm, date)
             difference := end.Sub(start)
-//            data := make([]byte, 3)
             data[0] = byte(int(difference.Minutes()) & 0xFF)
             data[1] = byte((int(difference.Minutes()) >> 8) & 0xFF)
             data[2] = byte((int(difference.Minutes()) >> 16) & 0xFF)
