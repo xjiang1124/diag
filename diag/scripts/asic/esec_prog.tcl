@@ -146,6 +146,18 @@ proc otp_init { sn slot cm_file sm_file } {
     return $err_cnt
 }
 
+proc post_check { sn slot } {
+    plog_start post_check_${sn}_slot${slot}.log
+
+    cap_open_if 10 $slot
+    regrd 0 0x6a000000
+
+    set ret [cap_secure_post_check 10 10 $slot]
+    cap_close_if 10 $slot
+    plog_stop
+    return $ret
+}
+
 proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     plog_start puf_enroll_slot${slot}.log
 
@@ -247,6 +259,9 @@ switch $stage {
     }
     "EFUSE_TEST" {
         set ret [efuse_test $slot]
+    }
+    "POST_CHECK" {
+        set ret [post_check $sn $slot]
     }
 
     default {

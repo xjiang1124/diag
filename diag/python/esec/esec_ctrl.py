@@ -61,6 +61,10 @@ def parse_args_diag():
         action='store_true',
         help="Program QSPI images")
     group.add_argument(
+        "-boot_test", "--boot_test", 
+        action='store_true',
+        help="Post check after key programming")
+    group.add_argument(
         "-efuse_test", "--efuse_test", 
         action='store_true',
         help="Test efuse by burning bit[127]")
@@ -300,7 +304,6 @@ PRIVEK <ek.sk>"""
         ret = common.session_cmd_pass(session, cmd, "GEN OTP PASSED")
         common.session_stop(session)
 
-        print ret
         return ret
 
     def otp_init(self, sn, slot):
@@ -310,46 +313,72 @@ PRIVEK <ek.sk>"""
         ret = common.session_cmd_pass(session, cmd, pass_sign, 120)
         common.session_stop(session)
 
-        print "ret:", ret
+        return ret
+
+    def boot_test(self, sn, slot):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -post_check -sn {} -slot {}".format(sn, slot)
+        pass_sign = "ESEC PROG PASSED"
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
+        common.session_stop(session)
+
         return ret
 
     def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku):
         self.create_otp_cm_fmt(sn)
-        ret = self.enroll_puf(sn, slot)
-        if ret != 0:
-            print "=== Enroll PUF failed ==="
-            print "=== ESEC PROG FAILED ==="
-            return ret
+        numRetry = 3
 
-        ret = self.sign_ek(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
-        if ret != 0:
-            print "=== Failed to sign pub_ek ==="
-            print "=== ESEC PROG FAILED ==="
-            return ret
+        for retry in range(numRetry):
+            print "=== ESEC PROG #{}".format(retry)
+            ret = self.enroll_puf(sn, slot)
+            if ret != 0:
+                print "=== Enroll PUF failed ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
 
-        ret = self.ek_check()
-        if ret != 0:
-            print "=== Failed to validate signed EK ==="
-            print "=== ESEC PROG FAILED ==="
-            return ret
+            ret = self.sign_ek(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
+            if ret != 0:
+                print "=== Failed to sign pub_ek ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
 
-        [ret, crc32_ek] = self.sign_ek_crc()
-        if ret != 0:
-            print "=== Failed to calculated CRC32 of signed EK ==="
-            print "=== ESEC PROG FAILED ==="
-            return ret
+            ret = self.ek_check()
+            if ret != 0:
+                print "=== Failed to validate signed EK ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
 
-        ret = self.gen_otp()
-        if ret != 0:
-            print "=== Failed to generate OTP binary ==="
-            print "=== ESEC PROG FAILED ==="
-            return ret
+            [ret, crc32_ek] = self.sign_ek_crc()
+            if ret != 0:
+                print "=== Failed to calculated CRC32 of signed EK ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
 
-        ret = self.otp_init(sn, slot)
+            ret = self.gen_otp()
+            if ret != 0:
+                print "=== Failed to generate OTP binary ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
+
+            ret = self.otp_init(sn, slot)
+            if ret != 0:
+                print "=== OTP init failed ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
+
+            ret = self.boot_test(sn, slot)
+            if ret != 0:
+                print "=== Bad OTP init ==="
+                print "=== Post boot test failed ==="
+            else:
+                break
+
         if ret != 0:
-            print "=== OTP init failed ==="
             print "=== ESEC PROG FAILED ==="
             return ret
+        else:
+            print "=== OTP PROG validated #{} ===".format(retry-1)
+
 
         [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
         if ret != 0:
@@ -512,7 +541,12 @@ if __name__ == "__main__":
         esec_ctrl.img_prog(int(args.slot))
         sys.exit()
 
+    if args.boot_test == True:
+        esec_ctrl.boot_test(args.sn, args.slot)
+        sys.exit()
+
     if args.efuse_test == True:
         esec_ctrl.efuse_test(int(args.slot))
         sys.exit()
 
+    print "Invalid input"

@@ -49,6 +49,11 @@ otp_init () {
     tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
 }
 
+post_check () {
+    cd $DIAG_HOME/diag/scripts/asic/
+    tclsh ./esec_prog.tcl -stage POST_CHECK -slot $SLOT -sn $SN
+}
+
 img_prog () {
     cd $DIAG_HOME/diag/scripts/asic/
     tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr images/esecure_fw_ptr.hex.txt -esec_1 images/esecure_firmware_packed.hex -esec_2 images/esecure_firmware_packed.hex -host_1 images/boot_nonsec_packed.hex -host_2 images/boot_nonsec_packed.hex
@@ -185,6 +190,11 @@ case $key in
     shift # past argument
     ;;
     #-------------
+    -post_check|--post_check)
+    POST_CHECK=TRUE
+    shift # past argument
+    ;;
+    #-------------
     -efuse_test|--efuse_test)
     EFUSE_TEST=TRUE
     shift # past argument
@@ -243,6 +253,11 @@ fi
 if [[ $EK_CHECK == TRUE ]]
 then
     check_sign_ek
+fi
+
+if [[ $POST_CHECK == TRUE ]]
+then
+    post_check
 fi
 
 if [[ $IMG_PROG == TRUE ]]
