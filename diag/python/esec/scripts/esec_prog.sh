@@ -54,6 +54,11 @@ post_check () {
     tclsh ./esec_prog.tcl -stage POST_CHECK -slot $SLOT -sn $SN
 }
 
+show_status () {
+    cd $DIAG_HOME/diag/scripts/asic/
+    tclsh ./esec_prog.tcl -stage SHOW_STS -slot $SLOT -sn $SN
+}
+
 img_prog () {
     cd $DIAG_HOME/diag/scripts/asic/
     tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr images/esecure_fw_ptr.hex.txt -esec_1 images/esecure_firmware_packed.hex -esec_2 images/esecure_firmware_packed.hex -host_1 images/boot_nonsec_packed.hex -host_2 images/boot_nonsec_packed.hex
@@ -195,6 +200,12 @@ case $key in
     shift # past argument
     ;;
     #-------------
+    -show_sts|--show_sts)
+    SHOW_STS=TRUE
+    shift # past argument
+    ;;
+
+    #-------------
     -efuse_test|--efuse_test)
     EFUSE_TEST=TRUE
     shift # past argument
@@ -258,6 +269,11 @@ fi
 if [[ $POST_CHECK == TRUE ]]
 then
     post_check
+fi
+
+if [[ $SHOW_STS == TRUE ]]
+then
+    show_status
 fi
 
 if [[ $IMG_PROG == TRUE ]]

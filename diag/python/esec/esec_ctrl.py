@@ -65,6 +65,10 @@ def parse_args_diag():
         action='store_true',
         help="Post check after key programming")
     group.add_argument(
+        "-show_sts", "--show_sts", 
+        action='store_true',
+        help="Show ESEC related info")
+    group.add_argument(
         "-efuse_test", "--efuse_test", 
         action='store_true',
         help="Test efuse by burning bit[127]")
@@ -324,6 +328,15 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def show_status(self, sn, slot):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -show_sts -sn {} -slot {}".format(sn, slot)
+        pass_sign = "ESEC PROG PASSED"
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
+        common.session_stop(session)
+
+        return ret
+
     def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku):
         self.create_otp_cm_fmt(sn)
         numRetry = 3
@@ -543,6 +556,9 @@ if __name__ == "__main__":
 
     if args.boot_test == True:
         esec_ctrl.boot_test(args.sn, args.slot)
+ 
+    if args.show_sts == True:
+        esec_ctrl.show_status(args.sn, args.slot)
         sys.exit()
 
     if args.efuse_test == True:

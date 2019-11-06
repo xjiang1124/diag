@@ -158,6 +158,21 @@ proc post_check { sn slot } {
     return $ret
 }
 
+proc show_status { sn slot } {
+    plog_start show_status_${sn}_slot${slot}.log
+
+    cap_open_if 10 $slot
+    regrd 0 0x6a000000
+
+    cap_show_esec_pins
+    cap_dump_cpld_sts_spi
+    cap_dump_cpld_sts_smb $slot
+
+    cap_close_if 10 $slot
+    plog_stop
+    return 0
+}
+
 proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     plog_start puf_enroll_slot${slot}.log
 
@@ -262,6 +277,9 @@ switch $stage {
     }
     "POST_CHECK" {
         set ret [post_check $sn $slot]
+    }
+    "SHOW_STS" {
+        set ret [show_status $sn $slot]
     }
 
     default {
