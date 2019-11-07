@@ -106,7 +106,7 @@ class MTP_Const:
     NIC_MGMT_IP_INIT_RETRY = 3
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
-    NIC_ESEC_PROG_DELAY = 600
+    NIC_ESEC_PROG_DELAY = 1800
     NIC_POWER_ON_DELAY = 30
     NIC_POWER_OFF_DELAY = 10
 
@@ -285,6 +285,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_POST_FMT = "./esec_ctrl.py -cleanup"
     NIC_ESEC_CPLD_CHECK_FMT = "./esec_ctrl.py -check_uboot -slot {:d} -post_check"
     NIC_ESEC_PROG_FMT = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
+    NIC_ESEC_PROG_DUMP_FMT = "./esec_ctrl.py -show_sts -sn {:s} -slot {:d}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"

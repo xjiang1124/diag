@@ -1687,20 +1687,20 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_pre():
             self.cli_log_slot_err(slot, "Pre init key programming failed")
-            self.mtp_mgmt_set_nic_avs_post(slot)
+            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key(self._id):
             self.cli_log_slot_err(slot, "Program NIC Secure Key failed")
-            self.mtp_mgmt_set_nic_avs_post(slot)
+            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
             self.cli_log_slot_err(slot, "Post cleanup key programming failed")
-            self.mtp_mgmt_set_nic_avs_post(slot)
+            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
-        self.mtp_mgmt_set_nic_avs_post(slot)
+        self._nic_ctrl_list[slot].nic_program_sec_key_dump()
         return True
 
 

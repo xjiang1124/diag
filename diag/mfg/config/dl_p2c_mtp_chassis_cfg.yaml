@@ -1,3 +1,7 @@
+###############################
+##### Flex Milpitas setup #####
+###############################
+
 MTP-100:
     MODE: ""
     TS: "192.168.74.208"
@@ -37,48 +41,6 @@ MTP-101:
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp101"
-    SLOTS: 10
-    CAPABILITY: 0x1
-
-MTP-500:
-    MODE: ""
-    TS: "192.168.74.208"
-    TS_PORT: "2004"
-    TS_USERID: "admin"
-    TS_PASSWORD: "N0isystem$"
-    APC1: "192.168.2.10"
-    APC1_PORT: "4"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
-    APC2: "192.168.2.10"
-    APC2_PORT: "5"
-    APC2_USERID: "apc"
-    APC2_PASSWORD: "apc"
-    IP: "192.168.2.30"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp500"
-    SLOTS: 10
-    CAPABILITY: 0x1
-
-MTP-501:
-    MODE: ""
-    TS: "192.168.74.208"
-    TS_PORT: "2004"
-    TS_USERID: "admin"
-    TS_PASSWORD: "N0isystem$"
-    APC1: "192.168.2.10"
-    APC1_PORT: "6"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
-    APC2: "192.168.2.10"
-    APC2_PORT: "7"
-    APC2_USERID: "apc"
-    APC2_PASSWORD: "apc"
-    IP: "192.168.2.31"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp501"
     SLOTS: 10
     CAPABILITY: 0x1
 
@@ -123,6 +85,94 @@ MTP-203:
     ALIAS: "mtp203"
     SLOTS: 10
     CAPABILITY: 0x2
+
+MTP-207:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.114"
+    APC1_PORT: ""
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.1.114"
+    APC2_PORT: ""
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.1.170"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp207"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-207:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.114"
+    APC1_PORT: ""
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.1.114"
+    APC2_PORT: ""
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.1.171"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp208"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+#############################
+##### Flex Penang setup #####
+#############################
+
+MTP-500:
+    MODE: ""
+    TS: "192.168.74.208"
+    TS_PORT: "2004"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: "192.168.2.10"
+    APC1_PORT: "4"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.10"
+    APC2_PORT: "5"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.30"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp500"
+    SLOTS: 10
+    CAPABILITY: 0x1
+
+MTP-501:
+    MODE: ""
+    TS: "192.168.74.208"
+    TS_PORT: "2004"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: "192.168.2.10"
+    APC1_PORT: "6"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.10"
+    APC2_PORT: "7"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.31"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp501"
+    SLOTS: 10
+    CAPABILITY: 0x1
 
 MTP-600:
     MODE: ""
