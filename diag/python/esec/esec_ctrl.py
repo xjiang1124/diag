@@ -380,10 +380,15 @@ PRIVEK <ek.sk>"""
                 return ret
 
             ret = self.boot_test(sn, slot)
+            ret = -1
             if ret != 0:
+                # Enter retry
                 print "=== Bad OTP init ==="
                 print "=== Post boot test failed ==="
+                print "Power cycle slot #{}".format(slot)
+                self.nic_con.power_cycle_multi(115200, slot, 10)
             else:
+                # Move forward
                 break
 
         if ret != 0:
