@@ -30,7 +30,7 @@ MTPS-401:
     TS_USERID: ""
     TS_PASSWORD: ""
     APC1: "192.168.1.125"
-    APC1_PORT: ""
+    APC1_PORT: "22"
     APC1_USERID: "apc"
     APC1_PASSWORD: "apc"
     APC2: ""

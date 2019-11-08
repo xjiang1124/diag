@@ -95,6 +95,7 @@ FLX_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
 
 # Penang flex server
 FLX_PENANG_WEBSERVER = "10.192.155.61"
+#FLX_PENANG_WEBSERVER = "172.30.178.5"
 FLX_PENANG_API_URL = "/FFTesterWS_PENSANDO/FFTesterWS.asmx"
 FLX_PENANG_GET_UUT_INFO_SOAP = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
 FLX_PENANG_SAVE_UUT_RSLT_SOAP = "http://www.flextronics.com/FFTesterWS/SaveResult"
