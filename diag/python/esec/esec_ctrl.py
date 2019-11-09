@@ -380,7 +380,6 @@ PRIVEK <ek.sk>"""
                 return ret
 
             ret = self.boot_test(sn, slot)
-            ret = -1
             if ret != 0:
                 # Enter retry
                 print "=== Bad OTP init ==="
