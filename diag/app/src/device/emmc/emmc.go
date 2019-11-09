@@ -12,6 +12,7 @@ import (
     "strconv"
 
     "common/cli"
+    "common/dcli"
     "common/errType"
 )
 
@@ -19,7 +20,7 @@ func EmmcTest(fileSizeInMB string, count int) (err int) {
 
     fileName := "/data/nic_util/emmctest.bin"
     cmd := exec.Command("dd", "if=/dev/urandom", "of="+fileName, "bs="+fileSizeInMB+"M", "count=1")
-    _, errGo := cmd.Output()
+    errGo := cmd.Run()
     if errGo != nil {
         cli.Println("e", errGo)
         err = errType.FAIL
