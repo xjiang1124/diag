@@ -12,7 +12,7 @@ import (
     "strconv"
 
     "common/cli"
-    "common/dcli"
+    //"common/dcli"
     "common/errType"
 )
 
