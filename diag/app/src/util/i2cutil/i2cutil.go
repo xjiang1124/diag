@@ -63,49 +63,47 @@ func readWriteBytes1(rws string, devName string, data uint64, numByte uint64) (e
 func readWriteBytes(rws string, devName string, data uint64, numByte uint64) (err int) {
     var dataBuf []byte
 
-    err = i2cPtcl.Open(devName)
+	i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+	if err != errType.SUCCESS {
+	    cli.Println("e", "Fail to open I2C device:", devName)
+	    return
+	}
+
+    err = i2cPtcl.Open(devName, i2cInfo.Bus, i2cInfo.DevAddr)
     if err != errType.SUCCESS {
         return
     }
     defer i2cPtcl.Close()
 
-    for _, vrm := range(i2cinfo.CurI2cTbl) {
-        if devName != vrm.Name {
-            continue
-        }
-        switch rws {
-        case "READ":
-            dataBuf, err = i2cPtcl.Read(numByte)
-            if err != errType.SUCCESS {
-                return
-            } else {
-                cli.Printf("i", "Read device %s done\n", devName)
-                cli.Printf("i", "0x%x\n", dataBuf)
-                for i:=0; i<len(dataBuf); i++ {
-                    cli.Printf("i", "data[%d] = 0x%x\n", i, dataBuf[i])
-                }
-            }
-        case "WRITE":
-            if numByte > 8 {
-                cli.Println("f", "Maximun 8 bytes of i2c write is allowed! Reveived request of ", numByte, "bytes")
-                return errType.FAIL
-            }
-            dataBuf = make([]byte, numByte)
-            for i:=0; uint64(i) < numByte; i++ {
-                dataBuf[i] = byte((data >> (8*uint64(i))) & 0xFF)
-                cli.Printf("d", "data[%d]=0x%x", i, dataBuf[i])
-            }
-            err = i2cPtcl.Write(dataBuf)
-            if err != errType.SUCCESS {
-                return
-            } else {
-                cli.Printf("i", "Write device %s done\n", devName)
+    switch rws {
+    case "READ":
+        dataBuf, err = i2cPtcl.Read(numByte)
+        if err != errType.SUCCESS {
+            cli.Println("i", "Faied to read I2C device")
+        } else {
+            cli.Printf("i", "Read device %s done\n", devName)
+            cli.Printf("i", "0x%x\n", dataBuf)
+            for i:=0; i<len(dataBuf); i++ {
+                cli.Printf("i", "data[%d] = 0x%x\n", i, dataBuf[i])
             }
         }
-        return
+    case "WRITE":
+        if numByte > 8 {
+            cli.Println("f", "Maximun 8 bytes of i2c write is allowed! Reveived request of ", numByte, "bytes")
+            return errType.FAIL
+        }
+        dataBuf = make([]byte, numByte)
+        for i:=0; uint64(i) < numByte; i++ {
+            dataBuf[i] = byte((data >> (8*uint64(i))) & 0xFF)
+            cli.Printf("d", "data[%d]=0x%x", i, dataBuf[i])
+        }
+        err = i2cPtcl.Write(dataBuf)
+        if err == errType.SUCCESS {
+            cli.Printf("i", "Write device %s done\n", devName)
+        } else {
+            cli.Println("i", "Failed to write I2C device")
+        }
     }
-    cli.Println("e", "Faied to find device", devName)
-    err = errType.INVALID_PARAM
     return
 }
 

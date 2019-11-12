@@ -8,6 +8,7 @@ import (
     "common/cli"
     "common/errType"
     "common/misc"
+    "hardware/i2cinfo"
     "protocol/i2cPtcl"
 )
 
@@ -37,7 +38,13 @@ const (
 )
 
 func Open(devName string) (err int) {
-    err = i2cPtcl.Open(devName)
+    i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Fail to open I2C device:", devName)
+        return
+    }
+
+    err = i2cPtcl.Open(devName, i2cInfo.Bus, i2cInfo.DevAddr)
     return
 }
 
