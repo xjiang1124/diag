@@ -36,6 +36,14 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    EMMC:
+        EMMC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
     SFP:
         I2C:
             INIT: ""

@@ -27,8 +27,8 @@ class NIC_CPLD_Version:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_11082019.tar"
-    MTP_ARM64_IMAGE = "image_arm64_11082019.tar"
+    MTP_AMD64_IMAGE = "image_amd64_11112019.tar"
+    MTP_ARM64_IMAGE = "image_arm64_11112019.tar"
 
     NIC_DIAGFW_IMAGE = "naples_diagfw_08082019.tar"
     NIC_GOLDFW_IMAGE = "naples_goldfw_09182019.tar"

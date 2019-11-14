@@ -39,7 +39,7 @@ def load_mtp_cfg():
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/swi_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
@@ -236,10 +236,10 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "No config entry found for mac {:s}\n".format(mac))
             continue
 
-        sn = nic_fru_cfg[mac]["SN"]
-        pre_sn = nic_fru_cfg[mac]["PRE_SN"]
-        pn = nic_fru_cfg[mac]["PN"]
-        pre_pn = nic_fru_cfg[mac]["PRE_PN"]
+        sn = nic_fru_cfg[mac]["NEW_SN"]
+        pre_sn = nic_fru_cfg[mac]["ORG_SN"]
+        pn = nic_fru_cfg[mac]["NEW_PN"]
+        pre_pn = nic_fru_cfg[mac]["ORG_PN"]
         if pre_sn != nic_fru_info[0]:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "FRU SN mismatch, Onboard: {:s}, CFG: {:s}".format(nic_fru_info[0], pre_sn))
             continue
@@ -323,9 +323,9 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "No config entry found for mac {:s}\n".format(mac))
             continue
 
-        exp_sn = nic_fru_cfg[mac]["SN"]
+        exp_sn = nic_fru_cfg[mac]["NEW_SN"]
         exp_mac = nic_fru_info[1]
-        exp_pn = nic_fru_cfg[mac]["PN"]
+        exp_pn = nic_fru_cfg[mac]["NEW_PN"]
         exp_date = nic_fru_info[3]
 
         for test in ["FRU_VERIFY", "CPLD_VERIFY"]:
