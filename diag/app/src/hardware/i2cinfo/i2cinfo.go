@@ -78,6 +78,7 @@ var ForioTbl = []I2cInfo {
 var ForioMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"I2CSPI",         "CPLD-I2CSPI",0x0,  0x52,    0x0,    "HUB_NONE", 0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
 }
 //=========================================

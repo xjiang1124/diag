@@ -5,6 +5,7 @@ package misc
 
 import (
     //"fmt"
+    "math/rand"
     "reflect"
     "strings"
     "time"
@@ -345,11 +346,33 @@ func StringInSlice(a string, list []string) bool {
     return false
 }
 
-func stringInSlice(a string, list []string) bool {
-    for _, b := range list {
-        if b == a {
-            return true
-        }
+/**
+ * Concatenate two byte slice
+ */
+func ByteSliceAppend(slice1 []byte, slice2 []byte) (slice []byte) {
+    len1 := len(slice1)
+    len2 := len(slice2)
+    slice = make([]byte, len1+len2)
+
+    for i:=0; i<len1; i++ {
+        slice[i] = slice1[i]
     }
-    return false
+
+    for i:=0; i<len2; i++ {
+        slice[i+len1] = slice2[i]
+    }
+    return
 }
+
+/**
+ * Generate byte slice with random value
+ */
+func GenRandByteSlice(numBytes int) (data []byte) {
+    data = make([]byte, numBytes)
+    for i:=0; i<numBytes; i++ {
+        rand.Seed(time.Now().UnixNano())
+        data[i] = byte(rand.Intn(0xFF))
+    }
+	return
+}
+
