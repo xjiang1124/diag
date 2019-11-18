@@ -15,23 +15,24 @@ const (
     CLR_INTR = 3
 )
 
-var pageSize int
+var pageSize = 256
 
 // SPI commands
-var cmdMuxSel    []byte
-var cmdDpramLpbk []byte
-var cmdUnlock    []byte
-var cmdLock      []byte
-var cmdWrEn      []byte
-var cmdSwRst     []byte
-var cmdWr        []byte
-var cmdRd        []byte
-var cmdRdSts     []byte
-var cmdRdFlag    []byte
-var cmdEn4BAddr  []byte
+var cmdMuxSel    = []byte{0x01, 0x03}
+var cmdDpramLpbk = []byte{0x01, 0xFF}
+var cmdUnlock    = []byte{0x02, 0x01, 0x6C}
+var cmdLock      = []byte{0x02, 0x01, 0xEC}
+var cmdWrEn      = []byte{0x02, 0x06}
+var cmdSwRst     = []byte{0x02, 0x06, 0x99}
+var cmdWr        = []byte{0x02, 0x12}
+var cmdRd        = []byte{0x02, 0x13}
+var cmdRdSts     = []byte{0x02, 0x05, 0xFF}
+var cmdRdFlag    = []byte{0x02, 0x70, 0xFF}
+var cmdEn4BAddr  = []byte{0x02, 0xB7}
+var cmdErase     = []byte{0x02, 0xDC}
+
 var cmdRdId      []byte
 var cmdRd256B    []byte
-var cmdErase     []byte
 
 // Test struct
 type Test struct {
@@ -41,20 +42,7 @@ type Test struct {
 
 //=========================================
 func init() {
-    cmdMuxSel   = []byte{0x01, 0x03}
-    cmdDpramLpbk= []byte{0x01, 0xFF}
-    cmdUnlock   = []byte{0x02, 0x01, 0x6C}
-    cmdLock     = []byte{0x02, 0x01, 0xEC}
-    cmdWrEn     = []byte{0x02, 0x06}
-    cmdSwRst    = []byte{0x02, 0x06, 0x99}
-    cmdWr       = []byte{0x02, 0x12}
-    cmdRd       = []byte{0x02, 0x13}
-    cmdRd       = []byte{0x02, 0x13}
-    cmdRdSts    = []byte{0x02, 0x05, 0xFF}
-    cmdRdFlag   = []byte{0x02, 0x70, 0xFF}
-    cmdEn4BAddr = []byte{0x02, 0xB7}
-    cmdErase    = []byte{0x02, 0xDC}
-
+    // Initialize read commands which needs multiple of FFs
     cmdRdId =   make([]byte, 22)
     cmdRd256B = make([]byte, 258)
 
@@ -69,8 +57,6 @@ func init() {
     for i := 2; i < 258; i++ {
         cmdRd256B[i] = 0xFF
     }
-
-    pageSize = 256
 }
 
 func addrToSlice(addr uint32) (addrSlice []byte) {
@@ -122,6 +108,12 @@ func SpiWritePage(addr uint32, data []byte) (err int) {
     }
 
     err = BusWrite(cmdWr, addrSlice, data)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "SpiWritePage: BusWrite failed!")
+        return
+    }
+
+    _, err = checkWrDone()
     return
 }
 
@@ -165,11 +157,29 @@ func SpiEraseBlock(addr uint32) (err int) {
         return
     }
 
+    _, err = checkWrDone()
     return
 }
 
 func SpiReadFlagSts() (data byte, err int) {
     err = BusWrite(cmdRdFlag)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "SpiReadFlagSts: failed to write cmdRdFlag")
+        return
+    }
+
+    retData, err := BusRead(2)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "SpiReadFlagSts: failed to BusRead")
+        return
+    }
+
+    data = retData[1]
+    return
+}
+
+func SpiReadSts() (data byte, err int) {
+    err = BusWrite(cmdRdSts)
     if err != errType.SUCCESS {
         dcli.Println("e", "SpiReadFlagSts: failed to write cmdRdFlag")
         return
@@ -200,6 +210,46 @@ func ReadId() (retData []byte, err int) {
 
     retData = data[1:]
 
+    return
+}
+
+/**
+ * Check Write/program/erase progress
+ * return: false: operation in progress; true: operation done
+ */
+func checkWrDone() (wrDone bool, err int) {
+    //misc.SleepInSec(1)
+    var flag byte
+    var sts byte
+    maxIte := 10
+    wrDone = false
+    for i:=0; i<maxIte; i++ {
+        flag, err = SpiReadFlagSts()
+        if err != errType.SUCCESS {
+            dcli.Println("e", "Failed to read flag status")
+            return
+        }
+
+        sts, err = SpiReadFlagSts()
+        if err != errType.SUCCESS {
+            dcli.Println("e", "Failed to read status register")
+            return
+        }
+        sts1 := sts & 1
+
+        if (flag == 0x81) && (sts1 == 1) {
+            dcli.Println("i", "Write page done")
+            wrDone = true
+            break
+        }
+        misc.SleepInUSec(5000)
+        dcli.Printf("i", "Flag Status Post: 0x%02x; Status Post: 0x%02x\n", flag, sts)
+    }
+
+    if wrDone == false {
+        err = errType.FAIL
+        dcli.Println("e", "TestWriteReadPage: Write page time out")
+    }
     return
 }
 
@@ -243,7 +293,7 @@ func (t *Test) TestDpramLpbk() (err int) {
 
     for i:=0; i<pageSize; i++ {
         if data[i] != dataRd[i+5] {
-            dcli.Printf("e", "Mismatch! data[%d]=0x%20x; dataRd[%d]=0x%20x\n", i, data[i], i, dataRd[i+5])
+            dcli.Printf("e", "Mismatch! data[%d]=0x%02x; dataRd[%d]=0x%02x\n", i, data[i], i, dataRd[i+5])
             err = errType.FAIL
         }
     }
@@ -306,10 +356,9 @@ func (t *Test) TestEraseBlock(addr uint32) (err int) {
 
     // Ddisable writing to the status register and 
     // lock the lock the sector 1023:0 and enable write protect pin 
-    err1 := BusWrite(cmdLock)
+    err = BusWrite(cmdLock)
     if err != errType.SUCCESS {
         dcli.Println("e", "TestWriteReadPage: Failed to disable write")
-        err = err1
         return
     }
 
@@ -345,30 +394,6 @@ func (t *Test) TestWritePage(addr uint32) (err int) {
     if err != errType.SUCCESS {
         dcli.Println("e", "TestWriteReadPage: Failed to write page")
         return
-    }
-
-    misc.SleepInSec(1)
-
-    maxIte := 10
-    wrDone := false
-    for i:=0; i<maxIte; i++ {
-        flag, err = SpiReadFlagSts()
-        if err != errType.SUCCESS {
-            dcli.Println("e", "TestWriteReadPage: Failed to read flag status")
-            return
-        }
-
-        if flag == 0x81 {
-            dcli.Println("i", "Write page done")
-            wrDone = true
-            break
-        }
-        misc.SleepInUSec(5000)
-        dcli.Printf("i", "Flag Status Post: 0x%02x\n", flag)
-    }
-
-    if wrDone == false {
-        dcli.Println("e", "TestWriteReadPage: Write page time out")
     }
 
     // Read QSPI page
