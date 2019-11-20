@@ -329,7 +329,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
-    MTP_NIC_MAC_DISP_FMT = "arp -i enp2s0"
+    MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
     MTP_NIC_PING_FMT = "ping -c 4 {:s}"
 
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
