@@ -112,6 +112,7 @@ func SpiWritePage(addr uint32, data []byte) (err int) {
         dcli.Println("e", "SpiWritePage: BusWrite failed!")
         return
     }
+    return
 
     _, err = checkWrDone()
     return
@@ -230,14 +231,14 @@ func checkWrDone() (wrDone bool, err int) {
             return
         }
 
-        sts, err = SpiReadFlagSts()
+        sts, err = SpiReadSts()
         if err != errType.SUCCESS {
             dcli.Println("e", "Failed to read status register")
             return
         }
         sts1 := sts & 1
 
-        if (flag == 0x81) && (sts1 == 1) {
+        if (flag == 0x81) && (sts1 == 0) {
             dcli.Println("i", "Write page done")
             wrDone = true
             break
@@ -253,6 +254,16 @@ func checkWrDone() (wrDone bool, err int) {
     return
 }
 
+/**
+ * SPI program
+ */
+func SpiProgram(filename string) (err int) {
+    return
+}
+
+
+//======================================================
+// Test suite
 func NewTest(bus uint32, devAddr byte) *Test {
     var t Test
     t.bus = bus
@@ -263,7 +274,10 @@ func NewTest(bus uint32, devAddr byte) *Test {
 
 func (t *Test) TestDpramLpbk() (err int) {
     // Generate 256B random data
-    data := misc.GenRandByteSlice(pageSize)
+    cmd := make([]byte, 1)
+    cmd[0] = 0x02
+    data := misc.GenRandByteSlice(16)
+    //data := make([]byte, 256)
 
     err = BusWrite(cmdDpramLpbk)
     if err != errType.SUCCESS {
@@ -271,19 +285,26 @@ func (t *Test) TestDpramLpbk() (err int) {
         return
     }
 
-    err = SpiWritePage(0x01020304, data)
+    //err = SpiWritePage(0x01020304, data)
+    err = BusWrite(cmd, data)
     if err != errType.SUCCESS {
         dcli.Println("e", "SpiWritePage failed")
         return
     }
-    return
 
-    dataRd, err := BusRead(uint64(pageSize+5))
+    //dataRd, err := BusRead(uint64(pageSize))
+    dataRd, err := BusRead(uint64(16))
     if err != errType.SUCCESS {
         dcli.Println("e", "SpiWritePage failed")
         return
     }
-    //dcli.Println("d", dataRd)
+
+    dcli.Println("d", data)
+    dcli.Println("d", len(data))
+
+    dcli.Println("d", dataRd)
+    dcli.Println("d", len(dataRd))
+    return
 
     // Check read back data
     dcli.Println("i", "Address Bytes")
@@ -310,6 +331,13 @@ func (t *Test) TestReadPage(addr uint32) (err int) {
     err = BusWrite(cmdMuxSel)
     if err != errType.SUCCESS {
         dcli.Println("e", "ReadPage failed!")
+        return
+    }
+
+    // Enable 4-byte addressing
+    err = BusWrite(cmdEn4BAddr)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "TestWriteReadPage: Failed to unlock")
         return
     }
 
@@ -348,6 +376,13 @@ func (t *Test) TestEraseBlock(addr uint32) (err int) {
         return
     }
 
+    // Enable 4-byte addressing
+    err = BusWrite(cmdEn4BAddr)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "TestWriteReadPage: Failed to unlock")
+        return
+    }
+
     err = SpiEraseBlock(addr)
     if err != errType.SUCCESS {
         dcli.Println("e", "TestWriteReadPage: Failed to erase block")
@@ -373,6 +408,13 @@ func (t *Test) TestWritePage(addr uint32) (err int) {
     err = BusWrite(cmdMuxSel)
     if err != errType.SUCCESS {
         dcli.Println("e", "TestWriteReadPage: Failed to enable MUX SEL")
+        return
+    }
+
+    // Enable 4-byte addressing
+    err = BusWrite(cmdEn4BAddr)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "TestWriteReadPage: Failed to unlock")
         return
     }
 
@@ -431,15 +473,14 @@ func (t *Test) TestReadId() (err int) {
     }
 
     // QSPI reset
-    err = BusWrite(cmdSwRst)
-    if err != errType.SUCCESS {
-        dcli.Println("e", "ReadPage failed!")
-        return
-    }
+    //err = BusWrite(cmdSwRst)
+    //if err != errType.SUCCESS {
+    //    dcli.Println("e", "ReadPage failed!")
+    //    return
+    //}
 
     // Read QSPI ID
     data, err := ReadId()
-    err = BusWrite(cmdRdId)
     if err != errType.SUCCESS {
         dcli.Println("e", "ReadPage failed!")
         return

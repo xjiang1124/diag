@@ -158,6 +158,65 @@ func I2cSpiReadId () (err int) {
     return
 }
 
+func I2cSpiEraseBlock (addr uint32) (err int) {
+    devName := "I2CSPI"
+
+	i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+	if err != errType.SUCCESS {
+	    cli.Println("e", "Fail to open I2C device:", devName)
+	    return
+	}
+
+    err = i2cspi.Open(devName, i2cInfo.Bus, i2cInfo.DevAddr)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer i2cspi.Close()
+
+    spiTest := i2cspi.NewTest(i2cInfo.Bus, i2cInfo.DevAddr)
+    err = spiTest.TestEraseBlock(addr)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+}
+
+func I2cSpiExecCmd (cmd string, addr uint32) (err int) {
+    devName := "I2CSPI"
+
+	i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+	if err != errType.SUCCESS {
+	    cli.Println("e", "Fail to open I2C device:", devName)
+	    return
+	}
+
+    err = i2cspi.Open(devName, i2cInfo.Bus, i2cInfo.DevAddr)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer i2cspi.Close()
+
+    spiTest := i2cspi.NewTest(i2cInfo.Bus, i2cInfo.DevAddr)
+    switch cmd {
+    case "ERASE_BLOCK":
+        err = spiTest.TestEraseBlock(addr)
+    case "READ_ID":
+        err = spiTest.TestReadId()
+    case "WRITE_PAGE":
+        err = spiTest.TestWritePage(addr)
+    case "READ_PAGE":
+        err = spiTest.TestReadPage(addr)
+    case "DPRAM":
+        err = spiTest.TestDpramLpbk()
+    }
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+}
+
 func myUsage() {
     flag.PrintDefaults()
     //i2cinfo.DispI2cInfoAll()
@@ -175,11 +234,12 @@ func main() {
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     //======================
     // i2cspi options
-    dpramPtr    := flag.Bool(  "dpram",false,  "I2CSPI DPRAM loopback test")
-    rdIdPtr     := flag.Bool(  "rdid", false,  "Read SPI ID")
-    rdPagePtr   := flag.Bool(  "rdpage",false, "I2CSPI read page")
-    wrRdPagePtr := flag.Bool(  "wrpage",false, "I2CSPI write page and read verify")
-    addrPtr     := flag.Uint64("addr",  0,     "SPI address")
+    dpramPtr    := flag.Bool(  "dpram", false,  "I2CSPI DPRAM loopback test")
+    rdIdPtr     := flag.Bool(  "rdid",  false,  "Read SPI ID")
+    rdPagePtr   := flag.Bool(  "rdpage",false,  "I2CSPI read page")
+    wrPagePtr   := flag.Bool(  "wrpage",false,  "I2CSPI write page and read verify")
+    erasePtr    := flag.Bool(  "erase", false,  "I2CSPI erase block")
+    addrPtr     := flag.Uint64("addr",  0,      "SPI address")
 
     flag.Parse()
 
@@ -208,22 +268,27 @@ func main() {
     }
 
     if *dpramPtr == true {
-        TestI2cSpiLpbk()
+        I2cSpiExecCmd("DPRAM", uint32(*addrPtr))
         return
     }
 
     if *rdPagePtr == true {
-        I2cSpiReadPage(uint32(*addrPtr))
+        I2cSpiExecCmd("READ_PAGE", uint32(*addrPtr))
         return
     }
 
     if *rdIdPtr == true {
-        I2cSpiReadId()
+        I2cSpiExecCmd("READ_ID", uint32(*addrPtr))
         return
     }
 
-    if *wrRdPagePtr == true {
-        I2cSpiWritePage(uint32(*addrPtr))
+    if *wrPagePtr == true {
+        I2cSpiExecCmd("WRITE_PAGE", uint32(*addrPtr))
+        return
+    }
+
+    if *erasePtr == true {
+        I2cSpiExecCmd("ERASE_BLOCK", uint32(*addrPtr))
         return
     }
 
