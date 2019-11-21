@@ -1351,12 +1351,16 @@ class mtp_ctrl():
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return err_msg_list
 
-        with open(os.path.join(path, filename), 'r') as f:
-            for line in f:
-                if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
-                    err_msg = line.replace('\n', '')
-                    err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
-                    err_msg_list.append(err_msg)
+        try:
+            with open(os.path.join(path, filename), 'r') as f:
+                for line in f:
+                    if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
+                        err_msg = line.replace('\n', '')
+                        err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
+                        err_msg_list.append(err_msg)
+        except:
+            err_msg_list.append("{:s} doesn't exist".format(filename))
+
         return err_msg_list
 
 
