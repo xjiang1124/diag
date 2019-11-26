@@ -17,7 +17,7 @@ const (
     IO       = 2
     CLR_INTR = 3
 
-    STS_UNLOCK = 0x6C
+    STS_UNLOCK = 0x20
     STS_LOCK   = 0xEC
 )
 
@@ -27,7 +27,7 @@ var sectorSize = 0x10000
 // SPI commands
 var cmdMuxSel    = []byte{0x01, 0x03}
 var cmdDpramLpbk = []byte{0x01, 0xFF}
-var cmdUnlock    = []byte{0x02, 0x01, 0x6C}
+var cmdUnlock    = []byte{0x02, 0x01, 0x20}
 var cmdLock      = []byte{0x02, 0x01, 0xEC}
 var cmdWrEn      = []byte{0x02, 0x06}
 var cmdSwRst     = []byte{0x02, 0x99}
@@ -149,7 +149,7 @@ func BusRead(numBytes uint64) (data []byte, err int) {
 func SpiWrCmdWait(cmd []byte, waitInUSec int) (err int) {
     err = BusWrite(cmd)
     if err != errType.SUCCESS {
-        dcli.Println("e", "SpiWritePage: BusWrite failed!")
+        dcli.Println("e", "BusWrite failed!")
         return
     }
 
@@ -194,7 +194,7 @@ func SpiWritePage(addr uint32, data []byte) (err int) {
         return
     }
 
-    err = checkWrDone(20000)
+    err = checkWrDone(200)
     return
 }
 
@@ -325,7 +325,7 @@ func checkWrDone(waitInUSec int) (err int) {
             wrDone = true
             break
         }
-        //dcli.Printf("i", "Flag Status Post: 0x%02x; Status Post: 0x%02x\n", flag, sts)
+        //dcli.Printf("i", "Flag Status: 0x%02x; Status: 0x%02x\n", flag, sts)
     }
 
     if wrDone == false {
@@ -489,13 +489,10 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
     misc.SleepInUSec(10)
 
     // Enable writing to the status register and unlock the lock the sector 1023:0
-    //err = SpiWrCmdWait(cmdUnlock, 5000)
     err = SpiWriteStatusReg(STS_UNLOCK)
     if err != errType.SUCCESS {
         return
     }
-
-    SpiShowAllSts()
 
     // Enable 4-byte addressing
     err = BusWrite(cmdEn4BAddr)
@@ -506,13 +503,6 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
 
     // Erase flash before write
     for addr:= startAddr; addr<startAddr+uint32(fileSize); addr=addr+uint32(sectorSize) {
-        // Enable 4-byte addressing
-        err = BusWrite(cmdEn4BAddr)
-        if err != errType.SUCCESS {
-            dcli.Println("e", "TestWriteReadPage: Failed to unlock")
-            return
-        }
-
         err = BusWrite(cmdWrEn)
         if err != errType.SUCCESS {
             dcli.Println("e", "cmdWrEn failed")
@@ -530,13 +520,6 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
 
     // Program image by page
     for addr:= startAddr; addr<startAddr+uint32(fileSize); addr=addr+uint32(pageSize) {
-        // Enable 4-byte addressing
-        err = BusWrite(cmdEn4BAddr)
-        if err != errType.SUCCESS {
-            dcli.Println("e", "TestWriteReadPage: Failed to unlock")
-            return
-        }
-
         err = BusWrite(cmdWrEn)
         if err != errType.SUCCESS {
             dcli.Println("e", "cmdWrEn failed")
@@ -549,6 +532,20 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
             dcli.Printf("e", "Abort page write at address 0x%08x\n", addr)
             return
         }
+    }
+
+    // SPI WR enable
+    err = BusWrite(cmdWrEn)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "SpiEraseSector: failed to write cmdWrEn")
+        return
+    }
+    misc.SleepInUSec(10)
+
+    // Enable writing to the status register and unlock the lock the sector 1023:0
+    err = SpiWriteStatusReg(STS_LOCK)
+    if err != errType.SUCCESS {
+        return
     }
 
     dcli.Println("i", "Image program done")
@@ -600,7 +597,7 @@ func SpiDump(imageType string, filename string, startAddr uint32, fileSize uint3
         return
     }
 
-    // Program image by page
+    // read by page
     for addr:= startAddr; addr<startAddr+uint32(fileSize); addr=addr+uint32(pageSize) {
         rdData, err = SpiReadPage(addr)
         if err != errType.SUCCESS {
@@ -768,11 +765,14 @@ func (t *Test) TestEraseSector(addr uint32) (err int) {
         return
     }
 
-    //err = BusWrite(cmdWrEn)
-    //if err != errType.SUCCESS {
-    //    dcli.Println("e", "SpiEraseSector: failed to write cmdWrEn")
-    //    return
-    //}
+    dcli.Println("i", "===P01===")
+    SpiShowAllSts()
+
+    err = BusWrite(cmdWrEn)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "SpiEraseSector: failed to write cmdWrEn")
+        return
+    }
 
     err = SpiEraseSector(addr)
     if err != errType.SUCCESS {
@@ -794,16 +794,23 @@ func (t *Test) TestWritePage(addr uint32) (err int) {
         return
     }
 
+    // Clear status bits in Flag Status Register
+    err = BusWrite(cmdClrFlag)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "TestWriteReadPage: Failed to enable MUX SEL")
+        return
+    }
+
     err = BusWrite(cmdWrEn)
     if err != errType.SUCCESS {
         dcli.Println("e", "SpiWritePage: failed to write cmdWrEn")
         return
     }
 
-    // Clear status bits in Flag Status Register
-    err = BusWrite(cmdClrFlag)
+    // Enable writing to the status register and unlock the lock the sector 1023:0
+    err = SpiWriteStatusReg(STS_UNLOCK)
     if err != errType.SUCCESS {
-        dcli.Println("e", "TestWriteReadPage: Failed to enable MUX SEL")
+        dcli.Println("e", "TestWriteReadPage: Failed to unlock")
         return
     }
 
@@ -814,23 +821,9 @@ func (t *Test) TestWritePage(addr uint32) (err int) {
         return
     }
 
-    // SPI WR enable
     err = BusWrite(cmdWrEn)
     if err != errType.SUCCESS {
-        dcli.Println("e", "SpiEraseSector: failed to write cmdWrEn")
-        return
-    }
-    // Enable writing to the status register and unlock the lock the sector 1023:0
-    err = SpiWriteStatusReg(STS_UNLOCK)
-    if err != errType.SUCCESS {
-        dcli.Println("e", "TestWriteReadPage: Failed to unlock")
-        return
-    }
-
-    // SPI WR enable
-    err = BusWrite(cmdWrEn)
-    if err != errType.SUCCESS {
-        dcli.Println("e", "SpiEraseSector: failed to write cmdWrEn")
+        dcli.Println("e", "SpiWritePage: failed to write cmdWrEn")
         return
     }
 

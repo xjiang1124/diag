@@ -128,6 +128,31 @@ func I2cSpiProgram (imgType string, filename string, startAddr uint32) (err int)
     return
 }
 
+func I2cSpiDump (imgType string, filename string, startAddr uint32, sizeInByte uint32) (err int) {
+    devName := "I2CSPI"
+    imgType = strings.ToUpper(imgType)
+
+	i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+	if err != errType.SUCCESS {
+	    cli.Println("e", "Fail to open I2C device:", devName)
+	    return
+	}
+
+    err = i2cspi.Open(devName, i2cInfo.Bus, i2cInfo.DevAddr)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer i2cspi.Close()
+
+    i2cspi.SpiDump(imgType, filename, startAddr, sizeInByte)
+
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+}
+
 func I2cSpiSendCmd (data uint64, numBytes int) (err int) {
     devName := "I2CSPI"
 
@@ -191,6 +216,7 @@ func main() {
     addrPtr     := flag.Uint64("addr",      0,      "SPI address")
     // Image program
     progPtr     := flag.Bool(  "prog",      false,  "Program image to SPI flash")
+    dumpPtr     := flag.Bool(  "dump",      false,  "Dump SPI flash to file")
     imgTypePtr  := flag.String("img_type",  "TESTFW", "Image type: TESTFW/GOLDFW")
     filenamePtr := flag.String("fn",        "",     "Image file name")
 
@@ -261,6 +287,11 @@ func main() {
 
     if *progPtr == true {
         I2cSpiProgram(*imgTypePtr, *filenamePtr, uint32(*addrPtr))
+        return
+    }
+
+    if *dumpPtr == true {
+        I2cSpiDump(*imgTypePtr, *filenamePtr, uint32(*addrPtr), uint32(*numBytesPtr))
         return
     }
 
