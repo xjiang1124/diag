@@ -12,9 +12,9 @@ SKIP:
 
 PARAMS:
     P2C:
-        - "MTP1#ASIC#L1#timeout=4800"
+        - "MTP1#ASIC#L1#timeout=2400"
     4C:
-        - "MTP1#ASIC#L1#timeout=4800"
+        - "MTP1#ASIC#L1#timeout=2400"
 
 MTP_PRE:
     NIC_POWER: True
