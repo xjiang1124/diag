@@ -295,7 +295,6 @@ func ReadId() (retData []byte, err int) {
  * return: false: operation in progress; true: operation done
  */
 func checkWrDone(waitInUSec int) (err int) {
-    //misc.SleepInSec(1)
     var flag byte
     var sts byte
     var i int
@@ -311,7 +310,6 @@ func checkWrDone(waitInUSec int) (err int) {
             dcli.Println("e", "Failed to read flag status")
             return
         }
-        //flag1 := flag & 0x80
 
         sts, err = SpiReadSts()
         if err != errType.SUCCESS {
@@ -320,8 +318,8 @@ func checkWrDone(waitInUSec int) (err int) {
         }
         sts1 := sts & 1
 
+        //if (flag == 0x81) {
         if (flag == 0x81) && (sts1 == 0) {
-            //dcli.Println("i", "Prog/Erase done")
             wrDone = true
             break
         }
@@ -510,7 +508,9 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
         }
         misc.SleepInUSec(10)
 
-        dcli.Printf("i", "Erasing addr 0x%08x\n", addr)
+        if addr%0x100000 == 0 {
+            dcli.Printf("i", "Erasing addr 0x%08x\n", addr)
+        }
         err = SpiEraseSector(addr)
         if err != errType.SUCCESS {
             dcli.Printf("e", "Abort erase at address 0x%08x\n", addr)
@@ -518,6 +518,7 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
         }
     }
 
+    dcli.Println("i", "Done erasing. Startging programming")
     // Program image by page
     for addr:= startAddr; addr<startAddr+uint32(fileSize); addr=addr+uint32(pageSize) {
         err = BusWrite(cmdWrEn)
@@ -527,7 +528,10 @@ func SpiProgram(imageType string, filename string, startAddr uint32) (err int) {
         }
         misc.SleepInUSec(10)
 
-        err = SpiWritePage(addr, data[addr:addr+uint32(pageSize)])
+        if addr%0x100000 == 0 {
+            dcli.Printf("i", "Programming addr 0x%08x\n", addr)
+        }
+        err = SpiWritePage(addr, data[addr-startAddr:addr-startAddr+uint32(pageSize)])
         if err != errType.SUCCESS {
             dcli.Printf("e", "Abort page write at address 0x%08x\n", addr)
             return
@@ -599,6 +603,10 @@ func SpiDump(imageType string, filename string, startAddr uint32, fileSize uint3
 
     // read by page
     for addr:= startAddr; addr<startAddr+uint32(fileSize); addr=addr+uint32(pageSize) {
+        if addr%0x100000 == 0 {
+            dcli.Printf("i", "Reading addr 0x%08x\n", addr)
+        }
+
         rdData, err = SpiReadPage(addr)
         if err != errType.SUCCESS {
             dcli.Printf("e", "Abort page write at address 0x%08x\n", addr)

@@ -50,10 +50,10 @@ func EmmcTest(fileSizeInMB string, count int) (err int) {
         err = errType.FAIL
         return
     }
-    cli.Printf("i", "Origin %x\n", origMd5.Sum(nil))
 
     var newMd5 hash.Hash
     for i := 0; i < count; i++ {
+        cli.Printf("d", "ite=%d, fn=%s\n", i, fileName+strconv.Itoa(i))
         cmd = exec.Command("cp", fileName, fileName+strconv.Itoa(i))
         _ = cmd.Run()
         cmd = exec.Command("sync")
@@ -79,6 +79,8 @@ func EmmcTest(fileSizeInMB string, count int) (err int) {
             err = errType.FAIL
             return
         }
+        cmd = exec.Command("rm", fileName+strconv.Itoa(i))
+        _ = cmd.Run()
     }
     cli.Printf("i", "All %d files md5sum are matched\n", count)
 
