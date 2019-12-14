@@ -21,6 +21,7 @@ GO_TEST_DIR=						\
 	common/dmutex
 
 AMD64_SRC_DIR=			\
+	dsp/i2cspi 			\
 	util/cpldutil		\
 	util/inventory		\
 	util/mtptest		\

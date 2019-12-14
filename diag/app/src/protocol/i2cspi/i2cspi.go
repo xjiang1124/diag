@@ -773,7 +773,6 @@ func (t *Test) TestEraseSector(addr uint32) (err int) {
         return
     }
 
-    dcli.Println("i", "===P01===")
     SpiShowAllSts()
 
     err = BusWrite(cmdWrEn)
