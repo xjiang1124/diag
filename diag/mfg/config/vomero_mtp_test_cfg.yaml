@@ -90,5 +90,15 @@ MTP_SEQ:
                 SLOT: Yes
                 VMARG: Yes
 
+    I2CSPI:
+        I2CSPI:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: Yes
+                VMARG: No
+
 MTP_POST:
     NIC_MEM:  True
