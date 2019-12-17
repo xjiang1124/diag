@@ -2560,15 +2560,14 @@ class mtp_ctrl():
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # for zmq, get result at the test end instead of sresult.
-        zmq_l1_result_re = r"MTP1 +ASIC +L1 +(\w+)"
-        match = re.findall(zmq_l1_result_re, cmd_buf)
-        if match:
-            ret = match[0]
-        else:
-            ret = "TIMEOUT"
-
-        # ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
-        if ret == "TIMEOUT":
+        # zmq_l1_result_re = r"MTP1 +ASIC +L1 +(\w+)"
+        # match = re.findall(zmq_l1_result_re, cmd_buf)
+        # if match:
+        #     ret = match[0]
+        # else:
+        #     ret = "TIMEOUT"
+        ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
+        if test == "L1" and ret == "TIMEOUT":
             self.mtp_run_diag_test_para_lock()
             self.mtp_mgmt_jtag_rst()
             self.mtp_run_diag_test_para_unlock()
