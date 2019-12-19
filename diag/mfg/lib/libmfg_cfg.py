@@ -27,10 +27,10 @@ class NIC_CPLD_Version:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_11192019.tar"
-    MTP_ARM64_IMAGE = "image_arm64_11192019.tar"
+    MTP_AMD64_IMAGE = "image_amd64_12172019.tar"
+    MTP_ARM64_IMAGE = "image_arm64_12172019.tar"
 
-    NIC_DIAGFW_IMAGE = "naples_diagfw_08082019.tar"
+    NIC_DIAGFW_IMAGE = "naples_diagfw_12172019.tar"
     NIC_GOLDFW_IMAGE = "naples_goldfw_09182019.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_cpld_rev4_08082019.bin"
@@ -46,7 +46,7 @@ class MFG_IMAGE_FILES:
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
-MFG_QSPI_TIMESTAMP = "08-08-2019"
+MFG_QSPI_TIMESTAMP = "12-02-2019"
 MFG_GOLD_TIMESTAMP = "09-17-2019"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
