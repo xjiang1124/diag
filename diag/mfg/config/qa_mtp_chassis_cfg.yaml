@@ -103,6 +103,8 @@ MTP-020:
     SLOTS: 10
     CAPABILITY: 0x1
 
+# Naples100 debug chassis
+# Capability: 1=>Naples100; 2=>Naples25; 3=>Both
 MTP-098:
     MODE: ""
     TS: ""
@@ -124,6 +126,7 @@ MTP-098:
     SLOTS: 10
     CAPABILITY: 0x1
 
+# Naples25 debug chassis
 MTP-099:
     MODE: ""
     TS: "192.168.1.127"
