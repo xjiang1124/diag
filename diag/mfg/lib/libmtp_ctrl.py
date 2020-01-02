@@ -2842,7 +2842,7 @@ class mtp_ctrl():
                 config_lines.append(tmp)
                 tmp = "        PN: \"" + scan_rslt[key]["NIC_PN"] + "\""
                 config_lines.append(tmp)
-                tmp = "        TS: " + scan_rslt[key]["NIC_TS"]
+                tmp = "        TS: \"" + scan_rslt[key]["NIC_TS"] + "\""
                 config_lines.append(tmp)
             else:
                 tmp = "        VALID: \"No\""
