@@ -23,7 +23,7 @@ func SwitchHwInfo(uutName string) (err int) {
         EepromList    = eepromMap[cardType]
         I2cHubList    = i2cHubListMap[cardType]
     } else {
-        uutType, err = i2cinfo.FindUutType(uutName)
+        uutType, err = i2cinfo.FindUutTypeMtp(uutName)
         if err != errType.SUCCESS {
             return
         }

@@ -6,14 +6,15 @@ import (
     "os"
     "strings"
 
-    //"common/cli"
+    "common/cli"
+    "common/errType"
+    "common/misc"
     //"config"
     "hardware/hwdev"
     "hardware/hwinfo"
     "hardware/i2cinfo"
     "device/eeprom"
     "device/cpld/cpldSmb"
-    "common/misc"
 )
 
 func init() {
@@ -47,7 +48,15 @@ func eepromTlbInit(uut string) {
         if eeprom.HpeNaples == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTbl
         }
+        if eeprom.HpeAlom == true {
+            eeprom.EepromExtTbl = eeprom.HpeAlomTbl
+        }
     }
+
+    if cardType == "NAPLES25SWM" || cardType == "NAPLES25OCP" {
+        eeprom.I2cAddr16 = true
+    }
+
     eeprom.CardType = cardType
     fmt.Println(eeprom.CardType)
 }
@@ -66,6 +75,7 @@ func main() {
     uutPtr     := flag.String("uut",    "UUT_NONE", "Target UUT")
     majorPtr   := flag.String("maj",    "",         "Hardware mayor reversion")
     hpePtr     := flag.Bool  ("hpe",    false,      "HPE eeprom operation option")
+    hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
     erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
     flag.Parse()
 
@@ -85,7 +95,21 @@ func main() {
         eeprom.HpeNaples = 1
     }
 
+    if *hpeAlomPtr == true {
+        eeprom.HpeAlom = true
+    }
+
+    if uut != "UUT_NONE" {
+        i2cinfo.SwitchI2cTbl(uut)
+    }
+
     eepromTlbInit(uut)
+
+    iInfo, err := i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to obtain I2C info of", devName)
+        return
+    }
 
     if *infoPtr == true {
         dispInfo()
@@ -93,7 +117,7 @@ func main() {
     }
 
     if *dispPtr == true {
-        hwdev.EepromDisp(devName, field)
+        hwdev.EepromDisp(devName, iInfo.Bus, iInfo.DevAddr, field)
         return
     }
 
@@ -104,8 +128,8 @@ func main() {
     }
 
     if *updatePtr == true || eeprom.Erase == true {
-//        hwdev.EepromUpdate(devName, mac, sn)
-        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {
+        // FIXME: Skip for ALOM
+        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" && eeprom.HpeAlom == false {
             fmt.Println("on MTP")
             rd, _ := cpldSmb.ReadSmb("CPLD", 0x21)
             rd = rd & 0xFD
@@ -114,27 +138,29 @@ func main() {
             CpldWrite(0x1, 0x2)
         }
         misc.SleepInUSec(1000)
-        if mac != "" {
-            hwdev.EepromUpdateMac(devName, mac)
+        if mac != "" && eeprom.HpeAlom == false {
+            hwdev.EepromUpdateMac(devName, iInfo.Bus, iInfo.DevAddr, mac)
             misc.SleepInUSec(500000)
         }
         if sn != "" {
-            hwdev.EepromUpdateSn(devName, sn)
+            hwdev.EepromUpdateSn(devName, iInfo.Bus, iInfo.DevAddr, sn)
             misc.SleepInUSec(500000)
         }
         if pn != "" {
-            hwdev.EepromUpdatePn(devName, pn)
+            hwdev.EepromUpdatePn(devName, iInfo.Bus, iInfo.DevAddr, pn)
             misc.SleepInUSec(500000)
         }
         if date != "" {
-            hwdev.EepromUpdateDate(devName, date)
+            hwdev.EepromUpdateDate(devName, iInfo.Bus, iInfo.DevAddr, date)
             misc.SleepInUSec(500000)
         }
         if major != "" {
-            hwdev.EepromUpdateMajor(devName, major)
+            hwdev.EepromUpdateMajor(devName, iInfo.Bus, iInfo.DevAddr, major)
             misc.SleepInUSec(500000)
         }
-        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" {
+
+        // FIXME
+        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" && eeprom.HpeAlom == false {
             rd, _ := cpldSmb.ReadSmb("CPLD", 0x21)
             rd = rd | 0x2
             _ = cpldSmb.WriteSmb("CPLD", 0x21, rd)
@@ -145,7 +171,7 @@ func main() {
     }
 
     if *dumpPtr == true {
-        hwdev.EepromDump(devName)
+        hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr)
         return
     }
 

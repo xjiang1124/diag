@@ -206,7 +206,7 @@ func init() {
  * Find UUT type based on environment variable
  * TODO: This functionality can be implemented through redis
  */
-func FindUutType(uutName string) (uutType string, err int) {
+func FindUutTypeMtp(uutName string) (uutType string, err int) {
     // This function is only useful on MTP
     cardType, found := os.LookupEnv("CARD_TYPE")
     if found == false {
@@ -228,6 +228,30 @@ func FindUutType(uutName string) (uutType string, err int) {
 }
 
 /**
+ * Find UUT type based on environment variable
+ * Can be used on both MTP and NIC Linux
+ */
+func FindUutType(uutName string) (uutType string, err int) {
+    uutType = "TYPE_NONE"
+    var found bool
+
+    if uutName == "UUT_NONE" {
+        uutType, found = os.LookupEnv("CARD_TYPE")
+        if found == false {
+            cli.Println("e", "Cannot find CARD_TYPE")
+            err = errType.INVALID_PARAM
+        }
+    } else {
+        uutType, found = os.LookupEnv(uutName)
+        if found == false {
+            cli.Println("e", "Cannot find uutType with uutName", uutName)
+            err = errType.INVALID_PARAM
+        }
+    }
+    return
+}
+
+/**
  * To support Naples_MTP test card. 
  * Todo: support mix of Naples in the same MTP
  */
@@ -242,7 +266,7 @@ func SwitchI2cTbl(uutName string) (err int) {
         return
     }
 
-    uutType, err := FindUutType(uutName)
+    uutType, err := FindUutTypeMtp(uutName)
     if err != errType.SUCCESS {
         return
     }
@@ -278,7 +302,7 @@ func SwitchI2cTblByIndex(uutIndex uint) (err int) {
         return
     }
     uutName := "UUT_" + strconv.FormatUint(uint64(uutIndex+1), 10)
-    uutType, err := FindUutType(uutName)
+    uutType, err := FindUutTypeMtp(uutName)
     if err != errType.SUCCESS {
         return
     }

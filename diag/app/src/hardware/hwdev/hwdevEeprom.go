@@ -13,13 +13,13 @@ import (
 
 )
 
-func EepromUpdateMac(devName string, mac string) (err int) {
+func EepromUpdateMac(devName string, bus uint32, devAddr byte, mac string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
     if os.Getenv("CARD_TYPE") == "MTP" && eeprom.CardType == "MTP" {
         mac0 := make([]byte, 12)
         copy(mac0, []byte(mac))
-        err = eeprom.UpdateMac(devName, mac0)
+        err = eeprom.UpdateMac(devName, bus, devAddr, mac0)
     } else {
         mac1 := make([]byte, 6)
         data, _ := strconv.ParseUint(mac, 16, 64)
@@ -29,14 +29,14 @@ func EepromUpdateMac(devName string, mac string) (err int) {
         mac1[3] = byte(data >> 16 & 0xFF)
         mac1[4] = byte(data >> 8 & 0xFF)
         mac1[5] = byte(data & 0xFF)
-        err = eeprom.UpdateMac(devName, mac1)
+        err = eeprom.UpdateMac(devName, bus, devAddr, mac1)
     }
 
     if err != errType.SUCCESS {
         return
     }
 
-    err = eeprom.ProgEeprom(devName)
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
         return
@@ -44,17 +44,17 @@ func EepromUpdateMac(devName string, mac string) (err int) {
     return
 }
 
-func EepromUpdateSn(devName string, sn string) (err int) {
+func EepromUpdateSn(devName string, bus uint32, devAddr byte, sn string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
     sn1 := make([]byte, 16)
     copy(sn1, []byte(sn))
-    err = eeprom.UpdateSn(devName, sn1)
+    err = eeprom.UpdateSn(devName, bus, devAddr, sn1)
     if err != errType.SUCCESS {
         return
     }
 
-    err = eeprom.ProgEeprom(devName)
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
         return
@@ -62,17 +62,17 @@ func EepromUpdateSn(devName string, sn string) (err int) {
     return
 }
 
-func EepromUpdatePn(devName string, pn string) (err int) {
+func EepromUpdatePn(devName string, bus uint32, devAddr byte, pn string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
     pn1 := make([]byte, 13)
     copy(pn1, []byte(pn))
-    err = eeprom.UpdatePn(devName, pn1)
+    err = eeprom.UpdatePn(devName, bus, devAddr, pn1)
     if err != errType.SUCCESS {
         return
     }
 
-    err = eeprom.ProgEeprom(devName)
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
         return
@@ -80,15 +80,15 @@ func EepromUpdatePn(devName string, pn string) (err int) {
     return
 }
 
-func EepromUpdateDate(devName string, date string) (err int) {
+func EepromUpdateDate(devName string, bus uint32, devAddr byte, date string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.UpdateDate(devName, date)
+    err = eeprom.UpdateDate(devName, bus, devAddr, date)
     if err != errType.SUCCESS {
         return
     }
 
-    err = eeprom.ProgEeprom(devName)
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
         return
@@ -96,18 +96,18 @@ func EepromUpdateDate(devName string, date string) (err int) {
     return
 }
 
-func EepromUpdateMajor(devName string, major string) (err int) {
+func EepromUpdateMajor(devName string, bus uint32, devAddr byte, major string) (err int) {
 
     hwinfo.EnableHubChannelExclusive(devName)
 
     major1 := make([]byte, 2)
     copy(major1, []byte(major))
-    err = eeprom.UpdateMajor(devName, major1)
+    err = eeprom.UpdateMajor(devName, bus, devAddr, major1)
     if err != errType.SUCCESS {
         return
     }
 
-    err = eeprom.ProgEeprom(devName)
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
         return
@@ -115,7 +115,7 @@ func EepromUpdateMajor(devName string, major string) (err int) {
     return
 }
 
-func EepromUpdate(devName string, mac string, sn string) (err int) {
+func EepromUpdate(devName string, bus uint32, devAddr byte, mac string, sn string) (err int) {
     mac1 := mac
     mac1 = strings.Replace(mac1, " ", "", -1)
     mac1 = strings.Replace(mac1, ":", "", -1)
@@ -139,12 +139,12 @@ func EepromUpdate(devName string, mac string, sn string) (err int) {
     }
 
     copy(sn1, []byte(sn))
-    err = eeprom.UpdateSn(devName, sn1)
+    err = eeprom.UpdateSn(devName, bus, devAddr, sn1)
     if err != errType.SUCCESS {
         return
     }
 
-    err = eeprom.ProgEeprom(devName)
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
         return
@@ -152,10 +152,10 @@ func EepromUpdate(devName string, mac string, sn string) (err int) {
     return
 }
 
-func EepromDisp(devName string, field string) (err int) {
+func EepromDisp(devName string, bus uint32, devAddr byte, field string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.DispEeprom(devName, field)
+    err = eeprom.DispEeprom(devName, bus, devAddr, field)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM display failed!")
         return
@@ -163,6 +163,6 @@ func EepromDisp(devName string, field string) (err int) {
     return
 }
 
-func EepromDump(devName string) {
-    eeprom.DumpEeprom(devName)
+func EepromDump(devName string, bus uint32, devAddr byte) {
+    eeprom.DumpEeprom(devName, bus, devAddr)
 }

@@ -9,7 +9,7 @@ import (
     "common/cli"
     "common/errType"
     "common/misc"
-    "protocol/smbus"
+    "protocol/smbusNew"
 )
 
 const(
@@ -97,7 +97,7 @@ var HpeTbl = []entry {
     entry{"Manufacturer",                              STRING,        135,        2,    []byte{0x48, 0x50}},
     entry{"Product Name Type/Length",                 INT8,        137,        1,    []byte{0xF2}},
     entry{"Product Name",                             STRING,        138,        50,    []byte{
-            0x48, 0x50, 0x45, 0x20, 0x53, 0x6D, 0x61, 0x72, 0x74, 0x4E, 0x49, 0x43,
+            0x48, 0x50, 0x45, 0x29, 0x53, 0x6D, 0x61, 0x72, 0x74, 0x4E, 0x49, 0x43,
             0x20, 0x31, 0x30, 0x2F, 0x32, 0x35, 0x47, 0x62, 0x20, 0x32, 0x2D, 0x70,
             0x6F, 0x72, 0x74, 0x20, 0x36, 0x39, 0x31, 0x53, 0x46, 0x50, 0x32, 0x38,
             0x20, 0x41, 0x64, 0x61, 0x70, 0x74, 0x65, 0x72, 0x20, 0x20, 0x20, 0x20,
@@ -127,12 +127,47 @@ var HpeTbl = []entry {
     entry{"HPE Multi-Record Area Checksum",         INT8,         247,        1,  []byte{0}},
 }
 
+var HpeAlomTbl = []entry {
+    entry{"Board Info Format Version",                  INT8,        128,        1,     []byte{1}},
+    entry{"Board Area Length",                          INT8,        129,        1,     []byte{0xF}},
+    entry{"Language Code",                              INT8,        130,        1,     []byte{0x19}},
+    entry{"Manufacture Date/Time",                      INT8,        131,        3,     []byte{0, 0, 0}},
+    entry{"Manufacturer Name Type/Length",              INT8,        134,        1,     []byte{0xC2}},
+    entry{"Manufacturer",                               STRING,      135,        2,     []byte{0x48, 0x50}},
+    entry{"Product Name Type/Length",                   INT8,        137,        1,     []byte{0xF2}},
+    entry{"Product Name",                               STRING,      138,        50,    []byte{
+            0x48, 0x50, 0x45, 0x29, 0x53, 0x6D, 0x61, 0x72, 0x74, 0x4E, 0x49, 0x43,
+            0x20, 0x31, 0x30, 0x2F, 0x32, 0x35, 0x47, 0x62, 0x20, 0x32, 0x2D, 0x70,
+            0x6F, 0x72, 0x74, 0x20, 0x36, 0x39, 0x31, 0x53, 0x46, 0x50, 0x32, 0x38,
+            0x20, 0x41, 0x64, 0x61, 0x70, 0x74, 0x65, 0x72, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20}},
+    entry{"PCA Serial Number Type/Length",              INT8,        188,        1,     []byte{0xCA}},
+    entry{"HPE Serial Number",                          STRING,      189,        10,    []byte{0x30, 0x30, 0x30, 0x30,
+            0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"PCA Product Number Type/Length",             INT8,        199,        1,     []byte{0xCA}},
+    entry{"HPE Product Number",                         STRING,      200,        10,    []byte{0x50, 0x31, 0x38, 0x36,
+        0x36, 0x39, 0x2F, 0x30, 0x30, 0x31}},
+    entry{"FRU File ID Type/Length",                    INT8,        210,        1,     []byte{0xC8}},
+    entry{"FRU ID",                                     STRING,      211,        8,     []byte{0x31, 0x31, 0x2F, 0x31,
+        0x34, 0x2F, 0x31, 0x39}},
+    entry{"OEM Revision Type/Length",                   INT8,        219,        1,     []byte{0x3}},
+    entry{"HP OEM Record ID",                           INT8,        220,        1,     []byte{0xD2}},
+    entry{"Revision Code",                              STRING,      221,        2,     []byte{0x30, 0x31}},
+    entry{"Board ID Type/Length",                       INT8,        223,        1,     []byte{0x4}},
+    entry{"Board ID",                                   INT8,        224,        4,     []byte{0x2, 0x0, 0x0, 0x0}},
+    entry{"Engineering Change Level Type/Length",       INT8,        228,        1,     []byte{0xC2}},
+    entry{"Engineering Change Level",                   INT8,        229,        2,     []byte{0x0, 0x0}},
+    entry{"HPE Multi-Record Area Checksum",             INT8,        231,        1,     []byte{0}},
+}
+
 var EepromTbl []entry
 var EepromExtTbl []entry
 var CardType string
 var brdInfoChk, cmnHeadChk, mraChk uint
 var HpeNaples uint
+var HpeAlom bool
 var Erase bool
+var I2cAddr16 bool
 
 func max(x, y int) (m int) {
     if x > y {
@@ -140,6 +175,12 @@ func max(x, y int) (m int) {
     } else {
         return y
     }
+}
+
+func init () {
+    HpeNaples = 0
+    HpeAlom = false
+    I2cAddr16 = false
 }
 
 func writeField(devName string, offset int, numBytes int, data []byte) (err int) {
@@ -158,7 +199,14 @@ func writeField(devName string, offset int, numBytes int, data []byte) (err int)
         }
         //cli.Printf("d", "offset=0x%x, data=0x%x\n",offset+i, writeData)
         misc.SleepInUSec(2000)
-        err = smbus.WriteByte(devName, uint64(offset+i), writeData)
+        if I2cAddr16 == true {
+            err = smbusNew.I2C16WriteByte(devName, uint16(offset+i), writeData)
+        } else {
+            err = smbusNew.WriteByte(devName, uint64(offset+i), writeData)
+        }
+        if err != errType.SUCCESS {
+            return
+        }
     }
     return
 }
@@ -167,7 +215,11 @@ func readField(devName string, offset int, numBytes int) (data []byte, err int) 
     data = make([]byte, numBytes)
 
     for i := 0; i < numBytes; i++ {
-        data[i], err = smbus.ReadByte(devName, uint64(offset+i))
+        if I2cAddr16 == true {
+            data[i], err = smbusNew.I2C16ReadByte(devName, uint16(offset+i))
+        } else {
+            data[i], err = smbusNew.ReadByte(devName, uint64(offset+i))
+        }
         if err != errType.SUCCESS {
             return
         }
@@ -175,12 +227,12 @@ func readField(devName string, offset int, numBytes int) (data []byte, err int) 
     return
 }
 
-func ProgEeprom(devName string) (err int) {
-    err = smbus.Open(devName)
+func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 
     is8g := 0
     if Erase == true {
@@ -249,7 +301,7 @@ func ProgEeprom(devName string) (err int) {
             }
         }
 
-        if HpeNaples == 1 {
+        if HpeNaples == 1 || HpeAlom == true {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Multi-Record Area Checksum" {
                     updateIntChk()
@@ -276,14 +328,14 @@ func UpdateMacMtp(devName string, mac []byte) (err int) {
     return
 }
 
-func UpdateMac(devName string, mac []byte) (err int) {
+func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
 //    CardType := os.Getenv("CARD_TYPE")
 
-    err = smbus.Open(devName)
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
@@ -319,12 +371,27 @@ func UpdateMac(devName string, mac []byte) (err int) {
                 continue
             }
         }
+
         if HpeNaples == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "MAC Address Base" {
                     copy(entry.Value, mac)
                     continue;
                 } else if entry.Name == "HPE Serial Number" {
+                    sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, sn)
+                    continue
+                } else if entry.Name == "Manufacture Date/Time" {
+                    date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, date)
+                    continue
+                }
+            }
+        }
+
+        if HpeAlom == true {
+            for _, entry := range(EepromExtTbl) {
+                if entry.Name == "HPE Serial Number" {
                     sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, sn)
                     continue
@@ -359,6 +426,13 @@ func updateIntChk() () {
             }
         }
     }
+    if HpeAlom == true {
+        for _, entry := range(EepromExtTbl) {
+            if (entry.Offset > 127) && (entry.Offset < 231) {
+                mraChk += calcSum(entry)
+            }
+        }
+    }
 }
 
 func calcSum(item entry) (chkSum uint) {
@@ -369,16 +443,16 @@ func calcSum(item entry) (chkSum uint) {
     return
 }
 
-func UpdateSn(devName string, sn []byte) (err int) {
+func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
     if len(sn) > 20 {
         cli.Println("f", "SN too long: ", sn)
         return
     }
-    err = smbus.Open(devName)
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 //    CardType := os.Getenv("CARD_TYPE")
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
@@ -435,22 +509,39 @@ func UpdateSn(devName string, sn []byte) (err int) {
                 }
             }
         }
+
+        if HpeAlom == true {
+            for _, entry := range(EepromExtTbl) {
+                if entry.Name == "HPE Serial Number" {
+                    copy(entry.Value, sn)
+                    continue
+                } else if entry.Name == "Manufacture Date/Time" {
+                    date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, date)
+                    continue
+                } else if entry.Name == "HPE Product Number" {
+                    pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, pn)
+                    continue
+                }
+            }
+        }
         updateIntChk()
     }
     return
 }
 
-func UpdatePn(devName string, pn []byte) (err int) {
+func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
     if len(pn) > 13 {
         cli.Println("f", "SN too long: ", pn)
         return
     }
 
-    err = smbus.Open(devName)
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 
 //    CardType := os.Getenv("CARD_TYPE")
     if CardType == "MTP" {
@@ -500,17 +591,34 @@ func UpdatePn(devName string, pn []byte) (err int) {
                 }
             }
         }
+
+        if HpeAlom == true {
+            for _, entry := range(EepromExtTbl) {
+                if entry.Name == "HPE Product Number" {
+                    copy(entry.Value, pn)
+                    continue
+                } else if entry.Name == "HPE Serial Number" {
+                    sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, sn)
+                    continue
+                } else if entry.Name == "Manufacture Date/Time" {
+                    date, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, date)
+                    continue
+                }
+            }
+        }
         updateIntChk()
     }
     return
 }
 
-func UpdateDate(devName string, str string) (err int) {
-    err = smbus.Open(devName)
+func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) {
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 
 //    CardType := os.Getenv("CARD_TYPE")
     if CardType == "MTP" {
@@ -567,17 +675,34 @@ func UpdateDate(devName string, str string) (err int) {
             }
         }
     }
+
+    if HpeAlom == true {
+        for _, entry := range(EepromExtTbl) {
+            if entry.Name == "Manufacture Date/Time" {
+                copy(entry.Value, data)
+                continue
+            } else if entry.Name == "HPE Product Number" {
+                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, pn)
+                continue
+            } else if entry.Name == "HPE Serial Number" {
+                sn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, sn)
+                continue
+            }
+        }
+    }
     updateIntChk()
     return
 }
 
-func UpdateMajor(devName string, major []byte) (err int) {
+func UpdateMajor(devName string, bus uint32, devAddr byte, major []byte) (err int) {
 
-    err = smbus.Open(devName)
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 
     if CardType == "MTP" {
         for _, entry := range(EepromTbl) {
@@ -599,12 +724,12 @@ func UpdateMajor(devName string, major []byte) (err int) {
     return
 }
 
-func DispEeprom(devName string, field string) (err int) {
-    err = smbus.Open(devName)
+func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int) {
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
 
     var data []byte
     fmtStr := "%-45s%-20s"
@@ -692,16 +817,45 @@ func DispEeprom(devName string, field string) (err int) {
             cli.Println("i", outStr)
         }
     }
+
+    if HpeAlom == true {
+        fmt.Println()
+        for _, entry := range(EepromExtTbl) {
+            data, err = readField(devName, entry.Offset, entry.NumBytes)
+            if err != errType.SUCCESS {
+                cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
+                return
+            }
+            if entry.DataType == STRING {
+                dataStr := string(data[:entry.NumBytes])
+                outStr = fmt.Sprintf(fmtStr, entry.Name, dataStr)
+            } else {
+                if entry.Name == "Manufacture Date/Time" {
+                    start := time.Date(1996, 1, 1, 0, 0, 0, 0, time.UTC)
+                    minutes := int((int(data[2]) * 0x10000) + (int(data[1]) * 0x100) + int(data[0]))
+                    now := start.Add(time.Minute * time.Duration(minutes))
+                    year, month, day := now.Date()
+                    date := fmt.Sprintf("%02d/%02d/%02d", int(month), int(day), (int(year) % 100))
+                    outStr = fmt.Sprintf(fmtDate, entry.Name, data[2], data[1], data[0], date)
+                } else if entry.Name == "MAC Address Base" {
+                    outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
+                } else {
+                    outStr = fmt.Sprintf(fmtHex, entry.Name, data)
+                }
+            }
+            cli.Println("i", outStr)
+        }
+    }
     return
 }
 
-func DumpEeprom(devName string) (err int) {
+func DumpEeprom(devName string, bus uint32, devAddr byte) (err int) {
 
-    err = smbus.Open(devName)
+    err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
+    defer smbusNew.Close()
     var data []byte
 //    CardType := os.Getenv("CARD_TYPE")
 

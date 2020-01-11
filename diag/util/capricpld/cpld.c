@@ -52,6 +52,13 @@
 
 #define GLOBAL1_PHY_ADDR			0x1B
 
+#define CPLD_ID_REG                 0x80
+#define ID_NAPLES100                0x12
+#define ID_NAPLES25                 0x13
+#define ID_VOMERO                   0x15
+#define ID_NAPLES25_SWM             0x17
+#define ID_NAPLES25_OCP             0x19
+
 #ifndef _GPIO_H_
 struct gpiohandle_request {
         __u32 lineoffsets[GPIOHANDLES_MAX];
@@ -754,15 +761,55 @@ main(int argc, char *argv[])
         mask = strtoul(argv[5], NULL, 0);
         cpld_write_field(addr, data, offset, mask);
     } else if (strcmp(argv[1], "-prog") == 0) {
-    	unsigned char buf[2000000];
+        // CPLD size table
+        // Naples25-SWM: 4000K
+        // Others: 2000K
+        int cpldSize;
+        uint8_t cpldId = cpld_read(CPLD_ID_REG);
+        unsigned char *buf;
+
+        if ( (cpldId == ID_NAPLES100) ||
+             (cpldId == ID_NAPLES25)  ||
+             (cpldId == ID_VOMERO)
+           )
+        {
+            cpldSize = 2000000;
+        } 
+        else if (
+            (cpldId == ID_NAPLES25_SWM) ||
+            (cpldId == ID_NAPLES25_OCP)
+            )
+        {
+            cpldSize = 4000000;
+        }
+        else
+        {
+            printf("Invalid CPLD id 0x%x\n", cpldId);
+            return -1;
+        }
+        printf("cpldSize %d\n", cpldSize);
+
+        buf = (unsigned char *) malloc(cpldSize);
 		memset(buf, 0, sizeof(buf));
 		FILE* fptr = fopen(argv[2], "rb");
 		if(fptr == NULL)
 		{
 			printf("Cannot open file %s\n", argv[2]);
+            free(buf);
 			exit(1);
 		}
-		int read_byte = fread(buf, 1, sizeof(buf), fptr);
+		int read_byte = fread(buf, 1, cpldSize, fptr);
+
+    	//unsigned char buf[2000000];
+		//memset(buf, 0, sizeof(buf));
+		//FILE* fptr = fopen(argv[2], "rb");
+		//if(fptr == NULL)
+		//{
+		//	printf("Cannot open file %s\n", argv[2]);
+		//	exit(1);
+		//}
+		//int read_byte = fread(buf, 1, sizeof(buf), fptr);
+
 		printf("program size %d\n", read_byte);
 		uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
     	flash_enable(fd);
@@ -773,6 +820,7 @@ main(int argc, char *argv[])
 		flash_disable(fd);
 		close(fd);
 		fclose(fptr);
+        free(buf);
     } else if (strcmp(argv[1], "-erase") == 0) {
 		uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
     	flash_enable(fd);
