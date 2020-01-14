@@ -163,6 +163,6 @@ func EepromDisp(devName string, bus uint32, devAddr byte, field string) (err int
     return
 }
 
-func EepromDump(devName string, bus uint32, devAddr byte) {
-    eeprom.DumpEeprom(devName, bus, devAddr)
+func EepromDump(devName string, bus uint32, devAddr byte, numBytes int) {
+    eeprom.DumpEeprom(devName, bus, devAddr, numBytes)
 }

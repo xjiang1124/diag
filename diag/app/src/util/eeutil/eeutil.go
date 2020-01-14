@@ -66,17 +66,18 @@ func main() {
     infoPtr    := flag.Bool  ("info",   false,      "Display device info")
     dispPtr    := flag.Bool  ("disp",   false,      "Display eeprom content")
     updatePtr  := flag.Bool  ("update", false,      "Update eeprom")
+    erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
+    dumpPtr    := flag.Bool  ("dump",    false,      "Dump FRU")
     macPtr     := flag.String("mac",    "",         "MAC address")
     snPtr      := flag.String("sn",     "",         "Serial number")
     pnPtr      := flag.String("pn",     "",         "Part number")
     mfgDatePtr := flag.String("date",   "",         "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",      "Display specific eeprom field")
-    dumpPtr    := flag.Bool ("dump",    false,      "Dump FRU")
     uutPtr     := flag.String("uut",    "UUT_NONE", "Target UUT")
     majorPtr   := flag.String("maj",    "",         "Hardware mayor reversion")
     hpePtr     := flag.Bool  ("hpe",    false,      "HPE eeprom operation option")
     hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
-    erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
+    numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -87,6 +88,7 @@ func main() {
     field := strings.ToUpper(*fieldPtr)
     uut := strings.ToUpper(*uutPtr)
     major := strings.ToUpper(*majorPtr)
+    numBytes := *numBytesPtr
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -171,7 +173,7 @@ func main() {
     }
 
     if *dumpPtr == true {
-        hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr)
+        hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
         return
     }
 

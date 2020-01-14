@@ -36,6 +36,20 @@ var MtpTbl = []entry {
     entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
     entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},
     entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
+    entry{"PRODUCT_NAME",   STRING, 10,  20, []byte("NAPLES25 MTP Adapter  ")},
+    entry{"SERIAL_NUM",     STRING, 30,  20, []byte("1234567890          ")},
+    entry{"COMPANY_NAME",   STRING, 50,  20, []byte("Pensando Systems Inc")},
+    entry{"MFG_DEVIATION",  STRING, 70,  20, []byte("0                   ")},
+    entry{"MFG_BITS",       STRING, 90,  2,  []byte("00")},
+    entry{"ENG_BITS",       STRING, 92,  2,  []byte("00")},
+    entry{"MAC_ADDR",       STRING, 94,  12, []byte("AABBCCDDEEFF")},
+    entry{"NUM_OF_MAC",     STRING, 106, 2,  []byte("00")},
+}
+
+var Naples25SwmTbl = []entry {
+    entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
+    entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("01")},
+    entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
     entry{"PRODUCT_NAME",   STRING, 10,  20, []byte("NIC MTP             ")},
     entry{"SERIAL_NUM",     STRING, 30,  20, []byte("1234567890          ")},
     entry{"COMPANY_NAME",   STRING, 50,  20, []byte("Pensando Systems Inc")},
@@ -849,7 +863,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
     return
 }
 
-func DumpEeprom(devName string, bus uint32, devAddr byte) (err int) {
+func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int) {
 
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
@@ -857,23 +871,22 @@ func DumpEeprom(devName string, bus uint32, devAddr byte) (err int) {
     }
     defer smbusNew.Close()
     var data []byte
-//    CardType := os.Getenv("CARD_TYPE")
 
-    if CardType == "NAPLES100" || CardType == "NAPLES25" || CardType == "FORIO" || CardType == "VOMERO" {
-        f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-        if error != nil {
-            cli.Println("e", "file create failed")
-        }
-        cli.Println("i", "dump FRU to file eeprom")
-        for _, entry := range(EepromTbl) {
-            data, err = readField(devName, entry.Offset, entry.NumBytes)
-            if err != errType.SUCCESS {
-                cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
-                return
-            }
-            f.WriteString(string(data[:]))
-        }
-        f.Close()
+    f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
+    if error != nil {
+        cli.Println("e", "file create failed")
     }
+    cli.Println("i", "dump FRU to file eeprom")
+    for i := 0; i < numBytes; i++ {
+        data, err = readField(devName, i, 1)
+        cli.Printf("d", "Offset=0x%x, data=0x%x\n", i, data)
+        if err != errType.SUCCESS {
+            cli.Println("f", "Failed to read field at offset", i)
+            return
+        }
+        f.WriteString(string(data[:]))
+    }
+
+    f.Close()
     return
 }
