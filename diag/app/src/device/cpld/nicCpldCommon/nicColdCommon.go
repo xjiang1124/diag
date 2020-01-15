@@ -1,6 +1,7 @@
 package nicCpldCommon
 
 const (
+    ID_NAPLES_MTP      = 0x11
     ID_NAPLES100       = 0x12
     ID_NAPLES25        = 0x13
     ID_FORIO           = 0x14

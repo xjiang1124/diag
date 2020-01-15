@@ -12,11 +12,7 @@ import (
     "common/errType"
     "common/misc"
     "device/cpld/naples100Cpld"
-    "device/cpld/naples25Cpld"
-    "device/cpld/naples25swmCpld"
-    "device/cpld/forioCpld"
-    "device/cpld/naplesMtpCpld"
-    "device/cpld/vomeroCpld"
+    "device/cpld/nicCpldCommon"
     "hardware/hwdev"
 )
 
@@ -29,18 +25,44 @@ func uutPresent(uutName string) (data byte, present bool) {
     devName := "CPLD"
     addr := uint64(naples100Cpld.REG_ID)
 
+    present = false
+
     cli.DisableVerbose()
     data, err := hwdev.NaplesCpldRdBlind(devName, addr, uutName)
-    if err != errType.SUCCESS {
-        data, err = hwdev.NaplesCpldRdBlind("CPLD_ALT", addr, uutName)
+
+    if err == errType.SUCCESS {
+        present = true
+        cli.EnableVerbose()
+        return
+    }
+
+    data, err = hwdev.NaplesCpldRdBlind("CPLD_ALT", addr, uutName)
+    if err == errType.SUCCESS {
+        present = true
+        cli.EnableVerbose()
+        return
+    }
+
+    data, err = hwdev.NaplesCpldRdBlind("CPLD_ADAP", addr, uutName)
+    if err == errType.SUCCESS {
+        // If adaptor present, turn on CPLD SMB and read ID
+        // FIXME: replace hard number
+        err = hwdev.NaplesCpldWr("CPLD_ADAP", 0x1, 0x14, uutName)
         if err != errType.SUCCESS {
             present = false
-        } else {
-            present = true
+            cli.EnableVerbose()
+            return
+
         }
-    } else {
-        present = true
+
+        data, err = hwdev.NaplesCpldRdBlind("CPLD_ALT", addr, uutName)
+        if err == errType.SUCCESS {
+            present = true
+            cli.EnableVerbose()
+            return
+        }
     }
+
     cli.EnableVerbose()
 
     return
@@ -57,37 +79,23 @@ func present() (err int) {
 
         if present == true {
             switch data {
-            case naples100Cpld.ID:
+            case nicCpldCommon.ID_NAPLES100:
                 presentStr = "NAPLES100"
-            case naples25Cpld.ID:
+            case nicCpldCommon.ID_NAPLES25:
                 presentStr = "NAPLES25"
-            case naples25swmCpld.ID:
+            case nicCpldCommon.ID_NAPLES25SWM:
                 presentStr = "NAPLES25SWM"
-            case forioCpld.ID:
+            case nicCpldCommon.ID_FORIO:
                 presentStr = "FORIO"
-            case vomeroCpld.ID:
+            case nicCpldCommon.ID_VOMERO:
                 presentStr = "VOMERO"
-            case naplesMtpCpld.ID:
+            case nicCpldCommon.ID_NAPLES_MTP:
                 presentStr = "NAPLES_MTP"
             default:
                 presentStr = "Unknown"
             }
         } else {
             presentStr = prsntNoneStr
-//            cli.DisableVerbose()
-//            var inst uint
-//            if(i > 5) {
-//                inst = 1
-//            } else {
-//                inst = 0
-//            }
-//            pcs, _ := mtpCpld.MvlRead(inst, uint((i-1)%5 + 0x10), 0x1)
-//            if ((pcs & 0xC000) > 0) && (pcs != 0xffff){
-//                presentStr = "PRESENT"
-//            } else {
-//                presentStr = prsntNoneStr
-//            }
-//            cli.EnableVerbose()
         }
 
         cli.Printf("i", "UUT_%-15d     %s\n", i, presentStr)
@@ -175,17 +183,17 @@ func sysDetect() (err int) {
 
         if present == true {
             switch data {
-            case naples100Cpld.ID:
+            case nicCpldCommon.ID_NAPLES100:
                 presentStr = "NAPLES100"
-            case naples25Cpld.ID:
+            case nicCpldCommon.ID_NAPLES25:
                 presentStr = "NAPLES25"
-            case naples25swmCpld.ID:
+            case nicCpldCommon.ID_NAPLES25SWM:
                 presentStr = "NAPLES25SWM"
-            case forioCpld.ID:
+            case nicCpldCommon.ID_FORIO:
                 presentStr = "FORIO"
-            case vomeroCpld.ID:
+            case nicCpldCommon.ID_VOMERO:
                 presentStr = "VOMERO"
-            case naplesMtpCpld.ID:
+            case nicCpldCommon.ID_NAPLES_MTP:
                 presentStr = "NAPLES_MTP"
             default:
                 presentStr = "Unknown"
