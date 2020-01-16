@@ -46,7 +46,7 @@ var MtpTbl = []entry {
     entry{"NUM_OF_MAC",     STRING, 106, 2,  []byte("00")},
 }
 
-var Naples25SwmTbl = []entry {
+var Naples25SwmAdapTbl = []entry {
     entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
     entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("01")},
     entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
