@@ -1,5 +1,19 @@
 #!/bin/bash
 
+
+power_on_naples25() {
+    slot=$1
+    turn_on_hub.sh $1 > /dev/null 2>&1
+    cpld_id=$(i2cget -y 0 0x4b 0x80 2> /dev/null )
+    if [ $? -eq 0 ]  #If we get a valid return code, an alom card is there that we need to power up
+    then
+        #power it up via CPLD
+        reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
+        reg1=$(( $reg1 | 0x14 ))
+        i2cset -y 0 0x4b 0x1 $reg1
+    fi
+}
+
 control_slot() {
     v12_addr="0x10"
     v3v3_addr="0x12"
@@ -46,6 +60,8 @@ control_slot() {
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
         sleep 0.5
     
+        power_on_naples25 $2
+
         echo "slot $2 turned on"
     
     else
@@ -82,7 +98,12 @@ control_all() {
         cpldutil -cpld-wr -addr=0x16 -data=0
         cpldutil -cpld-wr -addr=0x17 -data=0
         sleep 0.5
-    
+        
+        for i in {1..10}
+        do
+            power_on_naples25 $i
+        done
+
         echo "All slots turned on"
     
     else
