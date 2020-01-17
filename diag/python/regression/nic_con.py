@@ -156,11 +156,9 @@ class nic_con:
         ret = 0
         session = common.session_start()
 
-        #cmd = "turn_on_slot_multi.sh off {}".format(slot_list)
-        cmd = "turn_on_slot.sh off {}".format(slot_list)
+        cmd = "turn_on_slot_multi.sh off {}".format(slot_list)
         common.session_cmd(session, cmd)
-        #cmd = "turn_on_slot_multi.sh on {}".format(slot_list)
-        cmd = "turn_on_slot.sh on {}".format(slot_list)
+        cmd = "turn_on_slot_multi.sh on {}".format(slot_list)
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
