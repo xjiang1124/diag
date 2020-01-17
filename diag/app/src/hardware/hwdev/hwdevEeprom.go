@@ -7,11 +7,44 @@ import (
     "common/cli"
     "common/errType"
 
+    "device/cpld/cpldSmb"
+    "device/cpld/naples25swmAdapCpld"
     "device/eeprom"
 
     "hardware/hwinfo"
+    "hardware/i2cinfo"
 
 )
+
+// Naples25SW need to choose SMBus between NIC and ALOM
+func SelSmbFromAdaptor(uutName string, HpeAlom bool) (err int) {
+    var ctrlVal byte
+
+    uutType, err := i2cinfo.FindUutTypeMtp(uutName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if uutType == "UUT_NONE" {
+        // Do nothing
+        return
+    }
+
+    if uutType != "NAPLES25SWM" {
+        // Do nothing
+        return
+    }
+
+    if HpeAlom == false {
+        ctrlVal = 0x14
+    } else {
+        ctrlVal = 0x12
+    }
+
+    err = cpldSmb.WriteSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL, ctrlVal)
+
+    return
+}
 
 func EepromUpdateMac(devName string, bus uint32, devAddr byte, mac string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)

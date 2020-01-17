@@ -107,6 +107,8 @@ func main() {
 
     eepromTlbInit(uut)
 
+    hwdev.SelSmbFromAdaptor(uut, *hpeAlomPtr)
+
     iInfo, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to obtain I2C info of", devName)
