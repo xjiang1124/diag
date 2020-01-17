@@ -147,6 +147,10 @@ class nic_test:
         if pwr_cycle == True:
             self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
 
+        # Turn off SWM SGMII
+        for slot in nic_list:
+            self.nic_con.turn_off_sgmii(int(slot))
+
         for slot in nic_list:
             ret = self.setup_env(int(slot), False, 30, False, False, False)
             ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret

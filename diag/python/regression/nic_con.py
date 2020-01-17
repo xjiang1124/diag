@@ -156,9 +156,11 @@ class nic_con:
         ret = 0
         session = common.session_start()
 
-        cmd = "turn_on_slot_multi.sh off {}".format(slot_list)
+        #cmd = "turn_on_slot_multi.sh off {}".format(slot_list)
+        cmd = "turn_on_slot.sh off {}".format(slot_list)
         common.session_cmd(session, cmd)
-        cmd = "turn_on_slot_multi.sh on {}".format(slot_list)
+        #cmd = "turn_on_slot_multi.sh on {}".format(slot_list)
+        cmd = "turn_on_slot.sh on {}".format(slot_list)
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
@@ -385,6 +387,13 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
         return ret
+
+    def turn_off_sgmii(self, slot=0):
+        cmd = "swm_dis_sgmii.sh {}".format(slot)
+
+        session = common.session_start()
+        common.session_cmd(session, cmd)
+        common.session_stop(session)
 
     def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False):
         numRetry = 6
