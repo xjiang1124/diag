@@ -1,33 +1,52 @@
 #!/bin/bash
 
 
-power_on_naples25() {
+#For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD on thier ALOM adaapter
+power_on_naples25alom() {
     slot=$1
+    CPLD25swm="0x1b"
+    CPLD25ocp="0x1a"
     turn_on_hub.sh $1 > /dev/null 2>&1
     cpld_id=$(i2cget -y 0 0x4b 0x80 2> /dev/null )
-    if [ $? -eq 0 ]  #If we get a valid return code, an alom card is there that we need to power up
+    if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25swm ]] #If we get a valid return code, an alom card is there that we need to power up
     then
         #power it up via CPLD
         reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
         reg1=$(( $reg1 | 0x14 ))
         i2cset -y 0 0x4b 0x1 $reg1
     fi
+
+    if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25ocp ]] 
+    then
+        #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
+        reg1=$(i2cget -y 0 0x4b 0x40 2> /dev/null )
+        reg1=$(( $reg1 | 0x3 ))
+        i2cset -y 0 0x4b 0x40 $reg1
+    fi
+
 }
+
 
 control_slot() {
     v12_addr="0x10"
     v3v3_addr="0x12"
     perst_addr="0x16"
     
-    bitPos=$(( $2 - 1 ))
-    
-    if [[ $2 -ge 9 ]]
+    if [[ $low_high == "high" ]]
     then
         v12_addr=$(( $v12_addr + 1 ))
         v3v3_addr=$(( $v3v3_addr + 1 ))
         perst_addr=$(( $perst_addr + 1 ))
-        bitPos=$(( $bitPos - 8 ))
+        wValue=$pc_high
+    else
+        wValue=$pc_low
     fi
+    if [[ $wValue -eq 0 ]]
+    then
+        return 0
+    fi
+
+    printf "Setting $low_high power control to $on_off with 0x%x\n" $wValue
     
     cpldutil -cpld-rd -addr=$v12_addr
     v12=$?
@@ -38,51 +57,42 @@ control_slot() {
     cpldutil -cpld-rd -addr=$perst_addr
     perst=$?
     
-    bitPos=$(( 1 << $bitPos ))
-    
     #printf "0x%x\n" $v12_addr
     #printf "0x%x\n" $v3v3_addr
     #printf "0x%x\n" $perst_addr
-    
-    if [[ "$1" == "on" ]]
+
+    if [[ $on_off == "on" ]]
     then
-        echo "Turning on slot $2"
-        bitPos=$(( ~$bitPos ))
-        bitPos=$(( $bitPos & 0xff ))
-        v12=$(( $v12 & $bitPos ))
-        v3v3=$(( $v3v3 & $bitPos ))
-        perst=$(( $perst & $bitPos ))
+        wValue=$(( ~$wValue ))
+        wValue=$(( $wValue & 0xff ))
+        v12=$(( $v12 & $wValue ))
+        v3v3=$(( $v3v3 & $wValue ))
+        perst=$(( $perst & $wValue ))
     
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 0.5
+        sleep 0.2
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        sleep 0.5
+        sleep 0.2
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        sleep 0.5
-    
-        power_on_naples25 $2
-
-        echo "slot $2 turned on"
+        sleep 0.2
     
     else
-        echo "Turn off slot $2"
-        v12=$(( $v12 | $bitPos ))
-        v3v3=$(( $v3v3 | $bitPos ))
-        perst=$(( $perst | $bitPos ))
+        v12=$(( $v12 | $wValue ))
+        v3v3=$(( $v3v3 | $wValue ))
+        perst=$(( $perst | $wValue ))
     
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        sleep 0.5
+        sleep 0.2
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        sleep 0.5
+        sleep 0.2
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 0.5
-    
-        echo "slot $2 turned off"
+        sleep 0.2
     fi
     
     cpldutil -cpld-rd -addr=$v12_addr
     cpldutil -cpld-rd -addr=$v3v3_addr
     cpldutil -cpld-rd -addr=$perst_addr
+
 }
 
 control_all() {
@@ -101,7 +111,7 @@ control_all() {
         
         for i in {1..10}
         do
-            power_on_naples25 $i
+            power_on_naples25alom $i   #these adapters need an additional power on via the ALOM
         done
 
         echo "All slots turned on"
@@ -172,5 +182,38 @@ if [[ $2 == "all" ]]
 then
     control_all $1
 else
-    control_slot $1 $2
+    slot_list=$(echo $2 | tr "," "\n")
+	pc_low=0
+	pc_high=0
+	on_off=$1
+
+	for slot in $slot_list
+	do
+	    slot=$(( $slot - 1 ))
+	    if [[ $slot -ge 8 ]]
+	    then
+	        slot=$(( $slot - 8 ))
+	        bitPos=$(( 1 << $slot ))
+	        pc_high=$(( $pc_high | $bitPos ))
+	    else
+	        bitPos=$(( 1 << $slot ))
+        	pc_low=$(( $pc_low | $bitPos ))
+    	fi
+	done
+	#printf "pc_low: 0x%x\n" $pc_low
+	#printf "pc_high: 0x%x\n" $pc_high
+
+	declare -a low_high_list=("low" "high")
+	for low_high in "${low_high_list[@]}"
+	do
+    	control_slot
+	done
+
+    for slot in $slot_list
+    do
+       power_on_naples25alom $slot   #these adapters need an additional power on via the ALOM
+    done
+
+    
+    #control_slot $1 $2
 fi
