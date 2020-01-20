@@ -6,15 +6,18 @@ power_on_naples25_swm_ocp() {
     slot=$1
     CPLD25swm="0x1b"
     CPLD25ocp="0x1a"
-    turn_on_hub.sh $1 > /dev/null 2>&1
-    cpld_id=$(i2cget -y 0 0x4b 0x80 2> /dev/null )
+    #turn_on_hub.sh $1 > /dev/null 2>&1
+    turn_on_hub.sh $1
+    #cpld_id=$(i2cget -y 0 0x4b 0x80 2> /dev/null )
+    cpld_id=$(i2cget -y 0 0x4b 0x80)
     if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25swm ]] #If we get a valid return code, an alom card is there that we need to power up
     then
         # Disable SGMII port on adaptor board
         swm_dis_sgmii.sh $slot 
 
         #power it up ASIC via CPLD
-        reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
+        #reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
+        reg1=$(i2cget -y 0 0x4b 0x01)
         reg1=$(( $reg1 | 0x14 ))
         i2cset -y 0 0x4b 0x1 $reg1
     fi
@@ -22,7 +25,8 @@ power_on_naples25_swm_ocp() {
     if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25ocp ]] 
     then
         #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
-        reg1=$(i2cget -y 0 0x4b 0x40 2> /dev/null )
+        #reg1=$(i2cget -y 0 0x4b 0x40 2> /dev/null )
+        reg1=$(i2cget -y 0 0x4b 0x40)
         reg1=$(( $reg1 | 0x3 ))
         i2cset -y 0 0x4b 0x40 $reg1
     fi
@@ -211,6 +215,11 @@ else
 	do
     	control_slot
 	done
+
+    if [[ $on_off == "off" ]]
+    then
+        exit 0
+    fi
 
     for slot in $slot_list
     do
