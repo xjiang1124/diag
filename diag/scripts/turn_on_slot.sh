@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-#For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD on thier ALOM adaapter
-power_on_naples25alom() {
+#For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD.
+power_on_naples25_swm_ocp() {
     slot=$1
     CPLD25swm="0x1b"
     CPLD25ocp="0x1a"
@@ -10,7 +10,10 @@ power_on_naples25alom() {
     cpld_id=$(i2cget -y 0 0x4b 0x80 2> /dev/null )
     if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25swm ]] #If we get a valid return code, an alom card is there that we need to power up
     then
-        #power it up via CPLD
+        # Disable SGMII port on adaptor board
+        swm_dis_sgmii.sh $slot 
+
+        #power it up ASIC via CPLD
         reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
         reg1=$(( $reg1 | 0x14 ))
         i2cset -y 0 0x4b 0x1 $reg1
@@ -111,7 +114,7 @@ control_all() {
         
         for i in {1..10}
         do
-            power_on_naples25alom $i   #these adapters need an additional power on via the ALOM
+            power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the ALOM
         done
 
         echo "All slots turned on"
@@ -211,7 +214,7 @@ else
 
     for slot in $slot_list
     do
-       power_on_naples25alom $slot   #these adapters need an additional power on via the ALOM
+       power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the ALOM
     done
 
     
