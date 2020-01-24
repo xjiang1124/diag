@@ -18,7 +18,7 @@ power_on_naples25_swm_ocp() {
         #power it up ASIC via CPLD
         #reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
         reg1=$(i2cget -y 0 0x4b 0x01)
-        reg1=$(( $reg1 | 0x14 ))
+        reg1=$(( $reg1 | 0x1c ))
         i2cset -y 0 0x4b 0x1 $reg1
     fi
 
