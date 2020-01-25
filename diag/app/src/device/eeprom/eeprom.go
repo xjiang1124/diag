@@ -272,7 +272,9 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
                 }
             }
             if entry.Name == "Product Name" {
-                if (CardType == "NAPLES25") || (CardType == "NAPLES25SWM") {
+                if (CardType == "NAPLES25")    ||
+                   (CardType == "NAPLES25SWM") ||
+                   (CardType == "NAPLES25OCP") {
                     copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
                 } else if CardType == "FORIO" {
                     copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
@@ -280,13 +282,17 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
                     copy(entry.Value, []byte{0x56, 0x4F, 0x4D, 0x45, 0x52, 0x4F, 0x20, 0x20, 0x20, 0x20})
                 }
             }
-            if entry.Name == "Part Number" && ((CardType == "NAPLES25") || (CardType == "NAPLES25SWM")) {
+            if entry.Name == "Part Number"   &&
+               ( (CardType == "NAPLES25")    ||
+                 (CardType == "NAPLES25SWM") ||
+                 (CardType == "NAPLES25OCP") ) {
                 if entry.Value[6] == byte(0x38) {
                      is8g = 1
                 }
             }
             if entry.Name == "Board ID" {
-                if (CardType == "NAPLES25") ||
+                if (CardType == "NAPLES25")    ||
+                   (CardType == "NAPLES25OCP") ||
                    (CardType == "NAPLES25SWM") {
                     if is8g == 1 {
                         copy(entry.Value, []byte{5, 0 , 0, 0})

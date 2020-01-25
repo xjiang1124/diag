@@ -27,6 +27,9 @@ power_on_naples25_swm_ocp() {
         #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
         #reg1=$(i2cget -y 0 0x4b 0x40 2> /dev/null )
         reg1=$(i2cget -y 0 0x4b 0x40)
+        reg1=$(( $reg1 | 0x1 ))
+        i2cset -y 0 0x4b 0x40 $reg1
+        sleep 0.5
         reg1=$(( $reg1 | 0x3 ))
         i2cset -y 0 0x4b 0x40 $reg1
     fi

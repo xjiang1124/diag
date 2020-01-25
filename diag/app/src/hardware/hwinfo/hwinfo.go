@@ -267,6 +267,7 @@ func init() {
     dispMap["VOMERO"]      = forioDispStaList
     dispMap["NAPLES100"]   = naples100DispStaList
     dispMap["NAPLES25"]    = naples25DispStaList
+    dispMap["NAPLES25OCP"] = naples25DispStaList
     dispMap["NAPLES25SWM"] = naples25DispStaList
     dispMap["NAPLES_MTP"]  = naplesMtpDispStaList
     dispMap["MTP"]         = mtpDispStaList
@@ -285,6 +286,7 @@ func init() {
     eepromMap["NAPLES_MTP"] = naplesEepList
     eepromMap["NAPLES100"]  = naplesEepList
     eepromMap["NAPLES25"]   = naplesEepList
+    eepromMap["NAPLES25OCP"]= naplesEepList
     eepromMap["NAPLES25SWM"]= naplesEepList
     eepromMap["FORIO"]      = naplesEepList
     eepromMap["VOMERO"]     = naplesEepList
@@ -296,6 +298,7 @@ func init() {
     i2cHubMap["MTPS"]        = mtpI2cHubMap
     i2cHubMap["NAPLES100"]   = naples100I2cHubMap
     i2cHubMap["NAPLES25"]    = naples100I2cHubMap
+    i2cHubMap["NAPLES25OCP"] = naples100I2cHubMap
     i2cHubMap["NAPLES25SWM"] = naples100I2cHubMap
     i2cHubMap["FORIO"]       = naples100I2cHubMap
     i2cHubMap["VOMERO"]      = naples100I2cHubMap
@@ -306,6 +309,7 @@ func init() {
     i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
     i2cHubListMap["NAPLES100"]  = naples100I2cHubList
     i2cHubListMap["NAPLES25"]   = naples25I2cHubList
+    i2cHubListMap["NAPLES25OCP"]= naples25I2cHubList
     i2cHubListMap["NAPLES25SWM"]= naples25I2cHubList
     i2cHubListMap["FORIO"]      = forioI2cHubList
     i2cHubListMap["VOMERO"]     = forioI2cHubList
@@ -316,6 +320,7 @@ func init() {
     psuListMap["MTPS"]         = mtpPsuList
     psuListMap["NAPLES100"]    = naples100PsuList
     psuListMap["NAPLES25"]     = naples25PsuList
+    psuListMap["NAPLES25OCP"]  = naples25PsuList
     psuListMap["NAPLES25SWM"]  = naples25PsuList
     psuListMap["FORIO"]        = forioPsuList
     psuListMap["VOMERO"]       = forioPsuList
@@ -339,7 +344,7 @@ func init() {
         var t boardinfo.Naples100Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples100Cpld), &t)
         CpldInfo = &t
-    case "NAPLES25", "NAPLES25SWM":
+    case "NAPLES25", "NAPLES25SWM", "NAPLES25OCP":
         SfpTbl = naples25SfpTbl
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)

@@ -66,7 +66,8 @@ func Prbs(mode string, poly string, duration int) (err int) {
            (cardType == "VOMERO") {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples100[:]
-        } else if (cardType == "NAPLES25") ||
+        } else if (cardType == "NAPLES25")    ||
+                  (cardType == "NAPLES25OCP") ||
                   (cardType == "NAPLES25SWM") {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples25[:]
@@ -82,6 +83,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
             sbusList = make([]uint64, 16)
             sbusList = sbusEthListNaples100[:]
         } else if (cardType == "NAPLES25") ||
+                  (cardType == "NAPLES25OCP") ||
                   (cardType == "NAPLES25SWM") {
             sbusList = make([]uint64, 16)
             sbusList = sbusEthListNaples25[:]
