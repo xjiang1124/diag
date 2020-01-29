@@ -40,6 +40,9 @@ func eepromTlbInit(uut string) {
             if eeprom.HpeNaples == 1 {
                 eeprom.EepromExtTbl = eeprom.HpeTbl
             }
+            if eeprom.HpeAlom == true {
+                eeprom.EepromTbl = eeprom.HpeAlomTblAll
+            }
         }
     } else {
         // Assume now it is ARM
@@ -49,7 +52,7 @@ func eepromTlbInit(uut string) {
             eeprom.EepromExtTbl = eeprom.HpeTbl
         }
         if eeprom.HpeAlom == true {
-            eeprom.EepromExtTbl = eeprom.HpeAlomTbl
+            eeprom.EepromTbl = eeprom.HpeAlomTblAll
         }
     }
 
@@ -74,7 +77,7 @@ func main() {
     mfgDatePtr := flag.String("date",   "",         "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",      "Display specific eeprom field")
     uutPtr     := flag.String("uut",    "UUT_NONE", "Target UUT")
-    majorPtr   := flag.String("maj",    "",         "Hardware mayor reversion")
+    majorPtr   := flag.String("maj",    "",         "Hardware major reversion")
     hpePtr     := flag.Bool  ("hpe",    false,      "HPE eeprom operation option")
     hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
@@ -127,6 +130,10 @@ func main() {
 
     if *erasePtr == true {
         eeprom.Erase = true
+        if numBytes == 0 {
+            cli.Println("e", "You need to set the number of bytes to erase..failed to execute erase command", devName)
+            return;
+        }
     } else {
         eeprom.Erase = false
     }
@@ -141,26 +148,35 @@ func main() {
         } else {
             CpldWrite(0x1, 0x2)
         }
-        misc.SleepInUSec(1000)
-        if mac != "" && eeprom.HpeAlom == false {
-            hwdev.EepromUpdateMac(devName, iInfo.Bus, iInfo.DevAddr, mac)
-            misc.SleepInUSec(500000)
-        }
-        if sn != "" {
-            hwdev.EepromUpdateSn(devName, iInfo.Bus, iInfo.DevAddr, sn)
-            misc.SleepInUSec(500000)
-        }
-        if pn != "" {
-            hwdev.EepromUpdatePn(devName, iInfo.Bus, iInfo.DevAddr, pn)
-            misc.SleepInUSec(500000)
-        }
-        if date != "" {
-            hwdev.EepromUpdateDate(devName, iInfo.Bus, iInfo.DevAddr, date)
-            misc.SleepInUSec(500000)
-        }
-        if major != "" {
-            hwdev.EepromUpdateMajor(devName, iInfo.Bus, iInfo.DevAddr, major)
-            misc.SleepInUSec(500000)
+
+        if eeprom.Erase == true {
+            //EraseEeprom
+            cli.Printf("i", "Erasing Addr 0 -  0x%x\n",numBytes)
+            eeprom.EraseEeprom(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
+        } 
+
+        if *updatePtr == true {
+            misc.SleepInUSec(1000)
+            if mac != "" && eeprom.HpeAlom == false {
+                hwdev.EepromUpdateMac(devName, iInfo.Bus, iInfo.DevAddr, mac)
+                misc.SleepInUSec(500000)
+            }
+            if sn != "" {
+                hwdev.EepromUpdateSn(devName, iInfo.Bus, iInfo.DevAddr, sn)
+                misc.SleepInUSec(500000)
+            }
+            if pn != "" {
+                hwdev.EepromUpdatePn(devName, iInfo.Bus, iInfo.DevAddr, pn)
+                misc.SleepInUSec(500000)
+            }
+            if date != "" {
+                hwdev.EepromUpdateDate(devName, iInfo.Bus, iInfo.DevAddr, date)
+                misc.SleepInUSec(500000)
+            }
+            if major != "" {
+                hwdev.EepromUpdateMajor(devName, iInfo.Bus, iInfo.DevAddr, major)
+                misc.SleepInUSec(500000)
+            }
         }
 
         // FIXME

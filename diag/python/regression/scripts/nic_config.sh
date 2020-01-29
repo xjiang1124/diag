@@ -32,6 +32,12 @@ then
 elif [[ $cpld_id == "0x15" ]]
 then
     type="VOMERO"
+elif [[ $cpld_id == "0x17" ]]
+then
+    type="NAPLES25SWM"
+elif [[ $cpld_id == "0x19" ]]
+then
+    type="NAPLES25OCP"
 fi
 
 echo "$type Detected!"
