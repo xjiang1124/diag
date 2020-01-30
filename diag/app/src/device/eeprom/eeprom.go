@@ -467,9 +467,9 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
             }
             if entry.Name == "Product Name" {
                 
-                if (CardType == "NAPLES25")    ||
+                if ((CardType == "NAPLES25")    ||
                    (CardType == "NAPLES25SWM") ||
-                   (CardType == "NAPLES25OCP") &&
+                   (CardType == "NAPLES25OCP")) &&
                    (HpeAlom != true)  {
                     copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
                 } else if CardType == "FORIO" {
