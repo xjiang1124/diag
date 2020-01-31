@@ -70,6 +70,26 @@ function get_card_config() {
 
     declare -a sbus_list_naples25_pcie=("18" "20" "22" "24" "26" "28" "30" "32")
 
+    # Naples25OCP
+    declare -a sbus_list_naples25ocp_eth=("34" "38")
+    declare -a atten_list_naples25ocp_eth=("0" "0")
+    declare -a pre_list_naples25ocp_eth=("2" "2")
+    declare -a post_list_naples25ocp_eth=("12" "12")
+    declare -a tx_inv_list_naples25ocp_eth=("1" "0")
+    declare -a rx_inv_list_naples25ocp_eth=("0" "1")
+
+    declare -a sbus_list_naples25_pcie=("2" "4" "6" "8" "10" "12" "14" "16")
+
+    # Naples25SWM
+    declare -a sbus_list_naples25swm_eth=("34" "38")
+    declare -a atten_list_naples25swm_eth=("0" "0")
+    declare -a pre_list_naples25swm_eth=("2" "2")
+    declare -a post_list_naples25swm_eth=("12" "12")
+    declare -a tx_inv_list_naples25swm_eth=("1" "0")
+    declare -a rx_inv_list_naples25swm_eth=("0" "1")
+
+    declare -a sbus_list_naples25_pcie=("18" "20" "22" "24" "26" "28" "30" "32")
+
     if [ $card_type = "NAPLES100" ]
     then
         if [ $INF = "ETH" ]
@@ -104,6 +124,41 @@ function get_card_config() {
             echo "Wrong INF $INF"
             exit 1
         fi
+    elif [ $card_type = "NAPLES25OCP" ]
+    then
+        if [ $INF = "ETH" ]
+        then
+            sbus_list=("${sbus_list_naples25ocp_eth[@]}") 
+            atten_list=("${atten_list_naples25ocp_eth[@]}") 
+            pre_list=("${pre_list_naples25ocp_eth[@]}") 
+            post_list=("${post_list_naples25ocp_eth[@]}") 
+            tx_inv_list=("${tx_inv_list_naples25ocp_eth[@]}") 
+            rx_inv_list=("${rx_inv_list_naples25ocp_eth[@]}") 
+        elif [ $INF = "PCIE" ]
+        then
+            sbus_list=("${sbus_list_naples25ocp_pcie[@]}") 
+        else
+            echo "Wrong INF $INF"
+            exit 1
+        fi
+    elif [ $card_type = "NAPLES25SWP" ]
+    then
+        if [ $INF = "ETH" ]
+        then
+            sbus_list=("${sbus_list_naples25swm_eth[@]}") 
+            atten_list=("${atten_list_naples25swm_eth[@]}") 
+            pre_list=("${pre_list_naples25swm_eth[@]}") 
+            post_list=("${post_list_naples25swm_eth[@]}") 
+            tx_inv_list=("${tx_inv_list_naples25swm_eth[@]}") 
+            rx_inv_list=("${rx_inv_list_naples25swm_eth[@]}") 
+        elif [ $INF = "PCIE" ]
+        then
+            sbus_list=("${sbus_list_naples25swm_pcie[@]}") 
+        else
+            echo "Wrong INF $INF"
+            exit 1
+        fi
+
     else
         if [ $INF = "ETH" ]
         then
