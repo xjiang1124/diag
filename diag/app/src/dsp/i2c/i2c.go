@@ -28,10 +28,12 @@ func init() {
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
 
     i2cTestMap := make(map[string][]string)
-    i2cTestMap["NAPLES100"] = naples100TestList
-    i2cTestMap["NAPLES25"]  = naples100TestList
-    i2cTestMap["FORIO"]     = naples100TestList
-    i2cTestMap["VOMERO"]    = naples100TestList
+    i2cTestMap["NAPLES100"]     = naples100TestList
+    i2cTestMap["NAPLES25"]      = naples100TestList
+    i2cTestMap["NAPLES25SWM"]   = naples100TestList
+    i2cTestMap["NAPLES25OCP"]   = naples100TestList
+    i2cTestMap["FORIO"]         = naples100TestList
+    i2cTestMap["VOMERO"]        = naples100TestList
 
     i2cTestList = i2cTestMap[cardType]
 }

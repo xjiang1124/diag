@@ -65,6 +65,11 @@ func I2cI2cHdl(argList []string) {
     var ret int
     ret = errType.SUCCESS
 
+    if len(i2cTestList) == 0 {
+        dcli.Println("f", "Variable i2cTestList is empty.  No tests to run")
+        ret = errType.INVALID_TEST    
+    }
+
     for _, devName := range(i2cTestList) {
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
         //if err != errType.SUCCESS {

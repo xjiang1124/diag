@@ -36,7 +36,7 @@ var MtpTbl = []entry {
     entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
     entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},
     entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
-    entry{"PRODUCT_NAME",   STRING, 10,  20, []byte("NAPLES25 MTP Adapter  ")},
+    entry{"PRODUCT_NAME",   STRING, 10,  20, []byte("NAPLES25 MTP Adapter")},
     entry{"SERIAL_NUM",     STRING, 30,  20, []byte("1234567890          ")},
     entry{"COMPANY_NAME",   STRING, 50,  20, []byte("Pensando Systems Inc")},
     entry{"MFG_DEVIATION",  STRING, 70,  20, []byte("0                   ")},
@@ -131,7 +131,7 @@ var HpeTbl = []entry {
 
 
 var HpeAlomTblAll = []entry {
-
+    //Common Header
     entry{"Common Format Version",                  INT8,         0,        1,    []byte{1}},
     entry{"Internal Use Area Offset",               INT8,         1,        1,    []byte{0}},
     entry{"Chassis Area Offset",                    INT8,         2,        1,    []byte{0}},
@@ -673,7 +673,7 @@ func updateIntChk() () {
     if HpeAlom == true {
         //PIA Checksum (BIA is handled above in first EepromTbl checksum calculate)
         for _, entry := range(EepromTbl) {
-            if (entry.Offset > 103) && (entry.Offset < 184) {    
+            if (entry.Offset > 103) && (entry.Offset < 183) {    
                 productInfoChk += calcSum(entry)
             }
         }
