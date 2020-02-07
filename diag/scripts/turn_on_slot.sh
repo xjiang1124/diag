@@ -16,10 +16,17 @@ power_on_naples25_swm_ocp() {
         swm_dis_sgmii.sh $slot 
 
         #power it up ASIC via CPLD
-        #reg1=$(i2cget -y 0 0x4b 0x01 2> /dev/null )
         reg1=$(i2cget -y 0 0x4b 0x01)
-        reg1=$(( $reg1 | 0x1c ))
-        i2cset -y 0 0x4b 0x1 $reg1
+
+        if [[ $reg1 -eq 0x1C ]]
+        then
+            echo "Already powered up"
+        else
+            i2cset -y 0 0x4b 0x1 0x0C
+            sleep 0.2
+            i2cset -y 0 0x4b 0x1 0x1C
+            echo "Power on done"
+        fi
     fi
 
     if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25ocp ]] 
