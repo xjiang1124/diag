@@ -432,7 +432,7 @@ PRIVEK <ek.sk>"""
         ret = 0
         crc32_ek = ""
         session = common.session_start()
-        ret = self.nic_con.enter_uboot(session, slot)
+        ret = self.nic_con.enter_uboot_esec(session, slot)
         if ret != 0:
             print "Failed to enter uboot"
             return ret
@@ -441,20 +441,10 @@ PRIVEK <ek.sk>"""
             print "Failed to connect uboot"
             return ret
 
-        if post_check == False:
-            #self.nic_con.uart_session_cmd(session, "esec help", 30, "Capri# ")
-            self.nic_con.uart_session_cmd(session, "cpldwr 0x20 7", 30, "Capri# ")
-            self.nic_con.uart_session_cmd(session, "cpldrd 0x20", 30, "Capri# ")
-            session.sendline("reset")
-            session.expect("U-Boot")
-
-            self.nic_con.enter_uboot_after_reset(session, slot)
-            self.nic_con.uart_session_stop(session)
-            self.nic_con.uart_session_start(session)
-            self.nic_con.enter_uboot_after_reset(session, slot)
         self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_boot_status", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "esec read_chip_cert crc3s2", 30, "Capri# ")
 
         # Find CRC32
         session.sendline("esec read_chip_cert crc32")
