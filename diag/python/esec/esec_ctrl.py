@@ -444,7 +444,7 @@ PRIVEK <ek.sk>"""
         self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, "Capri# ")
         self.nic_con.uart_session_cmd(session, "esec read_boot_status", 30, "Capri# ")
-        self.nic_con.uart_session_cmd(session, "esec read_chip_cert crc3s2", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "esec read_chip_cert crc32", 30, "Capri# ")
 
         # Find CRC32
         session.sendline("esec read_chip_cert crc32")
