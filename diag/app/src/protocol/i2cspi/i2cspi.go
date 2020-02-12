@@ -21,6 +21,12 @@ const (
     STS_LOCK   = 0xEC
 )
 
+const (
+    MFG_ID_MICRON = 0x20
+    MFG_ID_MXIC   = 0xC2
+)
+
+
 var pageSize = 0x100
 var sectorSize = 0x10000
 
@@ -88,7 +94,7 @@ func init() {
     cmdRd256B = make([]byte, 258)
 
     cmdRdId[0] = 0x02
-    cmdRdId[1] = 0x9E
+    cmdRdId[1] = 0x9F
     for i := 2; i < 22; i++ {
         cmdRdId[i] = 0xFF
     }
@@ -305,11 +311,11 @@ func checkWrDone(waitInUSec int) (err int) {
     for i=0; i<maxIte; i++ {
         misc.SleepInUSec(waitInUSec)
 
-        flag, err = SpiReadFlagSts()
-        if err != errType.SUCCESS {
-            dcli.Println("e", "Failed to read flag status")
-            return
-        }
+        //flag, err = SpiReadFlagSts()
+        //if err != errType.SUCCESS {
+        //    dcli.Println("e", "Failed to read flag status")
+        //    return
+        //}
 
         sts, err = SpiReadSts()
         if err != errType.SUCCESS {
@@ -319,7 +325,8 @@ func checkWrDone(waitInUSec int) (err int) {
         sts1 := sts & 1
 
         //if (flag == 0x81) {
-        if (flag == 0x81) && (sts1 == 0) {
+        //if (flag == 0x81) && (sts1 == 0) {
+        if (sts1 == 0) {
             wrDone = true
             break
         }
