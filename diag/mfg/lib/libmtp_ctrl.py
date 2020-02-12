@@ -2383,6 +2383,15 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_nic_sw_cleanup_shutdown(self, slot):
+        if not self._nic_ctrl_list[slot].nic_sw_cleanup_shutdown():
+            self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+            self.mtp_dump_err_msg(err_msg)
+            return False
+
+        return True
+
 
     def mtp_check_nic_status(self, slot):
         return self._nic_ctrl_list[slot].nic_check_status()

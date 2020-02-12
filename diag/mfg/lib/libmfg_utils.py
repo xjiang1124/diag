@@ -364,6 +364,19 @@ def load_cfg_from_yaml(yaml_file):
     return cfg
 
 
+def mfg_expect_new(session, exp_list, timeout=None):
+    _exp_list = exp_list[:] + [pexpect.TIMEOUT]
+    _timeout = timeout
+    if _timeout != None:
+        idx = session.expect_exact(_exp_list, timeout = _timeout)
+    else:
+        idx = session.expect_exact(_exp_list)
+
+    if idx >= len(exp_list):
+        return -1
+    else:
+        return idx
+
 def mfg_expect(session, exp_list, timeout=None):
     _exp_list = exp_list[:] + [pexpect.TIMEOUT, pexpect.EOF]
     _timeout = timeout
