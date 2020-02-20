@@ -40,6 +40,12 @@ func eepromTlbInit(uut string) {
             if eeprom.HpeNaples == 1 {
                 eeprom.EepromExtTbl = eeprom.HpeTbl
             }
+            if eeprom.HpeSwm == 1 {
+                eeprom.EepromExtTbl = eeprom.HpeTblSWM
+            }
+            if eeprom.HpeOcp == 1 {
+                eeprom.EepromExtTbl = eeprom.HpeTblOCP
+            }
             if eeprom.HpeAlom == true {
                 eeprom.EepromTbl = eeprom.HpeAlomTblAll
             }
@@ -50,6 +56,12 @@ func eepromTlbInit(uut string) {
         eeprom.EepromTbl = eeprom.Naples100Tbl
         if eeprom.HpeNaples == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTbl
+        }
+        if eeprom.HpeSwm == 1 {
+            eeprom.EepromExtTbl = eeprom.HpeTblSWM
+        }
+        if eeprom.HpeOcp == 1 {
+            eeprom.EepromExtTbl = eeprom.HpeTblOCP
         }
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
@@ -79,7 +91,9 @@ func main() {
     uutPtr     := flag.String("uut",    "UUT_NONE", "Target UUT")
     majorPtr   := flag.String("maj",    "",         "Hardware major reversion")
     hpePtr     := flag.Bool  ("hpe",    false,      "HPE eeprom operation option")
+    hpeSwmPtr  := flag.Bool  ("hpeSwm", false,      "HPE SWM eeprom operation option")
     hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
+    hpeOcpPtr  := flag.Bool  ("hpeOcp", false,      "HPE OCP eeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
     flag.Parse()
 
@@ -100,8 +114,16 @@ func main() {
         eeprom.HpeNaples = 1
     }
 
+    if *hpeSwmPtr == true {
+        eeprom.HpeSwm = 1
+    }
+
     if *hpeAlomPtr == true {
         eeprom.HpeAlom = true
+    }
+
+    if *hpeOcpPtr == true {
+        eeprom.HpeOcp = 1
     }
 
     if uut != "UUT_NONE" {
@@ -111,7 +133,6 @@ func main() {
     eepromTlbInit(uut)
 
     hwdev.SelSmbFromAdaptor(uut, *hpeAlomPtr)
-
     iInfo, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to obtain I2C info of", devName)
@@ -141,7 +162,7 @@ func main() {
     if *updatePtr == true || eeprom.Erase == true {
         // FIXME: Skip for ALOM
         if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" && eeprom.HpeAlom == false {
-            fmt.Println("on MTP")
+            fmt.Println("On MTP")
             rd, _ := cpldSmb.ReadSmb("CPLD", 0x21)
             rd = rd & 0xFD
             _ = cpldSmb.WriteSmb("CPLD", 0x21, rd)
@@ -150,9 +171,8 @@ func main() {
         }
 
         if eeprom.Erase == true {
-            //EraseEeprom
             cli.Printf("i", "Erasing Addr 0 -  0x%x\n",numBytes)
-            eeprom.EraseEeprom(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
+            hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
         } 
 
         if *updatePtr == true {

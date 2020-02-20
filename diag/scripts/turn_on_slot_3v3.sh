@@ -1,5 +1,24 @@
 #!/bin/bash
 
+
+#For and Naples25SWM.  set the SBMUS to the NIC (Not the ALOM)
+mtp_adapter_set_nic_smb() {
+    slot=$1
+    CPLD25swm="0x1b"
+    turn_on_hub.sh $1
+    cpld_id=$(i2cget -y 0 0x4b 0x80)
+    if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25swm ]] #If we get a valid return code, an alom card is there that we need to power up
+    then
+        #set SMBUS master to nic
+        reg1=$(i2cget -y 0 0x4b 0x01)
+        if [[ $(($reg1 & 0x04)) -ne 0x04  ]]
+        then
+            reg1=$(( $reg1 | 0x04))
+	        i2cset -y 0 0x4b 0x1 $reg1
+        fi
+    fi
+}
+
 control_slot() {
     v3v3_addr="0x12"
     
@@ -46,6 +65,11 @@ control_all() {
         cpldutil -cpld-wr -addr=0x12 -data=0
         cpldutil -cpld-wr -addr=0x13 -data=0
         sleep 0.5
+
+        for i in {1..10}
+        do
+            mtp_adapter_set_nic_smb $i   #Enable Nic SMBUS master on naples25swm
+        done
     
     else
         echo "Turning off all slots"
@@ -134,6 +158,10 @@ else
         exit 0
     fi
 
+    for slot in $slot_list
+    do
+       mtp_adapter_set_nic_smb $slot   #Enable naples25swm SMBUS master
+    done
     
     #control_slot $1 $2
 fi

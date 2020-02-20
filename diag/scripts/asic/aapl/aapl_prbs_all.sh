@@ -78,7 +78,7 @@ function get_card_config() {
     declare -a tx_inv_list_naples25ocp_eth=("1" "0")
     declare -a rx_inv_list_naples25ocp_eth=("0" "1")
 
-    declare -a sbus_list_naples25_pcie=("2" "4" "6" "8" "10" "12" "14" "16")
+    declare -a sbus_list_naples25ocp_pcie=("2" "4" "6" "8" "10" "12" "14" "16")
 
     # Naples25SWM
     declare -a sbus_list_naples25swm_eth=("34" "38")
@@ -88,7 +88,7 @@ function get_card_config() {
     declare -a tx_inv_list_naples25swm_eth=("1" "0")
     declare -a rx_inv_list_naples25swm_eth=("0" "1")
 
-    declare -a sbus_list_naples25_pcie=("18" "20" "22" "24" "26" "28" "30" "32")
+    declare -a sbus_list_naples25swm_pcie=("18" "20" "22" "24" "26" "28" "30" "32")
 
     if [ $card_type = "NAPLES100" ]
     then
@@ -141,7 +141,7 @@ function get_card_config() {
             echo "Wrong INF $INF"
             exit 1
         fi
-    elif [ $card_type = "NAPLES25SWP" ]
+    elif [ $card_type = "NAPLES25SWM" ]
     then
         if [ $INF = "ETH" ]
         then

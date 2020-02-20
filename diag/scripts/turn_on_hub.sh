@@ -1,6 +1,14 @@
 #!/bin/bash
 
 hub_ctrl() {
+    #disable all the hubs first before enabling one of them 
+    #to avoid a race condition where you can get more than one i2c channel enabled
+    smbutil -dev=hub_1 -sd -addr=0
+    smbutil -dev=hub_2 -sd -addr=0
+    smbutil -dev=hub_3 -sd -addr=0
+    smbutil -dev=hub_4 -sd -addr=0
+    smbutil -dev=hub_5 -sd -addr=0
+
     smbutil -dev=hub_1 -sd -addr=$1
     smbutil -dev=hub_2 -sd -addr=$2
     smbutil -dev=hub_3 -sd -addr=$3

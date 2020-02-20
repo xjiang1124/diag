@@ -40,7 +40,6 @@ func SelSmbFromAdaptor(uutName string, HpeAlom bool) (err int) {
     } else {
         ctrlVal = 0x12
     }
-
     err = cpldSmb.WriteSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL, ctrlVal)
 
     return
@@ -180,6 +179,17 @@ func EepromUpdate(devName string, bus uint32, devAddr byte, mac string, sn strin
     err = eeprom.ProgEeprom(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
+func EepromErase(devName string, bus uint32, devAddr byte, numBytes int) (err int) {
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.EraseEeprom(devName, bus, devAddr, numBytes)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM Erase failed!")
         return
     }
     return
