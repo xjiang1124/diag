@@ -45,6 +45,30 @@ func SelSmbFromAdaptor(uutName string, HpeAlom bool) (err int) {
     return
 }
 
+func EepromFixNaples25HPE(devName string, bus uint32, devAddr byte) (err int) {
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.FixNaples25HPEfru(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM Fix Naples25HPE failed!")
+        return
+    }
+/*
+    err = EepromErase(devName, bus, devAddr, 256)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM erase failed!")
+        return
+    }
+*/
+
+    err = eeprom.ProgEeprom(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        cli.Println("f", "EEPROM update failed!")
+        return
+    }
+    return
+}
+
 func EepromUpdateMac(devName string, bus uint32, devAddr byte, mac string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 

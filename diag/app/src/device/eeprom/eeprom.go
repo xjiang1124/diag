@@ -102,7 +102,7 @@ var Naples100Tbl = []entry {
     entry{"Board Info Area Checksum",                 INT8,         103,    1,  []byte{0}},
 } 
 
-
+/*
 var HpeTbl = []entry {
     entry{"Board Info Format Version",              INT8,       128,        1,  []byte{1}},
     entry{"Board Area Length",                      INT8,       129,        1,  []byte{0xF}},
@@ -141,8 +141,45 @@ var HpeTbl = []entry {
     entry{"PAD",                                    INT8,       242,        5,  []byte{0, 0, 0, 0, 0}},
     entry{"HPE Multi-Record Area Checksum",         INT8,       247,        1,  []byte{0}},
 }
+*/
 
-
+var HpeTbl = []entry {
+    entry{"Board Info Format Version",              INT8,       128,        1,  []byte{1}},
+    entry{"Board Area Length",                      INT8,       129,        1,  []byte{0xF}},
+    entry{"Language Code",                          INT8,       130,        1,  []byte{0x19}},
+    entry{"Manufacturer Name Type/Length",          INT8,       131,        1,  []byte{0xC2}},
+    entry{"Manufacturer",                           STRING,     132,        2,  []byte{0x48, 0x50}},
+    entry{"Product Name Type/Length",               INT8,       134,        1,  []byte{0xF2}},
+    entry{"Product Name",                           STRING,     135,        50, []byte{
+            0x48, 0x50, 0x45, 0x20, 0x53, 0x6D, 0x61, 0x72, 0x74, 0x4E, 0x49, 0x43,
+            0x20, 0x31, 0x30, 0x2F, 0x32, 0x35, 0x47, 0x62, 0x20, 0x32, 0x2D, 0x70,
+            0x6F, 0x72, 0x74, 0x20, 0x36, 0x39, 0x31, 0x53, 0x46, 0x50, 0x32, 0x38,
+            0x20, 0x41, 0x64, 0x61, 0x70, 0x74, 0x65, 0x72, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20}},
+    entry{"PCA Serial Number Type/Length",          INT8,       185,        1,  []byte{0xCA}},
+    entry{"HPE Serial Number",                      STRING,     186,        10, []byte{0x30, 0x30, 0x30, 0x30,
+        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"PCA Product Number Type/Length",         INT8,       196,        1,  []byte{0xCA}},
+    entry{"HPE Product Number",                     STRING,     197,        10, []byte{0x50, 0x31, 0x38, 0x36,
+        0x36, 0x39, 0x2D, 0x30, 0x30, 0x31}},
+    entry{"FRU File ID Type/Length",                INT8,       207,        1,  []byte{0xC8}},
+    entry{"FRU ID",                                 STRING,     208,        8,  []byte{0x30, 0x36, 0x2F, 0x32,
+        0x34, 0x2F, 0x31, 0x39}},
+    entry{"OEM Revision Type/Length",               INT8,       216,        1,  []byte{0x3}},
+    entry{"HP OEM Record ID",                       INT8,       217,        1,  []byte{0xD2}},
+    entry{"Revision Code",                          STRING,     218,        2,  []byte{0x30, 0x41}},
+    entry{"Board ID Type/Length",                   INT8,       220,        1,  []byte{0x4}},
+    entry{"Board ID",                               INT8,       221,        4,  []byte{0x2, 0x0, 0x0, 0x0}},
+    entry{"Engineering Change Level Type/Length",   INT8,       225,        1,  []byte{0xC2}},
+    entry{"Engineering Change Level",               INT8,       226,        2,  []byte{0x0, 0x0}},
+    entry{"Number of MAC Address Type/Length",      INT8,       228,        1,  []byte{0x2}},
+    entry{"Total Number of MAC Address",            INT8,       229,        2,  []byte{0x18, 0x0}},
+    entry{"MAC Address Base Type/Length",           INT8,       231,        1,  []byte{0x6}},
+    entry{"MAC Address Base",                       INT8,       232,        6,  []byte{0, 0xAE, 0xCD, 0, 0, 0}},
+    entry{"End of Field",                           INT8,       238,        1,  []byte{0xC1}},
+    entry{"PAD",                                    INT8,       239,        8,  []byte{0, 0, 0, 0, 0, 0, 0, 0}},
+    entry{"HPE Multi-Record Area Checksum",         INT8,       247,        1,  []byte{0}},
+}
 
 var HpeTblOCP = []entry {
     entry{"Product Info Format Version",            INT8,        128,        1,    []byte{1}},
@@ -832,6 +869,59 @@ func calcSum(item entry) (chkSum uint) {
     for i := 0; i < item.NumBytes; i++ {
         chkSum += uint(item.Value[i])
     }
+    return
+}
+
+func FixNaples25HPEfru(devName string, bus uint32, devAddr byte) (err int) {
+    var sn   []byte
+    var mac  []byte
+    var date []byte
+    var pn   []byte
+    err = smbusNew.Open(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbusNew.Close()
+
+    for _, entry := range(EepromTbl) {
+    if entry.Name == "Serial Number" {
+            sn, _ = readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, sn)
+            continue
+        } else if entry.Name == "MAC Address Base" {
+            mac, _ = readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, mac)
+            continue
+        } else if entry.Name == "Manufacturing Date/Time" {
+            date, _ = readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, date)
+            continue
+        } else if entry.Name == "Part Number" {
+            pn, _ = readField(devName, entry.Offset, entry.NumBytes)
+            copy(entry.Value, pn)
+            continue
+        }
+    }
+
+    if HpeNaples == 1 {
+        for _, entry := range(EepromExtTbl) {
+            if entry.Name == "HPE Serial Number" {
+                copy(entry.Value, sn)
+                continue
+            } else if entry.Name == "MAC Address Base" {
+                copy(entry.Value, mac)
+                continue
+            } else if entry.Name == "Manufacture Date/Time" {
+                copy(entry.Value, date)
+                continue
+            } else if entry.Name == "HPE Product Number" {
+                copy(entry.Value, pn)
+                continue
+            }
+        }
+    }
+
+    updateIntChk()
     return
 }
 

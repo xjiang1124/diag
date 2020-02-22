@@ -106,6 +106,7 @@ func main() {
     uut := strings.ToUpper(*uutPtr)
     major := strings.ToUpper(*majorPtr)
     numBytes := *numBytesPtr
+    fixHpe := 1
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -180,22 +181,34 @@ func main() {
             if mac != "" && eeprom.HpeAlom == false {
                 hwdev.EepromUpdateMac(devName, iInfo.Bus, iInfo.DevAddr, mac)
                 misc.SleepInUSec(500000)
+                fixHpe = 0
             }
             if sn != "" {
                 hwdev.EepromUpdateSn(devName, iInfo.Bus, iInfo.DevAddr, sn)
                 misc.SleepInUSec(500000)
+                fixHpe = 0
             }
             if pn != "" {
                 hwdev.EepromUpdatePn(devName, iInfo.Bus, iInfo.DevAddr, pn)
                 misc.SleepInUSec(500000)
+                fixHpe = 0
             }
             if date != "" {
                 hwdev.EepromUpdateDate(devName, iInfo.Bus, iInfo.DevAddr, date)
                 misc.SleepInUSec(500000)
+                fixHpe = 0
             }
             if major != "" {
                 hwdev.EepromUpdateMajor(devName, iInfo.Bus, iInfo.DevAddr, major)
                 misc.SleepInUSec(500000)
+                fixHpe = 0
+            }
+            //Fix Naples25 HPE that are mispgorammed...option for FAE
+            if fixHpe > 0 && *hpePtr == true {
+                fmt.Printf(" FIXING NAPLES25 HPE\n")
+                hwdev.EepromFixNaples25HPE(devName, iInfo.Bus, iInfo.DevAddr)
+                //hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, 256)
+
             }
         }
 
