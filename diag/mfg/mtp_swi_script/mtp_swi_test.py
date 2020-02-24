@@ -489,6 +489,19 @@ def main():
         fail_nic_list.append(slot)
         pass_nic_list.remove(slot)
 
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+
+        ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            fail_nic_list.append(slot)
+            pass_nic_list.remove(slot)
+            break
+
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
@@ -537,7 +550,7 @@ def main():
             elif test == "SW_PROFILE"and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
             elif test == "SW_SHUTDOWN":
-                ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
+                ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
                 continue
@@ -550,26 +563,6 @@ def main():
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-    # Final power cycle to for SW init
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
-    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Started\n", level=0)
-    libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped\n", level=0)
-
-    for slot in range(len(nic_prsnt_list)):
-        if not nic_prsnt_list[slot]:
-            continue
-        if slot in fail_nic_list:
-            continue
-
-        ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
-            break
 
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()

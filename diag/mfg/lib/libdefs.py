@@ -271,7 +271,7 @@ class MFG_DIAG_CMDS:
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_GOLDFW_PROG_FMT = "fwupdate -p /{:s} -i goldfw"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
-    NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
+    NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_BOOT_DISP_FMT = "fwupdate -r"
     NIC_IMG_DISP_FMT = "fwupdate -l"
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
