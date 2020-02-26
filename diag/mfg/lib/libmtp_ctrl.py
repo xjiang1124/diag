@@ -20,6 +20,7 @@ from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_TIMESTAMP
+from libmfg_cfg import MFG_QSPI_VOMERO_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
@@ -1707,7 +1708,6 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].nic_program_sec_key_dump()
         return True
 
-
     def mtp_verify_nic_cpld(self, slot, sec_cpld=False):
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
@@ -1754,7 +1754,6 @@ class mtp_ctrl():
 
         return True
 
-
     def mtp_program_nic_qspi(self, slot, qspi_img):
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
@@ -1790,9 +1789,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if boot_image != "diagfw" or kernel_timestamp != MFG_QSPI_TIMESTAMP:
+        if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_TIMESTAMP):
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NIC is booted from {:s}".format(boot_image))
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}, get: {:s}".format(MFG_QSPI_TIMESTAMP, kernel_timestamp))
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s}, get: {:s}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP, kernel_timestamp))
             return False
 
         return True
@@ -2784,37 +2783,50 @@ class mtp_ctrl():
                     else:
                         scan_nic_key_list.append(key)
 
-            usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
-            raw_scan = raw_input(usr_prompt)
-            sn = libmfg_utils.serial_number_validate(raw_scan)
-            if not sn:
-                self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                return None
-            if sn in scan_sn_list:
-                self.cli_log_err("NIC Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
-                return None
-            else:
-                scan_sn_list.append(sn)
+            #Scan SN loop
+            sn = None
+            while True:
+                usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
+                raw_scan = raw_input(usr_prompt)
+                sn = libmfg_utils.serial_number_validate(raw_scan)
+                if not sn:
+                    self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                    #return None
+                elif sn in scan_sn_list:
+                    self.cli_log_err("NIC Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
+                    #return None
+                else:
+                    scan_sn_list.append(sn)
+                    break
 
-            usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
-            raw_scan = raw_input(usr_prompt)
-            mac = libmfg_utils.mac_address_validate(raw_scan)
-            if not mac:
-                self.cli_log_err("Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                return None
-            mac_ui = libmfg_utils.mac_address_format(mac)
-            if mac in scan_mac_list:
-                self.cli_log_err("NIC MAC Address: {:s} is double scanned, please restart the scan process\n".format(mac_ui), level=0)
-                return None
-            else:
-                scan_mac_list.append(mac)
+            #Scan Mac Loop
+            mac = None
+            while True:
+                usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
+                raw_scan = raw_input(usr_prompt)
+                mac = libmfg_utils.mac_address_validate(raw_scan)
+                if not mac:
+                    self.cli_log_err("Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                    #return None
+                elif mac in scan_mac_list:
+                    mac_ui = libmfg_utils.mac_address_format(mac)
+                    self.cli_log_err("NIC MAC Address: {:s} is double scanned, please restart the scan process\n".format(mac_ui), level=0)
+                    #return None
+                else:
+                    scan_mac_list.append(mac)
+                    break
 
-            usr_prompt = "Please scan {:s} Part Number Barcode:".format(key)
-            raw_scan = raw_input(usr_prompt)
-            pn = libmfg_utils.part_number_validate(raw_scan)
-            if not pn:
-                self.cli_log_err("Invalid NIC Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                return None
+            #Scan PN Loop
+            pn = None
+            while True:
+                usr_prompt = "Please scan {:s} Part Number Barcode:".format(key)
+                raw_scan = raw_input(usr_prompt)
+                pn = libmfg_utils.part_number_validate(raw_scan)
+                if not pn:
+                    self.cli_log_err("Invalid NIC Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                    #return None
+                else:
+                    break
 
             nic_scan_rslt["NIC_VALID"] = True
             nic_scan_rslt["NIC_SN"] = sn
