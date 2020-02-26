@@ -110,3 +110,70 @@ MTP-800:
     ALIAS: "mtp800"
     SLOTS: 10
     CAPABILITY: 0x3
+
+MTP-801:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.11"
+    APC1_PORT: "6"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.11"
+    APC2_PORT: "7"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.201"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp801"
+    SLOTS: 10
+    CAPABILITY: 0x3
+
+MTP-802:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.11"
+    APC1_PORT: "9"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.11"
+    APC2_PORT: "10"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.202"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp802"
+    SLOTS: 10
+    CAPABILITY: 0x3
+
+MTP-803:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.11"
+    APC1_PORT: "11"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.11"
+    APC2_PORT: "12"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.203"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp803"
+    SLOTS: 10
+    CAPABILITY: 0x3
+
+
+
+

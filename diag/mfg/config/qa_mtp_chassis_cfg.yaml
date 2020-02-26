@@ -12,7 +12,7 @@ MTP-001:
     APC2_PORT: "12"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.68.175"
+    IP: "192.168.68.182"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp001"
@@ -50,11 +50,11 @@ MTP-002:
     APC1_PORT: ""
     APC1_USERID: ""
     APC1_PASSWORD: ""
-    APC2: "192.168.72.137"
-    APC2_PORT: "8"
+    APC2: "192.168.70.161"
+    APC2_PORT: "19"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.68.184"
+    IP: "192.168.71.61"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp002"
@@ -75,7 +75,7 @@ MTP-003:
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.68.216"
+    IP: "192.168.68.215"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp003"
@@ -96,12 +96,13 @@ MTP-020:
     APC2_PORT: "6"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.68.181"
+    IP: "192.168.68.185"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp010"
     SLOTS: 10
     CAPABILITY: 0x1
+
 
 # Naples100 debug chassis
 # Capability: 1=>Naples100; 2=>Naples25; 3=>Both
@@ -154,40 +155,17 @@ MTPS-001:
     TS_PORT: ""
     TS_USERID: ""
     TS_PASSWORD: ""
-    APC1: "192.168.72.137"
-    APC1_PORT: "8"
+    APC1: "192.168.70.161"
+    APC1_PORT: "17"
     APC1_USERID: "apc"
     APC1_PASSWORD: "apc"
     APC2: ""
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.73.102"
+    IP: "192.168.69.136"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps001"
-    SLOTS: 4
-    CAPABILITY: 0x3
-
-
-FST-001:
-            
-    MODE: ""
-    TS: ""
-    TS_PORT: ""
-    TS_USERID: ""
-    TS_PASSWORD: ""
-    APC1: "192.168.72.137"
-    APC1_PORT: "2"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
-    APC2: ""
-    APC2_PORT: ""
-    APC2_USERID: ""
-    APC2_PASSWORD: ""
-    IP: "192.168.69.156"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp123"
     SLOTS: 4
     CAPABILITY: 0x3

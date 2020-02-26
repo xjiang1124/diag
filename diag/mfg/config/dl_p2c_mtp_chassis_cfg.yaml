@@ -194,3 +194,75 @@ MTP-600:
     ALIAS: "mtp600"
     SLOTS: 10
     CAPABILITY: 0x2
+
+MTP-603:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.10"
+    APC1_PORT: "11"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.10"
+    APC2_PORT: "12"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.113"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp603"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-604:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.2.10"
+    APC1_PORT: "13"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.2.10"
+    APC2_PORT: "14"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.2.114"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp604"
+    SLOTS: 10
+    CAPABILITY: 0x2
+
+MTP-605:
+     MODE: ""
+     TS: ""
+     TS_PORT: ""
+     TS_USERID: ""
+     TS_PASSWORD: ""
+     APC1: "192.168.2.10"
+     APC1_PORT: "17"
+     APC1_USERID: "apc"
+     APC1_PASSWORD: "apc"
+     APC2: "192.168.2.10"
+     APC2_PORT: "18"
+     APC2_USERID: "apc"
+     APC2_PASSWORD: "apc"
+     IP: "192.168.2.115"
+     USERID: "diag"
+     PASSWORD: "lab123"
+     ALIAS: "mtp605"
+     SLOTS: 10
+     CAPABILITY: 0x2
+
+
+
+
+
+
+
+
+
