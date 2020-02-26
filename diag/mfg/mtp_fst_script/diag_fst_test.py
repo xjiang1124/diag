@@ -42,7 +42,8 @@ for a, b in slot_bus_pair:
         bus_str = b.split(":", 1)[0]
         bus_int = int(bus_str, 16)+4
         eth = "enp"+str(bus_int)+"s0"
-        tmp = subprocess.call(["ifconfig", eth, "169.254.0.2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        tmp = subprocess.call(["ifconfig", eth, "169.254."+str(bus_int)+".2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        naples_env["NAPLES_URL"] = "http://169.254."+str(bus_int)+".1"
         time.sleep(1)
         try:
             x = subprocess.check_output("/home/diag/penctl.linux show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)

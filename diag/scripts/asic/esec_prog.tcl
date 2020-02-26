@@ -25,6 +25,9 @@ set parameters {
     {esec_2.arg     ""              "Esecure image 2"}
     {host_1.arg     ""              "Host image 1"}
     {host_2.arg     ""              "Host image 2"}
+    {pn.arg         ""              "Part Number"}
+    {mac.arg        ""              "MAC address"}
+    {mtp.arg        ""              "MTP name"}
 }
 
 set usage "- Usage:"
@@ -49,6 +52,9 @@ set esec_1      $options(esec_1)
 set esec_2      $options(esec_2)
 set host_1      $options(host_1)
 set host_2      $options(host_2)
+set pn          $options(pn)
+set mac         $options(mac)
+set mtp         $options(mtp)
 
 puts "slot: $slot"
 
@@ -246,6 +252,63 @@ proc efuse_test {slot} {
     return $ret
 }
 
+proc esec_all {sn slot PN MAC MTP
+        {CLIENT_KEY "certs/client.key.pem"} 
+        {CLIENT_CERT "certs/client-bundle.cert.pem"}
+        {TRUST_ROOTS "certs/rootca.cert.pem"}
+        {BACKEND_URL "192.168.67.213:12266#192.168.67.214:12266"} } {
+
+    set pub_ek_fn "pub_ek.tcl.txt"
+    set SN $sn
+
+    plog_msg "sn: $sn; slot: $slot"
+    plog_start esec_all_${sn}_slot${slot}.log
+
+    diag_open_j2c_if 10 $slot
+    regrd 0 0x6a000000
+    set card_type [cap_get_card_type]
+    if {$card_type == "NAPLES25" ||
+        $card_type == "NAPLES25SWM" ||
+        $card_type == "NAPLES25OCP"} {
+        set freq 417
+    } else {
+        set freq 833
+    }
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
+    ssi_cpld_write 0x29 0x80
+    cap_set_esec_enable_pin
+    cap_power_cycle_chk 25 10 $slot
+    
+    set err_cnt [cap_get_myerr_cnt cap_chlng_enroll_puf_str 0 1 1]
+
+    set pub_ek [cap_chlng_read_pub_ek_str]
+    set fp [open $pub_ek_fn w]
+    puts -nonewline $fp $pub_ek
+    close $fp
+    plog_msg "Enroll PUF done"
+
+    set tcl_pwd [pwd]
+    set DIAG_HOME $::env(DIAG_HOME)
+    cd $DIAG_HOME/diag/tools/pki
+    exec cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
+
+    exec python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $card_type -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
+
+    exec cp signed_ek.pub.bin signed_ek.pub.org.bin
+    if { [catch { exec dd if=/dev/zero of=signed_ek.pub.bin bs=1 count=1 seek=1411 } msg] } {
+        plog_msg "Information about it: $::errorInfo"
+    }
+    exec crc32 ./signed_ek.pub.bin
+
+    cd $tcl_pwd
+    plog_msg "Signing EK passed"
+
+    diag_close_j2c_if 10 $slot
+    plog_stop
+    return $err_cnt
+
+}
+
 
 if { $use_zmq == 1 } {
     set ::SSI_OPERATION_TIMEOUT_S 10
@@ -281,7 +344,9 @@ switch $stage {
     "SHOW_STS" {
         set ret [show_status $sn $slot]
     }
-
+    "ESEC_ALL" {
+        set ret [esec_all $sn $slot $pn $mac $mtp]
+    }
     default {
         plog_msg "Invalide stage: $stage"
         set ret -1
