@@ -43,6 +43,7 @@ for a, b in slot_bus_pair:
         bus_int = int(bus_str, 16)+4
         eth = "enp"+str(bus_int)+"s0"
         tmp = subprocess.call(["ifconfig", eth, "169.254."+str(bus_int)+".2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.call(["ifconfig", eth, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         naples_env["NAPLES_URL"] = "http://169.254."+str(bus_int)+".1"
         time.sleep(1)
         try:
