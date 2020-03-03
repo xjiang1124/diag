@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import os
 import pexpect
 import re
 import sys
@@ -60,6 +61,10 @@ def parse_args_diag():
         "-img_prog", "--img_prog", 
         action='store_true',
         help="Program QSPI images")
+    group.add_argument(
+        "-key_prog_all", "--key_prog_all", 
+        action='store_true',
+        help="Quick path to program secure key")
     group.add_argument(
         "-boot_test", "--boot_test", 
         action='store_true',
@@ -328,6 +333,14 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def key_prog_all(self, sn, slot, pn, mac, mtp):
+        os.chdir("/home/diag/diag/scripts/asic/")
+        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}".format(slot, sn, pn, mac, mtp)
+        pass_sign = "ESEC PROG PASSED"
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
+        common.session_stop(session)
+
     def show_status(self, sn, slot):
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -show_sts -sn {} -slot {}".format(sn, slot)
         pass_sign = "ESEC PROG PASSED"
@@ -542,6 +555,10 @@ if __name__ == "__main__":
 
     if args.ek_check == True:
         esec_ctrl.ek_check()
+        sys.exit()
+
+    if args.key_prog_all == True:
+        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, args.mtp)
         sys.exit()
 
     if args.img_prog == True:
