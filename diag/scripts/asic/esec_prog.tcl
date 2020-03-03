@@ -78,6 +78,14 @@ if {$use_zmq != 0} {
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag
 
+proc cap_get_err_cnt { proc_to_run } {
+   plog_msg "===> running  $proc_to_run"
+   set in_err [plog_get_err_count]
+   {*}$proc_to_run
+   set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+   return $err_cnt
+}
+
 proc read_pub_ek { sn slot fn } {
     plog_start read_pub_ek_${sn}_slot${slot}.log
     if {$fn == ""} {
@@ -279,7 +287,10 @@ proc esec_all {sn slot PN MAC MTP
     cap_set_esec_enable_pin
     cap_power_cycle_chk 25 10 $slot
     
-    set err_cnt [cap_get_myerr_cnt cap_chlng_enroll_puf_str 0 1 1]
+    set timestamp_pre [clock seconds]
+    #============================
+    # PUF enroll
+    set err_cnt [cap_get_err_cnt cap_chlng_enroll_puf_str]
 
     set pub_ek [cap_chlng_read_pub_ek_str]
     set fp [open $pub_ek_fn w]
@@ -287,6 +298,8 @@ proc esec_all {sn slot PN MAC MTP
     close $fp
     plog_msg "Enroll PUF done"
 
+    #============================
+    # Signing PUB EK
     set tcl_pwd [pwd]
     set DIAG_HOME $::env(DIAG_HOME)
     cd $DIAG_HOME/diag/tools/pki
@@ -295,18 +308,83 @@ proc esec_all {sn slot PN MAC MTP
     exec python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $card_type -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
 
     exec cp signed_ek.pub.bin signed_ek.pub.org.bin
+
     if { [catch { exec dd if=/dev/zero of=signed_ek.pub.bin bs=1 count=1 seek=1411 } msg] } {
         plog_msg "Information about it: $::errorInfo"
     }
-    exec crc32 ./signed_ek.pub.bin
+    
+    if { [catch { exec crc32 ./signed_ek.pub.bin } msg] } {
+        plog_msg "Information about it: $::errorInfo"
+        return -1
+    } else {
+        set crc32Val $msg
+        plog_msg "CRC32: $crc32Val"
+    }
 
     cd $tcl_pwd
     plog_msg "Signing EK passed"
 
+    #============================
+    # Check EK
+    if { [catch { exec /home/diag/diag/python/esec/scripts/esec_prog.sh -ek_check } msg] } {
+        plog_msg "Information about it: $::errorInfo"
+        ret -1
+    } else {
+        plog_msg $msg
+        # Check if EK is good
+        if {[string first "Signature Algorithm: ecdsa-with-SHA384" $msg] != -1} {
+            plog_msg "EK Check Passed"
+        } else {
+            plog_msg "EK Check Failed"
+            return -1
+        }
+    }
+    
+    #============================
+    # Gen OTP
+    if { [catch { exec /home/diag/diag/python/esec/scripts/esec_prog.sh -gen_otp } msg] } {
+        plog_msg "Information about it: $::errorInfo"
+        return -1
+    } else {
+        plog_msg $msg
+    }
+
+    #============================
+    # OTP init
+    set cm_file "./images/OTP_cm.hex"
+    set sm_file "./images/OTP_sm.hex"
+    set cmd_cm [list cap_chlng_init_otpf_str 0 0 0 0 439 $cm_file]
+    set cmd_sm [list cap_chlng_init_otpf_str 0 0 1 0 70  $sm_file]
+
+    set err_cnt_cm [cap_get_err_cnt $cmd_cm]
+    set err_cnt_sm [cap_get_err_cnt $cmd_sm]
+
+    set err_cnt [expr {$err_cnt_cm + $err_cnt_sm}]
+
+    if { $err_cnt == 0 } {
+        plog_msg "OTP Init Passed"
+    } else {
+        plog_msg "OTP Init Failed"
+        return -1
+    }
+    set timestamp_post [clock seconds]
+
+    #============================
+    # Boot Test
+    set ret [cap_secure_post_check 10 10 $slot]
+
+    set timestamp_final [clock seconds]
+
+    set time_key_prog [expr {$timestamp_post - $timestamp_pre}]
+    set time_boot_test [expr {$timestamp_final - $timestamp_post}]
+    
+    plog_msg "Key Prog Time: $time_key_prog"
+    plog_msg "Boot Test Time: $time_boot_test"
+
     diag_close_j2c_if 10 $slot
     plog_stop
-    return $err_cnt
 
+    return $ret
 }
 
 
