@@ -11,23 +11,27 @@ source ./cmdline.tcl
 
 
 set parameters {
-    {sn.arg         "Slotxxx"       "Serial Number"}
-    {slot.arg       ""              "Slot number"}
-    {use_zmq.arg    0               "Use ZMQ"}
-    {zmq_srv_ip.arg ""              "MTP IP"}
-    {zmq_port.arg   "55000"         "ZMQ port"}
-    {stage.arg      ""              "Esecure program stage"}
-    {fn.arg         ""              "File name"}
-    {cm_file.arg    ""              "CM file"}
-    {sm_file.arg    ""              "SM file"}
-    {fw_ptr.arg     ""              "FW image pointer file"}
-    {esec_1.arg     ""              "Esecure image 1"}
-    {esec_2.arg     ""              "Esecure image 2"}
-    {host_1.arg     ""              "Host image 1"}
-    {host_2.arg     ""              "Host image 2"}
-    {pn.arg         ""              "Part Number"}
-    {mac.arg        ""              "MAC address"}
-    {mtp.arg        ""              "MTP name"}
+    {sn.arg          "Slotxxx"       "Serial Number"}
+    {slot.arg        ""              "Slot number"}
+    {use_zmq.arg     0               "Use ZMQ"}
+    {zmq_srv_ip.arg  ""              "MTP IP"}
+    {zmq_port.arg    "55000"         "ZMQ port"}
+    {stage.arg       ""              "Esecure program stage"}
+    {fn.arg          ""              "File name"}
+    {cm_file.arg     ""              "CM file"}
+    {sm_file.arg     ""              "SM file"}
+    {fw_ptr.arg      ""              "FW image pointer file"}
+    {esec_1.arg      ""              "Esecure image 1"}
+    {esec_2.arg      ""              "Esecure image 2"}
+    {host_1.arg      ""              "Host image 1"}
+    {host_2.arg      ""              "Host image 2"}
+    {pn.arg          ""              "Part Number"}
+    {mac.arg         ""              "MAC address"}
+    {mtp.arg         ""              "MTP name"}
+    {client_key.arg  "certs/client.key.pem"                      "Client key"}
+    {client_cert.arg "certs/client-bundle.cert.pem"              "client cert"}
+    {trust_roots.arg "certs/rootca.cert.pem"                     "Root Cert"}
+    {backend_url.arg "192.168.67.213:12266#192.168.67.214:12266" "Backend URL"}
 }
 
 set usage "- Usage:"
@@ -55,6 +59,10 @@ set host_2      $options(host_2)
 set pn          $options(pn)
 set mac         $options(mac)
 set mtp         $options(mtp)
+set client_key  $options(client_key)
+set client_cert $options(client_cert)
+set trust_roots $options(trust_roots)
+set backend_url   $options(backend_url)
 
 puts "slot: $slot"
 
@@ -423,7 +431,7 @@ switch $stage {
         set ret [show_status $sn $slot]
     }
     "ESEC_ALL" {
-        set ret [esec_all $sn $slot $pn $mac $mtp]
+        set ret [esec_all $sn $slot $pn $mac $mtp, $client_key, $client_cert, $trust_roots, $backend_url]
     }
     default {
         plog_msg "Invalide stage: $stage"

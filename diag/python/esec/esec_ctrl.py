@@ -333,13 +333,15 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def key_prog_all(self, sn, slot, pn, mac, mtp):
+    def key_prog_all(self, sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}".format(slot, sn, pn, mac, mtp)
+        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all -sn {} -slot {} -pn \"{}\" -mac {} -mtp {} -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".format(slot, sn, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        print cmd
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
         common.session_stop(session)
+        return ret
 
     def show_status(self, sn, slot):
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -show_sts -sn {} -slot {}".format(sn, slot)
@@ -558,7 +560,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.key_prog_all == True:
-        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, args.mtp)
+        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, args.mtp, args.client_key, args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 
     if args.img_prog == True:
