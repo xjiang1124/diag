@@ -11,7 +11,7 @@ source ./cmdline.tcl
 
 
 set parameters {
-    {sn.arg          "Slotxxx"       "Serial Number"}
+    {sn.arg          "FLM00000001"   "Serial Number"}
     {slot.arg        ""              "Slot number"}
     {use_zmq.arg     0               "Use ZMQ"}
     {zmq_srv_ip.arg  ""              "MTP IP"}
@@ -321,7 +321,7 @@ proc esec_all {sn slot PN MAC MTP
         plog_msg "Information about it: $::errorInfo"
     }
     
-    if { [catch { exec crc32 ./signed_ek.pub.bin } msg] } {
+    if { [catch { exec crc32 ./signed_ek.pub.bin | tee crc32_ek.bin} msg] } {
         plog_msg "Information about it: $::errorInfo"
         return -1
     } else {

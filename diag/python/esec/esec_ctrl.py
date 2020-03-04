@@ -335,7 +335,10 @@ PRIVEK <ek.sk>"""
 
     def key_prog_all(self, sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all -sn {} -slot {} -pn \"{}\" -mac {} -mtp {} -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".format(slot, sn, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all\
+            -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+            -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+            format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
         print cmd
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
@@ -358,52 +361,65 @@ PRIVEK <ek.sk>"""
 
         for retry in range(numRetry):
             print "=== ESEC PROG #{}".format(retry)
-            ret = self.enroll_puf(sn, slot)
+            #ret = self.enroll_puf(sn, slot)
+            #if ret != 0:
+            #    print "=== Enroll PUF failed ==="
+            #    print "=== ESEC PROG FAILED ==="
+            #    return ret
+
+            #ret = self.sign_ek(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
+            #if ret != 0:
+            #    print "=== Failed to sign pub_ek ==="
+            #    print "=== ESEC PROG FAILED ==="
+            #    return ret
+
+            #ret = self.ek_check()
+            #if ret != 0:
+            #    print "=== Failed to validate signed EK ==="
+            #    print "=== ESEC PROG FAILED ==="
+            #    return ret
+
+            #[ret, crc32_ek] = self.sign_ek_crc()
+            #if ret != 0:
+            #    print "=== Failed to calculated CRC32 of signed EK ==="
+            #    print "=== ESEC PROG FAILED ==="
+            #    return ret
+
+            #ret = self.gen_otp()
+            #if ret != 0:
+            #    print "=== Failed to generate OTP binary ==="
+            #    print "=== ESEC PROG FAILED ==="
+            #    return ret
+
+            #ret = self.otp_init(sn, slot)
+            #if ret != 0:
+            #    print "=== OTP init failed ==="
+            #    print "=== ESEC PROG FAILED ==="
+            #    return ret
+
+            #ret = self.boot_test(sn, slot)
+            #if ret != 0:
+            #    # Enter retry
+            #    print "=== Bad OTP init ==="
+            #    print "=== Post boot test failed ==="
+            #    print "Power cycle slot #{}".format(slot)
+            #    self.nic_con.power_cycle_multi(115200, slot, 10)
+            #else:
+            #    # Move forward
+            #    break
+            ret = self.key_prog_all(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
             if ret != 0:
-                print "=== Enroll PUF failed ==="
                 print "=== ESEC PROG FAILED ==="
                 return ret
-
-            ret = self.sign_ek(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
-            if ret != 0:
-                print "=== Failed to sign pub_ek ==="
-                print "=== ESEC PROG FAILED ==="
-                return ret
-
-            ret = self.ek_check()
-            if ret != 0:
-                print "=== Failed to validate signed EK ==="
-                print "=== ESEC PROG FAILED ==="
-                return ret
-
-            [ret, crc32_ek] = self.sign_ek_crc()
-            if ret != 0:
-                print "=== Failed to calculated CRC32 of signed EK ==="
-                print "=== ESEC PROG FAILED ==="
-                return ret
-
-            ret = self.gen_otp()
-            if ret != 0:
-                print "=== Failed to generate OTP binary ==="
-                print "=== ESEC PROG FAILED ==="
-                return ret
-
-            ret = self.otp_init(sn, slot)
-            if ret != 0:
-                print "=== OTP init failed ==="
-                print "=== ESEC PROG FAILED ==="
-                return ret
-
-            ret = self.boot_test(sn, slot)
-            if ret != 0:
-                # Enter retry
-                print "=== Bad OTP init ==="
-                print "=== Post boot test failed ==="
-                print "Power cycle slot #{}".format(slot)
-                self.nic_con.power_cycle_multi(115200, slot, 10)
             else:
                 # Move forward
                 break
+
+        file1 = open("/home/diag/diag/tools/pki/crc32_ek.bin", "r+")
+        crc32_ek = file1.read()
+        crc32_ek = crc32_ek[:-1]
+        print("crc32_ek:", crc32_ek)
+        file1.close()
 
         if ret != 0:
             print "=== ESEC PROG FAILED ==="
@@ -411,7 +427,7 @@ PRIVEK <ek.sk>"""
         else:
             print "=== OTP PROG validated #{} ===".format(retry-1)
 
-
+        print ("slot:", slot)
         [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
         if ret != 0:
             print "=== Failed to check ESEC in uboot ==="
@@ -560,7 +576,8 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.key_prog_all == True:
-        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, args.mtp, args.client_key, args.client_cert, args.trust_roots, args.backend_url)
+        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, args.mtp, args.client_key,\
+                args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 
     if args.img_prog == True:
