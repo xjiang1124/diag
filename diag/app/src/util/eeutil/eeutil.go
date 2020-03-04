@@ -108,8 +108,10 @@ func main() {
     numBytes := *numBytesPtr
     fixHpe := 1
 
-    lock, _ := hwinfo.PreUutSetup(uut)
-    defer hwinfo.PostUutClean(lock)
+    if uut != "UUT_NONE" {
+        lock, _ := hwinfo.PreUutSetup(uut)
+        defer hwinfo.PostUutClean(lock)
+    }
 
     if *hpePtr == true {
         eeprom.HpeNaples = 1
