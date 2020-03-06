@@ -43,6 +43,27 @@ power_on_naples25_swm_ocp() {
 
 }
 
+# Enable NIC MTP Rev3 mode
+enable_nic_mtp_r3() {
+    mtp_rev=$(echo $MTP_REV | awk -F"_" '{print $2}')
+    echo "Rev: $mtp_rev"
+    if [[ "$mtp_rev" -lt 3 ]]
+    then
+        echo "MTP Rev 2 detected, skip NIC configuration"
+        return
+    fi
+
+    slot=$1
+    reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21 | awk '{print $9}' | awk -F"=" '{print $2}')
+    if [[ $reg1 = "" ]]
+    then
+        echo "Empty slot $slot"
+        return
+    fi
+
+    reg1=$(( $reg1 | 0x1 ))
+    smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
+}
 
 control_slot() {
     v12_addr="0x10"
@@ -129,6 +150,7 @@ control_all() {
         for i in {1..10}
         do
             power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the ALOM
+            enable_nic_mtp_r3 $i
         done
 
         echo "All slots turned on"
@@ -234,6 +256,7 @@ else
     for slot in $slot_list
     do
        power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the ALOM
+       enable_nic_mtp_r3 $slot
     done
 
     
