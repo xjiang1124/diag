@@ -108,9 +108,10 @@ func main() {
     numBytes := *numBytesPtr
     fixHpe := 1
 
-    if uut != "UUT_NONE" {
-        lock, _ := hwinfo.PreUutSetup(uut)
-        defer hwinfo.PostUutClean(lock)
+    lock, _ := hwinfo.PreUutSetup(uut)
+    defer hwinfo.PostUutClean(lock)
+    if *hpeAlomPtr {
+        defer hwdev.SelSmbFromAdaptor(uut, false)  //Set mux back to SMB when done
     }
 
     if *hpePtr == true {
