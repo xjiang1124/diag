@@ -209,7 +209,7 @@ function do_reset() {
         aapl serdes-init -server $SERVER_IP -port $PORT -addr $sbus -reset 
         aapl cmd -server $SERVER_IP -port $PORT -addr $sbus -aacs "tck_delay 10"
     done
-    echo "AAPL ETH SERDES RESET DONE"
+    echo "AAPL SERDES RESET DONE"
 }
 
 function do_init() {
@@ -218,7 +218,7 @@ function do_init() {
         echo "Initializing sbus $sbus; $SERVER_IP:$PORT"
         aapl  serdes-init -server $SERVER_IP -port $PORT -addr $sbus -div $div -width $width -elb -disable-signal-ok -firm $rom_file
     done
-    echo "AAPL ETH SERDES INIT DONE"
+    echo "AAPL SERDES INIT DONE"
 }
 
 function set_si() {

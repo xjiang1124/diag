@@ -58,6 +58,7 @@ set host_1      $options(host_1)
 set host_2      $options(host_2)
 set pn          $options(pn)
 set mac         $options(mac)
+
 set mtp         $options(mtp)
 set client_key  $options(client_key)
 set client_cert $options(client_cert)
@@ -262,17 +263,227 @@ proc efuse_test {slot} {
     set bit_read_back [cap_efuse_get_bit $bit_loc]
     if {$bit_read_back != 1} {
         plog_err "Failed to valid efuse bit; read back $bit_read_back"
-        set ret -1
+        set return -1
     }
     diag_close_j2c_if 10 $slot
     return $ret
 }
 
-proc esec_all {sn slot PN MAC MTP
+proc esec_gather_pac {sn usb_port slot PN MAC MTP
         {CLIENT_KEY "certs/client.key.pem"} 
         {CLIENT_CERT "certs/client-bundle.cert.pem"}
         {TRUST_ROOTS "certs/rootca.cert.pem"}
-        {BACKEND_URL "192.168.67.213:12266#192.168.67.214:12266"} } {
+        {BACKEND_URL "192.168.67.213:12266#192.168.67.214:12266"}
+        {pac_cnt 25} } {
+
+    unset -nocomplain ::CAP_EK_CACHE
+
+    set card_type [cap_get_card_type]
+    set pub_ek_fn "pub_ek.tcl.txt"
+    set SN $sn
+
+    for {set j 0} {$j < $pac_cnt} {incr j 1} {
+        set timestamp_pre [clock seconds]
+        set tt [ clock format [clock seconds] -format "%m_%d_%Y_%T" ]
+        plog_msg ""
+        plog_msg "esec_gather_pac : Iter:$j Begin:: Date:$tt"
+        plog_msg ""
+
+        cap_power_cycle_chk 25 $usb_port $slot
+        qspi_erase 0
+        
+        #============================
+        # PUF enroll
+        set err_cnt [cap_get_err_cnt cap_chlng_enroll_puf_str]
+
+        set pub_ek [cap_chlng_read_pub_ek_str]
+        set ::CAP_EK_CACHE($j) $pub_ek
+
+        set fp [open $pub_ek_fn w]
+        puts -nonewline $fp $pub_ek
+        close $fp
+        plog_msg "Enroll PUF done"
+
+        #============================
+        # Signing PUB EK
+        set tcl_pwd [pwd]
+        set DIAG_HOME $::env(DIAG_HOME)
+        cd $DIAG_HOME/diag/tools/pki
+
+        if { [catch {exec /home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn $SN -pn "$PN" -mac $MAC -brd_name $card_type -mtp MTP -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL} msg ]} {
+            plog_msg "Information about it: $::errorInfo"
+        }
+        
+        if { [catch { exec crc32 ./signed_ek.pub.bin | tee crc32_ek_$j.bin} msg] } {
+            plog_msg "Information about it: $::errorInfo"
+            return -1
+        } else {
+            set crc32Val $msg
+            plog_msg "CRC32: $crc32Val"
+        }
+
+        cd $tcl_pwd
+        plog_msg "Signing EK passed"
+
+        #============================
+        # Check EK
+        if { [catch { exec /home/diag/diag/python/esec/scripts/esec_prog.sh -ek_check } msg] } {
+            plog_msg "Information about it: $::errorInfo"
+            return -1
+        } else {
+            plog_msg $msg
+            # Check if EK is good
+            if {[string first "Signature Algorithm: ecdsa-with-SHA384" $msg] != -1} {
+                plog_msg "EK Check Passed"
+            } else {
+                plog_msg "EK Check Failed"
+                return -1
+            }
+        }
+        
+        #============================
+        # Gen OTP
+        if { [catch { exec /home/diag/diag/python/esec/scripts/esec_prog.sh -gen_otp } msg] } {
+            plog_msg "Information about it: $::errorInfo"
+            return -1
+        } else {
+            plog_msg $msg
+        }
+
+        #============================
+        # OTP init
+        set cm_file "./images/OTP_cm.hex"
+        set sm_file "./images/OTP_sm.hex"
+        set cmd_cm [list cap_chlng_init_otpf_str 0 0 0 0 439 $cm_file]
+        set cmd_sm [list cap_chlng_init_otpf_str 0 0 1 0 70  $sm_file]
+
+        set err_cnt_cm [cap_get_err_cnt $cmd_cm]
+        set err_cnt_sm [cap_get_err_cnt $cmd_sm]
+
+        cap_populate_pac_cache $j [expr ($j==0)] 0
+
+        set tt [ clock format [clock seconds] -format "%m_%d_%Y_%T" ]
+        plog_msg "esec_gather_pac :: Iter:$j Completed::  Date:$tt"
+
+        exec rm $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt
+        exec rm $DIAG_HOME/diag/tools/pki/pub_ek.tcl.txt
+        eval file delete [glob $DIAG_HOME/diag/tools/pki/signed_ek.pub*bin]
+
+        set timestamp_post [clock seconds]
+        set time_key_prog [expr {$timestamp_post - $timestamp_pre}]
+        
+        plog_msg "Per loop Key Prog Time: $time_key_prog"
+
+    }
+}
+
+proc esec_prog_optimal_pac {sn usb_port slot PN MAC MTP
+        {CLIENT_KEY "certs/client.key.pem"} 
+        {CLIENT_CERT "certs/client-bundle.cert.pem"}
+        {TRUST_ROOTS "certs/rootca.cert.pem"}
+        {BACKEND_URL "192.168.67.213:12266#192.168.67.214:12266"}
+        {pac_cnt 25} } {
+
+    set ::CAP_PAC_FILE_SLOT "${::CAP_PAC_FILE}_${slot}"
+    #set ::CAP_DUMP_PAC 1
+    set ::CAP_REMOVE_PAC_TMP_FILE 0
+    
+    esec_gather_pac $sn $usb_port $slot $PN $MAC $MTP $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL $pac_cnt
+    
+    #dump pac
+    cap_dump_pac_cache
+    
+    #find the optimal pac
+    cap_eval_pac_score_all
+    
+    #find pac with highest score
+    set xx [ cap_get_best_pac_score ]
+    if { $xx == -1 } {
+        plog_err "cap_esec_prog_optimal_pac :: Failed, PAC is likely to be bad or sub optimal, erasing qspi block 0"
+        qspi_erase 0
+        plog_err "cap_esec_prog_optimal_pac :: Unable to Enroll the chip. Exiting...."
+        return -1
+    }
+    
+    #program pac with best score
+    cap_program_pac $xx
+    plog_msg "cap_esec_prog_optimal_pac :: $xx of ek cache $::CAP_EK_CACHE($xx)"
+    
+    #capture and store the last pac
+    cap_qspi_pwr_up_chk 830 1
+        
+    # Copy winning CRC32
+    eval file copy -force -- /home/diag/diag/tools/pki/crc32_ek_$xx.bin /home/diag/diag/tools/pki/crc32_ek.bin
+
+    # clean up
+    set DIAG_HOME $::env(DIAG_HOME)
+    eval file delete [glob $DIAG_HOME/diag/tools/pki/crc32_ek_*bin]
+
+    return 0
+}
+
+proc esec_all_pac {sn usb_port slot PN MAC MTP
+        {CLIENT_KEY "certs/client.key.pem"} 
+        {CLIENT_CERT "certs/client-bundle.cert.pem"}
+        {TRUST_ROOTS "certs/rootca.cert.pem"}
+        {BACKEND_URL "192.168.67.213:12266#192.168.67.214:12266"}
+        {pac_cnt 25} } {
+
+    set err [plog_get_err_count]
+    set timestamp_pre [clock seconds]
+
+    plog_msg "sn: $sn; slot: $slot"
+    plog_start esec_all_${sn}_slot${slot}.log
+
+    diag_open_j2c_if 10 $slot
+    regrd 0 0x6a000000
+    set card_type [cap_get_card_type]
+    if {$card_type == "NAPLES25" ||
+        $card_type == "NAPLES25SWM" ||
+        $card_type == "NAPLES25OCP"} {
+        set freq 417
+    } else {
+        set freq 833
+    }
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
+    ssi_cpld_write 0x29 0x80
+    cap_set_esec_enable_pin
+
+    set ret [esec_prog_optimal_pac $sn $usb_port $slot $PN $MAC $MTP $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL $pac_cnt]
+
+    set timestamp_post [clock seconds]
+
+    #============================
+    # Boot Test
+    if {$ret == 0} {
+        set ret [cap_secure_post_check 10 10 $slot]
+    }
+
+    set timestamp_final [clock seconds]
+
+    set time_key_prog [expr {$timestamp_post - $timestamp_pre}]
+    set time_boot_test [expr {$timestamp_final - $timestamp_post}]
+    
+    plog_msg "Key Prog Time: $time_key_prog"
+    plog_msg "Boot Test Time: $time_boot_test"
+
+    diag_close_j2c_if 10 $slot
+    plog_stop
+
+    set err1 [plog_get_err_count]
+    if {$err != $err1} {
+        set return -1
+    }
+
+    return $ret
+}
+
+proc esec_all {sn usb_port slot PN MAC MTP
+        {CLIENT_KEY "certs/client.key.pem"} 
+        {CLIENT_CERT "certs/client-bundle.cert.pem"}
+        {TRUST_ROOTS "certs/rootca.cert.pem"}
+        {BACKEND_URL "192.168.67.213:12266#192.168.67.214:12266"}
+        {pac_cnt 25} } {
 
     set pub_ek_fn "pub_ek.tcl.txt"
     set SN $sn
@@ -311,13 +522,9 @@ proc esec_all {sn slot PN MAC MTP
     set tcl_pwd [pwd]
     set DIAG_HOME $::env(DIAG_HOME)
     cd $DIAG_HOME/diag/tools/pki
-    exec cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
+    #exec cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
-    exec python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $card_type -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
-
-    exec cp signed_ek.pub.bin signed_ek.pub.org.bin
-
-    if { [catch { exec dd if=/dev/zero of=signed_ek.pub.bin bs=1 count=1 seek=1411 } msg] } {
+    if { [catch {exec /home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn $SN -pn "$PN" -mac $MAC -brd_name $card_type -mtp MTP -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL} msg ]} {
         plog_msg "Information about it: $::errorInfo"
     }
     
@@ -336,7 +543,7 @@ proc esec_all {sn slot PN MAC MTP
     # Check EK
     if { [catch { exec /home/diag/diag/python/esec/scripts/esec_prog.sh -ek_check } msg] } {
         plog_msg "Information about it: $::errorInfo"
-        ret -1
+        return -1
     } else {
         plog_msg $msg
         # Check if EK is good
@@ -376,6 +583,16 @@ proc esec_all {sn slot PN MAC MTP
         return -1
     }
     set timestamp_post [clock seconds]
+
+    # clean up
+    set DIAG_HOME $::env(DIAG_HOME)
+    eval file delete [glob $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt]
+    eval file delete [glob $DIAG_HOME/diag/tools/pki/pub_ek.tcl.txt]
+    eval file delete [glob $DIAG_HOME/diag/tools/pki/signed_ek.pub*bin]
+
+    if { [catch {eval file delete [glob $DIAG_HOME/diag/tools/pki/crc32_ek_*bin]} msg] } {
+        plog_err "Information about it: $::errorInfo"
+    }
 
     #============================
     # Boot Test
@@ -431,11 +648,14 @@ switch $stage {
         set ret [show_status $sn $slot]
     }
     "ESEC_ALL" {
-        set ret [esec_all $sn $slot $pn $mac $mtp, $client_key, $client_cert, $trust_roots, $backend_url]
+        set ret [esec_all $sn 10 $slot $pn $mac $mtp $client_key $client_cert $trust_roots $backend_url]
+    }
+    "ESEC_ALL_PAC" {
+        set ret [esec_all_pac $sn 10 $slot $pn $mac $mtp $client_key $client_cert $trust_roots $backend_url]
     }
     default {
         plog_msg "Invalide stage: $stage"
-        set ret -1
+        set return -1
     }
 }
 
