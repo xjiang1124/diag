@@ -24,6 +24,15 @@ class NIC_CPLD_Version:
     FORIO_VERSION = "0x4"
     FORIO_TIMESTAMP = "04-11"
 
+    #NEED FINAL INFOT!!!
+    #ADD FIXME
+    #NAPLES25SWM_VERSION = "0x4"
+    #NAPLES25SWM_TIMESTAMP = "01-20"
+    NAPLES25SWM_VERSION = "0x6"
+    NAPLES25SWM_TIMESTAMP = "03-06"
+    NAPLES25SWM_SEC_VERSION = "0x03"
+    NAPLES25SWM_SEC_TIMESTAMP = "00-00"
+
 
 # MFG release images
 class MFG_IMAGE_FILES:
@@ -45,6 +54,12 @@ class MFG_IMAGE_FILES:
     VOMERO_CPLD_IMAGE = "vomero_cpld_rev4_02072020.bin"
     VOMERO_SEC_CPLD_IMAGE = "vomero_cpld_rev84_02102020.bin"
 
+    NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
+    NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
+
+    NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
+    NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
+
 
 MFG_MTP_CPLD_IO_VERSION = "0x6"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
@@ -61,7 +76,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
@@ -79,10 +94,13 @@ NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}$"
 HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
 NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
 HP_DISP_SN_FMT = r"HPE Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
+ALOM_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
+HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
+ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
+ALOM_DISP_PIA_PN_FMT = r"Product SKU Part Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 

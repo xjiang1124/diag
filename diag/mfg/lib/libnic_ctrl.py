@@ -16,6 +16,9 @@ from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_VALID_FW_LIST
+from libmfg_cfg import ALOM_SN_FMT
+from libmfg_cfg import ALOM_DISP_BIA_PN_FMT
+from libmfg_cfg import ALOM_DISP_PIA_PN_FMT
 
 from libdefs import NIC_Type
 from libdefs import NIC_Vendor
@@ -351,7 +354,7 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_console_detach()
-#                return False
+                return False
 
         # poweroff
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
@@ -900,6 +903,26 @@ class nic_ctrl():
         return True
 
 
+    def nic_kill_hal(self):
+        for x in range(6):
+            nic_cmd_list = list()
+            nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
+            nic_cmd_list.append(nic_cmd)
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                return False
+
+            nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
+            cmd_buf = self.nic_get_info(nic_cmd)
+            if not cmd_buf:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            
+            match = re.findall("/nic/bin/hal", cmd_buf)
+            if not match:
+                break
+
+            time.sleep(5)
+
     def nic_start_diag(self, aapl):
         # setup diag env on nic
         nic_cmd_list = list()
@@ -908,8 +931,7 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(time_str)
         nic_cmd_list.append(nic_cmd)
         if not aapl:
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
-            nic_cmd_list.append(nic_cmd)
+            self.nic_kill_hal()
             nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_CONFIG_FMT
             nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_INIT_FMT.format(self._slot+1)
@@ -1022,7 +1044,9 @@ class nic_ctrl():
         if not self.nic_vendor_init():
             return False
 
-        if self._vendor == NIC_Vendor.HPE:
+        if self._nic_type == NIC_Type.NAPLES25SWM:
+            nic_cmd = MFG_DIAG_CMDS.NIC_HPESWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        elif self._vendor == NIC_Vendor.HPE:
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         else:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
@@ -1074,13 +1098,16 @@ class nic_ctrl():
             return False
 
         if self.nic_2nd_fru_exist(self._pn):
-            if self._vendor == NIC_Vendor.HPE:
+            if self._nic_type == NIC_Type.NAPLES25SWM:
+                cmd = MFG_DIAG_CMDS.MTP_HPESWM_FRU_DISP_FMT.format(self._slot+1)
+            elif self._vendor == NIC_Vendor.HPE:
                 cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
+
             # secondary SN
             if self._vendor == NIC_Vendor.HPE:
                 match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())
@@ -1120,11 +1147,46 @@ class nic_ctrl():
                 return False
 
             if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
+                print(" ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-        return True
+        #CHECK ALOM FRU ON NAPLES25SWM
+        if self._nic_type == NIC_Type.NAPLES25SWM:
+            #rc = self.nic_alom_present()
+            rc = True
+            if not rc:
+                print(" ALOM NOT PRESENT")
+            else:
+                print(" ALOM PRESENT")
+                cmd = MFG_DIAG_CMDS.NIC_HPESWM_ALOM_FRU_DISP_FMT.format(self._slot+1)
+                if not self.mtp_exec_cmd(cmd):
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
 
+                # retrieve card serial number
+                match = re.findall(ALOM_SN_FMT, self.nic_get_cmd_buf())
+                if not match:
+                    print(" ERROR: ADD FIXME ALOM NO S/N MATCH")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                # retrieve card Board Information Area PN
+                match = re.findall(ALOM_DISP_BIA_PN_FMT, self.nic_get_cmd_buf())
+                if not match:
+                    print(" ERROR: ADD FIXME ALOM BIA PN")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                # retrieve card Product Information Area PN
+                match = re.findall(ALOM_DISP_PIA_PN_FMT, self.nic_get_cmd_buf())
+                if not match:
+                    print(" ERROR: ADD FIXME ALOM PIA PN")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+        return True
+        
 
     def nic_get_fru(self):
         if not self._sn or not self._mac or not self._pn or not self._vendor:
@@ -1173,7 +1235,6 @@ class nic_ctrl():
             return False
 
         self._cpld_timestamp = "{:02d}-{:02d}".format(month, date)
-
         return True
 
 
@@ -1226,3 +1287,133 @@ class nic_ctrl():
             reg28_data = int(match[0], 16)
 
         return [reg26_data, reg28_data]
+
+
+
+    def nic_read_alom_cpld(self, reg_addr, read_data):
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_RD_ALOM_CPLD_FMT.format(reg_addr, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
+        if not match:
+            return False
+        else:
+            read_data[0] = int(match[0], 16)
+        return True
+
+
+    def nic_write_alom_cpld(self, reg_addr, write_data):
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_WR_ALOM_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        match = re.findall(r"failed", self.nic_get_cmd_buf())
+        if match:
+            return False
+        return True
+
+    def nic_read_cpld(self, reg_addr, read_data):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
+        cpld_buf = self.nic_get_info(nic_cmd)
+        if not cpld_buf:
+            return False
+        match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
+        if not match:
+            return False
+        read_data[0] = int(match[0], 16)
+        return True
+        
+    def nic_write_cpld(self, reg_addr, write_data):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
+        cpld_buf = self.nic_get_info(nic_cmd)
+        if not cpld_buf:
+            return False
+        return True
+    '''
+    def nic_alom_present(self):
+        cpld_ctrl_reg = 0x01
+        if self._nic_type == NIC_Type.NAPLES25SWM:
+            read_data = [0]
+            rc = self.nic_read_cpld(cpld_ctrl_reg, read_data)
+            if not rc:
+                return False
+            print("ReadData=" + hex(read_data))
+            if (read_data & 0x20) != 0:
+                return True
+        return False
+    '''
+
+    def nic_naples25swm_scan_chain_test(self):
+        nic_scan_chain_reg = 0x33
+        alom_scan_reg0 = 0x02   #mask 0x0F
+        alom_scan_reg1 = 0x03   #mask 0x33
+        alom_cpld_ctrl_reg = 0x01
+        alom_initiate_scan_bit = 0x20
+        read_data = [0]
+        #LIST VALUES ARE --> NIC CPLD SCAN CHAIN REG, ALOM SCANREG0 EXPECTED, ALOM SCANREG1 EXPECTED
+        data = [[0xFF, 0x0F, 0x33], \
+                [0x00, 0x00, 0x00], \
+                [0x55, 0x05, 0x11], \
+                [0xAA, 0x0A, 0x22] ]
+
+        #rc = self.nic_alom_present()
+        rc = True
+        if not rc:
+            print(" ALOM NOT PRESENT")
+            #return True
+        else:
+            print(" ALOM PRESENT")
+
+
+        rc = self.nic_read_alom_cpld(alom_cpld_ctrl_reg, read_data)
+        if not rc: 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False 
+        cpld_ctrl_def = read_data[0]      
+
+        for row in data:
+            #row[0] NIC CPLD SCAN CHAIN REG DATA
+            #row[1] ALOM_SCAN_REG0 EXPECTED
+            #row[2] ALOM_SCAN_REG1 EXPECTED 
+            rc = self.nic_write_cpld(nic_scan_chain_reg, row[0])
+            if not rc: 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            print("Setting Scan Chain Push Reg to Init NIC Diag Environment complete=" + hex(row[0]))
+
+
+            #tell ALOM to request scan data
+            wr_data = (cpld_ctrl_def | alom_initiate_scan_bit)
+            rc = self.nic_write_alom_cpld(alom_cpld_ctrl_reg, wr_data)
+            if not rc:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            rc = self.nic_write_alom_cpld(alom_cpld_ctrl_reg, cpld_ctrl_def)
+            if not rc: 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            #read data on ALOM
+            rc = self.nic_read_alom_cpld(alom_scan_reg0, read_data)
+            if not rc: 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False 
+            print("Alom Scan Reg0=" + hex(read_data[0]))
+
+
+            rc = self.nic_read_alom_cpld(alom_scan_reg1, read_data)
+            if not rc: 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            print("Alom Scan Reg1=" + hex(read_data[0]))
+
+        return True
+

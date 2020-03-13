@@ -5,6 +5,7 @@ class NIC_Type:
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
     VOMERO = "VOMERO"
+    NAPLES25SWM = "NAPLES25SWM"
     UNKNOWN = "Unknown"
 
 
@@ -243,10 +244,13 @@ class MFG_DIAG_CMDS:
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
     MTP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d}"
     MTP_HP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpe"
+    MTP_HPESWM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeSwm"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
     NIC_HP_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -hpe"
     NIC_FRU_DISP_FMT = "{:s}eeutil -disp"
     NIC_HP_FRU_DISP_FMT = "{:s}eeutil -disp -hpe"
+    NIC_HPESWM_FRU_DISP_FMT = "{:s}eeutil -disp -hpeSwm"
+    NIC_HPESWM_ALOM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeAlom"
     NIC_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn"
 
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
@@ -254,6 +258,7 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
     NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
+    NIC_CPLD_WRITE_FMT = "{:s}cpld -w {:d} 0x{:x}"
 
     # onboard diag utils version
     NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"
@@ -306,6 +311,9 @@ class MFG_DIAG_CMDS:
     MTP_POWER_ON_NIC_FMT = "turn_on_slot.sh on all"
     MTP_POWER_OFF_NIC_FMT = "turn_on_slot.sh off all"
 
+
+    MTP_RD_ALOM_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
+    MTP_WR_ALOM_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
     MTP_SMB_CMD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
 
@@ -399,8 +407,9 @@ class MFG_DIAG_SIG:
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
 
 class MFG_DIAG_RE:
-    MFG_NIC_TYPE_NAPLES100 = r"UUT_(\d+) +NAPLES100"
-    MFG_NIC_TYPE_NAPLES25  = r"UUT_(\d+) +NAPLES25"
-    MFG_NIC_TYPE_FORIO     = r"UUT_(\d+) +FORIO"
-    MFG_NIC_TYPE_VOMERO    = r"UUT_(\d+) +VOMERO"
+    MFG_NIC_TYPE_NAPLES100   = r"\bUUT_(\d+) +NAPLES100\b"
+    MFG_NIC_TYPE_NAPLES25    = r"\bUUT_(\d+) +NAPLES25\b"
+    MFG_NIC_TYPE_FORIO       = r"\bUUT_(\d+) +FORIO\b"
+    MFG_NIC_TYPE_VOMERO      = r"\bUUT_(\d+) +VOMERO\b"
+    MFG_NIC_TYPE_NAPLES25SWM = r"\bUUT_(\d+) +NAPLES25SWM\b"
 

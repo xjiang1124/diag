@@ -1468,9 +1468,11 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             return False
         # ping to update the arp cache
-        cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            return False
+        for x in range(2):
+            time.sleep(5)
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                return False
 
         return True
 
@@ -1742,6 +1744,13 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.VOMERO_VERSION
                 exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.NAPLES25SWM_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2169,10 +2178,17 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
                 if not self.mtp_mgmt_exec_sudo_cmd(cmd):
                     return False
-                # ping to update the arp cache
-                cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-                if not self.mtp_mgmt_exec_cmd(cmd):
-                    return False
+
+                ###Have seen failures on Naples25SWM where ping fails and ARP table is not populated
+                ###Add a 2nd ping try as a work around.   
+                for x in range(2):
+                    time.sleep(5)
+                    # ping to update the arp cache
+                    cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+                    if not self.mtp_mgmt_exec_cmd(cmd):
+                        return False
+
+                
 
         return True
 
@@ -2325,6 +2341,14 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.VOMERO
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO)
+
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
+                self._nic_type_list[slot] = NIC_Type.NAPLES25SWM
+                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWM)
 
         return True
 
@@ -2652,6 +2676,10 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.NAPLES25SWM:  
+            #NAPLES25SWM uses same setting as Naples25
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2675,6 +2703,15 @@ class mtp_ctrl():
     def mtp_mgmt_set_nic_avs_post(self, slot):
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
+
+
+    def mtp_nic_naples25_test_scan_chain(self, slot):
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_scan_chain_test()
+        if not rc:
+            self.cli_log_slot_inf(slot, "nic_naples25swm_scan_chain_test fail")
+        else:
+            self.cli_log_slot_inf(slot, "nic_naples25swm_scan_chain_test pass")
+        return rc
 
 
     def mtp_run_diag_test_para_lock(self):

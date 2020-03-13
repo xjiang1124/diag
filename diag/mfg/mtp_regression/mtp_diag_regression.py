@@ -568,10 +568,12 @@ def main():
     naples25_test_cfg_file = "config/naples25_mtp_test_cfg.yaml"
     forio_test_cfg_file = "config/forio_mtp_test_cfg.yaml"
     vomero_test_cfg_file = "config/vomero_mtp_test_cfg.yaml"
+    naples25swm_test_cfg_file = "config/naples25swm_mtp_test_cfg.yaml"
     naples100_test_db = diag_db(corner, naples100_test_cfg_file)
     naples25_test_db = diag_db(corner, naples25_test_cfg_file)
     forio_test_db = diag_db(corner, forio_test_cfg_file)
     vomero_test_db = diag_db(corner, vomero_test_cfg_file)
+    naples25swm_test_db = diag_db(corner, naples25swm_test_cfg_file)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -596,6 +598,12 @@ def main():
     vomero_para_test_list = vomero_test_db.get_diag_para_test_list()
     vomero_pre_test_check_list = vomero_test_db.get_pre_diag_test_intf_list()
     vomero_post_test_check_list = vomero_test_db.get_post_diag_test_intf_list()
+
+    naples25swm_seq_test_list = naples25swm_test_db.get_diag_seq_test_list()
+    naples25swm_mtp_para_test_list = naples25swm_test_db.get_mtp_para_test_list()
+    naples25swm_para_test_list = naples25swm_test_db.get_diag_para_test_list()
+    naples25swm_pre_test_check_list = naples25swm_test_db.get_pre_diag_test_intf_list()
+    naples25swm_post_test_check_list = naples25swm_test_db.get_post_diag_test_intf_list()
 
     # logfiles
     open_file_track_list = list()
@@ -651,6 +659,7 @@ def main():
     naples25_nic_list = list()
     forio_nic_list = list()
     vomero_nic_list = list()
+    naples25swm_nic_list = list()
     pass_nic_list = list()
     fail_nic_list = list()
 
@@ -669,12 +678,15 @@ def main():
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.VOMERO:
                 vomero_nic_list.append(slot)
                 pass_nic_list.append(slot)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWM:
+                naples25swm_nic_list.append(slot)
+                pass_nic_list.append(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
 
-    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO]
-    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list]
+    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM]
+    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list]
 
     # check if MTP support present NIC
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
@@ -691,6 +703,9 @@ def main():
         elif nic_type == NIC_Type.VOMERO:
             mtp_exp_capability = 0x1
             test_db = vomero_test_db
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            mtp_exp_capability = 0x2
+            test_db = naples25swm_test_db
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
             continue
@@ -746,6 +761,8 @@ def main():
                 pre_test_check_list = forio_pre_test_check_list
             elif nic_type == NIC_Type.VOMERO:
                 pre_test_check_list = vomero_pre_test_check_list
+            elif nic_type == NIC_Type.NAPLES25SWM:
+                pre_test_check_list = naples25swm_pre_test_check_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -778,6 +795,9 @@ def main():
             elif nic_type == NIC_Type.VOMERO:
                 nic_para_test_list = vomero_para_test_list[:]
                 test_db = vomero_test_db
+            elif nic_type == NIC_Type.NAPLES25SWM:
+                nic_para_test_list = naples25swm_para_test_list[:]
+                test_db = naples25swm_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -801,7 +821,11 @@ def main():
                         pass_nic_list.remove(slot)
 
                 # second round, aapl tests
-                mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True)
+                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True):
+                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
+                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                    return
+
                 diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
                                                             nic_type,
                                                             nic_list,
@@ -828,6 +852,8 @@ def main():
                 mtp_para_test_list = forio_mtp_para_test_list
             elif nic_type == NIC_Type.VOMERO:
                 mtp_para_test_list = vomero_mtp_para_test_list
+            elif nic_type == NIC_Type.NAPLES25SWM:
+                mtp_para_test_list = naples25swm_mtp_para_test_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
@@ -860,6 +886,9 @@ def main():
             elif nic_type == NIC_Type.VOMERO:
                 nic_seq_test_list = vomero_seq_test_list[:]
                 test_db = vomero_test_db
+            elif nic_type == NIC_Type.NAPLES25SWM:
+                nic_seq_test_list = naples25swm_seq_test_list[:]
+                test_db = naples25swm_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -918,13 +947,16 @@ def main():
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     # Enable PCIe poll
-    diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
-    # failed enable pcie poll, fail the card
-    for slot in diag_post_fail_list:
-        if slot not in fail_nic_list:
-            fail_nic_list.append(slot)
-        if slot in pass_nic_list:
-            pass_nic_list.remove(slot)
+    #ADD - Bypass shutting down slot right now for debug
+    print("STOP ON ERR=" + str(stop_on_err))
+    if not stop_on_err:
+        diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
+        # failed enable pcie poll, fail the card
+        for slot in diag_post_fail_list:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 

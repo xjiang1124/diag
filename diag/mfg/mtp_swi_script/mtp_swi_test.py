@@ -163,6 +163,7 @@ def main():
     naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
     naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
     vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
+    naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
@@ -199,6 +200,8 @@ def main():
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
             sec_cpld_img_file = naples25_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWM:
+            sec_cpld_img_file = naples25swm_sec_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
@@ -294,6 +297,8 @@ def main():
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
             sec_cpld_img_file = naples25_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWM:
+            sec_cpld_img_file = naples25swm_sec_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue

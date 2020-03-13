@@ -424,7 +424,7 @@ class nic_con:
             temp = session.after
             if 'oob_mnic0' in session.before:
                 print 'oob_mnic0 enabled'
-                self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0".format(slot+100))
+                self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig")
             else:
                 print 'oob_mnic0 NOT enabled!'

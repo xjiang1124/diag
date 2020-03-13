@@ -1,6 +1,12 @@
 #!/bin/bash
 
 hub_ctrl() {
+
+    smbutil -dev=hub_1 -sd -addr=0
+    smbutil -dev=hub_2 -sd -addr=0
+    smbutil -dev=hub_3 -sd -addr=0
+    smbutil -dev=hub_4 -sd -addr=0
+
     smbutil -dev=hub_1 -sd -addr=$1
     smbutil -dev=hub_2 -sd -addr=$2
     smbutil -dev=hub_3 -sd -addr=$3

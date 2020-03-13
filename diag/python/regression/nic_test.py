@@ -185,26 +185,48 @@ class nic_test:
             if len(nic_list) != 0:
                  print "Sleep 30 sec"
                  time.sleep(30)
-
-            for slot in nic_list:
-                 self.nic_con.switch_console(slot)
-                 session = common.session_start()
-                 self.nic_con.uart_session_start(session)
-
-                 # Disable link manager
-                 self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-                 self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-                 self.nic_con.uart_session_cmd(session, "halctl show port status")
-                 sleep(0.5)
-
-                 self.nic_con.uart_session_stop(session)
-                 common.session_stop(session)
-
+            
         if aapl == True:
             for slot in nic_list:
                 ret = self.aapl_setup(self.baud_rate, int(slot), True)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+        time.sleep(5)
+        for slot in nic_list:
+             self.nic_con.switch_console(slot)
+             session = common.session_start()
+             self.nic_con.uart_session_start(session)
+
+             # Disable link manager
+             # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
+             self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+             self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+             self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
+             self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
+             
+             self.nic_con.uart_session_cmd(session, "halctl show port status")
+             sleep(0.5)
+
+             self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
+             cmd_args = session.before.split()
+             if cmd_args[3] == "0x17":
+                 print("\nNaples25SWM BOARD\n")
+                 # enable ports
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x10 0x7f")
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7f")
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x13 0x7f")
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x15 0x7f")
+                 # power up PHY ports
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0x3 0x1140")
+                 # power up serdes ports
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xC 0x1140")
+                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xD 0x1140")
+             
+
+
+             self.nic_con.uart_session_stop(session)
+             common.session_stop(session)
 
         if mgmt == True:
             for slot in nic_list:
@@ -251,9 +273,11 @@ class nic_test:
             time.sleep(30)
 
             # Disable link manager
+            # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
             self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
             self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-            self.nic_con.uart_session_cmd(session, "halctl show port status")
+            self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
+            self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
             sleep(0.5)
 
         self.nic_con.uart_session_cmd(session, "halctl debug port aacs-server-start --server-port 9000")
