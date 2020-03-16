@@ -971,7 +971,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             }
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeAlom == true {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Serial Number" {
                     copy(entry.Value, sn)
@@ -985,10 +985,6 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                     copy(entry.Value, date)
                     continue
                 } else if entry.Name == "HPE Product Number" {
-                    pn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                    copy(entry.Value, pn)
-                    continue
-                } else if entry.Name == "Product SKU Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
@@ -1041,12 +1037,9 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeAlom == true {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Product Number" {
-                    copy(entry.Value, pn)
-                    continue
-                } else if entry.Name == "Product SKU Part Number" {
                     copy(entry.Value, pn)
                     continue
                 } else if entry.Name == "HPE Serial Number" {
@@ -1112,7 +1105,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
         }
     }
 
-    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeAlom == true {
+    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
         for _, entry := range(EepromExtTbl) {
             if entry.Name == "Manufacture Date/Time" {
                 copy(entry.Value, data)
@@ -1122,10 +1115,6 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
                 copy(entry.Value, mac)
                 continue
             } else if entry.Name == "HPE Product Number" {
-                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                copy(entry.Value, pn)
-                continue
-            } else if entry.Name == "Product SKU Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
                 continue
