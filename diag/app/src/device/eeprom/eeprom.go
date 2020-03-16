@@ -222,7 +222,7 @@ var HpeTblSWM = []entry {
         0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61, 0x72, 0x64,}},
     entry{"PCA Product Number Type/Length",         INT8,        176,        1,    []byte{0xCA}},
     entry{"HPE Product Number",                     STRING,      177,       10,    []byte{0x50, 0x32, 0x36, 0x39,
-        0x36, 0x36, 0x2D, 0x42, 0x32, 31}},
+        0x36, 0x38, 0x2D, 0x42, 0x32, 31}},
     entry{"Product Version Type/Length",            INT8,        187,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x30}},
     entry{"PCA Serial Number Type/Length",          INT8,        190,        1,    []byte{0xCA}},
@@ -290,7 +290,7 @@ var HpeAlomTblAll = []entry {
         0x41, 0x4c, 0x4f, 0x4d, 0x20, 0x4d, 0x6f, 0x64}},
     entry{"Product SKU Part Number Type/Length",    INT8,       150,        1,    []byte{0xCA}},
     entry{"Product SKU Part Number",                STRING,     151,       10,    []byte{0x50, 0x32, 0x36, 0x39,
-        0x36, 0x39, 0x2D, 0x42, 0x32, 0x31  }},
+        0x37, 0x31, 0x2D, 0x42, 0x32, 0x31  }},
     entry{"Product Version Type/Length",            INT8,       161,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,     162,        2,    []byte{0x30, 0x30}},
     entry{"Product Serial Number Type/Length",      INT8,       164,        1,    []byte{0xCA}},
@@ -971,7 +971,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             }
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeAlom == true {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Serial Number" {
                     copy(entry.Value, sn)
@@ -985,6 +985,10 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                     copy(entry.Value, date)
                     continue
                 } else if entry.Name == "HPE Product Number" {
+                    pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                    copy(entry.Value, pn)
+                    continue
+                } else if entry.Name == "Product SKU Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
@@ -1037,9 +1041,12 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeAlom == true {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Product Number" {
+                    copy(entry.Value, pn)
+                    continue
+                } else if entry.Name == "Product SKU Part Number" {
                     copy(entry.Value, pn)
                     continue
                 } else if entry.Name == "HPE Serial Number" {
@@ -1105,7 +1112,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
         }
     }
 
-    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeAlom == true {
         for _, entry := range(EepromExtTbl) {
             if entry.Name == "Manufacture Date/Time" {
                 copy(entry.Value, data)
@@ -1115,6 +1122,10 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
                 copy(entry.Value, mac)
                 continue
             } else if entry.Name == "HPE Product Number" {
+                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
+                copy(entry.Value, pn)
+                continue
+            } else if entry.Name == "Product SKU Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
                 continue
