@@ -106,7 +106,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     logFn := "/data/nic_arm/aapl/aapl_init.log"
     if mode == "ETH" {
         for retry := 0; retry < 3; retry++ {
-            err = runCmd.Run("AAPL ETH SERDES INIT DONE", "AAPL ETH SERDES RESET FAILED", cmd, mode, "INIT")
+            err = runCmd.Run("AAPL SERDES INIT DONE", "AAPL SERDES INIT FAILED", cmd, mode, "INIT")
             if err != errType.SUCCESS {
                 dcli.Println("e", "Failed to init Eth serdes!")
                 return
