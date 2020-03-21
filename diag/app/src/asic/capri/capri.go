@@ -61,14 +61,16 @@ func Prbs(mode string, poly string, duration int) (err int) {
     // Check result
     if mode == "PCIE" {
         targetSpeedList = []string{"15", "16", "17"}
-        if (cardType == "NAPLES100") ||
-           (cardType == "FORIO")     ||
+        if (cardType == "NAPLES100")    ||
+           (cardType == "NAPLES100IBM") ||
+           (cardType == "FORIO")        ||
            (cardType == "VOMERO") {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples100[:]
         } else if (cardType == "NAPLES25")    ||
                   (cardType == "NAPLES25OCP") ||
-                  (cardType == "NAPLES25SWM") {
+                  (cardType == "NAPLES25SWM") ||
+                  (cardType == "NAPLES25WFG") {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples25[:]
         } else {
@@ -77,14 +79,16 @@ func Prbs(mode string, poly string, duration int) (err int) {
         }
     } else if mode == "ETH" {
         targetSpeedList = []string{"25", "26", "27"}
-        if (cardType == "NAPLES100") ||
-           (cardType == "FORIO")     ||
+        if (cardType == "NAPLES100")    ||
+           (cardType == "NAPLES100IBM") ||
+           (cardType == "FORIO")        ||
            (cardType == "VOMERO") {
             sbusList = make([]uint64, 16)
             sbusList = sbusEthListNaples100[:]
         } else if (cardType == "NAPLES25") ||
                   (cardType == "NAPLES25OCP") ||
-                  (cardType == "NAPLES25SWM") {
+                  (cardType == "NAPLES25SWM") ||
+                  (cardType == "NAPLES25WFG") {
             sbusList = make([]uint64, 16)
             sbusList = sbusEthListNaples25[:]
 

@@ -180,7 +180,8 @@ func init() {
     Naples25MtpTbl  = append(Naples25MtpTbl, MtpHubI2cTbl...)
     ForioMtpTbl     = append(ForioMtpTbl, MtpHubI2cTbl...)
 
-    if CardType == "NAPLES100" {
+    if CardType == "NAPLES100" || 
+       CardType == "NAPLES100IBM" {
         I2cTbl = Naples100Tbl
     } else if CardType == "NAPLES25" {
         I2cTbl = Naples25Tbl
@@ -281,7 +282,7 @@ func SwitchI2cTbl(uutName string) (err int) {
 
     if uutType == "NAPLES_MTP" {
         CurI2cTbl = NaplesMtpTbl
-    } else if uutType == "NAPLES100" {
+    } else if uutType == "NAPLES100" || uutType == "NAPLES100IBM"{
         CurI2cTbl = Naples100MtpTbl
     } else if uutType == "NAPLES25" {
         CurI2cTbl = Naples25MtpTbl

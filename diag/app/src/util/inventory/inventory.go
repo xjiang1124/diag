@@ -81,12 +81,16 @@ func present() (err int) {
             switch data {
             case nicCpldCommon.ID_NAPLES100:
                 presentStr = "NAPLES100"
+            case nicCpldCommon.ID_NAPLES100IBM:
+                presentStr = "NAPLES100IBM"
             case nicCpldCommon.ID_NAPLES25:
                 presentStr = "NAPLES25"
             case nicCpldCommon.ID_NAPLES25OCP:
                 presentStr = "NAPLES25OCP"
             case nicCpldCommon.ID_NAPLES25SWM:
                 presentStr = "NAPLES25SWM"
+            case nicCpldCommon.ID_NAPLES25WFG:
+                presentStr = "NAPLES25WFG"
             case nicCpldCommon.ID_FORIO:
                 presentStr = "FORIO"
             case nicCpldCommon.ID_VOMERO:
@@ -187,12 +191,16 @@ func sysDetect() (err int) {
             switch data {
             case nicCpldCommon.ID_NAPLES100:
                 presentStr = "NAPLES100"
+            case nicCpldCommon.ID_NAPLES100IBM:
+                presentStr = "NAPLES100IBM"
             case nicCpldCommon.ID_NAPLES25:
                 presentStr = "NAPLES25"
             case nicCpldCommon.ID_NAPLES25OCP:
                 presentStr = "NAPLES25OCP"
             case nicCpldCommon.ID_NAPLES25SWM:
                 presentStr = "NAPLES25SWM"
+            case nicCpldCommon.ID_NAPLES25WFG:
+                presentStr = "NAPLES25WFG"
             case nicCpldCommon.ID_FORIO:
                 presentStr = "FORIO"
             case nicCpldCommon.ID_VOMERO:

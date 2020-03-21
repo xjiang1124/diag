@@ -549,6 +549,12 @@ class nic_test:
             if ret != 0:
                 print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
 
+
+    def timeout_test(self, timeout):
+        session = common.session_start()
+        common.session_cmd(session, "ping hw-srv1", timeout)
+        common.session_stop(session)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
@@ -574,6 +580,7 @@ if __name__ == "__main__":
                        "--dis_uboot_pcie", 
                        help="Disable uboot PCIe for mutiple cards", 
                        action='store_true')
+    group.add_argument("-test_t", "--test_timeout", help="Test timeout", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -642,3 +649,5 @@ if __name__ == "__main__":
         test.ena_dis_uboot_pcie(slot_list, ena_dis)
         sys.exit()
 
+    if args.test_timeout == True:
+        test.timeout_test(args.wait_time)

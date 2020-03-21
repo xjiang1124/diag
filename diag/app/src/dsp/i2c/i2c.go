@@ -34,6 +34,8 @@ func init() {
     i2cTestMap["NAPLES25OCP"]   = naples100TestList
     i2cTestMap["FORIO"]         = naples100TestList
     i2cTestMap["VOMERO"]        = naples100TestList
+    i2cTestMap["NAPLES100_IBM"] = naples100TestList
+    i2cTestMap["NAPLES25_WFG"]  = naples100TestList
 
     i2cTestList = i2cTestMap[cardType]
 }

@@ -266,62 +266,67 @@ func init() {
     dispMap["FORIO"]       = forioDispStaList
     dispMap["VOMERO"]      = forioDispStaList
     dispMap["NAPLES100"]   = naples100DispStaList
+    dispMap["NAPLES100IBM"]= naples100DispStaList
     dispMap["NAPLES25"]    = naples25DispStaList
     dispMap["NAPLES25OCP"] = naples25DispStaList
     dispMap["NAPLES25SWM"] = naples25DispStaList
+    dispMap["NAPLES25WFG"] = naples25DispStaList
     dispMap["NAPLES_MTP"]  = naplesMtpDispStaList
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
 
-    // Pmbus test list
-    //pmbusTestMap = make(map[string][]string)
-    //pmbusTestMap["NAPLES100"] = NaplesPmbusTestList
-    //pmbusTestMap["NAPLES_MTP"] = NaplesPmbusTestList
-
     // EEPROM list
     eepromMap = make(map[string][]string)
-    eepromMap["MTP"]        = mtpEepList
-    eepromMap["MTPS"]       = mtpEepList
-    eepromMap["NAPLES_MTP"] = naplesEepList
-    eepromMap["NAPLES100"]  = naplesEepList
-    eepromMap["NAPLES25"]   = naplesEepList
-    eepromMap["NAPLES25OCP"]= naplesEepList
-    eepromMap["NAPLES25SWM"]= naplesEepList
-    eepromMap["FORIO"]      = naplesEepList
-    eepromMap["VOMERO"]     = naplesEepList
+    eepromMap["MTP"]           = mtpEepList
+    eepromMap["MTPS"]          = mtpEepList
+    eepromMap["NAPLES_MTP"]    = naplesEepList
+    eepromMap["NAPLES100"]     = naplesEepList
+    eepromMap["NAPLES100IBM"]  = naplesEepList
+    eepromMap["NAPLES25"]      = naplesEepList
+    eepromMap["NAPLES25OCP"]   = naplesEepList
+    eepromMap["NAPLES25SWM"]   = naplesEepList
+    eepromMap["NAPLES25WFG"]   = naplesEepList
+    eepromMap["FORIO"]         = naplesEepList
+    eepromMap["VOMERO"]        = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
     i2cHubMap["MTP"] = mtpI2cHubMap
     // MTP=MTPS
-    i2cHubMap["MTPS"]        = mtpI2cHubMap
-    i2cHubMap["NAPLES100"]   = naples100I2cHubMap
-    i2cHubMap["NAPLES25"]    = naples100I2cHubMap
-    i2cHubMap["NAPLES25OCP"] = naples100I2cHubMap
-    i2cHubMap["NAPLES25SWM"] = naples100I2cHubMap
-    i2cHubMap["FORIO"]       = naples100I2cHubMap
-    i2cHubMap["VOMERO"]      = naples100I2cHubMap
+    i2cHubMap["MTPS"]           = mtpI2cHubMap
+    i2cHubMap["NAPLES100"]      = naples100I2cHubMap
+    i2cHubMap["NAPLES100IBM"]   = naples100I2cHubMap
+    i2cHubMap["NAPLES25"]       = naples100I2cHubMap
+    i2cHubMap["NAPLES25OCP"]    = naples100I2cHubMap
+    i2cHubMap["NAPLES25SWM"]    = naples100I2cHubMap
+    i2cHubMap["NAPLES25WFG"]    = naples100I2cHubMap
+    i2cHubMap["FORIO"]          = naples100I2cHubMap
+    i2cHubMap["VOMERO"]         = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
-    i2cHubListMap["MTP"]        = mtpI2cHubList
-    i2cHubListMap["MTPS"]       = mtpsI2cHubList
-    i2cHubListMap["NAPLES_MTP"] = naplesMtpI2cHubList
-    i2cHubListMap["NAPLES100"]  = naples100I2cHubList
-    i2cHubListMap["NAPLES25"]   = naples25I2cHubList
-    i2cHubListMap["NAPLES25OCP"]= naples25I2cHubList
-    i2cHubListMap["NAPLES25SWM"]= naples25I2cHubList
-    i2cHubListMap["FORIO"]      = forioI2cHubList
-    i2cHubListMap["VOMERO"]     = forioI2cHubList
+    i2cHubListMap["MTP"]           = mtpI2cHubList
+    i2cHubListMap["MTPS"]          = mtpsI2cHubList
+    i2cHubListMap["NAPLES_MTP"]    = naplesMtpI2cHubList
+    i2cHubListMap["NAPLES100"]     = naples100I2cHubList
+    i2cHubListMap["NAPLES100IBM"]  = naples100I2cHubList
+    i2cHubListMap["NAPLES25"]      = naples25I2cHubList
+    i2cHubListMap["NAPLES25OCP"]   = naples25I2cHubList
+    i2cHubListMap["NAPLES25SWM"]   = naples25I2cHubList
+    i2cHubListMap["NAPLES25WFG"]   = naples25I2cHubList
+    i2cHubListMap["FORIO"]         = forioI2cHubList
+    i2cHubListMap["VOMERO"]        = forioI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
     psuListMap["MTP"]          = mtpPsuList
     psuListMap["MTPS"]         = mtpPsuList
     psuListMap["NAPLES100"]    = naples100PsuList
+    psuListMap["NAPLES100IBM"]  = naples100PsuList
     psuListMap["NAPLES25"]     = naples25PsuList
     psuListMap["NAPLES25OCP"]  = naples25PsuList
     psuListMap["NAPLES25SWM"]  = naples25PsuList
+    psuListMap["NAPLES25WFG"]  = naples25PsuList
     psuListMap["FORIO"]        = forioPsuList
     psuListMap["VOMERO"]       = forioPsuList
 
@@ -339,12 +344,12 @@ func init() {
     //===============================
     // Use switch case to avoid dummy data structure
     switch cardType {
-    case "NAPLES100":
+    case "NAPLES100", "NAPLES100IBM":
         QsfpTbl = naples100QsfpTbl
         var t boardinfo.Naples100Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples100Cpld), &t)
         CpldInfo = &t
-    case "NAPLES25", "NAPLES25SWM", "NAPLES25OCP":
+    case "NAPLES25", "NAPLES25SWM", "NAPLES25OCP", "NAPLES25WFG":
         SfpTbl = naples25SfpTbl
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
