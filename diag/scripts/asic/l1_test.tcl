@@ -31,7 +31,10 @@ source .tclrc.diag.new
 
 set uut "UUT_$slot"
 set card_type $::env($uut)
-if { $card_type == "NAPLES25" || $card_type == "NAPLES25SWM" || $card_type == "NAPLES25OCP"} {
+if { $card_type == "NAPLES25"    ||
+     $card_type == "NAPLES25SWM" ||
+     $card_type == "NAPLES25OCP" ||
+     $card_type == "NAPLES25WFG"} {
     set core_freq 417.0
 } else {
     set core_freq 833.0
