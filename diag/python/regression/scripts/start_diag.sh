@@ -23,7 +23,7 @@ mkdir -p $DIAG_DIR/log/
 if [[ $arch == "amd64" ]]
 then
     /home/diag/diag/python/regression/envinit.py
-    #turn_on_slot.sh on all
+    turn_on_slot.sh on all
     /home/diag/diag/util/inventory -env
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     cat $DIAG_DIR/log/board_env.txt >> temp_profile
