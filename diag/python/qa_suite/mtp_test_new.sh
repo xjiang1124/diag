@@ -21,7 +21,7 @@ $HOME/diag/scripts/turn_on_slot.sh off all
 $HOME/diag/scripts/turn_on_slot.sh on all
 cd $HOME
 #./start_diag.sh
-#source .profile
+#source .bash_profile
 
 version > $logfile
 devmgr -dev=fan -speed -pct=40 >> $logfile
