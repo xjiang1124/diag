@@ -1,6 +1,7 @@
 package hwdev
 
 import (
+    "fmt"
     "os"
     "strconv"
     "strings"
@@ -35,11 +36,16 @@ func SelSmbFromAdaptor(uutName string, HpeAlom bool) (err int) {
         return
     }
 
+    ctrlVal, err = cpldSmb.ReadSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL)
+    fmt.Printf(" 1ctrlVal=%x", ctrlVal)
     if HpeAlom == false {
-        ctrlVal = 0x14
+        ctrlVal &^= 0x02
+        ctrlVal = ctrlVal | 0x04
     } else {
-        ctrlVal = 0x12
+        ctrlVal &^= 0x04
+        ctrlVal = ctrlVal| 0x02
     }
+    fmt.Printf(" 2ctrlVal=%x", ctrlVal)
     err = cpldSmb.WriteSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL, ctrlVal)
 
     return

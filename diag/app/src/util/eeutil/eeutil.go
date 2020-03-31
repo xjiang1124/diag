@@ -41,7 +41,8 @@ func eepromTlbInit(uut string) {
                 eeprom.EepromExtTbl = eeprom.HpeTbl
             }
             if eeprom.HpeSwm == 1 {
-                eeprom.EepromExtTbl = eeprom.HpeTblSWM
+                eeprom.EepromTbl = eeprom.HpeTblSWM
+                eeprom.EepromExtTbl = eeprom.HpeTblSWMext
             }
             if eeprom.HpeOcp == 1 {
                 eeprom.EepromExtTbl = eeprom.HpeTblOCP
@@ -58,7 +59,8 @@ func eepromTlbInit(uut string) {
             eeprom.EepromExtTbl = eeprom.HpeTbl
         }
         if eeprom.HpeSwm == 1 {
-            eeprom.EepromExtTbl = eeprom.HpeTblSWM
+            eeprom.EepromTbl = eeprom.HpeTblSWM
+            eeprom.EepromExtTbl = eeprom.HpeTblSWMext
         }
         if eeprom.HpeOcp == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTblOCP
