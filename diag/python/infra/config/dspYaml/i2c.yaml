@@ -60,7 +60,7 @@ DSP:
     TEST#I2C:
         INFO: Test I2C/SMBus access of each device
         PLATFORM:
-            NIC: FORIO  NAPLES100 NAPLES25 NAPLES25OCP NAPLES25SWM VOMERO
+            NIC: ALL
         PRIORITY: NORMAL 
         PARAM:
 ...

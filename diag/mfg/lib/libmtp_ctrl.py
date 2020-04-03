@@ -2408,7 +2408,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_nic_sw_cleanup_shutdown(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_cleanup_shutdown():
-            self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
+            self.cli_log_slot_err(slot, "Graceful clean up shut down NIC failed")
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             return False
