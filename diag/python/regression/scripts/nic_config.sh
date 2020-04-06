@@ -38,6 +38,9 @@ then
 elif [[ $cpld_id == "0x19" ]]
 then
     type="NAPLES25OCP"
+elif [[ $cpld_id == "0x1c" ]]
+then
+    type="NAPLES100IBM"
 fi
 
 echo "$type Detected!"

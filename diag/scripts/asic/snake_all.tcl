@@ -19,7 +19,7 @@ if { $SNAKE_MODE == "PCIE_LB" } {
 plog_start $LOG_FN
 
 set card_type $::env(CARD_TYPE)
-if { ( $card_type == "NAPLES25" ) || ( $card_type == "NAPLES25SWM" ) } {
+if { ( $card_type == "NAPLES25" ) || ( $card_type == "NAPLES25SWM" )  || ( $card_type == "NAPLES25OCP" )} {
     set MAC_SPEED "mac25g_ext_port2port_lpbk"
     set CORE_CLK 417.0
 } elseif {$card_type == "NAPLES100"} {
