@@ -50,6 +50,9 @@ func eepromTlbInit(uut string) {
             if eeprom.HpeAlom == true {
                 eeprom.EepromTbl = eeprom.HpeAlomTblAll
             }
+            if (eeprom.CustType == "ORACLE") {
+               eeprom.EepromTbl = eeprom.OracleTbl
+           }
         }
     } else {
         // Assume now it is ARM
@@ -67,6 +70,9 @@ func eepromTlbInit(uut string) {
         }
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
+        }
+	if (eeprom.CustType == "ORACLE") {
+            eeprom.EepromTbl = eeprom.OracleTbl
         }
     }
 
@@ -96,6 +102,7 @@ func main() {
     hpeSwmPtr  := flag.Bool  ("hpeSwm", false,      "HPE SWM eeprom operation option")
     hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
     hpeOcpPtr  := flag.Bool  ("hpeOcp", false,      "HPE OCP eeprom operation option")
+    custTypePtr:= flag.String("custType", "pensando", "Customerized eeeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
     flag.Parse()
 
@@ -109,9 +116,11 @@ func main() {
     major := strings.ToUpper(*majorPtr)
     numBytes := *numBytesPtr
     fixHpe := 1
+    custType := strings.ToUpper(*custTypePtr)
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
+    eeprom.CustType = custType
     if *hpeAlomPtr {
         defer hwdev.SelSmbFromAdaptor(uut, false)  //Set mux back to SMB when done
     }
