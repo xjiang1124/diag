@@ -1055,7 +1055,6 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
         return
     }
     defer smbusNew.Close()
-
     var data []byte
     fmtStr := "%-45s%-20s"
     fmtDate := "%-45s0x%02X%02X%02X  %s"
@@ -1114,7 +1113,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
         cli.Println("i", outStr)
     }
 
-    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 && field == "ALL" {
         fmt.Println()
         for _, entry := range(EepromExtTbl) {
             data, err = readField(devName, entry.Offset, entry.NumBytes)
