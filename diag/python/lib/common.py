@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import datetime
+import errno
+import os
 import pexpect
 import sys
 import time
@@ -26,7 +28,7 @@ def load_yaml(filename):
             #config_dict = yaml.load(stream)
             config = ordered_load(stream, yaml.SafeLoader)
         except yaml.YAMLError as exc:
-            print exc
+            print(exc)
     return config
 
 #=========================================================
@@ -98,7 +100,7 @@ def runcmd(cmd, timeout=30, sudo=False):
                 session.sendline(CONST.SUDO_PWD)
                 session.expect(pexpect.EOF, timeout=timeout)
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         return -1
     return 0
 
@@ -120,7 +122,7 @@ def run_cmd(cmd, timeout=30, sudo=False):
         return 0
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         session.close()
         return -2
 
@@ -153,7 +155,7 @@ def bash_cmd(cmd, timeout=30, sudo=False):
         return retval
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         session.close()
         return -2
 
@@ -184,7 +186,7 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
             return -1
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         # Send CTRL+C
         session.send(chr(3))
         time.sleep(0.05)
@@ -214,7 +216,7 @@ def session_cmd_pass(session, cmd, pass_sign="", timeout=30, ending=bash_prompt,
         else:
             return -1
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         # Send CTRL+C
         session.send(chr(3))
         time.sleep(0.05)
@@ -246,7 +248,7 @@ def session_cmd_pass_multi(session, cmd, pass_sign_list=["NO PASS SIGN"], timeou
         return 0
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         # Send CTRL+C
         session.send(chr(3))
         time.sleep(0.05)
@@ -262,7 +264,7 @@ def session_start(timeout=30):
         session.expect(bash_prompt) 
         return session
     except pexpect.TIMEOUT:
-        print "=== Faled to spawn bash session ==="
+        print("=== Faled to spawn bash session ===")
         return None
 
 #=============================
@@ -274,6 +276,66 @@ def session_stop(session, timeout=30):
         session.expect(pexpect.EOF) 
         return 0
     except pexpect.TIMEOUT:
-        print "=== Faled to stop bash session ==="
+        print("=== Faled to stop bash session ===")
         return -1
 
+#=============================
+# mkdir -p
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    # Python 2.5
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            print("mkdir_p failed")
+            raise
+
+#=============================
+# untar
+def untar(fname):
+    if (fname.endswith("tar.gz")):
+        tar = tarfile.open(fname, "r:gz")
+        tar.extractall()
+        tar.close()
+    elif (fname.endswith("tar")):
+        tar = tarfile.open(fname, "r:")
+        tar.extractall()
+        tar.close()
+
+#=============================
+def find_file(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    if result == []:
+        print("Can not find file!", pattern, path)
+    return result
+
+#=============================
+def find_dir(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for dir_name in dirs:
+            if fnmatch.fnmatch(dir_name, pattern):
+                result.append(os.path.join(root, dir_name))
+    if result == []:
+        print("Can not find file!", pattern, path)
+
+    return result
+
+#=============================
+def find_first_dir(path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        #print path, root, dirs
+        for dir_name in dirs:
+            result.append(os.path.join(root, dir_name))
+
+    if result == []:
+        print("Can not find file!", path)
+
+    return result
