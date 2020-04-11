@@ -52,7 +52,10 @@ func eepromTlbInit(uut string) {
             }
             if (eeprom.CustType == "ORACLE") {
                eeprom.EepromTbl = eeprom.OracleTbl
-           }
+            }
+            if (eeprom.CustType == "IBM") {
+               eeprom.EepromTbl = eeprom.Naples100IBMTbl
+            }
         }
     } else {
         // Assume now it is ARM
@@ -73,6 +76,9 @@ func eepromTlbInit(uut string) {
         }
 	if (eeprom.CustType == "ORACLE") {
             eeprom.EepromTbl = eeprom.OracleTbl
+        }
+        if (eeprom.CustType == "IBM") {
+           eeprom.EepromTbl = eeprom.Naples100IBMTbl
         }
     }
 
