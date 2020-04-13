@@ -117,21 +117,21 @@ var Naples100IBMTbl = []entry {
     entry{"Language Code",                          INT8,        10,       1,    []byte{0x19}},
     entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
     entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
-    entry{"Manufacturer",                           STRING,        15,       8,    []byte{0x50, 0x65, 0x6E, 0x73,
+    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x65, 0x6E, 0x73,
         0x61, 0x6E, 0x64, 0x6F}},
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xDD}},
-    entry{"Product Name",                           STRING,        24,      25,    []byte{0x44, 0x53, 0x43, 0x2D,
+    entry{"Product Name",                           STRING,      24,      25,    []byte{0x44, 0x53, 0x43, 0x2D,
         0x31, 0x30, 0x30, 0x20, 0x32, 0x70, 0x20, 0x34, 0x30, 0x2F, 0x31, 0x30, 0x30, 0x47, 0x20, 0x51, 0x53, 
 	0x46, 0x50, 0x32, 0x38}},
-    entry{"Reserved",                               STRING,        49,       4,    []byte{0x20, 0x20, 0x20, 0x20}},
+    entry{"Reserved",                               STRING,      49,       4,    []byte{0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        53,       1,    []byte{0xCB}},
-    entry{"Serial Number",                          STRING,        54,       11,   []byte{0x30, 0x30, 0x30, 0x30,
+    entry{"Serial Number",                          STRING,      54,       11,   []byte{0x30, 0x30, 0x30, 0x30,
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
     entry{"Part Number Type/Length",                INT8,        65,       1,    []byte{0xD0}},
     entry{"Part Number",                            STRING,      66,       16,   []byte{0x44, 0x53, 0x43, 0x31,
         0x2D, 0x32, 0x51, 0x31, 0x30, 0x30, 0x2D, 0x38, 0x46, 0x31, 0x36, 0x50}},
     entry{"FRU File ID Type/Length",                INT8,        82,       1,    []byte{0xC8}},
-    entry{"FRU ID",                                 STRING,        83,       8,    []byte{0x30, 0x34, 0x2F, 0x31,
+    entry{"FRU ID",                                 STRING,      83,       8,    []byte{0x30, 0x34, 0x2F, 0x31,
         0x30, 0x2F, 0x32, 0x30}},
     entry{"Board ID Type/Length",                   INT8,        91,       1,    []byte{0x04}},
     entry{"Board ID",                               INT8,        92,       4,    []byte{0x01, 0x00, 0x00, 0x00}},
@@ -143,7 +143,7 @@ var Naples100IBMTbl = []entry {
     entry{"MAC Address Base",                       INT8,       103,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
         0x00, 0x00}},
     entry{"Assembly Number Type/Length",            INT8,       109,       1,    []byte{0xCD}},
-    entry{"Assembly Number",                        STRING,       110,      13,    []byte{0x36, 0x38, 0x2D, 0x30,
+    entry{"Assembly Number",                        STRING,     110,      13,    []byte{0x36, 0x38, 0x2D, 0x30,
         0x30, 0x31, 0x33, 0x2D, 0x30, 0x31, 0x20, 0x30, 0x33}},
     entry{"End of Field",                           INT8,       123,       1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,       124,       3,    []byte{0x00, 0x00, 0x00}},
@@ -844,6 +844,19 @@ func updateIntChk() () {
         for _, entry := range(EepromExtTbl) {
             if (entry.Offset > 127) && (entry.Offset < 223) {
                 productInfoChk += calcSum(entry)
+            }
+        }
+    }
+
+    if CustType == "IBM" {
+        brdInfoChk = 0
+        productInfoChk = 0;
+        cmnHeadChk = 0
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 7) && (entry.Offset < 127) {
+                brdInfoChk += calcSum(entry)
+            } else if (entry.Offset >= 0) && (entry.Offset < 7) {
+                cmnHeadChk += calcSum(entry)
             }
         }
     }
