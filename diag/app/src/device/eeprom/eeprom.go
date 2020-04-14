@@ -1017,6 +1017,9 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
 }
 
 func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
+    var an_ptr []byte
+    var pn_ptr []byte
+
     if len(pn) > 13 {
         cli.Println("f", "SN too long: ", pn)
         return
@@ -1042,7 +1045,8 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             // Keep default P/N for BIA 
             if HpeAlom != true {
                 if entry.Name == "Part Number" {
-                    copy(entry.Value, pn)
+                    pn_ptr = entry.Value
+                    //copy(entry.Value, pn)
                     continue
                 }
             }
@@ -1058,10 +1062,19 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
-             } else if entry.Name == "Product SKU Part Number" {
+            } else if entry.Name == "Product SKU Part Number" {
                 copy(entry.Value, pn)
                 continue
-             }
+            } else if entry.Name == "Assembly Number" {
+                    an_ptr = entry.Value
+                    continue
+            }
+        }
+
+        if ( CustType == "IBM" ) {
+            copy(an_ptr, pn)
+        } else if HpeAlom != true {
+            copy(pn_ptr, pn)
         }
 
         if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
@@ -1224,7 +1237,11 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 continue
             }
         } else if(field == "PN") {
-            if entry.Name != "Part Number" {
+            if ( CustType == "IBM" ) {
+                if entry.Name != "Assembly Number" {
+                    continue
+                }
+            } else if ( entry.Name != "Part Number" ) {
                 continue
             }
         } else if(entry.Name == "Reserved") {

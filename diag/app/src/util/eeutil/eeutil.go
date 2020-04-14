@@ -53,7 +53,8 @@ func eepromTlbInit(uut string) {
             if (eeprom.CustType == "ORACLE") {
                eeprom.EepromTbl = eeprom.OracleTbl
             }
-            if (eeprom.CustType == "IBM") {
+            if (cardType == "NAPLES100IBM") {
+               eeprom.CustType = "IBM"
                eeprom.EepromTbl = eeprom.Naples100IBMTbl
             }
         }
@@ -77,7 +78,8 @@ func eepromTlbInit(uut string) {
 	if (eeprom.CustType == "ORACLE") {
             eeprom.EepromTbl = eeprom.OracleTbl
         }
-        if (eeprom.CustType == "IBM") {
+        if (cardType == "NAPLES100IBM") {
+           eeprom.CustType = "IBM"
            eeprom.EepromTbl = eeprom.Naples100IBMTbl
         }
     }
