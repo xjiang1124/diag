@@ -417,7 +417,9 @@ proc esec_prog_optimal_pac {sn usb_port slot PN MAC MTP
 
     # clean up
     set DIAG_HOME $::env(DIAG_HOME)
-    eval file delete [glob $DIAG_HOME/diag/tools/pki/crc32_ek_*bin]
+    if { [catch {eval file delete [glob $DIAG_HOME/diag/tools/pki/crc32_ek_*bin]} msg] } {
+        plog_msg "Information about it: $::errorInfo"
+    }
 
     return 0
 }
@@ -591,7 +593,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
     eval file delete [glob $DIAG_HOME/diag/tools/pki/signed_ek.pub*bin]
 
     if { [catch {eval file delete [glob $DIAG_HOME/diag/tools/pki/crc32_ek_*bin]} msg] } {
-        plog_err "Information about it: $::errorInfo"
+        plog_msg "Information about it: $::errorInfo"
     }
 
     #============================

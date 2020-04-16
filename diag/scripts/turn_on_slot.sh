@@ -22,9 +22,14 @@ power_on_naples25_swm_ocp() {
         then
             echo "Already powered up"
         else
-            i2cset -y 0 0x4b 0x1 0x0C
+            i2cset -y 0 0x4b 0x1 0x14 #enable alom pwr (5V upconverted to 12V to card)
             sleep 0.2
-            i2cset -y 0 0x4b 0x1 0x1C
+            #enable high power mode on SWM CPLD
+            reg1=$(i2cget -y 0 0x4a 0x21)
+            reg1=$(( $reg1 | 0x2 ))
+            i2cset -y 0 0x4a 0x21 $reg1
+            sleep 0.2
+            i2cset -y 0 0x4b 0x1 0x1C #enable alom + 12V PCIE Edge power
             echo "Power on done"
         fi
     fi
