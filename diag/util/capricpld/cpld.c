@@ -58,6 +58,7 @@
 #define ID_VOMERO                   0x15
 #define ID_NAPLES25_SWM             0x17
 #define ID_NAPLES25_OCP             0x19
+#define ID_NAPLES100IBM             0x1C
 
 #ifndef _GPIO_H_
 struct gpiohandle_request {
@@ -768,8 +769,9 @@ main(int argc, char *argv[])
         uint8_t cpldId = cpld_read(CPLD_ID_REG);
         unsigned char *buf;
 
-        if ( (cpldId == ID_NAPLES100) ||
-             (cpldId == ID_NAPLES25)  ||
+        if ( (cpldId == ID_NAPLES100)    ||
+             (cpldId == ID_NAPLES100IBM) ||
+             (cpldId == ID_NAPLES25)     ||
              (cpldId == ID_VOMERO)
            )
         {
