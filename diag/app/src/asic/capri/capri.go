@@ -372,6 +372,7 @@ func SnakePost(mode string) (err int) {
     var logFn string
     var resultStr string
     var errGo error
+    var expFound bool
 
     testDone := false
 
@@ -414,10 +415,13 @@ func SnakePost(mode string) (err int) {
     }
     defer file.Close()
 
-    expErr1 := "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
-    expErr2 := "Unexpected int set: cap0.ms.em"
-    expErr3 := "interrupt-non-zero for reg:MS_M_AM_STS:"
-    expErr4 := "interrupt-non-zero for reg:AR_M_AM_STS"
+    expErrList := make([]string, 5)
+
+    expErrList[0] = "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
+    expErrList[1] = "Unexpected int set: cap0.ms.em"
+    expErrList[2] = "interrupt-non-zero for reg:MS_M_AM_STS:"
+    expErrList[3] = "interrupt-non-zero for reg:AR_M_AM_STS"
+    expErrList[4] = "PRP2() error_count non-zero"
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
 
@@ -428,15 +432,21 @@ func SnakePost(mode string) (err int) {
 
         readLine := scanner.Text()
         if strings.Contains(readLine, "ERROR ::") {
-            expErr := strings.SplitAfter(readLine, ":: ")
-            if strings.Contains(readLine, expErr1) ||
-               strings.Contains(readLine, expErr2) ||
-               strings.Contains(readLine, expErr3) ||
-               strings.Contains(readLine, expErr4) {
-                dcli.Println("i", "Expected Error Found ::", expErr[1])
+            //expErr := strings.SplitAfter(readLine, ":: ")
+            expErr := readLine
+
+            expFound = false
+            for i:=0; i<len(expErrList); i++ {
+                if  strings.Contains(readLine, expErrList[i]) {
+                    expFound = true
+                }
+            }
+
+            if expFound == true {
+                dcli.Println("i", "Expected Error Found ::", expErr)
                 continue
             } else {
-                dcli.Println("e", "ERROR ::", expErr[1])
+                dcli.Println("e", readLine)
                 err = errType.FAIL
             }
         }
