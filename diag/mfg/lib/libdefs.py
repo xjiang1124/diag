@@ -252,13 +252,14 @@ class MFG_DIAG_CMDS:
     NIC_HPESWM_FRU_DISP_FMT = "{:s}eeutil -disp -hpeSwm"
     NIC_HPESWM_ALOM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeAlom"
     NIC_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn"
+    NIC_HPESWM_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn -hpeSwm"
 
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 
     NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
-    NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
+    NIC_CPLD_READ_FMT = "{:s}cpld -r 0x{:x}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
-    NIC_CPLD_WRITE_FMT = "{:s}cpld -w {:d} 0x{:x}"
+    NIC_CPLD_WRITE_FMT = "{:s}cpld -w 0x{:x} 0x{:x}"
 
     # onboard diag utils version
     NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"
@@ -314,7 +315,8 @@ class MFG_DIAG_CMDS:
 
     MTP_RD_ALOM_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
     MTP_WR_ALOM_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
-    MTP_SMB_CMD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
+    MTP_SMB_RD_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
+    MTP_SMB_WR_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
 
     NIC_POWER_CHECK_FMT = "inventory -ps -slot={:d}"

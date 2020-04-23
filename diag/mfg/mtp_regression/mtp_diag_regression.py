@@ -751,6 +751,24 @@ def main():
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
 
+
+
+
+        #print(" ALOM TEST")
+        #alom_fail_list = list()
+        #for slot in nic_list:
+        #    print(" ALOM TEST SLOT" + str(slot+1))
+        #    rc = mtp_mgmt_ctrl.mtp_nic_naples25_alom_cable_signal_test(slot)
+        #    if rc == False:
+        #        alom_fail_list.append(slot)
+        #    print("ALOM TEST DONE")
+        #for slot in alom_fail_list:
+        #    nic_list.remove(slot)
+        #    fail_nic_list.append(slot)
+        #    pass_nic_list.remove(slot)
+            
+
+
         # Diag Pre Check
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_type == NIC_Type.NAPLES100:

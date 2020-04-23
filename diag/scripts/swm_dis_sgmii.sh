@@ -19,7 +19,7 @@ phy=0x10
 # Read status
 adaptor_mdio_rd.sh $phy 0
 # Disable port -- seems not working
-adaptor_mdio_wr.sh $phy 4 0x7b
+adaptor_mdio_wr.sh $phy 4 0x7C
 # Force link down
 adaptor_mdio_wr.sh $phy 1 0x13
 # Read status

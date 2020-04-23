@@ -51,6 +51,23 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
                 self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
+                cmd_args = session.before.split()
+                if cmd_args[3] == "0x17":
+                    # enable ports
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x10 0x7f")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7C")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x13 0x7f")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x15 0x7f")
+                    # power up PHY ports
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0x3 0x1140")
+                    # power up serdes ports
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xC 0x1140")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xD 0x1140")
+
+                    self.nic_con.uart_session_cmd(session, "/platform/bin/cpldmon &")
+                    sleep(3.0)
+                    self.nic_con.uart_session_cmd(session, "kill -9 $(pidof cpldmon)")
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
@@ -207,24 +224,6 @@ class nic_test:
              
              self.nic_con.uart_session_cmd(session, "halctl show port status")
              sleep(0.5)
-
-             self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
-             cmd_args = session.before.split()
-             if cmd_args[3] == "0x17":
-                 print("\nNaples25SWM BOARD\n")
-                 # enable ports
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x10 0x7f")
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7f")
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x13 0x7f")
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x15 0x7f")
-                 # power up PHY ports
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0x3 0x1140")
-                 # power up serdes ports
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xC 0x1140")
-                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xD 0x1140")
-             
-
-
              self.nic_con.uart_session_stop(session)
              common.session_stop(session)
 

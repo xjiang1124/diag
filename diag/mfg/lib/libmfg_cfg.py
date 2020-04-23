@@ -28,8 +28,8 @@ class NIC_CPLD_Version:
     #ADD FIXME
     #NAPLES25SWM_VERSION = "0x4"
     #NAPLES25SWM_TIMESTAMP = "01-20"
-    NAPLES25SWM_VERSION = "0x6"
-    NAPLES25SWM_TIMESTAMP = "03-06"
+    NAPLES25SWM_VERSION = "0x9"
+    NAPLES25SWM_TIMESTAMP = "04-20"
     NAPLES25SWM_SEC_VERSION = "0x03"
     NAPLES25SWM_SEC_TIMESTAMP = "00-00"
 
@@ -100,7 +100,7 @@ NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
-ALOM_DISP_PIA_PN_FMT = r"Product SKU Part Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
+ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 

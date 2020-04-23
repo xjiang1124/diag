@@ -37,13 +37,13 @@ func SelSmbFromAdaptor(uutName string, HpeAlom bool) (err int) {
 
     ctrlVal, err = cpldSmb.ReadSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL)
     if HpeAlom == false {
-        ctrlVal = 0x14
-        //ctrlVal &^= 0x02
-        //ctrlVal = ctrlVal | 0x04
+        //ctrlVal = 0x14
+        ctrlVal &^= 0x02
+        ctrlVal = ctrlVal | 0x04
     } else {
-        ctrlVal = 0x12
-        //ctrlVal &^= 0x04
-        //ctrlVal = ctrlVal| 0x02
+        //ctrlVal = 0x12
+        ctrlVal &^= 0x04
+        ctrlVal = ctrlVal| 0x02
     }
     err = cpldSmb.WriteSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL, ctrlVal)
 

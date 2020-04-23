@@ -2705,12 +2705,12 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
 
-    def mtp_nic_naples25_test_scan_chain(self, slot):
-        rc = self._nic_ctrl_list[slot].nic_naples25swm_scan_chain_test()
-        if not rc:
-            self.cli_log_slot_inf(slot, "nic_naples25swm_scan_chain_test fail")
+    def mtp_nic_naples25_alom_cable_signal_test(self, slot):
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_alom_cable_signal_test()
+        if rc == False:
+            self.cli_log_slot_err(slot, "NIC NAPLES25SWM ALOM CABLE TEST FAILED")
         else:
-            self.cli_log_slot_inf(slot, "nic_naples25swm_scan_chain_test pass")
+            self.cli_log_slot_inf(slot, "NIC NAPLES25SWM ALOM CABLE TEST PASSED")
         return rc
 
 

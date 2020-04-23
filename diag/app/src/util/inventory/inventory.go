@@ -46,8 +46,15 @@ func uutPresent(uutName string) (data byte, present bool) {
     data, err = hwdev.NaplesCpldRdBlind("CPLD_ADAP", addr, uutName)
     if err == errType.SUCCESS {
         // If adaptor present, turn on CPLD SMB and read ID
-        // FIXME: replace hard number
-        err = hwdev.NaplesCpldWr("CPLD_ADAP", 0x1, 0x14, uutName)
+        data, err = hwdev.NaplesCpldRd("CPLD_ADAP", 0x1, uutName)
+        if err == errType.SUCCESS {
+            present = true
+            cli.EnableVerbose()
+            return
+        }
+        data &^=(0x02)
+        data  |=(0x04)
+        err = hwdev.NaplesCpldWr("CPLD_ADAP", 0x1, data, uutName)
         if err != errType.SUCCESS {
             present = false
             cli.EnableVerbose()

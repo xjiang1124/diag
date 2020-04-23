@@ -1022,7 +1022,10 @@ class nic_ctrl():
     # check nic mfg vendor based on the sn format
     def nic_vendor_init(self, sn=None):
         if sn == None:
-            nic_cmd = MFG_DIAG_CMDS.NIC_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            if self._nic_type == NIC_Type.NAPLES25SWM:
+                nic_cmd = MFG_DIAG_CMDS.NIC_HPESWM_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            else:
+                nic_cmd = MFG_DIAG_CMDS.NIC_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
             fru_buf = self.nic_get_info(nic_cmd)
         else:
             fru_buf = sn
@@ -1054,7 +1057,6 @@ class nic_ctrl():
         if not fru_buf:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-
         # retrieve card serial number
         if self._vendor == NIC_Vendor.HPE:
             match = re.findall(HP_DISP_SN_FMT, fru_buf)
@@ -1065,7 +1067,6 @@ class nic_ctrl():
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-
         # retrieve card MAC address
         match = re.findall(NAPLES_DISP_MAC_FMT, fru_buf)
         if match:
@@ -1073,7 +1074,6 @@ class nic_ctrl():
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-
         # retrieve program date if it is valid
         if init_date:
             match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
@@ -1084,7 +1084,6 @@ class nic_ctrl():
                 return False
         else:
             self._date = None
-
         # retrieve card PN
         if self._vendor == NIC_Vendor.HPE:
             match = re.findall(HP_DISP_PN_FMT, fru_buf)
@@ -1107,7 +1106,6 @@ class nic_ctrl():
             if not self.mtp_exec_cmd(cmd):
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-
             # secondary SN
             if self._vendor == NIC_Vendor.HPE:
                 match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())
@@ -1148,6 +1146,10 @@ class nic_ctrl():
 
             if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
                 print(" ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU ")
+                print(" SN  " + self._sn + " " + sn)
+                print(" MAC " + self._mac + " " + mac)
+                print(" PN  " + self._pn + " " + pn)
+                print(" DT  " + self._date + " " + date)
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
@@ -1156,9 +1158,9 @@ class nic_ctrl():
             #rc = self.nic_alom_present()
             rc = True
             if not rc:
-                print(" ALOM NOT PRESENT")
+                print(" FIXME ADD ALOM NOT PRESENT")
             else:
-                print(" ALOM PRESENT")
+                print(" FIXME ADD ALOM PRESENT")
                 cmd = MFG_DIAG_CMDS.NIC_HPESWM_ALOM_FRU_DISP_FMT.format(self._slot+1)
                 if not self.mtp_exec_cmd(cmd):
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1167,21 +1169,18 @@ class nic_ctrl():
                 # retrieve card serial number
                 match = re.findall(ALOM_SN_FMT, self.nic_get_cmd_buf())
                 if not match:
-                    print(" ERROR: ADD FIXME ALOM NO S/N MATCH")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 
                 # retrieve card Board Information Area PN
                 match = re.findall(ALOM_DISP_BIA_PN_FMT, self.nic_get_cmd_buf())
                 if not match:
-                    print(" ERROR: ADD FIXME ALOM BIA PN")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 
                 # retrieve card Product Information Area PN
                 match = re.findall(ALOM_DISP_PIA_PN_FMT, self.nic_get_cmd_buf())
                 if not match:
-                    print(" ERROR: ADD FIXME ALOM PIA PN")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 
@@ -1195,49 +1194,112 @@ class nic_ctrl():
             return [self._sn, self._mac, self._pn, self._date, self._vendor]
 
 
-    def nic_cpld_init(self):
-        cpld_reg = 0
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, cpld_reg)
+    def nic_read_alom_cpld(self, reg_addr, read_data):
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_RD_ALOM_CPLD_FMT.format(reg_addr, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
+        if not match:
+            return False
+        else:
+            read_data[0] = int(match[0], 16)
+        return True
+
+    def nic_write_alom_cpld(self, reg_addr, write_data):
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_WR_ALOM_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        match = re.findall(r"failed", self.nic_get_cmd_buf())
+        if match:
+            return False
+        return True
+
+    def nic_read_cpld(self, reg_addr, read_data):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
         match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
         if match:
-            self._cpld_ver = match[0]
+            read_data[0] = int(match[1], 16)
         else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        # get the month timestamp
-        cpld_reg = 34
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, cpld_reg)
+        return True
+
+    def nic_write_cpld(self, reg_addr, write_data):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
-        match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
-        if match:
-            month = int(match[0], 16)
+        return True
+
+    def nic_read_cpld_via_smbus(self, reg_addr, read_data):
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return None
+
+        cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return None
+        match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
+        if not match:
+            return False
         else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            read_data[0] = int(match[0], 16)
+        return True
+
+    def nic_write_cpld_via_smbus(self, reg_addr, write_data):
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
             return False
 
-        # get the date timestamp
-        cpld_reg = 35
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, cpld_reg)
-        cpld_buf = self.nic_get_info(nic_cmd)
-        if not cpld_buf:
+        cmd = MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
             return False
-        match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
+        match = re.findall(r"failed", self.nic_get_cmd_buf())
         if match:
-            date = int(match[0], 16)
-        else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-
-        self._cpld_timestamp = "{:02d}-{:02d}".format(month, date)
         return True
 
 
+
+    def nic_cpld_init(self):
+        read_data = [0]
+        rc = self.nic_read_cpld(0x00, read_data)
+        if not rc:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        self._cpld_ver = "0x{:01d}".format(read_data[0])
+
+        # get the month timestamp
+        read_data = [0]
+        rc = self.nic_read_cpld(0x22, read_data)
+        if not rc:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        month = read_data[0]
+
+        # get the date timestamp
+        read_data = [0]
+        rc = self.nic_read_cpld(0x23, read_data)
+        if not rc:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        date = read_data[0]
+
+        self._cpld_timestamp = "{:02d}-{:02d}".format(month, date)
+        return True
+    
+    
     def nic_get_cpld(self):
         if not self._cpld_ver or not self._cpld_timestamp:
             return None
@@ -1267,7 +1329,7 @@ class nic_ctrl():
             return None
 
         reg_addr = 0x26
-        cmd = MFG_DIAG_CMDS.MTP_SMB_CMD_FMT.format(reg_addr, self._slot+1)
+        cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
         match = re.findall(pll_sta_reg_exp, self.nic_get_cmd_buf())
@@ -1277,7 +1339,7 @@ class nic_ctrl():
             reg26_data = int(match[0], 16)
 
         reg_addr = 0x28
-        cmd = MFG_DIAG_CMDS.MTP_SMB_CMD_FMT.format(reg_addr, self._slot+1)
+        cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
         match = re.findall(pll_sta_reg_exp, self.nic_get_cmd_buf())
@@ -1288,132 +1350,291 @@ class nic_ctrl():
 
         return [reg26_data, reg28_data]
 
-
-
-    def nic_read_alom_cpld(self, reg_addr, read_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-
-        cmd = MFG_DIAG_CMDS.MTP_RD_ALOM_CPLD_FMT.format(reg_addr, self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
-        if not match:
-            return False
-        else:
-            read_data[0] = int(match[0], 16)
-        return True
-
-
-    def nic_write_alom_cpld(self, reg_addr, write_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-
-        cmd = MFG_DIAG_CMDS.MTP_WR_ALOM_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        match = re.findall(r"failed", self.nic_get_cmd_buf())
-        if match:
-            return False
-        return True
-
-    def nic_read_cpld(self, reg_addr, read_data):
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
-        cpld_buf = self.nic_get_info(nic_cmd)
-        if not cpld_buf:
-            return False
-        match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
-        if not match:
-            return False
-        read_data[0] = int(match[0], 16)
-        return True
-        
-    def nic_write_cpld(self, reg_addr, write_data):
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
-        cpld_buf = self.nic_get_info(nic_cmd)
-        if not cpld_buf:
-            return False
-        return True
-    '''
     def nic_alom_present(self):
         cpld_ctrl_reg = 0x01
         if self._nic_type == NIC_Type.NAPLES25SWM:
             read_data = [0]
             rc = self.nic_read_cpld(cpld_ctrl_reg, read_data)
             if not rc:
+                print(" ERROR: nic_read_cpld FAILED for checking nic_alom_present")
                 return False
-            print("ReadData=" + hex(read_data))
-            if (read_data & 0x20) != 0:
+            if (read_data[0] & 0x20) != 0:
                 return True
         return False
-    '''
-
-    def nic_naples25swm_scan_chain_test(self):
+    
+    def nic_naples25swm_alom_cable_signal_test(self):
+        #funcDebug = 1
         nic_scan_chain_reg = 0x33
         alom_scan_reg0 = 0x02   #mask 0x0F
         alom_scan_reg1 = 0x03   #mask 0x33
         alom_cpld_ctrl_reg = 0x01
         alom_initiate_scan_bit = 0x20
         read_data = [0]
-        #LIST VALUES ARE --> NIC CPLD SCAN CHAIN REG, ALOM SCANREG0 EXPECTED, ALOM SCANREG1 EXPECTED
+        #LIST VALUES ARE --> NIC CPLD SCAN CHAIN REG WR DATA, ALOM SCANREG0 EXPECTED, ALOM SCANREG1 EXPECTED
         data = [[0xFF, 0x0F, 0x33], \
                 [0x00, 0x00, 0x00], \
                 [0x55, 0x05, 0x11], \
                 [0xAA, 0x0A, 0x22] ]
 
-        #rc = self.nic_alom_present()
-        rc = True
+        rc = self.nic_alom_present()
         if not rc:
             print(" ALOM NOT PRESENT")
-            #return True
+            return True
         else:
             print(" ALOM PRESENT")
 
+        #Check Cable Present   Reg 0x32 BIT5
+        rc = self.nic_read_cpld_via_smbus(0x32, read_data)
+        if not rc: 
+            print(" ERROR: nic_read_cpld_via_smbus FAILED")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False 
+        if (read_data[0] & 0x20) != 0x20:
+            print(" ERROR: ALOM PRESENT BIT NOT SET.  CPLD REG 0x32 BIT5") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        else:
+            print(" ALOM PRESENT BIT SET") 
 
         rc = self.nic_read_alom_cpld(alom_cpld_ctrl_reg, read_data)
         if not rc: 
+            print(" ERROR: nic_read_alom_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False 
         cpld_ctrl_def = read_data[0]      
 
+        #print(" ADD FIXME ALOM REG01 = " + hex(cpld_ctrl_def))
         for row in data:
-            #row[0] NIC CPLD SCAN CHAIN REG DATA
-            #row[1] ALOM_SCAN_REG0 EXPECTED
-            #row[2] ALOM_SCAN_REG1 EXPECTED 
+            #WR Scan Chain Push Data on SWM CPLD
             rc = self.nic_write_cpld(nic_scan_chain_reg, row[0])
             if not rc: 
+                print(" ERROR: nic_write_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            print("Setting Scan Chain Push Reg to Init NIC Diag Environment complete=" + hex(row[0]))
-
-
+            
             #tell ALOM to request scan data
             wr_data = (cpld_ctrl_def | alom_initiate_scan_bit)
             rc = self.nic_write_alom_cpld(alom_cpld_ctrl_reg, wr_data)
             if not rc:
+                print(" ERROR: nic_write_alom_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
             rc = self.nic_write_alom_cpld(alom_cpld_ctrl_reg, cpld_ctrl_def)
             if not rc: 
+                print(" ERROR: nic_write_alom_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            #read data on ALOM
+            #read data on ALOM SCAN LOW BYTE
             rc = self.nic_read_alom_cpld(alom_scan_reg0, read_data)
             if not rc: 
+                print(" ERROR: nic_read_alom_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False 
-            print("Alom Scan Reg0=" + hex(read_data[0]))
-
-
-            rc = self.nic_read_alom_cpld(alom_scan_reg1, read_data)
-            if not rc: 
+            if read_data[0] != row[1]:
+                print(" ERROR: ALOM SCAN CHAIN DATA REG0:  READ " + str(read_data[0]) +"   Expect" + str(row[1]))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            print("Alom Scan Reg1=" + hex(read_data[0]))
 
+            #read data on ALOM SCAN HIGH BYTE
+            rc = self.nic_read_alom_cpld(alom_scan_reg1, read_data)
+            if not rc:
+                print(" ERROR: nic_read_alom_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            if read_data[0] != row[2]:
+                print(" ERROR: ALOM SCAN CHAIN DATA REG0:  READ " + str(read_data[0]) +"   Expect" + str(row[2]))
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False 
+
+
+        #Test Other Signals
+
+        #FAN ON/OFF SIGNAL
+        print(" Test Other Signals ")
+        CPLDREG12H = 0x12
+        ALOMREG04H = 0x04
+        rc = self.nic_read_cpld(CPLDREG12H, read_data)
+        if not rc:
+            print(" ERROR: nic_read_cpld Failed") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        cpld12h = read_data[0]
+
+        state = [0, 1, 0]  #0 = OFF, 1 = ON
+        for i in state:
+            if i == 0:
+                cpld12h = cpld12h & (~0x10)
+            else:
+                cpld12h = cpld12h | 0x10
+
+            rc = self.nic_write_cpld(CPLDREG12H, cpld12h)
+            if not rc: 
+                print(" ERROR: nic_write_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            rc = self.nic_read_alom_cpld(ALOMREG04H, read_data)
+            if not rc: 
+                print(" ERROR: nic_read_alom_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False 
+            if i == 0:
+                if (read_data[0] & 0x04) != 0x00:
+                    print(" ERROR: CPLD FAN ENABLE. EXPECT BIT2 OFF") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+            else:
+                if (read_data[0] & 0x04) != 0x04:
+                    print(" ERROR: CPLD FAN ENABLE EXPECT BIT2 ON") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+        #Check we are in high power mode
+        print(" ALOM_CPLD_MAIN_PWR ")
+        rc = self.nic_read_cpld(0x01, read_data)
+        if not rc:
+            print(" ERROR: anic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if (read_data[0] & 0x80) != 0x80:
+            print(" ERROR: 12V EDGE ENABLE. SWM CPLD REG1 EXPECT BIT7 ON") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+
+        rc = self.nic_read_alom_cpld(0x00, read_data)
+        if not rc: 
+            print(" ERROR: nic_read_alom_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        alom_cpld_rev = read_data[0]
+
+        rc = self.nic_read_alom_cpld(ALOMREG04H, read_data)
+        if not rc: 
+            print(" ERROR: nic_read_alom_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False 
+
+        if alom_cpld_rev < 4:   #BIT IS INVERTED ON LOWER REV CPLD
+            if (read_data[0] & 0x40) != 0x00:
+                print(" ERROR: 12V EDGE ENABLE. ALOM CPLD REG4 EXPECT BIT6 OFF") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+        else: 
+            if (read_data[0] & 0x40) != 0x40:
+                print(" ERROR: 12V EDGE ENABLE. ALOM CPLD REG4 EXPECT BIT6 ON") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+        """
+        #ALOM_CPLD_MAIN_PWR
+        print(" ALOM_CPLD_MAIN_PWR ")
+        CPLDREG01H = 0x01
+
+        #Disable SWM CPLD SMB REG 0x21 BIT2, FORCE HIGH POWER MODE, OR 
+        #IT WILL CAUSE A REBOOT WHEN YOU DISABLE 12V FROM MTP ADAPTER CPLD
+        rc = self.nic_read_cpld_via_smbus(0x21, read_data)
+        if not rc: 
+            print(" ERROR: nic_read_cpld_via_smbus reg 0x21 FAILED")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False 
+        #Set PCIe Edge 12V On or OFF
+        rc = self.nic_write_cpld_via_smbus(0x21, (read_data[0] & (~0x02)) )
+        if not rc:
+            print(" ERROR: nic_write_cpld_via_smbus reg 0x21 Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+
+        rc = self.nic_read_alom_cpld(0x00, read_data)
+        if not rc: 
+            print(" ERROR: nic_read_alom_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        alom_cpld_rev = read_data[0]
+        
+        rc = self.nic_read_alom_cpld(alom_cpld_ctrl_reg, read_data)
+        if not rc:
+            print(" ERROR: nic_read_alom_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        alom01h = read_data[0]
+        state = [1, 0, 1]  #0 = OFF, 1 = ON
+        for i in state:
+            if i == 0:
+                alom01h = alom01h & (~0x08)
+            else:
+                alom01h = alom01h | 0x08
+            #Set PCIe Edge 12V On or OFF
+            rc = self.nic_write_alom_cpld(alom_cpld_ctrl_reg, alom01h)
+            if not rc:
+                print(" ERROR: nic_write_alom_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            #Read Status on SWM
+            rc = self.nic_read_cpld(CPLDREG01H, read_data)
+            if not rc:
+                print(" ERROR: anic_read_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            if i == 0:
+                if (read_data[0] & 0x80) != 0x00:
+                    print(" ERROR: 12V EDGE ENABLE. SWM CPLD REG1 EXPECT BIT7 OFF") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+            else:
+                if (read_data[0] & 0x80) != 0x80:
+                    print(" ERROR: 12V EDGE ENABLE. SWM CPLD REG1 EXPECT BIT7 ON") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+
+            #Read Status on MTP ADAPTER CPLD
+            rc = self.nic_read_alom_cpld(ALOMREG04H, read_data)
+            if not rc: 
+                print(" ERROR: nic_read_alom_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False 
+
+            if alom_cpld_rev < 4:   #BIT IS INVERTED ON LOWER REV CPLD
+                if i == 0:
+                    if (read_data[0] & 0x40) != 0x40:
+                        print(" ERROR: 12V EDGE ENABLE. ALOM CPLD REG4 EXPECT BIT6 ON") 
+                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                        return False
+                else:
+                    if (read_data[0] & 0x40) != 0x00:
+                        print(" ERROR: 12V EDGE ENABLE. ALOM CPLD REG4 EXPECT BIT6 OFF") 
+                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                        return False
+            else: 
+                if i == 0:
+                    if (read_data[0] & 0x40) != 0x00:
+                        print(" ERROR: 12V EDGE ENABLE. SWM CPLD REG4 EXPECT BIT6 OFF") 
+                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                        return False
+                else:
+                    if (read_data[0] & 0x40) != 0x40:
+                        print(" ERROR: 12V EDGE ENABLE. SWM CPLD REG4 EXPECT BIT6 ON") 
+                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                        return False
+
+        #RE-ENABLE FORCE HIGH POWER MODE 
+        rc = self.nic_read_cpld_via_smbus(0x21, read_data)
+        if not rc: 
+            print(" ERROR: nic_read_cpld_via_smbus reg 0x21 FAILED")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False 
+        #Set PCIe Edge 12V On or OFF
+        rc = self.nic_write_cpld_via_smbus(0x21, (read_data[0] | 0x02) )
+        if not rc:
+            print(" ERROR: nic_write_cpld_via_smbus reg 0x21 Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        """
+        print(" Done Return TRUE")
         return True
 
