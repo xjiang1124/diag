@@ -405,27 +405,26 @@ var HpeTblSWMext = []entry {
     entry{"Language Code",                          INT8,        130,        1,    []byte{0x19}},
     entry{"Manufacturer Name Type/Length",          INT8,        131,        1,    []byte{0xC3}},
     entry{"Manufacturer",                           STRING,      132,        3,    []byte{0x48, 0x50, 0x45}},
-    entry{"Product Name Type/Length",               INT8,        135,        1,    []byte{0xEC}},
-    entry{"Product Name",                           STRING,      136,       44,    []byte{
-        0x50, 0x43, 0x41, 0x20, 0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e, 
-        0x64, 0x6f, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 
-        0x2d, 0x32, 0x35, 0x20, 0x31, 0x30, 0x2f, 0x32, 0x35, 0x47, 
-        0x20, 0x32, 0x70, 0x20, 0x53, 0x46, 0x50, 0x32, 0x38, 0x20,
-        0x43, 0x61, 0x72, 0x64}},
-    entry{"PCA Product Number Type/Length",         INT8,        180,        1,    []byte{0xCA}},
-    entry{"HPE Product Number",                     STRING,      181,       10,    []byte{0x50, 0x32, 0x36, 0x39,
-        0x36, 0x38, 0x2D, 0x30, 0x30, 0x31}},
-    entry{"Product Version Type/Length",            INT8,        191,        1,    []byte{0xC2}},
-    entry{"Product Version",                        STRING,      192,        2,    []byte{0x30, 0x30}},
-    entry{"PCA Serial Number Type/Length",          INT8,        194,        1,    []byte{0xCA}},
-    entry{"HPE Serial Number",                      STRING,      195,       10,    []byte{0x30, 0x30, 0x30, 0x30, 
+    entry{"Product Name Type/Length",               INT8,        135,        1,    []byte{0xE8}},
+    entry{"Product Name",                           STRING,      136,       40,    []byte{
+        0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e, 0x64, 0x6f, 0x20, 0x44, 
+        0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2d, 0x32, 0x35, 0x20, 
+        0x31, 0x30, 0x2f, 0x32, 0x35, 0x47, 0x20, 0x32, 0x70, 0x20, 
+        0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61, 0x72, 0x64}},
+    entry{"PCA Product Number Type/Length",          INT8,        176,        1,    []byte{0xCA}},
+    entry{"HPE Product Number",                    STRING,        177,       10,    []byte{0x50, 0x32, 0x36, 0x39, 
+        0x36, 0x36, 0x2d, 0x42, 0x32, 0x31}},
+    entry{"Product Version Type/Length",            INT8,        187,        1,    []byte{0xC2}},
+    entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x31}},
+    entry{"PCA Serial Number Type/Length",          INT8,        190,        1,    []byte{0xCA}},
+    entry{"HPE Serial Number",                      STRING,      191,       10,    []byte{0x30, 0x30, 0x30, 0x30, 
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
-    entry{"Asset Tag Type/Length",                  INT8,        205,        1,    []byte{0xC0}},
-    entry{"FRU File ID Type/Length",                INT8,        206,        1,    []byte{0xC8}},
-    entry{"FRU ID",                                 STRING,      207,        8,    []byte{0x30, 0x36, 0x2F, 0x32,
+    entry{"Asset Tag Type/Length",                  INT8,        201,        1,    []byte{0xC0}},
+    entry{"FRU File ID Type/Length",                INT8,        202,        1,    []byte{0xC8}},
+    entry{"FRU ID",                                 STRING,      203,        8,    []byte{0x30, 0x36, 0x2F, 0x32,
         0x34, 0x2F, 0x31, 0x39}},
-    entry{"End of Field",                           INT8,        215,        1,    []byte{0xC1}},
-    entry{"PAD",                                    INT8,        216,        7,    []byte{0, 0, 0, 0, 0, 0, 0}},
+    entry{"End of Field",                           INT8,        211,        1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,        212,       11,    []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
     entry{"Product info Area Checksum",             INT8,        223,        1,    []byte{0x00}},
 } 
  
@@ -447,26 +446,27 @@ var HpeAlomTblAll = []entry {
     entry{"Board Area Length",                      INT8,         9,        1,    []byte{0xC}},
     entry{"Language Code",                          INT8,        10,        1,    []byte{0x19}},
     entry{"Manufacturing Date/Time",                INT8,        11,        3,    []byte{0, 0, 0}},
-    entry{"Manufacturing Type/Length",              INT8,        14,        1,    []byte{0xCD}},
-    entry{"Manufacturer",                           STRING,      15,       13,    []byte{0x50, 0x45, 0x4E, 0x53,
-        0x41, 0x4E, 0x44, 0x4F, 0x20, 0x49, 0x4E, 0x43, 0x2E}},
-    entry{"Product Name Type/Length",               INT8,        28,        1,    []byte{0xE6}},
-    entry{"Product Name",                           STRING,      29,       38,    []byte{
-        0x50, 0x43, 0x41, 0x20, 0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e,
+    entry{"Manufacturing Type/Length",              INT8,        14,        1,    []byte{0xC8}},
+    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x45, 0x4E, 0x53,
+        0x41, 0x4E, 0x44, 0x4F}},
+    entry{"Product Name Type/Length",               INT8,        23,        1,    []byte{0xEA}},
+    entry{"Product Name",                           STRING,      24,       42,    []byte{
+        0x50, 0x43, 0x41, 0x20, 0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e, 
         0x64, 0x6f, 0x20, 0x44, 0x53, 0x50, 0x20, 0x66, 0x6f, 0x72, 
-        0x20, 0x48, 0x50, 0x45, 0x20, 0x69, 0x4c, 0x4f, 0x20, 0x4d, 
-        0x67, 0x6d, 0x74, 0x20, 0x41, 0x4c, 0x4f, 0x4d }},
-    entry{"Serial Number Type/Length",              INT8,        67,        1,    []byte{0xCA}},
-    entry{"Serial Number",                          STRING,      68,       10,    []byte{0x30, 0x30, 0x30, 0x30,
+        0x20, 0x48, 0x50, 0x45, 0x20, 0x69, 0x4c, 0x4f, 0x20, 0x4d,
+        0x67, 0x6d, 0x74, 0x20, 0x41, 0x4c, 0x4f, 0x4d, 0x20, 0x4d, 
+        0x6f, 0x64 }},
+    entry{"Serial Number Type/Length",              INT8,        66,        1,    []byte{0xCA}},
+    entry{"Serial Number",                          STRING,      67,       10,    []byte{0x30, 0x30, 0x30, 0x30,
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
-    entry{"Part Number Type/Length",                INT8,        78,        1,    []byte{0xCA}},
-    entry{"Part Number",                            STRING,      79,       10,    []byte{ 0x50, 0x32, 0x36, 0x39, 
-        0x36, 0x39, 0x2d, 0x42, 0x32, 0x31 }},
-    entry{"FRU File ID Type/Length",                INT8,        89,        1,    []byte{0xC8}},
-    entry{"FRU File ID",                            STRING,      90,        8,    []byte{ 0x30, 0x31, 0x2f, 0x31, 
+    entry{"Part Number Type/Length",                INT8,        77,        1,    []byte{0xCA}},
+    entry{"Part Number",                            STRING,      78,       10,    []byte{ 0x50, 0x32, 0x36, 0x39, 
+        0x37, 0x31, 0x2d, 0x30, 0x30, 0x31 }},
+    entry{"FRU File ID Type/Length",                INT8,        88,        1,    []byte{0xC8}},
+    entry{"FRU File ID",                            STRING,      89,        8,    []byte{ 0x30, 0x31, 0x2f, 0x31, 
         0x33, 0x2f, 0x32, 0x30 }},
-    entry{"End of Field",                           INT8,        98,        1,    []byte{0xC1}},
-    entry{"PAD",                                    INT8,        99,        4,    []byte{0, 0, 0, 0}},
+    entry{"End of Field",                           INT8,        97,        1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,        98,        5,    []byte{0, 0, 0, 0, 0}},
     entry{"Board Info Area Checksum",               INT8,       103,        1,    []byte{0}},
 
 
@@ -482,13 +482,13 @@ var HpeAlomTblAll = []entry {
         0x53, 0x50, 0x20, 0x66, 0x6f, 0x72, 0x20, 0x48, 0x50, 0x45, 
         0x20, 0x69, 0x4c, 0x4f, 0x20, 0x4d, 0x67, 0x6d, 0x74, 0x20,
         0x41, 0x4c, 0x4f, 0x4d, 0x20, 0x4d, 0x6f, 0x64 }},
-    entry{"Product SKU Part Number Type/Length",    INT8,       150,        1,    []byte{0xCA}},
-    entry{"Product SKU Part Number",                STRING,     151,       10,    []byte{ 0x50, 0x32, 0x36, 0x39,
-        0x37, 0x31, 0x2d, 0x30, 0x30, 0x31 }},
+    entry{"PCA Product Number Type/Lengtgh",        INT8,       150,        1,    []byte{0xCA}},
+    entry{"HPE Product Number",                   STRING,       151,       10,    []byte{ 0x50, 0x32, 0x36, 0x39,
+        0x36, 0x39, 0x2d, 0x42, 0x32, 0x31 }},
     entry{"Product Version Type/Length",            INT8,       161,        1,    []byte{0xC2}},
-    entry{"Product Version",                        STRING,     162,        2,    []byte{0x30, 0x30}},
+    entry{"Product Version",                        STRING,     162,        2,    []byte{0x30, 0x31}},
     entry{"Product Serial Number Type/Length",      INT8,       164,        1,    []byte{0xCA}},
-    entry{"PIA Serial Number",                          STRING,     165,       10,    []byte{0x30, 0x30, 0x30, 0x30,
+    entry{"Serial Number",                      STRING,     165,       10,    []byte{0x30, 0x30, 0x30, 0x30,
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
     entry{"Asset Tag Type/Length",                  INT8,       175,        1,    []byte{0x00}},
     entry{"FRU File ID Type/Length",                INT8,       176,        1,    []byte{0x00}},
@@ -613,7 +613,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
     is8g := 0
     for _, entry := range(EepromTbl) {
         if entry.Name == "Product Area Offset" {
-            if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+            if HpeNaples == 1 || HpeOcp == 1 {
                 copy(entry.Value, []byte{0x10})
             }
         }
@@ -746,24 +746,20 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            // For HPE ALOM, DO NOT COPY PART NUMBER.  PRINTED LABEL IS PIA P/N WHICH IS DIFFERENT THAN BIA P/N.
-            // Keep default P/N for BIA 
-            if HpeAlom != true && CustType != "IBM" {
+            if CustType != "IBM" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            
-	    if CustType == "IBM" {
+            if CustType == "IBM" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
-		 }
+                }
             }
-                    
             if entry.Name == "MAC Address Base" {
                 copy(entry.Value, mac)
                 continue
@@ -775,11 +771,7 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
-            } else if entry.Name == "Product SKU Part Number" {
-                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                copy(entry.Value, pn)
-                continue
-            }
+            } 
         }
 
         if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
@@ -799,7 +791,7 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
                     sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, sn)
                     continue
-                } else if entry.Name == "HPE Product Number" {
+                } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
@@ -847,15 +839,33 @@ func updateIntChk() () {
         brdInfoChk = 0
         productInfoChk = 0;
         cmnHeadChk = 0
+        var biaOff, piaOff, cHdrLen, biaLen, piaLen int = 0, 0, 8, 0, 0
+
         for _, entry := range(EepromTbl) {
-            if (entry.Offset > 7) && (entry.Offset < 127) {
-                brdInfoChk += calcSum(entry)
-            } else if (entry.Offset >= 0) && (entry.Offset < 7) {
-                cmnHeadChk += calcSum(entry)
+            if entry.Name == "Board Info Offset" {
+                biaOff = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Product Area Offset" {
+                piaOff = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Board Area Length" {
+                biaLen = int(entry.Value[0]) * 8
             }
         }
         for _, entry := range(EepromExtTbl) {
-            if (entry.Offset > 127) && (entry.Offset < 223) {
+            if entry.Name == "Product Area Length" {
+                piaLen = int(entry.Value[0]) * 8
+            }
+        }
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset >= 0) && (entry.Offset < (cHdrLen - 1)) {      //common header
+                cmnHeadChk += calcSum(entry)
+            } else if (entry.Offset > (biaOff - 1)) && (entry.Offset < (biaLen + cHdrLen - 1)) {  //board info area
+                brdInfoChk += calcSum(entry)
+            }
+        }
+        for _, entry := range(EepromExtTbl) {
+            if (entry.Offset > (piaOff - 1)) && (entry.Offset < (piaOff + piaLen - 1)) {  //product info area
                 productInfoChk += calcSum(entry)
             }
         }
@@ -973,9 +983,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            // For HPE ALOM, DO NOT COPY PART NUMBER.  PRINTED LABEL IS PIA P/N WHICH IS DIFFERENT THAN BIA P/N.
-            // Keep default P/N from default fru table BIA 
-            if HpeAlom != true && CustType != "IBM" {
+            if CustType != "IBM" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -983,12 +991,12 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 }
             }
 
-	    if CustType == "IBM" {
+            if CustType == "IBM" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
-		 }
+                }
             }
                     
             if entry.Name == "Serial Number" {
@@ -1002,11 +1010,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
-            } else if entry.Name == "Product SKU Part Number" {
-                pn, _ := readField(devName, entry.Offset, entry.NumBytes)
-                copy(entry.Value, pn)
-                continue
-            }
+            } 
         }
 
         if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
@@ -1025,7 +1029,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                     date, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, date)
                     continue
-                } else if entry.Name == "HPE Product Number" {
+                } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
@@ -1063,16 +1067,11 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            // For HPE ALOM, DO NOT COPY PART NUMBER.  PRINTED LABEL IS PIA P/N WHICH IS DIFFERENT THAN BIA P/N.
-            // Keep default P/N for BIA 
-            if HpeAlom != true {
-                if entry.Name == "Part Number" {
-                    pn_ptr = entry.Value
-                    //copy(entry.Value, pn)
-                    continue
-                }
-            }
-            if entry.Name == "Serial Number" {
+            if entry.Name == "Part Number" {
+                pn_ptr = entry.Value
+                //copy(entry.Value, pn)
+                continue
+            } else if entry.Name == "Serial Number" {
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
@@ -1084,18 +1083,15 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
                 date, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, date)
                 continue
-            } else if entry.Name == "Product SKU Part Number" {
-                copy(entry.Value, pn)
-                continue
             } else if entry.Name == "Assembly Number" {
-                    an_ptr = entry.Value
-                    continue
+                an_ptr = entry.Value
+                continue
             }
         }
 
         if ( CustType == "IBM" ) {
             copy(an_ptr, pn)
-        } else if HpeAlom != true {
+        } else {
             copy(pn_ptr, pn)
         }
 
@@ -1117,7 +1113,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
                     sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, sn)
                     continue
-                } else if entry.Name == "HPE Product Number" {
+                } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
                     copy(entry.Value, pn)
                     continue
                 }
@@ -1145,9 +1141,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
 
     data := make([]byte, 3)
     for _, entry := range(EepromTbl) {
-        // For HPE ALOM, DO NOT COPY PART NUMBER.  PRINTED LABEL IS PRODUCT INFORMATION AREA P/N WHICH IS DIFFERENT 
-        // THAN BOARD INFORMATION AREA P/N. Keep default P/N for BIA 
-        if HpeAlom != true && CustType != "IBM" {
+        if CustType != "IBM" {
             if entry.Name == "Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1155,7 +1149,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             }
         }
 
-	if CustType == "IBM" {
+        if CustType == "IBM" {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1182,11 +1176,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             sn, _ := readField(devName, entry.Offset, entry.NumBytes)
             copy(entry.Value, sn)
             continue
-        } else if entry.Name == "Product SKU Part Number" {
-            pn, _ := readField(devName, entry.Offset, entry.NumBytes)
-            copy(entry.Value, pn)
-            continue
-        }
+        } 
     }
 
     if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
@@ -1206,7 +1196,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
-            } else if entry.Name == "HPE Product Number" {
+            } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
                 continue
