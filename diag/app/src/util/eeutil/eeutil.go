@@ -184,7 +184,7 @@ func main() {
 
     if *updatePtr == true || eeprom.Erase == true {
         // FIXME: Skip for ALOM
-        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" && eeprom.HpeAlom == false {
+        if os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE" && eeprom.HpeAlom == false && eeprom.HpeSwm == 0 {
             fmt.Println("On MTP")
             rd, _ := cpldSmb.ReadSmb("CPLD", 0x21)
             rd = rd & 0xFD
