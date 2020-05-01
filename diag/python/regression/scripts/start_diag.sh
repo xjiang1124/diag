@@ -92,6 +92,8 @@ then
     cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic3
     cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic4
     cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
+
+    env | grep MTP_REV | awk -F "=" '{print $2}' > /home/diag/mtp_rev
 fi
 
 #echo "redisFlag $redisFlag"

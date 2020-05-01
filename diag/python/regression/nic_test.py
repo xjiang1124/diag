@@ -22,14 +22,22 @@ class nic_test:
         self.num_retry = 3
         self.nic_con = nic_con()
 
+    def get_mtp_rev(self):
+        file1 = open("/home/diag/mtp_rev","r")
+        mtp_rev = file1.readlines()
+        file1.close()
+        return mtp_rev[0][:-1]
+
     def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
         print "=== Starting setup env on slot {} ===".format(slot)
+
+        mtp_rev = self.get_mtp_rev()
+        print("MTP_REV: ", mtp_rev)
 
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
             sys.exit(0)
-
 
         try:
             if pwr_cycle == True:
@@ -51,6 +59,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
                 self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
+                self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
                 cmd_args = session.before.split()
                 if cmd_args[3] == "0x17":
