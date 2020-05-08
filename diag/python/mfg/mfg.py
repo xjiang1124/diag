@@ -17,6 +17,7 @@ class mfg:
         self.cm_server = dict()
         self.cm_server["FML"] = "192.168.1.112"
         self.cm_server["FPN"] = "192.168.2.22"
+        self.cm_server["PEN"] = "hw-mftg-data"
         self.user = "mfg"
         self.pwd  = "pensando"
         self.remote_path = "/mfg_log/"
@@ -42,6 +43,7 @@ class mfg:
                         subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
                     except:
                         continue
+                    subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
 
             else:
                 remote_path = remote_path+'/'+sn+'/'
@@ -51,7 +53,10 @@ class mfg:
 
                 cmd = "sshpass -p 'pensando' scp -r mfg@"+remote_ip+":"+remote_path+"* "+local_path
                 print(cmd)
-                subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
+                try:
+                    subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
+                except:
+                    continue
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
