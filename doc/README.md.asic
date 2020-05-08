@@ -13,6 +13,46 @@ git merge upstream/master
 # push back to owner/git repo
 git push
 
+#-------------------
+# X86 Compilation
+# $ASIC_SRC/ip/cosim/docs/README_mtp_snake
+tcsh
+
+setenv AWS /home/$USER
+setenv AWSD /vol/dump/$USER
+
+setenv ASIC_SRC $AWS/workspace/asic
+setenv ASIC_GEN $AWSD/workspace/asic
+setenv ASIC_COMMON /home/asic
+source $ASIC_COMMON/templates/cshrc_include
+
+cd $ASIC_SRC/ip/cosim/tclsh
+source $ASIC_SRC/ip/cosim/diag/setup_diag.csh
+#pushd $ASIC_SRC/ip/cosim/tclsh
+gen_rtl -j`nproc` -n -v diag=1 x86=1 sam=1
+cd ../capri
+python gen_snake_stream_dirs.py
+cd ../diag
+python gen_asic_lib_bundle.py --arch=x86_64 --strip=1 --tar=1 --mtp_snake_dir=$ASIC_GEN/ip/cosim/capri/mtp
+
+cd $ASIC_GEN/ip/cosim/diag/nic/
+
+#-------------------
+# ARM Compilation
+setenv ASIC_GEN $ASIC_GEN_FOR_X86_64
+gen_rtl -j`nproc` -n -v diag=1 x86=1 sam=1
+echo $ASIC_GEN_FOR_X86_64
+echo $ASIC_GEN
+cd ../capri
+python gen_snake_stream_dirs.py
+python gen_asic_lib_bundle.py --arch=x86_64 --strip=1 --tar=1 --mtp_snake_dir=$ASIC_GEN/ip/cosim/capri/mtp
+setenv ASIC_GEN $AWSD/workspace/asic_arm64
+source $ASIC_SRC/ip/cosim/diag/setup_diag_arm.csh
+gen_rtl -j`nproc` -n -v diag=1 arm=1
+cd ../diag
+python gen_asic_lib_bundle.py --arch=aarch64 --strip=1 --tar=1 --mtp_snake_dir=$ASIC_GEN_FOR_X86_64/ip/cosim/capri/mtp
+
+
 -------------------
 #Compilation
 tcsh
