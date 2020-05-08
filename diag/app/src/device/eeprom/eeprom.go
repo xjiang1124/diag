@@ -620,8 +620,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         if entry.Name == "Product Name" {
             
             if ((CardType == "NAPLES25")    ||
-               (CardType == "NAPLES25OCP")) &&
-               (HpeAlom != true)  {
+               (CardType == "NAPLES25OCP")) {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
             } else if CardType == "FORIO" {
                 copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
@@ -679,7 +678,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         for _, entry := range(EepromExtTbl) {
 
             if entry.Name == "Product Name" {
-                if (CardType == "NAPLES25OCP") && (HpeAlom != true)  {
+                if (CardType == "NAPLES25OCP") {
                     copy(entry.Value, []byte{0x48, 0x50, 0x45, 0x20, 0x4F, 0x43, 
                         0x50, 0x20, 0x4E, 0x61, 0x70, 0x6C, 0x65, 0x73, 0x20, 0x44, 
                         0x53, 0x43, 0x2D, 0x32, 0x35, 0x20, 0x32, 0x70, 0x20, 0x53, 
@@ -688,7 +687,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
             }
 
             if entry.Name == "HPE Product Number" {
-                if (CardType == "NAPLES25OCP") && (HpeAlom != true)  {
+                if (CardType == "NAPLES25OCP") {
                     copy(entry.Value, []byte{0x50, 0x31, 0x38, 0x36, 0x36, 0x39, 
                         0x2D, 0x30, 0x30, 0x31})
                 } 
@@ -1249,6 +1248,10 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
     fmtHex := "%-45s0x%-20X"
     var outStr string
     for _, entry := range(EepromTbl) {
+        if ((HpeNaples == 1) && (field != "ALL")) {
+            continue
+        }
+
         if(field == "SN") {
             if entry.Name != "Serial Number" {
                 continue
@@ -1304,9 +1307,30 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
         cli.Println("i", outStr)
     }
 
-    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 && field == "ALL" {
+    if (HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1) {
         fmt.Println()
         for _, entry := range(EepromExtTbl) {
+            if ((HpeNaples != 1) && (field != "ALL")) {
+                continue;
+            }
+
+            //For Naples25 HPE.  ICT programs these fields which need to be read out to program entire FRU
+            if ((HpeNaples == 1) && (field != "ALL")) {
+                if(field == "SN") {
+                    if entry.Name != "HPE Serial Number" {
+                        continue
+                    }
+                } else if(field == "MAC") {
+                    if entry.Name != "MAC Address Base" {
+                        continue
+                    }
+                } else if(field == "PN") {
+                    if ( entry.Name != "HPE Product Number" ) {
+                        continue
+                    }
+                }
+            }
+
             data, err = readField(devName, entry.Offset, entry.NumBytes)
             if err != errType.SUCCESS {
                 cli.Println("f", "Failed to read field at offset", entry.Offset, "number of bytes", entry.NumBytes)
