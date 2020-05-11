@@ -388,6 +388,9 @@ proc esec_prog_optimal_pac {sn usb_port slot PN MAC MTP
     #set ::CAP_DUMP_PAC 1
     set ::CAP_REMOVE_PAC_TMP_FILE 0
     
+    #remove memory cache
+    cap_mem_pwr_up_cache_clear
+
     esec_gather_pac $sn $usb_port $slot $PN $MAC $MTP $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL $pac_cnt
     
     #dump pac

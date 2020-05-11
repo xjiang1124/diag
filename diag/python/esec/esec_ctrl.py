@@ -424,7 +424,7 @@ PRIVEK <ek.sk>"""
                     # Move forward
                     break
 
-            ret = self.key_prog_all(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+            ret = self.key_prog_all_pac(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
             if ret != 0:
                 print "=== ESEC PROG FAILED ==="
                 return ret
