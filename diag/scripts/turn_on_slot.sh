@@ -51,7 +51,12 @@ power_on_naples25_swm_ocp() {
 # Enable NIC MTP Rev3 mode
 enable_nic_mtp_r3() {
     slot=$1
-    reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21 | awk '{print $9}' | awk -F"=" '{print $2}')
+    turn_on_hub.sh $slot
+    sleep 0.2
+
+    reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21)
+    echo $reg1
+    reg1=$(expr match "$reg1" '.*data=\(0x[0-9|a-f|A-F]*\)')
     if [[ $reg1 = "" ]]
     then
         echo "Empty slot $slot"
