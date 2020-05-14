@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import Env_Cond
+from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
@@ -121,6 +122,10 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
 
     for intf in nic_check_list:
         for slot in nic_test_list[:]:
+
+            if (nic_type == NIC_Type.NAPLES25SWM) and (mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.SWM) and (intf == "NIC_ALOM_CABLE"):
+                continue
+
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf))
             start_ts = libmfg_utils.timestamp_snapshot()
@@ -471,6 +476,7 @@ def main():
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.MFG_NT)
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
     args = parser.parse_args()
 
@@ -479,6 +485,7 @@ def main():
     verbosity = False
     skip_test = False
     corner = Env_Cond.MFG_NT
+    swmtestmode = Swm_Test_Mode.SW_DETECT #SWMALOM
 
     if args.mtpid:
         mtp_id = args.mtpid
@@ -489,6 +496,9 @@ def main():
         verbosity = True
     if args.corner:
         corner = args.corner
+    if args.swm:
+        swmtestmode = args.swm
+        print(" SWMTESTMODE=" + str(swmtestmode))
 
     # Normal temperature, no voltage corner
     if corner == Env_Cond.MFG_NT:
@@ -643,6 +653,9 @@ def main():
         mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
         return
 
+    # Set Naples25SWM test mode
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
+
     # Wait the Chamber temperature, if HT or LT is set
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
     rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
@@ -752,22 +765,30 @@ def main():
             return
 
 
+        #NAPLES25 SWM CPLD & ALOM TEST
+        """
+        alom_fail_list = list()
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES25SWM: 
+                #CPLD TEST
+                for var in range(len(nic_list)):
+                    slot = nic_list[var]
+                    rc = mtp_mgmt_ctrl.mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(slot)
+                    if rc == False:
+                        alom_fail_list.append(slot)
+                if swmtestmode == Swm_Test_Mode.SWMALOM or swmtestmode == Swm_Test_Mode.ALOM:
+                    for var in range(len(nic_list)):
+                        slot = nic_list[var]
+                        rc = mtp_mgmt_ctrl.mtp_nic_naples25swm_alom_cable_signal_test(slot, 1)
+                        if rc == False:
+                            if slot not in alom_fail_list:
+                                alom_fail_list.append(slot)
 
-
-        #print(" ALOM TEST")
-        #alom_fail_list = list()
-        #for slot in nic_list:
-        #    print(" ALOM TEST SLOT" + str(slot+1))
-        #    rc = mtp_mgmt_ctrl.mtp_nic_naples25_alom_cable_signal_test(slot)
-        #    if rc == False:
-        #        alom_fail_list.append(slot)
-        #    print("ALOM TEST DONE")
-        #for slot in alom_fail_list:
-        #    nic_list.remove(slot)
-        #    fail_nic_list.append(slot)
-        #    pass_nic_list.remove(slot)
-            
-
+        for slot in alom_fail_list:
+            nic_list.remove(slot)
+            fail_nic_list.append(slot)
+            pass_nic_list.remove(slot)
+        """
 
         # Diag Pre Check
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
@@ -798,7 +819,7 @@ def main():
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
-
+        
         # NIC Parallel test
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_type == NIC_Type.NAPLES100:
@@ -814,6 +835,8 @@ def main():
                 nic_para_test_list = vomero_para_test_list[:]
                 test_db = vomero_test_db
             elif nic_type == NIC_Type.NAPLES25SWM:
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    continue
                 nic_para_test_list = naples25swm_para_test_list[:]
                 test_db = naples25swm_test_db
             else:
@@ -871,6 +894,8 @@ def main():
             elif nic_type == NIC_Type.VOMERO:
                 mtp_para_test_list = vomero_mtp_para_test_list
             elif nic_type == NIC_Type.NAPLES25SWM:
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    continue
                 mtp_para_test_list = naples25swm_mtp_para_test_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
@@ -905,6 +930,8 @@ def main():
                 nic_seq_test_list = vomero_seq_test_list[:]
                 test_db = vomero_test_db
             elif nic_type == NIC_Type.NAPLES25SWM:
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    continue
                 nic_seq_test_list = naples25swm_seq_test_list[:]
                 test_db = naples25swm_test_db
             else:

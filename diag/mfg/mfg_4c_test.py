@@ -11,6 +11,7 @@ import threading
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import Env_Cond
+from libdefs import Swm_Test_Mode
 from libdefs import NIC_Type
 from libdefs import FF_Stage
 from libdefs import MTP_Const
@@ -48,7 +49,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_summary):
+def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_summary, swm_test_mode):
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -57,9 +58,9 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
     mtp_mgmt_ctrl.cli_log_inf("MFG 4C Test Start @{:s}".format(stage), level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     if stage == FF_Stage.FF_4C_H:
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, Env_Cond.MFG_HT)
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
     else:
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, Env_Cond.MFG_LT)
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG 4C Test Complete @{:s}".format(stage), level=0)
@@ -81,11 +82,15 @@ def main():
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
     verbosity = False
+    swmtestmode = Swm_Test_Mode.SW_DETECT
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
+    if args.swm:
+        swmtestmode = args.swm
 
     if verbosity:
         diag_log_filep = sys.stdout
@@ -180,7 +185,8 @@ def main():
                                                                            mtp_mgmt_ctrl,
                                                                            mtp_id,
                                                                            stage,
-                                                                           mfg_4c_summary[mtp_id]))
+                                                                           mfg_4c_summary[mtp_id],
+                                                                           swmtestmode))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

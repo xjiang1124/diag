@@ -39,6 +39,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
+from libdefs import Swm_Test_Mode
 
 from libnic_ctrl import nic_ctrl
 
@@ -77,6 +78,7 @@ class mtp_ctrl():
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
+        self._swmtestmode = [Swm_Test_Mode.SW_DETECT] * self._slots
 
         self._debug_mode = dbg_mode
         self._filep = filep
@@ -731,6 +733,21 @@ class mtp_ctrl():
     def mtp_get_asic_version(self):
         return self._asic_ver
 
+    def mtp_get_swmtestmode(self, slot):
+        return self._swmtestmode[slot]
+
+    def mtp_set_swmtestmode(self, swmtestmode):
+        read_data = [0]
+        for slot in range(self._slots):
+            self._swmtestmode[slot] = swmtestmode
+        for slot in range(self._slots):
+            if self._swmtestmode[slot] == Swm_Test_Mode.SW_DETECT:
+                rc = self._nic_ctrl_list[slot].nic_read_swm_mtp_adapt_cpld(0x80, read_data)
+                if not rc:
+                    self._swmtestmode[slot] = Swm_Test_Mode.SWM
+                else:
+                    self._swmtestmode[slot] = Swm_Test_Mode.SWMALOM
+        return True
 
     def mtp_stale_image_cleanup(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
@@ -1949,7 +1966,7 @@ class mtp_ctrl():
         else:
             msg = "Init NIC FRU info without date"
         self.cli_log_slot_inf_lock(slot, msg)
-        if not self._nic_ctrl_list[slot].nic_fru_init(init_date):
+        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             return False
 
@@ -2471,6 +2488,22 @@ class mtp_ctrl():
                 return "SUCCESS"
             else:
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
+        elif intf == "NIC_ALOM_CABLE":
+            if self._swmtestmode[slot] == Swm_Test_Mode.SWMALOM or self._swmtestmode[slot] == Swm_Test_Mode.ALOM:
+                if self.mtp_nic_naples25swm_alom_cable_signal_test(slot, 1):
+                    return "SUCCESS"
+                else:
+                    return MTP_DIAG_Error.NIC_DIAG_FAIL
+            else:
+                return "SUCCESS"
+        elif intf == "NIC_N25SWM_CPLD":
+            if self._swmtestmode[slot] == Swm_Test_Mode.SWMALOM or self._swmtestmode[slot] == Swm_Test_Mode.SWM:
+                if self.mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(slot):
+                    return "SUCCESS"
+                else:
+                    return MTP_DIAG_Error.NIC_DIAG_FAIL
+            else:
+                return "SUCCESS"
         else:
             self.cli_log_slot_err(slot, "Unknown pre diag check module")
             return MTP_DIAG_Error.NIC_DIAG_FAIL
@@ -2705,13 +2738,35 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
 
-    def mtp_nic_naples25_alom_cable_signal_test(self, slot):
-        rc = self._nic_ctrl_list[slot].nic_naples25swm_alom_cable_signal_test()
+    def mtp_nic_naples25swm_alom_cable_signal_test(self, slot, highpowertest):
+        errlist = list()
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_alom_cable_signal_test(errlist, highpowertest)
         if rc == False:
-            self.cli_log_slot_err(slot, "NIC NAPLES25SWM ALOM CABLE TEST FAILED")
-        else:
-            self.cli_log_slot_inf(slot, "NIC NAPLES25SWM ALOM CABLE TEST PASSED")
+            for errstr in errlist:
+                self.cli_log_slot_err(slot, "{:s}".format(errstr))
         return rc
+
+    def mtp_nic_naples25swm_high_power_mode_test(self, slot):
+        errlist = list()
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_high_power_mode_test(errlist)
+        if rc == False:
+            self.cli_log_slot_err(slot, "NIC NAPLES25SWM HIGH POWER MODE TEST FAILED")
+            for errstr in errlist:
+                self.cli_log_slot_err(slot, "{:s}".format(errstr))
+        else:
+            self.cli_log_slot_inf(slot, "NIC NAPLES25SWM HIGH POWER MODE TEST PASSED")
+        return rc
+
+    def mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(self, slot):
+        errlist = list()
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_cpld_reg_test(errlist)
+        if rc == False:
+            for errstr in errlist:
+                self.cli_log_slot_err(slot, "{:s}".format(errstr))
+        return rc
+
+    def mtp_nic_naples25swm_mgmt_port_test(self, slot):
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_mgmt_port_test(slot)
 
 
     def mtp_run_diag_test_para_lock(self):

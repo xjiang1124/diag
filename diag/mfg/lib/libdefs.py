@@ -52,6 +52,14 @@ class Env_Cond(Enum):
     def __str__(self):
         return self.value
 
+class Swm_Test_Mode(Enum):
+    SWM = "swm"
+    SWMALOM = "swmalom"
+    ALOM = "alom"
+    SW_DETECT = "sw_detect"
+
+    def __str__(self):
+        return self.value
 
 class NIC_Status:
     NIC_STA_POWEROFF = 0

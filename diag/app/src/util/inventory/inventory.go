@@ -18,6 +18,11 @@ import (
 
 var powerStatName = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc",
                             "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok"}
+
+var powerStatNameSWM = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc",
+                            "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok",
+                            "VRD Fault", "alom cbl prsn", "temp trip"}
+
 func init() {
 }
 
@@ -243,17 +248,24 @@ func statusDump(slot int)  {
 func powerStatusDump(slot int)  {
     devName := "CPLD"
     uutName := "UUT_"+strconv.Itoa(slot)
+    cardType := os.Getenv(uutName)
+    pwrStatName := powerStatName
+    fmt.Printf(" CardType=%s\n", cardType)
+
+    if cardType == "NAPLES25SWM" {
+        pwrStatName = powerStatNameSWM
+    } 
 
     cli.DisableVerbose()
     stat0, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT0), uutName)
     stat1, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT1), uutName)
     cli.EnableVerbose()
 
-    for i := 0; i < 12; i++ {
+    for i := 0; i < len(pwrStatName); i++ {
         if(i < 8) {
-            cli.Printf("i","%-15s%d\n", powerStatName[i], (stat0 >> uint(i)) & 1)
+            cli.Printf("i","%-15s%d\n", pwrStatName[i], (stat0 >> uint(i)) & 1)
         } else {
-            cli.Printf("i","%-15s%d\n", powerStatName[i], (stat1 >> uint(i - 8)) & 1)
+            cli.Printf("i","%-15s%d\n", pwrStatName[i], (stat1 >> uint(i - 8)) & 1)
         }
     }
 

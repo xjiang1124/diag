@@ -63,9 +63,11 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
                 cmd_args = session.before.split()
                 if cmd_args[3] == "0x17":
+                    self.nic_con.turn_off_sgmii(int(slot))
+
                     # enable ports
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x10 0x7f")
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7C")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7f")
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x13 0x7f")
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x15 0x7f")
                     # power up PHY ports
@@ -172,10 +174,6 @@ class nic_test:
 
         if pwr_cycle == True:
             self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
-
-        # Turn off SWM SGMII
-        for slot in nic_list:
-            self.nic_con.turn_off_sgmii(int(slot))
 
         for slot in nic_list:
             ret = self.setup_env(int(slot), False, 30, False, False, False)

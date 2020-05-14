@@ -11,6 +11,7 @@ import threading
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
+from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Error
@@ -48,7 +49,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
+def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode):
     # go to mtp_regression and start the test
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -56,7 +57,7 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary)
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
+    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_P2C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
@@ -76,11 +77,15 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary)
 def main():
     parser = argparse.ArgumentParser(description="MFG P2C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
     verbosity = False
+    swmtestmode = Swm_Test_Mode.SW_DETECT
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
+    if args.swm:
+        swmtestmode = args.swm
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
@@ -155,7 +160,8 @@ def main():
         mtp_thread = threading.Thread(target = single_mtp_p2c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_p2c_script_dir,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
-                                                                            mfg_p2c_summary[mtp_id]))
+                                                                            mfg_p2c_summary[mtp_id],
+                                                                            swmtestmode))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
