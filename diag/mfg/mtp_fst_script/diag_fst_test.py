@@ -29,6 +29,7 @@ bus_list = [y for y in (x.strip() for x in new_str.splitlines()) if y]
 #else:
 #    print("Missing", 4-len(bus_list), "devices")
 print("Found", len(bus_list), "devices", "\n")
+print("bus_list", bus_list)
 
 for a, b in slot_bus_pair:
     if b in bus_list:
@@ -47,7 +48,7 @@ for a, b in slot_bus_pair:
         naples_env["NAPLES_URL"] = "http://169.254."+str(bus_int)+".1"
         time.sleep(1)
         try:
-            x = subprocess.check_output("/home/diag/penctl.linux show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+            x = subprocess.check_output("/home/diag/penctl.linux.0302 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             print("slot"+str(a), b, "sn: unknown", "type: unknown", "failed") 
             print("Get FRU failed")
@@ -56,7 +57,7 @@ for a, b in slot_bus_pair:
         y = x.decode("utf-8")
         fru = json.loads(y)
         try:
-            x = subprocess.check_output("/home/diag/penctl.linux show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+            x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             print("slot"+str(a), "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "failed")
             print("Get firmware failed")
@@ -64,7 +65,7 @@ for a, b in slot_bus_pair:
             continue
         y = x.decode("utf-8")
         firmware = json.loads(y)
-        if fru["status"]["fru"]["product-name"] == "NAPLES 25 ":
+        if fru["status"]["fru"]["product-name"] == "NAPLES 25 " or "DSC-25" in fru["status"]["fru"]["product-name"]:
             if "8GT/s" in new_str and "x8" in new_str:
                 print("slot"+str(a), b, "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "pass")
             else:
