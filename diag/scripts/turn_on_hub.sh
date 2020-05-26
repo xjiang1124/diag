@@ -1,4 +1,4 @@
-#!/bin/bash
+/bin/bash
 
 hub_ctrl() {
     #disable all the hubs first before enabling one of them 
@@ -7,13 +7,13 @@ hub_ctrl() {
     smbutil -dev=hub_2 -sd -addr=0
     smbutil -dev=hub_3 -sd -addr=0
     smbutil -dev=hub_4 -sd -addr=0
-    smbutil -dev=hub_5 -sd -addr=0
+    #smbutil -dev=hub_5 -sd -addr=0
 
     smbutil -dev=hub_1 -sd -addr=$1
     smbutil -dev=hub_2 -sd -addr=$2
     smbutil -dev=hub_3 -sd -addr=$3
     smbutil -dev=hub_4 -sd -addr=$4
-    smbutil -dev=hub_5 -sd -addr=$5
+    #smbutil -dev=hub_5 -sd -addr=$5
 }
 
 case $1 in
