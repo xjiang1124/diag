@@ -456,13 +456,29 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
 
     set ret [esec_prog_optimal_pac $sn $usb_port $slot $PN $MAC $MTP $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL $pac_cnt]
 
+    if { $ret == 0 } {
+        plog_msg "ESEC Optimal PAC passed"
+    } else {
+        plog_msg "ESEC Optimal PAC failed"
+        return -1
+    }
+
     set timestamp_post [clock seconds]
 
     #============================
     # Boot Test
-    if {$ret == 0} {
-        set ret [cap_secure_post_check 10 10 $slot]
+    set ret [cap_secure_post_check 10 10 $slot]
+
+    if { $ret == 0 } {
+        plog_msg "ESEC boot test passed"
+    } else {
+        plog_err "ESEC boot test failed"
+        return -1
     }
+
+    set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+    cap_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
+    plog_msg "CSP recorded"
 
     set timestamp_final [clock seconds]
 
@@ -603,6 +619,17 @@ proc esec_all {sn usb_port slot PN MAC MTP
     # Boot Test
     set ret [cap_secure_post_check 10 10 $slot]
 
+    if { $ret == 0 } {
+        plog_msg "ESEC boot test passed"
+    } else {
+        plog_err "ESEC boot test failed"
+        return -1
+    }
+
+    set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+    cap_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
+    plog_msg "CSP recorded"
+
     set timestamp_final [clock seconds]
 
     set time_key_prog [expr {$timestamp_post - $timestamp_pre}]
@@ -621,7 +648,8 @@ proc esec_all {sn usb_port slot PN MAC MTP
 if { $use_zmq == 1 } {
     set ::SSI_OPERATION_TIMEOUT_S 10
     diag_zmq_lock_release $zmq_conn $slot
-    diag_force_close_zmq_if $zmq_conn $slot
+    p
+    iag_force_close_zmq_if $zmq_conn $slot
 
     #diag_open_zmq_if $zmq_conn $slot
 } else {
