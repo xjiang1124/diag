@@ -423,6 +423,8 @@ class nic_con:
             session.expect("\#")
             temp = session.after
             if 'oob_mnic0' in session.before:
+                self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
+                time.sleep(0.5)
                 print 'oob_mnic0 enabled'
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig")
