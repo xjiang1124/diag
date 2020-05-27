@@ -1,4 +1,4 @@
-/bin/bash
+#!/bin/bash
 
 hub_ctrl() {
     #disable all the hubs first before enabling one of them 
