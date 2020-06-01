@@ -18,19 +18,25 @@ power_on_naples25_swm_ocp() {
         #power it up ASIC via CPLD
         reg1=$(i2cget -y 0 0x4b 0x01)
 
-        if [[ $reg1 -eq 0x1C ]]
+        reg1=$(( $reg1 & 0x18 )) 
+        if [[ $reg1 -eq 0x18 ]]
         then
             echo "Already powered up"
         else
             i2cset -y 0 0x4b 0x1 0x14 #enable alom pwr (5V upconverted to 12V to card)
             sleep 0.2
-            #enable high power mode on SWM CPLD
-            reg1=$(i2cget -y 0 0x4a 0x21)
-            reg1=$(( $reg1 | 0x2 ))
-            i2cset -y 0 0x4a 0x21 $reg1
-            sleep 0.2
-            i2cset -y 0 0x4b 0x1 0x1C #enable alom + 12V PCIE Edge power
-            echo "Power on done"
+            if [[ $swm_lp_mode -ne 1 ]]
+            then
+                #enable high power mode on SWM CPLD
+                reg1=$(i2cget -y 0 0x4a 0x21)
+                reg1=$(( $reg1 | 0x2 ))
+                i2cset -y 0 0x4a 0x21 $reg1
+                sleep 0.2
+                i2cset -y 0 0x4b 0x1 0x1C #enable alom + 12V PCIE Edge power
+                echo "Power on done (12V PCIe)"
+            else
+                echo "Power on done (Alom Power)"
+            fi
         fi
     fi
 
@@ -160,7 +166,7 @@ control_all() {
         
         for i in {1..10}
         do
-            power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the ALOM
+            power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
             enable_nic_mtp_r3 $i
         done
 
@@ -222,10 +228,18 @@ then
     exit
 fi
 
-if [[ $# -ne 2 ]] 
+if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
 then
     usage
     exit
+fi
+
+swm_lp_mode=0
+if [[ $# -eq 3 ]]
+then
+    echo "3rd arg = $3"
+    swm_lp_mode=$3
+    echo "swm_lp_mode = $swm_lp_mode"
 fi
 
 if [[ $2 == "all" ]]
@@ -266,7 +280,7 @@ else
 
     for slot in $slot_list
     do
-       power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the ALOM
+       power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
        enable_nic_mtp_r3 $slot
     done
 

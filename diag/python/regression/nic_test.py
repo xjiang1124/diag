@@ -49,6 +49,13 @@ class nic_test:
             self.nic_con.switch_console(int(slot))
 
             session = common.session_start()
+            read_data = [0]
+            cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x80".format(slot)
+            common.session_cmd_no_rc(session, cmd)
+            cpldID = re.findall(r"data=(0x[0-9a-fA-F]+)", session.before)
+            common.session_stop(session)
+
+            session = common.session_start()
             session.timeout = timeout
             ret = self.nic_con.uart_session_start(session, self.baud_rate)
             if ret == 0:
@@ -60,9 +67,10 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
-                self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
-                cmd_args = session.before.split()
-                if cmd_args[3] == "0x17":
+                #self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
+                #cmd_args = session.before.split()
+                #if cmd_args[3] == "0x17":
+                if cpldID[0] == "0x17":
                     self.nic_con.turn_off_sgmii(int(slot))
 
                     # enable ports
@@ -98,14 +106,14 @@ class nic_test:
 
         return ret
 
-    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
+    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False):
         numRetry = 5
         nic_list_remain = nic_list[:]
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
             print "timestamp", datetime.datetime.now().time()
-            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl)
+            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp)
             if ret == 0:
                 break
 
@@ -162,7 +170,7 @@ class nic_test:
         return ret, nic_list_remain
 
 
-    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
+    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
@@ -173,7 +181,7 @@ class nic_test:
         slot_list = ",".join(nic_list)
 
         if pwr_cycle == True:
-            self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 30, swm_lp)
 
         for slot in nic_list:
             ret = self.setup_env(int(slot), False, 30, False, False, False)
@@ -597,6 +605,7 @@ if __name__ == "__main__":
     parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
     parser.add_argument("-ite", "--iteration", help="Number of power cycle test iterations", type=int, default=1)
     parser.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
+    parser.add_argument("-swm_lp", "--swm_lp", help="Power Up SWM in Low Power Mode", action='store_true')
     parser.add_argument("-aapl", "--aapl", help="Setup AAPL", action='store_true')
     parser.add_argument("-mainfw", "--mainfw", help="Setup for mainfw", action='store_true')
 
@@ -638,7 +647,7 @@ if __name__ == "__main__":
         if args.mainfw == True:
             test.setup_env_multi_mainfw(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle)
         else: 
-            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl)
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp)
         sys.exit()
 
     if args.pwr_cycle_test == True:
@@ -657,3 +666,5 @@ if __name__ == "__main__":
 
     if args.test_timeout == True:
         test.timeout_test(args.wait_time)
+
+

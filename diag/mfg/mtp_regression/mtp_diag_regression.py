@@ -129,7 +129,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf))
             start_ts = libmfg_utils.timestamp_snapshot()
-            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot, vmarg)
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
             if ret == "SUCCESS":
@@ -138,6 +138,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
                 fail_list.append(slot)
                 nic_test_list.remove(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, intf, ret, duration))
+
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Complete\n".format(nic_type), level=0)
 
     return fail_list
@@ -485,7 +486,7 @@ def main():
     verbosity = False
     skip_test = False
     corner = Env_Cond.MFG_NT
-    swmtestmode = Swm_Test_Mode.SW_DETECT #SWMALOM
+    swmtestmode = Swm_Test_Mode.SWMALOM
 
     if args.mtpid:
         mtp_id = args.mtpid
@@ -759,36 +760,37 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=True):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
 
 
-        #NAPLES25 SWM CPLD & ALOM TEST
-        """
+        #NAPLES25 SWM LOW POWER BOOT MODE TEST
         alom_fail_list = list()
+        swm_lp_test_performed = 0
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-            if nic_type == NIC_Type.NAPLES25SWM: 
-                #CPLD TEST
-                for var in range(len(nic_list)):
-                    slot = nic_list[var]
-                    rc = mtp_mgmt_ctrl.mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(slot)
-                    if rc == False:
-                        alom_fail_list.append(slot)
-                if swmtestmode == Swm_Test_Mode.SWMALOM or swmtestmode == Swm_Test_Mode.ALOM:
-                    for var in range(len(nic_list)):
-                        slot = nic_list[var]
-                        rc = mtp_mgmt_ctrl.mtp_nic_naples25swm_alom_cable_signal_test(slot, 1)
-                        if rc == False:
-                            if slot not in alom_fail_list:
-                                alom_fail_list.append(slot)
+            for var in range(len(nic_list)):
+                slot = nic_list[var]
+                if nic_type == NIC_Type.NAPLES25SWM and (mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.SWMALOM or mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.ALOM):
+                        if swm_lp_test_performed == 0:
+                            mtp_mgmt_ctrl.cli_log_inf("Starting Naples25 SWM Low Power On Test", level=0)
+                        swm_lp_test_performed = 1
+                        if not mtp_mgmt_ctrl.mtp_nic_naples25swm_low_power_mode_test(slot):
+                            alom_fail_list.append(slot)
+
+        if swm_lp_test_performed > 0:
+            mtp_mgmt_ctrl.cli_log_inf("Setting Naples25 SWM Back to High Power Mode (requires a nic reboot)", level=0)
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=False):
+                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                return
 
         for slot in alom_fail_list:
             nic_list.remove(slot)
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
-        """
+
 
         # Diag Pre Check
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):

@@ -152,13 +152,15 @@ class nic_con:
         return ret
 
 
-    def power_cycle_multi(self, baud_rate=115200, slot_list="", wtime=30):
+    def power_cycle_multi(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
         ret = 0
         session = common.session_start()
 
         cmd = "turn_on_slot.sh off {}".format(slot_list)
         common.session_cmd(session, cmd)
         cmd = "turn_on_slot.sh on {}".format(slot_list)
+        if swm_lp == True:
+            cmd = "".join((cmd, " 1"))
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot

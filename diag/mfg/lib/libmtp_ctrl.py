@@ -78,7 +78,7 @@ class mtp_ctrl():
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
-        self._swmtestmode = [Swm_Test_Mode.SW_DETECT] * self._slots
+        self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
 
         self._debug_mode = dbg_mode
         self._filep = filep
@@ -742,11 +742,13 @@ class mtp_ctrl():
             self._swmtestmode[slot] = swmtestmode
         for slot in range(self._slots):
             if self._swmtestmode[slot] == Swm_Test_Mode.SW_DETECT:
+                read_data[0] = 0x00
+                #See if we can read the MTP Adapter CPLD ID.  This would indicate an ALOM should be present
                 rc = self._nic_ctrl_list[slot].nic_read_swm_mtp_adapt_cpld(0x80, read_data)
-                if not rc:
-                    self._swmtestmode[slot] = Swm_Test_Mode.SWM
-                else:
+                if read_data[0] == 0x1b:
                     self._swmtestmode[slot] = Swm_Test_Mode.SWMALOM
+                else:
+                    self._swmtestmode[slot] = Swm_Test_Mode.SWM
         return True
 
     def mtp_stale_image_cleanup(self):
@@ -2153,7 +2155,7 @@ class mtp_ctrl():
                 self.mtp_nic_mini_init(slot, fpo)
 
 
-    def mtp_nic_mgmt_para_init(self, aapl):
+    def mtp_nic_mgmt_para_init(self, aapl, swm_lp=False):
         nic_list = list()
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
@@ -2176,6 +2178,8 @@ class mtp_ctrl():
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param)
+            if swm_lp:
+                cmd = "".join((cmd, " -swm_lp")) 
 
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
@@ -2210,7 +2214,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False):
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -2226,7 +2230,7 @@ class mtp_ctrl():
         if fpo:
             self.mtp_nic_mgmt_seq_init(fpo)
         else:
-            self.mtp_nic_mgmt_para_init(aapl)
+            self.mtp_nic_mgmt_para_init(aapl, swm_lp)
 
         if not self.mtp_mgmt_nic_mac_validate():
             return False
@@ -2455,7 +2459,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_pre_post_diag_check(self, intf, slot):
+    def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=0):
         if intf == "NIC_JTAG":
             cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(slot+1)
             sig_list = ["valid bit 0x1", "error 0x00"]
@@ -2755,6 +2759,17 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "{:s}".format(errstr))
         else:
             self.cli_log_slot_inf(slot, "NIC NAPLES25SWM HIGH POWER MODE TEST PASSED")
+        return rc
+
+    def mtp_nic_naples25swm_low_power_mode_test(self, slot):
+        errlist = list()
+        rc = self._nic_ctrl_list[slot].nic_naples25swm_low_power_mode_test(errlist)
+        if rc == False:
+            self.cli_log_slot_err(slot, "NIC NAPLES25SWM LOW POWER MODE TEST FAILED")
+            for errstr in errlist:
+                self.cli_log_slot_err(slot, "{:s}".format(errstr))
+        else:
+            self.cli_log_slot_inf(slot, "NIC NAPLES25SWM LOW POWER MODE TEST PASSED")
         return rc
 
     def mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(self, slot):

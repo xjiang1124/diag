@@ -1363,7 +1363,7 @@ class nic_ctrl():
                 return True
         return False
     
-    def nic_naples25swm_alom_cable_signal_test(self, errlist, testhighpower):
+    def nic_naples25swm_alom_cable_signal_test(self, errlist, testhighpower=1):
         #funcDebug = 1
         nic_scan_chain_reg = 0x33
         mtp_adapt_scan_reg0 = 0x02   #mask 0x0F
@@ -1502,7 +1502,6 @@ class nic_ctrl():
             errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        mtp_adapt_reg01 = read_data[0]
         if (read_data[0] & 0x08) != 0x08:
             errlist.append(" ERROR: 12V EDGE ENABLE. MTP ADAPTER REG1 EXPECT BIT3 ON") 
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1553,11 +1552,64 @@ class nic_ctrl():
                 return False
         return True
 
+    def nic_naples25swm_low_power_mode_test(self, errlist):
+        read_data = [0]
+
+        if not self.nic_read_swm_mtp_adapt_cpld(0x01, read_data): 
+            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if (read_data[0] & 0x08) != 0x00:
+            errlist.append(" ERROR: 12V EDGE ENABLE. MTP ADAPTER REG1 EXPECT BIT3 (MAIN POWER) OFF") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_read_cpld_via_smbus(0x21, read_data):
+            errlist.append(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if (read_data[0] & 0x02) != 0x00:
+            errlist.append(" ERROR: 12V EDGE ENABLE. SWM CPLD REG21 EXPECT BIT1 OFF (force high power mode)") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_read_cpld(0x01, read_data):
+            errlist.append(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if (read_data[0] & 0x80) != 0x00:
+            errlist.append(" ERROR: 12V EDGE ENABLE. SWM CPLD REG1 EXPECT BIT7 OFF (Host Power)") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_read_swm_mtp_adapt_cpld(0x00, read_data): 
+            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        mtp_adapt_cpld_rev = read_data[0]
+
+        if not self.nic_read_swm_mtp_adapt_cpld(0x04, read_data): 
+            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False 
+
+        if mtp_adapt_cpld_rev < 4:   #BIT IS INVERTED ON LOWER REV CPLD
+            if (read_data[0] & 0x40) != 0x40:
+                errlist.append(" ERROR: 12V EDGE ENABLE. MTP ADAPTER CPLD REG4 EXPECT BIT6 ON") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+        else: 
+            if (read_data[0] & 0x40) != 0x00:
+                errlist.append(" ERROR: 12V EDGE ENABLE. MTP ADAPTER CPLD REG4 EXPECT BIT6 OFF") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+        return True
+
     #Test some registers that are set via SPI (for example software revision registers), and are read via SMBUS
     def nic_naples25swm_cpld_reg_test(self, errlist):
         spi_read_data = [0]
         smb_read_data = [0]
-        test_data = [0xFF, 0x00, 0xAA, 0x55, 0x00]
+        test_data = [0xAA, 0x55, 0x00]
 
 
         #0x34 - 0x37 SFP optics temperature, make sure they read the same on SPI & SMBUS side.  S/W periodically updates value, so cannot run custom data
