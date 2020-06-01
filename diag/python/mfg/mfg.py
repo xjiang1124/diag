@@ -17,11 +17,13 @@ class mfg:
         self.cm_server = dict()
         self.cm_server["FML"] = "192.168.1.112"
         self.cm_server["FPN"] = "192.168.2.22"
+        self.cm_server["FSN"] = "192.168.3.11"
         self.cm_server["PEN"] = "hw-mftg-data"
         self.user = "mfg"
         self.pwd  = "pensando"
         self.remote_path = "/mfg_log/"
         self.local_path = "/home/xguo2/workspace/manufacture/mfg_log/"
+        #self.local_path = "/vol/hw/diag/Naples25_2nd_Source_Qual_Build/mfg_log/"
         self.log_path = "/home/xguo2/workspace/manufacture/test_log/"
 
     def fetch_remote(self, cm, card_type, stage, sn_list):
@@ -51,7 +53,7 @@ class mfg:
                 #pathlib.Path(local_path).mkdir(parents=True, exist_ok=True)
                 common.mkdir_p(local_path)
 
-                cmd = "sshpass -p 'pensando' scp -r mfg@"+remote_ip+":"+remote_path+"* "+local_path
+                cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path+"* "+local_path
                 print(cmd)
                 try:
                     subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')

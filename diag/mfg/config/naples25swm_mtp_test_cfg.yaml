@@ -29,7 +29,6 @@ MTP_PRE:
     NIC_ALOM_CABLE: True
     NIC_N25SWM_CPLD: True
 
-
 NIC_PARA:
     RTC:
         RTC:

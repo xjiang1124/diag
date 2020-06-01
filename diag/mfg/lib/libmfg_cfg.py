@@ -26,43 +26,41 @@ class NIC_CPLD_Version:
 
     NAPLES25SWM_VERSION = "0x9"
     NAPLES25SWM_TIMESTAMP = "04-20"
-    NAPLES25SWM_SEC_VERSION = "0x03"
-    NAPLES25SWM_SEC_TIMESTAMP = "00-00"
+    NAPLES25SWM_SEC_VERSION = "0x89"
+    NAPLES25SWM_SEC_TIMESTAMP = "04-20"
+    
+
 
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_12172019.tar"
-    MTP_ARM64_IMAGE = "image_arm64_12172019.tar"
-
-    #MTP_AMD64_IMAGE = "image_amd64_02122020.tar"
-    #MTP_ARM64_IMAGE = "image_arm64_02122020.tar"
-
-    NIC_DIAGFW_IMAGE = "naples_diagfw_12172019.tar"
-    NIC_GOLDFW_IMAGE = "naples_goldfw_09182019.tar"
+ 
+    MTP_AMD64_IMAGE = "image_amd64_04262020.tar"
+    MTP_ARM64_IMAGE = "image_arm64_04262020.tar"
+    
+    NIC_DIAGFW_IMAGE = "naples_diagfw_swm_04222020.tar"
+    NIC_GOLDFW_IMAGE = "naples_goldfw_04162020.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_cpld_rev4_08082019.bin"
     NAPLES25_SEC_CPLD_IMAGE = "naples25_cpld_rev84_08082019.bin"
 
+    NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev9_04142020.bin"
+    NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev89_04142020.bin"
+    
     NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
     NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"
 
     VOMERO_CPLD_IMAGE = "vomero_cpld_rev4_02072020.bin"
     VOMERO_SEC_CPLD_IMAGE = "vomero_cpld_rev84_02102020.bin"
 
-    NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
-    NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
 
-    NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
-    NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev4_01202020.bin"
-
-
-MFG_MTP_CPLD_IO_VERSION = "0x6"
+MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
+MFG_QSPI_TIMESTAMP = "04-18-2020"
+MFG_GOLD_TIMESTAMP = "04-15-2020"
 MFG_QSPI_VOMERO_TIMESTAMP = "02-03-2020"
-MFG_QSPI_TIMESTAMP = "12-02-2019"
-MFG_GOLD_TIMESTAMP = "09-17-2019"
+
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
@@ -88,15 +86,18 @@ FLX_PENANG_BUILD_SN_FMT = r"{:s}|{:s}".format(FLX_PENANG_SN_FMT, HP_PENANG_SN_FM
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
 NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}$"
 HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
+HP_SWN_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
 HP_DISP_SN_FMT = r"HPE Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 ALOM_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
-ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
-ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[B0-9]{1}[0-9]{2})"
+HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
+HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
+ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
+ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
+HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 
@@ -113,8 +114,9 @@ FLX_GET_UUT_INFO_SOAP = "http:/www.flextronics.com/FFTester20/GetUnitInfo"
 FLX_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
 
 # Penang flex server
-FLX_PENANG_WEBSERVER = "10.192.155.61"
+#FLX_PENANG_WEBSERVER = "10.192.155.61"
 #FLX_PENANG_WEBSERVER = "172.30.178.5"
+FLX_PENANG_WEBSERVER = "10.206.9.16"
 FLX_PENANG_API_URL = "/FFTesterWS_PENSANDO/FFTesterWS.asmx"
 FLX_PENANG_GET_UUT_INFO_SOAP = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
 FLX_PENANG_SAVE_UUT_RSLT_SOAP = "http://www.flextronics.com/FFTesterWS/SaveResult"

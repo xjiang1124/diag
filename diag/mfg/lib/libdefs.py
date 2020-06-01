@@ -32,12 +32,12 @@ class FF_Stage:
 
 class FPN_FF_Stage:
     FF_CFG = "CFG"
-    FF_DL = "PSO-DOWNLOAD_AUTO_L39A"
-    FF_P2C = "PSO-P2C_AUTO_L39A"
-    FF_4C_H = "PSO-4C-H_AUTO_L39A"
-    FF_4C_L = "PSO-4C-L_AUTO_L39A"
-    FF_SWI = "PSO-SWI_AUTO_L39A"
-    FF_FST = "PSO-FST_AUTO_L39A"
+    FF_DL = "PSO-DOWNLOAD_AUTO"
+    FF_P2C = "PSO-P2C_AUTO"
+    FF_4C_H = "PSO-4C-H_AUTO"
+    FF_4C_L = "PSO-4C-L_AUTO"
+    FF_SWI = "PSO-SWI_AUTO"
+    FF_FST = "PSO-FST_AUTO"
 
 
 class Env_Cond(Enum):
@@ -106,7 +106,7 @@ class MTP_Const:
     MTP_PARA_AAPL_INIT_DELAY = 1800
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
-    OS_CMD_DELAY = 120
+    OS_CMD_DELAY = 300
     NIC_CON_CMD_DELAY = 900
     NIC_CON_INIT_DELAY = 60
     NIC_NETCOPY_DELAY = 120
@@ -116,7 +116,7 @@ class MTP_Const:
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
     NIC_ESEC_PROG_DELAY = 1800
-    NIC_POWER_ON_DELAY = 30
+    NIC_POWER_ON_DELAY = 120
     NIC_POWER_OFF_DELAY = 10
 
     MTP_DIAGMGR_DELAY = 10
@@ -250,14 +250,21 @@ class MFG_DIAG_CMDS:
 
     MTP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update"
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
+    MTP_HP_SWM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeSwm"
+    MTP_HP_ALOM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=1024 -hpeAlom"
     MTP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d}"
     MTP_HP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpe"
-    MTP_HPESWM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeSwm"
+    MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"
+    MTP_HP_ALOM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeAlom"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
+    NIC_HP_SWM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeSwm"
+    NIC_HP_ALOM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -pn='{:s}' -update -erase -numBytes=1024 -hpeAlom"
     NIC_HP_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -hpe"
     NIC_FRU_DISP_FMT = "{:s}eeutil -disp"
     NIC_HP_FRU_DISP_FMT = "{:s}eeutil -disp -hpe"
-    NIC_HPESWM_FRU_DISP_FMT = "{:s}eeutil -disp -hpeSwm"
+    NIC_HP_SWM_FRU_DISP_FMT = "{:s}eeutil -disp -dev=fru -hpeSwm"
+    NIC_HP_ALOM_FRU_DISP_FMT = "{:s}eeutil -disp -dev=fru -hpeAlom"
+    NIC_VENDOR_DISP_FMT_SWM = "{:s}eeutil -disp -field=sn -hpeSwm"
     NIC_HPESWM_ALOM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeAlom"
     NIC_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn"
     NIC_HPESWM_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn -hpeSwm"
@@ -265,7 +272,7 @@ class MFG_DIAG_CMDS:
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 
     NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
-    NIC_CPLD_READ_FMT = "{:s}cpld -r 0x{:x}"
+    NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
     NIC_CPLD_WRITE_FMT = "{:s}cpld -w 0x{:x} 0x{:x}"
 
@@ -283,11 +290,15 @@ class MFG_DIAG_CMDS:
     NIC_MOUNT_DISP_FMT = "mount | grep '/dev/mmcblk0p10'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
-    NIC_GOLDFW_PROG_FMT = "fwupdate -p /{:s} -i goldfw"
+    #NIC_GOLDFW_PROG_FMT = "fwupdate -p /{:s} -i goldfw"
+    NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
-    NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
+    #NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
+    NIC_EMMC_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p /{:s} -i 'all'"
+    NIC_EMMC_B_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p /{:s} -i mainfwb"
     NIC_BOOT_DISP_FMT = "fwupdate -r"
-    NIC_IMG_DISP_FMT = "fwupdate -l"
+    NIC_IMG_DISP_FMT = "fwupdate -L"
+    NIC_IMG_DISP1_FMT = "fwupdate -l"
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
     NIC_SET_GOLD_BOOT_FMT = "fwupdate -s goldfw"
@@ -323,6 +334,7 @@ class MFG_DIAG_CMDS:
 
     MTP_RD_ALOM_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
     MTP_WR_ALOM_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
+    MTP_SMB_CMD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_RD_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_WR_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
@@ -400,7 +412,7 @@ class MFG_DIAG_SIG:
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
-    NIC_OS_SHUTDOWN_OK_SIG = "System halted"
+    NIC_OS_SHUTDOWN_OK_SIG = "halted"
     NIC_MOUNT_OK_SIG = "/dev/mmcblk0p10 on /data"
     NIC_ESEC_PROG_PRE_SIG = "IMG PROG PASSED"
     NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
@@ -417,9 +429,8 @@ class MFG_DIAG_SIG:
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
 
 class MFG_DIAG_RE:
-    MFG_NIC_TYPE_NAPLES100   = r"\bUUT_(\d+) +NAPLES100\b"
-    MFG_NIC_TYPE_NAPLES25    = r"\bUUT_(\d+) +NAPLES25\b"
-    MFG_NIC_TYPE_FORIO       = r"\bUUT_(\d+) +FORIO\b"
-    MFG_NIC_TYPE_VOMERO      = r"\bUUT_(\d+) +VOMERO\b"
-    MFG_NIC_TYPE_NAPLES25SWM = r"\bUUT_(\d+) +NAPLES25SWM\b"
-
+    MFG_NIC_TYPE_NAPLES100 = r"UUT_(\d+) +NAPLES100"
+    MFG_NIC_TYPE_NAPLES25  = r"UUT_(\d+) +NAPLES25"
+    MFG_NIC_TYPE_FORIO     = r"UUT_(\d+) +FORIO"
+    MFG_NIC_TYPE_VOMERO    = r"UUT_(\d+) +VOMERO"
+    MFG_NIC_TYPE_NAPLES25SWM = r"UUT_(\d+) +NAPLES25SWM"

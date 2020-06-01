@@ -47,7 +47,7 @@ for a, b in slot_bus_pair:
         naples_env["NAPLES_URL"] = "http://169.254."+str(bus_int)+".1"
         time.sleep(1)
         try:
-            x = subprocess.check_output("/home/diag/penctl.linux show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+            x = subprocess.check_output("/home/diag/penctl.linux.0302 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             print("slot"+str(a), b, "sn: unknown", "type: unknown", "failed") 
             print("Get FRU failed")
@@ -56,7 +56,7 @@ for a, b in slot_bus_pair:
         y = x.decode("utf-8")
         fru = json.loads(y)
         try:
-            x = subprocess.check_output("/home/diag/penctl.linux show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+            x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             print("slot"+str(a), "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "failed")
             print("Get firmware failed")

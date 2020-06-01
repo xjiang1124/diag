@@ -117,11 +117,13 @@ def main():
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE)
         if (mtp_capability & 0x1):
+            # FIXME: Xin - Dedicated image
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
             mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
         if (mtp_capability & 0x2):
+            # FIXME: Xin - Dedicated image
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
-
+            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE)    
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)

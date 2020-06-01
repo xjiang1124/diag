@@ -61,11 +61,13 @@ class mtp_ctrl():
         self._status = MTP_Status.MTP_STA_POWEROFF
 
         self._nic_ctrl_list = [None] * self._slots
+        self._nic_alom_ctrl_list = [None] * self._slots
         self._nic_type_list = [None] * self._slots
         self._nic_prsnt_list = [False] * self._slots
         self._nic_scan_prsnt_list = [False] * self._slots
         self._nic_sn_list = [None] * self._slots
         self._nic_scan_sn_list = [None] * self._slots
+        self._nic_alom_sn_list = [None] * self._slots
 
         self._nic_thread_list = [None] * self._slots
         # lock for nic cli
@@ -86,6 +88,7 @@ class mtp_ctrl():
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
+        self._temppn = None
 
 
     def cli_log_inf(self, msg, level = 1):
@@ -1117,6 +1120,12 @@ class mtp_ctrl():
             naples25_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
             naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
             naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
+            
+            naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+            naples25swm_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+            naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
+            naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
+            
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
@@ -1125,10 +1134,13 @@ class mtp_ctrl():
 
             if stage == FF_Stage.FF_DL:
                 img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
+                img_list += [naples25swm_cpld_img_file, naples25swm_qspi_img_file]
             elif stage == FF_Stage.FF_CFG:
                 img_list = [naples25_cpld_img_file]
+                img_list += [naples25swm_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
+                img_list += [naples25swm_sec_cpld_img_file, naples25swm_gold_img_file]
             else:
                 img_list = []
 
@@ -1588,16 +1600,28 @@ class mtp_ctrl():
 
 
     def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
+        nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
-        if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn):
+        if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn, nic_type):
             self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
             return False
         return True
 
+    def mtp_program_nic_alom_fru(self, slot, date, alom_sn, alom_pn):
+        self.cli_log_slot_inf_lock(slot, "Program NIC ALOM FRU date={:s}, alom_sn={:s}, alom_pn={:s}".format(date, alom_sn, alom_pn))
+        if not self._nic_ctrl_list[slot].nic_program_alom_fru(date, alom_sn, alom_pn):
+            self.cli_log_slot_err_lock(slot, "Program NIC ALOM FRU failed")
+            return False
+        return True
 
     def mtp_get_nic_fru(self, slot):
         return self._nic_ctrl_list[slot].nic_get_fru()
 
+    def mtp_get_nic_alom_fru(self, slot):
+        return self._nic_ctrl_list[slot].nic_alom_get_fru()
+        
+    def mtp_get_nic_alom_sn(self, slot):
+        return self._nic_ctrl_list[slot].nic_alom_sn_get_fru()
 
     def mtp_verify_nic_fru(self, slot, sn, mac, pn, date):
         nic_fru_info = self._nic_ctrl_list[slot].nic_get_fru()
@@ -1624,6 +1648,46 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
 
         return True
+        
+    def mtp_verify_nic_alom_fru(self, slot, alom_sn, alom_pn, date):
+    
+        fru_buf = self._nic_ctrl_list[slot].mtp_read_alom_fru(slot)
+
+        if not fru_buf:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        # retrieve card serial number
+        
+        newdate = date[0] + date[1] + '/' + date[2] + date[3] + '/' + date[4] + date[5]
+            
+        if not re.findall(alom_sn, fru_buf):
+            self.cli_log_slot_err_lock(slot, "ALOM SN Verify Failed expect {:s}".format(alom_sn))
+            return False
+        if not re.findall(alom_pn, fru_buf):
+            self.cli_log_slot_err_lock(slot, "ALOM PN Verify Failed expect {:s}".format(alom_pn))
+            return False
+        if not re.findall(newdate, fru_buf):           
+            self.cli_log_slot_err_lock(slot, "Date Verify Failed expect {:s}".format(newdate))
+            return False
+        self.cli_log_slot_inf_lock(slot, "Verify NIC ALOM FRU Pass, sn={:s}, pn={:s}, date={:s}".format(alom_sn, alom_pn, date))
+
+        return True
+
+    def mtp_verify_nic_assettag(self, slot, exp_assettag):
+    
+        assettag = self._nic_ctrl_list[slot].nic_get_assettag()
+        if not assettag:
+            self.cli_log_slot_err_lock(slot, "Verify NIC assettag Failed, can not retrieve assettag content")
+            return False
+
+        if assettag != exp_assettag:
+            self.cli_log_slot_err_lock(slot, "assettag Verify Failed, get {:s}, expect {:s}".format(assettag, exp_assettag))
+        self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
+        return True
+        
+    def mtp_get_alom_fru(self, slot):
+        return self._nic_ctrl_list[slot].alom_get_fru()
 
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
@@ -1642,6 +1706,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25:
             exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
+            exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
         elif nic_type == NIC_Type.FORIO:
             exp_ver = NIC_CPLD_Version.FORIO_VERSION
             exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
@@ -1753,6 +1820,13 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
                 exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.NAPLES25SWM_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
         elif nic_type == NIC_Type.FORIO:
             exp_ver = NIC_CPLD_Version.FORIO_VERSION
             exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
@@ -1786,7 +1860,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
             return False
-
+        self.cli_log_slot_inf_lock(slot, "Program NIC QSPI passed")
         return True
 
 
@@ -1962,13 +2036,13 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_fru_init(self, slot, init_date=True):
+    def mtp_nic_fru_init(self, slot, init_date=True, nic_type=None):
         if init_date:
             msg = "Init NIC FRU info with date"
         else:
             msg = "Init NIC FRU info without date"
         self.cli_log_slot_inf_lock(slot, msg)
-        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
+        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, nic_type):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             return False
 
@@ -2092,6 +2166,7 @@ class mtp_ctrl():
 
 
     def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl):
+        nic_type = self.mtp_get_nic_type(slot)
         if not self.mtp_check_nic_status(slot):
             return
 
@@ -2112,7 +2187,7 @@ class mtp_ctrl():
                 init_date = False
             else:
                 init_date = True
-            if not self.mtp_nic_fru_init(slot, init_date):
+            if not self.mtp_nic_fru_init(slot, init_date, nic_type):
                 return
             fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
             self.mtp_set_nic_sn(slot, fru_info_list[0])
@@ -2742,6 +2817,7 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
 
+
     def mtp_nic_naples25swm_alom_cable_signal_test(self, slot, highpowertest):
         errlist = list()
         rc = self._nic_ctrl_list[slot].nic_naples25swm_alom_cable_signal_test(errlist, highpowertest)
@@ -2847,6 +2923,7 @@ class mtp_ctrl():
         scan_nic_key_list = list()
         scan_sn_list = list()
         scan_mac_list = list()
+        scan_atom_sn_list = list()
 
         # build all valid nic key list
         for slot in range(self._slots):
@@ -2934,12 +3011,44 @@ class mtp_ctrl():
                     #return None
                 else:
                     break
+            #Scan ALOM SN Loop
+            alom_sn = None
+            alom_pn = None
+
+            if pn == 'P26968-001':
+                while True:
+                    usr_prompt = "Please Scan {:s} ALOM Serial Number Barcode:".format(key)
+                    raw_scan = raw_input(usr_prompt)
+                    alom_sn = libmfg_utils.serial_number_validate(raw_scan)
+                    if not alom_sn:
+                        self.cli_log_err("Invalid ALOM Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                    #return None
+                    elif alom_sn in scan_atom_sn_list:
+                        self.cli_log_err("ALOM Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
+                    #return None
+                    else:
+                        scan_atom_sn_list.append(alom_sn)
+                        break
+                #Scan ALOM PN Loop
+                
+                while True:
+                    usr_prompt = "Please scan {:s} ALOM Part Number Barcode:".format(key)
+                    raw_scan = raw_input(usr_prompt)
+                    alom_pn = libmfg_utils.part_number_validate(raw_scan)
+                    if not alom_pn:
+                        self.cli_log_err("Invalid ALOM Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                    #return None
+                    else:
+                        break
 
             nic_scan_rslt["NIC_VALID"] = True
             nic_scan_rslt["NIC_SN"] = sn
             nic_scan_rslt["NIC_MAC"] = mac
             nic_scan_rslt["NIC_PN"] = pn
             nic_scan_rslt["NIC_TS"] = libmfg_utils.get_fru_date()
+            if pn == 'P26968-001':
+                nic_scan_rslt["SN_ALOM"] = alom_sn
+                nic_scan_rslt["PN_ALOM"] = alom_pn
             mtp_scan_rslt[key] = nic_scan_rslt
 
         nic_empty_list = list(set(valid_nic_key_list).difference(set(scan_nic_key_list)))
@@ -2972,6 +3081,13 @@ class mtp_ctrl():
                 config_lines.append(tmp)
                 tmp = "        TS: \"" + scan_rslt[key]["NIC_TS"] + "\""
                 config_lines.append(tmp)
+                pn = scan_rslt[key]["NIC_PN"]
+                if pn == 'P26968-001':
+                    tmp = "        SN_ALOM: \"" + scan_rslt[key]["SN_ALOM"] + "\""
+                    config_lines.append(tmp)
+                    tmp = "        PN_ALOM: \"" + scan_rslt[key]["PN_ALOM"] + "\""
+                    config_lines.append(tmp)
+
             else:
                 tmp = "        VALID: \"No\""
                 config_lines.append(tmp)

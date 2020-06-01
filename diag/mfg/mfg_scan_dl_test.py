@@ -64,12 +64,17 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     prog_date = str(fru_cfg["TS"])
 
     dsp = FF_Stage.FF_DL
-    for test in ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]:
+    #for test in ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]:
+    for test in ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program FRU
         if test == "FRU_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
+            if pn == 'P26968-001':
+                alom_sn = fru_cfg["SN_ALOM"]
+                alom_pn = fru_cfg["PN_ALOM"] 
+                ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
         # program CPLD
         elif test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
@@ -156,7 +161,12 @@ def main():
             sn = scan_rslt[key]["NIC_SN"]
             pn = scan_rslt[key]["NIC_PN"]
             mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
-            pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
+            if pn == 'P26968-001':
+                alom_sn = scan_rslt[key]["SN_ALOM"]
+                alom_pn = scan_rslt[key]["PN_ALOM"]
+                pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn)
+            else:
+                pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
         else:
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
     libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
@@ -177,6 +187,8 @@ def main():
     naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
     vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
+    naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
 
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
@@ -215,6 +227,8 @@ def main():
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
         pn = nic_fru_cfg[mtp_id][key]["PN"]
         mac_ui = libmfg_utils.mac_address_format(mac)
+        alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+        alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
@@ -229,6 +243,10 @@ def main():
             mtp_exp_capability = 0x2
             cpld_img_file = naples25_cpld_img_file
             qspi_img_file = naples25_qspi_img_file
+        elif card_type == NIC_Type.NAPLES25SWM:
+            mtp_exp_capability = 0x2
+            cpld_img_file = naples25swm_cpld_img_file
+            qspi_img_file = naples25swm_qspi_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -242,7 +260,13 @@ def main():
             return
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+        if card_type == NIC_Type.NAPLES25SWM:
+            alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+            alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+            
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
@@ -296,6 +320,9 @@ def main():
         elif card_type == NIC_Type.NAPLES25:
             qspi_img_file = naples25_qspi_img_file
             cpld_img_file = naples25_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWM:
+            qspi_img_file = naples25swm_qspi_img_file
+            cpld_img_file = naples25swm_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -346,9 +373,22 @@ def main():
         exp_mac = "-".join(re.findall("..", mac))
         exp_pn = pn
         exp_date = prog_date
+        alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+        alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+        exp_alom_sn = alom_sn
+        exp_alom_pn = alom_pn
+        exp_assettag = 'C0'
 
+        # power cycle all nic (Debug Power Failure Issue)
+        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    
         # nic power status check
-        for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]:
+        testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES25SWM:
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "ASSETTAG_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+            #testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "ASSETTAG_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
+        for test in testlists:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "NIC_POWER":
@@ -379,11 +419,15 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                if card_type == NIC_Type.NAPLES25SWM:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+                if card_type == NIC_Type.NAPLES25SWM:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic
@@ -397,13 +441,20 @@ def main():
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
-
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES25SWM:
+            alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+        
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES25SWM:
+            alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
     logfile_close(log_filep_list)
 
     # pkg the logfile
@@ -434,6 +485,26 @@ def main():
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
+        if nic_type == NIC_Type.NAPLES25SWM:
+            alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
+            if not alom_sn:
+                continue
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, alom_sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, alom_sn)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+            if log_hard_copy_flag:
+                libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(alom_sn, log_pkg_file))
+                os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+                log_relative_link = "../{:s}/{:s}".format(alom_sn, os.path.basename(log_pkg_file))
+                log_hard_copy_flag = False
+            else:
+                libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(alom_sn, log_relative_link))
+                chdir_cmd = "cd {:s}".format(mfg_log_dir)
+                ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
+                cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
+                os.system(cmd)            
 
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, FF_Stage.FF_DL)
