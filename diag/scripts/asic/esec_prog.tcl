@@ -477,6 +477,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     }
 
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
     cap_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
     plog_msg "CSP recorded"
 
