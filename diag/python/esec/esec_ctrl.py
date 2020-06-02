@@ -355,7 +355,7 @@ PRIVEK <ek.sk>"""
         print cmd
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
-        ret = common.session_cmd_pass(session, cmd, pass_sign, 600)
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 1200)
         common.session_stop(session)
         return ret
 
