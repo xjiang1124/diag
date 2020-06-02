@@ -272,7 +272,7 @@ class MFG_DIAG_CMDS:
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 
     NIC_CPLD_PROG_FMT = "{:s}cpld -prog /{:s}"
-    NIC_CPLD_READ_FMT = "{:s}cpld -r {:d}"
+    NIC_CPLD_READ_FMT = "{:s}cpld -r 0x{:x}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
     NIC_CPLD_WRITE_FMT = "{:s}cpld -w 0x{:x} 0x{:x}"
 

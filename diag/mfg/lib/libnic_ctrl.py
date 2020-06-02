@@ -1193,7 +1193,7 @@ class nic_ctrl():
             self._date = None
         # retrieve card PN
         if self._vendor == NIC_Vendor.HPE:
-            if nic_type == NIC_Type.NAPLES25SWM:
+            if self._nic_type == NIC_Type.NAPLES25SWM:
                 match = re.findall(HP_SWM_DISP_PN_FMT, fru_buf)
             else:
                 match = re.findall(HP_DISP_PN_FMT, fru_buf)
@@ -1209,7 +1209,7 @@ class nic_ctrl():
         
         # retrieve SWM card Product Number PN
         if self._vendor == NIC_Vendor.HPE:
-            if nic_type == NIC_Type.NAPLES25SWM:
+            if self._nic_type == NIC_Type.NAPLES25SWM:
                 match = re.findall(HP_SWN_PN_FMT, fru_buf)
             else:
                 match = re.findall(HP_DISP_PN_FMT, fru_buf)
@@ -1278,7 +1278,7 @@ class nic_ctrl():
                 date = None
         # secondary PN
         if self._vendor == NIC_Vendor.HPE:
-            if nic_type == NIC_Type.NAPLES25SWM:
+            if self._nic_type == NIC_Type.NAPLES25SWM:
                 match = re.findall(HP_SWM_DISP_PN_FMT, self.nic_get_cmd_buf())
             else:
                 match = re.findall(HP_DISP_PN_FMT, self.nic_get_cmd_buf())
@@ -1318,7 +1318,7 @@ class nic_ctrl():
             return False
 
         if self._vendor == NIC_Vendor.HPE:
-            if nic_type == NIC_Type.NAPLES25SWM:
+            if self._nic_type == NIC_Type.NAPLES25SWM:
                 fru_buf = self.mtp_read_alom_fru(self._slot)    
                 
                 #print ("NAPLES25SWM DISPLAY")
@@ -1516,34 +1516,6 @@ class nic_ctrl():
 
         return [reg26_data, reg28_data]
 
-    def nic_read_alom_cpld(self, reg_addr, read_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-
-        cmd = MFG_DIAG_CMDS.MTP_RD_ALOM_CPLD_FMT.format(reg_addr, self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
-        if not match:
-            return False
-        else:
-            read_data[0] = int(match[0], 16)
-        return True
-
-
-    def nic_write_alom_cpld(self, reg_addr, write_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-
-        cmd = MFG_DIAG_CMDS.MTP_WR_ALOM_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        match = re.findall(r"failed", self.nic_get_cmd_buf())
-        if match:
-            return False
-        return True
 
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
