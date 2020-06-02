@@ -14,6 +14,7 @@ const (
     ID_MTP_SWM_ADAP    = 0x1B
     ID_NAPLES100IBM    = 0x1C
     ID_NAPLES25WFG     = 0x1D
+    ID_VOMERO2         = 0x1E
 )
 
 const (

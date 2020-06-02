@@ -50,8 +50,8 @@ func eepromTlbInit(uut string) {
             if eeprom.HpeAlom == true {
                 eeprom.EepromTbl = eeprom.HpeAlomTblAll
             }
-            if (eeprom.CustType == "ORACLE") {
-               eeprom.EepromTbl = eeprom.OracleTbl
+            if (cardType == "VOMERO2") {
+               eeprom.EepromTbl = eeprom.Vomero2Tbl
             }
             if (cardType == "NAPLES100IBM") {
                eeprom.CustType = "IBM"
@@ -75,8 +75,8 @@ func eepromTlbInit(uut string) {
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
         }
-	if (eeprom.CustType == "ORACLE") {
-            eeprom.EepromTbl = eeprom.OracleTbl
+	if (cardType == "VOMERO2") {
+            eeprom.EepromTbl = eeprom.Vomero2Tbl
         }
         if (cardType == "NAPLES100IBM") {
            eeprom.CustType = "IBM"
@@ -84,7 +84,7 @@ func eepromTlbInit(uut string) {
         }
     }
 
-    if cardType == "NAPLES25SWM" || cardType == "NAPLES25OCP" {
+    if cardType == "NAPLES25SWM" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" {
         eeprom.I2cAddr16 = true
     }
 

@@ -193,6 +193,8 @@ func init() {
         I2cTbl = ForioTbl
     } else if CardType == "VOMERO" {
         I2cTbl = ForioTbl
+    } else if CardType == "VOMERO2" {
+        I2cTbl = ForioTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -295,6 +297,8 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "FORIO" {
         CurI2cTbl = ForioMtpTbl
     } else if uutType == "VOMERO" {
+        CurI2cTbl = ForioMtpTbl
+    } else if uutType == "VOMERO2" {
         CurI2cTbl = ForioMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
