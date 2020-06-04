@@ -51,6 +51,7 @@ func eepromTlbInit(uut string) {
                 eeprom.EepromTbl = eeprom.HpeAlomTblAll
             }
             if (cardType == "VOMERO2") {
+               eeprom.CustType = "ORACLE"
                eeprom.EepromTbl = eeprom.Vomero2Tbl
             }
             if (cardType == "NAPLES100IBM") {
@@ -76,6 +77,7 @@ func eepromTlbInit(uut string) {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
         }
 	if (cardType == "VOMERO2") {
+            eeprom.CustType = "ORACLE"
             eeprom.EepromTbl = eeprom.Vomero2Tbl
         }
         if (cardType == "NAPLES100IBM") {

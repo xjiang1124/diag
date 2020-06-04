@@ -212,33 +212,45 @@ var Vomero2Tbl = []entry {
     entry{"PAD",                                    INT8,        262,        1,    []byte{0x00}},
     entry{"Common Header Checksum",                 INT8,        263,        1,    []byte{0x00}},
     entry{"Board Info Format Version",              INT8,        264,        1,    []byte{0x01}},
-    entry{"Board Area Length",                      INT8,        265,        1,    []byte{0x0C}},
+    entry{"Board Area Length",                      INT8,        265,        1,    []byte{0x12}},
     entry{"Language Code",                          INT8,        266,        1,    []byte{0x19}},
     entry{"Manufacturing Date/Time",                INT8,        267,        3,    []byte{0x00, 0x00, 0x00}},
-    entry{"Manufacturing Type/Length",              INT8,        270,        1,    []byte{0xD5}},
-    entry{"Manufacturer",                           STRING,      271,        21,   []byte{0x50, 0x45, 0x4E, 0x53,
-        0x41, 0x4E, 0x44, 0x4F, 0x20, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4D, 0x53, 0x20, 0x49, 0x4E, 0x43, 0x2E}},
-    entry{"Product Name Type/Length",               INT8,        292,        1,    []byte{0xD0}},
-    entry{"Product Name",                           STRING,      293,        16,   []byte{0x44, 0x53, 0x43, 0x31,
-        0x2D, 0x32, 0x51, 0x31, 0x30, 0x30, 0x2D, 0x38, 0x56, 0x36, 0x34, 0x50}},
-    entry{"Serial Number Type/Length",              INT8,        309,        1,    []byte{0xCB}},
-    entry{"Serial Number",                          STRING,      310,        11,   []byte{0x30, 0x30, 0x30, 0x30,
+    entry{"Manufacturing Type/Length",              INT8,        270,        1,    []byte{0xC8}},
+    entry{"Manufacturer",                           STRING,      271,        8,    []byte{0x50, 0x65, 0x6E, 0x73,
+        0x61, 0x6E, 0x64, 0x6F}},
+    entry{"Product Name Type/Length",               INT8,        279,        1,    []byte{0xE8}},
+    entry{"Product Name",                           STRING,      280,        26,   []byte{0x44, 0x53, 0x43, 0x2D,
+        0x31, 0x30, 0x30, 0x56, 0x20, 0x35, 0x30, 0x2F, 0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53,
+        0x46, 0x50, 0x32, 0x38}},
+    entry{"PAD",                                    STRING,      306,        14,   []byte{0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Serial Number Type/Length",              INT8,        320,        1,    []byte{0xCB}},
+    entry{"Serial Number",                          STRING,      321,        11,   []byte{0x30, 0x30, 0x30, 0x30,
         0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
-    entry{"Part Number Type/Length",                INT8,        321,        1,    []byte{0xCD}},
-    entry{"Part Number",                            STRING,      322,        13,   []byte{0x36, 0x38, 0x2D, 0x30,
-        0x30, 0x31, 0x31, 0x2D, 0x30, 0x32, 0x20, 0x30, 0x31}},
-    entry{"FRU File ID Type/Length",                INT8,        335,        1,    []byte{0xC0}},
-    entry{"Board ID Type/Length",                   INT8,        336,        1,    []byte{0x04}},
-    entry{"Board ID",                               INT8,        337,        4,    []byte{0x06, 0x00, 0x00, 0x00}},
-    entry{"Engineering Change Level Type/Length",   INT8,        341,        1,    []byte{0xC2}},
-    entry{"Engineering Change Level",               INT8,        342,        2,    []byte{0x00, 0x00}},
-    entry{"Number of MAC Address Type/Length",      INT8,        344,        1,    []byte{0x02}},
-    entry{"Number of MAC Address",                  INT8,        345,        2,    []byte{0x18, 0x00}},
-    entry{"MAC Address Base Type/Length",           INT8,        347,        1,    []byte{0x06}},
-    entry{"MAC Address Base",                       INT8,        348,        6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00}},
-    entry{"End of Field",                           INT8,        354,        1,    []byte{0xC1}},
-    entry{"PAD",                                    INT8,        355,        4,    []byte{0x00, 0x00, 0x00, 0x00}},
-    entry{"Board Info Area Checksum",               INT8,        359,        1,    []byte{0x00}},
+    entry{"Part Number Type/Length",                INT8,        332,        1,    []byte{0xD9}},
+    entry{"Part Number",                            STRING,      333,        16,   []byte{0x44, 0x53, 0x43, 0x31,
+        0x2D, 0x32, 0x51, 0x31, 0x30, 0x30, 0x2D, 0x38, 0x56, 0x36, 0x34, 0x50}},
+    entry{"PAD",                                    STRING,      349,        9,    []byte{0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"FRU File ID Type/Length",                INT8,        358,        1,    []byte{0xC8}},
+    entry{"06/03/20",                               STRING,      359,        8,    []byte{0x30, 0x36, 0x2F, 0x30,
+        0x33, 0x2F, 0x32, 0x30}},
+    entry{"Board ID Type/Length",                   INT8,        367,        1,    []byte{0x04}},
+    entry{"Board ID",                               INT8,        368,        4,    []byte{0x06, 0x00, 0x00, 0x00}},
+    entry{"Engineering Change Level Type/Length",   INT8,        372,        1,    []byte{0xC2}},
+    entry{"Engineering Change Level",               INT8,        373,        2,    []byte{0x00, 0x00}},
+    entry{"Number of MAC Address Type/Length",      INT8,        375,        1,    []byte{0x02}},
+    entry{"Number of MAC Address",                  INT8,        376,        2,    []byte{0x18, 0x00}},
+    entry{"MAC Address Base Type/Length",           INT8,        378,        1,    []byte{0x06}},
+    entry{"MAC Address Base",                       INT8,        379,        6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 
+         0x00}},
+    entry{"Assembly Number Type/Length",            INT8,        385,        1,    []byte{0xCD}},
+    entry{"Assembly Number",                        STRING,      386,        13,   []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 
+         0x31, 0x31, 0x2D, 0x30, 0x32, 0x20, 0x30, 0x31}},
+    entry{"End of Field",                           INT8,        399,        1,    []byte{0xC1}},
+    entry{"PAD",                                    STRING,      400,        7,    []byte{0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00}},
+    entry{"Board Info Area Checksum",               INT8,        407,        1,    []byte{0x00}},
 } 
 
 /*
@@ -741,14 +753,14 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" {
+            if CustType != "IBM" && CustType != "ORACLE" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            if CustType == "IBM" {
+            if CustType == "IBM" || CustType == "ORACLE" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -879,6 +891,19 @@ func updateIntChk() () {
         }
     }
 
+    if CustType == "ORACLE" {
+        brdInfoChk = 0
+        productInfoChk = 0;
+        cmnHeadChk = 0
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 263) && (entry.Offset < 406) {
+                brdInfoChk += calcSum(entry)
+            } else if (entry.Offset >= 256) && (entry.Offset < 263) {
+                cmnHeadChk += calcSum(entry)
+            }
+        }
+    }
+
     if HpeAlom == true {
         //PIA Checksum (BIA is handled above in first EepromTbl checksum calculate)
         for _, entry := range(EepromTbl) {
@@ -978,7 +1003,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" {
+            if CustType != "IBM" && CustType != "ORACLE" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -986,7 +1011,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 }
             }
 
-            if CustType == "IBM" {
+            if CustType == "IBM" || CustType == "ORACLE" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1084,7 +1109,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if ( CustType == "IBM" ) {
+        if ( CustType == "IBM" || CustType == "ORACLE" ) {
             copy(an_ptr, pn)
         } else {
             copy(pn_ptr, pn)
@@ -1144,7 +1169,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             }
         }
 
-        if CustType == "IBM" {
+        if CustType == "IBM" || CustType == "ORACLE" {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1257,7 +1282,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 continue
             }
         } else if(field == "PN") {
-            if ( CustType == "IBM" ) {
+            if ( CustType == "IBM" || CustType == "ORACLE" ) {
                 if entry.Name != "Assembly Number" {
                     continue
                 }
