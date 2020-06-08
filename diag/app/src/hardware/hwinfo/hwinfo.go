@@ -107,6 +107,12 @@ var forioQsfpTbl = []QsfpInfo_t {
     QsfpInfo_t {"QSFP_1", 0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
     QsfpInfo_t {"QSFP_2", 0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
 }
+
+//===============================
+// Biodona 
+// Status display list
+var biodonaDispStaList map[string]DispStaFunc
+
 //===============================
 // MTP
 // Status display list
@@ -204,6 +210,18 @@ func init() {
     forioI2cHubMap = make(map[string]I2cHubInfo)
 
     //===============================
+    // Biodona
+    biodonaDispStaList = make(map[string]DispStaFunc)
+    biodonaDispStaList["ELB0_CORE"] = tps53659.DispStatus
+    biodonaDispStaList["ELB0_ARM"]  = tps53659.DispStatus
+    biodonaDispStaList["VDDQ_DDR"]  = tps53659.DispStatus
+    biodonaDispStaList["VDD_DDR"]   = tps549a20.DispStatus
+    biodonaDispStaList["TSENSOR"]   = tmp42123.DispStatus
+
+    // Dummy I2C hub map
+    naples100I2cHubMap = make(map[string]I2cHubInfo)
+
+    //===============================
     // MTP
     mtpDispStaList = make(map[string]DispStaFunc)
     mtpDispStaList["PSU_1"] = pet1600.DispStatus
@@ -246,9 +264,7 @@ func init() {
     forioI2cHubList := []string{"HUB_NONE"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
-    naples100PsuList := []string{"PSU_NONE"}
-    naples25PsuList := []string{"PSU_NONE"}
-    forioPsuList := []string{"PSU_NONE"}
+    nicPsuList := []string{"PSU_NONE"}
 
 
     //===============================
@@ -264,8 +280,6 @@ func init() {
     // Display list
     dispMap = make(map[string]map[string]DispStaFunc)
     dispMap["FORIO"]       = forioDispStaList
-    dispMap["VOMERO"]      = forioDispStaList
-    dispMap["VOMERO2"]      = forioDispStaList
     dispMap["NAPLES100"]   = naples100DispStaList
     dispMap["NAPLES100IBM"]= naples100DispStaList
     dispMap["NAPLES25"]    = naples25DispStaList
@@ -273,14 +287,20 @@ func init() {
     dispMap["NAPLES25SWM"] = naples25DispStaList
     dispMap["NAPLES25WFG"] = naples25DispStaList
     dispMap["NAPLES_MTP"]  = naplesMtpDispStaList
+    dispMap["VOMERO"]      = forioDispStaList
+    dispMap["VOMERO2"]     = forioDispStaList
+    //===============================
+    // Elba
+    dispMap["BIODONA_D4"]  = biodonaDispStaList
+    dispMap["BIODONA_D5"]  = biodonaDispStaList
+    //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
-    eepromMap["MTP"]           = mtpEepList
-    eepromMap["MTPS"]          = mtpEepList
+    eepromMap["FORIO"]         = naplesEepList
     eepromMap["NAPLES_MTP"]    = naplesEepList
     eepromMap["NAPLES100"]     = naplesEepList
     eepromMap["NAPLES100IBM"]  = naplesEepList
@@ -288,9 +308,15 @@ func init() {
     eepromMap["NAPLES25OCP"]   = naplesEepList
     eepromMap["NAPLES25SWM"]   = naplesEepList
     eepromMap["NAPLES25WFG"]   = naplesEepList
-    eepromMap["FORIO"]         = naplesEepList
     eepromMap["VOMERO"]        = naplesEepList
-    eepromMap["VOMERO2"]        = naplesEepList
+    eepromMap["VOMERO2"]       = naplesEepList
+    //===============================
+    // Elba
+    eepromMap["BIODONA_D4"]    = naplesEepList
+    eepromMap["BIODONA_D5"]    = naplesEepList
+    //===============================
+    eepromMap["MTP"]           = mtpEepList
+    eepromMap["MTPS"]          = mtpEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -305,7 +331,11 @@ func init() {
     i2cHubMap["NAPLES25WFG"]    = naples100I2cHubMap
     i2cHubMap["FORIO"]          = naples100I2cHubMap
     i2cHubMap["VOMERO"]         = naples100I2cHubMap
-    i2cHubMap["VOMERO2"]         = naples100I2cHubMap
+    i2cHubMap["VOMERO2"]        = naples100I2cHubMap
+    //===============================
+    // Elba
+    i2cHubMap["BIODONA_D4"]     = naples100I2cHubMap
+    i2cHubMap["BIODONA_D5"]     = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"]           = mtpI2cHubList
@@ -319,21 +349,29 @@ func init() {
     i2cHubListMap["NAPLES25WFG"]   = naples25I2cHubList
     i2cHubListMap["FORIO"]         = forioI2cHubList
     i2cHubListMap["VOMERO"]        = forioI2cHubList
-    i2cHubListMap["VOMERO2"]        = forioI2cHubList
+    i2cHubListMap["VOMERO2"]       = forioI2cHubList
+    //===============================
+    // Elba
+    i2cHubListMap["BIODONA_D4"]    = forioI2cHubList
+    i2cHubListMap["BIODONA_D5"]    = forioI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
     psuListMap["MTP"]          = mtpPsuList
     psuListMap["MTPS"]         = mtpPsuList
-    psuListMap["NAPLES100"]    = naples100PsuList
-    psuListMap["NAPLES100IBM"]  = naples100PsuList
-    psuListMap["NAPLES25"]     = naples25PsuList
-    psuListMap["NAPLES25OCP"]  = naples25PsuList
-    psuListMap["NAPLES25SWM"]  = naples25PsuList
-    psuListMap["NAPLES25WFG"]  = naples25PsuList
-    psuListMap["FORIO"]        = forioPsuList
-    psuListMap["VOMERO"]       = forioPsuList
-    psuListMap["VOMERO2"]       = forioPsuList
+    psuListMap["NAPLES100"]    = nicPsuList
+    psuListMap["NAPLES100IBM"] = nicPsuList
+    psuListMap["NAPLES25"]     = nicPsuList
+    psuListMap["NAPLES25OCP"]  = nicPsuList
+    psuListMap["NAPLES25SWM"]  = nicPsuList
+    psuListMap["NAPLES25WFG"]  = nicPsuList
+    psuListMap["FORIO"]        = nicPsuList
+    psuListMap["VOMERO"]       = nicPsuList
+    psuListMap["VOMERO2"]      = nicPsuList
+    //===============================
+    // Elba
+    psuListMap["BIODONA_D4"]   = nicPsuList
+    psuListMap["BIODONA_D5"]   = nicPsuList
 
     //===============================
     // Platform specified list
@@ -349,10 +387,10 @@ func init() {
     //===============================
     // Use switch case to avoid dummy data structure
     switch cardType {
-    case "NAPLES100", "NAPLES100IBM":
+    case "NAPLES100", "NAPLES100IBM", "BIODONA_D4", "BIODONA_D5":
         QsfpTbl = naples100QsfpTbl
-        var t boardinfo.Naples100Cpld_T
-        yaml.Unmarshal([]byte(boardinfo.Naples100Cpld), &t)
+        var t boardinfo.NicCpld_T
+        yaml.Unmarshal([]byte(boardinfo.NicCpld), &t)
         CpldInfo = &t
     case "NAPLES25", "NAPLES25SWM", "NAPLES25OCP", "NAPLES25WFG":
         SfpTbl = naples25SfpTbl

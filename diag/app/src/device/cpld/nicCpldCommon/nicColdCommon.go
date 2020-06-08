@@ -15,6 +15,8 @@ const (
     ID_NAPLES100IBM    = 0x1C
     ID_NAPLES25WFG     = 0x1D
     ID_VOMERO2         = 0x1E
+    ID_BIODONA_D4      = 0x40
+    ID_BIODONA_D5      = 0x41
 )
 
 const (

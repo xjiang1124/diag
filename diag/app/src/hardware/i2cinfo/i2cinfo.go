@@ -195,6 +195,8 @@ func init() {
         I2cTbl = ForioTbl
     } else if CardType == "VOMERO2" {
         I2cTbl = ForioTbl
+    } else if CardType == "BIODONA_D4" || CardType == "BIODONA_D5" {
+        I2cTbl = BiodonaTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {

@@ -15,8 +15,13 @@ const (
 
 var naples100TestList = []string {
     "CAP0_CORE_DVDD", "CAP0_CORE_AVDD", "CAP0_HBM", "CAP0_ARM", "CAP0_3V3",
+}
+
+var biodonaTestList = []string {
+    "ELB0_CORE", "ELB0_ARM", "VDDQ_DDR", "VDD_DDR",
     "TSENSOR", "RTC",
 }
+
 var i2cTestList []string
 
 //var i2cTestMap map[string][]string
@@ -35,8 +40,10 @@ func init() {
     i2cTestMap["FORIO"]         = naples100TestList
     i2cTestMap["VOMERO"]        = naples100TestList
     i2cTestMap["VOMERO2"]       = naples100TestList
-    i2cTestMap["NAPLES100IBM"] = naples100TestList
-    i2cTestMap["NAPLES25WFG"]  = naples100TestList
+    i2cTestMap["NAPLES100IBM"]  = naples100TestList
+    i2cTestMap["NAPLES25WFG"]   = naples100TestList
+    i2cTestMap["BIODONA_D4"]    = biodonaTestList
+    i2cTestMap["BIODONA_D5"]    = biodonaTestList
 
     i2cTestList = i2cTestMap[cardType]
 }

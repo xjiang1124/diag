@@ -41,6 +41,12 @@ then
 elif [[ $cpld_id == "0x1c" ]]
 then
     type="NAPLES100IBM"
+elif [[ $cpld_id == "0x40" ]]
+then
+    type="BIODONA_D4"
+elif [[ $cpld_id == "0x41" ]]
+then
+    type="BIODONA_D5"
 fi
 
 echo "$type Detected!"
