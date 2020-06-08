@@ -668,7 +668,6 @@ class nic_ctrl():
         return True
 
     def mtp_read_alom_fru(self, slot):
-
         cmd = MFG_DIAG_CMDS.MTP_HP_ALOM_FRU_DISP_FMT.format(slot+1)
         return self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
 
@@ -1312,25 +1311,24 @@ class nic_ctrl():
             print ("fru_buf 12 match: ")
             return False
         
-        
-        #print ("ALOM nic_type: {}".format(nic_type))
-        if not self.nic_vendor_init():
-            return False
+        #ALOM CARD WITH SWM IF ATTACHED
+        if self._nic_type == NIC_Type.NAPLES25SWM:
+            if swmtestmode == Swm_Test_Mode.SWMALOM or swmtestmode == Swm_Test_Mode.ALOM:
+                errlist = list()
+                rc = self.nic_swm_check_alom_present(errlist)
+                if not rc:
+                    print(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
+                    return False
+                else:
+                    print(" ALOM PRESENT")
 
-        if self._vendor == NIC_Vendor.HPE:
-            if self._nic_type == NIC_Type.NAPLES25SWM:
                 fru_buf = self.mtp_read_alom_fru(self._slot)    
                 
-                #print ("NAPLES25SWM DISPLAY")
-                #print (fru_buf)
-
                 if not fru_buf:
                     print ("fru_buf 13: {}".format(nic_cmd))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False        
                 
-                #Charles
-                #match = re.findall(HP_DISP_SN_FMT, fru_buf)  
                 match = None
                 match = re.findall(ALOM_SN_FMT, fru_buf)
                 if match:
@@ -1367,45 +1365,6 @@ class nic_ctrl():
                 
         return True
         
-        #CHECK ALOM FRU ON NAPLES25SWM
-        if self._nic_type == NIC_Type.NAPLES25SWM:
-            #rc = self.nic_alom_present()
-            rc = True
-            if not rc:
-                print(" ALOM NOT PRESENT")
-            else:
-                print(" ALOM PRESENT")
-                cmd = MFG_DIAG_CMDS.NIC_HPESWM_ALOM_FRU_DISP_FMT.format(self._slot+1)
-                if not self.mtp_exec_cmd(cmd):
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-                else:
-                    if not self.mtp_exec_cmd(cmd):
-                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                        return False
-
-                    # retrieve card serial number
-                    match = re.findall(ALOM_SN_FMT, self.nic_get_cmd_buf())
-                    if not match:
-                        print(" ERROR: ADD FIXME ALOM NO S/N MATCH")
-                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                        return False
-
-                    # retrieve card Board Information Area PN
-                    match = re.findall(ALOM_DISP_BIA_PN_FMT, self.nic_get_cmd_buf())
-                    if not match:
-                        print(" ERROR: ADD FIXME ALOM BIA PN")
-                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                        return False
-
-                    # retrieve card Product Information Area PN
-                    match = re.findall(ALOM_DISP_PIA_PN_FMT, self.nic_get_cmd_buf())
-                    if not match:
-                        print(" ERROR: ADD FIXME ALOM PIA PN")
-                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                        return False
-
-        return True
         
 
     def nic_get_fru(self):

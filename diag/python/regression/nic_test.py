@@ -49,14 +49,22 @@ class nic_test:
             self.nic_con.switch_console(int(slot))
 
             session = common.session_start()
-            read_data = [0]
+            session.timeout = timeout
+            cmd = "turn_on_hub.sh {}".format(slot)
+            common.session_cmd_no_rc(session, cmd)
+            sleep(0.5)
             cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x80".format(slot)
             common.session_cmd_no_rc(session, cmd)
             cpldID = re.findall(r"data=(0x[0-9a-fA-F]+)", session.before)
-            common.session_stop(session)
 
-            session = common.session_start()
-            session.timeout = timeout
+            cmd = "smbutil -uut=uut_{} -dev=cpld_adap -rd -addr=0x80".format(slot)
+            common.session_cmd_no_rc(session, cmd)
+            match = re.findall(r"Failed", session.before)
+            if match:
+                sleepTime=3.0
+            else:
+                sleepTime=6.0
+
             ret = self.nic_con.uart_session_start(session, self.baud_rate)
             if ret == 0:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
@@ -67,9 +75,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
-                #self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 0x80")
-                #cmd_args = session.before.split()
-                #if cmd_args[3] == "0x17":
+
                 if cpldID[0] == "0x17":
                     self.nic_con.turn_off_sgmii(int(slot))
 
@@ -85,7 +91,7 @@ class nic_test:
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xD 0x1140")
 
                     self.nic_con.uart_session_cmd(session, "/platform/bin/cpldmon &")
-                    sleep(3.0)
+                    sleep(sleepTime)
                     self.nic_con.uart_session_cmd(session, "kill -9 $(pidof cpldmon)")
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
