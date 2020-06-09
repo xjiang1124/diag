@@ -2042,7 +2042,7 @@ class mtp_ctrl():
         else:
             msg = "Init NIC FRU info without date"
         self.cli_log_slot_inf_lock(slot, msg)
-        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, nic_type):
+        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             return False
 

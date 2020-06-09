@@ -1318,6 +1318,7 @@ class nic_ctrl():
                 rc = self.nic_swm_check_alom_present(errlist)
                 if not rc:
                     print(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
                 else:
                     print(" ALOM PRESENT")
