@@ -160,7 +160,7 @@ def main():
     fail_rslt_list = list()
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
     while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False)
+        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode)
         if scan_rslt:
             break;
         mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
@@ -173,10 +173,13 @@ def main():
             sn = scan_rslt[key]["NIC_SN"]
             pn = scan_rslt[key]["NIC_PN"]
             mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
-            if pn == 'P26968-001':
+            if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
                 alom_sn = scan_rslt[key]["SN_ALOM"]
                 alom_pn = scan_rslt[key]["PN_ALOM"]
-                pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn)
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    pass_rslt_list.append(nic_cli_id_str + "SN_ALOM = " + alom_sn + "PN_ALOM = " + alom_pn)
+                else:
+                    pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn)
             else:
                 pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
         else:
@@ -399,9 +402,9 @@ def main():
         testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES25SWM:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "FRU_ALOM_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
             if swmtestmode == Swm_Test_Mode.ALOM:
-                testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
+                testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         for test in testlists:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
@@ -417,6 +420,8 @@ def main():
             # verify fru
             elif test == "FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, exp_date)
+            elif test == "FRU_ALOM_VERIFY":
+                ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
             # verify cpld
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
