@@ -21,6 +21,7 @@ from libmfg_cfg import MFG_IMAGE_FILES
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+from libdefs import Swm_Test_Mode
 
 
 def logfile_close(filep_list):
@@ -57,7 +58,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, swmtestmode):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -71,7 +72,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         if test == "FRU_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES25SWM:
+            #skip ALOM programming if Naples25 SWM test mode is SWM only
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode != Swm_Test_Mode.SWM:  
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
@@ -99,12 +101,17 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
     args = parser.parse_args()
     if args.mtpid:
         mtp_id = args.mtpid
 
     mtp_cfg_db = load_mtp_cfg()
+
+    swmtestmode = Swm_Test_Mode.SWMALOM 
+    if args.swm:
+        swmtestmode = args.swm
 
     # local log files
     log_filep_list = list()
@@ -330,7 +337,8 @@ def main():
                                                                               nic_fru_cfg[mtp_id][key],
                                                                               cpld_img_file,
                                                                               qspi_img_file,
-                                                                              slot))
+                                                                              slot,
+                                                                              swmtestmode))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -415,8 +423,8 @@ def main():
                 if card_type == NIC_Type.NAPLES25SWM:
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
             # verify asset tag
-            elif test == "ASSETTAG_VERIFY":
-                ret = mtp_mgmt_ctrl.mtp_verify_nic_assettag(slot, exp_assettag)
+            #elif test == "ASSETTAG_VERIFY":
+            #    ret = mtp_mgmt_ctrl.mtp_verify_nic_assettag(slot, exp_assettag)
             # verify CPLD
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
