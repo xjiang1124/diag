@@ -49,10 +49,10 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
-
 def main():
     parser = argparse.ArgumentParser(description="MTP Final Stage Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTPS-001, etc", required=True)
+    parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
 
     args = parser.parse_args()
     if args.mtpid:
