@@ -45,7 +45,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, card_type):
+def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
     # go to mtp_fst_script and start the test
     cmd = "cd {:s}".format(mtp_fst_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -53,7 +53,7 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_fst_test.py --mtpid {:s} --card_type {:s}".format(mtp_id, card_type)
+    cmd = "./mtp_fst_test.py --mtpid {:s}".format(mtp_id)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Complete", level=0)
@@ -73,7 +73,6 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
 def main():
     parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
 
     args = parser.parse_args()
     if args.verbosity:
@@ -132,7 +131,7 @@ def main():
         mtp_thread = threading.Thread(target = single_mtp_fst_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_fst_script_dir,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
-                                                                            mfg_fst_summary[mtp_id]), card_type)
+                                                                            mfg_fst_summary[mtp_id]))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
