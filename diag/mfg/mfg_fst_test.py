@@ -76,6 +76,7 @@ def main():
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
 
     args = parser.parse_args()
+    card_type = args.card_type
     if args.verbosity:
         verbosity = True
     else:
