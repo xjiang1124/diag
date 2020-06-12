@@ -1404,7 +1404,7 @@ class nic_ctrl():
         if not rc:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        self._cpld_ver = "0x{:01d}".format(read_data[0])
+        self._cpld_ver = "0x{:X}".format(read_data[0])
 
         # get the month timestamp
         read_data = [0]
