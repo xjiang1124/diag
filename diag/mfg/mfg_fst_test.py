@@ -132,7 +132,8 @@ def main():
         mtp_thread = threading.Thread(target = single_mtp_fst_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_fst_script_dir,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
-                                                                            mfg_fst_summary[mtp_id]), card_type)
+                                                                            mfg_fst_summary[mtp_id], 
+                                                                            card_type))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
