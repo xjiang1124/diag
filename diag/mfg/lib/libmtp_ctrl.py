@@ -2042,7 +2042,7 @@ class mtp_ctrl():
         else:
             msg = "Init NIC FRU info without date"
         self.cli_log_slot_inf_lock(slot, msg)
-        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, nic_type):
+        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             return False
 
@@ -2912,7 +2912,7 @@ class mtp_ctrl():
         return [ret, err_msg_list]
 
 
-    def mtp_barcode_scan(self, present_check=True):
+    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM):
         mtp_scan_rslt = dict()
         mtp_ts_snapshot = libmfg_utils.get_timestamp()
         mtp_scan_rslt["MTP_ID"] = self._id
@@ -2968,54 +2968,59 @@ class mtp_ctrl():
                         scan_nic_key_list.append(key)
 
             #Scan SN loop
-            sn = None
-            while True:
-                usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
-                raw_scan = raw_input(usr_prompt)
-                sn = libmfg_utils.serial_number_validate(raw_scan)
-                if not sn:
-                    self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                    #return None
-                elif sn in scan_sn_list:
-                    self.cli_log_err("NIC Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
-                    #return None
-                else:
-                    scan_sn_list.append(sn)
-                    break
+            sn = "0"
+            mac = "000000000000"
+            pn = "0"
+            if swmtestmode != Swm_Test_Mode.ALOM:
+                while True:
+                    usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
+                    raw_scan = raw_input(usr_prompt)
+                    sn = libmfg_utils.serial_number_validate(raw_scan)
+                    if not sn:
+                        self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                        #return None
+                    elif sn in scan_sn_list:
+                        self.cli_log_err("NIC Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
+                        #return None
+                    else:
+                        scan_sn_list.append(sn)
+                        break
 
-            #Scan Mac Loop
-            mac = None
-            while True:
-                usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
-                raw_scan = raw_input(usr_prompt)
-                mac = libmfg_utils.mac_address_validate(raw_scan)
-                if not mac:
-                    self.cli_log_err("Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                    #return None
-                elif mac in scan_mac_list:
-                    mac_ui = libmfg_utils.mac_address_format(mac)
-                    self.cli_log_err("NIC MAC Address: {:s} is double scanned, please restart the scan process\n".format(mac_ui), level=0)
-                    #return None
-                else:
-                    scan_mac_list.append(mac)
-                    break
+                #Scan Mac Loop
+                while True:
+                    usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
+                    raw_scan = raw_input(usr_prompt)
+                    mac = libmfg_utils.mac_address_validate(raw_scan)
+                    if not mac:
+                        self.cli_log_err("Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                        #return None
+                    elif mac in scan_mac_list:
+                        mac_ui = libmfg_utils.mac_address_format(mac)
+                        self.cli_log_err("NIC MAC Address: {:s} is double scanned, please restart the scan process\n".format(mac_ui), level=0)
+                        #return None
+                    else:
+                        scan_mac_list.append(mac)
+                        break
 
-            #Scan PN Loop
-            pn = None
-            while True:
-                usr_prompt = "Please scan {:s} Part Number Barcode:".format(key)
-                raw_scan = raw_input(usr_prompt)
-                pn = libmfg_utils.part_number_validate(raw_scan)
-                if not pn:
-                    self.cli_log_err("Invalid NIC Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                    #return None
-                else:
-                    break
-            #Scan ALOM SN Loop
-            alom_sn = None
-            alom_pn = None
+                #Scan PN Loop
+                while True:
+                    usr_prompt = "Please scan {:s} Part Number Barcode:".format(key)
+                    raw_scan = raw_input(usr_prompt)
+                    pn = libmfg_utils.part_number_validate(raw_scan)
+                    if not pn:
+                        self.cli_log_err("Invalid NIC Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                        #return None
+                    else:
+                        break
+                #Scan ALOM SN Loop
+                alom_sn = None
+                alom_pn = None
 
-            if pn == 'P26968-001':
+
+            if swmtestmode == Swm_Test_Mode.ALOM:  #if only scanning Alom we need to manually put in the SWM part number
+                pn="P26968-001"
+
+            if pn == 'P26968-001':  
                 while True:
                     usr_prompt = "Please Scan {:s} ALOM Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
@@ -3046,7 +3051,7 @@ class mtp_ctrl():
             nic_scan_rslt["NIC_MAC"] = mac
             nic_scan_rslt["NIC_PN"] = pn
             nic_scan_rslt["NIC_TS"] = libmfg_utils.get_fru_date()
-            if pn == 'P26968-001':
+            if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
                 nic_scan_rslt["SN_ALOM"] = alom_sn
                 nic_scan_rslt["PN_ALOM"] = alom_pn
             mtp_scan_rslt[key] = nic_scan_rslt

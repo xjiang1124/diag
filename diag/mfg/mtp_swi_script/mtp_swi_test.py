@@ -22,6 +22,7 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+from libdefs import Swm_Test_Mode
 
 
 def logfile_close(filep_list):
@@ -174,6 +175,10 @@ def main():
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
+
+
+    # Set Naples25SWM test mode
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)

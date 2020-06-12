@@ -31,7 +31,6 @@ def get_product_name_from_pn(pn):
     else:
         product_name = "UNKNOWN"
     return product_name
-
 def config_eth():
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
     
@@ -107,24 +106,25 @@ def fst_general():
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot"+str(a), "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "failed")
+                print("slot"+str(a), "sn:", sn, "type:", product_name, "failed")
                 print("Get firmware failed")
                 cleanup(eth)
                 continue
             y = x.decode("utf-8")
             firmware = json.loads(y)
-            if fru["status"]["fru"]["product-name"] == "NAPLES 25 " or "DSC-25" in fru["status"]["fru"]["product-name"]:
+
+            if product_name == "NAPLES 25 " or product_name == "NAPLES25SWM":
                 if "8GT/s" in new_str and "x8" in new_str:
-                    print("slot"+str(a), b, "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "pass")
+                    print("slot"+str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
-                    print("slot"+str(a), b, "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "failed")
+                    print("slot"+str(a), b, "sn:", sn, "type:", product_name, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
-                    print("slot"+str(a), b, "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "pass")
+                    print("slot"+str(a), b, "sn:", sn, "type:", sn, "pass")
                 else:
-                    print("slot"+str(a), b, "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "failed")
+                    print("slot"+str(a), b, "sn:", sn, "type:", sn, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             #print(fru["status"]["fru"]["serial-number"], fru["status"]["fru"]["product-name"].replace(" ", ""))

@@ -728,6 +728,14 @@ def main():
         elif nic_type == NIC_Type.NAPLES25SWM:
             mtp_exp_capability = 0x2
             test_db = naples25swm_test_db
+            if (mtp_mgmt_ctrl.mtp_get_swmtestmode(nic_list[0]) == Swm_Test_Mode.SWMALOM or mtp_mgmt_ctrl.mtp_get_swmtestmode(nic_list[0]) == Swm_Test_Mode.ALOM):
+                swm_lp_boot_mode=True
+            else:
+                swm_lp_boot_mode=False
+
+            if (corner != Env_Cond.MFG_NT and corner != Env_Cond.MFG_QA):  #Skip SWM Low Power Test for 4C
+                swm_lp_boot_mode=False
+
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
             continue
@@ -768,36 +776,37 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=True):
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
 
 
         #NAPLES25 SWM LOW POWER BOOT MODE TEST
-        alom_fail_list = list()
-        swm_lp_test_performed = 0
-        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-            for var in range(len(nic_list)):
-                slot = nic_list[var]
-                if nic_type == NIC_Type.NAPLES25SWM and (mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.SWMALOM or mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.ALOM):
-                        if swm_lp_test_performed == 0:
-                            mtp_mgmt_ctrl.cli_log_inf("Starting Naples25 SWM Low Power On Test", level=0)
-                        swm_lp_test_performed = 1
-                        if not mtp_mgmt_ctrl.mtp_nic_naples25swm_low_power_mode_test(slot):
-                            alom_fail_list.append(slot)
+        if (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_QA):   #Skip SWM Low Power Test for 4 corner
+            alom_fail_list = list()
+            swm_lp_test_performed = 0
+            for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+                for var in range(len(nic_list)):
+                    slot = nic_list[var]
+                    if nic_type == NIC_Type.NAPLES25SWM and (mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.SWMALOM or mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.ALOM):
+                            if swm_lp_test_performed == 0:
+                                mtp_mgmt_ctrl.cli_log_inf("Starting Naples25 SWM Low Power On Test", level=0)
+                            swm_lp_test_performed = 1
+                            if not mtp_mgmt_ctrl.mtp_nic_naples25swm_low_power_mode_test(slot):
+                                alom_fail_list.append(slot)
 
-        if swm_lp_test_performed > 0:
-            mtp_mgmt_ctrl.cli_log_inf("Setting Naples25 SWM Back to High Power Mode (requires a nic reboot)", level=0)
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=False):
-                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-                mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-                return
+            if swm_lp_test_performed > 0:
+                mtp_mgmt_ctrl.cli_log_inf("Setting Naples25 SWM Back to High Power Mode (requires a nic reboot)", level=0)
+                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=False):
+                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                    return
 
-        for slot in alom_fail_list:
-            nic_list.remove(slot)
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
+            for slot in alom_fail_list:
+                nic_list.remove(slot)
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
 
 
         # Diag Pre Check
