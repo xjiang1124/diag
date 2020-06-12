@@ -24,12 +24,7 @@ class nic_con:
         session.sendline(cmd)
         for ite in range(2):
             print "ite: ", ite
-            if ite == 2:
-                # Vomero case, may need two tims
-                timeout = 30
-                print "Last try to connenct UART, wait for", timeout, "sec"
-            else:
-                timeout = 1
+            timeout = 1
 
             try:
                 #session.expect("Terminal ready")
@@ -44,7 +39,8 @@ class nic_con:
                 ret = 0
                 break
             except pexpect.TIMEOUT:
-                print "=== TIMEOUT: Can not connect to NIC on UART!"
+                if ite != 0:
+                    print "=== TIMEOUT: Can not connect to NIC on UART!"
                 ret = -1
         return ret
 
@@ -532,6 +528,7 @@ class nic_con:
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         sleep(0.5)
         common.session_cmd(session, cmd)
+        common.session_stop(session)
         return 0
 
 

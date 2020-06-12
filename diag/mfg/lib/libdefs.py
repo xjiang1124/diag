@@ -393,6 +393,7 @@ class MFG_DIAG_CMDS:
     MFG_LOG_LINK_FMT = "ln {:s} {:s}"
 
     FST_DIAG_CMD_FMT = "/home/diag/mtp_fst_script/diag_fst_test.py"
+    FST_DIAG_CMD_FMT_CLD = "/home/diag/mtp_fst_script/diag_fst_test.py -card_type {} -stage {}"
     NIC_SW_PROFILE_CMD_FMT = "/{:s}"
 
 class MFG_DIAG_SIG:

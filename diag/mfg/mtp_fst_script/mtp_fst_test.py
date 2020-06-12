@@ -53,10 +53,13 @@ def main():
     parser = argparse.ArgumentParser(description="MTP Final Stage Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTPS-001, etc", required=True)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
+    parser.add_argument("-stage", "--stage", help="stage", type=str, default="FETCH_SN")
 
     args = parser.parse_args()
     if args.mtpid:
         mtp_id = args.mtpid
+    card_type = args.card_type.upper()
+    stage = args.stage.upper()
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -89,24 +92,45 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Start", level=0)
     start_ts = libmfg_utils.timestamp_snapshot()
-    cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
-        mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
-        logfile_close(log_filep_list)
-        return
-    stop_ts = libmfg_utils.timestamp_snapshot()
-    duration = str(stop_ts - start_ts)
-    mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Complete", level=0)
 
-    result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
-    # find the regexp for pass slot only:
-    # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
-    pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
-    fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
-    pass_match = re.findall(pass_reg_exp, result)
-    fail_match = re.findall(fail_reg_exp, result)
-    dsp = FF_Stage.FF_FST
-    test = "PCIE_LINK"
+    if card_type == "GENERAL":
+        cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
+            mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
+            logfile_close(log_filep_list)
+            return
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+        mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Complete", level=0)
+
+        result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        # find the regexp for pass slot only:
+        # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
+        pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
+        fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
+        pass_match = re.findall(pass_reg_exp, result)
+        fail_match = re.findall(fail_reg_exp, result)
+        dsp = FF_Stage.FF_FST
+        test = "PCIE_LINK"
+    elif card_type == "NAPLES100IBM":
+        cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
+            mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
+            logfile_close(log_filep_list)
+            return
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+        mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Complete", level=0)
+
+        result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        # find the regexp for pass slot only:
+        # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
+        pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
+        fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
+        pass_match = re.findall(pass_reg_exp, result)
+        fail_match = re.findall(fail_reg_exp, result)
+        dsp = FF_Stage.FF_FST
+        test = "PCIE_LINK"
 
     for _slot, _sn, _nic_type in fail_match:
         slot = int(_slot) - 1

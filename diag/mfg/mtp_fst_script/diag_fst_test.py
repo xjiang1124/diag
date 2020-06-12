@@ -23,6 +23,15 @@ def get_bus_list():
     print("Found", len(bus_list), "devices", "\n")
     return bus_list
 
+def get_product_name_from_pn(pn):
+    if "68-0013-01" in pn:
+        product_name = "NAPLES100IBM"
+    elif "P26968" in pn:
+        product_name = "NAPLES25SWM"
+    else:
+        product_name = "UNKNOWN"
+    return product_name
+
 def config_eth():
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
     
@@ -90,6 +99,11 @@ def fst_general():
                 continue
             y = x.decode("utf-8")
             fru = json.loads(y)
+            sn = fru["status"]["fru"]["serial-number"]
+            product_name = fru["status"]["fru"]["product-name"].replace(" ", "")
+            pn = fru["status"]["fru"]["part-number"]
+            product_name = get_product_name_from_pn(pn)
+
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
@@ -140,9 +154,11 @@ def fst_ibm_fetch_sn():
             continue
 
         output1 = output.decode("utf-8")
+        #print(output1)
         fru = json.loads(output1)
         sn = fru["serial-number"]
-        print("Slot", slot, "SN:", sn)
+        pn = fru["board-assembly-area"]
+        print("Slot", slot, "SN:", sn, "PN:", pn)
 
         # Switch to mainfw
         cmd = "/nic/tools/fwupdate -s mainfwa"
