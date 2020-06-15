@@ -81,6 +81,15 @@ var ForioMtpTbl = []I2cInfo {
     I2cInfo {"I2CSPI",         "CPLD-I2CSPI",0x0,  0x52,    0x0,    "HUB_NONE", 0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
 }
+
+// Vomero2 I2C table on MTP SMBus
+var Vomero2MtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x76,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"I2CSPI",         "CPLD-I2CSPI",0x0,  0x52,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE", 0},
+}
+
 //=========================================
 // NaplesMtp PMBus table
 // devAddr is 7-bit address
@@ -301,7 +310,7 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "VOMERO" {
         CurI2cTbl = ForioMtpTbl
     } else if uutType == "VOMERO2" {
-        CurI2cTbl = ForioMtpTbl
+        CurI2cTbl = Vomero2MtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

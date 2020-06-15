@@ -56,6 +56,7 @@
 #define ID_NAPLES100                0x12
 #define ID_NAPLES25                 0x13
 #define ID_VOMERO                   0x15
+#define ID_VOMERO2                  0x1E
 #define ID_NAPLES25_SWM             0x17
 #define ID_NAPLES25_OCP             0x19
 #define ID_NAPLES100IBM             0x1C
@@ -779,6 +780,7 @@ main(int argc, char *argv[])
         } 
         else if (
             (cpldId == ID_NAPLES25_SWM) ||
+            (cpldId == ID_VOMERO2)      ||
             (cpldId == ID_NAPLES25_OCP)
             )
         {

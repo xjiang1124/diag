@@ -32,6 +32,9 @@ then
 elif [[ $cpld_id == "0x15" ]]
 then
     type="VOMERO"
+elif [[ $cpld_id == "0x1e" ]]
+then
+    type="VOMERO2"
 elif [[ $cpld_id == "0x17" ]]
 then
     type="NAPLES25SWM"
