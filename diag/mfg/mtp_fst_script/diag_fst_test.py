@@ -12,7 +12,7 @@ def cleanup(eth):
     print()
 
 def get_ssh_cmd(ip, cmd):
-    ssh_cmd_fmt = "./sshpass -p pen123 ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
+    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p pen123 ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
     ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
     return ssh_cmd
 
@@ -31,6 +31,7 @@ def get_product_name_from_pn(pn):
     else:
         product_name = "UNKNOWN"
     return product_name
+
 def config_eth():
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
     
@@ -104,10 +105,11 @@ def fst_general():
             product_name = get_product_name_from_pn(pn)
 
             try:
-                x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                x = subprocess.check_output("/home/diag/penctl.linux.0303 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
                 print("slot"+str(a), "sn:", sn, "type:", product_name, "failed")
                 print("Get firmware failed")
+                print(e.output)
                 cleanup(eth)
                 continue
             y = x.decode("utf-8")
@@ -133,7 +135,7 @@ def fst_general():
             print("goldfw:", firmware["all-installed-fw"]["goldfw"]["kernel_fit"]["software_version"])
             cleanup(eth)
 
-def fst_ibm_fetch_sn():
+def fst_cloud_fetch_sn():
     print("Fetching SN with goldfw")
       
     slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
@@ -151,6 +153,7 @@ def fst_ibm_fetch_sn():
         except subprocess.CalledProcessError as e:
             print("slot"+str(slot), "failed to fetch SN") 
             print("Get FRU failed")
+            print(e.output)
             continue
 
         output1 = output.decode("utf-8")
@@ -158,7 +161,12 @@ def fst_ibm_fetch_sn():
         fru = json.loads(output1)
         sn = fru["serial-number"]
         pn = fru["board-assembly-area"]
-        print("Slot", slot, "SN:", sn, "PN:", pn)
+        product_name =  get_product_name_from_pn(pn)
+
+        if product_name == "UNKNOWN":
+            print("Slot", slot, "SN:", sn, "Product name:", product_name, "failed")
+        else:
+            print("Slot", slot, "SN:", sn, "Product name:", product_name, "pass")
 
         # Switch to mainfw
         cmd = "/nic/tools/fwupdate -s mainfwa"
@@ -171,12 +179,13 @@ def fst_ibm_fetch_sn():
             continue
         print("Slot", slot, "SN:", sn, "switched to mainfwa")
 
-def fst_ibm_check_pcie(slot_list, sn_list):
+def fst_cloud_check_pcie(card_info_list):
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
 
-    for i in range(len(slot_list)):
-        slot = slot_list[i]
-        sn = sn_list[i]
+    for card_info in card_info_list:
+        slot = card_info.split(":")[0]
+        sn = card_info.split(":")[1]
+        product_name = card_info.split(":")[2]
         bus = slot_bus_dict[int(slot)]
 
         result = subprocess.check_output("lspci -vv -s "+bus+" | grep LnkSta:", shell=True, stderr=subprocess.STDOUT)
@@ -194,22 +203,20 @@ def main():
     parser = argparse.ArgumentParser(description="MTP Final Stage Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
     parser.add_argument("-stage", "--stage", help="stage: fetch_sn/check_pcie", type=str, default="fetch_sn")
-    parser.add_argument("-slot_list", "--slot_list", help="slot list", type=str, default="")
-    parser.add_argument("-sn_list", "--sn_list", help="SN list", type=str, default="")
+    parser.add_argument("-card_info_list", "--card_info_list", help="card info list", type=str, default="")
     args = parser.parse_args()
 
     card_type = args.card_type.upper()
     stage = args.stage.upper()
-    slot_list = args.slot_list.split(',')
-    sn_list = args.sn_list.split(',')
+    card_info_list = args.card_info_list.split(',')
 
     if card_type == "GENERAL":
         fst_general()
-    elif card_type == "NAPLES100IBM":
+    elif card_type == "NAPLES100IBM" or card_type == "CLOUD":
         if stage == "FETCH_SN":
-            fst_ibm_fetch_sn()
+            fst_cloud_fetch_sn()
         elif stage == "CHECK_PCIE":
-            fst_ibm_check_pcie(slot_list, sn_list)
+            fst_cloud_check_pcie(slot_list, card_info_list)
         else:
             print("Wrong stage:", stage)
     else:

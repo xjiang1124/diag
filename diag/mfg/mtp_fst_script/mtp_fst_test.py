@@ -105,14 +105,14 @@ def main():
 
         result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
         # find the regexp for pass slot only:
-        # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
+        # eg: slot2 18:00.0 sn: FLM1914005F type: NAPLES100 pass
         pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
         fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
         pass_match = re.findall(pass_reg_exp, result)
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
-    elif card_type == "NAPLES100IBM":
+    elif card_type == "CLOUD":
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
@@ -123,14 +123,21 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Complete", level=0)
 
         result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        print(result)
         # find the regexp for pass slot only:
         # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
-        pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
-        fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
+        pass_reg_exp = r"Slot (\d).* SN: (.*) Product name: (.*) pass"
+        #pass_reg_exp = r"Slot (\d).*found"
+        fail_reg_exp = r"Slot (\d).* SN: (.*) Product name: (.*) failed"
         pass_match = re.findall(pass_reg_exp, result)
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
+        print(pass_match)
+        print(fail_match)
+
+        if stage == "FETCH_SN":
+            return
 
     for _slot, _sn, _nic_type in fail_match:
         slot = int(_slot) - 1

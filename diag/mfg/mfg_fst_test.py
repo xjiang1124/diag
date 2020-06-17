@@ -74,6 +74,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
+    parser.add_argument("-stage", "--stage", help="stage", type=str, default="FETCH_SN")
 
     args = parser.parse_args()
     card_type = args.card_type
