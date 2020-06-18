@@ -822,6 +822,17 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_reboot(self):
+        if not self.mtp_mgmt_exec_cmd("sync", timeout=MTP_Const.OS_SYNC_DELAY):
+            self.cli_log_err("Failed to execute sync command")
+            return False
+
+        if not self.mtp_mgmt_exec_sudo_cmd("reboot"):
+            self.cli_log_err("Failed to execute reboot command")
+            return False
+
+        return True
+
 
     def mtp_chassis_shutdown(self):
         self.mtp_mgmt_poweroff()

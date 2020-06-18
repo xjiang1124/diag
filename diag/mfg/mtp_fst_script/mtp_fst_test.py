@@ -106,8 +106,8 @@ def main():
         result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
         # find the regexp for pass slot only:
         # eg: slot2 18:00.0 sn: FLM1914005F type: NAPLES100 pass
-        pass_reg_exp = r"slot(\d).*sn:(.*)type:(.*)pass"
-        fail_reg_exp = r"slot(\d).*sn:(.*)type:(.*)failed"
+        pass_reg_exp = r"slot: (\d).* sn: (.*) type: (.*) pass"
+        fail_reg_exp = r"slot: (\d).* sn: (.*) type: (.*) failed"
         pass_match = re.findall(pass_reg_exp, result)
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
@@ -126,15 +126,12 @@ def main():
         print(result)
         # find the regexp for pass slot only:
         # eg: slot1 18:00.0 sn: FLM1914005F type: NAPLES100 pass
-        pass_reg_exp = r"Slot (\d).* SN: (.*) Product name: (.*) pass"
-        #pass_reg_exp = r"Slot (\d).*found"
-        fail_reg_exp = r"Slot (\d).* SN: (.*) Product name: (.*) failed"
+        pass_reg_exp = r"slot: (\d).* sn: (.*) type: (.*) pass"
+        fail_reg_exp = r"slot: (\d).* sn: (.*) type: (.*) failed"
         pass_match = re.findall(pass_reg_exp, result)
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
-        print(pass_match)
-        print(fail_match)
 
         if stage == "FETCH_SN":
             return

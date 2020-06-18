@@ -45,7 +45,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, card_type):
+def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, card_type, stage):
     # go to mtp_fst_script and start the test
     cmd = "cd {:s}".format(mtp_fst_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -53,7 +53,7 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_fst_test.py --mtpid {:s} --card_type {:s}".format(mtp_id, card_type)
+    cmd = "./mtp_fst_test.py --mtpid {:s} --card_type {:s} --stage {:s}".format(mtp_id, card_type, stage)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Complete", level=0)
@@ -74,7 +74,6 @@ def main():
     parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
-    parser.add_argument("-stage", "--stage", help="stage", type=str, default="FETCH_SN")
 
     args = parser.parse_args()
     card_type = args.card_type
@@ -102,11 +101,12 @@ def main():
     mfg_fst_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    #libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH"):
+        #if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -120,7 +120,7 @@ def main():
         mtp_fst_script_pkg = "mtp_fst_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP FST Test script", level=0)
         if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_fst_script_pkg):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP FST Test script failed", level=0)
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP FST Test script failed", level=1)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
@@ -129,13 +129,15 @@ def main():
 
     mtp_thread_list = list()
     mfg_fst_summary = dict()
+    stage = "FETCH_SN"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_fst_summary[mtp_id] = list()
         mtp_thread = threading.Thread(target = single_mtp_fst_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_fst_script_dir,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
                                                                             mfg_fst_summary[mtp_id], 
-                                                                            card_type))
+                                                                            card_type,
+                                                                            stage))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -151,11 +153,63 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+    # for Cloud, we need to reboot and do stage II test
+    if card_type == "CLOUD":
+        # reboot
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+            if not mtp_mgmt_ctrl.mtp_mgmt_reboot():
+                mtp_mgmt_ctrl.cli_log_err("Unable to reboot MTP Chassis", level=0)
+                mtpid_list.remove(mtp_id)
+                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+                mtpid_fail_list.append(mtp_id)
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is rebooted", level=0)
+
+        # connect MTP
+
+        # Connect to MTP
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH"):
+                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+                mtpid_list.remove(mtp_id)
+                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+                mtpid_fail_list.append(mtp_id)
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
+        # Stage II test
+
+        mtp_thread_list = list()
+        mfg_fst_summary = dict()
+        stage = "FETCH_SN"
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mfg_fst_summary[mtp_id] = list()
+            mtp_thread = threading.Thread(target = single_mtp_fst_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_fst_script_dir,
+                                                                                mtp_mgmt_ctrl,
+                                                                                mtp_id,
+                                                                                mfg_fst_summary[mtp_id], 
+                                                                                card_type,
+                                                                                stage))
+            mtp_thread.daemon = True
+            mtp_thread.start()
+            mtp_thread_list.append(mtp_thread)
+            time.sleep(2)
+
+        # monitor all the thread
+        while True:
+            if len(mtp_thread_list) == 0:
+                break
+            for mtp_thread in mtp_thread_list[:]:
+                if not mtp_thread.is_alive():
+                    mtp_thread.join()
+                    mtp_thread_list.remove(mtp_thread)
+            time.sleep(5)
+
     mfg_fst_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP Final Test Duration:{:s}".format(mfg_fst_stop_ts - mfg_fst_start_ts))
 
     # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+    #libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     libmfg_utils.mfg_summary_disp(FF_Stage.FF_FST, mfg_fst_summary, mtpid_fail_list)

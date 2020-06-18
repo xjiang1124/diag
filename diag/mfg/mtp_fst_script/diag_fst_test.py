@@ -93,7 +93,7 @@ def fst_general():
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot"+str(a), b, "sn: unknown", "type: unknown", "failed") 
+                print("slot:", str(a), b, "sn: unknown", "type: unknown", "failed") 
                 print("Get FRU failed")
                 cleanup(eth)
                 continue
@@ -107,7 +107,7 @@ def fst_general():
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0303 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot"+str(a), "sn:", sn, "type:", product_name, "failed")
+                print("slot:", str(a), "sn:", sn, "type:", product_name, "failed")
                 print("Get firmware failed")
                 print(e.output)
                 cleanup(eth)
@@ -117,16 +117,16 @@ def fst_general():
 
             if product_name == "NAPLES 25 " or product_name == "NAPLES25SWM":
                 if "8GT/s" in new_str and "x8" in new_str:
-                    print("slot"+str(a), b, "sn:", sn, "type:", product_name, "pass")
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
-                    print("slot"+str(a), b, "sn:", sn, "type:", product_name, "failed")
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
-                    print("slot"+str(a), b, "sn:", sn, "type:", sn, "pass")
+                    print("slot:", str(a), b, "sn:", sn, "type:", sn, "pass")
                 else:
-                    print("slot"+str(a), b, "sn:", sn, "type:", sn, "failed")
+                    print("slot:", str(a), b, "sn:", sn, "type:", sn, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             #print(fru["status"]["fru"]["serial-number"], fru["status"]["fru"]["product-name"].replace(" ", ""))
@@ -137,10 +137,16 @@ def fst_general():
 
 def fst_cloud_fetch_sn():
     print("Fetching SN with goldfw")
+
+    try:
+        os.remove("/home/diag/mtp_fst_script/card_info_dict.txt")
+    except OSError:
+        print("card_info_dict.txt not exist")
       
     slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
     card_slot_list = config_eth()
+    card_info_dict = dict()
 
     for slot in card_slot_list:
         bus = slot_bus_dict[slot]
@@ -164,9 +170,11 @@ def fst_cloud_fetch_sn():
         product_name =  get_product_name_from_pn(pn)
 
         if product_name == "UNKNOWN":
-            print("Slot", slot, "SN:", sn, "Product name:", product_name, "failed")
+            print("slot:", slot, "sn:", sn, "type:", product_name, "failed")
         else:
-            print("Slot", slot, "SN:", sn, "Product name:", product_name, "pass")
+            print("slot:", slot, "sn:", sn, "type:", product_name, "pass")
+
+        card_info_dict[slot] = sn+':'+product_name
 
         # Switch to mainfw
         cmd = "/nic/tools/fwupdate -s mainfwa"
@@ -175,26 +183,33 @@ def fst_cloud_fetch_sn():
             output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             print(output.decode("utf-8"))
-            print("slot"+str(slot), "sn", sn, "failed to switch to mainfw") 
+            print("slot:", str(slot), "sn", sn, "failed to switch to mainfw") 
             continue
-        print("Slot", slot, "SN:", sn, "switched to mainfwa")
+        print("slot", slot, "sn:", sn, "switched to mainfwa")
 
-def fst_cloud_check_pcie(card_info_list):
+    json.dump(card_info_dict, open("/home/diag/mtp_fst_script/card_info_dict.txt",'w'))
+
+def fst_cloud_check_pcie():
+
+    card_info_dict = json.load(open("/home/diag/mtp_fst_script/card_info_dict.txt")) 
+
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
 
-    for card_info in card_info_list:
-        slot = card_info.split(":")[0]
-        sn = card_info.split(":")[1]
-        product_name = card_info.split(":")[2]
+    for slot, sn_pn in card_info_dict.items():
+        sn = sn_pn.split(":")[0]
+        product_name = sn_pn.split(":")[1]
+
         bus = slot_bus_dict[int(slot)]
 
         result = subprocess.check_output("lspci -vv -s "+bus+" | grep LnkSta:", shell=True, stderr=subprocess.STDOUT)
         result1 = result.decode("utf-8")
 
-        if "8GT/s" in result1 and "x16" in result1:
-            print("slot"+str(slot), bus, "sn:", sn, "type: NAPLES100IBM", "pass")
+        if product_name == "UNKNOWN":
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
+        elif "8GT/s" in result1 and "x16" in result1:
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
         else:
-            print("slot"+str(slot), bus, "sn:", sn, "type: NAPLES100IBM", "failed")
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
             print("Speed and Width are failed")
             print(result1.replace("\n", ""))
 
@@ -203,12 +218,10 @@ def main():
     parser = argparse.ArgumentParser(description="MTP Final Stage Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
     parser.add_argument("-stage", "--stage", help="stage: fetch_sn/check_pcie", type=str, default="fetch_sn")
-    parser.add_argument("-card_info_list", "--card_info_list", help="card info list", type=str, default="")
     args = parser.parse_args()
 
     card_type = args.card_type.upper()
     stage = args.stage.upper()
-    card_info_list = args.card_info_list.split(',')
 
     if card_type == "GENERAL":
         fst_general()
@@ -216,7 +229,7 @@ def main():
         if stage == "FETCH_SN":
             fst_cloud_fetch_sn()
         elif stage == "CHECK_PCIE":
-            fst_cloud_check_pcie(slot_list, card_info_list)
+            fst_cloud_check_pcie()
         else:
             print("Wrong stage:", stage)
     else:
