@@ -59,6 +59,11 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
+    # For cloud card, collect logs at CHECK_PCIE stage
+    if card_type == "CLOUD":
+        if stage == "FETCH_SN":
+            return
+    
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_FST)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect FST Test result failed", level=0)
@@ -76,7 +81,7 @@ def main():
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
 
     args = parser.parse_args()
-    card_type = args.card_type
+    card_type = args.card_type.upper()
     if args.verbosity:
         verbosity = True
     else:
@@ -155,6 +160,7 @@ def main():
 
     # for Cloud, we need to reboot and do stage II test
     if card_type == "CLOUD":
+        print("Rebooting")
         # reboot
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_mgmt_reboot():
@@ -181,7 +187,8 @@ def main():
 
         mtp_thread_list = list()
         mfg_fst_summary = dict()
-        stage = "FETCH_SN"
+        stage = "CHECK_PCIE"
+        print("Performing pcie check")
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             mfg_fst_summary[mtp_id] = list()
             mtp_thread = threading.Thread(target = single_mtp_fst_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_fst_script_dir,

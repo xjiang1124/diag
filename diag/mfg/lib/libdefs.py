@@ -98,6 +98,7 @@ class MTP_Const:
 
     MTP_POWER_ON_DELAY = 180
     MTP_POWER_ON_TIMEOUT = 120
+    MTP_REBOOT_DELAY = 120
     MTP_OS_SHUTDOWN_DELAY = 60
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
@@ -176,7 +177,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
     ONBOARD_CFG_LOG_FILES = "/home/diag/mtp_cfg_script/*log /home/diag/mtp_cfg_script/*yaml"
     ONBOARD_SWI_LOG_FILES = "/home/diag/mtp_swi_script/*log"
-    ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log"
+    ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log*"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
     ONBOARD_NIC_LOG_DIR = "/home/diag/diag/nic_log/"
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
@@ -194,7 +195,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
-    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
+    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/home/xguo2/workspace/temp/mfg_log/{:s}/FST/{:s}/"
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"

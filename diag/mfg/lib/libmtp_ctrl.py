@@ -831,6 +831,9 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute reboot command")
             return False
 
+        self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_REBOOT_DELAY), level=0)
+        libmfg_utils.count_down(MTP_Const.MTP_REBOOT_DELAY)
+
         return True
 
 

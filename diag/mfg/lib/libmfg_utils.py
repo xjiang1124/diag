@@ -1071,7 +1071,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
                 mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(log_pkg_file), level=0)
                 continue
-            log_hard_copy_flag = False
+
+            # It is fine to do hard copy
+            #log_hard_copy_flag = False
             # relative link is ../sn/log_pkg_file
             log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
         # create hard link
