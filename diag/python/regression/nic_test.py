@@ -22,6 +22,9 @@ class nic_test:
         self.num_retry = 3
         self.nic_con = nic_con()
 
+    def switch_fw(self, slot=0):
+        self.nic_con.switch_fw(self.baud_rate, slot);
+
     def get_mtp_rev(self):
         file1 = open("/home/diag/mtp_rev","r")
         mtp_rev = file1.readlines()
@@ -614,6 +617,7 @@ if __name__ == "__main__":
     parser.add_argument("-swm_lp", "--swm_lp", help="Power Up SWM in Low Power Mode", action='store_true')
     parser.add_argument("-aapl", "--aapl", help="Setup AAPL", action='store_true')
     parser.add_argument("-mainfw", "--mainfw", help="Setup for mainfw", action='store_true')
+    parser.add_argument("-switch_fw", "--switch-fw", help="Switch FW on Naples", action='store_true')
 
     args = parser.parse_args()
 
@@ -673,4 +677,7 @@ if __name__ == "__main__":
     if args.test_timeout == True:
         test.timeout_test(args.wait_time)
 
+    if args.switch_fw == True:
+        test.switch_fw(args.slot)
+        sys.exit()
 

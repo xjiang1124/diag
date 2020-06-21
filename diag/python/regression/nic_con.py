@@ -482,6 +482,55 @@ class nic_con:
             print "=== Management port is ready ==="
             return ret
 
+    def switch_fw(self, rate, slot=0):
+        ret = 0
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            return -1
+
+        session = common.session_start()
+        self.uart_session_start(session, rate)
+        session.timeout = 60
+
+        cmd = "fwupdate -r"
+        try:
+            session.sendline(cmd)
+            session.expect("\#")
+            temp = session.after
+            if 'mainfwa' in session.before:
+                print 'current fw is mainfwa, switching to mainfwb'
+                cmd = "fwupdate -s mainfwb"
+            else:
+                print 'current fw is mainfwb, switching to mainfwa'
+                cmd = "fwupdate -s mainfwa"
+
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Faled to get fw ==="
+            ret = -1
+
+        try:
+            session.sendline(cmd)
+            session.expect("\#")
+
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Faled to switch fw ==="
+            ret = -1
+
+        try:
+            session.sendline("reboot")
+            session.expect("\#")
+
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Faled to reboot after switching fw ==="
+            ret = -1
+
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
     def disable_pcie_uboot(self, slot):
         ret = 0
         session = common.session_start()
