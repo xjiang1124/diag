@@ -206,7 +206,7 @@ function do_reset() {
     for sbus in ${sbus_list[@]}
     do
         echo "Resetting sbus $sbus; $SERVER_IP:$PORT"
-        aapl serdes-init -server $SERVER_IP -port $PORT -addr $sbus -reset 
+        #aapl serdes-init -server $SERVER_IP -port $PORT -addr $sbus -reset 
         aapl cmd -server $SERVER_IP -port $PORT -addr $sbus -aacs "tck_delay 10"
     done
     echo "AAPL SERDES RESET DONE"
