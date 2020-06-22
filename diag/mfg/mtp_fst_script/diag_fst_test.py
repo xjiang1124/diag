@@ -12,7 +12,7 @@ def cleanup(eth):
     print()
 
 def get_ssh_cmd(ip, cmd):
-    ssh_cmd_fmt = "./sshpass -p pen123 ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
+    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p pen123 ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
     ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
     return ssh_cmd
 
@@ -22,6 +22,15 @@ def get_bus_list():
     bus_list = [y for y in (x.strip() for x in new_str.splitlines()) if y]
     print("Found", len(bus_list), "devices", "\n")
     return bus_list
+
+def get_product_name_from_pn(pn):
+    if "68-0013-01" in pn:
+        product_name = "NAPLES100IBM"
+    elif "P26968" in pn:
+        product_name = "NAPLES25SWM"
+    else:
+        product_name = "UNKNOWN"
+    return product_name
 
 def config_eth():
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
@@ -51,6 +60,83 @@ def config_eth():
         
     time.sleep(1)
     return card_slot_list
+
+def fst_general_old():
+    naples_env = os.environ.copy()
+    naples_env["NAPLES_URL"] = "http://169.254.0.1"
+    
+    slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
+    
+    eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
+    for eth in eth_list:
+        subprocess.call(["ifconfig", eth, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(1)
+    
+    result = subprocess.check_output("lspci -d 1dd8:1000 | awk '{print $1}'", shell=True)
+    new_str = result.decode("utf-8")
+    bus_list = [y for y in (x.strip() for x in new_str.splitlines()) if y]
+    #if len(bus_list) == 4:
+    #    print("All devices are found")
+    #else:
+    #    print("Missing", 4-len(bus_list), "devices")
+    print("Found", len(bus_list), "devices", "\n")
+    
+    for a, b in slot_bus_pair:
+        if b in bus_list:
+            print("slot"+str(a))
+            result = subprocess.check_output("lspci -vv -s "+b+" | grep LnkSta:", shell=True, stderr=subprocess.STDOUT)
+            new_str = result.decode("utf-8")
+            #if "8GT/s" in new_str and "x16" in new_str:
+            #    print("slot"+str(a), b, "Speed and Width check pass")
+            #else:
+            #    print("slot"+str(a), b, "Speed and Width are failed")
+            bus_str = b.split(":", 1)[0]
+            bus_int = int(bus_str, 16)+4
+            eth = "enp"+str(bus_int)+"s0"
+            tmp = subprocess.call(["ifconfig", eth, "169.254.0.2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
+            try:
+                x = subprocess.check_output("/home/diag/penctl.linux show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as e:
+                print("slot"+str(a), b, "sn: unknown", "type: unknown", "failed") 
+                print("Get FRU failed")
+                print(str(e))
+                cleanup(eth)
+                continue
+            y = x.decode("utf-8")
+            fru = json.loads(y)
+            try:
+                x = subprocess.check_output("/home/diag/penctl.linux show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as e:
+                print("slot"+str(a), "sn:", fru["status"]["fru"]["serial-number"], "type:", fru["status"]["fru"]["product-name"].replace(" ", ""), "failed")
+                print("Get firmware failed")
+                cleanup(eth)
+                continue
+            y = x.decode("utf-8")
+            firmware = json.loads(y)
+
+            sn = fru["status"]["fru"]["serial-number"]
+            product_name = fru["status"]["fru"]["product-name"]
+
+            if fru["status"]["fru"]["product-name"] == "NAPLES 25 ":
+                if "8GT/s" in new_str and "x8" in new_str:
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
+                else:
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "failed")
+                    print("Speed and Width are failed")
+                    print(new_str.replace("\n", ""))
+            else:
+                if "8GT/s" in new_str and "x16" in new_str:
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
+                else:
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "failed")
+                    print("Speed and Width are failed")
+                    print(new_str.replace("\n", ""))
+            #print(fru["status"]["fru"]["serial-number"], fru["status"]["fru"]["product-name"].replace(" ", ""))
+            print(firmware["running-fw"]+":", firmware["running-fw-version"])
+            print("uboot:", firmware["running-uboot"])
+            print("goldfw:", firmware["all-installed-fw"]["goldfw"]["kernel_fit"]["software_version"])
+            cleanup(eth)
 
 def fst_general():
     naples_env = os.environ.copy()
@@ -84,7 +170,7 @@ def fst_general():
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot"+str(a), b, "sn: unknown", "type: unknown", "failed") 
+                print("slot:", str(a), b, "sn: unknown", "type: unknown", "failed") 
                 print("Get FRU failed")
                 cleanup(eth)
                 continue
@@ -93,14 +179,14 @@ def fst_general():
             sn = fru["status"]["fru"]["serial-number"]
             product_name = fru["status"]["fru"]["product-name"].replace(" ", "")
             pn = fru["status"]["fru"]["part-number"]
-            if "P26968" in pn:
-                product_name = "NAPLES25SWM"
+            product_name = get_product_name_from_pn(pn)
 
             try:
-                x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                x = subprocess.check_output("/home/diag/penctl.linux.0303 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot"+str(a), "sn:", sn, "type:", product_name, "failed")
+                print("slot:", str(a), "sn:", sn, "type:", product_name, "failed")
                 print("Get firmware failed")
+                print(e.output)
                 cleanup(eth)
                 continue
             y = x.decode("utf-8")
@@ -108,16 +194,16 @@ def fst_general():
 
             if product_name == "NAPLES 25 " or product_name == "NAPLES25SWM":
                 if "8GT/s" in new_str and "x8" in new_str:
-                    print("slot"+str(a), b, "sn:", sn, "type:", product_name, "pass")
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
-                    print("slot"+str(a), b, "sn:", sn, "type:", product_name, "failed")
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
-                    print("slot"+str(a), b, "sn:", sn, "type:", sn, "pass")
+                    print("slot:", str(a), b, "sn:", sn, "type:", sn, "pass")
                 else:
-                    print("slot"+str(a), b, "sn:", sn, "type:", sn, "failed")
+                    print("slot:", str(a), b, "sn:", sn, "type:", sn, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             #print(fru["status"]["fru"]["serial-number"], fru["status"]["fru"]["product-name"].replace(" ", ""))
@@ -126,12 +212,18 @@ def fst_general():
             print("goldfw:", firmware["all-installed-fw"]["goldfw"]["kernel_fit"]["software_version"])
             cleanup(eth)
 
-def fst_ibm_fetch_sn():
+def fst_cloud_fetch_sn():
     print("Fetching SN with goldfw")
+
+    try:
+        os.remove("/home/diag/mtp_fst_script/card_info_dict.txt")
+    except OSError:
+        print("card_info_dict.txt not exist")
       
     slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
     card_slot_list = config_eth()
+    card_info_dict = dict()
 
     for slot in card_slot_list:
         bus = slot_bus_dict[slot]
@@ -144,12 +236,22 @@ def fst_ibm_fetch_sn():
         except subprocess.CalledProcessError as e:
             print("slot"+str(slot), "failed to fetch SN") 
             print("Get FRU failed")
+            print(e.output)
             continue
 
         output1 = output.decode("utf-8")
+        #print(output1)
         fru = json.loads(output1)
         sn = fru["serial-number"]
-        print("Slot", slot, "SN:", sn)
+        pn = fru["board-assembly-area"]
+        product_name =  get_product_name_from_pn(pn)
+
+        if product_name == "UNKNOWN":
+            print("slot:", slot, "sn:", sn, "type:", product_name, "failed")
+        else:
+            print("slot:", slot, "sn:", sn, "type:", product_name, "pass")
+
+        card_info_dict[slot] = sn+':'+product_name
 
         # Switch to mainfw
         cmd = "/nic/tools/fwupdate -s mainfwa"
@@ -158,25 +260,33 @@ def fst_ibm_fetch_sn():
             output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             print(output.decode("utf-8"))
-            print("slot"+str(slot), "sn", sn, "failed to switch to mainfw") 
+            print("slot:", str(slot), "sn", sn, "failed to switch to mainfw") 
             continue
-        print("Slot", slot, "SN:", sn, "switched to mainfwa")
+        print("slot", slot, "sn:", sn, "switched to mainfwa")
 
-def fst_ibm_check_pcie(slot_list, sn_list):
+    json.dump(card_info_dict, open("/home/diag/mtp_fst_script/card_info_dict.txt",'w'))
+
+def fst_cloud_check_pcie():
+
+    card_info_dict = json.load(open("/home/diag/mtp_fst_script/card_info_dict.txt")) 
+
     slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
 
-    for i in range(len(slot_list)):
-        slot = slot_list[i]
-        sn = sn_list[i]
+    for slot, sn_pn in card_info_dict.items():
+        sn = sn_pn.split(":")[0]
+        product_name = sn_pn.split(":")[1]
+
         bus = slot_bus_dict[int(slot)]
 
         result = subprocess.check_output("lspci -vv -s "+bus+" | grep LnkSta:", shell=True, stderr=subprocess.STDOUT)
         result1 = result.decode("utf-8")
 
-        if "8GT/s" in result1 and "x16" in result1:
-            print("slot"+str(slot), bus, "sn:", sn, "type: NAPLES100IBM", "pass")
+        if product_name == "UNKNOWN":
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
+        elif "8GT/s" in result1 and "x16" in result1:
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
         else:
-            print("slot"+str(slot), bus, "sn:", sn, "type: NAPLES100IBM", "failed")
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
             print("Speed and Width are failed")
             print(result1.replace("\n", ""))
 
@@ -185,22 +295,20 @@ def main():
     parser = argparse.ArgumentParser(description="MTP Final Stage Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
     parser.add_argument("-stage", "--stage", help="stage: fetch_sn/check_pcie", type=str, default="fetch_sn")
-    parser.add_argument("-slot_list", "--slot_list", help="slot list", type=str, default="")
-    parser.add_argument("-sn_list", "--sn_list", help="SN list", type=str, default="")
     args = parser.parse_args()
 
     card_type = args.card_type.upper()
     stage = args.stage.upper()
-    slot_list = args.slot_list.split(',')
-    sn_list = args.sn_list.split(',')
 
     if card_type == "GENERAL":
         fst_general()
-    elif card_type == "NAPLES100IBM":
+    elif card_type == "GENERAL_OLD":
+        fst_general_old()
+    elif card_type == "NAPLES100IBM" or card_type == "CLOUD":
         if stage == "FETCH_SN":
-            fst_ibm_fetch_sn()
+            fst_cloud_fetch_sn()
         elif stage == "CHECK_PCIE":
-            fst_ibm_check_pcie(slot_list, sn_list)
+            fst_cloud_check_pcie()
         else:
             print("Wrong stage:", stage)
     else:
