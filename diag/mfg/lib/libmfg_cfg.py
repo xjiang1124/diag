@@ -35,11 +35,11 @@ class NIC_CPLD_Version:
 # MFG release images
 class MFG_IMAGE_FILES:
  
-    MTP_AMD64_IMAGE = "image_amd64_04262020.tar"
-    MTP_ARM64_IMAGE = "image_arm64_04262020.tar"
+    MTP_AMD64_IMAGE = "image_amd64_06092020.tar"
+    MTP_ARM64_IMAGE = "image_arm64_06092020.tar"
     
-    NIC_DIAGFW_IMAGE = "naples_diagfw_swm_04222020.tar"
-    NIC_GOLDFW_IMAGE = "naples_goldfw_04162020.tar"
+    NIC_DIAGFW_IMAGE = "naples_diagfw_05212020.tar"
+    NIC_GOLDFW_IMAGE = "naples_gold_1.3.1-E-17_0416.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_cpld_rev4_08082019.bin"
     NAPLES25_SEC_CPLD_IMAGE = "naples25_cpld_rev84_08082019.bin"
@@ -57,7 +57,7 @@ class MFG_IMAGE_FILES:
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
-MFG_QSPI_TIMESTAMP = "04-18-2020"
+MFG_QSPI_TIMESTAMP = "05-21-2020"
 MFG_GOLD_TIMESTAMP = "04-15-2020"
 MFG_QSPI_VOMERO_TIMESTAMP = "02-03-2020"
 

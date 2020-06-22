@@ -1648,6 +1648,16 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
 
         return True
+    def mtp_verify_hpe_pn_fru(self, slot, hpe_pn):
+    
+        fru_pn = self._nic_ctrl_list[slot].get_nic_fru_hpe_pn()
+
+        if fru_pn != hpe_pn:
+            self.cli_log_slot_err_lock(slot, "HPE PN Verify Failed expect {:s}".format(hpe_pn))
+            return False
+        self.cli_log_slot_inf_lock(slot, "Verify HPE PN FRU Pass, PN={:s}".format(hpe_pn))
+
+        return True
         
     def mtp_verify_nic_alom_fru(self, slot, alom_sn, alom_pn, date):
     
