@@ -106,7 +106,7 @@ def main():
     mfg_fst_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis
-    #libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
@@ -216,7 +216,7 @@ def main():
     libmfg_utils.cli_inf("MFG MTP Final Test Duration:{:s}".format(mfg_fst_stop_ts - mfg_fst_start_ts))
 
     # power off all the test mtp
-    #libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     libmfg_utils.mfg_summary_disp(FF_Stage.FF_FST, mfg_fst_summary, mtpid_fail_list)
