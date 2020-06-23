@@ -157,7 +157,7 @@ class esec_ctrl:
     def __init__(self):
         self.nic_con = nic_con()
 
-    def create_otp_cm_fmt(self, sn):
+    def create_otp_cm_fmt(self, sn, slot):
         tgt_sn_len = 16
         ret = 0
 
@@ -218,6 +218,16 @@ PRIVEK <ek.sk>"""
             ret = -1
         else:
             output = sn.ljust(tgt_sn_len, '0')
+
+            # If Oracle card, add 'O' to SN
+            card_type = os.environ['UUT_'+str(slot)]
+            if card_type == "VOMERO" or card_type == "VOMERO2":
+                output1 = list(output)
+                print("Adding Oracle signature")
+                output1[15] = 'O'
+                output = "".join(output1)
+
+            print("SN:", output)
             output = "".join("{:02x}".format(ord(c)) for c in output)
             output = "0x"+output
             file_output = fmt_txt.format(output)
@@ -369,7 +379,7 @@ PRIVEK <ek.sk>"""
         return ret
 
     def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku):
-        self.create_otp_cm_fmt(sn)
+        self.create_otp_cm_fmt(sn, slot)
         numRetry = 3
 
         for retry in range(numRetry):
@@ -552,7 +562,7 @@ if __name__ == "__main__":
     esec_ctrl = esec_ctrl()
 
     if args.otp_cm_fmt == True:
-        esec_ctrl.create_otp_cm_fmt(args.sn)
+        esec_ctrl.create_otp_cm_fmt(args.sn, args.slot)
         sys.exit()
 
     if args.enroll_puf == True:
