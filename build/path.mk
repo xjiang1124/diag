@@ -37,6 +37,7 @@ ARM64_SRC_DIR=			\
 	util/emmcutil		\
 	dsp/i2c 			\
 	dsp/emmc 			\
+	dsp/led  			\
 	dsp/mvl    			\
 	dsp/nic_asic		\
 	dsp/qsfp    		\

@@ -516,6 +516,7 @@ var HpeNaples uint
 var HpeSwm uint
 var HpeAlom bool
 var HpeOcp uint
+var DellOcp uint
 var Erase bool
 var I2cAddr16 bool
 var CustType string
@@ -533,6 +534,7 @@ func init () {
     HpeSwm = 0
     HpeAlom = false
     HpeOcp = 0
+    DellOcp = 0
     I2cAddr16 = false
 }
 
@@ -628,7 +630,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         if entry.Name == "Product Name" {
             
             if ((CardType == "NAPLES25")    ||
-               (CardType == "NAPLES25OCP")) {
+               (HpeOcp == 1)) {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
             } else if CardType == "FORIO" {
                 copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
@@ -640,14 +642,14 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         if entry.Name == "Part Number"   &&
            ( (CardType == "NAPLES25")    ||
              (CardType == "NAPLES25SWM") ||
-             (CardType == "NAPLES25OCP") ) {
+             (HpeOcp == 1) ) {
             if entry.Value[6] == byte(0x38) {
                  is8g = 1
             }
         }
         if entry.Name == "Board ID" {
             if (CardType == "NAPLES25")    ||
-               (CardType == "NAPLES25OCP") ||
+               (HpeOcp == 1) ||
                (CardType == "NAPLES25SWM") {
                 if is8g == 1 {
                     copy(entry.Value, []byte{5, 0 , 0, 0})
@@ -686,7 +688,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         for _, entry := range(EepromExtTbl) {
 
             if entry.Name == "Product Name" {
-                if (CardType == "NAPLES25OCP") {
+                if (HpeOcp == 1) {
                     copy(entry.Value, []byte{0x48, 0x50, 0x45, 0x20, 0x4F, 0x43, 
                         0x50, 0x20, 0x4E, 0x61, 0x70, 0x6C, 0x65, 0x73, 0x20, 0x44, 
                         0x53, 0x43, 0x2D, 0x32, 0x35, 0x20, 0x32, 0x70, 0x20, 0x53, 
@@ -695,7 +697,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
             }
 
             if entry.Name == "HPE Product Number" {
-                if (CardType == "NAPLES25OCP") {
+                if (HpeOcp == 1) {
                     copy(entry.Value, []byte{0x50, 0x31, 0x38, 0x36, 0x36, 0x39, 
                         0x2D, 0x30, 0x30, 0x31})
                 } 
@@ -873,6 +875,36 @@ func updateIntChk() () {
         }
         for _, entry := range(EepromExtTbl) {
             if (entry.Offset > (piaOff - 1)) && (entry.Offset < (piaOff + piaLen - 1)) {  //product info area
+                productInfoChk += calcSum(entry)
+            }
+        }
+    }
+    if DellOcp == 1 {
+        brdInfoChk = 0
+        productInfoChk = 0;
+        cmnHeadChk = 0
+        var biaOff, piaOff, cHdrLen, biaLen, piaLen int = 0, 0, 8, 0, 0
+
+        for _, entry := range(EepromTbl) {
+            if entry.Name == "Board Info Offset" {
+                biaOff = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Product Area Offset" {
+                piaOff = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Board Area Length" {
+                biaLen = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Product Area Length" {
+                piaLen = int(entry.Value[0]) * 8
+            }
+        }
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset >= 0) && (entry.Offset < (cHdrLen - 1)) {      //common header
+                cmnHeadChk += calcSum(entry)
+            } else if (entry.Offset > (biaOff - 1)) && (entry.Offset < (biaLen + cHdrLen - 1)) {  //board info area
+                brdInfoChk += calcSum(entry)
+            } else if (entry.Offset > (piaOff - 1)) && (entry.Offset < (piaOff + piaLen - 1)) {  //product info area
                 productInfoChk += calcSum(entry)
             }
         }

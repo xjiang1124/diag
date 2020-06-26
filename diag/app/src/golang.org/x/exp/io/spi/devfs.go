@@ -68,16 +68,16 @@ type Devfs struct {
 // Open opens the provided device with the specified options
 // and returns a connection.
 func (d *Devfs) Open() (driver.Conn, error) {
-	f, err := os.OpenFile(d.Dev, os.O_RDWR, os.ModeDevice)
+    f, err := os.OpenFile(d.Dev, os.O_RDWR, os.ModeDevice)
 	if err != nil {
 		return nil, err
 	}
-	conn := &devfsConn{f: f}
+    conn := &devfsConn{f: f}
 	if err := conn.Configure(driver.Mode, int(d.Mode)); err != nil {
 		conn.Close()
 		return nil, err
 	}
-	if err := conn.Configure(driver.MaxSpeed, int(d.MaxSpeed)); err != nil {
+    if err := conn.Configure(driver.MaxSpeed, int(d.MaxSpeed)); err != nil {
 		conn.Close()
 		return nil, err
 	}
@@ -134,17 +134,49 @@ func (c *devfsConn) Tx(w, r []byte) error {
 	}
 	// TODO(jbd): len(w) == len(r)?
 	// TODO(jbd): Allow nil w.
-	p := payload{
+    fmt.Printf(" **Spi TX Len(w)=%d   Len(r)=%d\n", len(w), len(r));
+    p := payload{
 		tx:       uint64(uintptr(unsafe.Pointer(&w[0]))),
-		rx:       uint64(uintptr(unsafe.Pointer(&r[0]))),
+		rx:       0, //uint64(uintptr(unsafe.Pointer(&r[0]))),
 		length:   uint32(len(w)),
 		speed:    c.speed,
 		delay:    c.delay,
 		bits:     c.bits,
 		csChange: c.csChange,
 	}
+
 	// TODO(jbd): Read from the device and fill rx.
 	return c.ioctl(msgRequestCode(1), uintptr(unsafe.Pointer(&p)))
+}
+
+
+func (c *devfsConn) Rx(w []byte, r []byte) error {
+	if r == nil {
+		fmt.Printf(" ERROR: r cannot be nil");
+	}
+    fmt.Printf(" **Spi RX Len(w)=%d   Len(r)=%d\n", len(w), len(r));
+	p := []payload{
+		payload{
+            tx:       uint64(uintptr(unsafe.Pointer(&w[0]))),
+            rx:       uint64(uintptr(unsafe.Pointer(&r[0]))),
+            length:   uint32(len(w)),
+            speed:    c.speed,
+		    delay:    c.delay,
+		    bits:     c.bits,
+		    csChange: c.csChange,
+        },
+        payload{
+            tx:       0,
+            rx:       uint64(uintptr(unsafe.Pointer(&r[0]))),
+            length:   uint32(len(r)),
+            speed:    c.speed,
+		    delay:    c.delay,
+		    bits:     c.bits,
+		    csChange: c.csChange,
+        },
+	}
+
+	return c.ioctl(msgRequestCode(2), uintptr(unsafe.Pointer(&p[0])))
 }
 
 func (c *devfsConn) Close() error {

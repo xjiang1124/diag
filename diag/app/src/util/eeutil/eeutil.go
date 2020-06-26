@@ -47,6 +47,9 @@ func eepromTlbInit(uut string) {
             if eeprom.HpeOcp == 1 {
                 eeprom.EepromExtTbl = eeprom.HpeTblOCP
             }
+            if eeprom.DellOcp == 1 {
+                eeprom.EepromTbl = eeprom.DellTblOcp
+            }
             if eeprom.HpeAlom == true {
                 eeprom.EepromTbl = eeprom.HpeAlomTblAll
             }
@@ -72,6 +75,9 @@ func eepromTlbInit(uut string) {
         }
         if eeprom.HpeOcp == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTblOCP
+        }
+        if eeprom.DellOcp == 1 {
+            eeprom.EepromTbl = eeprom.DellTblOcp
         }
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
@@ -112,6 +118,7 @@ func main() {
     hpeSwmPtr  := flag.Bool  ("hpeSwm", false,      "HPE SWM eeprom operation option")
     hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
     hpeOcpPtr  := flag.Bool  ("hpeOcp", false,      "HPE OCP eeprom operation option")
+    DellOcpPtr := flag.Bool  ("DellOcp", false,     "Dell OCP eeprom operation option")
     custTypePtr:= flag.String("custType", "pensando", "Customerized eeeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
     flag.Parse()
@@ -149,6 +156,10 @@ func main() {
 
     if *hpeOcpPtr == true {
         eeprom.HpeOcp = 1
+    }
+
+    if *DellOcpPtr == true {
+        eeprom.DellOcp = 1
     }
 
     if uut != "UUT_NONE" {

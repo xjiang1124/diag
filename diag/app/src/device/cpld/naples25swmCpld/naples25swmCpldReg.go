@@ -6,7 +6,7 @@ const (
     REG_CTRL_STS           = 0x02
     REG_INTR_ENA           = 0x03
     REG_INTR_STS           = 0x04
-    REG_LED_CTRL           = 0x05
+    REG_LED_PORT_CTRL      = 0x05
     REG_ESW_MDIO_CTRL_LOW  = 0x06
     REG_ESW_MDIO_CTRL_HIGH = 0x07
     REG_ESW_MDIO_DATA_LOW  = 0x08
@@ -16,13 +16,13 @@ const (
     REG_SMB_WR_SPI_RD_1    = 0x0C
     REG_SPI_WR_SMB_RD_0    = 0x0D
     REG_SPI_WR_SMB_RD_1    = 0x0E
-    REG_LED_RATE           = 0x0F
+    REG_LED_PORT_RATE      = 0x0F
     REG_ASIC_CTRL_0        = 0x10
     REG_ASIC_CTRL_1        = 0x11
     REG_ASIC_CTRL_2        = 0x12
     REG_ASIC_GPIO_0        = 0x13
     REG_ASIC_GPIO_1        = 0x14
-    REG_LED_SYS            = 0x15
+    REG_LED_SYS_CTRL       = 0x15
     REG_CAPRI_CORE_TEMP    = 0x16
     REG_CAPRI_HBM_TEMP     = 0x17
     REG_BOARD_TEMP         = 0x18

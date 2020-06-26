@@ -84,6 +84,14 @@ func (d *Device) Tx(w, r []byte) error {
 	return d.conn.Tx(w, r)
 }
 
+// Tx performs a duplex transmission to write w to the SPI device
+// and read len(r) bytes to r.
+// User should not mutate the w and r until this call returns.
+func (d *Device) Rx(w, r []byte) error {
+	// TODO(jbd): Allow nil w.
+	return d.conn.Rx(w, r)
+}
+
 // Open opens a device with the specified bus and chip select
 // by using the given driver. If a nil driver is provided,
 // the default driver (devfs) is used.

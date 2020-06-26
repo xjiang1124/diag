@@ -45,6 +45,11 @@ type Conn interface {
 	// driver should return an error.
 	Tx(w, r []byte) error
 
+	// Tx performs a SPI transaction: w is written if not nil, the result is
+	// put into r if not nil. len(w) must be equal to len(r), otherwise the
+	// driver should return an error.
+	Rx(w, r []byte) error
+
 	// Close frees the underlying resources and closes the connection.
 	Close() error
 }
