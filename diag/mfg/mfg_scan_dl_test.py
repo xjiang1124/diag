@@ -62,15 +62,17 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
-    prog_date = str(fru_cfg["TS"])
-    test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
-
+    prog_date = str(fru_cfg["TS"]) 
+    test_list = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]
+    
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.NAPLES25SWM:
+        test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):  #If SWM and only asking for ALOM, skip SWM FRU PROGRAMMING
         test_list = ["FRU_PROG"]
 
     dsp = FF_Stage.FF_DL
-    #for test in ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]:
+
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -123,7 +125,8 @@ def main():
     else:
         verbosity = False
 
-    swmtestmode = Swm_Test_Mode.SWMALOM
+    #swmtestmode = Swm_Test_Mode.SWMALOM
+    swmtestmode = Swm_Test_Mode.IBM
     if args.swm:
         swmtestmode = args.swm
 
@@ -207,6 +210,8 @@ def main():
     # get the absolute file path
     naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
     naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples100ibm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE
+    naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
     naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
@@ -254,8 +259,9 @@ def main():
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
         pn = nic_fru_cfg[mtp_id][key]["PN"]
         mac_ui = libmfg_utils.mac_address_format(mac)
-        alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-        alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+        if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
+            alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+            alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
@@ -266,6 +272,10 @@ def main():
             mtp_exp_capability = 0x1
             cpld_img_file = vomero_cpld_img_file
             qspi_img_file = vomero_qspi_img_file
+        elif card_type == NIC_Type.NAPLES100IBM:
+            mtp_exp_capability = 0x1
+            cpld_img_file = naples100ibm_cpld_img_file
+            qspi_img_file = naples100ibm_qspi_img_file
         elif card_type == NIC_Type.NAPLES25:
             mtp_exp_capability = 0x2
             cpld_img_file = naples25_cpld_img_file
@@ -352,6 +362,9 @@ def main():
         elif card_type == NIC_Type.VOMERO:
             qspi_img_file = vomero_qspi_img_file
             cpld_img_file = vomero_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100IBM:
+            qspi_img_file = naples100ibm_qspi_img_file
+            cpld_img_file = naples100ibm_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
             qspi_img_file = naples25_qspi_img_file
             cpld_img_file = naples25_cpld_img_file
@@ -411,11 +424,12 @@ def main():
         exp_mac = "-".join(re.findall("..", mac))
         exp_pn = pn
         exp_date = prog_date
-        alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-        alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
-        exp_alom_sn = alom_sn
-        exp_alom_pn = alom_pn
-        exp_assettag = 'C0'
+        if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
+            alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+            alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+            exp_alom_sn = alom_sn
+            exp_alom_pn = alom_pn
+            exp_assettag = 'C0'
 
         # power cycle all nic (Debug Power Failure Issue)
         mtp_mgmt_ctrl.mtp_power_cycle_nic()

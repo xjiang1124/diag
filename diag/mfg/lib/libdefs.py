@@ -2,6 +2,7 @@ from enum import Enum
 
 class NIC_Type:
     NAPLES100 = "NAPLES100"
+    NAPLES100IBM = "NAPLES100IBM"
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
     VOMERO = "VOMERO"
@@ -52,11 +53,13 @@ class Env_Cond(Enum):
     def __str__(self):
         return self.value
 
+#NOT ONLY SWM TEST MODE, ALL TEST MODE WILL USE AS SAME
 class Swm_Test_Mode(Enum):
     SWM = "swm"
     SWMALOM = "swmalom"
     ALOM = "alom"
     SW_DETECT = "sw_detect"
+    IBM = "ibm"
 
     def __str__(self):
         return self.value
@@ -117,7 +120,7 @@ class MTP_Const:
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
     NIC_ESEC_PROG_DELAY = 1800
-    NIC_POWER_ON_DELAY = 120
+    NIC_POWER_ON_DELAY = 30
     NIC_POWER_OFF_DELAY = 10
 
     MTP_DIAGMGR_DELAY = 10
@@ -177,7 +180,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
     ONBOARD_CFG_LOG_FILES = "/home/diag/mtp_cfg_script/*log /home/diag/mtp_cfg_script/*yaml"
     ONBOARD_SWI_LOG_FILES = "/home/diag/mtp_swi_script/*log"
-    ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log*"
+    ONBOARD_FST_LOG_FILES = "/home/diag/mtp_fst_script/*log"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
     ONBOARD_NIC_LOG_DIR = "/home/diag/diag/nic_log/"
     NIC_ONBOARD_ASIC_LOG_DIR = "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/"
@@ -195,7 +198,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
-    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/home/xguo2/workspace/temp/mfg_log/{:s}/FST/{:s}/"
+    DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -297,6 +300,10 @@ class MFG_DIAG_CMDS:
     #NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
     NIC_EMMC_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p /{:s} -i 'all'"
     NIC_EMMC_B_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p /{:s} -i mainfwb"
+    ###For IBM DUE TO THE SIZE OF IMAGE CHANGE FROM 173MB to 375MB 5/19/20####
+    NIC_EMMC_PROG_FMT_IBM = "cd /; cd /update; tar xvf {:s} -C /update fwupdate; ./fwupdate -p {:s} -i 'all'"
+    NIC_EMMC_B_PROG_FMT_IBM = "cd /; cd /update; tar xvf {:s} -C /update fwupdate; ./fwupdate -p {:s} -i mainfwb"
+    #######################################
     NIC_BOOT_DISP_FMT = "fwupdate -r"
     NIC_IMG_DISP_FMT = "fwupdate -L"
     NIC_IMG_DISP1_FMT = "fwupdate -l"
@@ -320,6 +327,9 @@ class MFG_DIAG_CMDS:
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
     NAPLES100_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
+    # Naples100IBM: core_freq=833 arm_freq=1600
+    NAPLES100IBM_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
+    NAPLES100IBM_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
     # Vomero: core_freq=833 arm_freq=2200
     VOMERO_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2200"
     VOMERO_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2200"
@@ -436,3 +446,4 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_FORIO     = r"UUT_(\d+) +FORIO"
     MFG_NIC_TYPE_VOMERO    = r"UUT_(\d+) +VOMERO"
     MFG_NIC_TYPE_NAPLES25SWM = r"UUT_(\d+) +NAPLES25SWM"
+    MFG_NIC_TYPE_NAPLES100IBM = r"UUT_(\d+) +NAPLES100IBM"

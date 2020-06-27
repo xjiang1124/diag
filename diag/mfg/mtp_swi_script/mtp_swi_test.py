@@ -105,7 +105,11 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         start_ts = libmfg_utils.timestamp_snapshot()
         # program sw image onto EMMC
         if test == "SW_INSTALL":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.NAPLES100IBM:
+                ret = mtp_mgmt_ctrl.mtp_program_nic_emmc_ibm(slot, emmc_img_file)
+            else:
+                ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
@@ -162,10 +166,12 @@ def main():
 
     # get the absolute file path
     naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
+    naples100ibm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE
     naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
     vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
     naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
@@ -178,7 +184,8 @@ def main():
 
 
     # Set Naples25SWM test mode
-    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
+    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.IBM)
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -201,6 +208,8 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
             sec_cpld_img_file = naples100_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100IBM:
+            sec_cpld_img_file = naples100ibm_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
@@ -298,6 +307,8 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
             sec_cpld_img_file = naples100_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100IBM:
+            sec_cpld_img_file = naples100ibm_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
@@ -557,6 +568,10 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SW_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
+                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if card_type == NIC_Type.NAPLES100IBM:
+                    if ret:
+                        ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_gold_boot(slot)
             elif test == "SW_PROFILE"and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
             elif test == "SW_SHUTDOWN":

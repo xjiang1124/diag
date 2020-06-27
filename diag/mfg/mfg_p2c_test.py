@@ -80,7 +80,8 @@ def main():
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
     verbosity = False
-    swmtestmode = Swm_Test_Mode.SWMALOM
+    #swmtestmode = Swm_Test_Mode.SWMALOM
+    swmtestmode = Swm_Test_Mode.IBM
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True

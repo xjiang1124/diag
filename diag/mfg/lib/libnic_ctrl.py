@@ -22,6 +22,7 @@ from libmfg_cfg import ALOM_SN_FMT
 from libmfg_cfg import ALOM_DISP_BIA_PN_FMT
 from libmfg_cfg import ALOM_DISP_PIA_PN_FMT
 from libmfg_cfg import HPESWM_DISP_ASSET_FMT
+from libmfg_cfg import IBM_DISP_ASSEMBLY_FMT
 
 from libdefs import NIC_Type
 from libdefs import NIC_Vendor
@@ -593,24 +594,24 @@ class nic_ctrl():
                     #Program HPE SWM
                     cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        print("****MTP FRU PROG 1st****")
+                        #print("****MTP FRU PROG 1st****")
                         return False
                                               
                     cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        print("****MTP FRU PROG 2nd****")
+                        #print("****MTP FRU PROG 2nd****")
                         return False
                 else:
                     #Program HPE
                     cmd = MFG_DIAG_CMDS.MTP_HP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        print("****MTP FRU PROG 3rd****")
+                        #print("****MTP FRU PROG 3rd****")
                         return False
             else:
                 #Program Non HPE
                 cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                 if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                    print("****MTP FRU PROG 4th****")
+                    #print("****MTP FRU PROG 4th****")
                     return False
                
 
@@ -620,33 +621,23 @@ class nic_ctrl():
                 #In NIC Program HPE SWM
                 nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
                 nic_cmd_list.append(nic_cmd)
-                #print("****MTP FRU SWM PROG****")
-                #print(nic_cmd)
-                #print("***************")
+      
                 nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
                 nic_cmd_list.append(nic_cmd)
-                #print("****MTP FRU SWM DISP****")
-                #print(nic_cmd)
-                #print("***************")
+         
             else:    
                 #In NIC Program HPE
                 nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
                 nic_cmd_list.append(nic_cmd)
-                #print("****MTP FRU HPE DISP****")
-                #print(nic_cmd)
-                #print("***************")
+          
         else:
             #In NIC Program Non HPE
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
             nic_cmd_list.append(nic_cmd)
-            #print("****MTP FRU NON HPE DISP****")
-            #print(nic_cmd)
-            #print("***************")
+  
             
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            print("****MTP FRU PROG 5th****")
-            #print(MTP_Const.OS_CMD_DELAY)
-            #print("************************")
+   
             return False
 
         return True
@@ -673,6 +664,25 @@ class nic_ctrl():
 
 
     def nic_copy_image(self, img_name, directory="/"):
+        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
+        cmd = "scp {:s} -r {:s} {:s}@{:s}:{:s}".format(libmfg_utils.get_ssh_option(), img_name, NIC_MGMT_USERNAME, ipaddr, directory)
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        if idx < 0:
+            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        return True
+    def nic_copy_image_IBM(self, img_name, directory="/update"):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = "scp {:s} -r {:s} {:s}@{:s}:{:s}".format(libmfg_utils.get_ssh_option(), img_name, NIC_MGMT_USERNAME, ipaddr, directory)
         self._nic_handle.sendline(cmd)
@@ -836,14 +846,9 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-        #print("******NIC QSPI PROG******")
-        #print(nic_cmd_list)
-        #print("*************************")
+  
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
-            #print("*******NIC CMD LIST*******")
-            #print(nic_cmd_list)
-            #print("*************************")
-            #print(self.nic_exec_cmds)
+       
             return False
 
         return True
@@ -902,6 +907,24 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name, img_name)
         nic_cmd_list.append(nic_cmd)        
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT.format(img_name, img_name)                                                                                         
+        emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
+            return False
+
+        return True
+      
+    def nic_program_emmc_ibm(self, emmc_img):
+        if not self.nic_copy_image_IBM(emmc_img):
+            return False
+        img_name = os.path.basename(emmc_img)
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_IBM.format(img_name, img_name)
+        nic_cmd_list.append(nic_cmd)        
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT_IBM.format(img_name, img_name)                                                                                         
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
@@ -1118,6 +1141,7 @@ class nic_ctrl():
 
     # check nic mfg vendor based on the sn format
     def nic_vendor_init(self, sn=None):
+        nic_type = self._nic_type                         
         if sn == None:
             if self._nic_type == NIC_Type.NAPLES25SWM:
                 #nic_cmd = MFG_DIAG_CMDS.NIC_HPESWM_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
@@ -1125,11 +1149,7 @@ class nic_ctrl():
             else:
                 nic_cmd = MFG_DIAG_CMDS.NIC_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
             fru_buf = self.nic_get_info(nic_cmd)
-            #print("******FIELD SN*******")
-            #print(nic_cmd)
-            #print("*********************")
-            #print(fru_buf)
-            #print("*********************")
+
         else:
             fru_buf = sn
 
@@ -1191,6 +1211,7 @@ class nic_ctrl():
         if not fru_buf:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+        match = None            
         # retrieve card serial number
         if self._vendor == NIC_Vendor.HPE:
             match = re.findall(HP_DISP_SN_FMT, fru_buf)
@@ -1206,6 +1227,7 @@ class nic_ctrl():
             print ("fru_buf 2: {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+        match = None            
         # retrieve card MAC address
         match = re.findall(NAPLES_DISP_MAC_FMT, fru_buf)
         if match:
@@ -1214,6 +1236,7 @@ class nic_ctrl():
             print ("fru_buf 3 match: ")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+        match = None            
         # retrieve program date if it is valid
         if init_date:
             match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
@@ -1225,14 +1248,22 @@ class nic_ctrl():
                 return False
         else:
             self._date = None
+        match = None            
         # retrieve card PN
+        #print("******READ SWM TEST MODE***********")
+        #print(swmtestmode)
+        #print("***********************************")
         if self._vendor == NIC_Vendor.HPE:
             if self._nic_type == NIC_Type.NAPLES25SWM:
                 match = re.findall(HP_SWM_DISP_PN_FMT, fru_buf)
             else:
-                match = re.findall(HP_DISP_PN_FMT, fru_buf)
+                match = re.findall(HP_DISP_PN_FMT, fru_buf)              
         else:
-            match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
+            if swmtestmode == Swm_Test_Mode.IBM:
+                match = re.findall(IBM_DISP_ASSEMBLY_FMT, fru_buf)
+            else:
+                match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
+            
 
         if match:
             self._pn = match[0]
@@ -1278,18 +1309,20 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary SN
+            match = None
             if self._vendor == NIC_Vendor.HPE:
-                match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())
                 if self._nic_type == NIC_Type.NAPLES25SWM:
                     match = re.findall(ALOM_SN_FMT, fru_buf)
-                else:
-                    match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
+                else:    
+                    match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())       
+            else:
+                match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
             if match:
                 sn = match[0]
             else:
                 print ("fru_buf 8 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False     
+                return False
                 
             # secondary MAC
             match = re.findall(NAPLES_DISP_MAC_FMT, self.nic_get_cmd_buf())
@@ -1311,13 +1344,17 @@ class nic_ctrl():
             else:
                 date = None
         # secondary PN
+        match = None            
         if self._vendor == NIC_Vendor.HPE:
             if self._nic_type == NIC_Type.NAPLES25SWM:
                 match = re.findall(HP_SWM_DISP_PN_FMT, self.nic_get_cmd_buf())
             else:
                 match = re.findall(HP_DISP_PN_FMT, self.nic_get_cmd_buf())
-        else:   
-            match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
+        else:
+            if swmtestmode == Swm_Test_Mode.IBM:
+                match = re.findall(IBM_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
+            else:
+                match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
         if match:
             pn = match[0]
         else:
@@ -1405,12 +1442,7 @@ class nic_ctrl():
 
     def nic_get_fru(self):
         if not self._sn or not self._mac or not self._pn or not self._vendor:
-            print("******NIC GET FRU********")
-            print(self._sn)
-            print(self._mac)
-            print(self._pn)
-            print(self._vendor)
-            print("*************************")
+
             return None
         else:
             return [self._sn, self._mac, self._pn, self._date, self._vendor]
@@ -1518,7 +1550,10 @@ class nic_ctrl():
         if not cpld_buf:
             return False
         match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
-        if match:
+        #print("****MATCH******")
+        #print(match)
+        #print("***************")
+        if len(match) > 1:
             read_data[0] = int(match[1], 16)
         else:
             return False

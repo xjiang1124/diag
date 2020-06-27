@@ -50,6 +50,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode):
+
     # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -57,7 +58,15 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+
+    cmd = None
+
+    # if swm_test_mode == Swm_Test_Mode.IBM:
+    # cmd = "./mtp_dl_test.py --mtpid {:s}".format(mtp_id)
+    # else:
+        
     cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
+
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_DL_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Complete", level=0)
@@ -83,7 +92,8 @@ def main():
     if args.verbosity:
         verbosity = True
 
-    swmtestmode = Swm_Test_Mode.SWMALOM 
+    #swmtestmode = Swm_Test_Mode.SWMALOM 
+    swmtestmode = Swm_Test_Mode.IBM 
     if args.swm:
         swmtestmode = args.swm
 
@@ -125,6 +135,7 @@ def main():
         if (mtp_capability & 0x1):
             # FIXME: Xin - Dedicated image
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
+            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE)
             mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
         if (mtp_capability & 0x2):
             # FIXME: Xin - Dedicated image

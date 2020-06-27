@@ -20,7 +20,9 @@ from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_IBM_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_VOMERO_TIMESTAMP
+#from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
@@ -743,6 +745,8 @@ class mtp_ctrl():
         read_data = [0]
         for slot in range(self._slots):
             self._swmtestmode[slot] = swmtestmode
+        if swmtestmode == Swm_Test_Mode.IBM:
+            return True
         for slot in range(self._slots):
             if self._swmtestmode[slot] == Swm_Test_Mode.SW_DETECT:
                 read_data[0] = 0x00
@@ -1099,6 +1103,10 @@ class mtp_ctrl():
             naples100_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
             naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
             naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
+            naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+            naples100ibm_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
+            naples100ibm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE
+            naples100ibm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE
 
             vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
             vomero_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
@@ -1114,12 +1122,14 @@ class mtp_ctrl():
             if stage == FF_Stage.FF_DL:
                 img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
                 img_list += [vomero_cpld_img_file, vomero_qspi_img_file]
+                img_list += [naples100ibm_cpld_img_file, naples100ibm_qspi_img_file]
             elif stage == FF_Stage.FF_CFG:
                 img_list = [naples100_cpld_img_file]
                 img_list += [vomero_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
+                img_list += [naples100ibm_sec_cpld_img_file, naples100ibm_gold_img_file]
             else:
                 img_list = []
 
@@ -1452,7 +1462,7 @@ class mtp_ctrl():
 
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
-        if boot_image != "goldfw" or kernel_timestamp != MFG_GOLD_TIMESTAMP:
+        if boot_image != "goldfw" or (kernel_timestamp != MFG_GOLD_TIMESTAMP and kernel_timestamp != MFG_GOLD_IBM_TIMESTAMP):
             self.cli_log_slot_err(slot, "goldfw verify failed, NIC is booted from {:s}({:s})".format(boot_image, kernel_timestamp))
             return False
 
@@ -1515,9 +1525,9 @@ class mtp_ctrl():
         # ping to update the arp cache
         for x in range(2):
             time.sleep(5)
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-            if not self.mtp_mgmt_exec_cmd(cmd):
-                return False
+        cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            return False
 
         return True
 
@@ -1727,6 +1737,9 @@ class mtp_ctrl():
         if nic_type == NIC_Type.NAPLES100:
             exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            exp_ver = NIC_CPLD_Version.NAPLES100IBM_VERSION
+            exp_timestamp = NIC_CPLD_Version.NAPLES100IBM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25:
             exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
@@ -1837,6 +1850,13 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
                 exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.NAPLES100IBM_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES100IBM_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.NAPLES100IBM_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES100IBM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25:
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.NAPLES25_SEC_VERSION
@@ -1861,13 +1881,6 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.VOMERO_VERSION
                 exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES25SWM_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -1917,7 +1930,8 @@ class mtp_ctrl():
 
         if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_TIMESTAMP):
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NIC is booted from {:s}".format(boot_image))
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s}, get: {:s}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP, kernel_timestamp))
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s}}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP, kernel_timestamp))
+             
             return False
 
         return True
@@ -1925,6 +1939,17 @@ class mtp_ctrl():
 
     def mtp_program_nic_emmc(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
+            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            return False
+
+        if not self.mtp_mgmt_set_nic_sw_boot(slot):
+            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
+            return False
+
+        return True
+        
+    def mtp_program_nic_emmc_ibm(self, slot, emmc_img):
+        if not self._nic_ctrl_list[slot].nic_program_emmc_ibm(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
             return False
 
@@ -2438,6 +2463,14 @@ class mtp_ctrl():
                 self._nic_type_list[slot] = NIC_Type.NAPLES100
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100)
 
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100IBM, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
+                self._nic_type_list[slot] = NIC_Type.NAPLES100IBM
+                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100IBM)
+                                                                                                   
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2806,6 +2839,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES100:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100IBM_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100IBM_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.VOMERO:
             vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
@@ -3044,7 +3080,7 @@ class mtp_ctrl():
             if swmtestmode == Swm_Test_Mode.ALOM:  #if only scanning Alom we need to manually put in the SWM part number
                 pn="P26968-001"
 
-            if pn == 'P26968-001':  
+            if pn == 'P26968-001':
                 while True:
                     usr_prompt = "Please Scan {:s} ALOM Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)

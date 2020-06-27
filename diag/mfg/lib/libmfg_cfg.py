@@ -10,6 +10,10 @@ class NIC_CPLD_Version:
     NAPLES100_TIMESTAMP = "05-31"
     NAPLES100_SEC_VERSION = "0x89"
     NAPLES100_SEC_TIMESTAMP = "06-03"
+    NAPLES100IBM_VERSION = "0x2"
+    NAPLES100IBM_TIMESTAMP = "04-30"
+    NAPLES100IBM_SEC_VERSION = "0x82"
+    NAPLES100IBM_SEC_TIMESTAMP = "04-30"
 
     NAPLES25_VERSION = "0x4"
     NAPLES25_TIMESTAMP = "08-08"
@@ -40,6 +44,7 @@ class MFG_IMAGE_FILES:
     
     NIC_DIAGFW_IMAGE = "naples_diagfw_05212020.tar"
     NIC_GOLDFW_IMAGE = "naples_gold_1.3.1-E-17_0416.tar"
+    NIC_GOLDFW_IMAGE_IBM = "naples_goldfw1.3.1-E-20_0514.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_cpld_rev4_08082019.bin"
     NAPLES25_SEC_CPLD_IMAGE = "naples25_cpld_rev84_08082019.bin"
@@ -49,6 +54,9 @@ class MFG_IMAGE_FILES:
     
     NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
     NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"
+    
+    NAPLES100IBM_CPLD_IMAGE = "naples100_ibm_rev2_04142020.bin"
+    NAPLES100IBM_SEC_CPLD_IMAGE = "naples100_ibm_rev82_04142020.bin"
 
     VOMERO_CPLD_IMAGE = "vomero_cpld_rev4_02072020.bin"
     VOMERO_SEC_CPLD_IMAGE = "vomero_cpld_rev84_02102020.bin"
@@ -58,9 +66,10 @@ MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
 MFG_QSPI_TIMESTAMP = "05-21-2020"
+#MFG_QSPI_IBM_TIMESTAMP = "05-21-2020"
 MFG_GOLD_TIMESTAMP = "04-15-2020"
 MFG_QSPI_VOMERO_TIMESTAMP = "02-03-2020"
-
+MFG_GOLD_IBM_TIMESTAMP = "05-12-2020"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
@@ -70,7 +79,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES100IBM]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
@@ -93,6 +102,7 @@ ALOM_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
+IBM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
 HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"

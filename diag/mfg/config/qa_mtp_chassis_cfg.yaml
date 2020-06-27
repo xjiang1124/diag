@@ -148,6 +148,27 @@ MTP-028:
     SLOTS: 10
     CAPABILITY: 0x2
     
+MTP-029:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.72.137"
+    APC1_PORT: "3"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.68.215"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp029"
+    SLOTS: 10
+    CAPABILITY: 0x1
+    
 MTP-030:
     MODE: ""
     TS: ""
@@ -284,15 +305,15 @@ MTPS-001:
     TS_PORT: ""
     TS_USERID: ""
     TS_PASSWORD: ""
-    APC1: "192.168.70.161"
-    APC1_PORT: "17"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
     APC2: ""
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.69.136"
+    IP: "192.168.71.221"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps001"
