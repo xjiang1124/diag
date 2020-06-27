@@ -230,7 +230,7 @@ class nic_con:
             common.session_cmd(session, cmd)
             cmd = "turn_on_slot_3v3.sh on {}".format(slot)
             common.session_cmd(session, cmd)
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x14".format(slot)
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x34".format(slot)
             common.session_cmd(session, cmd)
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
             common.session_cmd(session, cmd)
