@@ -1,6 +1,6 @@
 from libdefs import NIC_Type
 
-GLB_CFG_MFG_TEST_MODE = True
+GLB_CFG_MFG_TEST_MODE = False
 
 MFG_BYPASS_PSU_CHECK = True
 
@@ -20,6 +20,9 @@ class NIC_CPLD_Version:
     VOMERO_TIMESTAMP = "02-07"
     VOMERO_SEC_VERSION = "0x84"
     VOMERO_SEC_TIMESTAMP = "02-10"
+
+    VOMERO2_VERSION = "0x2"
+    VOMERO2_TIMESTAMP = "00-00"
 
     FORIO_VERSION = "0x4"
     FORIO_TIMESTAMP = "04-11"
@@ -70,7 +73,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
@@ -92,7 +95,7 @@ HP_DISP_SN_FMT = r"HPE Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_
 ALOM_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
 NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
-NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
+NAPLES_DISP_PN_FMT = r"(Part|Assembly) Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
 HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"

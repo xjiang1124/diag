@@ -1442,7 +1442,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_verify_nic_gold_boot(self, slot):
         if not self.mtp_nic_boot_info_init(slot):
-            self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            self.cli_log_slot_err(slot, "Init NIC gold boot info failed")
             return False
 
         gold_info = self._nic_ctrl_list[slot].nic_get_boot_info()
@@ -1462,7 +1462,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_verify_nic_sw_boot(self, slot):
         if not self.mtp_nic_boot_info_init(slot):
-            self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
         sw_info = self._nic_ctrl_list[slot].nic_get_boot_info()
@@ -1739,6 +1739,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.VOMERO:
             exp_ver = NIC_CPLD_Version.VOMERO_VERSION
             exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO2:
+            exp_ver = NIC_CPLD_Version.VOMERO_VERSION
+            exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -1854,6 +1857,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.FORIO:
             exp_ver = NIC_CPLD_Version.FORIO_VERSION
             exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO2:
+            exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
+            exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO:
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.VOMERO_SEC_VERSION
@@ -2461,7 +2467,13 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.VOMERO
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO)
-
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO2, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
+                self._nic_type_list[slot] = NIC_Type.VOMERO2
+                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO2)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2809,6 +2821,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.VOMERO:
             vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.VOMERO2:
+            vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO2_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.VOMERO2_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)

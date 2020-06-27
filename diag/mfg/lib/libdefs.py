@@ -5,6 +5,7 @@ class NIC_Type:
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
     VOMERO = "VOMERO"
+    VOMERO2 = "VOMERO2"
     NAPLES25SWM = "NAPLES25SWM"
     UNKNOWN = "Unknown"
 
@@ -109,7 +110,7 @@ class MTP_Const:
     SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 300
     NIC_CON_CMD_DELAY = 900
-    NIC_CON_INIT_DELAY = 60
+    NIC_CON_INIT_DELAY = 160
     NIC_NETCOPY_DELAY = 120
     NIC_CON_CMD_RETRY = 3
     NIC_MGMT_IP_SET_DELAY = 3
@@ -323,6 +324,9 @@ class MFG_DIAG_CMDS:
     # Vomero: core_freq=833 arm_freq=2200
     VOMERO_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2200"
     VOMERO_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2200"
+    # Vomero2: core_freq=833 arm_freq=2200
+    VOMERO2_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
+    VOMERO2_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
     # Naples25: core_freq=417 arm_freq=1600
     NAPLES25_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 417 -arm_freq 1600"
     NAPLES25_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 417 -arm_freq 1600"
@@ -435,4 +439,5 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES25  = r"UUT_(\d+) +NAPLES25"
     MFG_NIC_TYPE_FORIO     = r"UUT_(\d+) +FORIO"
     MFG_NIC_TYPE_VOMERO    = r"UUT_(\d+) +VOMERO"
+    MFG_NIC_TYPE_VOMERO2   = r"UUT_(\d+) +VOMERO2"
     MFG_NIC_TYPE_NAPLES25SWM = r"UUT_(\d+) +NAPLES25SWM"
