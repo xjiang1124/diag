@@ -181,7 +181,7 @@ var Vomero2Tbl = []entry {
     entry{"Next Cap address",                       INT8,        83,         1,    []byte{0x00}},
     entry{"Sensor Type",                            INT8,        84,         1,    []byte{0x50}},
     entry{"Sensor Address",                         INT8,        85,         1,    []byte{0xEC}},
-    entry{"Sensor #1 Address Offset",               INT8,        86,         1,    []byte{0x17}},
+    entry{"Sensor 1 Address Offset",                INT8,        86,         1,    []byte{0x17}},
     entry{"Reserved",                               INT8,        87,         1,    []byte{0x16}},
     entry{"Warning Threshold",                      INT8,        88,         2,    []byte{0x00, 0x5F}},
     entry{"Critical Temp Threshold",                INT8,        90,         2,    []byte{0x00, 0x69}},
