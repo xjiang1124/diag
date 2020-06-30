@@ -61,7 +61,25 @@ show_status () {
 
 img_prog () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr images/esecure_fw_ptr.hex.txt -esec_1 images/esecure_firmware_packed.hex -esec_2 images/esecure_firmware_packed.hex -host_1 images/boot_nonsec_packed.hex -host_2 images/boot_nonsec_packed.hex
+    fw_ptr_img="images/esecure_fw_ptr.hex.txt"
+    orcl_esec_img="images/orcl_esecure_firmware_v1_k0_packed.hex"
+    orcl_host_img="images/orcl_boot_nonsec_v1_k0_packed.hex"
+    generic_esec_img="images/esecure_firmware_packed.hex"
+    generic_host_img="images/boot_nonsec_packed.hex"
+    uut="UUT_$SLOT"
+    card_type="${!uut}"
+    if [[ $card_type = "VOMERO2" ]]
+    then
+        esec_img=$orcl_esec_img
+        host_img=$orcl_host_img
+    else
+        esec_img=$generic_esec_img
+        host_img=$generic_host_img
+    fi
+    echo "slot: $SLOT; esec_img: $esec_img; host_img: $host_img; card_type: $card_type"
+
+
+    tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
 }
 
 efuse_test () {
