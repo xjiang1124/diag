@@ -108,9 +108,7 @@ func EepromUpdateMac(devName string, bus uint32, devAddr byte, mac string) (err 
 func EepromUpdateSn(devName string, bus uint32, devAddr byte, sn string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    sn1 := make([]byte, 16)
-    copy(sn1, []byte(sn))
-    err = eeprom.UpdateSn(devName, bus, devAddr, sn1)
+    err = eeprom.UpdateSn(devName, bus, devAddr, []byte(sn))
     if err != errType.SUCCESS {
         return
     }

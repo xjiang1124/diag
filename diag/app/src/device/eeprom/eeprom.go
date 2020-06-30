@@ -83,8 +83,8 @@ var Naples100Tbl = []entry {
     entry{"Reserved",                               STRING,      47,       6,    []byte{0x20, 0x20, 0x20, 0x20,
         0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        53,       1,    []byte{0xCB}},
-    entry{"Serial Number",                          STRING,      54,       11,   []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Serial Number",                          STRING,      54,       11,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Part Number Type/Length",                INT8,        65,       1,    []byte{0xCD}},
     entry{"Part Number",                            STRING,      66,       13,   []byte{0x36, 0x38, 0x2D, 0x30,
         0x30, 0x30, 0x33, 0x2D, 0x30, 0x32, 0x20, 0x30, 0x31}},
@@ -126,8 +126,8 @@ var Naples100IBMTbl = []entry {
     entry{"PAD",                                    STRING,      49,      15,    []byte{0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        64,       1,    []byte{0xCB}},
-    entry{"Serial Number",                          STRING,      65,       11,   []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Serial Number",                          STRING,      65,       11,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Part Number Type/Length",                INT8,        76,       1,    []byte{0xD9}},
     entry{"Part Number",                            STRING,      77,       16,   []byte{0x44, 0x53, 0x43, 0x31,
         0x2D, 0x32, 0x51, 0x31, 0x30, 0x30, 0x2D, 0x38, 0x46, 0x31, 0x36, 0x50}},
@@ -156,8 +156,8 @@ var Naples100IBMTbl = []entry {
 var Vomero2Tbl = []entry {
     entry{"Class Code",                             INT8,        0,          3,    []byte{0x00, 0x80, 0x02}},
     entry{"PCI-SIG Vendor ID",                      INT8,        3,          2,    []byte{0xD8, 0x1D}},
-    entry{"Serial Number",                          STRING,      5,          20,   []byte{0x78, 0x78, 0x78, 0x78, 0x78,
-          0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Serial Number",                          STRING,      5,          20,   []byte{0x20, 0x20, 0x20, 0x20, 0x20,
+          0x20, 020, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"Model Number",                           STRING,      25,         40,   []byte{0x50, 0x65, 0x6E, 0x73, 0x61,
           0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x43, 0x2D, 0x31, 0x30, 0x30, 0x56, 0x20, 0x35, 0x30, 0x2F, 0x31, 0x30, 0x30, 
 	  0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61, 0x72, 0x64}},
@@ -225,8 +225,8 @@ var Vomero2Tbl = []entry {
     entry{"PAD",                                    STRING,      306,        14,   []byte{0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        320,        1,    []byte{0xCB}},
-    entry{"Serial Number",                          STRING,      321,        11,   []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Serial Number",                          STRING,      321,        11,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Part Number Type/Length",                INT8,        332,        1,    []byte{0xD9}},
     entry{"Part Number",                            STRING,      333,        16,   []byte{0x44, 0x53, 0x43, 0x31,
         0x2D, 0x32, 0x51, 0x31, 0x30, 0x30, 0x2D, 0x38, 0x56, 0x36, 0x34, 0x50}},
@@ -308,8 +308,8 @@ var HpeTbl = []entry {
             0x20, 0x41, 0x64, 0x61, 0x70, 0x74, 0x65, 0x72, 0x20, 0x20, 0x20, 0x20,
             0x20, 0x20}},
     entry{"PCA Serial Number Type/Length",          INT8,       185,        1,  []byte{0xCA}},
-    entry{"HPE Serial Number",                      STRING,     186,        10, []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"HPE Serial Number",                      STRING,     186,        10, []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"PCA Product Number Type/Length",         INT8,       196,        1,  []byte{0xCA}},
     entry{"HPE Product Number",                     STRING,     197,        10, []byte{0x50, 0x31, 0x38, 0x36,
         0x36, 0x39, 0x2D, 0x30, 0x30, 0x31}},
@@ -348,8 +348,8 @@ var HpeTblOCP = []entry {
     entry{"Product Version Type/Length",            INT8,        182,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,      183,        2,    []byte{0x30, 0x30}},
     entry{"PCA Serial Number Type/Length",          INT8,        185,        1,    []byte{0xCA}},
-    entry{"HPE Serial Number",                      STRING,      186,       10,    []byte{0x30, 0x30, 0x30, 0x30, 
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"HPE Serial Number",                      STRING,      186,       10,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Asset Tag Type/Length",                  INT8,        196,        1,    []byte{0x00}},
     entry{"FRU File ID Type/Length",                INT8,        197,        1,    []byte{0xC8}},
     entry{"FRU ID",                                 STRING,      198,        8,    []byte{0x30, 0x36, 0x2F, 0x32,
@@ -384,8 +384,8 @@ var HpeTblSWM = []entry {
         0x31, 0x30, 0x2f, 0x32, 0x35, 0x47, 0x20, 0x32, 0x70, 0x20, 
         0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61, 0x72, 0x64}},
     entry{"Serial Number Type/Length",              INT8,        68,       1,    []byte{0xCB}},
-    entry{"Serial Number",                          STRING,      69,      10,    []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Serial Number",                          STRING,      69,      10,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Pad",                                    INT8,        79,       1,    []byte{0x00}},
     entry{"Part Number Type/Length",                INT8,        80,       1,    []byte{0xCD}},
     entry{"Part Number",                            STRING,      81,      13,    []byte{0x50, 0x32, 0x36, 0x39, 
@@ -425,8 +425,8 @@ var HpeTblSWMext = []entry {
     entry{"Product Version Type/Length",            INT8,        187,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x31}},
     entry{"PCA Serial Number Type/Length",          INT8,        190,        1,    []byte{0xCA}},
-    entry{"HPE Serial Number",                      STRING,      191,       10,    []byte{0x30, 0x30, 0x30, 0x30, 
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"HPE Serial Number",                      STRING,      191,       10,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Asset Tag Type/Length",                  INT8,        201,        1,    []byte{0xC0}},
     entry{"FRU File ID Type/Length",                INT8,        202,        1,    []byte{0xC8}},
     entry{"FRU ID",                                 STRING,      203,        8,    []byte{0x30, 0x36, 0x2F, 0x32,
@@ -465,8 +465,8 @@ var HpeAlomTblAll = []entry {
         0x67, 0x6d, 0x74, 0x20, 0x41, 0x4c, 0x4f, 0x4d, 0x20, 0x4d, 
         0x6f, 0x64 }},
     entry{"Serial Number Type/Length",              INT8,        66,        1,    []byte{0xCA}},
-    entry{"Serial Number",                          STRING,      67,       10,    []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Serial Number",                          STRING,      67,       10,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Part Number Type/Length",                INT8,        77,        1,    []byte{0xCA}},
     entry{"Part Number",                            STRING,      78,       10,    []byte{ 0x50, 0x32, 0x36, 0x39, 
         0x37, 0x31, 0x2d, 0x30, 0x30, 0x31 }},
@@ -496,8 +496,8 @@ var HpeAlomTblAll = []entry {
     entry{"Product Version Type/Length",            INT8,       161,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,     162,        2,    []byte{0x30, 0x31}},
     entry{"Product Serial Number Type/Length",      INT8,       164,        1,    []byte{0xCA}},
-    entry{"Serial Number",                      STRING,     165,       10,    []byte{0x30, 0x30, 0x30, 0x30,
-        0x30, 0x30, 0x30, 0x30, 0x30, 0x30}},
+    entry{"Serial Number",                      STRING,     165,       10,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Asset Tag Type/Length",                  INT8,       175,        1,    []byte{0x00}},
     entry{"FRU File ID Type/Length",                INT8,       176,        1,    []byte{0x00}},
     entry{"End of Field",                           INT8,       177,        1,    []byte{0xC1}},
@@ -1050,8 +1050,19 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                     continue
                 }
             }
-                    
+
             if entry.Name == "Serial Number" {
+                // Not a good solution to set SN padding
+                var snInitVal byte
+                if CustType == "ORACLE" {
+                    snInitVal = 0x20
+                } else {
+                    snInitVal = 0x0
+                }
+                for i := range entry.Value {
+                    entry.Value[i] = snInitVal
+                }
+
                 copy(entry.Value, sn)
                 continue
             } else if entry.Name == "MAC Address Base" {
