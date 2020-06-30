@@ -44,7 +44,7 @@ class nic_ctrl():
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._nic_status = NIC_Status.NIC_STA_POWEROFF
-        self._nic_con_prompt = "#"
+        self._nic_con_prompt = "# "
 
         self._diag_ver = None
         self._diag_util_ver = None
@@ -274,6 +274,9 @@ class nic_ctrl():
         # TODO: Forio need another enter to connect console
         if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
             self._nic_handle.sendline("")
+
+        #if self._nic_type == NIC_Type.VOMERO2:
+        #    self._nic_handle.sendline("")
 
         exp_list = [self._nic_con_prompt, "login:", "assword:"]
         while True:
@@ -1224,7 +1227,6 @@ class nic_ctrl():
         if match:
             self._sn = match[0]
         else:
-            print ("fru_buf 2: {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = None            
@@ -1233,7 +1235,6 @@ class nic_ctrl():
         if match:
             self._mac = match[0]
         else:
-            print ("fru_buf 3 match: ")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = None            
@@ -1243,7 +1244,6 @@ class nic_ctrl():
             if match:
                 self._date = match[0].replace('/','')
             else:
-                print ("fru_buf 4 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
         else:
@@ -1268,7 +1268,6 @@ class nic_ctrl():
         if match:
             self._pn = match[0]
         else:
-            print ("fru_buf 5 match: ")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         
@@ -1305,7 +1304,6 @@ class nic_ctrl():
             else:
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
-                print ("fru_buf 7 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary SN
@@ -1320,7 +1318,6 @@ class nic_ctrl():
             if match:
                 sn = match[0]
             else:
-                print ("fru_buf 8 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
                 
@@ -1329,7 +1326,6 @@ class nic_ctrl():
             if match:
                 mac = match[0]
             else:
-                print ("fru_buf 9 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary date
@@ -1338,7 +1334,6 @@ class nic_ctrl():
                 if match:
                     date = match[0].replace('/','')
                 else:
-                    print ("fru_buf 10 match: ")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
             else:
@@ -1358,7 +1353,6 @@ class nic_ctrl():
         if match:
             pn = match[0]
         else:
-            print ("fru_buf 11 match: ")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
             
@@ -1380,7 +1374,6 @@ class nic_ctrl():
             print ("pn {} vs {} ".format(self._pn, pn))
             print ("date {} vs {} ".format(self._date, date))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            print ("fru_buf 12 match: ")
             return False
 
         #ALOM CARD WITH SWM IF ATTACHED
