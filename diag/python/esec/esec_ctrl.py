@@ -77,7 +77,6 @@ def parse_args_diag():
         "-efuse_test", "--efuse_test", 
         action='store_true',
         help="Test efuse by burning bit[127]")
-
     #======================
     parser.add_argument(
         "-k", "--client_key",
@@ -139,6 +138,11 @@ def parse_args_diag():
         "--post_check",
         action='store_true',
         help="Uboot post key programming check")
+    parser.add_argument(
+        "-fast",
+        "--fast_path", 
+        action='store_true',
+        help="Fast path of key programming")
 
     #parser.add_argument(
     #    "-pub_ek",
@@ -217,7 +221,7 @@ PRIVEK <ek.sk>"""
             print "Invalid SN lenth: expect less than 16; received {}".format(len(sn))
             ret = -1
         else:
-            output = sn.ljust(tgt_sn_len, '0')
+            output = sn.ljust(tgt_sn_len, '\0')
 
             # If Oracle card, add 'O' to SN
             card_type = os.environ['UUT_'+str(slot)]
@@ -378,7 +382,7 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku):
+    def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku, fast_path):
         self.create_otp_cm_fmt(sn, slot)
         numRetry = 3
 
@@ -434,7 +438,10 @@ PRIVEK <ek.sk>"""
                     # Move forward
                     break
 
-            ret = self.key_prog_all_pac(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+            if fast_path == True:
+                ret = self.key_prog_all(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+            else:
+                ret = self.key_prog_all_pac(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
             if ret != 0:
                 print "=== ESEC PROG FAILED ==="
                 return ret
@@ -583,7 +590,7 @@ if __name__ == "__main__":
 
     if args.esec_prog == True:
         esec_ctrl.esec_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
-                args.sn, args.slot, args.pn, args.mac, args.brd_name, args.mtp, args.sku)
+                args.sn, args.slot, args.pn, args.mac, args.brd_name, args.mtp, args.sku, args.fast_path)
         sys.exit()
 
     if args.cleanup == True:
