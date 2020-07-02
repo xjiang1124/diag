@@ -29,7 +29,7 @@ power_on_naples25_swm_ocp() {
             then
                 #enable high power mode on SWM CPLD
                 reg1=$(i2cget -y 0 0x4a 0x21)
-                reg1=$(( $reg1 | 0x2 ))
+                reg1=$(( $reg1 | 0x6 ))
                 i2cset -y 0 0x4a 0x21 $reg1
                 sleep 0.2
                 i2cset -y 0 0x4b 0x1 0x1C #enable alom + 12V PCIE Edge power
@@ -79,6 +79,7 @@ enable_nic_mtp_r3() {
         echo "MTP Rev $mtp_rev detected, set bit 0"
         reg1=$(( $reg1 | 0x1 ))
     fi
+    reg1=$(( $reg1 | 0x4 ))
     smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
 }
 
