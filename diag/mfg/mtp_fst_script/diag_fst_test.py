@@ -28,6 +28,8 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES100IBM"
     elif "P26968" in pn:
         product_name = "NAPLES25SWM"
+    if "68-0011-02" in pn:
+        product_name = "VOMERO2"
     else:
         product_name = "UNKNOWN"
     return product_name
@@ -94,6 +96,8 @@ def fst_general_old():
             bus_int = int(bus_str, 16)+4
             eth = "enp"+str(bus_int)+"s0"
             tmp = subprocess.call(["ifconfig", eth, "169.254.0.2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
+            tmp = subprocess.call(["ifconfig", eth, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(1)
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
@@ -212,6 +216,55 @@ def fst_general():
             print("goldfw:", firmware["all-installed-fw"]["goldfw"]["kernel_fit"]["software_version"])
             cleanup(eth)
 
+def fst_general_oracle():
+    slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
+    
+    card_slot_list = config_eth()
+    card_info_dict = dict()
+
+    for slot in card_slot_list:
+        bus = slot_bus_dict[slot]
+        # Get SN
+        ip = "169.254."+str(bus+4)+".1"
+        cmd = "cat /tmp/fru.json"
+        ssh_cmd = get_ssh_cmd(ip, cmd)
+        try:
+            output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print("slot"+str(slot), "failed to fetch SN") 
+            print("Get FRU failed")
+            print(e.output)
+            continue
+
+        output1 = output.decode("utf-8")
+        #print(output1)
+        fru = json.loads(output1)
+        sn = fru["serial-number"]
+        pn = fru["board-assembly-area"]
+        product_name =  get_product_name_from_pn(pn)
+
+        card_info_dict[slot] = sn+':'+product_name
+
+    slot_bus_dict1 = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
+
+    for slot, sn_pn in card_info_dict.items():
+        sn = sn_pn.split(":")[0]
+        product_name = sn_pn.split(":")[1]
+
+        bus = slot_bus_dict1[int(slot)]
+
+        result = subprocess.check_output("lspci -vv -s "+bus+" | grep LnkSta:", shell=True, stderr=subprocess.STDOUT)
+        result1 = result.decode("utf-8")
+
+        if product_name == "UNKNOWN":
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
+        elif "8GT/s" in result1 and "x16" in result1:
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
+        else:
+            print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
+            print("Speed and Width are failed")
+            print(result1.replace("\n", ""))
+
 def fst_cloud_fetch_sn():
     print("Fetching SN with goldfw")
 
@@ -304,6 +357,8 @@ def main():
         fst_general()
     elif card_type == "GENERAL_OLD":
         fst_general_old()
+    elif card_type == "ORACLE":
+        fst_general_oracle()
     elif card_type == "NAPLES100IBM" or card_type == "CLOUD":
         if stage == "FETCH_SN":
             fst_cloud_fetch_sn()
