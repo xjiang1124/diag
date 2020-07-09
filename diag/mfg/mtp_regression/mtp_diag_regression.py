@@ -513,7 +513,8 @@ def main():
     skip_test = False
     corner = Env_Cond.MFG_NT
     #swmtestmode = Swm_Test_Mode.SWMALOM
-    swmtestmode = Swm_Test_Mode.IBM
+    #swmtestmode = Swm_Test_Mode.IBM
+    swmtestmode = Swm_Test_Mode.VOMERO2
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -786,6 +787,8 @@ def main():
                     swm_lp_boot_mode=True
                 else:
                     swm_lp_boot_mode=False
+            else:
+                swm_lp_boot_mode=False
 
             if (corner != Env_Cond.MFG_NT and corner != Env_Cond.MFG_QA):  #Skip SWM Low Power Test for 4C
                 swm_lp_boot_mode=False

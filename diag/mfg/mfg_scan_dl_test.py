@@ -62,7 +62,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
-    prog_date = str(fru_cfg["TS"]) 
+    prog_date = str(fru_cfg["TS"])
     test_list = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]
     
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -114,6 +114,40 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
 
+def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
+    
+    dsp = FF_Stage.FF_DL
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue    #NEXT
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if not card_type == NIC_Type.VOMERO2:
+            continue
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        mac = nic_fru_cfg[mtp_id][key]["MAC"]
+        pn = nic_fru_cfg[mtp_id][key]["PN"]
+        prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+      
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, 'SET_PSLC'))
+        
+        start_ts = libmfg_utils.timestamp_snapshot()        
+        ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, 'SET_PSLC', "FAILED", duration))
+            fail_nic_list.append(slot)
+            pass_nic_list.remove(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, 'SET_PSLC', duration))
+    return 0
+
 def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -126,7 +160,8 @@ def main():
         verbosity = False
 
     #swmtestmode = Swm_Test_Mode.SWMALOM
-    swmtestmode = Swm_Test_Mode.IBM
+    #swmtestmode = Swm_Test_Mode.IBM
+    swmtestmode = Swm_Test_Mode.VOMERO2
     if args.swm:
         swmtestmode = args.swm
 
@@ -206,6 +241,8 @@ def main():
 
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+    pass_nic_list = list()
+    fail_nic_list = list()
 
     # get the absolute file path
     naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
@@ -216,6 +253,8 @@ def main():
     naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
     vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
+    vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2                                                                                                
     naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
     naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
 
@@ -276,6 +315,10 @@ def main():
             mtp_exp_capability = 0x1
             cpld_img_file = naples100ibm_cpld_img_file
             qspi_img_file = naples100ibm_qspi_img_file
+        elif card_type == NIC_Type.VOMERO2:
+            mtp_exp_capability = 0x1
+            cpld_img_file = vomero2_cpld_img_file
+            qspi_img_file = vomero2_qspi_img_file
         elif card_type == NIC_Type.NAPLES25:
             mtp_exp_capability = 0x2
             cpld_img_file = naples25_cpld_img_file
@@ -365,6 +408,9 @@ def main():
         elif card_type == NIC_Type.NAPLES100IBM:
             qspi_img_file = naples100ibm_qspi_img_file
             cpld_img_file = naples100ibm_cpld_img_file
+        elif card_type == NIC_Type.VOMERO2:
+            qspi_img_file = vomero2_qspi_img_file
+            cpld_img_file = vomero2_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
             qspi_img_file = naples25_qspi_img_file
             cpld_img_file = naples25_cpld_img_file
@@ -407,6 +453,7 @@ def main():
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
+    set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:

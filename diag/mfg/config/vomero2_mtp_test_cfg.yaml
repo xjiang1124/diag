@@ -77,8 +77,8 @@ NIC_PARA:
                 SLOT: No
 
 MTP_PARA:
-    SNAKE_HBM: True
-    SNAKE_PCIE: True
+    SNAKE_HBM: False
+    SNAKE_PCIE: False
 
 MTP_SEQ:
     ASIC:
@@ -90,6 +90,7 @@ MTP_SEQ:
                 SN: Yes
                 SLOT: Yes
                 VMARG: Yes
+
 
 MTP_POST:
     NIC_MEM:  True

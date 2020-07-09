@@ -59,11 +59,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
 
-    cmd = None
-
-    # if swm_test_mode == Swm_Test_Mode.IBM:
-    # cmd = "./mtp_dl_test.py --mtpid {:s}".format(mtp_id)
-    # else:
+  
         
     cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
 
@@ -93,7 +89,8 @@ def main():
         verbosity = True
 
     #swmtestmode = Swm_Test_Mode.SWMALOM 
-    swmtestmode = Swm_Test_Mode.IBM 
+    #swmtestmode = Swm_Test_Mode.IBM
+    swmtestmode = Swm_Test_Mode.VOMERO2
     if args.swm:
         swmtestmode = args.swm
 
@@ -137,6 +134,7 @@ def main():
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE)
             mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
+            mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE)
         if (mtp_capability & 0x2):
             # FIXME: Xin - Dedicated image
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)

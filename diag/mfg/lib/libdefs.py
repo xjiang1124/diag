@@ -54,13 +54,14 @@ class Env_Cond(Enum):
     def __str__(self):
         return self.value
 
-#NOT ONLY SWM TEST MODE, ALL TEST MODE WILL USE AS SAME
+
 class Swm_Test_Mode(Enum):
     SWM = "swm"
     SWMALOM = "swmalom"
     ALOM = "alom"
     SW_DETECT = "sw_detect"
     IBM = "ibm"
+    VOMERO2 = "vomero2"
 
     def __str__(self):
         return self.value
@@ -113,7 +114,7 @@ class MTP_Const:
     SSH_PASSWORD_DELAY = 30
     OS_CMD_DELAY = 300
     NIC_CON_CMD_DELAY = 900
-    NIC_CON_INIT_DELAY = 160
+    NIC_CON_INIT_DELAY = 60
     NIC_NETCOPY_DELAY = 120
     NIC_CON_CMD_RETRY = 3
     NIC_MGMT_IP_SET_DELAY = 3
@@ -136,8 +137,8 @@ class MTP_Const:
     MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
     MFG_DL_TEST_TIMEOUT = 14400
-    # 2.5 hour
-    MFG_SW_TEST_TIMEOUT = 9000
+    # 2.5 hour SWM and IBM update to 5 hours
+    MFG_SW_TEST_TIMEOUT = 18000
     # 1 hour
     MFG_FST_TEST_TIMEOUT = 3600
     MFG_CFG_TEST_TIMEOUT = 3600
@@ -280,7 +281,7 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_READ_FMT = "{:s}cpld -r 0x{:x}"
     NIC_CPLD_REF_FMT = "{:s}cpld -refresh"
     NIC_CPLD_WRITE_FMT = "{:s}cpld -w 0x{:x} 0x{:x}"
-
+    NIC_SETTING_PARTITION_FMT = "mmc enh_area set -y 0 30998528 /dev/mmcblk0"
     # onboard diag utils version
     NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"
     # copied diag version
@@ -423,6 +424,8 @@ class MFG_DIAG_SIG:
     MTP_FAN2_PRSNT_SIG = "Fan 2 is present"
     NIC_CON_OK_SIG = "# stty speed 4800"
     NIC_MGMT_OK_SIG = "Management port is ready"
+    NIC_PARTITION_OK_SIG = "setting OTP PARTITION_SETTING_COMPLETED!"
+    NIC_PARTITION1_OK_SIG = "Device is already partitioned"
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"

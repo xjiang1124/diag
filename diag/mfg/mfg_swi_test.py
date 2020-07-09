@@ -133,13 +133,15 @@ def main():
         # Check if image updated is needed
         mtp_swi_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        #mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
+        mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
         mtp_swi_image_list.append(nic_sw_img_file)
         if (mtp_capability & 0x1):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2)
         if (mtp_capability & 0x2):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE)

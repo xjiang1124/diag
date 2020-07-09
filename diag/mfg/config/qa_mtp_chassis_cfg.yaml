@@ -148,27 +148,6 @@ MTP-028:
     SLOTS: 10
     CAPABILITY: 0x2
     
-MTP-029:
-    MODE: ""
-    TS: ""
-    TS_PORT: ""
-    TS_USERID: ""
-    TS_PASSWORD: ""
-    APC1: "192.168.72.137"
-    APC1_PORT: "3"
-    APC1_USERID: "apc"
-    APC1_PASSWORD: "apc"
-    APC2: ""
-    APC2_PORT: ""
-    APC2_USERID: ""
-    APC2_PASSWORD: ""
-    IP: "192.168.68.215"
-    USERID: "diag"
-    PASSWORD: "lab123"
-    ALIAS: "mtp029"
-    SLOTS: 10
-    CAPABILITY: 0x1
-    
 MTP-030:
     MODE: ""
     TS: ""
@@ -179,16 +158,17 @@ MTP-030:
     APC1_PORT: "1"
     APC1_USERID: "apc"
     APC1_PASSWORD: "apc"
-    APC2: ""
-    APC2_PORT: ""
-    APC2_USERID: ""
-    APC2_PASSWORD: ""
-    IP: "192.168.69.145"
+    APC2: "192.168.72.137"
+    APC2_PORT: "7"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    #IP: "192.168.69.145"
+    IP: "192.168.71.18"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp030"
     SLOTS: 10
-    CAPABILITY: 0x2
+    CAPABILITY: 0x1
     
 MTP-031:
     MODE: ""
@@ -252,6 +232,28 @@ MTP-033:
     ALIAS: "mtp033"
     SLOTS: 10
     CAPABILITY: 0x2
+    
+MTP-039:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.70.161"
+    APC1_PORT: "5"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    #IP: "192.168.68.180"
+    IP: "192.168.69.214"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp039"
+    SLOTS: 10
+    CAPABILITY: 0x1
 
 
 # Naples100 debug chassis
@@ -305,17 +307,59 @@ MTPS-001:
     TS_PORT: ""
     TS_USERID: ""
     TS_PASSWORD: ""
-    APC1: ""
-    APC1_PORT: ""
-    APC1_USERID: ""
-    APC1_PASSWORD: ""
+    APC1: "192.168.70.161"
+    APC1_PORT: "17"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
     APC2: ""
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.71.221"
+    IP: "192.168.69.136"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps001"
     SLOTS: 4
+    CAPABILITY: 0x3
+    
+MTP-599:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.75"
+    APC1_PORT: "4"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.75"
+    APC2_PORT: "5"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.76"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp599"
+    SLOTS: 10
+    CAPABILITY: 0x3
+
+MTP-699:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.75"
+    APC1_PORT: "6"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.75"
+    APC2_PORT: "7"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.77"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp699"
+    SLOTS: 10
     CAPABILITY: 0x3

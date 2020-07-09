@@ -21,7 +21,9 @@ from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_IBM_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_VOMERO2_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_VOMERO_TIMESTAMP
+from libmfg_cfg import MFG_QSPI_VOMERO2_TIMESTAMP
 #from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
@@ -745,7 +747,8 @@ class mtp_ctrl():
         read_data = [0]
         for slot in range(self._slots):
             self._swmtestmode[slot] = swmtestmode
-        if swmtestmode == Swm_Test_Mode.IBM:
+        #if swmtestmode == Swm_Test_Mode.IBM:
+        if swmtestmode == Swm_Test_Mode.VOMERO2:
             return True
         for slot in range(self._slots):
             if self._swmtestmode[slot] == Swm_Test_Mode.SW_DETECT:
@@ -1112,6 +1115,10 @@ class mtp_ctrl():
             vomero_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
             vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
             vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
+            vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2
+            vomero2_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
+            vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
+            vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
 
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1122,13 +1129,16 @@ class mtp_ctrl():
             if stage == FF_Stage.FF_DL:
                 img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
                 img_list += [vomero_cpld_img_file, vomero_qspi_img_file]
+                img_list += [vomero2_cpld_img_file, vomero2_qspi_img_file]
                 img_list += [naples100ibm_cpld_img_file, naples100ibm_qspi_img_file]
             elif stage == FF_Stage.FF_CFG:
                 img_list = [naples100_cpld_img_file]
                 img_list += [vomero_cpld_img_file]
+                img_list += [vomero2_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
+                img_list += [vomero2_sec_cpld_img_file, vomero2_gold_img_file]
                 img_list += [naples100ibm_sec_cpld_img_file, naples100ibm_gold_img_file]
             else:
                 img_list = []
@@ -1462,7 +1472,7 @@ class mtp_ctrl():
 
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
-        if boot_image != "goldfw" or (kernel_timestamp != MFG_GOLD_TIMESTAMP and kernel_timestamp != MFG_GOLD_IBM_TIMESTAMP):
+        if boot_image != "goldfw" or (kernel_timestamp != MFG_GOLD_TIMESTAMP and kernel_timestamp != MFG_GOLD_IBM_TIMESTAMP and kernel_timestamp != MFG_GOLD_VOMERO2_TIMESTAMP):
             self.cli_log_slot_err(slot, "goldfw verify failed, NIC is booted from {:s}({:s})".format(boot_image, kernel_timestamp))
             return False
 
@@ -1753,8 +1763,8 @@ class mtp_ctrl():
             exp_ver = NIC_CPLD_Version.VOMERO_VERSION
             exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO2:
-            exp_ver = NIC_CPLD_Version.VOMERO_VERSION
-            exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
+            exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
+            exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -1779,6 +1789,22 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Refresh NIC CPLD failed")
             return False
 
+        return True
+    def mtp_setting_partition(self, slot):
+        # returnbuff = self._nic_ctrl_list[slot].nic_setting_partition_by_conn()
+        # print ('mtp_setting_partition: ' + returnbuff)
+        
+        if not self._nic_ctrl_list[slot].nic_setting_partition():
+            self.cli_log_slot_err_lock(slot, "Setting PSLC failed")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Setting PSLC Pass")
+        return True
+        
+    def mtp_nic_partition_check(self, slot):
+        if not self._nic_ctrl_list[slot].nic_verify_partition():
+            self.cli_log_slot_err_lock(slot, "PSLC Verify failed")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
         return True
 
 
@@ -1878,8 +1904,12 @@ class mtp_ctrl():
             exp_ver = NIC_CPLD_Version.FORIO_VERSION
             exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO2:
-            exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
-            exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.VOMERO2_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.VOMERO2_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
+                exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO:
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.VOMERO_SEC_VERSION
@@ -1934,10 +1964,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_TIMESTAMP):
+        if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO2_TIMESTAMP):
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NIC is booted from {:s}".format(boot_image))
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s}}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP, kernel_timestamp))
-             
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s} or VOMERO2 Expect: {:s}  get: {:s}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP,MFG_QSPI_VOMERO2_TIMESTAMP, kernel_timestamp))
             return False
 
         return True

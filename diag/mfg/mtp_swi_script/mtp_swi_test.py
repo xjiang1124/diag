@@ -169,9 +169,11 @@ def main():
     naples100ibm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE
     naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
     vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
+    vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
     naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
@@ -185,7 +187,8 @@ def main():
 
     # Set Naples25SWM test mode
     #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
-    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.IBM)
+    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.IBM)
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.VOMERO2)
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -212,6 +215,9 @@ def main():
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
+        elif card_type == NIC_Type.VOMERO2:
+            sec_cpld_img_file = vomero2_sec_cpld_img_file
+                                                         
         elif card_type == NIC_Type.NAPLES25:
             sec_cpld_img_file = naples25_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWM:
@@ -311,6 +317,8 @@ def main():
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
+        elif card_type == NIC_Type.VOMERO2:
+            sec_cpld_img_file = vomero2_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
             sec_cpld_img_file = naples25_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWM:
