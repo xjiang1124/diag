@@ -93,7 +93,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Start", level=0)
     start_ts = libmfg_utils.timestamp_snapshot()
 
-    if card_type == "GENERAL" or card_type == "GENERAL_OLD":
+    if card_type == "GENERAL" or card_type == "GENERAL_OLD" or card_type == "ORACLE":
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage)
         #cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
