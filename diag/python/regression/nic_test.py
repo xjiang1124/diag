@@ -59,6 +59,10 @@ class nic_test:
             cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x80".format(slot)
             common.session_cmd_no_rc(session, cmd)
             cpldID = re.findall(r"data=(0x[0-9a-fA-F]+)", session.before)
+            if cpldID == None:
+                print("Failed to find CPLD ID! Read back", session.before)
+                common.session_stop(session)
+                return -1
 
             cmd = "smbutil -uut=uut_{} -dev=cpld_adap -rd -addr=0x80".format(slot)
             common.session_cmd_no_rc(session, cmd)
@@ -79,23 +83,34 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
 
-                if cpldID[0] == "0x17":
-                    self.nic_con.turn_off_sgmii(int(slot))
+                try:
+                    if cpldID[0] == "0x17":
+                        self.nic_con.turn_off_sgmii(int(slot))
+    
+                        # enable ports
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x10 0x7f")
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7f")
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x13 0x7f")
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x15 0x7f")
+                        # power up PHY ports
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0x3 0x1140")
+                        # power up serdes ports
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xC 0x1140")
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xD 0x1140")
+    
+                        self.nic_con.uart_session_cmd(session, "/platform/bin/cpldmon &")
+                        sleep(sleepTime)
+                        self.nic_con.uart_session_cmd(session, "kill -9 $(pidof cpldmon)")
+                except:
+                    print("Failed to turn off sgmii")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return -1
+            else:
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+                return -1
 
-                    # enable ports
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x10 0x7f")
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x11 0x7f")
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x13 0x7f")
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -mdiowr 0x4 0x15 0x7f")
-                    # power up PHY ports
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0x3 0x1140")
-                    # power up serdes ports
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xC 0x1140")
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -smiwr 0x0 0xD 0x1140")
-
-                    self.nic_con.uart_session_cmd(session, "/platform/bin/cpldmon &")
-                    sleep(sleepTime)
-                    self.nic_con.uart_session_cmd(session, "kill -9 $(pidof cpldmon)")
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
@@ -215,7 +230,11 @@ class nic_test:
                 self.nic_con.switch_console(slot)
 
                 session = common.session_start()
-                self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return -1
 
                 self.nic_con.uart_session_cmd(session, "sysinit.sh classic hw diag")
 
@@ -235,17 +254,32 @@ class nic_test:
 
         time.sleep(5)
         for slot in nic_list:
+            if ret_list[int(slot)-1] != 0:
+                continue
+
              self.nic_con.switch_console(slot)
              session = common.session_start()
-             self.nic_con.uart_session_start(session)
+             ret = self.nic_con.uart_session_start(session)
+             if ret != 0:
+                 self.nic_con.uart_session_stop(session)
+                 common.session_stop(session)
+                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+                 continue
 
              # Disable link manager
              # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
-             self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-             self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-             self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
-             self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
-             
+             try:
+                 self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+                 self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+                 #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
+                 #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
+             except:
+                 self.nic_con.uart_session_stop(session)
+                 common.session_stop(session)
+                 ret = -1
+                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+                 continue
+            
              self.nic_con.uart_session_cmd(session, "halctl show port status")
              sleep(0.5)
              self.nic_con.uart_session_stop(session)
@@ -297,11 +331,17 @@ class nic_test:
 
             # Disable link manager
             # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
-            self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-            self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-            self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
-            self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
-            sleep(0.5)
+            try:
+                self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+                self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+                #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
+                #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
+                sleep(0.5)
+            except:
+                 self.nic_con.uart_session_stop(session)
+                 common.session_stop(session)
+                 return -1
+
 
         self.nic_con.uart_session_cmd(session, "halctl debug port aacs-server-start --server-port 9000")
         sleep(2)
@@ -390,11 +430,9 @@ class nic_test:
 
             print "=== Snake on slot {} started ===".format(slot)
         except:
-            try: 
-                self.nic_con.uart_session_stop(session)
-            except:
-                pass
+            self.nic_con.uart_session_stop(session)
             print "=== Snake on slot {} FAILED to start! ===".format(slot)
+            common.session_stop(session)
             ret = -1
 
         common.session_stop(session)
@@ -410,7 +448,11 @@ class nic_test:
 
         self.nic_con.switch_console(slot)
         session = common.session_start()
-        self.nic_con.uart_session_start(session)
+        ret = self.nic_con.uart_session_start(session)
+        if ret != 0:
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+            return -1
 
         if test_type == "snake":
             if mode == "hbm":
