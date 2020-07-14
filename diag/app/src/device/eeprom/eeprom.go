@@ -1,4 +1,4 @@
-package eeprom
+
 
 import (
     "fmt"
@@ -1446,7 +1446,7 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int
     cli.Println("i", "dump FRU to file eeprom")
     for i := 0; i < numBytes; i++ {
         data, err = readField(devName, i, 1)
-        cli.Printf("d", "Offset=0x%x, data=0x%x\n", i, data)
+        //cli.Printf("d", "Offset=0x%x, data=0x%x\n", i, data)
         if err != errType.SUCCESS {
             cli.Println("f", "Failed to read field at offset", i)
             return
