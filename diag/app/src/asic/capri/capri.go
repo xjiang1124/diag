@@ -38,6 +38,8 @@ func Prbs(mode string, poly string, duration int) (err int) {
     var sbusPcieListNaples100 = []uint64{2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32}
     var sbusEthListNaples100 = []uint64{34,35,36,37,38,39,40,41}
 
+    var sbusPcieListNaples25ocp = []uint64{2,4,6,8,10,12,14,16}
+
     var sbusPcieListNaples25 = []uint64{18,20,22,24,26,28,30,32}
     var sbusEthListNaples25 = []uint64{34,38}
 
@@ -69,11 +71,13 @@ func Prbs(mode string, poly string, duration int) (err int) {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples100[:]
         } else if (cardType == "NAPLES25")    ||
-                  (cardType == "NAPLES25OCP") ||
                   (cardType == "NAPLES25SWM") ||
                   (cardType == "NAPLES25WFG") {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples25[:]
+        } else if (cardType == "NAPLES25OCP") {
+            sbusList = make([]uint64, 16)
+            sbusList = sbusPcieListNaples25ocp[:]
         } else {
             sbusList = make([]uint64, 16)
             sbusList = sbusPcieListNaples100[:]

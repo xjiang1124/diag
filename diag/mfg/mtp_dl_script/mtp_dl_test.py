@@ -147,9 +147,7 @@ def main():
 
     mtp_cfg_db = load_mtp_cfg()
 
-    #swmtestmode = Swm_Test_Mode.SWMALOM
-    #swmtestmode = Swm_Test_Mode.IBM 
-    swmtestmode = Swm_Test_Mode.VOMERO2
+    swmtestmode = Swm_Test_Mode.SWMALOM
     if args.swm:
         swmtestmode = args.swm
 
@@ -191,6 +189,8 @@ def main():
     vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2
     naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
     naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25OCP_CPLD_IMAGE
+    naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
                                                                                                         
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
@@ -304,6 +304,10 @@ def main():
             mtp_exp_capability = 0x2
             cpld_img_file = naples25swm_cpld_img_file
             qspi_img_file = naples25swm_qspi_img_file
+        elif card_type == NIC_Type.NAPLES25OCP:
+            mtp_exp_capability = 0x2
+            cpld_img_file = naples25ocp_cpld_img_file
+            qspi_img_file = naples25ocp_qspi_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -388,6 +392,9 @@ def main():
         elif card_type == NIC_Type.NAPLES25SWM:
             qspi_img_file = naples25swm_qspi_img_file
             cpld_img_file = naples25swm_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25OCP:
+            qspi_img_file = naples25ocp_qspi_img_file
+            cpld_img_file = naples25ocp_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -484,10 +491,9 @@ def main():
                 if card_type == NIC_Type.NAPLES25SWM:
                     if ret:
                         ret = mtp_mgmt_ctrl.mtp_verify_hpe_pn_fru(slot, hpe_pn)
-                    card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                     if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                        ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
-         
+                        if ret:
+                            ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
             # verify CPLD
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)

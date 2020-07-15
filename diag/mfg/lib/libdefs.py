@@ -8,6 +8,7 @@ class NIC_Type:
     VOMERO = "VOMERO"
     VOMERO2 = "VOMERO2"
     NAPLES25SWM = "NAPLES25SWM"
+    NAPLES25OCP = "NAPLES25OCP"
     UNKNOWN = "Unknown"
 
 
@@ -54,15 +55,12 @@ class Env_Cond(Enum):
     def __str__(self):
         return self.value
 
-
+#SWM TEST MODE:  Onlu use for Naples 25 SWM ... or be careful if you mod it
 class Swm_Test_Mode(Enum):
     SWM = "swm"
     SWMALOM = "swmalom"
     ALOM = "alom"
     SW_DETECT = "sw_detect"
-    IBM = "ibm"
-    VOMERO2 = "vomero2"
-
     def __str__(self):
         return self.value
 
@@ -257,20 +255,25 @@ class MFG_DIAG_CMDS:
     MTP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update"
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
     MTP_HP_SWM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeSwm"
+    MTP_HP_OCP_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeOcp"
     MTP_HP_ALOM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=1024 -hpeAlom"
     MTP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d}"
     MTP_HP_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpe"
+    MTP_HP_OCP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeOcp"
     MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"
     MTP_HP_ALOM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeAlom"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
     NIC_HP_SWM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeSwm"
+    NIC_HP_OCP_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeOcp"
     NIC_HP_ALOM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -pn='{:s}' -update -erase -numBytes=1024 -hpeAlom"
     NIC_HP_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -hpe"
     NIC_FRU_DISP_FMT = "{:s}eeutil -disp"
     NIC_HP_FRU_DISP_FMT = "{:s}eeutil -disp -hpe"
     NIC_HP_SWM_FRU_DISP_FMT = "{:s}eeutil -disp -dev=fru -hpeSwm"
+    NIC_HP_OCP_FRU_DISP_FMT = "{:s}eeutil -disp -dev=fru -hpeOcp"
     NIC_HP_ALOM_FRU_DISP_FMT = "{:s}eeutil -disp -dev=fru -hpeAlom"
     NIC_VENDOR_DISP_FMT_SWM = "{:s}eeutil -disp -field=sn -hpeSwm"
+    NIC_VENDOR_DISP_FMT_OCP = "{:s}eeutil -disp -field=sn -hpeOcp"
     NIC_HPESWM_ALOM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeAlom"
     NIC_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn"
     NIC_HPESWM_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn -hpeSwm"
@@ -300,8 +303,8 @@ class MFG_DIAG_CMDS:
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
     #NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
-    NIC_EMMC_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p /{:s} -i 'all'"
-    NIC_EMMC_B_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p /{:s} -i mainfwb"
+    NIC_EMMC_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i 'all'"
+    NIC_EMMC_B_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i mainfwb"
     ###For IBM DUE TO THE SIZE OF IMAGE CHANGE FROM 173MB to 375MB 5/19/20####
     NIC_EMMC_PROG_FMT_IBM = "cd /; cd /update; tar xvf {:s} -C /update fwupdate; ./fwupdate -p {:s} -i 'all'"
     NIC_EMMC_B_PROG_FMT_IBM = "cd /; cd /update; tar xvf {:s} -C /update fwupdate; ./fwupdate -p {:s} -i mainfwb"
@@ -448,10 +451,11 @@ class MFG_DIAG_SIG:
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
 
 class MFG_DIAG_RE:
-    MFG_NIC_TYPE_NAPLES100 = r"UUT_(\d+) +NAPLES100"
-    MFG_NIC_TYPE_NAPLES25  = r"UUT_(\d+) +NAPLES25"
-    MFG_NIC_TYPE_FORIO     = r"UUT_(\d+) +FORIO"
-    MFG_NIC_TYPE_VOMERO    = r"UUT_(\d+) +VOMERO"
-    MFG_NIC_TYPE_VOMERO2   = r"UUT_(\d+) +VOMERO2"
-    MFG_NIC_TYPE_NAPLES25SWM = r"UUT_(\d+) +NAPLES25SWM"
-    MFG_NIC_TYPE_NAPLES100IBM = r"UUT_(\d+) +NAPLES100IBM"
+    MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"
+    MFG_NIC_TYPE_NAPLES25  = r"\bUUT_(\d+) +NAPLES25\b"
+    MFG_NIC_TYPE_FORIO     = r"\bUUT_(\d+) +FORIO\b"
+    MFG_NIC_TYPE_VOMERO    = r"\bUUT_(\d+) +VOMERO\b"
+    MFG_NIC_TYPE_VOMERO2   = r"\bUUT_(\d+) +VOMERO2\b"
+    MFG_NIC_TYPE_NAPLES25SWM = r"\bUUT_(\d+) +NAPLES25SWM\b"
+    MFG_NIC_TYPE_NAPLES25OCP = r"\bUUT_(\d+) +NAPLES25OCP\b"
+    MFG_NIC_TYPE_NAPLES100IBM = r"\bUUT_(\d+) +NAPLES100IBM\b"

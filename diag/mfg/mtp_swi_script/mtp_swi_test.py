@@ -171,6 +171,7 @@ def main():
     vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
     vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
     naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
+    naples25ocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25OCP_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
@@ -186,9 +187,7 @@ def main():
 
 
     # Set Naples25SWM test mode
-    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
-    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.IBM)
-    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.VOMERO2)
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -222,6 +221,8 @@ def main():
             sec_cpld_img_file = naples25_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWM:
             sec_cpld_img_file = naples25swm_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25OCP:
+            sec_cpld_img_file = naples25ocp_sec_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
@@ -323,6 +324,8 @@ def main():
             sec_cpld_img_file = naples25_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWM:
             sec_cpld_img_file = naples25swm_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25OCP:
+            sec_cpld_img_file = naples25ocp_sec_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue

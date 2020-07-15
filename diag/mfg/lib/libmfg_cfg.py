@@ -1,6 +1,6 @@
 from libdefs import NIC_Type
 
-GLB_CFG_MFG_TEST_MODE = False
+GLB_CFG_MFG_TEST_MODE = True
 
 MFG_BYPASS_PSU_CHECK = True
 
@@ -37,6 +37,12 @@ class NIC_CPLD_Version:
     NAPLES25SWM_TIMESTAMP = "04-20"
     NAPLES25SWM_SEC_VERSION = "0x89"
     NAPLES25SWM_SEC_TIMESTAMP = "04-20"
+
+
+    NAPLES25OCP_VERSION = "0x2"
+    NAPLES25OCP_TIMESTAMP = "07-08"
+    NAPLES25OCP_SEC_VERSION = "0x82"
+    NAPLES25OCP_SEC_TIMESTAMP = "06-25"
     
 
 
@@ -57,6 +63,9 @@ class MFG_IMAGE_FILES:
 
     NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev9_04142020.bin"
     NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev89_04142020.bin"
+
+    NAPLES25OCP_CPLD_IMAGE = "naples25_ocp_rev02_07082020.bin"
+    NAPLES25OCP_SEC_CPLD_IMAGE = "naples25_ocp_rev82_06192020.bin"
     
     NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
     NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"
@@ -89,7 +98,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES100IBM]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
@@ -118,6 +127,8 @@ NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 #NAPLES_DISP_PN_FMT = r"(Part|Assembly) Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
 HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
+HP_OCP_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"   #P18671-001
+HP_OCP_DISP_SN_FMT = r"HPE Serial Number + (FLM\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
