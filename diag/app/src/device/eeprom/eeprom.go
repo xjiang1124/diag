@@ -1,4 +1,4 @@
-
+package eeprom
 
 import (
     "fmt"
