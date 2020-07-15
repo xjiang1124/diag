@@ -26,10 +26,7 @@ child.expect("\$ ")
 child.sendline("sudo chmod ugo+rw /dev/ttyS1")
 child.expect("\$ ")
 
-child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/001")
-child.expect("\$ ")
-
-child.sendline("sudo chmod ugo+rw /dev/bus/usb/001/002")
+child.sendline("sudo /home/diag/diag/scripts/config_ftdi.sh")
 child.expect("\$ ")
 
 child.sendline("sudo /home/diag/diag/tools/devmem 0xfed08010 w 0x80")
