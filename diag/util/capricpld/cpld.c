@@ -560,157 +560,157 @@ static void cap_counter(uint8_t port)
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InGoodOctetsLo 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InGoodOctetsLo 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 1, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InGoodOctetsHi 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InGoodOctetsHi 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 2, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InBadOctets 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InBadOctets 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 4, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InUnicast 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InUnicast 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 6, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InBroadcasts 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InBroadcasts 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 7, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InMulticasts 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InMulticasts 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x16, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InPause 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InPause 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x18, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InUndersize 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InUndersize 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x19, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InFragments 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InFragments 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x1A, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InOversize 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InOversize 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x1B, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InJabber 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InJabber 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x1C, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InRxErr 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InRxErr 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x1D, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("InFCSErr 0x%x\n", (data_hi << 8 | data_lo));
+	printf("InFCSErr 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0xE, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("\nOutGoodOctetsLo 0x%x\n", (data_hi << 8 | data_lo));
+	printf("\nOutGoodOctetsLo 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0xF, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("OutGoodOctetsHi 0x%x\n", (data_hi << 8 | data_lo));
+	printf("OutGoodOctetsHi 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x10, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("OutUnicast 0x%x\n", (data_hi << 8 | data_lo));
+	printf("OutUnicast 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x13, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("OutBroadcasts 0x%x\n", (data_hi << 8 | data_lo));
+	printf("OutBroadcasts 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x12, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("OutMulticasts 0x%x\n", (data_hi << 8 | data_lo));
+	printf("OutMulticasts 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x3, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("OutFCSErr 0x%x\n", (data_hi << 8 | data_lo));
+	printf("OutFCSErr 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x15, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("OutPause 0x%x\n", (data_hi << 8 | data_lo));
+	printf("OutPause 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x1E, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("Collisions 0x%x\n", (data_hi << 8 | data_lo));
+	printf("Collisions 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x5, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("Deferred 0x%x\n", (data_hi << 8 | data_lo));
+	printf("Deferred 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x14, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("Single 0x%x\n", (data_hi << 8 | data_lo));
+	printf("Single 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x17, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("Multiple 0x%x\n", (data_hi << 8 | data_lo));
+	printf("Multiple 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x11, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("Excessive 0x%x\n", (data_hi << 8 | data_lo));
+	printf("Excessive 0x%x\n", (data_hi << 16 | data_lo));
 
 	mdio_wr(STAT_OPT_REG, (0xC000 | port << CNT_REG_PORT_OFFSET) + 0x1F, GLOBAL1_PHY_ADDR);
 	usleep(1000);
 	mdio_rd(STAT_CNT_LO_REG, &data_lo, GLOBAL1_PHY_ADDR);
 	mdio_rd(STAT_CNT_HI_REG, &data_hi, GLOBAL1_PHY_ADDR);
-	printf("Late 0x%x\n", (data_hi << 8 | data_lo));
+	printf("Late 0x%x\n", (data_hi << 16 | data_lo));
 
 }
 
