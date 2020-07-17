@@ -84,7 +84,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
 
                 try:
-                    if cpldID[0] == "0x17":
+                    if cpldID[0] == "0x17" or cpldID[0] == "0x19":
                         self.nic_con.turn_off_sgmii(int(slot))
     
                         # enable ports
