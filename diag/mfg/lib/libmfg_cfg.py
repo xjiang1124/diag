@@ -55,6 +55,8 @@ class MFG_IMAGE_FILES:
     
     NIC_DIAGFW_IMAGE = "naples_diagfw_05212020.tar"
     NIC_GOLDFW_IMAGE = "naples_gold_1.3.1-E-17_0416.tar"
+    NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.8.0-E-48_0716.tar"
+    NIC_GOLDFW_IMAGE_OCP = "naples_goldfw1.3.1-E-20_0514.tar"
     NIC_GOLDFW_IMAGE_IBM = "naples_goldfw1.3.1-E-20_0514.tar"
     NIC_DIAGFW_IMAGE_VOMERO2 = "naples_diagfw_w_uboot_1.3.1-E-26_0620.tar"
     NIC_GOLDFW_IMAGE_VOMERO2 = "naples_minigoldfw_1.7.4-C-7_0702.tar"

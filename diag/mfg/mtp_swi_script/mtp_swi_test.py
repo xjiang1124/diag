@@ -173,8 +173,7 @@ def main():
     naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
     naples25ocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25OCP_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
-    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
+    
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
@@ -212,17 +211,20 @@ def main():
             sec_cpld_img_file = naples100_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES100IBM:
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO2:
             sec_cpld_img_file = vomero2_sec_cpld_img_file
-                                                         
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2                                             
         elif card_type == NIC_Type.NAPLES25:
             sec_cpld_img_file = naples25_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWM:
             sec_cpld_img_file = naples25swm_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM 
         elif card_type == NIC_Type.NAPLES25OCP:
             sec_cpld_img_file = naples25ocp_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_OCP 
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
