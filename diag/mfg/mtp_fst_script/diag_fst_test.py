@@ -28,10 +28,13 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES100IBM"
     elif "P26968" in pn:
         product_name = "NAPLES25SWM"
-    if "68-0011-02" in pn:
+    elif "68-0005-04" in pn:
+        product_name = "NAPLES25"
+    elif "68-0011-02" in pn:
         product_name = "VOMERO2"
     else:
         product_name = "UNKNOWN"
+
     return product_name
 
 def config_eth():
@@ -186,7 +189,7 @@ def fst_general():
             product_name = get_product_name_from_pn(pn)
 
             try:
-                x = subprocess.check_output("/home/diag/penctl.linux.0303 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
                 print("slot:", str(a), "sn:", sn, "type:", product_name, "failed")
                 print("Get firmware failed")
@@ -196,7 +199,7 @@ def fst_general():
             y = x.decode("utf-8")
             firmware = json.loads(y)
 
-            if product_name == "NAPLES 25 " or product_name == "NAPLES25SWM":
+            if product_name == "NAPLES25" or product_name == "NAPLES25SWM":
                 if "8GT/s" in new_str and "x8" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:

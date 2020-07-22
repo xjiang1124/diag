@@ -22,9 +22,9 @@ class mfg:
         self.user = "mfg"
         self.pwd  = "pensando"
         self.remote_path = "/mfg_log/"
-        self.local_path = "/home/adieckman/workspace/manufacture/mfg_log/"
+        self.local_path = "/home/xguo2/workspace/manufacture/mfg_log/"
         #self.local_path = "/vol/hw/diag/Naples25_2nd_Source_Qual_Build/mfg_log/"
-        self.log_path = "/home/adieckman/workspace/manufacture/test_log/"
+        self.log_path = "/home/xguo2/workspace/manufacture/test_log/"
 
     def fetch_remote(self, cm, card_type, stage, sn_list):
         remote_ip = mfg.cm_server[cm]
