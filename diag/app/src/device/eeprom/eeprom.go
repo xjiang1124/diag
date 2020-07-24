@@ -332,6 +332,7 @@ var HpeTbl = []entry {
     entry{"HPE Multi-Record Area Checksum",         INT8,       247,        1,  []byte{0}},
 }
 
+/* 
 var HpeTblOCP = []entry {
     entry{"Product Info Format Version",            INT8,        128,        1,    []byte{1}},
     entry{"Product Area Length",                    INT8,        129,        1,    []byte{0xA}},
@@ -357,7 +358,7 @@ var HpeTblOCP = []entry {
     entry{"End of Field",                           INT8,        206,        1,    []byte{0xC1}},
     entry{"Product info Area Checksum",             INT8,        207,        1,    []byte{0x00}},
 }
-
+*/
 
 //Board Information Area Table
 var HpeTblSWM = []entry {
@@ -391,7 +392,7 @@ var HpeTblSWM = []entry {
     entry{"Part Number",                            STRING,      81,      13,    []byte{0x50, 0x32, 0x36, 0x39, 
         0x36, 0x38, 0x2d, 0x30, 0x30, 0x31, 0x00, 0x00, 0x00}},
     entry{"FRU File ID Type/Length",                INT8,        94,       1,    []byte{0xC8}},
-    entry{"FRU File ID",                            INT8,        95,       8,    []byte{0x30, 0x36, 0x2F, 0x32, 
+    entry{"FRU File ID",                            STRING,      95,       8,    []byte{0x30, 0x36, 0x2F, 0x32, 
         0x34, 0x2F, 0x31, 0x39}},
     entry{"Board ID Type/Length",                   INT8,       103,       1,    []byte{4}},
     entry{"Board ID",                               INT8,       104,       4,    []byte{0x02, 0 , 0, 0}},
@@ -615,6 +616,7 @@ func EraseEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err in
 }
 
 func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
+    var multiRecordNumber uint32 = 0;
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
@@ -623,14 +625,13 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
     is8g := 0
     for _, entry := range(EepromTbl) {
         if entry.Name == "Product Area Offset" {
-            if HpeNaples == 1 || HpeOcp == 1 {
+            if HpeNaples == 1 {
                 copy(entry.Value, []byte{0x10})
             }
         }
         if entry.Name == "Product Name" {
             
-            if ((CardType == "NAPLES25")    ||
-               (HpeOcp == 1)) {
+            if CardType == "NAPLES25" {
                 copy(entry.Value, []byte{0x4E, 0x41, 0x50, 0x4C, 0x45, 0x53, 0x20, 0x32, 0x35, 0x20})
             } else if CardType == "FORIO" {
                 copy(entry.Value, []byte{0x46, 0x4F, 0x52, 0x49, 0x4F, 0x20, 0x38, 0x47, 0x42, 0x20})
@@ -672,6 +673,16 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         } else if entry.Name == "Product info Area Checksum" {
             updateIntChk()
             entry.Value[0] = byte(0x100 - productInfoChk % 0x100)
+        } else if entry.Name == "Record Checksum" {
+            updateIntChk()
+            entry.Value[0] = byte(0x100 - mraChk[multiRecordNumber] % 0x100)
+            fmt.Printf("RECORD [%d] = %x\n", multiRecordNumber, mraChk[multiRecordNumber]) 
+            updateIntChk() //Have it go re-calculate the header checksum now that the record checksum is in place
+        } else if entry.Name == "Header Checksum" {
+            updateIntChk()
+            entry.Value[0] = byte(0x100 - mraHdrChk[multiRecordNumber] % 0x100)
+            fmt.Printf("HEADER [%d] = %x\n", multiRecordNumber, mraHdrChk[multiRecordNumber]) 
+            multiRecordNumber++
         }
 
         err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
@@ -686,24 +697,6 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
     //Sub in fields for other products below and handle checksum for all extended table
     if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
         for _, entry := range(EepromExtTbl) {
-
-            if entry.Name == "Product Name" {
-                if (HpeOcp == 1) {
-                    copy(entry.Value, []byte{0x48, 0x50, 0x45, 0x20, 0x4F, 0x43, 
-                        0x50, 0x20, 0x4E, 0x61, 0x70, 0x6C, 0x65, 0x73, 0x20, 0x44, 
-                        0x53, 0x43, 0x2D, 0x32, 0x35, 0x20, 0x32, 0x70, 0x20, 0x53, 
-                        0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61, 0x72, 0x64, 0x00})
-                } 
-            }
-
-            if entry.Name == "HPE Product Number" {
-                if (HpeOcp == 1) {
-                    copy(entry.Value, []byte{0x50, 0x31, 0x38, 0x36, 0x36, 0x39, 
-                        0x2D, 0x30, 0x30, 0x31})
-                } 
-            }
-
-
             if entry.Name == "Product info Area Checksum" || entry.Name == "HPE Multi-Record Area Checksum" {
                 updateIntChk()
                 entry.Value[0] = byte(0x100 - productInfoChk % 0x100)
@@ -800,7 +793,7 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
                     sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, sn)
                     continue
-                } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
+                } else if entry.Name == "HPE Product Number" && HpeNaples == 1 {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
@@ -830,13 +823,6 @@ func updateIntChk() () {
             cmnHeadChk += calcSum(entry)
         }
     }
-    if HpeOcp == 1 {
-        for _, entry := range(EepromExtTbl) {
-            if (entry.Offset > 127) && (entry.Offset < 207) {
-                productInfoChk += calcSum(entry)
-            }
-        }
-    }
     if HpeNaples == 1 {
         for _, entry := range(EepromExtTbl) {
             if (entry.Offset > 127) && (entry.Offset < 247) {
@@ -844,7 +830,7 @@ func updateIntChk() () {
             }
         }
     }
-    if HpeSwm == 1 {
+    if ((HpeSwm == 1) || (HpeOcp == 1)) {
         brdInfoChk = 0
         productInfoChk = 0;
         cmnHeadChk = 0
@@ -881,9 +867,14 @@ func updateIntChk() () {
     }
     if DellOcp == 1 {
         brdInfoChk = 0
-        productInfoChk = 0;
+        productInfoChk = 0
         cmnHeadChk = 0
         var biaOff, piaOff, cHdrLen, biaLen, piaLen int = 0, 0, 8, 0, 0
+
+        for i:=0; i<len(mraHdrChk); i++ {
+            mraChk[i] = 0
+            mraHdrChk[i] = 0
+        }
 
         for _, entry := range(EepromTbl) {
             if entry.Name == "Board Info Offset" {
@@ -906,6 +897,36 @@ func updateIntChk() () {
                 brdInfoChk += calcSum(entry)
             } else if (entry.Offset > (piaOff - 1)) && (entry.Offset < (piaOff + piaLen - 1)) {  //product info area
                 productInfoChk += calcSum(entry)
+            }
+        }
+        //Calculate multi-record checksum
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 260) && (entry.Offset < 309) {
+                mraChk[0] += calcSum(entry)
+            }
+            if (entry.Offset > 313) && (entry.Offset < 339) {
+
+                mraChk[1] += calcSum(entry)
+            }
+            if (entry.Offset > 343) && (entry.Offset < 359) {
+                mraChk[2] += calcSum(entry)
+            }
+        }
+
+
+        //Calculate multi-record header checksum
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 255) && (entry.Offset < 260) {
+                mraHdrChk[0] += calcSum(entry)
+                fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[0])
+            }
+            if (entry.Offset > 308) && (entry.Offset < 313) {
+                mraHdrChk[1] += calcSum(entry)
+                fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[1])
+            }
+            if (entry.Offset > 338) && (entry.Offset < 343) {
+                mraHdrChk[2] += calcSum(entry)
+                fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[2])
             }
         }
     }
@@ -1092,7 +1113,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                     date, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, date)
                     continue
-                } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
+                } else if entry.Name == "HPE Product Number" && HpeNaples == 1 {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
@@ -1176,7 +1197,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
                     sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, sn)
                     continue
-                } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
+                } else if entry.Name == "HPE Product Number" && HpeNaples == 1 {
                     copy(entry.Value, pn)
                     continue
                 }
@@ -1259,7 +1280,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
                 sn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, sn)
                 continue
-            } else if entry.Name == "HPE Product Number" && HpeSwm == 0 {
+            } else if entry.Name == "HPE Product Number" && HpeNaples == 1 {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
                 continue

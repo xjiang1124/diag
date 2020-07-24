@@ -1669,14 +1669,9 @@ class mtp_ctrl():
         
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type == NIC_Type.NAPLES25OCP:
-            print(" FIXME ADD: NEED TO TAKE THIS OUT ONCE FRU FORMAT IS FIXED. STOP SKIPPING SN CHECK")
-            print(" FIXME ADD: NEED TO TAKE THIS OUT ONCE FRU FORMAT IS FIXED. STOP SKIPPING SN CHECK")
-
-        if nic_type != NIC_Type.NAPLES25OCP:
-            if nic_sn != sn: 
-                self.cli_log_slot_err_lock(slot, "SN Verify Failed, get {:s}, expect {:s}".format(nic_sn, sn))
-                return False
+        if nic_sn != sn: 
+            self.cli_log_slot_err_lock(slot, "SN Verify Failed, get {:s}, expect {:s}".format(nic_sn, sn))
+            return False
         if nic_mac != mac:
             self.cli_log_slot_err_lock(slot, "MAC Verify Failed, get {:s}, expect {:s}".format(nic_mac, mac))
             return False
