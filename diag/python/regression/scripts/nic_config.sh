@@ -47,6 +47,9 @@ then
 elif [[ $cpld_id == "0x1e" ]]
 then
     type="VOMERO2"
+elif [[ $cpld_id == "0x1f" ]]
+then
+    type="NAPLES100HPE"
 elif [[ $cpld_id == "0x40" ]]
 then
     type="BIODONA_D4"

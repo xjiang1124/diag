@@ -65,6 +65,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
         targetSpeedList = []string{"15", "16", "17"}
         if (cardType == "NAPLES100")    ||
            (cardType == "NAPLES100IBM") ||
+           (cardType == "NAPLES100HPE") ||
            (cardType == "FORIO")        ||
            (cardType == "VOMERO2")        ||
            (cardType == "VOMERO") {
@@ -86,6 +87,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
         targetSpeedList = []string{"25", "26", "27"}
         if (cardType == "NAPLES100")    ||
            (cardType == "NAPLES100IBM") ||
+           (cardType == "NAPLES100HPE") ||
            (cardType == "FORIO")        ||
            (cardType == "VOMERO2")        ||
            (cardType == "VOMERO") {

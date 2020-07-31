@@ -147,12 +147,86 @@ var Naples100IBMTbl = []entry {
         0x00, 0x00}},
     entry{"Assembly Number Type/Length",            INT8,       129,       1,    []byte{0xCD}},
     entry{"Assembly Number",                        STRING,     130,      13,    []byte{0x36, 0x38, 0x2D, 0x30,
-        0x30, 0x31, 0x33, 0x2D, 0x30, 0x31, 0x20, 0x30, 0x33}},
-    entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
+        0x30, 0x31, 0x33, 0x2D, 0x30, 0x31, 0x20, 0x30, 0x33}}, entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,       144,       7,    []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00}},
     entry{"Board Info Area Checksum",               INT8,       151,       1,    []byte{0x00}},
 } 
+
+var Naples100HPETbl = []entry {
+    entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
+    entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
+    entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},
+    entry{"Board Info Offset",                      INT8,        3,        1,    []byte{0x01}},
+    entry{"Product Area Offset",                    INT8,        4,        1,    []byte{0x10}},
+    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0x00}},
+    entry{"PAD",                                    INT8,        6,        1,    []byte{0x00}},
+    entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0x00}},
+
+    entry{"Board Info Format Version",              INT8,        8,        1,    []byte{0x01}},
+    entry{"Board Area Length",                      INT8,        9,        1,    []byte{0x0F}},
+    entry{"Language Code",                          INT8,        10,       1,    []byte{0x19}},
+    entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
+    entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
+    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x45, 0x4E, 0x53,
+        0x41, 0x4E, 0x44, 0x4F}},
+    entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xEC}},
+    entry{"Product Name",                           STRING,      24,       44,   []byte{0x50, 0x43, 0x41, 0x20,
+        0x50, 0x65, 0x6E, 0x73, 0x61, 0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2d, 
+	0x31, 0x30, 0x30, 0x20, 0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32,
+        0x38, 0x20, 0x43, 0x61, 0x72, 0x64}},
+    entry{"Serial Number Type/Length",              INT8,        68,       1,    []byte{0xCB}},
+    entry{"Serial Number",                          STRING,      69,       10,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"PAD",                                    INT8,        79,       1,    []byte{0x00}},
+    entry{"Part Number Type/Length",                INT8,        80,       1,    []byte{0xCD}},
+    entry{"Part Number",                            STRING,      81,       10,   []byte{0x50, 0x33, 0x37, 0x36,
+        0x39, 0x32, 0x2D, 0x30, 0x30, 0x31}},
+    entry{"PAD",                                    INT8,        91,       3,    []byte{0x00, 0x00, 0x00}},
+    entry{"FRU File ID Type/Length",                INT8,        94,       1,    []byte{0xC8}},
+    entry{"FRU ID",                                 STRING,      95,       8,    []byte{0x30, 0x36, 0x2F, 0x32,
+        0x34, 0x2F, 0x31, 0x39}},
+    entry{"Board ID Type/Length",                   INT8,       103,       1,    []byte{0x04}},
+    entry{"Board ID",                               INT8,       104,       4,    []byte{0x02, 0x00, 0x00, 0x00}},
+    entry{"Engineering Change Level Type/Length",   INT8,       108,       1,    []byte{0xC2}},
+    entry{"Engineering Change Level",               INT8,       109,       2,    []byte{0x00, 0x00}},
+    entry{"Number of MAC Address Type/Length",      INT8,       111,       1,    []byte{0x02}},
+    entry{"Number of MAC Address",                  INT8,       112,       2,    []byte{0x18, 0x00}},
+    entry{"MAC Address Base Type/Length",           INT8,       114,       1,    []byte{0x06}},
+    entry{"MAC Address Base",                       INT8,       115,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
+        0x00, 0x00}},
+    entry{"End of Field",                           INT8,       121,       1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,       122,       5,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00}},
+    entry{"Board Info Area Checksum",               INT8,       127,       1,    []byte{0x00}},
+
+    entry{"Product Info Format Version",            INT8,       128,       1,    []byte{0x01}},
+    entry{"Product Area lenth",                     INT8,       129,       1,    []byte{0x0B}},
+    entry{"Language Code",                          INT8,       130,       1,    []byte{0x19}},
+    entry{"Manufacturer Name Type/Length",          INT8,       131,       1,    []byte{0xC3}},
+    entry{"Manufacturer",                           STRING,     132,       3,    []byte{0x48, 0x50, 0x45}},
+    entry{"Product Name Type/Length",               INT8,       135,       1,    []byte{0xE8}},
+    entry{"Product Name",                           STRING,     136,       40,   []byte{0x50, 0x65, 0x6E, 0x73,
+        0x61, 0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2D, 0x31, 0x30, 0x30, 0x20,
+        0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61,
+        0x72, 0x64}},
+    entry{"PCA Product Number Type/Length",         INT8,       176,       1,    []byte{0xCA}},
+    entry{"HPE Product Number",                     STRING,     177,       10,   []byte{0x50, 0x33, 0x37, 0x36,
+        0x39, 0x30, 0x2D, 0x42, 0x32, 0x31}},
+    entry{"Product Version Type/Length",            INT8,       187,       1,    []byte{0xC2}},
+    entry{"Product Version",                        INT8,       188,       2,    []byte{0x30, 0x31}},
+    entry{"PCA Serial Number Type/Length",          INT8,       190,       1,    []byte{0xCA}},
+    entry{"Serial Number",                          STRING,     191,       10,   []byte{0x35, 0x55, 0x50, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"Asset Tag Type/Length",                  INT8,       201,       1,    []byte{0xC0}},
+    entry{"Fru File ID Type/Length",                INT8,       202,       1,    []byte{0xC8}},
+    entry{"FRU ID",                                 STRING,     203,       8,    []byte{0x30, 0x36, 0x2F, 0x32,
+        0x34, 0x2F, 0x31, 0x39}},
+    entry{"End of Field",                           INT8,       211,       1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,       212,       3,    []byte{0x00, 0x00, 0x00}},
+    entry{"Product info Area Checksum",             INT8,       215,       1,    []byte{0x00}},
+} 
+
 var Vomero2Tbl = []entry {
     entry{"Class Code",                             INT8,        0,          3,    []byte{0x00, 0x80, 0x02}},
     entry{"PCI-SIG Vendor ID",                      INT8,        3,          2,    []byte{0xD8, 0x1D}},
@@ -933,7 +1007,7 @@ func updateIntChk() () {
 
     if CustType == "IBM" {
         brdInfoChk = 0
-        productInfoChk = 0;
+        productInfoChk = 0
         cmnHeadChk = 0
         for _, entry := range(EepromTbl) {
             if (entry.Offset > 7) && (entry.Offset < 151) {
@@ -946,12 +1020,27 @@ func updateIntChk() () {
 
     if CustType == "ORACLE" {
         brdInfoChk = 0
-        productInfoChk = 0;
+        productInfoChk = 0
         cmnHeadChk = 0
         for _, entry := range(EepromTbl) {
             if (entry.Offset > 263) && (entry.Offset < 406) {
                 brdInfoChk += calcSum(entry)
             } else if (entry.Offset >= 256) && (entry.Offset < 263) {
+                cmnHeadChk += calcSum(entry)
+            }
+        }
+    }
+
+    if CustType == "HPE" {
+        brdInfoChk = 0
+        productInfoChk = 0
+        cmnHeadChk = 0
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 7) && (entry.Offset < 127) {
+                brdInfoChk += calcSum(entry)
+            } else if (entry.Offset > 127) && (entry.Offset < 215) {
+                productInfoChk += calcSum(entry)
+            } else if (entry.Offset >= 0) && (entry.Offset < 7) {
                 cmnHeadChk += calcSum(entry)
             }
         }

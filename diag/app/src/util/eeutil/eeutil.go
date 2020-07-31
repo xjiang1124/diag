@@ -62,6 +62,10 @@ func eepromTlbInit(uut string) {
                eeprom.CustType = "IBM"
                eeprom.EepromTbl = eeprom.Naples100IBMTbl
             }
+            if (cardType == "NAPLES100HPE") {
+               eeprom.CustType = "HPE"
+               eeprom.EepromTbl = eeprom.Naples100HPETbl
+            }
         }
     } else {
         // Assume now it is ARM
@@ -91,6 +95,10 @@ func eepromTlbInit(uut string) {
         if (cardType == "NAPLES100IBM") {
            eeprom.CustType = "IBM"
            eeprom.EepromTbl = eeprom.Naples100IBMTbl
+        }
+        if (cardType == "NAPLES100HPE") {
+           eeprom.CustType = "HPE"
+           eeprom.EepromTbl = eeprom.Naples100HPETbl
         }
     }
 

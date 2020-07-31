@@ -129,6 +129,10 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_ctrl = naples100Cpld.REG_LED_PORT_CTRL
         *port_rate = naples100Cpld.REG_LED_PORT_RATE
         *sys_ctrl = naples100Cpld.REG_LED_SYS_CTRL
+    } else if (cardType == "NAPLES100HPE") {
+        *port_ctrl = naples100Cpld.REG_LED_PORT_CTRL
+        *port_rate = naples100Cpld.REG_LED_PORT_RATE
+        *sys_ctrl = naples100Cpld.REG_LED_SYS_CTRL
     } else if (cardType == "FORIO") {
         *port_ctrl = forioCpld.REG_LED_PORT_CTRL
         *port_rate = forioCpld.REG_LED_PORT_RATE

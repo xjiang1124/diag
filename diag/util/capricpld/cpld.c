@@ -60,6 +60,7 @@
 #define ID_NAPLES25_SWM             0x17
 #define ID_NAPLES25_OCP             0x19
 #define ID_NAPLES100IBM             0x1C
+#define ID_NAPLES100HPE             0x1F
 
 #ifndef _GPIO_H_
 struct gpiohandle_request {
@@ -772,6 +773,7 @@ main(int argc, char *argv[])
 
         if ( (cpldId == ID_NAPLES100)    ||
              (cpldId == ID_NAPLES100IBM) ||
+             (cpldId == ID_NAPLES100HPE) ||
              (cpldId == ID_NAPLES25)     ||
              (cpldId == ID_VOMERO)
            )
