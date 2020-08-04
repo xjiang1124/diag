@@ -102,7 +102,7 @@ func eepromTlbInit(uut string) {
         }
     }
 
-    if cardType == "NAPLES25SWM" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" {
+    if cardType == "NAPLES25SWM" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" || cardType == "NAPLES100HPE" {
         eeprom.I2cAddr16 = true
     }
 

@@ -211,7 +211,7 @@ var Naples100HPETbl = []entry {
         0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61,
         0x72, 0x64}},
     entry{"PCA Product Number Type/Length",         INT8,       176,       1,    []byte{0xCA}},
-    entry{"HPE Product Number",                     STRING,     177,       10,   []byte{0x50, 0x33, 0x37, 0x36,
+    entry{"Product Number",                         STRING,     177,       10,   []byte{0x50, 0x33, 0x37, 0x36,
         0x39, 0x30, 0x2D, 0x42, 0x32, 0x31}},
     entry{"Product Version Type/Length",            INT8,       187,       1,    []byte{0xC2}},
     entry{"Product Version",                        INT8,       188,       2,    []byte{0x30, 0x31}},
