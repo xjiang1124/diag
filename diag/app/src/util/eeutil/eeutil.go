@@ -65,6 +65,7 @@ func eepromTlbInit(uut string) {
             if (cardType == "NAPLES100HPE") {
                eeprom.CustType = "HPE"
                eeprom.EepromTbl = eeprom.Naples100HPETbl
+            }
             if (cardType == "NAPLES25SWMDELL") {
                eeprom.CustType = "DELLSWM"
                eeprom.EepromTbl = eeprom.DellTblSWM
@@ -111,7 +112,7 @@ func eepromTlbInit(uut string) {
         }
     }
 
-    if cardType == "NAPLES25SWM" || cardType == "NAPLES25SWMDELL" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" || || cardType == "NAPLES100HPE" {
+    if cardType == "NAPLES25SWM" || cardType == "NAPLES25SWMDELL" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" || cardType == "NAPLES100HPE" {
         eeprom.I2cAddr16 = true
     }
 
