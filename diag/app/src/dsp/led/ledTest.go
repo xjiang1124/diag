@@ -146,8 +146,11 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_rate = naples25Cpld.REG_LED_PORT_RATE
         *sys_ctrl = naples25Cpld.REG_LED_SYS_CTRL
     } else if (cardType == "NAPLES25OCP") {
-        dcli.Println("f", "Unsupported cardType:", cardType)
-        return errType.FAIL
+        //dcli.Println("f", "Unsupported cardType:", cardType)
+        *port_ctrl = naples25swmCpld.REG_LED_PORT_CTRL
+        *port_rate = naples25swmCpld.REG_LED_PORT_RATE
+        *sys_ctrl = naples25swmCpld.REG_LED_SYS_CTRL
+        //return errType.FAIL
     } else if (cardType == "NAPLES25SWM") {
         *port_ctrl = naples25swmCpld.REG_LED_PORT_CTRL
         *port_rate = naples25swmCpld.REG_LED_PORT_RATE

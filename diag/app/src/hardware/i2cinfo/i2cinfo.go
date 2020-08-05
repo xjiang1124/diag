@@ -97,6 +97,16 @@ var Vomero2MtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE", 0},
 }
 
+// Naples25 I2C table on MTP SMBus
+var Naples25SwmDellMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU_ALOM",       "AT25320B",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"CPLD_ADAP",      "CPLD",      0x0,   0x4B,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU_ADAP",       "AT24C02C",  0x0,   0x57,    0x0,    "HUB_NONE", 0},
+}
+
 //=========================================
 // NaplesMtp PMBus table
 // devAddr is 7-bit address
@@ -207,6 +217,8 @@ func init() {
         I2cTbl = Naples25Tbl
     } else if CardType == "NAPLES25SWM" {
         I2cTbl = Naples25Tbl
+    } else if CardType == "NAPLES25SWMDELL" {
+        I2cTbl = Naples25Tbl
     } else if CardType == "FORIO" {
         I2cTbl = ForioTbl
     } else if CardType == "VOMERO" {
@@ -314,6 +326,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = Naples25OcpMtpTbl
     } else if uutType == "NAPLES25SWM" {
         CurI2cTbl = Naples25SwmMtpTbl
+    } else if uutType == "NAPLES25SWMDELL" {
+        CurI2cTbl = Naples25SwmDellMtpTbl
     } else if uutType == "NAPLES25WFG" {
         CurI2cTbl = Naples25MtpTbl
     } else if uutType == "FORIO" {

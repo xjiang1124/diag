@@ -3,6 +3,7 @@ package eeprom
 
 
 //Board Information Area Table
+
 var HpeTblOCP = []entry {
     entry{"Common Format Version",                  INT8,        0,        1,    []byte{1}},
     entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0}},
@@ -48,7 +49,6 @@ var HpeTblOCP = []entry {
     entry{"PAD",                                    INT8,       120,       7,    []byte{0, 0, 0, 0, 0, 0, 0}},
     entry{"Board Info Area Checksum",               INT8,       127,       1,    []byte{0}},
 } 
-
 
 var HpeTblOCPext = []entry {
     entry{"Product Info Format Version",            INT8,        128,        1,    []byte{1}},
@@ -234,5 +234,17 @@ var DellTblOcp = []entry {
     entry{"Max Sustained Power in S5",              INT8,       354,        2,    []byte{0x00, 0x14}},
     entry{"Max Peak Power in S5",                   INT8,       356,        2,    []byte{0x00, 0x14}},
     entry{"Power Brake",                            INT8,       358,        1,    []byte{0x00}},
-                    
+    
+                            //multi-record
+    entry{"Multi-Record Area",                      INT8,       359,        1,    []byte{0xE3}},
+    entry{"Record Format",                          INT8,       360,        1,    []byte{0x02}},
+    entry{"Record Length",                          INT8,       361,        1,    []byte{0x0F}},
+    entry{"Record Checksum",                        INT8,       362,        1,    []byte{0x00}},
+    entry{"Header Checksum",                        INT8,       363,        1,    []byte{0x00}},
+    entry{"Manufacture ID",                         INT8,       364,        3,    []byte{0xA2, 0x02, 0x00}},
+    entry{"Dell Version number",                    INT8,       367,        1,    []byte{0x01}},
+    entry{"FRU Card Type Identifier",               INT8,       368,        1,    []byte{0x16}},
+    entry{"Storage Size",                           INT8,       369,        2,    []byte{0x0F, 0xA0}},
+    entry{"FRU Content Size",                       INT8,       371,        2,    []byte{0x01, 0xA4}},
+    entry{"Reserve",                                INT8,       373,        1,    []byte{0x00}},
 } 

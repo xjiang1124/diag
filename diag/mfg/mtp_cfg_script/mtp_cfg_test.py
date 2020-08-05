@@ -126,6 +126,8 @@ def main():
     # get the absolute file path
     naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
     naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
+    naples25_swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
+    naples25_hpe_ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
     vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_CFG):
@@ -165,6 +167,10 @@ def main():
         elif card_type == NIC_Type.VOMERO:
             mtp_exp_capability = 0x1
         elif card_type == NIC_Type.NAPLES25:
+            mtp_exp_capability = 0x2
+        elif card_type == NIC_Type.NAPLES25SWM:
+            mtp_exp_capability = 0x2
+        elif card_type == NIC_Type.NAPLES25OCP:
             mtp_exp_capability = 0x2
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
@@ -224,6 +230,10 @@ def main():
             cpld_img_file = vomero_cpld_img_file
         elif card_type == NIC_Type.NAPLES25:
             cpld_img_file = naples25_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWM:
+            naples25_swm_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25OCP:
+            naples25_hpe_ocp_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue

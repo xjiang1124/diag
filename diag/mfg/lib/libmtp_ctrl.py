@@ -24,6 +24,9 @@ from libmfg_cfg import MFG_GOLD_IBM_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_VOMERO2_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_VOMERO_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_VOMERO2_TIMESTAMP
+from libmfg_cfg import MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
+
 #from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
@@ -826,6 +829,7 @@ class mtp_ctrl():
 
         return True
 
+
     def mtp_mgmt_reboot(self):
         if not self.mtp_mgmt_exec_cmd("sync", timeout=MTP_Const.OS_SYNC_DELAY):
             self.cli_log_err("Failed to execute sync command")
@@ -1156,7 +1160,12 @@ class mtp_ctrl():
             naples25swm_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
             naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
             naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
-            
+
+            naples25_hpeocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
+            naples25_hpeocp_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP
+            naples25_hpeocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
+            naples25_hpeocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE
+
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
@@ -1469,7 +1478,7 @@ class mtp_ctrl():
 
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
-        if boot_image != "goldfw" or (kernel_timestamp != MFG_GOLD_TIMESTAMP and kernel_timestamp != MFG_GOLD_IBM_TIMESTAMP and kernel_timestamp != MFG_GOLD_VOMERO2_TIMESTAMP):
+        if boot_image != "goldfw" or (kernel_timestamp != MFG_GOLD_TIMESTAMP and kernel_timestamp != MFG_GOLD_IBM_TIMESTAMP and kernel_timestamp != MFG_GOLD_VOMERO2_TIMESTAMP and kernel_timestamp != MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP):
             self.cli_log_slot_err(slot, "goldfw verify failed, NIC is booted from {:s}({:s})".format(boot_image, kernel_timestamp))
             return False
 
@@ -1976,9 +1985,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO2_TIMESTAMP):
+        if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO2_TIMESTAMP and kernel_timestamp != MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP):
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NIC is booted from {:s}".format(boot_image))
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s} or VOMERO2 Expect: {:s}  get: {:s}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP,MFG_QSPI_VOMERO2_TIMESTAMP, kernel_timestamp))
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s} or VOMERO2 Expect: {:s} or HPE OCP Expect: {:s} get: {:s}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP,MFG_QSPI_VOMERO2_TIMESTAMP, MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP, kernel_timestamp))
             return False
 
         return True

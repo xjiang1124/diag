@@ -125,6 +125,8 @@ def main():
             mtp_cfg_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
         if (mtp_capability & 0x2):
             mtp_cfg_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
+            mtp_cfg_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE)
+            mtp_cfg_image_list.append(MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_cfg_image_list, onboard_image_files):
