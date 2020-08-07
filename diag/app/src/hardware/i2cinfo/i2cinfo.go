@@ -206,6 +206,7 @@ func init() {
     Naples100HPEMtpTbl = append(Naples100HPEMtpTbl, MtpHubI2cTbl...)
     Naples25MtpTbl  = append(Naples25MtpTbl, MtpHubI2cTbl...)
     ForioMtpTbl     = append(ForioMtpTbl, MtpHubI2cTbl...)
+    BiodonaMtpTbl     = append(BiodonaMtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
@@ -336,6 +337,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = ForioMtpTbl
     } else if uutType == "VOMERO2" {
         CurI2cTbl = Vomero2MtpTbl
+    } else if uutType == "BIODONA_D4" || uutType == "BIODONA_D5" {
+        CurI2cTbl = BiodonaMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
