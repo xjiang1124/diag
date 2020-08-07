@@ -609,11 +609,11 @@ var DellTblSWM = []entry {
     entry{"Serial Number",                          STRING,      65,       11,   []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Part Number Type/Length",                INT8,        76,       1,    []byte{0xD9}},
-    entry{"Part Number",                            STRING,      77,       16,   []byte{
+    entry{"Part Number",                            STRING,      77,       17,   []byte{
         0x44, 0x53, 0x43, 0x31, 0x2d, 0x32, 0x53, 0x32, 0x35, 0x2d, 
-        0x34, 0x48, 0x38, 0x50, 0x2d, 0x53}},
-    entry{"PAD",                                    STRING,      93,        9,   []byte{0x20, 0x20, 0x20, 0x20,
-        0x20, 0x20, 0x20, 0x20, 0x20}},
+        0x34, 0x48, 0x38, 0x50, 0x2d, 0x44, 0x53}},
+    entry{"PAD",                                    STRING,      94,        8,   []byte{0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20}},
     entry{"FRU File ID Type/Length",                INT8,       102,       1,    []byte{0xC8}},
     entry{"FRU ID",                                 STRING,     103,       8,    []byte{0x30, 0x37, 0x2f, 0x32, 
         0x31, 0x2f, 0x32, 0x30}},
@@ -1041,6 +1041,9 @@ func updateIntChk() () {
             if (entry.Offset > 343) && (entry.Offset < 359) {
                 mraChk[2] += calcSum(entry)
             }
+            if (entry.Offset > 363) && (entry.Offset < 373) {
+                mraChk[3] += calcSum(entry)
+            }
         }
 
 
@@ -1048,15 +1051,19 @@ func updateIntChk() () {
         for _, entry := range(EepromTbl) {
             if (entry.Offset > 255) && (entry.Offset < 260) {
                 mraHdrChk[0] += calcSum(entry)
-                fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[0])
+                //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[0])
             }
             if (entry.Offset > 308) && (entry.Offset < 313) {
                 mraHdrChk[1] += calcSum(entry)
-                fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[1])
+                //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[1])
             }
             if (entry.Offset > 338) && (entry.Offset < 343) {
                 mraHdrChk[2] += calcSum(entry)
-                fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[2])
+                //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[2])
+            }
+            if (entry.Offset > 358) && (entry.Offset < 363) {
+                mraHdrChk[3] += calcSum(entry)
+                //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[2])
             }
         }
     }

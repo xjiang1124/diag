@@ -142,7 +142,7 @@ var DellTblOcp = []entry {
     entry{"Product Version Type/Length",            INT8,       148,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,     149,        2,    []byte{0x00, 0x20}},
     entry{"PCA Serial Number Type/Length",          INT8,       151,        1,    []byte{0xE0}},
-    entry{"PCA Serial Number",                      STRING,     152,       32,    []byte{
+    entry{"Serial Number",                          STRING,     152,       32,    []byte{
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -217,8 +217,8 @@ var DellTblOcp = []entry {
     entry{"Custom LFM - 25C",                       INT8,       334,        1,    []byte{0x70}},
     entry{"Custom LFM - 35C",                       INT8,       335,        1,    []byte{0x72}},
     entry{"Custom LFM - 45C",                       INT8,       336,        1,    []byte{0x72}},
-    entry{"Custom LFM - 55C",                       INT8,       337,        1,    []byte{0x72}},
-    entry{"Custom LFM - 65C",                       INT8,       338,        1,    []byte{0x72}},
+    entry{"Custom LFM - 55C",                       INT8,       337,        1,    []byte{0x76}},
+    entry{"Custom LFM - 65C",                       INT8,       338,        1,    []byte{0x78}},
 
     //multi-record
     entry{"Multi-Record Area",                      INT8,       339,        1,    []byte{0xE2}},
@@ -237,8 +237,8 @@ var DellTblOcp = []entry {
     
                             //multi-record
     entry{"Multi-Record Area",                      INT8,       359,        1,    []byte{0xE3}},
-    entry{"Record Format",                          INT8,       360,        1,    []byte{0x02}},
-    entry{"Record Length",                          INT8,       361,        1,    []byte{0x0F}},
+    entry{"Record Format",                          INT8,       360,        1,    []byte{0x82}},
+    entry{"Record Length",                          INT8,       361,        1,    []byte{0x0A}},
     entry{"Record Checksum",                        INT8,       362,        1,    []byte{0x00}},
     entry{"Header Checksum",                        INT8,       363,        1,    []byte{0x00}},
     entry{"Manufacture ID",                         INT8,       364,        3,    []byte{0xA2, 0x02, 0x00}},
