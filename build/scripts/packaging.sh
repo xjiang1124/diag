@@ -106,64 +106,74 @@ fi
 # Prepare ASIC files
 echo "--------------------"
 echo "Preparing ASIC files"
-DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$arch
-SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
-ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$arch
 
-if [[ $arch == "amd64" ]]
-then
-    DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic
+declare -a asic_list=("capri" "elba")
 
-    mkdir -p $DIAG_ASIC_PATH
-    mkdir -p $DIAG_ASIC_IMG_PATH
-    mkdir -p $DIAG_ASIC_IMG_PATH
+for asic in ${asic_list[@]}
+do
+    echo "Processing $asic"
 
-    echo "Update ASIC lib"
-    rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+    DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$asic/$arch
+    #SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
+    ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
     
-    echo "Copy ASIC lib to $arch image"
-    rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
-
-    echo "Copy snake CFG to $arch image"
-    rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
-
-fi
+    if [[ $arch == "amd64" ]]
+    then
+        DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic/$asic/
+    
+        mkdir -p $DIAG_ASIC_PATH
+        mkdir -p $DIAG_ASIC_IMG_PATH
+    
+        echo "Update ASIC lib"
+        rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+        
+        echo "Copy ASIC lib to $arch image"
+        rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
+    
+        #echo "Copy snake CFG to $arch image"
+        #rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
+    fi
+    
+    if [[ $arch == "arm64" ]]
+    then
+        DIAG_ASIC_IMG_PATH=$BUILD_DIR/temp/$arch
+        ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/nic_arm/$asic/
+       
+        mkdir -p $ARM_ASIC_PATH
+        mkdir -p $DIAG_ASIC_PATH
+    
+        echo "Update ASIC lib"
+        rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+    
+        echo "Copy ASIC lib to $arch image"
+        rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
+    
+        #echo "Copy snake CFG to $arch image"
+        #cp -r $SNAKE_CFG_PATH/* $DIAG_ASIC_IMG_PATH
+    
+        echo "Copy aapl $arch image"
+        cp -r $TOP_DIR/diag/scripts/asic/aapl/ $DIAG_ASIC_IMG_PATH
+    
+        cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/python/regression/arm_nic/* $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/python/regression/scripts/dft_profile_nic $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/python/regression/scripts/nic_config.sh $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/python/regression/scripts/rtc_sanity.sh $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/scripts/vmarg.sh $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/scripts/asic/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    fi
+done
 
 if [[ $arch == "arm64" ]]
 then
-    DIAG_ASIC_IMG_PATH=$BUILD_DIR/temp/$arch/nic_arm
-    ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/nic
-   
-    mkdir -p $ARM_ASIC_PATH
-    mkdir -p $DIAG_ASIC_PATH
-
-    echo "Update ASIC lib"
-    rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
-
-    echo "Copy ASIC lib to $arch image"
-    cp -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
-
-    echo "Copy snake CFG to $arch image"
-    cp -r $SNAKE_CFG_PATH/* $DIAG_ASIC_IMG_PATH
-
-    echo "Copy aapl $arch image"
-    cp -r $TOP_DIR/diag/scripts/asic/aapl/ $DIAG_ASIC_IMG_PATH
-
-    cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/python/regression/arm_nic/* $DIAG_ASIC_IMG_PATH/
-    cp $TOP_DIR/diag/python/regression/scripts/dft_profile_nic $DIAG_ASIC_IMG_PATH/
-    cp $TOP_DIR/diag/python/regression/scripts/nic_config.sh $DIAG_ASIC_IMG_PATH/
-    cp $TOP_DIR/diag/python/regression/scripts/rtc_sanity.sh $DIAG_ASIC_IMG_PATH/
-    cp $TOP_DIR/diag/scripts/vmarg.sh $DIAG_ASIC_IMG_PATH/
-    cp $TOP_DIR/diag/scripts/asic/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/scripts/asic/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/scripts/asic/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/scripts/asic/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-
-    tar czf $IMG_DIR/nic_arm.tar -C $BUILD_DIR/temp/$arch/ nic_arm/
+    #tar czf $IMG_DIR/nic_arm.tar -C $BUILD_DIR/temp/nic_arm/ nic_arm/
+    cd $BUILD_DIR/temp/$arch; tar czf $IMG_DIR/nic_arm.tar nic_arm/ 
 fi
 
 echo "ASIC file -- Done"

@@ -45,56 +45,77 @@ echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/scripts/asic" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
-if [[ $arch == "amd64" ]]
+mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+mtp_id_str1=($mtp_id_str)
+mtp_id=${mtp_id_str1[-1]}
+#echo "mtp_id: $mtp_id"
+
+if [ $mtp_id == "0x42" ]
 then
-    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
-    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
-
-    #==================================
-    echo "Set up ASIC environment"
-    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/" >> temp_profile
-    echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
-    echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
-    echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
-    echo "source \$ASIC_LIB/source_env_path" >> temp_profile
-    
-    cp temp_profile ~/.bash_profile
-    source ~/.bash_profile
-    hack_asic.sh
-    mkdir -p $ASIC_SRC/ip/cosim/tclsh/images/
-
-    # Start redis if it is not running
-    redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
-    if [[ $redisFlag != "1" ]]
-    then
-        $DIAG_DIR/tools/redis-server --daemonize yes
-        # Wait for 1s for redis-server to get ready
-        sleep 5s
-        echo "Turning on diag engine"
-        $DIAG_DIR/tools/redis-cli CONFIG SET protected-mode no
-        $DIAG_DIR/tools/redis-cli -h $REDIS_IP set DIAG_UP 1
-        echo "Diag engine turned on"
-    fi
-    
-    # Flush all previous residues
-    $DIAG_DIR/tools/redis-cli -h $REDIS_IP FLUSHALL
-
-    # Load all the redis keys
-    cat $DIAG_DIR/python/infra/config/OUTPUT/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
-    echo "Redis keys loaded"
-
-    # ESEC images
-    cp -r $DIAG_DIR/python/esec/images/ $DIAG_DIR/asic/asic_src/ip/cosim/tclsh/
-
-    # Duplicate 5 asic DSPs
-    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic1
-    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic2
-    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic3
-    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic4
-    cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
-
-    env | grep MTP_REV | awk -F "=" '{print $2}' > /home/diag/mtp_rev
+    echo "ELBA MTP"
+    echo "export MTP_TYPE=ELBA_MTP" >> temp_profile
+    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/elba/" >> temp_profile
+elif [ $mtp_id == "0x2" ]
+then
+    echo "CAPRI MTP"
+    echo "export MTP_TYPE=CAPRI_MTP" >> temp_profile
+    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/capri/" >> temp_profile
+else
+    echo "export MTP_TYPE=CAPRI_MTP" >> temp_profile
+    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/capri/" >> temp_profile
 fi
+
+source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
+echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
+
+#==================================
+echo "Set up ASIC environment"
+echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
+echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
+echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
+echo "source \$ASIC_LIB/source_env_path" >> temp_profile
+
+cp temp_profile ~/.bash_profile
+source ~/.bash_profile
+if [ $mtp_id == "0x42" ]
+then
+    hack_asic_elba.sh
+else
+    hack_asic.sh
+fi
+mkdir -p $ASIC_SRC/ip/cosim/tclsh/images/
+
+# Start redis if it is not running
+redisFlag=$($DIAG_DIR/tools/redis-cli get DIAG_UP)
+if [[ $redisFlag != "1" ]]
+then
+    $DIAG_DIR/tools/redis-server --daemonize yes
+    # Wait for 1s for redis-server to get ready
+    sleep 5s
+    echo "Turning on diag engine"
+    $DIAG_DIR/tools/redis-cli CONFIG SET protected-mode no
+    $DIAG_DIR/tools/redis-cli -h $REDIS_IP set DIAG_UP 1
+    echo "Diag engine turned on"
+fi
+
+# Flush all previous residues
+$DIAG_DIR/tools/redis-cli -h $REDIS_IP FLUSHALL
+
+# Load all the redis keys
+cat $DIAG_DIR/python/infra/config/OUTPUT/* | $DIAG_DIR/tools/redis-cli -h $REDIS_IP &>/dev/null
+echo "Redis keys loaded"
+
+# ESEC images
+cp -r $DIAG_DIR/python/esec/images/ $ASIC_SRC/ip/cosim/tclsh/
+
+# Duplicate 5 asic DSPs
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic1
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic2
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic3
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic4
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
+
+env | grep MTP_REV | awk -F "=" '{print $2}' > /home/diag/mtp_rev
 
 #echo "redisFlag $redisFlag"
 
