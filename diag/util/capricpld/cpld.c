@@ -61,6 +61,7 @@
 #define ID_NAPLES25_OCP             0x19
 #define ID_NAPLES100IBM             0x1C
 #define ID_NAPLES100HPE             0x1F
+#define ID_NAPLES25_SWM_DELL        0x20
 
 #ifndef _GPIO_H_
 struct gpiohandle_request {
@@ -783,7 +784,8 @@ main(int argc, char *argv[])
         else if (
             (cpldId == ID_NAPLES25_SWM) ||
             (cpldId == ID_VOMERO2)      ||
-            (cpldId == ID_NAPLES25_OCP)
+            (cpldId == ID_NAPLES25_OCP) || 
+            (cpldId == ID_NAPLES25_SWM_DELL)
             )
         {
             cpldSize = 4000000;
