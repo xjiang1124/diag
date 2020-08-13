@@ -12,6 +12,7 @@ else
     export ASIC_LIB_BUNDLE=/data/nic_arm/capri
 fi
 
+rm -rf /data/nic_arm/nic
 ln -sf $ASIC_LIB_BUNDLE /data/nic_arm/nic
 
 export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib

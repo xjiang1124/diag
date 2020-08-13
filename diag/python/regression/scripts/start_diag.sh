@@ -68,6 +68,7 @@ else
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 fi
 ASIC_LIB_BUNDLE=$DIAG_DIR/asic
+rm -rf $ASIC_LIB_BUNDLE
 ln -sf $ASIC_DIR_SUB_TOP $ASIC_LIB_BUNDLE
 
 echo "Set up ASIC environment"
