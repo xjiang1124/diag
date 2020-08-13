@@ -119,7 +119,7 @@ do
     
     if [[ $arch == "amd64" ]]
     then
-        DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic/$asic/
+        DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic_all/$asic/
     
         mkdir -p $DIAG_ASIC_PATH
         mkdir -p $DIAG_ASIC_IMG_PATH
@@ -136,8 +136,8 @@ do
     
     if [[ $arch == "arm64" ]]
     then
-        DIAG_ASIC_IMG_PATH=$BUILD_DIR/temp/$arch
-        ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/nic_arm/$asic/
+        DIAG_ASIC_IMG_PATH=$BUILD_DIR/temp/$arch/nic_arm/
+        ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/$asic/
        
         mkdir -p $ARM_ASIC_PATH
         mkdir -p $DIAG_ASIC_PATH

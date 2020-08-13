@@ -3,7 +3,7 @@
 DIAG_ROOT="/home/diag/diag/"
 declare -a arr=( 
     "/home/diag/diag/log/*txt"  
-    "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log" 
+    "$ASIC_SRC/ip/cosim/tclsh/*log" 
     )
 
 for i in "${arr[@]}"

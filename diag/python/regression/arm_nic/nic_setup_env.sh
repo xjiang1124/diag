@@ -1,6 +1,19 @@
 source /data/nic_arm/nic_config.sh
 
-export ASIC_LIB_BUNDLE=/data/nic_arm/nic/
+cpld_id="$(cpld -r 0x80)"
+cpld_id="${cpld_id}"
+
+elba_flag=$(($cpld_id & 0x40))
+
+if [[ $elba_flag == "0x40" ]]
+then
+    export ASIC_LIB_BUNDLE=/data/nic_arm/elba
+else
+    export ASIC_LIB_BUNDLE=/data/nic_arm/capri
+fi
+
+ln -sf $ASIC_LIB_BUNDLE /data/nic_arm/nic
+
 export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib
 export ASIC_SRC=$ASIC_LIB_BUNDLE//asic_src
 export ASIC_GEN=$ASIC_LIB_BUNDLE//asic_src

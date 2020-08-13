@@ -50,30 +50,36 @@ mtp_id_str1=($mtp_id_str)
 mtp_id=${mtp_id_str1[-1]}
 #echo "mtp_id: $mtp_id"
 
+#==================================
+ASIC_DIR_TOP=$DIAG_DIR/asic_all
+
 if [ $mtp_id == "0x42" ]
 then
     echo "ELBA MTP"
     echo "export MTP_TYPE=ELBA_MTP" >> temp_profile
-    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/elba/" >> temp_profile
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
 elif [ $mtp_id == "0x2" ]
 then
     echo "CAPRI MTP"
     echo "export MTP_TYPE=CAPRI_MTP" >> temp_profile
-    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/capri/" >> temp_profile
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 else
     echo "export MTP_TYPE=CAPRI_MTP" >> temp_profile
-    echo "export ASIC_LIB_BUNDLE=$DIAG_DIR/asic/capri/" >> temp_profile
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 fi
+ASIC_LIB_BUNDLE=$DIAG_DIR/asic
+ln -sf $ASIC_DIR_SUB_TOP $ASIC_LIB_BUNDLE
 
-source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
-echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
-
-#==================================
 echo "Set up ASIC environment"
+echo "export ASIC_LIB_BUNDLE=$ASIC_LIB_BUNDLE" >> temp_profile
 echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
 echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
 echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
 echo "source \$ASIC_LIB/source_env_path" >> temp_profile
+
+#==================================
+source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
+echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
