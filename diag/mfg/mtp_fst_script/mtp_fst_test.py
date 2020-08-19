@@ -113,7 +113,7 @@ def main():
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
-    elif card_type == "CLOUD":
+    elif "CLOUD" in card_type:
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)

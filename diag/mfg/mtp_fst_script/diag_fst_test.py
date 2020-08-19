@@ -28,7 +28,7 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES100IBM"
     elif "P26968" in pn:
         product_name = "NAPLES25SWM"
-    elif "68-0005-04" in pn:
+    elif "68-0005-04" in pn or "P18669" in pn:
         product_name = "NAPLES25"
     elif "68-0011-02" in pn:
         product_name = "VOMERO2"
@@ -268,7 +268,7 @@ def fst_general_oracle():
             print("Speed and Width are failed")
             print(result1.replace("\n", ""))
 
-def fst_cloud_fetch_sn():
+def fst_cloud_fetch_sn(card_type):
     print("Fetching SN with goldfw")
 
     try:
@@ -296,10 +296,14 @@ def fst_cloud_fetch_sn():
             continue
 
         output1 = output.decode("utf-8")
-        #print(output1)
+        print(output1)
         fru = json.loads(output1)
         sn = fru["serial-number"]
-        pn = fru["board-assembly-area"]
+        if card_type == "NAPLES25HPECLOUD":
+            pn = fru["part-number"]
+        else:
+            pn = fru["board-assembly-area"]
+        print(sn, pn)
         product_name =  get_product_name_from_pn(pn)
 
         if product_name == "UNKNOWN":
@@ -339,11 +343,18 @@ def fst_cloud_check_pcie():
 
         if product_name == "UNKNOWN":
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
-        elif "8GT/s" in result1 and "x16" in result1:
+            print(result1.replace("\n", ""))
+            continue
+        elif "NAPLES25" in product_name:
+            tgt_width = 'x8'
+        else:
+            tgt_width = 'x16'
+
+        if "8GT/s" in result1 and tgt_width in result1:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
         else:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
-            print("Speed and Width are failed")
+            print("speed and width are failed")
             print(result1.replace("\n", ""))
 
 
@@ -362,9 +373,9 @@ def main():
         fst_general_old()
     elif card_type == "ORACLE":
         fst_general_oracle()
-    elif card_type == "NAPLES100IBM" or card_type == "CLOUD":
+    elif card_type == "NAPLES100IBM" or "CLOUD" in card_type:
         if stage == "FETCH_SN":
-            fst_cloud_fetch_sn()
+            fst_cloud_fetch_sn(card_type)
         elif stage == "CHECK_PCIE":
             fst_cloud_check_pcie()
         else:
