@@ -22,3 +22,5 @@ diag/util/mdio/mdio_acc
 asic_repo/
 *bin
 *jed
+*csv
+test_logs
