@@ -106,7 +106,7 @@ def main():
     mfg_fst_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis
-    #libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

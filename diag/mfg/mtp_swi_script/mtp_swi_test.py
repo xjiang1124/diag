@@ -167,13 +167,16 @@ def main():
     # get the absolute file path
     naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
     naples100ibm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE
+    naples100hpe_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100HPE_SEC_CPLD_IMAGE
     naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
     vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
     vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
     naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
     naples25ocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-    
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_NAPLES100
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
@@ -186,7 +189,8 @@ def main():
 
 
     # Set Naples25SWM test mode
-    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
+    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
+    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.IBM)
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -197,6 +201,7 @@ def main():
     dsp = FF_Stage.FF_SWI
     pass_nic_list = list()
     fail_nic_list = list()
+    exp_100hpe_pn = 'P37692-001'
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
@@ -212,19 +217,23 @@ def main():
         elif card_type == NIC_Type.NAPLES100IBM:
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
+        elif card_type == NIC_Type.NAPLES100HPE:
+            sec_cpld_img_file = naples100hpe_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_NAPLES100
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO2:
             sec_cpld_img_file = vomero2_sec_cpld_img_file
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2                                             
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
         elif card_type == NIC_Type.NAPLES25:
             sec_cpld_img_file = naples25_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
         elif card_type == NIC_Type.NAPLES25SWM:
             sec_cpld_img_file = naples25swm_sec_cpld_img_file
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM 
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM
         elif card_type == NIC_Type.NAPLES25OCP:
             sec_cpld_img_file = naples25ocp_sec_cpld_img_file
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP 
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
@@ -237,7 +246,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
 
-        for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]:
+        for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
@@ -255,6 +264,8 @@ def main():
             # check nic boot from diagfw
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
+            elif test == "NAPLES_PN_VERIFY":
+                ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_100hpe_pn)                                
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                 continue
@@ -318,6 +329,8 @@ def main():
             sec_cpld_img_file = naples100_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES100IBM:
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100HPE:
+            sec_cpld_img_file = naples100hpe_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO:
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO2:

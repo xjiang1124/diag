@@ -513,7 +513,8 @@ def main():
     skip_test = False
     corner = Env_Cond.MFG_NT
     swm_lp_boot_mode = False
-    swmtestmode = Swm_Test_Mode.SWMALOM
+    #swmtestmode = Swm_Test_Mode.SWMALOM
+    #swmtestmode = Swm_Test_Mode.IBM
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -603,21 +604,22 @@ def main():
     # load the diag test config
     naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml"
     naples100ibm_test_cfg_file = "config/naples100ibm_mtp_test_cfg.yaml"
+    naples100hpe_test_cfg_file = "config/naples100hpe_mtp_test_cfg.yaml"
     naples25_test_cfg_file = "config/naples25_mtp_test_cfg.yaml"
     forio_test_cfg_file = "config/forio_mtp_test_cfg.yaml"
     vomero_test_cfg_file = "config/vomero_mtp_test_cfg.yaml"
     vomero2_test_cfg_file = "config/vomero2_mtp_test_cfg.yaml"
     naples25swm_test_cfg_file = "config/naples25swm_mtp_test_cfg.yaml"
     naples25ocp_test_cfg_file = "config/naples25ocp_mtp_test_cfg.yaml"
-    
     naples100_test_db = diag_db(corner, naples100_test_cfg_file)
     naples100ibm_test_db = diag_db(corner, naples100ibm_test_cfg_file)
+    naples100hpe_test_db = diag_db(corner, naples100hpe_test_cfg_file)
     naples25_test_db = diag_db(corner, naples25_test_cfg_file)
     forio_test_db = diag_db(corner, forio_test_cfg_file)
     vomero_test_db = diag_db(corner, vomero_test_cfg_file)
     vomero2_test_db = diag_db(corner, vomero2_test_cfg_file)
     naples25swm_test_db = diag_db(corner, naples25swm_test_cfg_file)
-    naples25ocp_test_db = diag_db(corner, naples25ocp_test_cfg_file)
+    naples25ocp_test_db = diag_db(corner, naples25ocp_test_cfg_file)                                                                
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -630,6 +632,12 @@ def main():
     naples100ibm_para_test_list = naples100ibm_test_db.get_diag_para_test_list()
     naples100ibm_pre_test_check_list = naples100ibm_test_db.get_pre_diag_test_intf_list()
     naples100ibm_post_test_check_list = naples100ibm_test_db.get_post_diag_test_intf_list()
+    
+    naples100hpe_seq_test_list = naples100hpe_test_db.get_diag_seq_test_list()
+    naples100hpe_mtp_para_test_list = naples100hpe_test_db.get_mtp_para_test_list()
+    naples100hpe_para_test_list = naples100hpe_test_db.get_diag_para_test_list()
+    naples100hpe_pre_test_check_list = naples100hpe_test_db.get_pre_diag_test_intf_list()
+    naples100hpe_post_test_check_list = naples100hpe_test_db.get_post_diag_test_intf_list()
 
     naples25_seq_test_list = naples25_test_db.get_diag_seq_test_list()
     naples25_mtp_para_test_list = naples25_test_db.get_mtp_para_test_list()
@@ -654,7 +662,6 @@ def main():
     vomero2_para_test_list = vomero2_test_db.get_diag_para_test_list()
     vomero2_pre_test_check_list = vomero2_test_db.get_pre_diag_test_intf_list()
     vomero2_post_test_check_list = vomero2_test_db.get_post_diag_test_intf_list()
-
     naples25swm_seq_test_list = naples25swm_test_db.get_diag_seq_test_list()
     naples25swm_mtp_para_test_list = naples25swm_test_db.get_mtp_para_test_list()
     naples25swm_para_test_list = naples25swm_test_db.get_diag_para_test_list()
@@ -666,7 +673,6 @@ def main():
     naples25ocp_para_test_list = naples25ocp_test_db.get_diag_para_test_list()
     naples25ocp_pre_test_check_list = naples25ocp_test_db.get_pre_diag_test_intf_list()
     naples25ocp_post_test_check_list = naples25ocp_test_db.get_post_diag_test_intf_list()
-
     # logfiles
     open_file_track_list = list()
 
@@ -722,6 +728,7 @@ def main():
 
     naples100_nic_list = list()
     naples100ibm_nic_list = list()
+    naples100hpe_nic_list = list()
     naples25_nic_list = list()
     forio_nic_list = list()
     vomero_nic_list = list()
@@ -739,6 +746,9 @@ def main():
                 pass_nic_list.append(slot)
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES100IBM:
                 naples100ibm_nic_list.append(slot)
+                pass_nic_list.append(slot)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES100HPE:
+                naples100hpe_nic_list.append(slot)
                 pass_nic_list.append(slot)
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25:
                 naples25_nic_list.append(slot)
@@ -762,9 +772,10 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
+    
+    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP]
+    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list]
 
-    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES25OCP]
-    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples25ocp_nic_list]
 
     # check if MTP support present NIC
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
@@ -778,6 +789,9 @@ def main():
         elif nic_type == NIC_Type.NAPLES100IBM:
             mtp_exp_capability = 0x1
             test_db = naples100ibm_test_db
+        elif nic_type == NIC_Type.NAPLES100HPE:
+            mtp_exp_capability = 0x1
+            test_db = naples100hpe_test_db
         elif nic_type == NIC_Type.NAPLES25:
             mtp_exp_capability = 0x2
             test_db = naples25_test_db
@@ -882,12 +896,15 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
 
+
         # Diag Pre Check
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_type == NIC_Type.NAPLES100:
                 pre_test_check_list = naples100_pre_test_check_list
             elif nic_type == NIC_Type.NAPLES100IBM:
                 pre_test_check_list = naples100ibm_pre_test_check_list
+            elif nic_type == NIC_Type.NAPLES100HPE:
+                pre_test_check_list = naples100hpe_pre_test_check_list
             elif nic_type == NIC_Type.NAPLES25:
                 pre_test_check_list = naples25_pre_test_check_list
             elif nic_type == NIC_Type.FORIO:
@@ -927,6 +944,9 @@ def main():
             elif nic_type == NIC_Type.NAPLES100IBM:
                 nic_para_test_list = naples100ibm_para_test_list[:]
                 test_db = naples100ibm_test_db
+            elif nic_type == NIC_Type.NAPLES100HPE:
+                nic_para_test_list = naples100hpe_para_test_list[:]
+                test_db = naples100hpe_test_db
             elif nic_type == NIC_Type.NAPLES25:
                 nic_para_test_list = naples25_para_test_list[:]
                 test_db = naples25_test_db
@@ -999,6 +1019,8 @@ def main():
                 mtp_para_test_list = naples100_mtp_para_test_list
             elif nic_type == NIC_Type.NAPLES100IBM:
                 mtp_para_test_list = naples100ibm_mtp_para_test_list
+            elif nic_type == NIC_Type.NAPLES100HPE:
+                mtp_para_test_list = naples100hpe_mtp_para_test_list
             elif nic_type == NIC_Type.NAPLES25:
                 mtp_para_test_list = naples25_mtp_para_test_list
             elif nic_type == NIC_Type.FORIO:
@@ -1040,6 +1062,9 @@ def main():
             elif nic_type == NIC_Type.NAPLES100IBM:
                 nic_seq_test_list = naples100ibm_seq_test_list[:]
                 test_db = naples100ibm_test_db
+            elif nic_type == NIC_Type.NAPLES100HPE:
+                nic_seq_test_list = naples100hpe_seq_test_list[:]
+                test_db = naples100hpe_test_db
             elif nic_type == NIC_Type.NAPLES25:
                 nic_seq_test_list = naples25_seq_test_list[:]
                 test_db = naples25_test_db

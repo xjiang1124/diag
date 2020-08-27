@@ -138,15 +138,16 @@ def main():
         if (mtp_capability & 0x1):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES100HPE_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_NAPLES100)
         if (mtp_capability & 0x2):
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE)
-            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)

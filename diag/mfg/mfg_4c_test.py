@@ -86,7 +86,7 @@ def main():
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SWMALOM
-
+    #swmtestmode = Swm_Test_Mode.IBM
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True

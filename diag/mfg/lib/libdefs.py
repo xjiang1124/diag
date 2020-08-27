@@ -3,6 +3,7 @@ from enum import Enum
 class NIC_Type:
     NAPLES100 = "NAPLES100"
     NAPLES100IBM = "NAPLES100IBM"
+    NAPLES100HPE = "NAPLES100HPE"
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
     VOMERO = "VOMERO"
@@ -55,12 +56,14 @@ class Env_Cond(Enum):
     def __str__(self):
         return self.value
 
-#SWM TEST MODE:  Onlu use for Naples 25 SWM ... or be careful if you mod it
+#NOT ONLY SWM TEST MODE, ALL TEST MODE WILL USE AS SAME
 class Swm_Test_Mode(Enum):
     SWM = "swm"
     SWMALOM = "swmalom"
     ALOM = "alom"
     SW_DETECT = "sw_detect"
+
+
     def __str__(self):
         return self.value
 
@@ -114,13 +117,13 @@ class MTP_Const:
     NIC_CON_CMD_DELAY = 900
     NIC_CON_INIT_DELAY = 60
     NIC_NETCOPY_DELAY = 120
-    NIC_CON_CMD_RETRY = 3
+    NIC_CON_CMD_RETRY = 10
     NIC_MGMT_IP_SET_DELAY = 3
     NIC_MGMT_IP_INIT_RETRY = 3
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
     NIC_ESEC_PROG_DELAY = 1800
-    NIC_POWER_ON_DELAY = 30
+    NIC_POWER_ON_DELAY = 180
     NIC_POWER_OFF_DELAY = 10
 
     MTP_DIAGMGR_DELAY = 10
@@ -335,12 +338,15 @@ class MFG_DIAG_CMDS:
     # Naples100IBM: core_freq=833 arm_freq=1600
     NAPLES100IBM_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
     NAPLES100IBM_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
+    # Naples100HPE: core_freq=833 arm_freq=1600
+    NAPLES100HPE_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
+    NAPLES100HPE_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
     # Vomero: core_freq=833 arm_freq=2200
     VOMERO_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2200"
     VOMERO_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2200"
     # Vomero2: core_freq=833 arm_freq=2200
-    VOMERO2_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
-    VOMERO2_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
+    VOMERO2_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2200"
+    VOMERO2_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2200"
     # Naples25: core_freq=417 arm_freq=1600
     NAPLES25_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 417 -arm_freq 1600"
     NAPLES25_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 417 -arm_freq 1600"
@@ -459,3 +465,4 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES25SWM = r"\bUUT_(\d+) +NAPLES25SWM\b"
     MFG_NIC_TYPE_NAPLES25OCP = r"\bUUT_(\d+) +NAPLES25OCP\b"
     MFG_NIC_TYPE_NAPLES100IBM = r"\bUUT_(\d+) +NAPLES100IBM\b"
+    MFG_NIC_TYPE_NAPLES100HPE = r"\bUUT_(\d+) +NAPLES100HPE\b"

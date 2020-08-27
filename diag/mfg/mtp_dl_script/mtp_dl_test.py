@@ -65,7 +65,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     prog_date = str(fru_cfg["TS"])
 
     dsp = FF_Stage.FF_DL
-    testseqlist = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]
+    testseqlist = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]                                                                
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25SWM:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
@@ -135,7 +135,6 @@ def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, 'SET_PSLC', duration))
     return 0
 
-
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -148,6 +147,7 @@ def main():
     mtp_cfg_db = load_mtp_cfg()
 
     swmtestmode = Swm_Test_Mode.SWMALOM
+    #swmtestmode = Swm_Test_Mode.IBM 
     if args.swm:
         swmtestmode = args.swm
 
@@ -181,12 +181,14 @@ def main():
     naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     naples100ibm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE
     naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples100hpe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100HPE_CPLD_IMAGE
+    naples100hpe_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100
     naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
     naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
     vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
-    vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2
+    vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2                                                                                                
     naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
     naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
@@ -199,7 +201,7 @@ def main():
         return
 
     # power cycle all nic
-    mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
+    #mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
@@ -222,29 +224,29 @@ def main():
             tmp_fru_cfg[key]["NIC_VALID"] = True
             tmp_fru_cfg[key]["NIC_TS"] = libmfg_utils.get_fru_date()
             if mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
-                if nic_fru_info:
-                    tmp_fru_cfg[key]["NIC_SN"] = nic_fru_info[0]
-                    tmp_fru_cfg[key]["NIC_MAC"] = nic_fru_info[1].replace('-', '')
-                    tmp_fru_cfg[key]["NIC_PN"] = nic_fru_info[2]
-                    if card_type == NIC_Type.NAPLES25SWM:
-                        nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_alom_fru(slot)
-                        tmp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
-                        tmp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
-                else:
+                    nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
+                    if nic_fru_info:
+                        tmp_fru_cfg[key]["NIC_SN"] = nic_fru_info[0]
+                        tmp_fru_cfg[key]["NIC_MAC"] = nic_fru_info[1].replace('-', '')
+                        tmp_fru_cfg[key]["NIC_PN"] = nic_fru_info[2]
+                        if card_type == NIC_Type.NAPLES25SWM:
+                            nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_alom_fru(slot)
+                            tmp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
+                            tmp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
+                    else:
+                        tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
+                        tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
+                        tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
+                        if card_type == NIC_Type.NAPLES25SWM:
+                            tmp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
+                            tmp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
+            else:
                     tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
                     tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
                     tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
                     if card_type == NIC_Type.NAPLES25SWM:
                         tmp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
                         tmp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
-            else:
-                tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
-                tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
-                tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
-                if card_type == NIC_Type.NAPLES25SWM:
-                    tmp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
-                    tmp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
         else:
             tmp_fru_cfg[key]["NIC_VALID"] = False
 
@@ -288,6 +290,10 @@ def main():
             mtp_exp_capability = 0x1
             cpld_img_file = naples100ibm_cpld_img_file
             qspi_img_file = naples100ibm_qspi_img_file
+        elif card_type == NIC_Type.NAPLES100HPE:
+            mtp_exp_capability = 0x1
+            cpld_img_file = naples100hpe_cpld_img_file
+            qspi_img_file = naples100hpe_qspi_img_file
         elif card_type == NIC_Type.VOMERO:
             mtp_exp_capability = 0x1
             cpld_img_file = vomero_cpld_img_file
@@ -380,6 +386,9 @@ def main():
         elif card_type == NIC_Type.NAPLES100IBM:
             qspi_img_file = naples100ibm_qspi_img_file
             cpld_img_file = naples100ibm_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100HPE:
+            qspi_img_file = naples100hpe_qspi_img_file
+            cpld_img_file = naples100hpe_cpld_img_file
         elif card_type == NIC_Type.VOMERO:
             qspi_img_file = vomero_qspi_img_file
             cpld_img_file = vomero_cpld_img_file
@@ -429,7 +438,7 @@ def main():
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
-    set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list)
+    #set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -488,9 +497,10 @@ def main():
             elif test == "FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, exp_date)
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES25SWM:
+                if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     if ret:
                         ret = mtp_mgmt_ctrl.mtp_verify_hpe_pn_fru(slot, hpe_pn)
+                                                                    
                     if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         if ret:
                             ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
