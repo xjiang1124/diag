@@ -69,6 +69,7 @@ if __name__ == "__main__":
 
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
     parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
+    parser.add_argument("-file", "--file", help="File With Serial Number", type=str, default="")
     parser.add_argument("-sn_list", "--sn_list", help="Serial Number list", type=str, default="")
     parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="NAPLES100")
     parser.add_argument("-stage", "--stage", help="P2C", type=str, default="NAPLES100")
@@ -81,6 +82,14 @@ if __name__ == "__main__":
     sn_list1 = args.sn_list.upper()
     sn_list = sn_list1.split(',')
     
+    filename = args.file
+    if filename != "":
+        print("Using SN in file", filename)
+        with open(filename) as f:
+            sn_list = f.readlines()
+        sn_list = [x.strip() for x in sn_list]
+        print(sn_list)
+
     stage = args.stage.upper()
     card_type = args.card_type.upper()
 
