@@ -32,6 +32,8 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES25"
     elif "68-0011-02" in pn:
         product_name = "VOMERO2"
+    elif "P37692" in pn:
+        product_name = "NAPLES100HPE"
     else:
         product_name = "UNKNOWN"
 
@@ -187,7 +189,7 @@ def fst_general():
             product_name = fru["status"]["fru"]["product-name"].replace(" ", "")
             pn = fru["status"]["fru"]["part-number"]
             product_name = get_product_name_from_pn(pn)
-
+           
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
@@ -208,9 +210,9 @@ def fst_general():
                     print(new_str.replace("\n", ""))
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
-                    print("slot:", str(a), b, "sn:", sn, "type:", sn, "pass")
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
-                    print("slot:", str(a), b, "sn:", sn, "type:", sn, "failed")
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name, "failed")
                     print("Speed and Width are failed")
                     print(new_str.replace("\n", ""))
             #print(fru["status"]["fru"]["serial-number"], fru["status"]["fru"]["product-name"].replace(" ", ""))
