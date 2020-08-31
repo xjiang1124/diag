@@ -58,8 +58,18 @@ set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
 set DIAG_SRC "$DIAG_DIR/diag/scripts/asic/"
 
+if {$MTP_TYPE == "MTP_ELBA"} {
+    puts "Elba MTP"
+    set tclrc_source .tclrc.diag.elb.new
+    set asic_type ELBA
+} else {
+    puts "Capri MTP"
+    set tclrc_source .tclrc.diag.new
+    set asic_type CAPRI
+}
+
 cd $ASIC_SRC/ip/cosim/tclsh
-source .tclrc.diag
+source $tclrc_source
 source $DIAG_SRC/asic_tests.tcl
 
 puts "sn: $sn; slot: $slot; mode: $mode; mac_lb: $mac_lb; duration: $duration; use_zmq: $use_zmq"
@@ -73,7 +83,7 @@ if { $use_zmq == 1 } {
 } else {
     diag_close_j2c_if 10 $slot
 }
-set err_cnt [cap_snake $sn $slot $mode $core_freq $mac_lb $duration $use_zmq $zmq_conn $fan_ctrl $tgt_temp]
+set err_cnt [asic_snake $asic_type $sn $slot $mode $core_freq $mac_lb $duration $use_zmq $zmq_conn $fan_ctrl $tgt_temp]
 diag_close_zmq_if
 
 # Print twice for DSP to capture signature

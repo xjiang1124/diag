@@ -8,3 +8,5 @@ ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_l
 ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
 ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
 
+cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh/
+head -n -6 .tclrc.diag.elb > .tclrc.diag.elb.new

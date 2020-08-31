@@ -6,9 +6,7 @@ power_on_naples25_swm_ocp() {
     slot=$1
     CPLD25swm="0x1b"
     CPLD25ocp="0x1a"
-    #turn_on_hub.sh $1 > /dev/null 2>&1
-    turn_on_hub.sh $1
-    #cpld_id=$(i2cget -y 0 0x4b 0x80 2> /dev/null )
+    #turn_on_hub.sh $1
     cpld_id=$(i2cget -y 0 0x4b 0x80)
     if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25swm ]] #If we get a valid return code, an alom card is there that we need to power up
     then
@@ -54,11 +52,38 @@ power_on_naples25_swm_ocp() {
 
 }
 
+# Enable Elba card JTAG
+elba_enable_jtag() {
+    slot=$1
+
+    if [ $mtp_id == "0x42" ]
+    then
+        reg=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x22)
+        reg=$(expr match "$reg" '.*data=\(0x[0-9|a-f|A-F]*\)')
+        if [[ $reg = "" ]]
+        then
+            echo "Skip turn on Elba MTP JTAG $slot"
+            return
+        fi
+
+        reg=$(( $reg & 0xfc ))
+        smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x22 -data=$reg
+    fi
+}
+
+elba_delay() {
+    if [ $mtp_id == "0x42" ]
+    then
+        echo "Elba delay enabled"
+        sleep 1
+    fi
+}
+
 # Enable NIC MTP Rev3 mode
 enable_nic_mtp_r3() {
     slot=$1
-    turn_on_hub.sh $slot
-    sleep 0.2
+    #turn_on_hub.sh $slot
+    sleep 1
 
     reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21)
     echo $reg1
@@ -131,8 +156,8 @@ control_slot() {
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
         sleep 0.2
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        sleep 0.2
-    
+ 
+        elba_delay
     else
         v12=$(( $v12 | $wValue ))
         v3v3=$(( $v3v3 | $wValue ))
@@ -149,7 +174,6 @@ control_slot() {
     cpldutil -cpld-rd -addr=$v12_addr
     cpldutil -cpld-rd -addr=$v3v3_addr
     cpldutil -cpld-rd -addr=$perst_addr
-
 }
 
 control_all() {
@@ -166,10 +190,14 @@ control_all() {
         cpldutil -cpld-wr -addr=0x17 -data=0
         sleep 0.5
         
+        elba_delay
+
         for i in {1..10}
         do
+            turn_on_hub.sh $i
             power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
             enable_nic_mtp_r3 $i
+            elba_enable_jtag $i
         done
 
         echo "All slots turned on"
@@ -244,6 +272,10 @@ then
     echo "swm_lp_mode = $swm_lp_mode"
 fi
 
+mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+mtp_id_str1=($mtp_id_str)
+mtp_id=${mtp_id_str1[-1]}
+
 if [[ $2 == "all" ]]
 then
     control_all $1
@@ -282,8 +314,10 @@ else
 
     for slot in $slot_list
     do
-       power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
-       enable_nic_mtp_r3 $slot
+        turn_on_hub.sh $slot
+        power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
+        enable_nic_mtp_r3 $slot
+        elba_enable_jtag $slot
     done
 
     

@@ -56,17 +56,18 @@ ASIC_DIR_TOP=$DIAG_DIR/asic_all
 if [ $mtp_id == "0x42" ]
 then
     echo "ELBA MTP"
-    echo "export MTP_TYPE=ELBA_MTP" >> temp_profile
+    echo "export MTP_TYPE=MTP_ELBA" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
 elif [ $mtp_id == "0x2" ]
 then
     echo "CAPRI MTP"
-    echo "export MTP_TYPE=CAPRI_MTP" >> temp_profile
+    echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 else
-    echo "export MTP_TYPE=CAPRI_MTP" >> temp_profile
+    echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 fi
+
 ASIC_LIB_BUNDLE=$DIAG_DIR/asic
 rm -rf $ASIC_LIB_BUNDLE
 ln -sf $ASIC_DIR_SUB_TOP $ASIC_LIB_BUNDLE
