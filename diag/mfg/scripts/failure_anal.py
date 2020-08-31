@@ -15,6 +15,8 @@ import numpy
 import argparse
 import re
 import collections
+from pathlib import Path
+import shlex
 
 try:
     import cPickle as pickle
@@ -97,6 +99,36 @@ def get_err_code(err_info):
         err_code = "COMP_KNOCKOFF"
     elif "Component Loose" in err_info:
         err_code = "COMP_LOOSE"
+    elif "Component Damaged" in err_info:
+        err_code = "COMP_DEFECT"
+    elif "Component Misaligned" in err_info:
+        err_code = "COMP_MISALIGN"
+    elif "Component Electrical Failure" in err_info:
+        err_code = "COMP_ELEC"
+    elif "Component Missing" in err_info:
+        err_code = "COMP_MISS"
+    elif "Component Height" in err_info:
+        err_code= "COMP_HEIGHT"
+    elif "Comp_Marginal_Value" in err_info:
+        err_code = "COMP_MARGINAL"
+    elif "Component Wrong" in err_info:
+        err_code = "COMP_WRONG"
+    elif "Component Burnt" in err_info:
+        err_code = "COMP_BURNT"
+    elif "Wrong Orientation" in err_info:
+        err_code = "WRONG_ORNT"
+    elif "NDF" in err_info:
+        err_code = "NDF"
+    elif "L1" in err_info:
+        err_code = "L1"
+        if "hbm_test" in err_info:
+            err_code = err_code + "_HBM"
+        elif "esec_l1_test" in err_info:
+            err_code = err_code + "_ESEC"
+        elif "Cmd failed" in err_info:
+            err_code = err_code + "_CMD"
+        else:
+            print(err_info)
     elif "ETH_PRBS" in err_info:
         err_code = "ETH_PRBS"
     elif "PCIE_PRBS" in err_info:
@@ -105,30 +137,14 @@ def get_err_code(err_info):
         err_code = "SNAKE_PCIE"
     elif "SNAKE_HBM" in err_info:
         err_code = "SNAKE_HBM"
-    elif "Component Damaged" in err_info:
-        err_code = "COMP_DEFECT"
     elif "MVL STUB FAIL" in err_info:
         err_code = "MVL"
     elif "RTC FAIL" in err_info:
         err_code = "RTC"
-    elif "L1" in err_info:
-        err_code = "L1"
-        if "esec" in err_info:
-            err_code = err_code + "_ESEC"
-        elif "hbm" in err_info:
-            err_code = err_code + "_HBM"
-        elif "Cmd failed" in err_info:
-            err_code = err_code + "_CMD"
-        else:
-            print(err_info)
     elif "ERROR: MTP ADAPTER SCAN CHAIN" in err_info:
         err_code = "ADPT_SCAN_CHAIN"
-    elif "Component Misaligned" in err_info:
-        err_code = "COMP_MISALIGN"
     elif "Contamination" in err_info:
         err_code = "CONTAMINATION"
-    elif "Component Electrical Failure" in err_info:
-        err_code = "COMP_ELEC"
     elif "Solder" in err_info:
         err_code = "SOLDER"
     elif "Init NIC EMMC" in err_info:
@@ -139,6 +155,28 @@ def get_err_code(err_info):
         err_code = "NIC_JTAG"
     elif "PRE_CHECK NIC_ALOM_CABLE FAIL" in err_info:
         err_code = "ALOM_CABLE"
+    elif "Copy NIC Diag Image failed" in err_info:
+        err_code = "COPY_NIC_IMAGE_FAIL"
+    elif "Program NIC Secure Key failed" in err_info:
+        err_code = "KEY_PROG_FAIL"
+    elif "Pre init key programming failed" in err_info:
+        err_code = "PRE_KEY_PROG_FAIL"
+
+    # ICT error code
+    elif "Test Point" in err_info:
+        err_code = "TEST_POINT"
+    elif "Shorted Continuity" in err_info:
+        err_code = "SHORT_CONTINUITY"
+    elif "Lifted Lead" in err_info:
+        err_code = "LIFT_LEAD"
+    elif "Component Reversed" in err_info:
+        err_code = "COMP_REV"
+    elif "Extra Part" in err_info:
+        err_code = "EXTRA_PART"
+    elif "Bad Rework" in err_info:
+        err_code = "BAD_REWORK"
+    elif "Gold finger Damaged" in err_info:
+        err_code = "GOLD_FNGR_DMG"
     else:
         err_code = "UNKNOWN"
         print("Unknown error code!")
@@ -147,29 +185,7 @@ def get_err_code(err_info):
     err_code = err_code+","+volt_lvl
     return err_code
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    group = parser.add_mutually_exclusive_group()
-
-    parser.add_argument("-fetch", "--fetch", help="Fetch log file", action='store_true')
-    parser.add_argument("-fy", "--first_yield", help="Parse first fail", action='store_true')
-    parser.add_argument("-verbose", "--verbose", help="Print all output", action='store_true')
-    parser.add_argument("-stat_file", "--stat_file", help="Statistis from file", action='store_true')
-
-    group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
-    parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
-    parser.add_argument("-fn", "--filename", help="File name of yield report", type=str, default="")
-    parser.add_argument("-sl", "--stage_list", help="Stage list; e.g. 'DL,P2C'", type=str, default="")
-    parser.add_argument("-prefix", "--prefix", help="prefix", type=str, default="")
-    parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
-
-    args = parser.parse_args()
-
-    filename = args.filename
-    prefix = args.prefix
-    log_root = args.logroot
-
+def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fetch, verbose):
     if "SWM" in filename:
         card_type = "NAPLES25SWM"
     elif "100" in filename:
@@ -183,14 +199,20 @@ if __name__ == "__main__":
     fail_dsrp_list = sheet['Failure Description']
     stage_list = sheet['Impacted Station ']
     sn_list = sheet['Serial No']
+    location_list = sheet['Location ']
+    root_cause_list = sheet['Root Cause ']
+    action_list = sheet['ACTION']
+
     f_dl  = open(prefix+"_"+card_type.lower()+"_dl.txt","w+")
     f_4c  = open(prefix+"_"+card_type.lower()+"_4c.txt","w+")
     f_p2c = open(prefix+"_"+card_type.lower()+"_p2c.txt","w+")
     f_swi = open(prefix+"_"+card_type.lower()+"_swi.txt","w+")
+    f_fst = open(prefix+"_"+card_type.lower()+"_fst.txt","w+")
 
     stage_new_list = []
     record_dict = dict()
-    dl_sn_dict = dict()
+    ict_sn_dict = dict()
+    dl_sn_dict  = dict()
     p2c_sn_dict = dict()
     h4c_sn_dict = dict()
     l4c_sn_dict = dict()
@@ -199,8 +221,12 @@ if __name__ == "__main__":
 
     for idx, sn in sn_list.items():
         stage_new_list.append("NA")
-        if pd.isna(sn) == True:
+        if pd.isna(sn) == True or pd.isna(fail_dsrp_list[idx]) == True:
             break
+
+        # Temp solution: Penang yield report has extra records of old data
+        if idx < 1640:
+            continue
 
         stage = "NA"
         fail_dsrp = fail_dsrp_list[idx]
@@ -217,11 +243,16 @@ if __name__ == "__main__":
             stage = "4C-L"
         elif "SWI" in stage_list[idx]:
             stage = "SWI"
+        elif "FST" in stage_list[idx]:
+            stage = "FST"
+        elif "ICT" in stage_list[idx]:
+            stage = "ICT"
         else:
-            print("Wrong stage!", idx, stage_list[idx])
+            #print("Skip stage", idx, stage_list[idx])
+            continue
 
         stage_new_list[idx] = stage
-    
+
         if "Diagnostic Software Problem" in fail_dsrp:
             if stage == "DL":
                 f_dl.write(sn+'\n')
@@ -233,12 +264,17 @@ if __name__ == "__main__":
                 f_4c.write(sn+'\n')
             if stage == "SWI":
                 f_swi.write(sn+'\n')
+            if stage == "FST":
+                f_fst.write(sn+'\n')
         else:
             err_info_dict = dict()
             stage_err_info_dict = dict()
             err_info_dict["ERR_INFO"] = fail_dsrp_list[idx]
             err_info_dict["ERR_CODE"] = get_err_code(fail_dsrp_list[idx])
             stage_err_info_dict[stage+"_GENERAL"] = err_info_dict
+
+            if stage == "ICT":
+                ict_sn_dict[sn] = stage_err_info_dict
             if stage == "DL":
                 dl_sn_dict[sn] = stage_err_info_dict
             if stage == "P2C":
@@ -249,17 +285,26 @@ if __name__ == "__main__":
                 h4c_sn_dict[sn] = stage_err_info_dict
             if stage == "SWI":
                 swi_sn_dict[sn] = stage_err_info_dict
+            if stage == "FST":
+                fst_sn_dict[sn] = stage_err_info_dict
 
-    record_dict["DL"] = dl_sn_dict
-    record_dict["P2C"] = p2c_sn_dict
+            err_info_dict["LOCATION"] = location_list[idx]
+            err_info_dict["ROOT CAUSE"] = root_cause_list[idx]
+            err_info_dict["ACTION"] = action_list[idx]
+
+    record_dict["ICT"]  = ict_sn_dict
+    record_dict["DL"]   = dl_sn_dict
+    record_dict["P2C"]  = p2c_sn_dict
     record_dict["4C-H"] = h4c_sn_dict
     record_dict["4C-L"] = l4c_sn_dict
-    record_dict["SWI"] = swi_sn_dict
+    record_dict["SWI"]  = swi_sn_dict
+    record_dict["FST"]  = fst_sn_dict
 
     f_dl.close()
     f_p2c.close()
     f_4c.close()
     f_swi.close()
+    f_fst.close()
 
     if args.fetch == True:
         sys.exit(0)
@@ -278,7 +323,12 @@ if __name__ == "__main__":
 
         stage_sn_dict = dict()
         for idx, sn in sn_list.items():
-            if pd.isna(sn) == True:
+
+            # Temp solution: Penang yield report has extra records of old data
+            if idx < 1640:
+                continue
+
+            if pd.isna(sn) == True or pd.isna(fail_dsrp_list[idx]) == True:
                 break
 
             if stage_new_list[idx] != stage_tgt:
@@ -305,6 +355,10 @@ if __name__ == "__main__":
                 err_info_dict["ERR_CODE"] = "LOG_NOT_FOUND"
                 stage_err_info_dict[stage+"_GENERAL"] = err_info_dict
                 stage_sn_dict[sn] = stage_err_info_dict
+
+                err_info_dict["LOCATION"] = location_list[idx]
+                err_info_dict["ROOT CAUSE"] = root_cause_list[idx]
+                err_info_dict["ACTION"] = action_list[idx]
                 continue
 
             if args.first_yield == True:
@@ -421,6 +475,10 @@ if __name__ == "__main__":
                     err_info_dict["ERR_CODE"] = "PASS"
                     err_info_dict["TEST_INFO"] = log_file_dict
 
+                err_info_dict["LOCATION"] = location_list[idx]
+                err_info_dict["ROOT CAUSE"] = root_cause_list[idx]
+                err_info_dict["ACTION"] = action_list[idx]
+
                 stage_err_info_dict[dir_name] = err_info_dict
 
                 #os.system("rm -rf ./*")
@@ -446,7 +504,7 @@ if __name__ == "__main__":
                 for test_info,err_info_dict in test_info_dict.items():
                     print("--- {} ---".format(test_info))
                     print("ERROR CODE:", err_info_dict["ERR_CODE"])
-                    if args.verbose == True:
+                    if verbose == True:
                         print(err_info_dict["ERR_INFO"])
         for stage, sn_dict in record_dict.items():
             if stage != stage_tgt:
@@ -457,19 +515,19 @@ if __name__ == "__main__":
                 for test_info,err_info_dict in test_info_dict.items():
                     print("--- {} ---".format(test_info))
                     print("ERROR CODE:", err_info_dict["ERR_CODE"])
-                    if args.verbose == True:
+                    if verbose == True:
                         print(err_info_dict["ERR_INFO"])
 
     # Output to csv file
     # stage - date - MTP_ID - SN - err_code
 
     fmt_anal_file = "anal_{}_{}{}.csv"
-    fmt_anal_output = "{},{},{},{},{}\n"
+    fmt_anal_output = "{},{},{},{},{},{},{},{},{}\n"
     fmt_date = "{}-{}-{}"
 
     anal_file = fmt_anal_file.format(card_type, prefix, "_".join(stage_tgt_list))
     f = open(anal_file, "w+") 
-    anal_output = fmt_anal_output.format("STAGE", "DATE", "MTP_ID", "SN", "ERR_CODE")
+    anal_output = fmt_anal_output.format("STAGE", "DATE", "MTP_ID", "SN", "ERR_CODE", "CORNER", "LOCATION", "ROOT CAUSE", "ACTION")
     f.write(anal_output)
     for stage_tgt in stage_tgt_list:
         print("=== {} ===".format(stage_tgt))
@@ -477,8 +535,22 @@ if __name__ == "__main__":
             if stage != stage_tgt:
                 continue
             for sn, test_info_dict in sn_dict.items():
+                #print(sn)
                 for test_info,err_info_dict in test_info_dict.items():
+                    location = err_info_dict["LOCATION"]
+                    root_cause = err_info_dict["ROOT CAUSE"]
+                    action = err_info_dict["ACTION"]
+                    action = action.replace(",", ";")
+
                     err_code = err_info_dict["ERR_CODE"]
+                    try:
+                        corner = err_code.split(',')[1]
+                    except:
+                        corner = "NA"
+                    if corner == "":
+                        corner = "NA"
+                    err_code = err_code.split(',')[0]
+
                     if err_code == "LOG_NOT_FOUND":
                         mtp_id = "NA"
                         date = "NA"
@@ -489,7 +561,7 @@ if __name__ == "__main__":
                         mon = log_info_dict["MONTH"]
                         day = log_info_dict["DAY"]
                         date = fmt_date.format(year, mon, day)
-                    anal_output = fmt_anal_output.format(stage, date, mtp_id, sn, err_code)
+                    anal_output = fmt_anal_output.format(stage, date, mtp_id, sn, err_code, corner, location, root_cause, action)
                     f.write(anal_output)
 
         for stage, sn_dict in record_dict.items():
@@ -497,10 +569,23 @@ if __name__ == "__main__":
                 continue
             for sn, test_info_dict in sn_dict.items():
                 for test_info,err_info_dict in test_info_dict.items():
+                    location = err_info_dict["LOCATION"]
+                    root_cause = err_info_dict["ROOT CAUSE"]
+                    action = err_info_dict["ACTION"]
+                    action = action.replace(",", ";")
+
                     err_code = err_info_dict["ERR_CODE"]
+                    try:
+                        corner = err_code.split(',')[1]
+                    except:
+                        corner = "NA"
+                    if corner == "":
+                        corner = "NA"
+                    err_code = err_code.split(',')[0]
+
                     date = "NA"
                     mtp_id = "NA"
-                    anal_output = fmt_anal_output.format(stage, date, mtp_id, sn, err_code)
+                    anal_output = fmt_anal_output.format(stage, date, mtp_id, sn, err_code, corner, location, root_cause, action)
                     f.write(anal_output)
     f.close()
 
@@ -526,6 +611,15 @@ if __name__ == "__main__":
     #total_tested["SWI"]  = 905.0
     #total_tested["FST"]  = 944.0
 
+    #WK34 NAPLES25SWM
+    #total_tested["ICT"]  = 276.0
+    total_tested["DL"]   = 77.0
+    total_tested["P2C"]  = 114.0
+    #total_tested["4C-H"] = 1031.0
+    #total_tested["4C-L"] = 273.0
+    total_tested["SWI"]  = 557.0
+    #total_tested["FST"]  = 944.0
+
     #WK32 NAPLES100
     #total_tested["DL"]   = 276.0
     #total_tested["P2C"]  = 271.0
@@ -539,7 +633,7 @@ if __name__ == "__main__":
     #total_tested["P2C"]  = 271.0
     #total_tested["4C-H"] = 253.0
     #total_tested["4C-L"] = 237.0
-    total_tested["SWI"]  = 135.0
+    #total_tested["SWI"]  = 135.0
     #total_tested["FST"]  = 204.0
 
     stat_dict = dict()
@@ -598,6 +692,268 @@ if __name__ == "__main__":
             new_err_code = err_code.replace(",", "")
             stat_output = fmt_stat_output.format(new_err_code, num, stat_pct_dict[stage][err_code])
             f.write(stat_output)
+        f.write("\n")
         
     f.close()
 
+def get_mfg_log_list(card_type, sn, stage):
+    if sn == "":
+        print("SN can not be empty!")
+        return
+
+    if "4C" in stage:
+        path = log_root+card_type+"/4C/"+stage+"/"
+    else:
+        path = log_root+card_type+"/"+stage+"/"
+    #print(path)
+
+    dir_name = path+sn
+    #print(dir_name)
+    files_found = find_file('*gz', dir_name)
+
+    if files_found == []:
+        print(sn, "No log file found")
+        return
+
+    print("Following logs are located")
+    for file_fullname in files_found:
+        file_name = os.path.basename(file_fullname)
+        print(file_name.split(".")[0])
+    return
+
+def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, verbose):
+    cwd_top = os.getcwd()
+    try:
+        shutil.rmtree(cwd_top+'/test_logs')
+    except os.error:
+        print("no test_logs folder, will be created")
+
+    record_diag_dict = dict()
+    if "4C" in stage:
+        path = log_root+card_type+"/4C/"+stage+"/"
+    else:
+        path = log_root+card_type+"/"+stage+"/"
+    #print(path)
+
+    dir_name = path+sn
+    #print(dir_name)
+    files_found = find_file('*gz', dir_name)
+
+    if files_found == []:
+        print(sn, "No log file found")
+        return
+
+    if parse_mode != "SPEC":
+        log_time_list = []
+        for idx, file_fullname in enumerate(files_found):
+            dir_name1 = os.path.dirname(file_fullname)
+            file_name = os.path.basename(file_fullname)
+
+            m = re.compile("^([\D\d]+)_(MTP[S]*-\d+)_(\d\d\d\d)-(\d\d)-(\d\d)_(\d\d)-(\d\d)-(\d\d).*")
+            result = m.match(file_name)
+
+            log_file_dict = dict()
+            log_file_dict["STAGE"]  = result.group(1)
+            log_file_dict["MTP_NO"] = result.group(2)
+            log_file_dict["YEAR"]   = result.group(3)
+            log_file_dict["MONTH"]  = result.group(4)
+            log_file_dict["DAY"]    = result.group(5)
+            log_file_dict["HOUR"]   = result.group(6)
+            log_file_dict["MIN"]    = result.group(7)
+            log_file_dict["SEC"]    = result.group(8)
+            log_time = "{}-{}-{}-{}-{}".format(log_file_dict["YEAR"], log_file_dict["MONTH"],log_file_dict["DAY"],log_file_dict["HOUR"], log_file_dict["MIN"])
+            log_time_list.append(log_time)
+        if parse_mode == "FIRST":
+            tgt_log_time="9999-99-99-99-99"
+            tgt_log_time_idx=0
+            for i in range(len(log_time_list)):
+                if log_time_list[i] < tgt_log_time:
+                    tgt_log_time = log_time_list[i]
+                    tgt_log_time_idx = i
+        else:
+            tgt_log_time="0000-00-00-00-00"
+            tgt_log_time_idx=0
+            for i in range(len(log_time_list)):
+                if log_time_list[i] > tgt_log_time:
+                    tgt_log_time = log_time_list[i]
+                    tgt_log_time_idx = i
+
+        files_found = [files_found[tgt_log_time_idx]]
+        print(files_found)
+        parse_log_file(files_found[0], sn)
+
+def parse_log_file(file_fullname, sn):
+    cwd_top = os.getcwd()
+    dir_name1 = os.path.dirname(file_fullname)
+    file_name = os.path.basename(file_fullname)
+    #print(file_fullname)
+    
+    tgt_dir = cwd_top+"/test_logs"
+    if not os.path.exists(tgt_dir):
+        os.mkdir(tgt_dir)
+    os.chdir(cwd_top+"/test_logs")
+    
+    untar(file_fullname)
+    
+    dir_name = file_name.split(".")[0]
+
+    os.chdir(cwd_top+"/test_logs/"+dir_name)
+
+    if stage == "DL":
+        test_stage_log = "test_dl.log"
+    elif stage == "SWI":
+        test_stage_log = "test_swi.log"
+    else:
+        test_stage_log = "mtp_test.log"
+
+    # find slot number
+    fmt_pattern_fail = "^.*{}.*NIC_DIAG_REGRESSION_TEST_FAIL.*"
+    fmt_pattern_pass = "^.*{}.*NIC_DIAG_REGRESSION_TEST_PASS.*"
+    pattern_fail = fmt_pattern_fail.format(sn)
+    pattern_pass = fmt_pattern_pass.format(sn)
+    pass_flag = False
+    nic_info = dict()
+    err_info_dict = dict()
+    err_info = ""
+    for line in open(test_stage_log, 'r'):
+
+        # Somehow we do have first log as pass
+        if re.search(pattern_pass, line):
+            print(sn, "Passed!")
+            pass_flag = True
+            break
+
+        if re.search(pattern_fail, line):
+            m = re.compile("^.*(NIC-[\d]+) ([\D\d]+) ([\D\d]+) .*")
+            result = m.match(line)
+            if m:
+                nic_info["SLOT"]      = result.group(1)
+                nic_info["CARD_TYPE"] = result.group(2)
+                nic_info["SN"]        = result.group(3)
+                break
+
+    if pass_flag == False:
+        err_info = err_info + line
+
+        # Find top level failure info
+        for line in open(test_stage_log, 'r'):
+            if re.search("^.*ERR.*"+nic_info["SLOT"]+".*", line):
+                err_info = err_info + line
+
+        err_info_dict["ERR_INFO"] = err_info
+
+        err_code = get_err_code(err_info)
+        err_info_dict["ERR_CODE"] = err_code
+    else:
+        err_info_dict["ERR_INFO"] = err_info
+        err_info_dict["ERR_CODE"] = "PASS"
+        sys.exit(1)
+
+    print(err_code)
+
+    # L1 ESEC
+    if "L1_ESEC" in err_code:
+        for path in Path('./').rglob("cap_l1*"+sn+"*log"):
+            #print(path.parent)
+            #print(path.name)
+            l1_filename = str(path.parent)+'/'+str(path.name)
+
+        fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
+        #cmd = "grep 'ERROR ::' "+l1_filename + " | grep 'Puf allowed CAP_PUF_DPPM_PCT:15.8'"
+        cmd = fmt_cmd.format("L1_ESEC", l1_filename)
+        #print(cmd)
+        cmd_list = shlex.split(cmd)
+        result = subprocess.check_output(cmd_list)
+        result_str = result.decode("utf-8")
+        print(result_str)
+    elif "L1" in err_code:
+        for path in Path('./').rglob("cap_l1*"+sn+"*log"):
+            l1_filename = str(path.parent)+'/'+str(path.name)
+
+        fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
+        cmd = fmt_cmd.format("L1", l1_filename)
+        print(cmd)
+        cmd_list = shlex.split(cmd)
+        result = subprocess.check_output(cmd_list)
+        result_str = result.decode("utf-8")
+        print(result_str)
+
+    os.chdir(cwd_top)
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    group = parser.add_mutually_exclusive_group()
+
+    parser.add_argument("-fetch", "--fetch", help="Fetch log file", action='store_true')
+    parser.add_argument("-fy", "--first_yield", help="Parse first fail", action='store_true')
+    parser.add_argument("-verbose", "--verbose", help="Print all output", action='store_true')
+    parser.add_argument("-list", "--list", help="List all test logs under specific sn", action='store_true')
+    parser.add_argument("-parse", "--parse", help="Parse error of specific sn", action='store_true')
+    parser.add_argument("-d", "--delete", help="Delete logs after processing", action='store_true')
+
+    group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
+    parser.add_argument("-fn", "--filename", help="File name of yield report", type=str, default="")
+    parser.add_argument("-sl", "--stage_list", help="Stage list; e.g. 'DL,P2C'", type=str, default="")
+    parser.add_argument("-prefix", "--prefix", help="prefix", type=str, default="")
+    parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
+
+    # Log parser
+    parser.add_argument("-pmode", "--parse_mode", help="Parse mode", type=str, default="list")
+    parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
+    parser.add_argument("-card_type", "--card_type", help="Card_type", type=str, default="")
+    parser.add_argument("-stage", "--stage", help="Stage", type=str, default="")
+    parser.add_argument("-tgt_log", "--tgt_log", help="Target log", type=str, default="")
+
+    args = parser.parse_args()
+
+    filename = args.filename
+    prefix = args.prefix
+    log_root = args.logroot
+    verbose = args.verbose
+
+    sn = args.sn.upper()
+    stage = args.stage.upper()
+    card_type = args.card_type.upper()
+    tgt_log = args.tgt_log
+    parse_mode = args.parse_mode.upper()
+
+    if filename != "":
+        parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
+        sys.exit(0)
+
+    if args.parse == True:
+        if parse_mode == "LIST":
+            get_mfg_log_list(card_type, sn, stage)
+            sys.exit(0)
+
+        #if tgt_log == "":
+        #    print("Target log can not be empty!")
+        #    sys.exit(0)
+
+        #if "4C" in stage:
+        #    path = log_root+card_type+"/4C/"+stage+"/"
+        #else:
+        #    path = log_root+card_type+"/"+stage+"/"
+
+        #cwd_top = os.getcwd()
+        #dir_name = path+sn
+        ##print(dir_name)
+        #files_found = find_file(tgt_log+'.tar.gz', dir_name)
+
+        #if files_found == []:
+        #    print(sn, "No log file found")
+        #    sys.exit(0)
+        #if len(files_found) != 1:
+        #    print("ERROR: more than one target log found!")
+        #    sys.exit(0)
+
+        #stage_err_info_dict = dict()
+
+        #file_fullname = files_found[0]
+
+        #parse_log_file(file_fullname, sn)
+        #os.chdir(cwd_top)
+        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, verbose)
