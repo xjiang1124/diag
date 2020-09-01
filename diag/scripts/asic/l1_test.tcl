@@ -32,18 +32,6 @@ set G_USE_ZMQ $use_zmq
 set G_ZMQ_CONN $zmq_conn
 set G_SLOT $slot
 
-cd $ASIC_SRC/ip/cosim/tclsh
-if {$MTP_TYPE == "MTP_ELBA"} {
-    puts "Elba MTP"
-    set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 $use_zmq 127.0.0.1 0 1 1 0 0 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
-    #set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 0" 
-    source .tclrc.diag.elb.new
-} else {
-    puts "Capri MTP"
-    set l1_cmd "cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn"
-    source .tclrc.diag.new
-}
-
 set uut "UUT_$slot"
 set card_type $::env($uut)
 if { $card_type == "NAPLES25"    ||
@@ -57,6 +45,18 @@ if { $card_type == "NAPLES25"    ||
 
 puts "card type: $card_type; UUT: $uut"
 puts "sn: $sn; slot: $slot"
+
+cd $ASIC_SRC/ip/cosim/tclsh
+if {$MTP_TYPE == "MTP_ELBA"} {
+    puts "Elba MTP"
+    set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 $use_zmq 127.0.0.1 0 1 1 0 0 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+    #set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 0" 
+    source .tclrc.diag.elb.new
+} else {
+    puts "Capri MTP"
+    set l1_cmd "cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn"
+    source .tclrc.diag.new
+}
 
 # esec_l1 reboot wati time
 set ::CAP_GPIO3_PWR_OFF_DUR 5000
