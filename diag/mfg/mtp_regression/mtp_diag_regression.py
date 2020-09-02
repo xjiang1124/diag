@@ -611,6 +611,8 @@ def main():
     vomero2_test_cfg_file = "config/vomero2_mtp_test_cfg.yaml"
     naples25swm_test_cfg_file = "config/naples25swm_mtp_test_cfg.yaml"
     naples25ocp_test_cfg_file = "config/naples25ocp_mtp_test_cfg.yaml"
+    naples25swmdell_test_cfg_file = "config/naples25swmdell_mtp_test_cfg.yaml"
+    
     naples100_test_db = diag_db(corner, naples100_test_cfg_file)
     naples100ibm_test_db = diag_db(corner, naples100ibm_test_cfg_file)
     naples100hpe_test_db = diag_db(corner, naples100hpe_test_cfg_file)
@@ -619,7 +621,8 @@ def main():
     vomero_test_db = diag_db(corner, vomero_test_cfg_file)
     vomero2_test_db = diag_db(corner, vomero2_test_cfg_file)
     naples25swm_test_db = diag_db(corner, naples25swm_test_cfg_file)
-    naples25ocp_test_db = diag_db(corner, naples25ocp_test_cfg_file)                                                                
+    naples25ocp_test_db = diag_db(corner, naples25ocp_test_cfg_file)
+    naples25swmdell_test_db = diag_db(corner, naples25swmdell_test_cfg_file)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -662,6 +665,7 @@ def main():
     vomero2_para_test_list = vomero2_test_db.get_diag_para_test_list()
     vomero2_pre_test_check_list = vomero2_test_db.get_pre_diag_test_intf_list()
     vomero2_post_test_check_list = vomero2_test_db.get_post_diag_test_intf_list()
+
     naples25swm_seq_test_list = naples25swm_test_db.get_diag_seq_test_list()
     naples25swm_mtp_para_test_list = naples25swm_test_db.get_mtp_para_test_list()
     naples25swm_para_test_list = naples25swm_test_db.get_diag_para_test_list()
@@ -673,6 +677,14 @@ def main():
     naples25ocp_para_test_list = naples25ocp_test_db.get_diag_para_test_list()
     naples25ocp_pre_test_check_list = naples25ocp_test_db.get_pre_diag_test_intf_list()
     naples25ocp_post_test_check_list = naples25ocp_test_db.get_post_diag_test_intf_list()
+
+    naples25swmdell_seq_test_list = naples25swmdell_test_db.get_diag_seq_test_list()
+    naples25swmdell_mtp_para_test_list = naples25swmdell_test_db.get_mtp_para_test_list()
+    naples25swmdell_para_test_list = naples25swmdell_test_db.get_diag_para_test_list()
+    naples25swmdell_pre_test_check_list = naples25swmdell_test_db.get_pre_diag_test_intf_list()
+    naples25swmdell_post_test_check_list = naples25swmdell_test_db.get_post_diag_test_intf_list()
+
+
     # logfiles
     open_file_track_list = list()
 
@@ -735,6 +747,7 @@ def main():
     vomero2_nic_list = list()
     naples25swm_nic_list = list()
     naples25ocp_nic_list = list()
+    naples25swmdell_nic_list = list()
     pass_nic_list = list()
     fail_nic_list = list()
 
@@ -766,23 +779,21 @@ def main():
                 naples25swm_nic_list.append(slot)
                 pass_nic_list.append(slot)
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
-                print("Slot-" + str(slot) + "Naples OCP")
                 naples25ocp_nic_list.append(slot)                
+                pass_nic_list.append(slot)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWMDELL:
+                naples25swmdell_nic_list.append(slot)
                 pass_nic_list.append(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
     
-    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP]
-    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list]
-
+    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL]
+    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list]
 
     # check if MTP support present NIC
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-        #print("nic_type: " + nic_type)
-        #print("nic_list:")
-        #print(nic_list)
         if nic_type == NIC_Type.NAPLES100:
             mtp_exp_capability = 0x1
             test_db = naples100_test_db
@@ -820,6 +831,9 @@ def main():
         elif nic_type == NIC_Type.NAPLES25OCP:
             mtp_exp_capability = 0x2
             test_db = naples25ocp_test_db
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            mtp_exp_capability = 0x2
+            test_db = naples25swmdell_test_db
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
             continue
@@ -917,6 +931,8 @@ def main():
                 pre_test_check_list = naples25swm_pre_test_check_list
             elif nic_type == NIC_Type.NAPLES25OCP:
                 pre_test_check_list = naples25ocp_pre_test_check_list
+            elif nic_type == NIC_Type.NAPLES25SWMDELL:
+                pre_test_check_list = naples25swmdell_pre_test_check_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -967,6 +983,9 @@ def main():
             elif nic_type == NIC_Type.NAPLES25OCP:
                 nic_para_test_list = naples25ocp_para_test_list[:]
                 test_db = naples25ocp_test_db
+            elif nic_type == NIC_Type.NAPLES25SWMDELL:
+                nic_para_test_list = naples25swmdell_para_test_list[:]
+                test_db = naples25swmdell_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -1035,6 +1054,8 @@ def main():
                 mtp_para_test_list = naples25swm_mtp_para_test_list
             elif nic_type == NIC_Type.NAPLES25OCP:
                 mtp_para_test_list = naples25ocp_mtp_para_test_list
+            elif nic_type == NIC_Type.NAPLES25SWMDELL:
+                mtp_para_test_list = naples25swmdell_mtp_para_test_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
@@ -1085,6 +1106,9 @@ def main():
             elif nic_type == NIC_Type.NAPLES25OCP:
                 nic_seq_test_list = naples25ocp_seq_test_list[:]
                 test_db = naples25ocp_test_db
+            elif nic_type == NIC_Type.NAPLES25SWMDELL:
+                nic_seq_test_list = naples25swmdell_seq_test_list[:]
+                test_db = naples25swmdell_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue

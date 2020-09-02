@@ -148,6 +148,12 @@ def main():
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25SWMDELL_SEC_CPLD_IMAGE)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP)
+            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL)
+
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)

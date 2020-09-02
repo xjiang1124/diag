@@ -50,7 +50,7 @@ DSP:
                 VALUE: 1
                 INFO: Iterations for the test
             timeout:
-                VALUE: 30
+                VALUE: 60
                 INFO: Test timeout setting 
             dshid:
                 VALUE: 0

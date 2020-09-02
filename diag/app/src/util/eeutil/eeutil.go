@@ -49,6 +49,7 @@ func eepromTlbInit(uut string) {
                 eeprom.EepromExtTbl = eeprom.HpeTblOCPext
             }
             if eeprom.DellOcp == 1 {
+                eeprom.CustType = "DELLOCP"
                 eeprom.EepromTbl = eeprom.DellTblOcp
             }
             if eeprom.HpeAlom == true {
@@ -88,6 +89,7 @@ func eepromTlbInit(uut string) {
             eeprom.EepromExtTbl = eeprom.HpeTblOCPext
         }
         if eeprom.DellOcp == 1 {
+            eeprom.CustType = "DELLOCP"
             eeprom.EepromTbl = eeprom.DellTblOcp
         }
         if eeprom.HpeAlom == true {
@@ -108,7 +110,6 @@ func eepromTlbInit(uut string) {
         if (cardType == "NAPLES25SWMDELL") {
            eeprom.CustType = "DELLSWM"
            eeprom.EepromTbl = eeprom.DellTblSWM
-           fmt.Printf(" ADD DEBUG: DELL SWM TABLE\n")
         }
     }
 

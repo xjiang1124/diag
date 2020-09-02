@@ -445,6 +445,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     set card_type [cap_get_card_type]
     if {$card_type == "NAPLES25" ||
         $card_type == "NAPLES25SWM" ||
+        $card_type == "NAPLES25SWMDELL" ||
         $card_type == "NAPLES25OCP"} {
         set freq 417
     } else {
@@ -518,6 +519,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
     set card_type [cap_get_card_type]
     if {$card_type == "NAPLES25" ||
         $card_type == "NAPLES25SWM" ||
+        $card_type == "NAPLES25SWMDELL" ||
         $card_type == "NAPLES25OCP"} {
         set freq 417
     } else {

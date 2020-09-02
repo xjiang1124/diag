@@ -232,7 +232,7 @@ func MdioSMIRead(phyAddr uint8, regAddr uint8) (value uint16, err int) {
 	var data16 uint16 = 0
     err = errType.SUCCESS
 
-	data16 = SMI_BUSY | SMI_MODE | SMI_READ | (uint16(phyAddr & 0x1F) << SMI_DEV_SHIFT) | uint16(regAddr & 0x1F)
+    data16 = SMI_BUSY | SMI_MODE | SMI_READ | (uint16(phyAddr & 0x1F) << SMI_DEV_SHIFT) | uint16(regAddr & 0x1F)
 
     err = MdioWrite(SMI_PHY_ADDR, SMI_CMD_REG, data16)
 
@@ -240,12 +240,12 @@ func MdioSMIRead(phyAddr uint8, regAddr uint8) (value uint16, err int) {
 
     value, err = MdioRead(uint8(SMI_PHY_ADDR), uint8(SMI_DATA_REG))
 
-	return
+    return
 }
 
 
 func MdioSMIWrite(phyAddr uint8, regAddr uint8, WRdata uint16) (err int) {
-	var data16 uint16 = 0
+    var data16 uint16 = 0
 
     err = MdioWrite(SMI_PHY_ADDR, SMI_DATA_REG, WRdata)
 
@@ -254,7 +254,7 @@ func MdioSMIWrite(phyAddr uint8, regAddr uint8, WRdata uint16) (err int) {
     data16 = SMI_BUSY | SMI_MODE | SMI_WRITE | (uint16(phyAddr & 0x1F) << SMI_DEV_SHIFT) | uint16(regAddr & 0x1F)
     err = MdioWrite(SMI_PHY_ADDR, SMI_CMD_REG, data16)
 
-	return
+    return
 }
 
 

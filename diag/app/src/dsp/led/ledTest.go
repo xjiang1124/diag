@@ -1,3 +1,9 @@
+/*************** 
+  LED TEST... covers
+  SYS LED (can be amber of gree)
+  2 PORT LED (for sfp-28 / qsfp)
+  2 LED's ON MGMT PORT
+******************/
 package main
 
 import (
@@ -21,11 +27,14 @@ import (
 const MVSW_PORT3    uint8 = 0x13
 
 const MVSW_SW_LED_CTRL_REG	        uint8  = 0x16
-const MVSW_SW_LED_CTRL_DATA		    uint16 = (1 << 0)
+const MVSW_SW_LED_CTRL_DATA_SHFT	uint16 = 0
 const MVSW_SW_LED_CTRL_DATA_MASK	uint16 = 0x2FF
-const MVSW_SW_LED_CTRL_PTR		    uint16 = (1 << 12)
+const MVSW_SW_LED_CTRL_PTR_SHFT		uint16 = 12
 const MVSW_SW_LED_CTRL_PTR_MASK		uint16 = 0x7
-const MVSW_SW_LED_CTRL_UPDATE	    uint16 = (1 << 15)
+const MVSW_SW_LED_CTRL_PTR_LED0         uint16 = 0x00
+const MVSW_SW_LED_CTRL_PTR_STRETCH      uint16 = (0x06 << MVSW_SW_LED_CTRL_PTR_SHFT)
+const MVSW_SW_LED_CTRL_PTR_CONTROL      uint16 = (0x07 << MVSW_SW_LED_CTRL_PTR_SHFT)
+const MVSW_SW_LED_CTRL_UPDATE	        uint16 = (1 << 15)
 const MVSW_SW_LED_CTRL_UPDATE_MASK	uint16 = 0x1
 
 //LED CTRL DATA BITS
@@ -39,16 +48,16 @@ const MVSW_SW_LED_CTRL_FORCE_ON     uint16  = 0xF
 
 
 const (
-	LED_ALL_GRN = iota
-	LED_ALL_AMB
-	LED_ALL_BLK_GRN
+    LED_ALL_GRN = iota  //iota = 0
+    LED_ALL_AMB
+    LED_ALL_BLK_GRN
     LED_ALL_BLK_AMB
     LED_ALL_OFF
 )
 
 
 func SetLEDs(port_ctrl uint32, port_rate uint32 , sys_ctrl uint32, led_state uint32) (error int) {
-    var pc_val, pr_val, sc_val uint32 = 0, 0, 0
+    var pc_val, pr_val, mvsw_led_reg_val uint32 = 0, 0, 0
     var err int
 
     if led_state == LED_ALL_GRN || led_state == LED_ALL_AMB || led_state == LED_ALL_OFF {
@@ -66,31 +75,82 @@ func SetLEDs(port_ctrl uint32, port_rate uint32 , sys_ctrl uint32, led_state uin
         }
     }
 
+    /*
+    # ./cpld -mdiowr 0x16 0x13 0x6000
+    # ./cpld -mdiord 0x16 0x13
+    0x6012
+    #
+    #
+    #
+    # ./cpld -mdiowr 0x16 0x13 0xE712
+    #
+    # ./cpld -mdiowr 0x16 0x13 0x6000
+    # ./cpld -mdiord 0x16 0x13
+    0x6712
+    #
+    */
+    /* WR LED CTRL.  SET STRETCH BITS SO WE CAN READ THAT BLOCK */
+    mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_PTR_STRETCH)
+dcli.Printf("i", " LED: MVSW WR Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
+    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), mvsw_led_reg_val, uint32(MVSW_PORT3)) 
+    if err != 0 {
+        dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
+        return errType.FAIL
+    }
+
+    /* RD LED CTRL TO READ DEFAULT STRETCH SETTINGS */
+    err = spi.MvlRegRead(uint32(MVSW_SW_LED_CTRL_REG), &mvsw_led_reg_val, uint32(MVSW_PORT3))
+    if err != 0 {
+        dcli.Println("e", " ERROR: MARVELL SWITCH READ FAILED" )
+        return errType.FAIL
+    } 
+dcli.Printf("i", " LED: MVSW RD Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
+     
+
+    mvsw_led_reg_val = uint32((mvsw_led_reg_val & uint32(MVSW_SW_LED_CTRL_DATA_MASK)) | 
+                                                      uint32(MVSW_SW_LED_CTRL_UPDATE) | 
+                                                uint32(MVSW_SW_LED_CTRL_PTR_STRETCH)) |
+                                                                              0x0700   //DATA FOR STRETCH PAGE: SKIP COLUMN .. SET TO ALL 1's
+dcli.Printf("i", " LED: MVSW WR Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
+    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), mvsw_led_reg_val, uint32(MVSW_PORT3)) 
+    if err != 0 {
+        dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
+        return errType.FAIL
+    }
+
+
+    err = spi.MvlRegRead(uint32(MVSW_SW_LED_CTRL_REG), &mvsw_led_reg_val, uint32(MVSW_PORT3))
+    if err != 0 {
+        dcli.Println("e", " ERROR: MARVELL SWITCH READ FAILED" )
+        return errType.FAIL
+    } 
+dcli.Printf("i", " LED: MVSW RD Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
+
     switch led_state {
     	case LED_ALL_GRN:
-    		dcli.Println("i", " LED: Setting Solid Green" )
+    	    dcli.Println("i", " LED: Setting Solid Green" )
             pc_val = 0x05
             pr_val = 0x04
-            sc_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED1_SHIFT))
     	case LED_ALL_AMB:
-    		dcli.Println("i", " LED: Setting Solid Amber" )
+    	    dcli.Println("i", " LED: Setting Solid Amber" )
             pc_val = 0x0A
             pr_val = 0x20
-            sc_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED0_SHIFT))
+            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED0_SHIFT))
         case LED_ALL_BLK_GRN:
             pc_val = 0x05
             pr_val = 0x07
-            sc_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED1_SHIFT))
         case LED_ALL_BLK_AMB:
-    		dcli.Println("i", " LED: Setting Blinking Amber" )
+            dcli.Println("i", " LED: Setting Blinking Amber" )
             pc_val = 0x0A
             pr_val = 0x38
-            sc_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED0_SHIFT))
+            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED0_SHIFT))
         case LED_ALL_OFF:
-    		dcli.Println("i", " LED: Setting All LED to OFF" )
+            dcli.Println("i", " LED: Setting All LED to OFF" )
             pc_val = 0x00
             pr_val = 0x00
-            sc_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
+            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
                            (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED0_SHIFT) | 
                            (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED1_SHIFT))
     	default:
@@ -108,13 +168,11 @@ func SetLEDs(port_ctrl uint32, port_rate uint32 , sys_ctrl uint32, led_state uin
         dcli.Println("e", " ERROR: CPLD WRITE FAILED" )
         return errType.FAIL
     }
-    err = spi.MvlSmiRegWrite(uint32(MVSW_SW_LED_CTRL_REG), sc_val, uint32(MVSW_PORT3)) 
+    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), mvsw_led_reg_val, uint32(MVSW_PORT3)) 
     if err != 0 {
         dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
         return errType.FAIL
     }
-    misc.SleepInSec(3)
-
     return errType.SUCCESS
 }
 
@@ -146,12 +204,11 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_rate = naples25Cpld.REG_LED_PORT_RATE
         *sys_ctrl = naples25Cpld.REG_LED_SYS_CTRL
     } else if (cardType == "NAPLES25OCP") {
-        //dcli.Println("f", "Unsupported cardType:", cardType)
         *port_ctrl = naples25swmCpld.REG_LED_PORT_CTRL
         *port_rate = naples25swmCpld.REG_LED_PORT_RATE
         *sys_ctrl = naples25swmCpld.REG_LED_SYS_CTRL
         //return errType.FAIL
-    } else if (cardType == "NAPLES25SWM") {
+    } else if (cardType == "NAPLES25SWM" || cardType == "NAPLES25SWMDELL") {
         *port_ctrl = naples25swmCpld.REG_LED_PORT_CTRL
         *port_rate = naples25swmCpld.REG_LED_PORT_RATE
         *sys_ctrl = naples25swmCpld.REG_LED_SYS_CTRL
@@ -181,26 +238,40 @@ func LedLedHdl(argList []string) {
         goto endLedTest
     }
 
+    //ALL GREEN
     err = SetLEDs(port_ctrl, port_rate , sys_ctrl, LED_ALL_GRN)
     if err != 0 {
         goto endLedTest
     }
+    misc.SleepInSec(5)
+
+    //ALL AMBER
     err = SetLEDs(port_ctrl, port_rate , sys_ctrl, LED_ALL_AMB)
     if err != 0 {
         goto endLedTest
     }
+    misc.SleepInSec(5)
+
+    //ALL OFF
     err = SetLEDs(port_ctrl, port_rate , sys_ctrl, LED_ALL_OFF)
     if err != 0 {
         goto endLedTest
     }
+    misc.SleepInSec(5)
+
+    //ALL BLINKING GREEN
     err = SetLEDs(port_ctrl, port_rate , sys_ctrl, LED_ALL_BLK_GRN)
     if err != 0 {
         goto endLedTest
     }
+    misc.SleepInSec(5)
+
+    //ALL BLINKING AMBER
     err = SetLEDs(port_ctrl, port_rate , sys_ctrl, LED_ALL_BLK_AMB)
     if err != 0 {
         goto endLedTest
     }
+    misc.SleepInSec(5)
 
     /* SFP OFF, SYS SOLID AMBER, EXTERNAL MGMT PORT BACK TO NORMAL */
     err = SetLEDs(port_ctrl, port_rate , sys_ctrl, LED_ALL_OFF)
@@ -215,7 +286,7 @@ func LedLedHdl(argList []string) {
     data = uint32(MVSW_SW_LED_CTRL_UPDATE | 
                  (MVSW_SW_LED_CTRL_SET_ACT << MVSW_SW_LED_CTRL_LED0_SHIFT) |
                  (MVSW_SW_LED_CTRL_GIG_LINK << MVSW_SW_LED_CTRL_LED1_SHIFT))
-    err = spi.MvlSmiRegWrite(uint32(MVSW_SW_LED_CTRL_REG), data, uint32(MVSW_PORT3)) 
+    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), data, uint32(MVSW_PORT3)) 
     if err != 0 {
         dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
         goto endLedTest

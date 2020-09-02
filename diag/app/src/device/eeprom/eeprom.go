@@ -627,7 +627,7 @@ var DellTblSWM = []entry {
     entry{"MAC Address Base",                       INT8,       123,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
         0x00, 0x00}},
     entry{"Assembly Number Type/Length",            INT8,       129,       1,    []byte{0xCD}},
-    entry{"Assembly Number",                        STRING,     130,      13,    []byte{36, 0x38, 0x2d, 0x30, 
+    entry{"Assembly Number",                        STRING,     130,      13,    []byte{0x36, 0x38, 0x2d, 0x30, 
         0x30, 0x31, 0x34, 0x2d, 0x30, 0x31, 0x20, 0x30, 0x30}},
     entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,       144,       7,    []byte{0x00, 0x00, 0x00, 0x00,
@@ -877,14 +877,14 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "DELLSWM" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "DELLSWM" && CustType != "DELLOCP" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" || CustType == "DELLOCP" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1031,17 +1031,17 @@ func updateIntChk() () {
         }
         //Calculate multi-record checksum
         for _, entry := range(EepromTbl) {
-            if (entry.Offset > 260) && (entry.Offset < 309) {
+            if (entry.Offset > 316) && (entry.Offset < 365) {
                 mraChk[0] += calcSum(entry)
             }
-            if (entry.Offset > 313) && (entry.Offset < 339) {
+            if (entry.Offset > 369) && (entry.Offset < 395) {
 
                 mraChk[1] += calcSum(entry)
             }
-            if (entry.Offset > 343) && (entry.Offset < 359) {
+            if (entry.Offset > 399) && (entry.Offset < 415) {
                 mraChk[2] += calcSum(entry)
             }
-            if (entry.Offset > 363) && (entry.Offset < 373) {
+            if (entry.Offset > 419) && (entry.Offset < 430) {
                 mraChk[3] += calcSum(entry)
             }
         }
@@ -1049,19 +1049,19 @@ func updateIntChk() () {
 
         //Calculate multi-record header checksum
         for _, entry := range(EepromTbl) {
-            if (entry.Offset > 255) && (entry.Offset < 260) {
+            if (entry.Offset > 311) && (entry.Offset < 316) {
                 mraHdrChk[0] += calcSum(entry)
                 //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[0])
             }
-            if (entry.Offset > 308) && (entry.Offset < 313) {
+            if (entry.Offset > 364) && (entry.Offset < 369) {
                 mraHdrChk[1] += calcSum(entry)
                 //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[1])
             }
-            if (entry.Offset > 338) && (entry.Offset < 343) {
+            if (entry.Offset > 394) && (entry.Offset < 399) {
                 mraHdrChk[2] += calcSum(entry)
                 //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[2])
             }
-            if (entry.Offset > 358) && (entry.Offset < 363) {
+            if (entry.Offset > 414) && (entry.Offset < 419) {
                 mraHdrChk[3] += calcSum(entry)
                 //fmt.Printf(" MRH CSUM Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[2])
             }
@@ -1209,7 +1209,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "DELLSWM" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "DELLSWM" && CustType != "DELLOCP" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1217,7 +1217,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 }
             }
 
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" || CustType == "DELLOCP" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1326,7 +1326,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" ) {
+        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM"  || CustType == "DELLOCP" ) {
             copy(an_ptr, pn)
         } else {
             copy(pn_ptr, pn)
@@ -1378,7 +1378,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
 
     data := make([]byte, 3)
     for _, entry := range(EepromTbl) {
-        if CustType != "IBM" && CustType != "DELLSWM" {
+        if CustType != "IBM" && CustType != "DELLSWM" && CustType != "DELLOCP" {
             if entry.Name == "Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1386,7 +1386,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             }
         }
 
-        if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" {
+        if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" || CustType == "DELLOCP" {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)

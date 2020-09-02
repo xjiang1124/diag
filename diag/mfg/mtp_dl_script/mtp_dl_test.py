@@ -193,6 +193,8 @@ def main():
     naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
     naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
     naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
+    naples25swmdell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
+    naples25swmdell_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL
                                                                                                         
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
@@ -314,6 +316,10 @@ def main():
             mtp_exp_capability = 0x2
             cpld_img_file = naples25ocp_cpld_img_file
             qspi_img_file = naples25ocp_qspi_img_file
+        elif card_type == NIC_Type.NAPLES25SWMDELL:
+            mtp_exp_capability = 0x2
+            cpld_img_file = naples25swmdell_cpld_img_file
+            qspi_img_file = naples25swmdell_qspi_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -404,6 +410,9 @@ def main():
         elif card_type == NIC_Type.NAPLES25OCP:
             qspi_img_file = naples25ocp_qspi_img_file
             cpld_img_file = naples25ocp_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWMDELL:
+            qspi_img_file = naples25swmdell_qspi_img_file
+            cpld_img_file = naples25swmdell_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue

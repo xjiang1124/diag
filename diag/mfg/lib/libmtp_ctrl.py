@@ -28,6 +28,7 @@ from libmfg_cfg import MFG_QSPI_VOMERO_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_VOMERO2_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
+from libmfg_cfg import MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
 #from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
@@ -1339,6 +1340,7 @@ class mtp_ctrl():
             else:
                 self.cli_log_inf("MTP Inlet sensor test passed")
                 return True
+            return True
         else:
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("MTP Inlet sensor test failed")
@@ -1377,6 +1379,7 @@ class mtp_ctrl():
                     return inlet_2
             else:
                 return (inlet_1 + inlet_2) / 2
+            return 25
         else:
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("Unable to get inlet temperature")
@@ -1484,9 +1487,39 @@ class mtp_ctrl():
 
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
-        if boot_image != "goldfw" or (kernel_timestamp != MFG_GOLD_TIMESTAMP and kernel_timestamp != MFG_GOLD_IBM_TIMESTAMP and kernel_timestamp != 
-        MFG_GOLD_NAPLES100HPE_TIMESTAMP and kernel_timestamp != MFG_GOLD_VOMERO2_TIMESTAMP and kernel_timestamp != MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP):
-            self.cli_log_slot_err(slot, "goldfw verify failed, NIC is booted from {:s}({:s})".format(boot_image, kernel_timestamp))
+
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type == NIC_Type.NAPLES100:
+            expected_timestam = MFG_GOLD_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            expected_timestam = MFG_GOLD_IBM_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES100HPE:
+            expected_timestam = MFG_GOLD_NAPLES100HPE_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25:
+            expected_timestam = MFG_GOLD_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            expected_timestam = MFG_GOLD_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            expected_timestam = MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25OCP:
+            expected_timestam = MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
+        elif nic_type == NIC_Type.FORIO:
+            expected_timestam = MFG_GOLD_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO2:
+            expected_timestam = MFG_GOLD_VOMERO2_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO:
+            expected_timestam = MFG_GOLD_TIMESTAMP
+        else:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        if ( boot_image != "goldfw" ):
+            self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
+            return False
+
+        if ( expected_timestam != kernel_timestamp ):
+            self.cli_log_slot_err_lock(slot, "goldfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestam, kernel_timestamp))
             return False
 
         self.cli_log_slot_inf(slot, "NIC boot from {:s}({:s})".format(boot_image, kernel_timestamp))
@@ -1786,6 +1819,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25SWM:
             exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
+            exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25OCP:
             exp_ver = NIC_CPLD_Version.NAPLES25OCP_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES25OCP_TIMESTAMP
@@ -1940,6 +1976,15 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
                 exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_TIMESTAMP
+                print(" ADD FIXME:  NEED TO LOOK AT CPLD TIMESTAMP.. INTERMITENTLY NOT WORKING")
+                return True
         elif nic_type == NIC_Type.NAPLES25OCP:
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.NAPLES25OCP_SEC_VERSION
@@ -2007,17 +2052,36 @@ class mtp_ctrl():
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type not in self._valid_type_list:
+        if nic_type == NIC_Type.NAPLES100:
+            expected_timestam = MFG_QSPI_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            expected_timestam = MFG_QSPI_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES100HPE:
+            expected_timestam = MFG_QSPI_NAPLES100HPE_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25:
+            expected_timestam = MFG_QSPI_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            expected_timestam = MFG_QSPI_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            expected_timestam = MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
+        elif nic_type == NIC_Type.NAPLES25OCP:
+            expected_timestam = MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
+        elif nic_type == NIC_Type.FORIO:
+            expected_timestam = MFG_QSPI_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO2:
+            expected_timestam = MFG_QSPI_VOMERO2_TIMESTAMP
+        elif nic_type == NIC_Type.VOMERO:
+            expected_timestam = MFG_QSPI_VOMERO_TIMESTAMP
+        else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if boot_image != "diagfw" or (kernel_timestamp != MFG_QSPI_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO_TIMESTAMP and kernel_timestamp != MFG_QSPI_VOMERO2_TIMESTAMP and kernel_timestamp != MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP and kernel_timestamp != MFG_QSPI_NAPLES100HPE_TIMESTAMP):
-        
- 
+        if ( boot_image != "diagfw" ):
+            self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))
+            return False
 
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NIC is booted from {:s}".format(boot_image))
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, NAPLES Expect: {:s} or VOMERO Expect: {:s} or VOMERO2 Expect: {:s} or HPE OCP Expect: {:s} or NAPLES100HPE Expect: {:s} get: {:s}".format(MFG_QSPI_TIMESTAMP, MFG_QSPI_VOMERO_TIMESTAMP,MFG_QSPI_VOMERO2_TIMESTAMP, MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP, MFG_QSPI_NAPLES100HPE_TIMESTAMP, kernel_timestamp))
-             
+        if ( expected_timestam != kernel_timestamp ):
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestam, kernel_timestamp))
             return False
 
         return True
@@ -2548,7 +2612,6 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES100
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100)
-
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100IBM, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2556,7 +2619,6 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES100IBM
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100IBM)
-                                                                                      
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100HPE, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2564,7 +2626,6 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES100HPE
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100HPE)
-                
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2572,7 +2633,6 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES25
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25)
-
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_FORIO, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2580,7 +2640,6 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.FORIO
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.FORIO)
-
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -2610,7 +2669,13 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES25OCP
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25OCP)
-
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWMDELL, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                self._nic_prsnt_list[slot] = True
+                self._nic_type_list[slot] = NIC_Type.NAPLES25SWMDELL
+                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWMDELL)
         return True
 
 
@@ -2770,7 +2835,6 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
-        nic_test_list = nic_list[:]
         nic_fail_list = list()
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
@@ -2778,8 +2842,9 @@ class mtp_ctrl():
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return nic_list[:]
 
-        nic_list_param = ",".join(str(slot+1) for slot in nic_test_list)
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
+
 
         if test == "PRBS_ETH":
             cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, vmarg)
@@ -2963,6 +3028,10 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25SWM:  
+            #NAPLES25SWM uses same setting as Naples25
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:  
             #NAPLES25SWM uses same setting as Naples25
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)

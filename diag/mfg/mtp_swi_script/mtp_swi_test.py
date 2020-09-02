@@ -173,6 +173,7 @@ def main():
     vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
     naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
     naples25ocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE
+    naples25swmdell_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_SEC_CPLD_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
@@ -233,7 +234,10 @@ def main():
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM
         elif card_type == NIC_Type.NAPLES25OCP:
             sec_cpld_img_file = naples25ocp_sec_cpld_img_file
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP 
+        elif card_type == NIC_Type.NAPLES25SWMDELL:
+            sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL 
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
@@ -341,6 +345,8 @@ def main():
             sec_cpld_img_file = naples25swm_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25OCP:
             sec_cpld_img_file = naples25ocp_sec_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWMDELL:
+            sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue

@@ -13,6 +13,8 @@ source /etc/profile
 PATH=$PATH:/data/nic_util/
 PATH=$PATH:/data/nic_arm/
 
+CORECLK417MHZ=0
+
 cpld_id="$(cpld -r 0x80)"
 echo "P0: cpld_id $cpld_id"
 cpld_id="${cpld_id}"
@@ -38,9 +40,11 @@ then
 elif [[ $cpld_id == "0x17" ]]
 then
     type="NAPLES25SWM"
+    CORECLK417MHZ=1
 elif [[ $cpld_id == "0x19" ]]
 then
     type="NAPLES25OCP"
+    CORECLK417MHZ=1
 elif [[ $cpld_id == "0x1c" ]]
 then
     type="NAPLES100IBM"
@@ -50,6 +54,10 @@ then
 elif [[ $cpld_id == "0x1f" ]]
 then
     type="NAPLES100HPE"
+elif [[ $cpld_id == "0x20" ]]
+then
+    type="NAPLES25SWMDELL"
+    CORECLK417MHZ=1
 elif [[ $cpld_id == "0x40" ]]
 then
     type="BIODONA_D4"
@@ -63,5 +71,16 @@ echo "export CARD_TYPE=\"$type\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
 
+if [[ $CORECLK417MHZ -ne 1 ]]
+then
+    echo "nic_config done"
+    exit $?
+fi
 
+
+echo "Setting Core Clock to 417Mhz"
+/platform/bin/capview << EOF
+secure on
+fset ms_cfg_clk__S pll_select_core=0x5
+EOF
 echo "nic_config done"

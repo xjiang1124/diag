@@ -42,6 +42,12 @@ class NIC_CPLD_Version:
     NAPLES25SWM_TIMESTAMP = "04-20"
     NAPLES25SWM_SEC_VERSION = "0x89"
     NAPLES25SWM_SEC_TIMESTAMP = "04-20"
+
+    NAPLES25SWMDELL_VERSION = "0x2"
+    NAPLES25SWMDELL_TIMESTAMP = "00-02"
+    NAPLES25SWMDELL_SEC_VERSION = "0x82"
+    NAPLES25SWMDELL_SEC_TIMESTAMP = "00-130"
+
     NAPLES25OCP_VERSION = "0x2"
     NAPLES25OCP_TIMESTAMP = "07-08"
     NAPLES25OCP_SEC_VERSION = "0x82"
@@ -61,6 +67,8 @@ class MFG_IMAGE_FILES:
     NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.8.0-E-48_0716.tar"
     NIC_DIAGFW_IMAGE_HPE_OCP = "naples_diagfw_1.3.1-E-27.tar"
     NIC_GOLDFW_IMAGE_HPE_OCP = "naples_goldfw_1.3.1-E-28_0731.tar"
+    NIC_DIAGFW_IMAGE_SWMDELL = "naples_diagfw_1.3.1-E-31_0824.tar"
+    NIC_GOLDFW_IMAGE_SWMDELL = "naples_goldfw_1.3.1-E-31_0824.tar"
     NIC_GOLDFW_IMAGE_IBM = "naples_goldfw1.3.1-E-20_0514.tar"
     NIC_GOLDFW_IMAGE_HPE = "naples_goldfw1_1.3.1-E-28_0731.tar"
     NIC_DIAGFW_IMAGE_HPE_NAPLES100 = "naples_diagfw_1.3.1-E-31_0824.tar"
@@ -73,6 +81,10 @@ class MFG_IMAGE_FILES:
 
     NAPLES25SWM_CPLD_IMAGE = "naples25_swm_rev9_04142020.bin"
     NAPLES25SWM_SEC_CPLD_IMAGE = "naples25_swm_rev89_04142020.bin"
+
+    NAPLES25SWMDELL_CPLD_IMAGE = "naples25_swmdell_rev2_08202020.bin"
+    NAPLES25SWMDELL_SEC_CPLD_IMAGE = "naples25_swmdell_rev82_08202020.bin"
+
     NAPLES25_HPE_OCP_CPLD_IMAGE = "naples25_ocp_rev02_07082020.bin"
     NAPLES25_HPE_OCP_SEC_CPLD_IMAGE = "naples25_ocp_rev82_06192020.bin"
     
@@ -107,6 +119,7 @@ MFG_QSPI_IBM_TIMESTAMP = "05-21-2020"
 MFG_GOLD_IBM_TIMESTAMP = "05-12-2020"
 MFG_QSPI_NAPLES100HPE_TIMESTAMP = "08-24-2020"
 MFG_GOLD_NAPLES100HPE_TIMESTAMP = "07-31-2020"
+MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP = "08-24-2020"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
@@ -116,7 +129,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
@@ -141,6 +154,7 @@ NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
 #NAPLES_DISP_DATE_FMT = r"(\d{2}/\d{2}/\d{2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 IBM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
+DELLSWM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{2})"
 VOMERO2_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 #NAPLES_DISP_PN_FMT = r"(Part|Assembly) Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
