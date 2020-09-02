@@ -702,9 +702,14 @@ def get_mfg_log_list(card_type, sn, stage):
         return
 
     if "4C" in stage:
+        if "H" in stage:
+            stage = "4C-H"
+        else:
+            stage = "4C-L"
         path = log_root+card_type+"/4C/"+stage+"/"
     else:
         path = log_root+card_type+"/"+stage+"/"
+
     #print(path)
 
     dir_name = path+sn
@@ -730,6 +735,10 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, verbose):
 
     record_diag_dict = dict()
     if "4C" in stage:
+        if "H" in stage:
+            stage = "4C-H"
+        else:
+            stage = "4C-L"
         path = log_root+card_type+"/4C/"+stage+"/"
     else:
         path = log_root+card_type+"/"+stage+"/"
@@ -821,7 +830,8 @@ def parse_log_file(file_fullname, sn):
         if re.search(pattern_pass, line):
             print(sn, "Passed!")
             pass_flag = True
-            break
+            os.chdir(cwd_top)
+            return
 
         if re.search(pattern_fail, line):
             m = re.compile("^.*(NIC-[\d]+) ([\D\d]+) ([\D\d]+) .*")
@@ -832,12 +842,29 @@ def parse_log_file(file_fullname, sn):
                 nic_info["SN"]        = result.group(3)
                 break
 
+    expErrList = [
+        "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1",
+        "Unexpected int set: cap0.ms.em",
+        "interrupt-non-zero for reg:MS_M_AM_STS:",
+        "interrupt-non-zero for reg:AR_M_AM_STS",
+        "PRP2() error_count non-zero",
+        "stall_timeout_error"]
+
     if pass_flag == False:
         err_info = err_info + line
 
         # Find top level failure info
         for line in open(test_stage_log, 'r'):
             if re.search("^.*ERR.*"+nic_info["SLOT"]+".*", line):
+
+                # There are some expected Errors in snake test
+                expFound = False
+                for expErr in expErrList:
+                    if expErr in line:
+                        expFound = True
+                if expFound == True:
+                    continue
+
                 err_info = err_info + line
 
         err_info_dict["ERR_INFO"] = err_info
@@ -849,34 +876,63 @@ def parse_log_file(file_fullname, sn):
         err_info_dict["ERR_CODE"] = "PASS"
         sys.exit(1)
 
+    print(err_info)
     print(err_code)
 
+    if "4C" in stage:
+        if "HV" in err_code:
+            prefix = "hv_"
+        elif "LV" in err_code:
+            prefix = "lv_"
+        else:
+            print("No corner detected!")
+            return
+    else:
+        prefix = "./"
+
+    if "L1" in err_code:
+        logfile_path = prefix+"asic_logs/"
+        logfile_pattern = "cap_l1*"+sn+"*log"
+    elif "SNAKE_PCIE" in err_code:
+        logfile_path = prefix+"asic_logs/"
+        logfile_pattern = sn+"_snake_pcie.log"
+    elif "AVS" in err_code:
+        logfile_path = "./"
+        logfile_pattern = "diag_"+nic_info["SLOT"]+"_dl.log"
+    else:
+        print("Unsupported error code!")
+        return
+
+    print(logfile_path, logfile_pattern)
+    log_filename = ""
+    #for path in Path('./').rglob("cap_l1*"+sn+"*log"):
+    for path in Path(logfile_path).rglob(logfile_pattern):
+        log_filename = str(path.parent)+'/'+str(path.name)
+
+    print("log_filename:", log_filename)
+
+    fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
     # L1 ESEC
     if "L1_ESEC" in err_code:
-        for path in Path('./').rglob("cap_l1*"+sn+"*log"):
-            #print(path.parent)
-            #print(path.name)
-            l1_filename = str(path.parent)+'/'+str(path.name)
-
-        fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
-        #cmd = "grep 'ERROR ::' "+l1_filename + " | grep 'Puf allowed CAP_PUF_DPPM_PCT:15.8'"
-        cmd = fmt_cmd.format("L1_ESEC", l1_filename)
-        #print(cmd)
-        cmd_list = shlex.split(cmd)
-        result = subprocess.check_output(cmd_list)
-        result_str = result.decode("utf-8")
-        print(result_str)
+        cmd = fmt_cmd.format("L1_ESEC", log_filename)
+    elif "L1_HBM" in err_code:
+        cmd = fmt_cmd.format("L1_HBM", log_filename)
     elif "L1" in err_code:
-        for path in Path('./').rglob("cap_l1*"+sn+"*log"):
-            l1_filename = str(path.parent)+'/'+str(path.name)
+        cmd = fmt_cmd.format("L1", log_filename)
+    elif "SNAKE" in err_code:
+        cmd = fmt_cmd.format("SNAKE", log_filename)
+    elif "AVS" in err_code:
+        cmd = fmt_cmd.format("AVS", log_filename)
+    else:
+        print("Unsupported error code II!")
+        return
+    
 
-        fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
-        cmd = fmt_cmd.format("L1", l1_filename)
-        print(cmd)
-        cmd_list = shlex.split(cmd)
-        result = subprocess.check_output(cmd_list)
-        result_str = result.decode("utf-8")
-        print(result_str)
+    print(cmd)
+    cmd_list = shlex.split(cmd)
+    result = subprocess.check_output(cmd_list)
+    result_str = result.decode("utf-8")
+    print(result_str)
 
     os.chdir(cwd_top)
 
