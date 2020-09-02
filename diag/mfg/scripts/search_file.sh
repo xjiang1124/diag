@@ -62,7 +62,7 @@ then
         done
     done <<< "${output1}"
 
-    grep "ERROR ::" $FN | grep -e "cap_puf_dppm_chk:"
+    grep "ERROR ::" $FN | grep -e "cap_puf_dppm_chk:" -e "cap_esec_chk_boot_step :: expected_val:0x20 got_val" | sort -t: -u -k1,1
 fi
 
 if [[ $MODE == "L1_HBM" ]]
@@ -87,5 +87,10 @@ if [[ $MODE == "AVS" ]]
 then
     #grep -a -A100 -e "tclsh8.6 set_avs.tcl" $FN | grep ""FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
     grep -a -A300 -e "tclsh8.6 set_avs.tcl" $FN | grep "FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
+fi
+
+if [[ $MODE == "ETH_PRBS" ]]
+then
+    grep "ERROR" $FN
 fi
 

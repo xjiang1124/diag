@@ -66,6 +66,19 @@ def untar(fname):
         tar.extractall()
         tar.close()
 
+def run_bash_cmd(cmd):
+    cmd_list = shlex.split(cmd)
+    print(cmd_list)
+    result = subprocess.check_output(cmd_list)
+    result_str = result.decode("utf-8")
+    return result_str
+
+def rm_cmd(path):
+    fmt_cmd = "rm -rf {}" 
+    cmd = fmt_cmd.format(path)
+    ret = run_bash_cmd(cmd)
+    print(ret)
+
 def get_dieId_sn(line):
     line_arr = line.split()
     ret = line_arr[len(line_arr)-1]
@@ -726,12 +739,12 @@ def get_mfg_log_list(card_type, sn, stage):
         print(file_name.split(".")[0])
     return
 
-def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, verbose):
+def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup):
     cwd_top = os.getcwd()
-    try:
-        shutil.rmtree(cwd_top+'/test_logs')
-    except os.error:
-        print("no test_logs folder, will be created")
+    #try:
+    #    shutil.rmtree(cwd_top+'/test_logs')
+    #except os.error:
+    #    print("no test_logs folder, will be created")
 
     record_diag_dict = dict()
     if "4C" in stage:
@@ -786,16 +799,26 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, verbose):
                 if log_time_list[i] > tgt_log_time:
                     tgt_log_time = log_time_list[i]
                     tgt_log_time_idx = i
-
         files_found = [files_found[tgt_log_time_idx]]
-        print(files_found)
-        parse_log_file(files_found[0], sn)
 
-def parse_log_file(file_fullname, sn):
+    # Specified log location
+    else:
+        files_found = find_file(tgt_log+'.tar.gz', dir_name)
+
+        if files_found == []:
+            print(sn, "No log file found")
+            sys.exit(0)
+        if len(files_found) != 1:
+            print("ERROR: more than one target log found!")
+            sys.exit(0)
+
+    print(files_found)
+    parse_log_file(files_found[0], sn, verbose, cleanup)
+
+def parse_log_file(file_fullname, sn, verbose, cleanup):
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
     file_name = os.path.basename(file_fullname)
-    #print(file_fullname)
     
     tgt_dir = cwd_top+"/test_logs"
     if not os.path.exists(tgt_dir):
@@ -806,7 +829,8 @@ def parse_log_file(file_fullname, sn):
     
     dir_name = file_name.split(".")[0]
 
-    os.chdir(cwd_top+"/test_logs/"+dir_name)
+    card_log_path = cwd_top+"/test_logs/"+dir_name
+    os.chdir(card_log_path)
 
     if stage == "DL":
         test_stage_log = "test_dl.log"
@@ -853,9 +877,14 @@ def parse_log_file(file_fullname, sn):
     if pass_flag == False:
         err_info = err_info + line
 
+        if verbose == True:
+            pattern = "^.*ERR.*"+nic_info["SLOT"]+".*"
+        else:
+            pattern = "^.*ERR.*"+nic_info["SLOT"]+".*FAIL.*"
+
         # Find top level failure info
         for line in open(test_stage_log, 'r'):
-            if re.search("^.*ERR.*"+nic_info["SLOT"]+".*", line):
+            if re.search(pattern, line):
 
                 # There are some expected Errors in snake test
                 expFound = False
@@ -899,6 +928,9 @@ def parse_log_file(file_fullname, sn):
     elif "AVS" in err_code:
         logfile_path = "./"
         logfile_pattern = "diag_"+nic_info["SLOT"]+"_dl.log"
+    elif "ETH_PRBS" in err_code:
+        logfile_path = "nic_logs/AAPL-"+nic_info["SLOT"]
+        logfile_pattern = "log_NIC_ASIC.txt"
     else:
         print("Unsupported error code!")
         return
@@ -923,20 +955,26 @@ def parse_log_file(file_fullname, sn):
         cmd = fmt_cmd.format("SNAKE", log_filename)
     elif "AVS" in err_code:
         cmd = fmt_cmd.format("AVS", log_filename)
+    elif "ETH_PRBS" in err_code:
+        cmd = fmt_cmd.format("ETH_PRBS", log_filename)
     else:
         print("Unsupported error code II!")
         return
-    
 
-    print(cmd)
-    cmd_list = shlex.split(cmd)
-    result = subprocess.check_output(cmd_list)
-    result_str = result.decode("utf-8")
-    print(result_str)
+    ret_str = run_bash_cmd(cmd)
+    if ret_str == "":
+        ret_str = "No error found. Please check manually"
+    print(ret_str)
 
     os.chdir(cwd_top)
 
+    if cleanup == True:
+        rm_cmd(card_log_path)
 
+def cleanup_all():
+    cwd_top = cwd_top = os.getcwd()
+    path = cwd_top + "/test_logs/"
+    rm_cmd(path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -948,7 +986,8 @@ if __name__ == "__main__":
     parser.add_argument("-verbose", "--verbose", help="Print all output", action='store_true')
     parser.add_argument("-list", "--list", help="List all test logs under specific sn", action='store_true')
     parser.add_argument("-parse", "--parse", help="Parse error of specific sn", action='store_true')
-    parser.add_argument("-d", "--delete", help="Delete logs after processing", action='store_true')
+    parser.add_argument("-cl", "--cl", help="Delete logs after processing", action='store_true')
+    parser.add_argument("-cl_all", "--cl_all", help="Delete logs after processing", action='store_true')
 
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
     parser.add_argument("-fn", "--filename", help="File name of yield report", type=str, default="")
@@ -975,6 +1014,12 @@ if __name__ == "__main__":
     card_type = args.card_type.upper()
     tgt_log = args.tgt_log
     parse_mode = args.parse_mode.upper()
+    cl = args.cl
+    cl_all = args.cl_all
+
+    if cl_all == True:
+        cleanup_all()
+        sys.exit(0)
 
     if filename != "":
         parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
@@ -984,32 +1029,4 @@ if __name__ == "__main__":
         if parse_mode == "LIST":
             get_mfg_log_list(card_type, sn, stage)
             sys.exit(0)
-
-        #if tgt_log == "":
-        #    print("Target log can not be empty!")
-        #    sys.exit(0)
-
-        #if "4C" in stage:
-        #    path = log_root+card_type+"/4C/"+stage+"/"
-        #else:
-        #    path = log_root+card_type+"/"+stage+"/"
-
-        #cwd_top = os.getcwd()
-        #dir_name = path+sn
-        ##print(dir_name)
-        #files_found = find_file(tgt_log+'.tar.gz', dir_name)
-
-        #if files_found == []:
-        #    print(sn, "No log file found")
-        #    sys.exit(0)
-        #if len(files_found) != 1:
-        #    print("ERROR: more than one target log found!")
-        #    sys.exit(0)
-
-        #stage_err_info_dict = dict()
-
-        #file_fullname = files_found[0]
-
-        #parse_log_file(file_fullname, sn)
-        #os.chdir(cwd_top)
-        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, verbose)
+        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cl)
