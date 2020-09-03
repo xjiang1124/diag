@@ -17,7 +17,11 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-
+    #-------------
+    -saw|--saw)
+    SAW=TRUE
+    shift # past argument
+    ;;
     #-------------
     -verb|--verb)
     VERB=TRUE
@@ -96,6 +100,13 @@ fi
 
 if [[ $MODE == "FW_REV" ]]
 then
+
+    if [[ $SAW == TRUE ]]
+    then
+        grep -a -A130 "fwupdate -l" $FN
+        exit 0
+    fi
+
     echo "========================================"
     echo "boot0"
     grep -a -A130 "fwupdate -l" $FN | grep -A12 "boot0" | grep "software_version"
