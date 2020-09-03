@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-fetch", "--fetch", help="Fetch log file", action='store_true')
 
-    group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
+    group.add_argument("-cm", "--cm", help="CM site: FML/FPN/FSN/PEN", type=str, default="PEN")
     parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
     parser.add_argument("-file", "--file", help="File With Serial Number", type=str, default="")
     parser.add_argument("-sn_list", "--sn_list", help="Serial Number list", type=str, default="")
