@@ -71,16 +71,21 @@ echo "export CARD_TYPE=\"$type\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
 
-if [[ $CORECLK417MHZ -ne 1 ]]
+#This piece of code is a bit odd.. it cannot be indented so need to run it outside an if statement
+#DO NOT INDENT CODE IN THE IF STATEMENT
+#DO NOT INDENT CODE IN THE IF STATEMENT
+if [[ $CORECLK417MHZ -eq 1 ]]
 then
-    echo "nic_config done"
-    exit $?
-fi
-
 
 echo "Setting Core Clock to 417Mhz"
 /platform/bin/capview << EOF
 secure on
 fset ms_cfg_clk__S pll_select_core=0x5
 EOF
+
+fi
+
+
+
 echo "nic_config done"
+
