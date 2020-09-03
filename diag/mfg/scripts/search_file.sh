@@ -94,3 +94,42 @@ then
     grep "ERROR" $FN
 fi
 
+if [[ $MODE == "FW_REV" ]]
+then
+    echo "========================================"
+    echo "boot0"
+    grep -a -A130 "fwupdate -l" $FN | grep -A12 "boot0" | grep "software_version"
+    grep -a -A130 "fwupdate -l" $FN | grep -A12 "boot0" | grep "software_pipeline"
+
+    echo "========================================"
+    echo "mainfwa"
+    echo "system_image"
+    grep -a -A130 "fwupdate -l" $FN | grep -A32 "mainfwa" | grep -A10 "system_image" | grep -e "software_version" -e "software_pipeline"
+    echo "kernel_fit"
+    grep -a -A130 "fwupdate -l" $FN | grep -A32 "mainfwa" | grep -A10 "kernel_fit" | grep -e "software_version" -e "software_pipeline"
+    echo "uboot"
+    grep -a -A130 "fwupdate -l" $FN | grep -A32 "mainfwa" | grep -A10 "uboot" | grep -e "software_version" -e "software_pipeline"
+
+    echo "========================================"
+    echo "mainfwb"
+    echo "system_image"
+    grep -a -A130 "fwupdate -l" $FN | grep -A32 "mainfwb" | grep -A10 "system_image" | grep -e "software_version" -e "software_pipeline"
+    echo "kernel_fit"
+    grep -a -A130 "fwupdate -l" $FN | grep -A32 "mainfwb" | grep -A10 "kernel_fit" | grep -e "software_version" -e "software_pipeline"
+    echo "uboot"
+    grep -a -A130 "fwupdate -l" $FN | grep -A32 "mainfwb" | grep -A10 "uboot" | grep -e "software_version" -e "software_pipeline"
+
+    echo "========================================"
+    echo "goldfw"
+    echo "kernel_fit"
+    grep -a -A130 "fwupdate -l" $FN | grep -A24 "goldfw" | grep -A10 "kernel_fit" | grep "software_version"
+    echo "uboot"
+    grep -a -A130 "fwupdate -l" $FN | grep -A24 "goldfw" | grep -A10 "uboot" | grep "software_version"
+
+    echo "========================================"
+    echo "cpld"
+    grep -a -A130 "fwupdate -l" $FN | grep -A12 "cpld" | grep "version"
+
+    echo "========================================"
+fi
+

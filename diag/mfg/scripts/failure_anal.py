@@ -68,7 +68,6 @@ def untar(fname):
 
 def run_bash_cmd(cmd):
     cmd_list = shlex.split(cmd)
-    print(cmd_list)
     result = subprocess.check_output(cmd_list)
     result_str = result.decode("utf-8")
     return result_str
@@ -813,9 +812,12 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
             sys.exit(0)
 
     print(files_found)
-    parse_log_file(files_found[0], sn, verbose, cleanup)
+    if parse_mode == "FW_REV":
+        parse_fw_rev(files_found[0], sn, verbose, cleanup)
+    else:
+        parse_log_file(files_found[0], sn, stage, verbose, cleanup)
 
-def parse_log_file(file_fullname, sn, verbose, cleanup):
+def parse_log_file(file_fullname, sn, stage, verbose, cleanup):
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
     file_name = os.path.basename(file_fullname)
@@ -935,13 +937,15 @@ def parse_log_file(file_fullname, sn, verbose, cleanup):
         print("Unsupported error code!")
         return
 
-    print(logfile_path, logfile_pattern)
+    if verbose == True:
+        print(logfile_path, logfile_pattern)
     log_filename = ""
     #for path in Path('./').rglob("cap_l1*"+sn+"*log"):
     for path in Path(logfile_path).rglob(logfile_pattern):
         log_filename = str(path.parent)+'/'+str(path.name)
 
-    print("log_filename:", log_filename)
+    if verbose == True:
+        print("log_filename:", log_filename)
 
     fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
     # L1 ESEC
@@ -960,6 +964,72 @@ def parse_log_file(file_fullname, sn, verbose, cleanup):
     else:
         print("Unsupported error code II!")
         return
+
+    ret_str = run_bash_cmd(cmd)
+    if ret_str == "":
+        ret_str = "No error found. Please check manually"
+    print(ret_str)
+
+    os.chdir(cwd_top)
+
+    if cleanup == True:
+        rm_cmd(card_log_path)
+
+def parse_fw_rev(file_fullname, sn, verbose, cleanup):
+    cwd_top = os.getcwd()
+    dir_name1 = os.path.dirname(file_fullname)
+    file_name = os.path.basename(file_fullname)
+    
+    tgt_dir = cwd_top+"/test_logs"
+    if not os.path.exists(tgt_dir):
+        os.mkdir(tgt_dir)
+    os.chdir(cwd_top+"/test_logs")
+    
+    untar(file_fullname)
+    
+    dir_name = file_name.split(".")[0]
+
+    card_log_path = cwd_top+"/test_logs/"+dir_name
+    os.chdir(card_log_path)
+
+    test_stage_log = "test_swi.log"
+
+    # find slot number
+    fmt_pattern_pass = "^.*{}.*NIC_DIAG_REGRESSION_TEST_PASS.*"
+    pattern_pass = fmt_pattern_pass.format(sn)
+    nic_info = dict()
+    err_info_dict = dict()
+    err_info = ""
+
+    found_flag = False
+    for line in open(test_stage_log, 'r'):
+        if re.search(pattern_pass, line):
+            m = re.compile("^.*(NIC-[\d]+) ([\D\d]+) ([\D\d]+) .*")
+            result = m.match(line)
+            if m:
+                nic_info["SLOT"]      = result.group(1)
+                nic_info["CARD_TYPE"] = result.group(2)
+                nic_info["SN"]        = result.group(3)
+                found_flag = True
+                break
+
+    if found_flag == False:
+        print("Unable to find record:", sn)
+        return
+    logfile_path = "./"
+    logfile_pattern = "diag_"+nic_info["SLOT"]+"_swi.log"
+
+    if verbose == True:
+        print(logfile_path, logfile_pattern)
+    log_filename = ""
+    for path in Path(logfile_path).rglob(logfile_pattern):
+        log_filename = str(path.parent)+'/'+str(path.name)
+
+    if verbose == True:
+        print("log_filename:", log_filename)
+
+    fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
+    cmd = fmt_cmd.format("FW_REV", log_filename)
 
     ret_str = run_bash_cmd(cmd)
     if ret_str == "":

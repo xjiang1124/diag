@@ -9,8 +9,18 @@ import re
 import subprocess
 import sys
 
-sys.path.append("../lib")
-import common
+#=============================
+# mkdir -p
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    # Python 2.5
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            print("mkdir_p failed")
+            raise
 
 class mfg:
     def __init__(self):
@@ -22,24 +32,21 @@ class mfg:
         self.user = "mfg"
         self.pwd  = "pensando"
         self.remote_path = "/mfg_log/"
-        self.local_path = "/home/xguo2/workspace/manufacture/mfg_log/"
-        #self.local_path = "/vol/hw/diag/Naples25_2nd_Source_Qual_Build/mfg_log/"
-        self.log_path = "/home/xguo2/workspace/manufacture/test_log/"
 
-    def fetch_remote(self, cm, card_type, stage, sn_list):
+    def fetch_remote(self, cm, card_type, stage, sn_list, logroot):
         remote_ip = mfg.cm_server[cm]
 
         corner_4C = ['4C-H', '4C-L']
         for sn in sn_list:
             remote_path = self.remote_path+card_type+'/'+stage
-            local_path = self.local_path+card_type+'/'+stage
+            logroot = logroot+card_type+'/'+stage
             if stage == "4C":
                 for corner in corner_4C:
                     remote_path1 = remote_path+'/'+corner+'/'+sn+'/'
-                    local_path1 = local_path+'/'+corner+'/'+sn+'/'
-                    common.mkdir_p(local_path1)
+                    logroot1 = logroot+'/'+corner+'/'+sn+'/'
+                    mkdir_p(logroot1)
 
-                    cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path1+"* "+local_path1
+                    cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path1+"* "+logroot1
                     print(cmd)
                     try:
                         subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
@@ -49,11 +56,11 @@ class mfg:
 
             else:
                 remote_path = remote_path+'/'+sn+'/'
-                local_path = local_path+'/'+sn+'/'
-                #pathlib.Path(local_path).mkdir(parents=True, exist_ok=True)
-                common.mkdir_p(local_path)
+                logroot = logroot+'/'+sn+'/'
+                #pathlib.Path(logroot).mkdir(parents=True, exist_ok=True)
+                mkdir_p(logroot)
 
-                cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path+"* "+local_path
+                cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path+"* "+logroot
                 print(cmd)
                 try:
                     subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
@@ -73,6 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("-sn_list", "--sn_list", help="Serial Number list", type=str, default="")
     parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="NAPLES100")
     parser.add_argument("-stage", "--stage", help="P2C", type=str, default="NAPLES100")
+    parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
 
     args = parser.parse_args()
     
@@ -102,6 +110,6 @@ if __name__ == "__main__":
 
 
     if args.fetch == True:
-        mfg.fetch_remote(cm, card_type, stage, sn_list)
+        mfg.fetch_remote(cm, card_type, stage, sn_list, args.logroot)
         sys.exit()
 
