@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import shlex
 
 #=============================
 # mkdir -p
@@ -21,6 +22,12 @@ def mkdir_p(path):
         else:
             print("mkdir_p failed")
             raise
+
+def run_bash_cmd(cmd):
+    cmd_list = shlex.split(cmd)
+    result = subprocess.check_output(cmd_list)
+    result_str = result.decode("utf-8")
+    return result_str
 
 class mfg:
     def __init__(self):
@@ -38,7 +45,25 @@ class mfg:
 
         corner_4C = ['4C-H', '4C-L']
         for sn in sn_list:
-            remote_path = self.remote_path+card_type+'/'+stage
+            remote_path = ""
+            # In case of no card_type specified, find it first
+            if card_type == "":
+                cmd = "sshpass -p 'pensando' ssh mfg@"+remote_ip+" find /mfg_log/ -name "+sn
+                path_list = run_bash_cmd(cmd).split("\n")
+                for path in path_list:
+                    if stage == "4C":
+                        print("Please specify card_type")
+                        return
+                    if stage in path:
+                        card_type = path.split("/")[2]
+                        sn1 = path.split("/")[4]
+                        print("=== Card Type:", card_type, "===")
+                        path1 = path.split("/")[:-1]
+                        remote_path = '/'.join(path1)
+                        print(remote_path)
+                        break
+            else:
+                remote_path = self.remote_path+card_type+'/'+stage
             logroot = logroot+card_type+'/'+stage
             if stage == "4C":
                 for corner in corner_4C:
@@ -78,7 +103,7 @@ if __name__ == "__main__":
     parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
     parser.add_argument("-file", "--file", help="File With Serial Number", type=str, default="")
     parser.add_argument("-sn_list", "--sn_list", help="Serial Number list", type=str, default="")
-    parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="NAPLES100")
+    parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="")
     parser.add_argument("-stage", "--stage", help="P2C", type=str, default="NAPLES100")
     parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
 
