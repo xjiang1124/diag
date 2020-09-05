@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import csv
+import errno
 import os, fnmatch
 import tarfile
 import shutil
@@ -22,6 +23,19 @@ try:
     import cPickle as pickle
 except ImportError:  # python 3.x
     import pickle
+
+#=============================
+# mkdir -p
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    # Python 2.5
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            print("mkdir_p failed")
+            raise
 
 def find_file(pattern, path):
     result = []
@@ -738,7 +752,7 @@ def get_mfg_log_list(card_type, sn, stage):
         print(file_name.split(".")[0])
     return
 
-def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup):
+def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup, save, save_path):
     cwd_top = os.getcwd()
     #try:
     #    shutil.rmtree(cwd_top+'/test_logs')
@@ -815,9 +829,9 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
     if parse_mode == "FW_REV":
         parse_fw_rev(files_found[0], sn, verbose, cleanup)
     else:
-        parse_log_file(files_found[0], sn, stage, verbose, cleanup)
+        parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path)
 
-def parse_log_file(file_fullname, sn, stage, verbose, cleanup):
+def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
     file_name = os.path.basename(file_fullname)
@@ -970,6 +984,15 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup):
         ret_str = "No error found. Please check manually"
     print(ret_str)
 
+    if save == True:
+        save_path = save_path+"/"+sn
+        mkdir_p(save_path)
+        fmt_cmd = "cp -r {} {}/"
+        cmd = fmt_cmd.format(card_log_path, save_path)
+        print(cmd)
+        ret = run_bash_cmd(cmd)
+        print(ret)
+
     os.chdir(cwd_top)
 
     if cleanup == True:
@@ -1058,6 +1081,7 @@ if __name__ == "__main__":
     parser.add_argument("-parse", "--parse", help="Parse error of specific sn", action='store_true')
     parser.add_argument("-cl", "--cl", help="Delete logs after processing", action='store_true')
     parser.add_argument("-cl_all", "--cl_all", help="Delete logs after processing", action='store_true')
+    parser.add_argument("-sv", "--save", help="Save log to target location", action='store_true')
 
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
     parser.add_argument("-fn", "--filename", help="File name of yield report", type=str, default="")
@@ -1071,6 +1095,7 @@ if __name__ == "__main__":
     parser.add_argument("-card_type", "--card_type", help="Card_type", type=str, default="")
     parser.add_argument("-stage", "--stage", help="Stage", type=str, default="")
     parser.add_argument("-tgt_log", "--tgt_log", help="Target log", type=str, default="")
+    parser.add_argument("-sv_path", "--save_path", help="Path to save log", type=str, default="/vol/hw/diag/asic_log")
 
     args = parser.parse_args()
 
@@ -1099,4 +1124,4 @@ if __name__ == "__main__":
         if parse_mode == "LIST":
             get_mfg_log_list(card_type, sn, stage)
             sys.exit(0)
-        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cl)
+        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cl, args.save, args.save_path)

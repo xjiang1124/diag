@@ -15,17 +15,17 @@
 #   FPN: Obselete
 #   FSN: Flex Penang P5 site
 #   PEN: Pensando log server; most of logs should be available on this server. 
-# logroot: local path that log files are copied over; default="/home/xguo2/workspace/manufacture/mfg_log/"
+#   logroot: local path that log files are copied over; default="/home/xguo2/workspace/manufacture/mfg_log/"
 # file: txt format file with all SNs
 # sn_list: SNs separated by ","
 # stage: DL/P2C/4C/SWI/FST
 
 # Example:
 # By SN list
-python3 ./mfg.py -sn_list 2YU029009F,2YU029009F -fetch -card_type naples25swm -stage p2c -cm pen
+python3 ./mfg.py -sn_list 2YU029009F,2YU029009F -fetch -card_type naples25swm -stage p2c -cm pen -logroot /home/xguo2/workspace/temp/
 
 # By SN file
-python3 ./mfg.py -file ../../mfg/scripts/wk33_naples100_swi.txt -fetch -card_type naples100 -stage swi -cm pen
+python3 ./mfg.py -file ../../mfg/scripts/wk33_naples100_swi.txt -fetch -card_type naples100 -stage swi -cm pen -logroot /home/xguo2/workspace/temp/
 
 #=============================================
 # Failure analysis
@@ -39,21 +39,21 @@ python3 ./mfg.py -file ../../mfg/scripts/wk33_naples100_swi.txt -fetch -card_typ
 # Output SN list will be in format "prefix_cardtype_stage.txt"
 
 # Example
-python3 ./failure_anal.py -fn Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -prefix wk34 -sl dl,p2c,swi
+python3 ./failure_anal.py -fn Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -prefix wk34 -sl dl,p2c,swi -logroot /home/xguo2/workspace/temp/
 
 # Generate Yield report
 # Output file is in csv format
-python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c
+python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c -logroot /home/xguo2/workspace/temp/
 
 #=============================================
 # Parse error from specified SN
 # Get log list
-python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode list
+python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode list -logroot /home/xguo2/workspace/temp/
 
 # Get error details.
 # Specify log target base of log list output from command above
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -tgt_log NT_MTP-699_2020-08-07_00-37-20
+./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -tgt_log NT_MTP-699_2020-08-07_00-37-20 -logroot /home/xguo2/workspace/temp/
 
 # Parse the latest log
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode latest
+./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode latest -logroot /home/xguo2/workspace/temp/
 
