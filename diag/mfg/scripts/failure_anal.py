@@ -864,6 +864,8 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
     nic_info = dict()
     err_info_dict = dict()
     err_info = ""
+    err_info_s = ""
+    err_info_a = ""
     for line in open(test_stage_log, 'r'):
 
         # Somehow we do have first log as pass
@@ -891,13 +893,11 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
         "stall_timeout_error"]
 
     if pass_flag == False:
-        err_info = err_info + line
+        err_info_s = err_info_s + line
+        err_info_a = err_info_a + line
 
-        if verbose == True:
-            pattern = "^.*ERR.*"+nic_info["SLOT"]+".*"
-        else:
-            pattern = "^.*ERR.*"+nic_info["SLOT"]+".*FAIL.*"
-
+        # Get summary first
+        pattern = "^.*ERR.*"+nic_info["SLOT"]+".*FAIL.*"
         # Find top level failure info
         for line in open(test_stage_log, 'r'):
             if re.search(pattern, line):
@@ -910,8 +910,30 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
                 if expFound == True:
                     continue
 
-                err_info = err_info + line
+                err_info_s = err_info_s + line
 
+        # Get all errors
+        pattern = "^.*ERR.*"+nic_info["SLOT"]+".*"
+        for line in open(test_stage_log, 'r'):
+            if re.search(pattern, line):
+
+                # There are some expected Errors in snake test
+                expFound = False
+                for expErr in expErrList:
+                    if expErr in line:
+                        expFound = True
+                if expFound == True:
+                    continue
+                err_info_a = err_info_a + line
+
+        if "Init NIC boot info failed" in err_info_a:
+            err_info = err_info_a
+        else:
+            if verbose == False:
+                err_info = err_info_s
+            else:
+                err_info = err_inf_a
+    
         err_info_dict["ERR_INFO"] = err_info
 
         err_code = get_err_code(err_info)
@@ -947,6 +969,9 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
     elif "ETH_PRBS" in err_code:
         logfile_path = "nic_logs/AAPL-"+nic_info["SLOT"]
         logfile_pattern = "log_NIC_ASIC.txt"
+    elif "NIC_BOOT_FAIL" in err_code:
+        logfile_path = "./"
+        logfile_pattern = "diag_"+nic_info["SLOT"]+"*log"
     else:
         print("Unsupported error code!")
         return
@@ -976,12 +1001,13 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
     elif "ETH_PRBS" in err_code:
         cmd = fmt_cmd.format("ETH_PRBS", log_filename)
     else:
-        print("Unsupported error code II!")
-        return
+        err_code = err_code.split(",")[0]
+        cmd = fmt_cmd.format(err_code, log_filename)
 
     ret_str = run_bash_cmd(cmd)
     if ret_str == "":
         ret_str = "No error found. Please check manually"
+
     print(ret_str)
 
     if save == True:

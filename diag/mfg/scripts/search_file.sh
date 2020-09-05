@@ -46,14 +46,12 @@ if [[ $VERB == TRUE ]]
 then
     echo "MODE:        ${MODE}"
     echo "FN:          ${FN}"
-fi
 
-if [[ $MODE == "L1" ]]
+elif [[ $MODE == "L1" ]]
 then
     grep "ERROR ::" $FN
-fi
 
-if [[ $MODE == "L1_ESEC" ]]
+elif [[ $MODE == "L1_ESEC" ]]
 then
     output1=$(grep -A10 "ERROR :: cap_eval_pac_score_all" $FN)
     #output2=$(grep "ERROR ::" $FN | grep "cap_puf_dppm_chk: Puf allowed")
@@ -67,9 +65,8 @@ then
     done <<< "${output1}"
 
     grep "ERROR ::" $FN | grep -e "cap_puf_dppm_chk:" -e "cap_esec_chk_boot_step :: expected_val:0x20 got_val" | sort -t: -u -k1,1
-fi
 
-if [[ $MODE == "L1_HBM" ]]
+elif [[ $MODE == "L1_HBM" ]]
 then
     output=$(grep -e "ERROR ::" -e "ERROR_CHANNEL_FAILURES_EXIST" -e "RROR_CTC_WRITE_READ_COMPARE_FAILURE" -e "UNKNOWN_ERROR_CODE" $FN)
 
@@ -80,25 +77,21 @@ then
             echo $i
         done
     done <<< "${output}"
-fi
 
-if [[ $MODE == "SNAKE" ]]
+elif [[ $MODE == "SNAKE" ]]
 then
     grep -e "ERROR ::" $FN | grep -v "cap0.ms.em.int_groups.intreg: axi_interrupt" | grep -v "Unexpected int set: cap0.ms.em" | grep -v "interrupt-non-zero for reg:MS_M_AM_STS" | grep -v "interrupt-non-zero for reg:AR_M_AM_STS" | grep -v "PRP2() error_count non-zero" | grep -v "stall_timeout_error"
-fi
 
-if [[ $MODE == "AVS" ]]
+elif [[ $MODE == "AVS" ]]
 then
     #grep -a -A100 -e "tclsh8.6 set_avs.tcl" $FN | grep ""FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
     grep -a -A300 -e "tclsh8.6 set_avs.tcl" $FN | grep "FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
-fi
 
-if [[ $MODE == "ETH_PRBS" ]]
+elif [[ $MODE == "ETH_PRBS" ]]
 then
     grep "ERROR" $FN
-fi
 
-if [[ $MODE == "FW_REV" ]]
+elif [[ $MODE == "FW_REV" ]]
 then
 
     if [[ $SAW == TRUE ]]
@@ -142,5 +135,13 @@ then
     grep -a -A130 "fwupdate -l" $FN | grep -A12 "cpld" | grep "version"
 
     echo "========================================"
+
+elif [[ $MODE == "NIC_BOOT_FAIL" ]]
+then
+    grep -a -m 1 -B6 "j2c : read req error  inst: 0x5 addr: 0x6a000000 flag: 0x3" $FN
+
+else
+    echo "Unsupported error code SEARCH!" $MODE
 fi
+
 
