@@ -1777,15 +1777,54 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
         return True
         
-    def mtp_verify_naples_pn(self, slot, exp_100hpe_pn):
+    def mtp_verify_naples_pn(self, slot):
     
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         if not naples_pn:
             self.cli_log_slot_err_lock(slot, "Verify NIC NAPLES PN Failed")
             return False
 
-        if naples_pn != exp_100hpe_pn:
-            self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, get {:s}".format(naples_pn))
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES100:
+            exp_pn = '68-0003-01 01'
+            return True
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            exp_pn = '68-0013-01 03'
+            #111-04635+A0    NETAPP VERSION
+            return True
+        elif nic_type == NIC_Type.NAPLES100HPE:
+            exp_pn = 'P37692-001'
+        elif nic_type == NIC_Type.NAPLES25:
+            exp_pn = '68-0005-03 01'
+            #P18669-001   HPE P/N
+            #68-0008-xx yy    EQUINIX
+            return True
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            exp_pn = 'P26968-001'
+            return True
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            exp_pn = '68-0014-01 00'
+            return True
+        elif nic_type == NIC_Type.NAPLES25OCP:
+            exp_pn = 'P37689-001'
+            #P18671-001   
+            #68-0010-xx  PEnsando OCP (not built)     
+            return True
+        elif nic_type == NIC_Type.FORIO:
+            exp_pn = '68-0007-01 01'
+            return True
+        elif nic_type == NIC_Type.VOMERO:
+            exp_pn = '68-0009-01 01'
+            return True
+        elif nic_type == NIC_Type.VOMERO2:
+            exp_pn = '68-0011-02 01'
+            return True
+        else:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        if naples_pn != exp_pn:
+            self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, Expect {:s} Read {:s}".format(exp_pn, naples_pn))
             return False
             
         self.cli_log_slot_inf_lock(slot, "Verify Naples_PN Pass, naples_pn={:s}".format(naples_pn))
@@ -1796,6 +1835,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
         # check the current cpld version
+        cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
@@ -1820,8 +1860,9 @@ class mtp_ctrl():
             exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            cpld_has_timestamp = 0
             exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_TIMESTAMP
+            exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_MINOR_VERSION
         elif nic_type == NIC_Type.NAPLES25OCP:
             exp_ver = NIC_CPLD_Version.NAPLES25OCP_VERSION
             exp_timestamp = NIC_CPLD_Version.NAPLES25OCP_TIMESTAMP
@@ -1842,9 +1883,14 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
             return True
 
-        if cur_ver == exp_ver and cur_timestamp == exp_timestamp:
-            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
-            return True
+        if cpld_has_timestamp > 0:
+            if cur_ver == exp_ver and cur_timestamp == exp_timestamp:
+                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+                return True
+        else:
+            if cur_ver == exp_ver and cur_timestamp[:len(exp_timestamp)] == exp_timestamp:  
+                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+                return True
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
@@ -1932,6 +1978,7 @@ class mtp_ctrl():
         return True
 
     def mtp_verify_nic_cpld(self, slot, sec_cpld=False):
+        cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
             self.cli_log_slot_err_lock(slot, "Verify NIC CPLD failed, can not retrieve CPLD info")
@@ -1977,14 +2024,13 @@ class mtp_ctrl():
                 exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
                 exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            cpld_has_timestamp = 0
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_SEC_VERSION
                 exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_SEC_TIMESTAMP
             else:
                 exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_TIMESTAMP
-                print(" ADD FIXME:  NEED TO LOOK AT CPLD TIMESTAMP.. INTERMITENTLY NOT WORKING")
-                return True
+                exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_MINOR_VERSION
         elif nic_type == NIC_Type.NAPLES25OCP:
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.NAPLES25OCP_SEC_VERSION
@@ -2013,11 +2059,18 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if cur_ver != exp_ver or cur_timestamp != exp_timestamp:
-            self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
-            self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
-            self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp))
-            return False
+        if cpld_has_timestamp > 0:
+            if cur_ver != exp_ver or cur_timestamp != exp_timestamp:
+                self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
+                self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
+                self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp))
+                return False
+        else: 
+            if cur_ver != exp_ver or cur_timestamp[:len(exp_timestamp)] != exp_timestamp:
+                self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
+                self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
+                self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp[:len(exp_timestamp)]))
+                return False
 
         return True
 
