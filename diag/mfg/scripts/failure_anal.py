@@ -727,6 +727,8 @@ def get_mfg_log_list(card_type, sn, stage):
         print("SN can not be empty!")
         return
 
+    print("===", sn, "===")
+
     if "4C" in stage:
         if "H" in stage:
             stage = "4C-H"
@@ -752,12 +754,43 @@ def get_mfg_log_list(card_type, sn, stage):
         print(file_name.split(".")[0])
     return
 
+def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cleanup, save, save_path):
+    print("Using SN in file", filename)
+    with open(filename) as f:
+        sn_list = f.readlines()
+    sn_list = [x.strip() for x in sn_list]
+    print(sn_list)
+    stage1 = stage
+    sn1 = ""
+
+    if fmode != "SN" and fmode != "SN_STAGE":
+        print("Invalide file mode:", fmode)
+        return
+
+    for sn in sn_list:
+        sn = " ".join(sn.split())
+        if fmode == "SN":
+            sn1 = sn
+        elif fmode == "SN_STAGE":
+            sn1 = sn.split(" ")[0]
+            stage1 = sn.split(" ")[1]
+            print("===", sn1, stage1)
+            if "4C-H" in stage1:
+                stage1 = "4CH"
+            elif "4C-L" in stage1:
+                stage1 = "4CL"
+            sn_list1 = [sn1]
+        if parse_mode == "LIST":
+            get_mfg_log_list(card_type, sn1, stage1)
+        else:
+            parse_log_file_top(log_root, parse_mode, card_type, stage1, sn1, tgt_log, verbose, cleanup, save, save_path)
+
 def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup, save, save_path):
+
+    print("========================================")
+    print("===", sn, stage, "===")
+
     cwd_top = os.getcwd()
-    #try:
-    #    shutil.rmtree(cwd_top+'/test_logs')
-    #except os.error:
-    #    print("no test_logs folder, will be created")
 
     record_diag_dict = dict()
     if "4C" in stage:
@@ -832,6 +865,7 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
         parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path)
 
 def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
+
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
     file_name = os.path.basename(file_fullname)
@@ -932,7 +966,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
             if verbose == False:
                 err_info = err_info_s
             else:
-                err_info = err_inf_a
+                err_info = err_info_a
     
         err_info_dict["ERR_INFO"] = err_info
 
@@ -972,43 +1006,50 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
     elif "NIC_BOOT_FAIL" in err_code:
         logfile_path = "./"
         logfile_pattern = "diag_"+nic_info["SLOT"]+"*log"
+    # Base file ready has error info
+    elif "MVL" in err_code:
+        logfile_path = "SKIP"
+        logfile_pattern = "SKIP"
     else:
         print("Unsupported error code!")
         return
 
-    if verbose == True:
-        print(logfile_path, logfile_pattern)
-    log_filename = ""
-    #for path in Path('./').rglob("cap_l1*"+sn+"*log"):
-    for path in Path(logfile_path).rglob(logfile_pattern):
-        log_filename = str(path.parent)+'/'+str(path.name)
+    if logfile_path != "SKIP":
+        if verbose == True:
+            print(logfile_path, logfile_pattern)
+        log_filename = ""
+        #for path in Path('./').rglob("cap_l1*"+sn+"*log"):
+        for path in Path(logfile_path).rglob(logfile_pattern):
+            log_filename = str(path.parent)+'/'+str(path.name)
 
-    if verbose == True:
-        print("log_filename:", log_filename)
+        if verbose == True:
+            print("log_filename:", log_filename)
 
-    fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
-    # L1 ESEC
-    if "L1_ESEC" in err_code:
-        cmd = fmt_cmd.format("L1_ESEC", log_filename)
-    elif "L1_HBM" in err_code:
-        cmd = fmt_cmd.format("L1_HBM", log_filename)
-    elif "L1" in err_code:
-        cmd = fmt_cmd.format("L1", log_filename)
-    elif "SNAKE" in err_code:
-        cmd = fmt_cmd.format("SNAKE", log_filename)
-    elif "AVS" in err_code:
-        cmd = fmt_cmd.format("AVS", log_filename)
-    elif "ETH_PRBS" in err_code:
-        cmd = fmt_cmd.format("ETH_PRBS", log_filename)
+        fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
+        # L1 ESEC
+        if "L1_ESEC" in err_code:
+            cmd = fmt_cmd.format("L1_ESEC", log_filename)
+        elif "L1_HBM" in err_code:
+            cmd = fmt_cmd.format("L1_HBM", log_filename)
+        elif "L1" in err_code:
+            cmd = fmt_cmd.format("L1", log_filename)
+        elif "SNAKE" in err_code:
+            cmd = fmt_cmd.format("SNAKE", log_filename)
+        elif "AVS" in err_code:
+            cmd = fmt_cmd.format("AVS", log_filename)
+        elif "ETH_PRBS" in err_code:
+            cmd = fmt_cmd.format("ETH_PRBS", log_filename)
+        else:
+            err_code = err_code.split(",")[0]
+            cmd = fmt_cmd.format(err_code, log_filename)
+
+        ret_str = run_bash_cmd(cmd)
+        if ret_str == "":
+            ret_str = "No error found. Please check manually"
+
+        print(ret_str)
     else:
-        err_code = err_code.split(",")[0]
-        cmd = fmt_cmd.format(err_code, log_filename)
-
-    ret_str = run_bash_cmd(cmd)
-    if ret_str == "":
-        ret_str = "No error found. Please check manually"
-
-    print(ret_str)
+        print(err_info_a)
 
     if save == True:
         save_path = save_path+"/"+sn
@@ -1103,14 +1144,14 @@ if __name__ == "__main__":
     parser.add_argument("-fetch", "--fetch", help="Fetch log file", action='store_true')
     parser.add_argument("-fy", "--first_yield", help="Parse first fail", action='store_true')
     parser.add_argument("-verbose", "--verbose", help="Print all output", action='store_true')
-    parser.add_argument("-list", "--list", help="List all test logs under specific sn", action='store_true')
     parser.add_argument("-parse", "--parse", help="Parse error of specific sn", action='store_true')
     parser.add_argument("-cl", "--cl", help="Delete logs after processing", action='store_true')
     parser.add_argument("-cl_all", "--cl_all", help="Delete logs after processing", action='store_true')
     parser.add_argument("-sv", "--save", help="Save log to target location", action='store_true')
 
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
-    parser.add_argument("-fn", "--filename", help="File name of yield report", type=str, default="")
+    parser.add_argument("-fn", "--filename", help="File name of input", type=str, default="")
+    parser.add_argument("-fmode", "--file_mode", help="File mode: NONE/SN/SN_STAGE", type=str, default="YIELD")
     parser.add_argument("-sl", "--stage_list", help="Stage list; e.g. 'DL,P2C'", type=str, default="")
     parser.add_argument("-prefix", "--prefix", help="prefix", type=str, default="")
     parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
@@ -1126,6 +1167,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     filename = args.filename
+    file_mode = args.file_mode.upper()
     prefix = args.prefix
     log_root = args.logroot
     verbose = args.verbose
@@ -1143,7 +1185,10 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if filename != "":
-        parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
+        if file_mode == "YIELD":
+            parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
+        else:
+            parse_log_from_file(filename, file_mode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cl, args.save, args.save_path)
         sys.exit(0)
 
     if args.parse == True:
@@ -1151,3 +1196,4 @@ if __name__ == "__main__":
             get_mfg_log_list(card_type, sn, stage)
             sys.exit(0)
         parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cl, args.save, args.save_path)
+        sys.exit(0)

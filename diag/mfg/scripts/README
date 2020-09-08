@@ -10,22 +10,37 @@
 #
 # mfg.py
 # Parameters
-# CM: FML/FPN/FSN/PEN
+# cm: Options: FML/FPN/FSN/PEN
 #   FML: Flex Milpitas
-#   FPN: Obselete
+#   FPN: Obsolete
 #   FSN: Flex Penang P5 site
 #   PEN: Pensando log server; most of logs should be available on this server. 
-#   logroot: local path that log files are copied over; default="/home/xguo2/workspace/manufacture/mfg_log/"
+# logroot: local path that log files are copied over; use absolute path
 # file: txt format file with all SNs
 # sn_list: SNs separated by ","
 # stage: DL/P2C/4C/SWI/FST
 
 # Example:
 # By SN list
-python3 ./mfg.py -sn_list 2YU029009F,2YU029009F -fetch -card_type naples25swm -stage p2c -cm pen -logroot /home/xguo2/workspace/temp/
+LOGROOT="/home/xguo2/workspace/temp/"
+python3 ./mfg.py -sn_list 2YU029009F,2YU029009F -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
 
 # By SN file
-python3 ./mfg.py -file ../../mfg/scripts/wk33_naples100_swi.txt -fetch -card_type naples100 -stage swi -cm pen -logroot /home/xguo2/workspace/temp/
+FMODE="SN"
+python3 ./mfg.py -file temp -fmode $FMODE -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
+# SN file format example:
+2YU029009F
+2YU03300Z9
+
+# By SN/STAGE file
+FMODE="SN_STAGE"
+python3 ./mfg.py -file temp1 -fmode $FMODE -fetch -card_type naples100 -stage swi -cm pen -logroot $LOGROOT
+# SN_STAGE file format example:
+2YU029009F    P2C
+2YU03300Z9    P2C
+2YU0270014    4C-H
+2YU030009K    4C-H
+2YU029011P    4C-L
 
 #=============================================
 # Failure analysis
@@ -39,21 +54,42 @@ python3 ./mfg.py -file ../../mfg/scripts/wk33_naples100_swi.txt -fetch -card_typ
 # Output SN list will be in format "prefix_cardtype_stage.txt"
 
 # Example
-python3 ./failure_anal.py -fn Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -prefix wk34 -sl dl,p2c,swi -logroot /home/xguo2/workspace/temp/
+python3 ./failure_anal.py -fn Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -prefix wk34 -sl dl,p2c,swi -logroot $LOGROOT
 
 # Generate Yield report
 # Output file is in csv format
-python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c -logroot /home/xguo2/workspace/temp/
+python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c -logroot $LOGROOT
 
 #=============================================
 # Parse error from specified SN
 # Get log list
-python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode list -logroot /home/xguo2/workspace/temp/
+Example
+python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode list -logroot $LOGROOT
 
 # Get error details.
 # Specify log target base of log list output from command above
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -tgt_log NT_MTP-699_2020-08-07_00-37-20 -logroot /home/xguo2/workspace/temp/
+./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -tgt_log NT_MTP-699_2020-08-07_00-37-20 -logroot $LOGROOT
+
+# Parse the first log
+Example
+./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode first -logroot $LOGROOT
 
 # Parse the latest log
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode latest -logroot /home/xguo2/workspace/temp/
+Example
+./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode latest -logroot $LOGROOT
 
+# Parse SN list from file
+FMODE="SN"
+PMODE="latest"
+python3 ./failure_anal.py -fn temp -fmode $FMODE -stage p2c -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
+
+# Parse SN list from file
+FMODE="SN_STAGE"
+PMODE="latest"
+python3 ./failure_anal.py -fn temp1 -fmode $FMODE -stage p2c -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
+
+#=============================================
+# Other parameterso
+-cl:     Delete log folder for specified SN
+-cl_all: Delete all log folder under logroot
+-sv:     save logs to location specified by -sv_path

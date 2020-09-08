@@ -42,6 +42,12 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+if [[ $FN == "" ]]
+then
+    echo "EORROR:: filename is empty"
+    exit 0
+fi
+
 if [[ $VERB == TRUE ]]
 then
     echo "MODE:        ${MODE}"

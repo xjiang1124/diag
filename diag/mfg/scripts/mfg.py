@@ -92,6 +92,28 @@ class mfg:
                 except:
                     continue
 
+    def fetch_remote_file(self, cm, card_type, stage, filename, fmode, logroot):
+        print("Using SN in file", filename)
+        with open(filename) as f:
+            sn_list = f.readlines()
+        sn_list = [x.strip() for x in sn_list]
+        print(sn_list)
+        stage1 = stage
+        sn_list1 = []
+
+        for sn in sn_list:
+            sn = " ".join(sn.split())
+            if fmode == "SN":
+                sn_list1 = [sn]
+            else:
+                sn1 = sn.split(" ")[0]
+                stage1 = sn.split(" ")[1]
+                print("===", sn1, stage1)
+                if "4C" in stage1:
+                    stage1 = "4C"
+                sn_list1 = [sn1]
+            mfg.fetch_remote(cm, card_type, stage1, sn_list1, args.logroot)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -102,39 +124,45 @@ if __name__ == "__main__":
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN/FSN/PEN", type=str, default="PEN")
     parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
     parser.add_argument("-file", "--file", help="File With Serial Number", type=str, default="")
+    parser.add_argument("-fmode", "--file_mode", help="File mode: SN only/SN_STAGE", type=str, default="SN")
     parser.add_argument("-sn_list", "--sn_list", help="Serial Number list", type=str, default="")
     parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="")
-    parser.add_argument("-stage", "--stage", help="P2C", type=str, default="NAPLES100")
+    parser.add_argument("-stage", "--stage", help="Manufacture stage: DL/P2C/4C/SWI/FST", type=str, default="")
     parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
 
     args = parser.parse_args()
     
     mfg = mfg()
 
-    cm = args.cm.upper()
-    sn_list1 = args.sn_list.upper()
-    sn_list = sn_list1.split(',')
-    
-    filename = args.file
-    if filename != "":
-        print("Using SN in file", filename)
-        with open(filename) as f:
-            sn_list = f.readlines()
-        sn_list = [x.strip() for x in sn_list]
-        print(sn_list)
-
     stage = args.stage.upper()
     card_type = args.card_type.upper()
+    cm = args.cm.upper()
+    filename = args.file
+    fmode = args.file_mode.upper()
+    logroot = args.logroot
 
+    sn_list1 = args.sn_list.upper()
+    sn_list = sn_list1.split(',')
+ 
     try:
         srv_ip = mfg.cm_server[cm]
         print(srv_ip)
     except KeyError:
         print("Invalid CM:", cm)
         sys.exit()
-
+   
+    #if filename != "":
+    #    print("Using SN in file", filename)
+    #    with open(filename) as f:
+    #        sn_list = f.readlines()
+    #    sn_list = [x.strip() for x in sn_list]
+    #    print(sn_list)
 
     if args.fetch == True:
-        mfg.fetch_remote(cm, card_type, stage, sn_list, args.logroot)
-        sys.exit()
+        if filename == "":
+            mfg.fetch_remote(cm, card_type, stage, sn_list, logroot)
+            sys.exit()
+        else:
+            mfg.fetch_remote_file(cm, card_type, stage, filename, fmode, logroot)
+            sys.exit()
 
