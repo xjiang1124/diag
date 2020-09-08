@@ -22,8 +22,8 @@
 
 # Example:
 # By SN list
-LOGROOT="/home/xguo2/workspace/temp/"
-python3 ./mfg.py -sn_list 2YU029009F,2YU029009F -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
+LOGROOT="/home/xguo2/workspace/temp/mfg_log/"
+python3 ./mfg.py -sn_list 2YU029009F,2YU03300Z9 -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
 
 # By SN file
 FMODE="SN"

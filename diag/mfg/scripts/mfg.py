@@ -64,11 +64,11 @@ class mfg:
                         break
             else:
                 remote_path = self.remote_path+card_type+'/'+stage
-            logroot = logroot+card_type+'/'+stage
+            logroot1 = logroot+card_type+'/'+stage
             if stage == "4C":
                 for corner in corner_4C:
                     remote_path1 = remote_path+'/'+corner+'/'+sn+'/'
-                    logroot1 = logroot+'/'+corner+'/'+sn+'/'
+                    logroot1 = logroot1+'/'+corner+'/'+sn+'/'
                     mkdir_p(logroot1)
 
                     cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path1+"* "+logroot1
@@ -81,11 +81,12 @@ class mfg:
 
             else:
                 remote_path = remote_path+'/'+sn+'/'
-                logroot = logroot+'/'+sn+'/'
+                logroot1 = logroot1+'/'+sn+'/'
                 #pathlib.Path(logroot).mkdir(parents=True, exist_ok=True)
-                mkdir_p(logroot)
+                print(logroot1)
+                mkdir_p(logroot1)
 
-                cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path+"* "+logroot
+                cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path+"* "+logroot1
                 print(cmd)
                 try:
                     subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
@@ -139,7 +140,9 @@ if __name__ == "__main__":
     cm = args.cm.upper()
     filename = args.filename
     fmode = args.file_mode.upper()
+
     logroot = args.logroot
+    logroot = logroot+"/"
 
     sn_list1 = args.sn_list.upper()
     sn_list = sn_list1.split(',')

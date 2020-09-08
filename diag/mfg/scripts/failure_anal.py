@@ -1169,7 +1169,7 @@ if __name__ == "__main__":
     filename = args.filename
     file_mode = args.file_mode.upper()
     prefix = args.prefix
-    log_root = args.logroot
+    log_root = args.logroot + "/"
     verbose = args.verbose
 
     sn = args.sn.upper()
