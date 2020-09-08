@@ -27,14 +27,14 @@ python3 ./mfg.py -sn_list 2YU029009F,2YU029009F -fetch -card_type naples25swm -s
 
 # By SN file
 FMODE="SN"
-python3 ./mfg.py -file temp -fmode $FMODE -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
+python3 ./mfg.py -fn temp -fmode $FMODE -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
 # SN file format example:
 2YU029009F
 2YU03300Z9
 
 # By SN/STAGE file
 FMODE="SN_STAGE"
-python3 ./mfg.py -file temp1 -fmode $FMODE -fetch -card_type naples100 -stage swi -cm pen -logroot $LOGROOT
+python3 ./mfg.py -fn temp1 -fmode $FMODE -fetch -card_type naples25swm -stage swi -cm pen -logroot $LOGROOT
 # SN_STAGE file format example:
 2YU029009F    P2C
 2YU03300Z9    P2C
@@ -68,15 +68,18 @@ python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -pars
 
 # Get error details.
 # Specify log target base of log list output from command above
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -tgt_log NT_MTP-699_2020-08-07_00-37-20 -logroot $LOGROOT
+PMODE="SPEC"
+python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -tgt_log NT_MTP-605_2020-08-23_21-57-23 -pmode $PMODE -logroot $LOGROOT
 
 # Parse the first log
 Example
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode first -logroot $LOGROOT
+PMODE="FIRST"
+python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
 
 # Parse the latest log
 Example
-./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode latest -logroot $LOGROOT
+PMODE="LATEST"
+python3 ./failure_anal.py -sn 2YU026001Y -stage p2c -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
 
 # Parse SN list from file
 FMODE="SN"
@@ -89,7 +92,12 @@ PMODE="latest"
 python3 ./failure_anal.py -fn temp1 -fmode $FMODE -stage p2c -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
 
 #=============================================
-# Other parameterso
+# Other parameters
 -cl:     Delete log folder for specified SN
 -cl_all: Delete all log folder under logroot
 -sv:     save logs to location specified by -sv_path
+
+#=============================================
+# Find fw rev from swi log
+SN=2YU03400M7
+./find_fw_rev.sh -sn $SN

@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN/FSN/PEN", type=str, default="PEN")
     parser.add_argument("-sn", "--sn", help="Serial Number", type=str, default="")
-    parser.add_argument("-file", "--file", help="File With Serial Number", type=str, default="")
+    parser.add_argument("-fn", "--filename", help="File nmae with Serial Number", type=str, default="")
     parser.add_argument("-fmode", "--file_mode", help="File mode: SN only/SN_STAGE", type=str, default="SN")
     parser.add_argument("-sn_list", "--sn_list", help="Serial Number list", type=str, default="")
     parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="")
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     stage = args.stage.upper()
     card_type = args.card_type.upper()
     cm = args.cm.upper()
-    filename = args.file
+    filename = args.filename
     fmode = args.file_mode.upper()
     logroot = args.logroot
 
