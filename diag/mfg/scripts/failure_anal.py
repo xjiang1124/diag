@@ -754,7 +754,7 @@ def get_mfg_log_list(card_type, sn, stage):
         print(file_name.split(".")[0])
     return
 
-def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cleanup, save, save_path):
+def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cleanup, save, save_path, raw):
     print("Using SN in file", filename)
     with open(filename) as f:
         sn_list = f.readlines()
@@ -783,9 +783,9 @@ def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage,
         if parse_mode == "LIST":
             get_mfg_log_list(card_type, sn1, stage1)
         else:
-            parse_log_file_top(log_root, parse_mode, card_type, stage1, sn1, tgt_log, verbose, cleanup, save, save_path)
+            parse_log_file_top(log_root, parse_mode, card_type, stage1, sn1, tgt_log, verbose, cleanup, save, save_path, raw)
 
-def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup, save, save_path):
+def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup, save, save_path, raw):
 
     print("========================================")
     print("===", sn, stage, "===")
@@ -860,11 +860,11 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
 
     print(files_found)
     if parse_mode == "FW_REV":
-        parse_fw_rev(files_found[0], sn, verbose, cleanup)
+        parse_fw_rev(files_found[0], sn, verbose, cleanup, raw)
     else:
-        parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path)
+        parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path, raw)
 
-def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
+def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, raw):
 
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
@@ -1065,7 +1065,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path):
     if cleanup == True:
         rm_cmd(card_log_path)
 
-def parse_fw_rev(file_fullname, sn, verbose, cleanup):
+def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
     file_name = os.path.basename(file_fullname)
@@ -1120,7 +1120,12 @@ def parse_fw_rev(file_fullname, sn, verbose, cleanup):
 
     fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
     cmd = fmt_cmd.format("FW_REV", log_filename)
+    if verbose == True:
+        cmd = cmd + " -verb"
+    if raw == True:
+        cmd = cmd + " -raw"
 
+    print(cmd)
     ret_str = run_bash_cmd(cmd)
     if ret_str == "":
         ret_str = "No error found. Please check manually"
@@ -1148,6 +1153,7 @@ if __name__ == "__main__":
     parser.add_argument("-cl", "--cl", help="Delete logs after processing", action='store_true')
     parser.add_argument("-cl_all", "--cl_all", help="Delete logs after processing", action='store_true')
     parser.add_argument("-sv", "--save", help="Save log to target location", action='store_true')
+    parser.add_argument("-raw", "--raw", help="Display raw data", action='store_true')
 
     group.add_argument("-cm", "--cm", help="CM site: FML/FPN", type=str, default="FPN")
     parser.add_argument("-fn", "--filename", help="File name of input", type=str, default="")
@@ -1188,12 +1194,12 @@ if __name__ == "__main__":
         if file_mode == "YIELD":
             parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
         else:
-            parse_log_from_file(filename, file_mode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cl, args.save, args.save_path)
+            parse_log_from_file(filename, file_mode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cl, args.save, args.save_path, args.raw)
         sys.exit(0)
 
     if args.parse == True:
         if parse_mode == "LIST":
             get_mfg_log_list(card_type, sn, stage)
             sys.exit(0)
-        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cl, args.save, args.save_path)
+        parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cl, args.save, args.save_path, args.raw)
         sys.exit(0)

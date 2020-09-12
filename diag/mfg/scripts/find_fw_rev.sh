@@ -16,6 +16,11 @@ case $key in
     VERB=TRUE
     shift # past argument
     ;;
+    #-------------
+    -raw|--raw)
+    RAW=TRUE
+    shift # past argument
+    ;;
 
     #-------------
     --default)
@@ -52,4 +57,9 @@ do
     done
 done <<< "${fetch_output}"
 
-python3 ./failure_anal.py -stage swi -card_type $CARD_TYPE -parse -pmode fw_rev -sn $SN -cl -logroot $cwd
+if [[ $RAW == TRUE ]]
+then
+    python3 ./failure_anal.py -stage swi -card_type $CARD_TYPE -parse -pmode fw_rev -sn $SN -cl -logroot $cwd -raw
+else
+    python3 ./failure_anal.py -stage swi -card_type $CARD_TYPE -parse -pmode fw_rev -sn $SN -cl -logroot $cwd
+fi

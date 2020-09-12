@@ -18,8 +18,8 @@ case $key in
     shift # past value
     ;;
     #-------------
-    -saw|--saw)
-    SAW=TRUE
+    -raw|--raw)
+    RAW=TRUE
     shift # past argument
     ;;
     #-------------
@@ -99,14 +99,15 @@ then
 
 elif [[ $MODE == "FW_REV" ]]
 then
+    echo "========================================"
 
-    if [[ $SAW == TRUE ]]
+    if [[ $RAW == TRUE ]]
     then
+        grep -a  "cpld -prog" $FN
         grep -a -A130 "fwupdate -l" $FN
         exit 0
     fi
 
-    echo "========================================"
     echo "boot0"
     grep -a -A130 "fwupdate -l" $FN | grep -A12 "boot0" | grep "software_version"
     grep -a -A130 "fwupdate -l" $FN | grep -A12 "boot0" | grep "software_pipeline"
