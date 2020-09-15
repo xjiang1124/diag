@@ -58,7 +58,7 @@ python3 ./failure_anal.py -fn Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -p
 
 # Generate Yield report
 # Output file is in csv format
-python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c -logroot $LOGROOT
+python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c,4c-h,swi -logroot $LOGROOT
 
 #=============================================
 # Parse error from specified SN

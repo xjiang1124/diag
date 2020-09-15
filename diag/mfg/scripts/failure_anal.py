@@ -145,6 +145,8 @@ def get_err_code(err_info):
         err_code = "WRONG_ORNT"
     elif "NDF" in err_info:
         err_code = "NDF"
+    elif "NRF" in err_info:
+        err_code = "NRF"
     elif "L1" in err_info:
         err_code = "L1"
         if "hbm_test" in err_info:
@@ -251,8 +253,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
             break
 
         # Temp solution: Penang yield report has extra records of old data
-        if idx < 1640:
-            continue
+        #if idx < 1640:
+        #    continue
 
         stage = "NA"
         fail_dsrp = fail_dsrp_list[idx]
@@ -279,7 +281,10 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
         stage_new_list[idx] = stage
 
-        if "Diagnostic Software Problem" in fail_dsrp:
+        #print(sn, stage)
+
+        #if "Diagnostic Software Problem" in fail_dsrp:
+        if "NRF" in fail_dsrp:
             if stage == "DL":
                 f_dl.write(sn+'\n')
             if stage == "P2C":
@@ -351,8 +356,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
         for idx, sn in sn_list.items():
 
             # Temp solution: Penang yield report has extra records of old data
-            if idx < 1640:
-                continue
+            #if idx < 1640:
+            #    continue
 
             if pd.isna(sn) == True or pd.isna(fail_dsrp_list[idx]) == True:
                 break
@@ -360,7 +365,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
             if stage_new_list[idx] != stage_tgt:
                 continue
 
-            if "Diagnostic Software Problem" not in fail_dsrp_list[idx]:
+            #if "Diagnostic Software Problem" not in fail_dsrp_list[idx]:
+            if "NRF" not in fail_dsrp_list[idx]:
                 continue
 
             if "4C" in stage_tgt:
@@ -640,10 +646,10 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     #WK34 NAPLES25SWM
     #total_tested["ICT"]  = 276.0
     total_tested["DL"]   = 77.0
-    total_tested["P2C"]  = 114.0
-    #total_tested["4C-H"] = 1031.0
+    total_tested["P2C"]  = 1268.0
+    total_tested["4C-H"] = 1344.0
     #total_tested["4C-L"] = 273.0
-    total_tested["SWI"]  = 557.0
+    total_tested["SWI"]  = 1364.0
     #total_tested["FST"]  = 944.0
 
     #WK32 NAPLES100
