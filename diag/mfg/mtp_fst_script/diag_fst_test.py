@@ -13,6 +13,7 @@ def cleanup(eth):
 
 def get_ssh_cmd(ip, cmd):
     ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p pen123 ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
+    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p pen123 ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
     ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
     return ssh_cmd
 
@@ -34,8 +35,10 @@ def get_product_name_from_pn(pn):
         product_name = "VOMERO2"
     elif "P37692" in pn:
         product_name = "NAPLES100HPE"
+    elif "68-0014-01" in pn:
+        product_name = "NAPLES25SWMDELL"
     elif "DSC1-2S25-4H8P-DS" in pn:
-        product_name = "NAPLES25SWM"
+        product_name = "SSH_DETECT"
     else:
         product_name = "UNKNOWN"
         print("Unknow PN:", pn)
@@ -177,7 +180,8 @@ def fst_general():
             eth = "enp"+str(bus_int)+"s0"
             tmp = subprocess.call(["ifconfig", eth, "169.254."+str(bus_int)+".2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.call(["ifconfig", eth, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            naples_env["NAPLES_URL"] = "http://169.254."+str(bus_int)+".1"
+            nic_ip = "169.254."+str(bus_int)+".1"
+            naples_env["NAPLES_URL"] = "http://"+nic_ip
             time.sleep(1)
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
@@ -193,6 +197,31 @@ def fst_general():
             pn = fru["status"]["fru"]["part-number"]
             product_name = get_product_name_from_pn(pn)
 
+            if product_name == "SSH_DETECT":
+                print("SSH_DETECT")
+                try:
+                    x = subprocess.check_output("/home/diag/penctl.linux.0915 -a /home/diag/penctl.token system enable-sshd", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                    y = subprocess.check_output("/home/diag/penctl.linux.0915 -a /home/diag/penctl.token update ssh-pub-key -f ~/.ssh/id_rsa.pub", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                    cmd = "cat /tmp/fru.json"
+                    ssh_cmd = get_ssh_cmd(nic_ip, cmd)
+                    print(ssh_cmd)
+                    z = subprocess.check_output(ssh_cmd, env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                except:
+                    print("Failed to use ssh to detect PN")
+                    print("slot:", str(a), b, "sn: unknown", "type: unknown", "failed") 
+                    cleanup(eth)
+                    continue
+
+                #print(x.decode("utf-8"))
+                #print(y.decode("utf-8"))
+                #print(z.decode("utf-8"))
+            
+                zz = z.decode("utf-8")
+                nic_fru = json.loads(zz)
+                #print(nic_fru)
+                pn = nic_fru["board-assembly-area"]
+                product_name = get_product_name_from_pn(pn)
+
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
@@ -204,7 +233,7 @@ def fst_general():
             y = x.decode("utf-8")
             firmware = json.loads(y)
 
-            if product_name == "NAPLES25" or product_name == "NAPLES25SWM":
+            if product_name == "NAPLES25" or product_name == "NAPLES25SWM" or product_name == "NAPLES25SWMDELL":
                 if "8GT/s" in new_str and "x8" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
