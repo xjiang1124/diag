@@ -34,8 +34,11 @@ def get_product_name_from_pn(pn):
         product_name = "VOMERO2"
     elif "P37692" in pn:
         product_name = "NAPLES100HPE"
+    elif "DSC1-2S25-4H8P-DS" in pn:
+        product_name = "NAPLES25SWM"
     else:
         product_name = "UNKNOWN"
+        print("Unknow PN:", pn)
 
     return product_name
 
@@ -189,7 +192,7 @@ def fst_general():
             product_name = fru["status"]["fru"]["product-name"].replace(" ", "")
             pn = fru["status"]["fru"]["part-number"]
             product_name = get_product_name_from_pn(pn)
-           
+
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
