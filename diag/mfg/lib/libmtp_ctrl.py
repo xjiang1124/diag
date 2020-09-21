@@ -21,6 +21,7 @@ from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_IBM_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_NAPLES100_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_NAPLES100HPE_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_NAPLES100HPE_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_VOMERO2_TIMESTAMP
@@ -1105,8 +1106,8 @@ class mtp_ctrl():
 
         # check if firmware image exist
         if mtp_capability & 0x1:
-            naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            naples100_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
+            naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100
+            naples100_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_NAPLES100
             naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
             naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
             naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
@@ -1491,7 +1492,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
 
         if nic_type == NIC_Type.NAPLES100:
-            expected_timestam = MFG_GOLD_TIMESTAMP
+            expected_timestam = MFG_GOLD_NAPLES100_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES100IBM:
             expected_timestam = MFG_GOLD_IBM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES100HPE:
@@ -1581,9 +1582,9 @@ class mtp_ctrl():
         # ping to update the arp cache
         for x in range(2):
             time.sleep(5)
-        cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            return False
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                return False
 
         return True
 
@@ -1777,58 +1778,21 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
         return True
         
-    def mtp_verify_naples_pn(self, slot):
+    def mtp_verify_naples_pn(self, slot, exp_pn, name):
     
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
+        
         if not naples_pn:
-            self.cli_log_slot_err_lock(slot, "Verify NIC NAPLES PN Failed")
+            self.cli_log_slot_err_lock(slot, "Verify NIC {:s} PN Failed".format(name))
             return False
 
-        nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.NAPLES100:
-            exp_pn = '68-0003-01 01'
-            return True
-        elif nic_type == NIC_Type.NAPLES100IBM:
-            exp_pn = '68-0013-01 03'
-            #111-04635+A0    NETAPP VERSION
-            return True
-        elif nic_type == NIC_Type.NAPLES100HPE:
-            exp_pn = 'P37692-001'
-        elif nic_type == NIC_Type.NAPLES25:
-            exp_pn = '68-0005-03 01'
-            #P18669-001   HPE P/N
-            #68-0008-xx yy    EQUINIX
-            return True
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            exp_pn = 'P26968-001'
-            return True
-        elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            exp_pn = '68-0014-01 00'
-            return True
-        elif nic_type == NIC_Type.NAPLES25OCP:
-            exp_pn = 'P37689-001'
-            #P18671-001   
-            #68-0010-xx  PEnsando OCP (not built)     
-            return True
-        elif nic_type == NIC_Type.FORIO:
-            exp_pn = '68-0007-01 01'
-            return True
-        elif nic_type == NIC_Type.VOMERO:
-            exp_pn = '68-0009-01 01'
-            return True
-        elif nic_type == NIC_Type.VOMERO2:
-            exp_pn = '68-0011-02 01'
-            return True
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-            return False
-
-        if naples_pn != exp_pn:
-            self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, Expect {:s} Read {:s}".format(exp_pn, naples_pn))
+        if exp_pn in naples_pn:
+            self.cli_log_slot_inf_lock(slot, "Verify {:s}_PN Pass, {:s}_PN={:s}".format(name,name,naples_pn))                                  
+            return True        
+        else:                      
+            self.cli_log_slot_err_lock(slot, "{:s}_PN Verify Failed, get {:s}".format(name,naples_pn))
             return False
             
-        self.cli_log_slot_inf_lock(slot, "Verify Naples_PN Pass, naples_pn={:s}".format(naples_pn))
-        return True
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()
 
@@ -1892,6 +1856,7 @@ class mtp_ctrl():
                 self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
                 return True
 
+
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
             return False
@@ -1906,8 +1871,6 @@ class mtp_ctrl():
 
         return True
     def mtp_setting_partition(self, slot):
-        # returnbuff = self._nic_ctrl_list[slot].nic_setting_partition_by_conn()
-        # print ('mtp_setting_partition: ' + returnbuff)
         
         if not self._nic_ctrl_list[slot].nic_setting_partition():
             self.cli_log_slot_err_lock(slot, "Setting PSLC failed")
@@ -2031,6 +1994,8 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
                 exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_MINOR_VERSION
+  
+
         elif nic_type == NIC_Type.NAPLES25OCP:
             if sec_cpld:
                 exp_ver = NIC_CPLD_Version.NAPLES25OCP_SEC_VERSION
@@ -2080,10 +2045,26 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf_lock(slot, "Program NIC QSPI passed")
         return True
-
+        
+    def mtp_copy_nic_gold(self, slot, gold_img):
+        if not self._nic_ctrl_list[slot].nic_copy_gold(gold_img):
+            self.cli_log_slot_inf_lock(slot, "Copy NIC goldfw failed")
+            return False
+            
+        return True
 
     def mtp_program_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
+            self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
+            return False
+
+        if not self.mtp_mgmt_set_nic_gold_boot(slot):
+            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
+            return False
+
+        return True
+    def mtp_program_nic_gold_naples100(self, slot, gold_img):
+        if not self._nic_ctrl_list[slot].nic_program_gold_naples100(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
             return False
 
@@ -2139,14 +2120,24 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_copy_nic_emmc(self, slot, emmc_img):
+        if not self._nic_ctrl_list[slot].nic_copy_emmc(emmc_img):
+            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            return False
+            
+        return True
+        
+    def mtp_set_nic_sw_boot(self, slot, emmc_img):
+
+        if not self.mtp_mgmt_set_nic_sw_boot(slot):
+            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
+            return False
+
+        return True
 
     def mtp_program_nic_emmc(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            return False
-
-        if not self.mtp_mgmt_set_nic_sw_boot(slot):
-            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
             return False
 
         return True
@@ -2160,6 +2151,11 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
             return False
 
+        return True
+    def mtp_program_nic_emmc_naples100(self, slot, emmc_img):
+        if not self._nic_ctrl_list[slot].nic_program_emmc_naples100(emmc_img):
+            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            return False
         return True
 
 
@@ -2661,7 +2657,7 @@ class mtp_ctrl():
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
-                slot = int(match[idx]) - 1
+                slot = int(match[idx]) - 1     
                 self._nic_prsnt_list[slot] = True
                 self._nic_type_list[slot] = NIC_Type.NAPLES100
                 self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100)
@@ -2773,6 +2769,14 @@ class mtp_ctrl():
             return False
 
         self.cli_log_slot_inf(slot, "Set NIC default diag boot")
+        return True
+        
+    def mtp_mgmt_set_nic_mainfw_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_mainfw_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with mainfw failed")
+            return False
+
+        self.cli_log_slot_inf(slot, "Set NIC default mainfw boot")
         return True
 
 

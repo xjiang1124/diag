@@ -359,6 +359,34 @@ class nic_ctrl():
             return False
 
         return True
+        
+    def nic_set_mainfw_boot(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # set default to mainfw boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
 
 
     def nic_sw_cleanup_shutdown(self):
@@ -762,26 +790,12 @@ class nic_ctrl():
         return True
     def nic_setting_partition(self):
         nic_cmd_list = list()
-        
-        #cmd_buf = self.nic_get_info('which mmc')
-
-        # save result buffer
-        #cmd_buf = self.nic_get_cmd_buf()
-        #print(cmd_buf)
-        
         nic_cmd = MFG_DIAG_CMDS.NIC_SETTING_PARTITION_FMT
-        #print("********SETTING 1st PARTITION COMMAND******")
-        #print(nic_cmd)
-        #print("***************************************")
         nic_cmd_list.append(nic_cmd)
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             return False
-
-        # save result buffer
-        #cmd_buf = self.nic_get_cmd_buf()
-        #print(cmd_buf)
-               
+         
         if MFG_DIAG_SIG.NIC_PARTITION1_OK_SIG in cmd_buf:
             return True
         elif MFG_DIAG_SIG.NIC_PARTITION_OK_SIG in cmd_buf:
@@ -905,14 +919,31 @@ class nic_ctrl():
 
         return True
 
-
-    def nic_program_gold(self, gold_img):
+    def nic_copy_gold(self, gold_img):
         if not self.nic_copy_image(gold_img):
             return False
+            
+        return True
+
+    def nic_program_gold(self, gold_img):
+
         img_name = os.path.basename(gold_img)
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT.format(img_name, img_name)
+        gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
+            return False
+
+        return True
+    def nic_program_gold_naples100(self, gold_img):
+        #if not self.nic_copy_image(gold_img):
+            #return False
+        img_name = os.path.basename(gold_img)
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT_NAPLES100.format(img_name)
         gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
@@ -946,7 +977,9 @@ class nic_ctrl():
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+            
 
+ 
 
     def nic_program_emmc(self, emmc_img):
         if not self.nic_copy_image(emmc_img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
@@ -979,6 +1012,21 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT_IBM.format(img_name, img_name)
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
+            return False
+
+        return True
+    def nic_program_emmc_naples100(self, emmc_img):
+        if not self.nic_copy_image(emmc_img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+            return False
+        img_name = os.path.basename(emmc_img)
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_NAPLES100.format(img_name)
+        nic_cmd_list.append(nic_cmd)
+        emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
             return False
 
@@ -1287,9 +1335,6 @@ class nic_ctrl():
             match = re.findall(NAPLES_DISP_SN_FMT, fru_buf)
         if match:
             self._sn = match[0]
-            print("***SERIAL NUMBER***")
-            print(self._sn)
-            print("*******************")
         else:
             print ("fru_buf 2: {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1299,9 +1344,6 @@ class nic_ctrl():
         match = re.findall(NAPLES_DISP_MAC_FMT, fru_buf)
         if match:
             self._mac = match[0]
-            print("***MAC ADDR***")
-            print(self._mac)
-            print("*******************")
         else:
             print ("fru_buf 3 match: ")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1333,7 +1375,7 @@ class nic_ctrl():
             if self._nic_type == NIC_Type.NAPLES100IBM:
                 match = re.findall(IBM_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.VOMERO2:
-                print("5")
+                print("fru_buf 5 match: ")
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(DELLSWM_DISP_ASSEMBLY_FMT, fru_buf)
@@ -1342,11 +1384,8 @@ class nic_ctrl():
 
         if match:
             self._pn = match[0]
-            print("***PART NUMBER***")
-            print(self._pn)
-            print("*******************")
         else:
-            print ("fru_buf 5 match: ")
+            print ("fru_buf 6 match: ")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         
@@ -1401,9 +1440,6 @@ class nic_ctrl():
                 match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
             if match:
                 sn = match[0]
-                print("***2ND SERIAL NUMBER***")
-                print(sn)
-                print("*******************")
             else:
                 print ("fru_buf 8 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1413,9 +1449,6 @@ class nic_ctrl():
             match = re.findall(NAPLES_DISP_MAC_FMT, self.nic_get_cmd_buf())
             if match:
                 mac = match[0]
-                print("***2ND MAC ADDR***")
-                print(mac)
-                print("******************")
             else:
                 print ("fru_buf 9 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1451,9 +1484,6 @@ class nic_ctrl():
                     match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
             if match:
                 pn = match[0]
-                print("***2ND PART NUMBER***")
-                print(pn)
-                print("******************")
             else:
                 print ("fru_buf 11 match: ")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -1469,16 +1499,6 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
- 
-        #Charles
-        #if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
-            #print ("sn {} vs {} ".format(self._sn, sn))
-            #print ("mac {} vs {} ".format(self._mac, mac))
-            #print ("pn {} vs {} ".format(self._pn, pn))
-            #print ("date {} vs {} ".format(self._date, date))
-            #self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            #print ("fru_buf 12 match: ")
-            #return False
 
         #ALOM CARD WITH SWM IF ATTACHED
         if self._nic_type == NIC_Type.NAPLES25SWM:
@@ -1495,7 +1515,7 @@ class nic_ctrl():
                 fru_buf = self.mtp_read_alom_fru(self._slot)    
                 
                 if not fru_buf:
-                    print ("fru_buf 13: {}".format(nic_cmd))
+                    print ("fru_buf 12: {}".format(nic_cmd))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False        
                 
@@ -1504,7 +1524,7 @@ class nic_ctrl():
                 if match:
                     self._alom_sn = match[0]
                 else:
-                    print ("fru_buf 14: {}".format(fru_buf))
+                    print ("fru_buf 13: {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 
@@ -1514,7 +1534,7 @@ class nic_ctrl():
                 if match:
                     self._alom_pn = match[0]
                 else:
-                    print ("fru_buf 15: {}".format(fru_buf))
+                    print ("fru_buf 14: {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
             
@@ -1528,7 +1548,7 @@ class nic_ctrl():
                     #print(self._alom_pro_no)
                     #print("******************************")
                 else:
-                    print ("fru_buf 16: {}".format(fru_buf))
+                    print ("fru_buf 15: {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
             
@@ -1652,9 +1672,7 @@ class nic_ctrl():
         if not cpld_buf:
             return False
         match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
-        #print("****MATCH******")
-        #print(match)
-        #print("***************")
+  
         if len(match) > 1:
             read_data[0] = int(match[1], 16)
         else:

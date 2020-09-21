@@ -59,12 +59,17 @@ class NIC_CPLD_Version:
 # MFG release images
 class MFG_IMAGE_FILES:
  
-    MTP_AMD64_IMAGE = "image_amd64_08262020.tar"
-    MTP_ARM64_IMAGE = "image_arm64_08262020.tar"
+
+    
+    MTP_AMD64_IMAGE = "image_amd64_09082020.tar"
+    MTP_ARM64_IMAGE = "image_arm64_09082020.tar"
+    
+    MTP_PENCTL_IMAGE = "penctl.linux.0915"
+    MTP_PENCTL_TOKEN = "penctl.token"
     
     NIC_DIAGFW_IMAGE = "naples_diagfw_05212020.tar"
-    NIC_GOLDFW_IMAGE = "naples_gold_1.3.1-E-17_0416.tar"
-    NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.8.0-E-48_0716.tar"
+    NIC_GOLDFW_IMAGE = "naples_goldfw_1.3.1-E-19_0717.tar"
+    NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.3.1-E-19_0717.tar"
     NIC_DIAGFW_IMAGE_HPE_OCP = "naples_diagfw_1.3.1-E-27.tar"
     NIC_GOLDFW_IMAGE_HPE_OCP = "naples_goldfw_1.3.1-E-28_0731.tar"
     NIC_DIAGFW_IMAGE_SWMDELL = "naples_diagfw_1.3.1-E-31_0824.tar"
@@ -75,6 +80,8 @@ class MFG_IMAGE_FILES:
     NIC_GOLDFW_IMAGE_HPE_NAPLES100 = "naples_goldfw_1.3.1-E-28_0731.tar"
     NIC_DIAGFW_IMAGE_VOMERO2 = "naples_diagfw_w_uboot_1.3.1-E-26_0620.tar"
     NIC_GOLDFW_IMAGE_VOMERO2 = "naples_minigoldfw_1.7.4-C-7_0702.tar"
+    NIC_DIAGFW_IMAGE_NAPLES100 = "naples_diagfw_12172019.tar"
+    NIC_GOLDFW_IMAGE_NAPLES100 = "naples_goldfw_09182019.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_rev9_06222020.bin"
     NAPLES25_SEC_CPLD_IMAGE = "naples25_rev89_06172020.bin"
@@ -108,8 +115,8 @@ MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 
 MFG_QSPI_TIMESTAMP = "05-21-2020"
-
-MFG_GOLD_TIMESTAMP = "04-15-2020"
+MFG_GOLD_TIMESTAMP = "04-18-2020"
+MFG_GOLD_NAPLES100_TIMESTAMP = "09-17-2019"
 MFG_QSPI_VOMERO_TIMESTAMP = "02-03-2020"
 MFG_GOLD_VOMERO2_TIMESTAMP = "07-01-2020"
 MFG_QSPI_VOMERO2_TIMESTAMP = "06-18-2020"

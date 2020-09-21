@@ -114,7 +114,7 @@ class MTP_Const:
     MTP_PARA_AAPL_INIT_DELAY = 1800
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
-    OS_CMD_DELAY = 300
+    OS_CMD_DELAY = 600
     NIC_CON_CMD_DELAY = 900
     NIC_CON_INIT_DELAY = 60
     NIC_NETCOPY_DELAY = 120
@@ -139,8 +139,8 @@ class MTP_Const:
     MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
     MFG_DL_TEST_TIMEOUT = 14400
-    # 2.5 hour SWM and IBM update to 5 hours
-    MFG_SW_TEST_TIMEOUT = 18000
+    # 2.5 hour SWM and IBM update to 6 hours
+    MFG_SW_TEST_TIMEOUT = 21600
     # 1 hour
     MFG_FST_TEST_TIMEOUT = 3600
     MFG_CFG_TEST_TIMEOUT = 3600
@@ -303,16 +303,12 @@ class MFG_DIAG_CMDS:
     NIC_MOUNT_DISP_FMT = "mount | grep '/dev/mmcblk0p10'"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
-    #NIC_GOLDFW_PROG_FMT = "fwupdate -p /{:s} -i goldfw"
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
-    #NIC_EMMC_PROG_FMT = "fwupdate -p /{:s} -i 'uboot mainfwa mainfwb'"
+    NIC_EMMC_PROG_FMT_NAPLES100 = "fwupdate -p /data/{:s} -i 'uboot mainfwa mainfwb'"
+    NIC_GOLDFW_PROG_FMT_NAPLES100 = "fwupdate -p /{:s} -i goldfw"
     NIC_EMMC_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i 'all'"
     NIC_EMMC_B_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i mainfwb"
-    ###For IBM DUE TO THE SIZE OF IMAGE CHANGE FROM 173MB to 375MB 5/19/20####
-    NIC_EMMC_PROG_FMT_IBM = "cd /; cd /update; tar xvf {:s} -C /update fwupdate; ./fwupdate -p {:s} -i 'all'"
-    NIC_EMMC_B_PROG_FMT_IBM = "cd /; cd /update; tar xvf {:s} -C /update fwupdate; ./fwupdate -p {:s} -i mainfwb"
-    #######################################
     NIC_BOOT_DISP_FMT = "fwupdate -r"
     NIC_IMG_DISP_FMT = "fwupdate -L"
     NIC_IMG_DISP1_FMT = "fwupdate -l"

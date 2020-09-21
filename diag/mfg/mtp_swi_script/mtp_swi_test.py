@@ -51,6 +51,28 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
+    
+def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_list):
+    dsp = FF_Stage.FF_SWI
+    for test in ["CPLD_PROG", "CPLD_REF"]:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = libmfg_utils.timestamp_snapshot()
+        # program CPLD
+        if test == "CPLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # refresh CPLD
+        elif test == "CPLD_REF":
+            ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
+            continue
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
@@ -76,15 +98,15 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
+def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
     dsp = FF_Stage.FF_SWI
-    for test in ["SEC_CPLD_VERIFY", "GOLD_PROG"]:
+    for test in ["SEC_CPLD_VERIFY", "COPY_GOLD"]:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         if test == "SEC_CPLD_VERIFY":
             ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
-        elif test == "GOLD_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
+        elif test == "COPY_GOLD":
+            ret = mtp_mgmt_ctrl.mtp_copy_nic_gold(slot, gold_img_file)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
@@ -106,10 +128,33 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         # program sw image onto EMMC
         if test == "SW_INSTALL":
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES100IBM:
-                ret = mtp_mgmt_ctrl.mtp_program_nic_emmc_ibm(slot, emmc_img_file)
+            if nic_type == NIC_Type.NAPLES100:
+                ret = mtp_mgmt_ctrl.mtp_program_nic_emmc_naples100(slot, emmc_img_file)
             else:
                 ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
+        else:       
+            mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
+            continue
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            prog_fail_nic_list.append(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
+    dsp = FF_Stage.FF_SWI
+    for test in ["GOLD_PROG"]:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = libmfg_utils.timestamp_snapshot()
+        if test == "GOLD_PROG":
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.NAPLES100:
+                ret = mtp_mgmt_ctrl.mtp_program_nic_gold_naples100(slot, gold_img_file)
+            else:
+                ret = mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
@@ -151,6 +196,7 @@ def main():
     diag_log_filep = open(diag_log_file, "w+", buffering=0)
     log_filep_list.append(diag_log_filep)
 
+                              
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
@@ -178,6 +224,25 @@ def main():
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
     gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_NAPLES100
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_NAPLES100
+    naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
+    naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100
+    naples100ibm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE
+    naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples100hpe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100HPE_CPLD_IMAGE
+    naples100hpe_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100
+    naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
+    naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
+    vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
+    vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2                                                                                                
+    naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
+    naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
+    naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
+    naples25swmdell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
+    naples25swmdell_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
@@ -187,21 +252,38 @@ def main():
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
+          
+    # init the nic diag environment
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if nic_prsnt_list[slot]:
+            if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
+                continue
 
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # Set Naples25SWM test mode
-    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
-    #mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.IBM)
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
-
+        
     dsp = FF_Stage.FF_SWI
     pass_nic_list = list()
-    fail_nic_list = list()   
+    fail_nic_list = list()
+    exp_100hpe_pn = "P37692"
+    exp_swm_pn = "P26968"
+    exp_naples25_pn = "68-0005"
+    exp_100_pn = "68-0003"
+    exp_vomero2_pn = "68-0011"
+    exp_naples25hpe_pn = "P18669"
+    exp_25ocp_pn = "P37689"
+    exp_swmdell_pn = "68-0014"
+
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
@@ -213,28 +295,38 @@ def main():
         pass_nic_list.append(slot)
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
+            cpld_img_file = naples100_cpld_img_file                        
             sec_cpld_img_file = naples100_sec_cpld_img_file
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_NAPLES100
         elif card_type == NIC_Type.NAPLES100IBM:
+            cpld_img_file = naples100ibm_cpld_img_file                        
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
         elif card_type == NIC_Type.NAPLES100HPE:
+            cpld_img_file = naples100hpe_cpld_img_file                        
             sec_cpld_img_file = naples100hpe_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_NAPLES100
         elif card_type == NIC_Type.VOMERO:
+            cpld_img_file = vomero_cpld_img_file                        
             sec_cpld_img_file = vomero_sec_cpld_img_file
         elif card_type == NIC_Type.VOMERO2:
+            cpld_img_file = vomero2_cpld_img_file                        
             sec_cpld_img_file = vomero2_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
         elif card_type == NIC_Type.NAPLES25:
+            cpld_img_file = naples25_cpld_img_file                        
             sec_cpld_img_file = naples25_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
         elif card_type == NIC_Type.NAPLES25SWM:
+            cpld_img_file = naples25swm_cpld_img_file                        
             sec_cpld_img_file = naples25swm_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM
         elif card_type == NIC_Type.NAPLES25OCP:
+            cpld_img_file = naples25ocp_cpld_img_file                        
             sec_cpld_img_file = naples25ocp_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP 
         elif card_type == NIC_Type.NAPLES25SWMDELL:
+            cpld_img_file = naples25swmdell_cpld_img_file                        
             sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL 
         else:
@@ -242,6 +334,7 @@ def main():
             continue
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Non Secure CPLD image: " + os.path.basename(cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Main image: " + os.path.basename(emmc_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Gold image: " + os.path.basename(gold_img_file))
@@ -268,8 +361,21 @@ def main():
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
             elif test == "NAPLES_PN_VERIFY":
-                ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot)   
-                ret = True
+                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if card_type == NIC_Type.NAPLES100HPE:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_100hpe_pn,'NAPLES100HPE')
+                elif card_type == NIC_Type.NAPLES25OCP:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_25ocp_pn,'NAPLES25OCP')
+                elif card_type == NIC_Type.NAPLES25SWM:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_swm_pn,'NAPLES25SWM')
+                elif card_type == NIC_Type.NAPLES100:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_100_pn,'NAPLES100')
+                elif card_type == NIC_Type.VOMERO2:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_vomero2_pn,'VOMERO2')
+                elif card_type == NIC_Type.NAPLES25:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_naples25_pn,'NAPLES25')
+                elif card_type == NIC_Type.NAPLES25SWMDELL:
+                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_swmdell_pn,'NAPLES25SWMDELL')    
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                 continue
@@ -282,6 +388,75 @@ def main():
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+            
+    # program the NIC firmware
+    nic_thread_list = list()
+    prog_fail_nic_list = list()
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
+            #qspi_img_file = naples100_qspi_img_file
+            cpld_img_file = naples100_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100IBM:
+            #qspi_img_file = naples100ibm_qspi_img_file
+            cpld_img_file = naples100ibm_cpld_img_file
+        elif card_type == NIC_Type.NAPLES100HPE:
+            #qspi_img_file = naples100hpe_qspi_img_file
+            cpld_img_file = naples100hpe_cpld_img_file
+        elif card_type == NIC_Type.VOMERO:
+            #qspi_img_file = vomero_qspi_img_file
+            cpld_img_file = vomero_cpld_img_file
+        elif card_type == NIC_Type.VOMERO2:
+            #qspi_img_file = vomero2_qspi_img_file
+            cpld_img_file = vomero2_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25:
+            #qspi_img_file = naples25_qspi_img_file
+            cpld_img_file = naples25_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWM:
+            #qspi_img_file = naples25swm_qspi_img_file
+            cpld_img_file = naples25swm_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25OCP:
+            #qspi_img_file = naples25ocp_qspi_img_file
+            cpld_img_file = naples25ocp_cpld_img_file
+        elif card_type == NIC_Type.NAPLES25SWMDELL:
+            #qspi_img_file = naples25swmdell_qspi_img_file
+            cpld_img_file = naples25swmdell_cpld_img_file
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
+            continue
+
+        nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
+                                                                              cpld_img_file,
+                                                                              slot,
+                                                                              sn,
+                                                                              prog_fail_nic_list))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+        time.sleep(2)
+    
+    # monitor all the thread
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
+    
+    for slot in prog_fail_nic_list:
+        fail_nic_list.append(slot)
+        pass_nic_list.remove(slot)
+
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # Secure key programming
     for slot in range(len(nic_prsnt_list)):
@@ -410,6 +585,74 @@ def main():
         logfile_close(log_filep_list)
         return
 
+    # Copy the NIC Gold image
+    nic_thread_list = list()
+    prog_fail_nic_list = list()
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        nic_thread = threading.Thread(target = single_nic_copy_gold_program, args = (mtp_mgmt_ctrl,
+                                                                                gold_img_file,
+                                                                                slot,
+                                                                                sn,
+                                                                                prog_fail_nic_list))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+        time.sleep(2)
+
+    # monitor all the thread
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
+
+    for slot in prog_fail_nic_list:
+        fail_nic_list.append(slot)
+        pass_nic_list.remove(slot)
+
+    # program the NIC EMMC image
+    nic_thread_list = list()
+    prog_fail_nic_list = list()
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
+                                                                                emmc_img_file,
+                                                                                slot,
+                                                                                sn,
+                                                                                prog_fail_nic_list))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+        time.sleep(2)
+
+    # monitor all the thread
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
+
+    for slot in prog_fail_nic_list:
+        fail_nic_list.append(slot)
+        pass_nic_list.remove(slot)
+
     # program the NIC Gold image
     nic_thread_list = list()
     prog_fail_nic_list = list()
@@ -446,7 +689,7 @@ def main():
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
+    
     # verify the NIC goldfw boot
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
@@ -473,61 +716,18 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-    # Set NIC diagfw boot to install sw
-    for slot in range(len(nic_prsnt_list)):
-        if not nic_prsnt_list[slot]:
-            continue
-        if slot in fail_nic_list:
-            continue
-
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["DIAG_BOOT"]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = libmfg_utils.timestamp_snapshot()
-            if test == "DIAG_BOOT":
-                ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
-                continue
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                fail_nic_list.append(slot)
-                pass_nic_list.remove(slot)
-                break
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-    # power cycle all nic
+    # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
-        mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
-
-    # program the NIC EMMC image
-    nic_thread_list = list()
-    prog_fail_nic_list = list()
+    
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot for setting MAINFW\n")
             continue
-        if slot in fail_nic_list:
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot):
+            mtp_mgmt_ctrl.mtp_diag_fail_report(slot, "Failed to set slot to MAINFW\n")
             continue
-
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
-                                                                                emmc_img_file,
-                                                                                slot,
-                                                                                sn,
-                                                                                prog_fail_nic_list))
-        nic_thread.daemon = True
-        nic_thread.start()
-        nic_thread_list.append(nic_thread)
-        time.sleep(2)
-
+    
     # monitor all the thread
     while True:
         if len(nic_thread_list) == 0:
@@ -557,7 +757,6 @@ def main():
 
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
     mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Started\n", level=0)
     libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
     mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped\n", level=0)

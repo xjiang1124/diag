@@ -203,9 +203,19 @@ def main():
         return
 
     # power cycle all nic
-    #mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
+       
+    # init the nic diag environment
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if nic_prsnt_list[slot]:
+            if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
+                continue
 
+
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)

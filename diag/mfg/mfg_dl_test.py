@@ -60,11 +60,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
 
     cmd = None
-
-    # if swm_test_mode == Swm_Test_Mode.IBM:
-    # cmd = "./mtp_dl_test.py --mtpid {:s}".format(mtp_id)
-    # else:
-        
+    
     cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
 
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_DL_TEST_TIMEOUT)
@@ -92,8 +88,7 @@ def main():
     if args.verbosity:
         verbosity = True
 
-    swmtestmode = Swm_Test_Mode.SWMALOM 
-    #swmtestmode = Swm_Test_Mode.IBM 
+    swmtestmode = Swm_Test_Mode.SWMALOM  
     if args.swm:
         swmtestmode = args.swm
 
@@ -133,7 +128,9 @@ def main():
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL)
         if (mtp_capability & 0x1):
             # FIXME: Xin - Dedicated image
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
@@ -146,6 +143,7 @@ def main():
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE)    
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE)
+            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE)
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)

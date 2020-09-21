@@ -678,6 +678,60 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
 
     return True
 
+def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
+    if mtp_image in image_on_mtp and nic_image in image_on_mtp:
+        mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
+        return True
+
+    # cleanup the stale diag images
+    cmd = "rm -f /home/diag/image_a*.tar"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    if "penctl.linux" not in mtp_image:
+        mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl image: {:s}".format(mtp_image), level=0)
+        return False
+    if "penctl.token" not in nic_image:
+        mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl TOKEN image: {:s}".format(nic_image), level=0)
+        return False
+
+    mtp_image_file = "release/{:s}".format(mtp_image)
+    if not file_exist(mtp_image_file):
+        mtp_mgmt_ctrl.cli_log_err("MTP Penctl image {:s} doesn't exist... Abort".format(mtp_image_file), level=0)
+        return False
+    nic_image_file = "release/{:s}".format(nic_image)
+    if not file_exist(nic_image_file):
+        mtp_mgmt_ctrl.cli_log_err("NIC Penctl_TOKEN image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy FST Penctl image: {:s}".format(mtp_image_file), level=0)
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    mtp_ip_addr = mtp_mgmt_cfg[0]
+    mtp_usrid = mtp_mgmt_cfg[1]
+    mtp_passwd = mtp_mgmt_cfg[2]
+    remote_dir = "/home/diag/"
+
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy FST Penctl image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update FST Penctl image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
+    if not mtp_mgmt_ctrl.mtp_update_mtp_diag_image(remote_dir + os.path.basename(mtp_image_file)):
+        mtp_mgmt_ctrl.cli_log_err("Update FST Penctl image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update FST Penctl image complete\n", level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy FST Penctl TOKEN image: {:s}".format(nic_image_file), level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy FST Penctl TOKEN image failed... Abort", level=0)
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Update FST Penctl TOKEN image: {:s}".format(os.path.basename(nic_image_file)), level=0)
+    if not mtp_mgmt_ctrl.mtp_update_nic_diag_image(remote_dir + os.path.basename(nic_image_file)):
+        mtp_mgmt_ctrl.cli_log_err("Update FST Penctl TOKEN image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update FST PENCTL image complete\n", level=0)
+
+    return True
+                                                                           
 
 def email_report(email_to, title, body = None):
     if not email_to:

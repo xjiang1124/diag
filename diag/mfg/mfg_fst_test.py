@@ -21,6 +21,7 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+from libmfg_cfg import MFG_IMAGE_FILES
 
 
 def load_mtp_cfg():
@@ -116,8 +117,27 @@ def main():
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+            continue
+        mtp_dl_image_list = list()
+        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)        
+        mtp_diag_image = MFG_IMAGE_FILES.MTP_PENCTL_IMAGE
+        nic_diag_image = MFG_IMAGE_FILES.MTP_PENCTL_TOKEN
+
+        if not libmfg_utils.mtp_update_fst_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
 
     # Copy script, config file on to each MTP Chassis
     mtp_fst_script_dir = "mtp_fst_script/"
