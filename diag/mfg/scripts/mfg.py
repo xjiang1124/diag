@@ -100,20 +100,33 @@ class mfg:
         sn_list = [x.strip() for x in sn_list]
         print(sn_list)
         stage1 = stage
+        card_type1 = card_type
         sn_list1 = []
 
         for sn in sn_list:
             sn = " ".join(sn.split())
             if fmode == "SN":
                 sn_list1 = [sn]
-            else:
+            elif fmode == "SN_STAGE":
                 sn1 = sn.split(" ")[0]
                 stage1 = sn.split(" ")[1]
                 print("===", sn1, stage1)
                 if "4C" in stage1:
                     stage1 = "4C"
                 sn_list1 = [sn1]
-            mfg.fetch_remote(cm, card_type, stage1, sn_list1, args.logroot)
+            elif fmode == "SN_TYPE_STAGE":
+                sn1 = sn.split(" ")[0]
+                card_type1 = sn.split(" ")[1]
+                stage1 = sn.split(" ")[2]
+                print("===", sn1, stage1)
+                if "4C" in stage1:
+                    stage1 = "4C"
+                sn_list1 = [sn1]
+            else:
+                print("Invalid FMODE:", fmode)
+                return
+
+            mfg.fetch_remote(cm, card_type1, stage1, sn_list1, args.logroot)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)

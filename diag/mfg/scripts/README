@@ -34,13 +34,21 @@ python3 ./mfg.py -fn temp -fmode $FMODE -fetch -card_type naples25swm -stage p2c
 
 # By SN/STAGE file
 FMODE="SN_STAGE"
-python3 ./mfg.py -fn temp1 -fmode $FMODE -fetch -card_type naples25swm -stage swi -cm pen -logroot $LOGROOT
+python3 ./mfg.py -fn temp1 -fmode $FMODE -fetch -card_type naples25swm -cm pen -logroot $LOGROOT
 # SN_STAGE file format example:
 2YU029009F    P2C
 2YU03300Z9    P2C
 2YU0270014    4C-H
-2YU030009K    4C-H
+3YU030009K    4C-H
 2YU029011P    4C-L
+
+# By SN/CARD_TYPE/STAGE file
+FMODE="SN_TYPE_STAGE"
+python3 ./mfg.py -fn temp1 -fmode $FMODE -fetch -cm pen -logroot $LOGROOT
+# SN_STAGE file format example:
+3YU036006K    NAPLES25SWM    4C-H
+FPN201801A2    NAPLES100    P2C
+FPN2018022D    NAPLES100    P2C
 
 #=============================================
 # Failure analysis
@@ -89,7 +97,12 @@ python3 ./failure_anal.py -fn temp -fmode $FMODE -stage p2c -card_type naples25s
 # Parse SN list from file
 FMODE="SN_STAGE"
 PMODE="latest"
-python3 ./failure_anal.py -fn temp1 -fmode $FMODE -stage p2c -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
+python3 ./failure_anal.py -fn temp1 -fmode $FMODE -card_type naples25swm -parse -pmode $PMODE -logroot $LOGROOT
+
+# Parse SN list from file
+FMODE="SN_TYPE_STAGE"
+PMODE="latest"
+python3 ./failure_anal.py -fn temp1 -fmode $FMODE -parse -pmode $PMODE -logroot $LOGROOT
 
 #=============================================
 # Other parameters

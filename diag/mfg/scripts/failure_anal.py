@@ -9,7 +9,8 @@ import subprocess
 import sys
 import shlex
 import subprocess
-#import xlwt
+import xlwt
+import xlsxwriter
 import pandas as pd
 import xlrd
 import numpy
@@ -81,9 +82,13 @@ def untar(fname):
         tar.close()
 
 def run_bash_cmd(cmd):
-    cmd_list = shlex.split(cmd)
-    result = subprocess.check_output(cmd_list)
-    result_str = result.decode("utf-8")
+    try:
+        cmd_list = shlex.split(cmd)
+        result = subprocess.check_output(cmd_list)
+        result_str = result.decode("utf-8")
+    except:
+        print("Log search failed!")
+        result_str = ""
     return result_str
 
 def rm_cmd(path):
@@ -155,6 +160,8 @@ def get_err_code(err_info):
             err_code = err_code + "_ESEC"
         elif "Cmd failed" in err_info:
             err_code = err_code + "_CMD"
+        elif "TIMEOUT" in err_info:
+            err_code = err_code + "_TIMEOUT"
         else:
             print(err_info)
     elif "ETH_PRBS" in err_info:
@@ -760,18 +767,36 @@ def get_mfg_log_list(card_type, sn, stage):
         print(file_name.split(".")[0])
     return
 
-def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cleanup, save, save_path, raw):
+def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cleanup, save, save_path, raw, out_fn):
     print("Using SN in file", filename)
     with open(filename) as f:
         sn_list = f.readlines()
     sn_list = [x.strip() for x in sn_list]
     print(sn_list)
     stage1 = stage
+    card_type1 = card_type
     sn1 = ""
 
-    if fmode != "SN" and fmode != "SN_STAGE":
+    if fmode != "SN" and fmode != "SN_STAGE" and fmode != "SN_TYPE_STAGE":
         print("Invalide file mode:", fmode)
         return
+
+    # Configure output
+    cwd = os.getcwd()
+    tgt_dir = cwd+"/OUTPUT/"
+    if not os.path.exists(tgt_dir):
+        os.mkdir(tgt_dir)
+    if out_fn == "":
+        out_fn = "fail_anal.xlsx"
+    out_fn = tgt_dir+out_fn
+    book = xlsxwriter.Workbook(out_fn)
+    sh = book.add_worksheet("Failure Anal")
+    sh.write(0, 0, "CARD TYPE")
+    sh.write(0, 1, "SN")
+    sh.write(0, 2, "STAGE")
+    sh.write(0, 3, "ERR CODE")
+    sh.write(0, 4, "ERR INFO")
+    sh_row = 1
 
     for sn in sn_list:
         sn = " ".join(sn.split())
@@ -786,15 +811,35 @@ def parse_log_from_file(filename, fmode, log_root, parse_mode, card_type, stage,
             elif "4C-L" in stage1:
                 stage1 = "4CL"
             sn_list1 = [sn1]
-        if parse_mode == "LIST":
-            get_mfg_log_list(card_type, sn1, stage1)
         else:
-            parse_log_file_top(log_root, parse_mode, card_type, stage1, sn1, tgt_log, verbose, cleanup, save, save_path, raw)
+            sn1 = sn.split(" ")[0]
+            card_type1 = sn.split(" ")[1]
+            stage1 = sn.split(" ")[2]
+            print("===", sn1, stage1)
+            if "4C-H" in stage1:
+                stage1 = "4CH"
+            elif "4C-L" in stage1:
+                stage1 = "4CL"
+            sn_list1 = [sn1]
+
+        if parse_mode == "LIST":
+            get_mfg_log_list(card_type1, sn1, stage1)
+        else:
+            [sn, err_code, err_info] = parse_log_file_top(log_root, parse_mode, card_type1, stage1, sn1, tgt_log, verbose, cleanup, save, save_path, raw)
+            sh.write(sh_row, 0, card_type1)
+            sh.write(sh_row, 1, sn)
+            sh.write(sh_row, 2, stage1)
+            sh.write(sh_row, 3, err_code)
+            sh.write(sh_row, 4, err_info)
+            sh_row = sh_row + 1
+    book.close()
 
 def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verbose, cleanup, save, save_path, raw):
 
     print("========================================")
-    print("===", sn, stage, "===")
+    print("===", sn, card_type, stage, "===")
+
+    ret = []
 
     cwd_top = os.getcwd()
 
@@ -815,7 +860,7 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
 
     if files_found == []:
         print(sn, "No log file found")
-        return
+        return [sn, "NO_LOG_FOUND", "No log file found"]
 
     if parse_mode != "SPEC":
         log_time_list = []
@@ -868,9 +913,13 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
     if parse_mode == "FW_REV":
         parse_fw_rev(files_found[0], sn, verbose, cleanup, raw)
     else:
-        parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path, raw)
+        ret = parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path, raw)
+
+    return ret
 
 def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, raw):
+    ret_err_info = ""
+    ret_err_code = ""
 
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
@@ -913,7 +962,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
             print(sn, "Passed!")
             pass_flag = True
             os.chdir(cwd_top)
-            return
+            return [sn, "PASS_FOUND", "Passed!"]
 
         if re.search(pattern_fail, line):
             m = re.compile("^.*(NIC-[\d]+) ([\D\d]+) ([\D\d]+) .*")
@@ -937,7 +986,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
         err_info_a = err_info_a + line
 
         # Get summary first
-        pattern = "^.*ERR.*"+nic_info["SLOT"]+".*FAIL.*"
+        pattern = "^.*ERR.*"+nic_info["SLOT"]+".*(FAIL|TIMEOUT).*"
         # Find top level failure info
         for line in open(test_stage_log, 'r'):
             if re.search(pattern, line):
@@ -985,6 +1034,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
 
     print(err_info)
     print(err_code)
+    ret_err_code = err_code
 
     if "4C" in stage:
         if "HV" in err_code:
@@ -993,6 +1043,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
             prefix = "lv_"
         else:
             print("No corner detected!")
+            os.chdir(cwd_top)
             return
     else:
         prefix = "./"
@@ -1018,6 +1069,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
         logfile_pattern = "SKIP"
     else:
         print("Unsupported error code!")
+        os.chdir(cwd_top)
         return
 
     if logfile_path != "SKIP":
@@ -1049,13 +1101,19 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
             err_code = err_code.split(",")[0]
             cmd = fmt_cmd.format(err_code, log_filename)
 
+        print(os.getcwd())
+        print(cmd)
         ret_str = run_bash_cmd(cmd)
         if ret_str == "":
             ret_str = "No error found. Please check manually"
 
         print(ret_str)
+        ret_err_info = ret_str
     else:
         print(err_info_a)
+        ret_err_info = err_info_a
+
+    ret = [sn, ret_err_code, ret_err_info]
 
     if save == True:
         save_path = save_path+"/"+sn
@@ -1070,6 +1128,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
 
     if cleanup == True:
         rm_cmd(card_log_path)
+    return ret
 
 def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
     cwd_top = os.getcwd()
@@ -1175,6 +1234,7 @@ if __name__ == "__main__":
     parser.add_argument("-stage", "--stage", help="Stage", type=str, default="")
     parser.add_argument("-tgt_log", "--tgt_log", help="Target log", type=str, default="")
     parser.add_argument("-sv_path", "--save_path", help="Path to save log", type=str, default="/vol/hw/diag/asic_log")
+    parser.add_argument("-out_fn", "--out_fn", help="Output file", type=str, default="")
 
     args = parser.parse_args()
 
@@ -1200,7 +1260,7 @@ if __name__ == "__main__":
         if file_mode == "YIELD":
             parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
         else:
-            parse_log_from_file(filename, file_mode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cl, args.save, args.save_path, args.raw)
+            parse_log_from_file(filename, file_mode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cl, args.save, args.save_path, args.raw, args.out_fn)
         sys.exit(0)
 
     if args.parse == True:
