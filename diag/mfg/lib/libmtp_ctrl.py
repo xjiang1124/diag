@@ -67,7 +67,7 @@ class mtp_ctrl():
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
         self._valid_type_list = MFG_VALID_NIC_TYPE_LIST
         self._proto_type_list = MFG_PROTO_NIC_TYPE_LIST
-        self._slots = 10
+        self._slots = MTP_Const.MTP_SLOT_NUM
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
 
