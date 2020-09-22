@@ -251,6 +251,16 @@ proc efuse_test {slot} {
     } else {
         set freq 833
     }
+
+    set cpld_rev [ssi_cpld_read 0x00]
+    set cpld_ver [ssi_cpld_read 0x80]
+    
+    if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM:  SET EFUSE VDDQ ENABLE
+        set cpld_data [ssi_cpld_read 0x10]
+        set cpld_data [expr {$cpld_data | 0x20}]
+        ssi_cpld_write 0x10 $cpld_data
+    }
+
     cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
 
     cpu_force_global_flags 1
@@ -265,7 +275,15 @@ proc efuse_test {slot} {
         plog_err "Failed to valid efuse bit; read back $bit_read_back"
         set return -1
     }
+
+    if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM
+        set cpld_data [ssi_cpld_read 0x10]
+        set cpld_data [expr {$cpld_data & 0xDF}]
+        ssi_cpld_write 0x10 $cpld_data
+    }
+
     diag_close_j2c_if 10 $slot
+
     return $ret
 }
 

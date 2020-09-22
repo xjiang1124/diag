@@ -58,9 +58,6 @@ class NIC_CPLD_Version:
 
 # MFG release images
 class MFG_IMAGE_FILES:
- 
-
-    
     MTP_AMD64_IMAGE = "image_amd64_09082020.tar"
     MTP_ARM64_IMAGE = "image_arm64_09082020.tar"
     
@@ -109,6 +106,44 @@ class MFG_IMAGE_FILES:
     VOMERO_SEC_CPLD_IMAGE = "vomero_cpld_rev84_02102020.bin"
     VOMERO2_CPLD_IMAGE = "vomero2_rev5_07242020.bin"
     VOMERO2_SEC_CPLD_IMAGE = "vomero2_rev85_07242020.bin"
+
+class PART_NUMBERS_MATCH:
+    N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [0-9]{2}"   #68-0003-01 01    PENSANDO
+    N100_NET_PN_FMT = r"111-04635"                     #111-04635        NETAPP
+    N100_PN_FMT_ALL = r"{:s}|{:s}".format(N100_PEN_PN_FMT,N100_NET_PN_FMT)
+
+    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [0-9]{2}"   #68-0013-01 03       IBM
+    N100_IBM_FMT_ALL = r"{:s}".format(N100_IBM_PN_FMT)
+    exp_pn = N100_IBM_FMT_ALL
+
+    N100_HPE_PN_FMT = r"P37692-00[0-9]{1}"            #P37692-001       HPE 
+    N100_HPE_FMT_ALL = r"{:s}".format(N100_HPE_PN_FMT)
+
+    N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [0-9]{2}"   #68-0005-03 01    PENSANDO
+    N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"            #P18669-001       HPE
+    N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"   #68-0008-xx yy    EQUINIX
+    N25_PN_FMT_ALL = r"{:s}|{:s}|{:s}".format(N25_PEN_PN_FMT,N25_HPE_PN_FMT,N25_EQI_PN_FMT)
+
+    N25_SWM_HPE_PN_FMT = r"P26968-00[0-9]{1}"            #P26968-001       HPE SWM
+    N25_SWM_HPE_FMT_ALL = r"{:s}".format(N25_SWM_HPE_PN_FMT)
+
+    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [0-9]{2}"   #68-0014-01 00       DELL SWM
+    N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)
+
+    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [0-9]{2}"   #68-0010-xx       PENSANDO
+    N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"            #P37689-001       HPE
+    N25_OCP_DEL_PN_FMT = r"P18671-00[0-9]{1}"            #P18671-001       DELL
+    N25_OCP_PN_FMT_ALL = r"{:s}|{:s}|{:s}".format(N25_OCP_PEN_PN_FMT,N25_OCP_HPE_PN_FMT,N25_OCP_DEL_PN_FMT)    
+
+    FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"   #68-0007-01 01
+    FORIO_FMT_ALL = r"{:s}".format(FORIO_PN_FMT)
+
+    VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"   #68-0009-01 01
+    VOMERO_MT_ALL = r"{:s}".format(VOMERO_PN_FMT)
+
+    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [0-9]{2}"   #68-0011-01 01
+    VOMERO2_MT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
+
 
 
 MFG_MTP_CPLD_IO_VERSION = "0x5"
@@ -170,6 +205,7 @@ HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
+
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 

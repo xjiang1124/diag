@@ -76,20 +76,19 @@ func (d *Device) SetCSChange(leaveEnabled bool) error {
 	return d.conn.Configure(driver.CSChange, v)
 }
 
-// Tx performs a duplex transmission to write w to the SPI device
-// and read len(r) bytes to r.
+// SPI_WR performs a duplex transmission to write w to the SPI device
 // User should not mutate the w and r until this call returns.
-func (d *Device) Tx(w, r []byte) error {
+func (d *Device) SPI_WR(w, r []byte) error {
 	// TODO(jbd): Allow nil w.
-	return d.conn.Tx(w, r)
+	return d.conn.SPI_WR(w, r)
 }
 
-// Tx performs a duplex transmission to write w to the SPI device
+// SPI_WR_RD performs a duplex transmission to write w to the SPI device
 // and read len(r) bytes to r.
 // User should not mutate the w and r until this call returns.
-func (d *Device) Rx(w, r []byte) error {
+func (d *Device) SPI_WR_RD(w, r []byte) error {
 	// TODO(jbd): Allow nil w.
-	return d.conn.Rx(w, r)
+	return d.conn.SPI_WR_RD(w, r)
 }
 
 // Open opens a device with the specified bus and chip select

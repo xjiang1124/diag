@@ -275,14 +275,6 @@ def main():
     dsp = FF_Stage.FF_SWI
     pass_nic_list = list()
     fail_nic_list = list()
-    exp_100hpe_pn = "P37692"
-    exp_swm_pn = "P26968"
-    exp_naples25_pn = "68-0005"
-    exp_100_pn = "68-0003"
-    exp_vomero2_pn = "68-0011"
-    exp_naples25hpe_pn = "P18669"
-    exp_25ocp_pn = "P37689"
-    exp_swmdell_pn = "68-0014"
 
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -361,21 +353,7 @@ def main():
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
             elif test == "NAPLES_PN_VERIFY":
-                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES100HPE:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_100hpe_pn,'NAPLES100HPE')
-                elif card_type == NIC_Type.NAPLES25OCP:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_25ocp_pn,'NAPLES25OCP')
-                elif card_type == NIC_Type.NAPLES25SWM:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_swm_pn,'NAPLES25SWM')
-                elif card_type == NIC_Type.NAPLES100:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_100_pn,'NAPLES100')
-                elif card_type == NIC_Type.VOMERO2:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_vomero2_pn,'VOMERO2')
-                elif card_type == NIC_Type.NAPLES25:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_naples25_pn,'NAPLES25')
-                elif card_type == NIC_Type.NAPLES25SWMDELL:
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot, exp_swmdell_pn,'NAPLES25SWMDELL')    
+                ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                 continue

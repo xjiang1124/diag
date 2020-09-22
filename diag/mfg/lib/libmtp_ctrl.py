@@ -35,6 +35,7 @@ from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
 from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import PART_NUMBERS_MATCH
 
 from libdefs import NIC_Type
 from libdefs import MTP_DIAG_Error
@@ -1778,19 +1779,44 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
         return True
         
-    def mtp_verify_naples_pn(self, slot, exp_pn, name):
-    
+    def mtp_verify_naples_pn(self, slot):
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         
         if not naples_pn:
             self.cli_log_slot_err_lock(slot, "Verify NIC {:s} PN Failed".format(name))
             return False
 
-        if exp_pn in naples_pn:
-            self.cli_log_slot_inf_lock(slot, "Verify {:s}_PN Pass, {:s}_PN={:s}".format(name,name,naples_pn))                                  
-            return True        
-        else:                      
-            self.cli_log_slot_err_lock(slot, "{:s}_PN Verify Failed, get {:s}".format(name,naples_pn))
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES100:
+            exp_pn = N100_PN_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES100IBM:
+            exp_pn = N100_IBM_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES100HPE:
+            exp_pn = N100_HPE_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES25:
+            exp_pn = N25_PN_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES25SWM:
+            exp_pn = N25_SWM_HPE_PN_FMT
+        elif nic_type == NIC_Type.NAPLES25SWMDELL:
+            exp_pn = N25_SWM_DEL_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES25OCP:
+            exp_pn = N25_OCP_PN_FMT_ALL
+        elif nic_type == NIC_Type.FORIO:
+            exp_pn = FORIO_FMT_ALL
+        elif nic_type == NIC_Type.VOMERO:
+            exp_pn = VOMERO_FMT_ALL
+        elif nic_type == NIC_Type.VOMERO2:
+            exp_pn = VOMERO2_FMT_ALL
+        else:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+            return False
+
+        match = re.findall(exp_pn, naples_pn)
+        if match:
+            self.cli_log_slot_inf_lock(slot, "Verify Naples_PN Pass, naples_pn={:s}".format(naples_pn))
+            return True
+        else:
+            self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, Read {:s}".format(naples_pn))
             return False
             
     def mtp_get_alom_fru(self, slot):
