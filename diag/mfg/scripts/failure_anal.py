@@ -972,7 +972,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
             print(sn, "Passed!")
             pass_flag = True
             os.chdir(cwd_top)
-            return [sn, "PASS_FOUND", "Passed!"]
+            return [sn, "PASS_FOUND", "Found pass! Please manually check the log."]
 
         if re.search(pattern_fail, line):
             m = re.compile("^.*(NIC-[\d]+) ([\D\d]+) ([\D\d]+) .*")

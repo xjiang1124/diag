@@ -68,10 +68,10 @@ class mfg:
             if stage == "4C":
                 for corner in corner_4C:
                     remote_path1 = remote_path+'/'+corner+'/'+sn+'/'
-                    logroot1 = logroot1+'/'+corner+'/'+sn+'/'
-                    mkdir_p(logroot1)
+                    logroot2 = logroot1+'/'+corner+'/'+sn+'/'
+                    mkdir_p(logroot2)
 
-                    cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path1+"* "+logroot1
+                    cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path1+"* "+logroot2
                     print(cmd)
                     try:
                         subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
