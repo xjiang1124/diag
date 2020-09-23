@@ -143,9 +143,15 @@ then
 
     echo "========================================"
 
-elif [[ $MODE == "NIC_BOOT_FAIL" ]]
+elif [[ $MODE == "PCIE_LINK" ]]
 then
-    grep -a -m 1 -B6 "j2c : read req error  inst: 0x5 addr: 0x6a000000 flag: 0x3" $FN
+    grep -a -A5 "failed" $FN
+
+elif [[ $MODE == "PCIE_LINK" ]]
+then
+    #grep -a -A100 -e "tclsh8.6 set_avs.tcl" $FN | grep ""FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
+    grep -a -A300 -e "tclsh8.6 set_avs.tcl" $FN | grep "FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
+
 
 else
     echo "Unsupported error code SEARCH!" $MODE

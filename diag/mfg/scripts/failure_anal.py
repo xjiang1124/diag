@@ -196,6 +196,10 @@ def get_err_code(err_info):
         err_code = "KEY_PROG_FAIL"
     elif "Pre init key programming failed" in err_info:
         err_code = "PRE_KEY_PROG_FAIL"
+    elif "PCIE_LINK" in err_info:
+        err_code = "PCIE_LINK"
+    elif "Boot up Problem" in err_info:
+        err_code = "BOOT_UP"
 
     # ICT error code
     elif "Test Point" in err_info:
@@ -328,7 +332,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
             err_info_dict["LOCATION"] = location_list[idx]
             err_info_dict["ROOT CAUSE"] = root_cause_list[idx]
-            err_info_dict["ACTION"] = action_list[idx]
+            err_info_dict["ACTION"] = action_list[idx].replace(",", ";").replace('\n', ';').replace('\r', ';')
 
     record_dict["ICT"]  = ict_sn_dict
     record_dict["DL"]   = dl_sn_dict
@@ -358,9 +362,11 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
     record_diag_dict = dict()
     for stage_tgt in stage_tgt_list:
+        print("==== Stage:", stage_tgt, "====")
 
         stage_sn_dict = dict()
         for idx, sn in sn_list.items():
+            print("=== SN:", sn, "===")
 
             # Temp solution: Penang yield report has extra records of old data
             #if idx < 1640:
@@ -397,7 +403,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
                 err_info_dict["LOCATION"] = location_list[idx]
                 err_info_dict["ROOT CAUSE"] = root_cause_list[idx]
-                err_info_dict["ACTION"] = action_list[idx]
+                err_info_dict["ACTION"] = action_list[idx].replace(",", ";").replace('\n', ';').replace('\r', ';')
                 continue
 
             if args.first_yield == True:
@@ -465,6 +471,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     test_stage_log = "test_dl.log"
                 elif stage_tgt == "SWI":
                     test_stage_log = "test_swi.log"
+                elif stage_tgt == "FST":
+                    test_stage_log = "test_fst.log"
                 else:
                     test_stage_log = "mtp_test.log"
 
@@ -516,7 +524,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
                 err_info_dict["LOCATION"] = location_list[idx]
                 err_info_dict["ROOT CAUSE"] = root_cause_list[idx]
-                err_info_dict["ACTION"] = action_list[idx]
+                err_info_dict["ACTION"] = action_list[idx].replace(",", ";").replace('\n', ';').replace('\r', ';')
 
                 stage_err_info_dict[dir_name] = err_info_dict
 
@@ -579,7 +587,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     location = err_info_dict["LOCATION"]
                     root_cause = err_info_dict["ROOT CAUSE"]
                     action = err_info_dict["ACTION"]
-                    action = action.replace(",", ";")
+                    action = action.replace(",", ";").replace('\n', ';').replace('\r', ';')
 
                     err_code = err_info_dict["ERR_CODE"]
                     try:
@@ -611,7 +619,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     location = err_info_dict["LOCATION"]
                     root_cause = err_info_dict["ROOT CAUSE"]
                     action = err_info_dict["ACTION"]
-                    action = action.replace(",", ";")
+                    action = action.replace(",", ";").replace('\n', ';').replace('\r', ';')
 
                     err_code = err_info_dict["ERR_CODE"]
                     try:
@@ -652,12 +660,12 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
     #WK34 NAPLES25SWM
     #total_tested["ICT"]  = 276.0
-    total_tested["DL"]   = 77.0
-    total_tested["P2C"]  = 1268.0
-    total_tested["4C-H"] = 1344.0
+    #total_tested["DL"]   = 77.0
+    total_tested["P2C"]  = 172.0
+    total_tested["4C-H"] = 47.0
     #total_tested["4C-L"] = 273.0
-    total_tested["SWI"]  = 1364.0
-    #total_tested["FST"]  = 944.0
+    total_tested["SWI"]  = 216.0
+    total_tested["FST"]  = 226.0
 
     #WK32 NAPLES100
     #total_tested["DL"]   = 276.0
@@ -941,6 +949,8 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
         test_stage_log = "test_dl.log"
     elif stage == "SWI":
         test_stage_log = "test_swi.log"
+    elif stage == "FST":
+        test_stage_log = "test_fst.log"
     else:
         test_stage_log = "mtp_test.log"
 
@@ -1067,6 +1077,10 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
     elif "MVL" in err_code:
         logfile_path = "SKIP"
         logfile_pattern = "SKIP"
+    elif "PCIE_LINK" in err_code:
+        logfile_path = "./"
+        logfile_pattern = "diag_fst.log"
+
     else:
         print("Unsupported error code!")
         os.chdir(cwd_top)
@@ -1097,6 +1111,8 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
             cmd = fmt_cmd.format("AVS", log_filename)
         elif "ETH_PRBS" in err_code:
             cmd = fmt_cmd.format("ETH_PRBS", log_filename)
+        elif "PCIE_LINK" in err_code:
+            cmd = fmt_cmd.format("PCIE_LINK", log_filename)
         else:
             err_code = err_code.split(",")[0]
             cmd = fmt_cmd.format(err_code, log_filename)

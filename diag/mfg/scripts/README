@@ -109,7 +109,7 @@ python3 ./failure_anal.py -fn temp1 -fmode $FMODE -parse -pmode $PMODE -logroot 
 -cl:     Delete log folder for specified SN
 -cl_all: Delete all log folder under logroot
 -sv:     save logs to location specified by -sv_path
-
+-out_fn: Output parsed error to an excel file under OUTPUT. Default: OUTPUT/fail_anal.xslx
 #=============================================
 # Find fw rev from swi log
 SN=2YU03400M7
