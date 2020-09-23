@@ -41,6 +41,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     # test summary logfile
     test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
     # local copy of summary logfile
+    if not os.cmd(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/")):
+        mtp_mgmt_ctrl.cli_log_err("Unable to create temporary log folder in script folder "+os.getcwd())
     local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
 
     # temperary dir for log files
