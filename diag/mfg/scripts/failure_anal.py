@@ -102,7 +102,7 @@ def get_dieId_sn(line):
     ret = line_arr[len(line_arr)-1]
     return ret
 
-def get_err_code(err_info):
+def get_err_code(err_info, err_dsrp):
     if "HV_" in err_info and "LV_" in err_info:
         volt_lvl = "HV_LV"
     elif "HV_" in err_info:
@@ -130,6 +130,10 @@ def get_err_code(err_info):
         err_code = "COMP_KNOCKOFF"
     elif "Component Loose" in err_info:
         err_code = "COMP_LOOSE"
+        if "MVL" in err_dsrp:
+            err_code = "LOOSE_RJ45"
+        elif "ALOM_CABLE" in err_dsrp:
+            err_code = "LOOSE_ALOM_CABLE"
     elif "Component Damaged" in err_info:
         err_code = "COMP_DEFECT"
     elif "Component Misaligned" in err_info:
@@ -200,6 +204,8 @@ def get_err_code(err_info):
         err_code = "PCIE_LINK"
     elif "Boot up Problem" in err_info:
         err_code = "BOOT_UP"
+    elif "SFP Loose" in err_info:
+        err_code = "SFP_LOOSE"
 
     # ICT error code
     elif "Test Point" in err_info:
@@ -231,10 +237,13 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
         card_type = "NAPLES100"
     else:
         card_type = "UNKNOWN"
+        print("Unknow card_type:", card_type)
+        return
     
     xls = pd.ExcelFile(filename)
     sheet = xls.parse('RCCA')
-    wk_list = sheet['WW']
+    #wk_list = sheet['WW']
+    fail_code_list = sheet['Failure Code']
     fail_dsrp_list = sheet['Failure Description']
     stage_list = sheet['Impacted Station ']
     sn_list = sheet['Serial No']
@@ -242,11 +251,14 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     root_cause_list = sheet['Root Cause ']
     action_list = sheet['ACTION']
 
+    #print(sn_list)
+
     f_dl  = open(prefix+"_"+card_type.lower()+"_dl.txt","w+")
     f_4c  = open(prefix+"_"+card_type.lower()+"_4c.txt","w+")
     f_p2c = open(prefix+"_"+card_type.lower()+"_p2c.txt","w+")
     f_swi = open(prefix+"_"+card_type.lower()+"_swi.txt","w+")
     f_fst = open(prefix+"_"+card_type.lower()+"_fst.txt","w+")
+    f_all = open(prefix+"_"+card_type.lower()+"_all.txt","w+")
 
     stage_new_list = []
     record_dict = dict()
@@ -260,7 +272,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
     for idx, sn in sn_list.items():
         stage_new_list.append("NA")
-        if pd.isna(sn) == True or pd.isna(fail_dsrp_list[idx]) == True:
+        if pd.isna(sn) == True or pd.isna(fail_code_list[idx]) == True:
             break
 
         # Temp solution: Penang yield report has extra records of old data
@@ -268,8 +280,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
         #    continue
 
         stage = "NA"
-        fail_dsrp = fail_dsrp_list[idx]
-        wk = wk_list[idx]
+        fail_code = fail_code_list[idx]
+        #wk = wk_list[idx]
         if "DOWNLOAD" in stage_list[idx]:
             stage = "DL"
         elif "P2C" in stage_list[idx]:
@@ -292,10 +304,10 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
         stage_new_list[idx] = stage
 
-        #print(sn, stage)
+        #print(sn, stage, fail_code)
 
-        #if "Diagnostic Software Problem" in fail_dsrp:
-        if "NRF" in fail_dsrp:
+        #if "Diagnostic Software Problem" in fail_code:
+        if "NRF" in fail_code:
             if stage == "DL":
                 f_dl.write(sn+'\n')
             if stage == "P2C":
@@ -308,11 +320,12 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                 f_swi.write(sn+'\n')
             if stage == "FST":
                 f_fst.write(sn+'\n')
+            f_all.write(sn+" "+card_type+" "+stage+"\n")
         else:
             err_info_dict = dict()
             stage_err_info_dict = dict()
-            err_info_dict["ERR_INFO"] = fail_dsrp_list[idx]
-            err_info_dict["ERR_CODE"] = get_err_code(fail_dsrp_list[idx])
+            err_info_dict["ERR_INFO"] = fail_code_list[idx]
+            err_info_dict["ERR_CODE"] = get_err_code(fail_code_list[idx], fail_dsrp_list[idx])
             stage_err_info_dict[stage+"_GENERAL"] = err_info_dict
 
             if stage == "ICT":
@@ -347,6 +360,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     f_4c.close()
     f_swi.close()
     f_fst.close()
+    f_all.close()
 
     if args.fetch == True:
         sys.exit(0)
@@ -372,14 +386,14 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
             #if idx < 1640:
             #    continue
 
-            if pd.isna(sn) == True or pd.isna(fail_dsrp_list[idx]) == True:
+            if pd.isna(sn) == True or pd.isna(fail_code_list[idx]) == True:
                 break
 
             if stage_new_list[idx] != stage_tgt:
                 continue
 
-            #if "Diagnostic Software Problem" not in fail_dsrp_list[idx]:
-            if "NRF" not in fail_dsrp_list[idx]:
+            #if "Diagnostic Software Problem" not in fail_code_list[idx]:
+            if "NRF" not in fail_code_list[idx]:
                 continue
 
             if "4C" in stage_tgt:
@@ -514,7 +528,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
                     err_info_dict["ERR_INFO"] = err_info
 
-                    err_code = get_err_code(err_info)
+                    err_code = get_err_code(err_info, "")
                     err_info_dict["ERR_CODE"] = err_code
                     err_info_dict["TEST_INFO"] = log_file_dict
                 else:
@@ -661,7 +675,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     #WK34 NAPLES25SWM
     #total_tested["ICT"]  = 276.0
     #total_tested["DL"]   = 77.0
-    total_tested["P2C"]  = 172.0
+    total_tested["P2C"]  = 230.0
     total_tested["4C-H"] = 47.0
     #total_tested["4C-L"] = 273.0
     total_tested["SWI"]  = 216.0
@@ -713,7 +727,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     try:
                         stage_stat_dict[err_code] = stage_stat_dict[err_code] + 1
                     except:
-                        stage_stat_dict[err_code] = 2
+                        stage_stat_dict[err_code] = 1
             
             sorted_x = sorted(stage_stat_dict.items(), key=lambda kv: kv[1], reverse=True)
             sorted_dict = collections.OrderedDict(sorted_x)
@@ -1035,7 +1049,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
     
         err_info_dict["ERR_INFO"] = err_info
 
-        err_code = get_err_code(err_info)
+        err_code = get_err_code(err_info, "")
         err_info_dict["ERR_CODE"] = err_code
     else:
         err_info_dict["ERR_INFO"] = err_info
