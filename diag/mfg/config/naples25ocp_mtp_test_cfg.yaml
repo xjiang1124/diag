@@ -26,6 +26,7 @@ MTP_PRE:
     NIC_STATUS: True
     NIC_DIAG_BOOT: True
     NIC_CPLD: True
+    NIC_OCP_SIGNALS: True
 
 NIC_PARA:
     RTC:

@@ -1731,9 +1731,9 @@ class nic_ctrl():
         #else:
         #    print(" ALOM PRESENT BIT SET") 
 
-        rc = self.nic_read_swm_mtp_adapt_cpld(mtp_adapt_cpld_ctrl_reg, read_data)
+        rc = self.nic_read_mtp_adapt_cpld(mtp_adapt_cpld_ctrl_reg, read_data)
         if not rc: 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False 
         cpld_ctrl_def = read_data[0]      
@@ -1749,22 +1749,22 @@ class nic_ctrl():
             
             #tell MTP ADAPTER CPLD to request scan data
             wr_data = (cpld_ctrl_def | mtp_adapt_initiate_scan_bit)
-            rc = self.nic_write_swm_mtp_adapt_cpld(mtp_adapt_cpld_ctrl_reg, wr_data)
+            rc = self.nic_write_mtp_adapt_cpld(mtp_adapt_cpld_ctrl_reg, wr_data)
             if not rc:
-                errlist.append(" ERROR: nic_write_swm_mtp_adapt_cpld Failed")
+                errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            rc = self.nic_write_swm_mtp_adapt_cpld(mtp_adapt_cpld_ctrl_reg, cpld_ctrl_def)
+            rc = self.nic_write_mtp_adapt_cpld(mtp_adapt_cpld_ctrl_reg, cpld_ctrl_def)
             if not rc: 
-                errlist.append(" ERROR: nic_write_swm_mtp_adapt_cpld Failed")
+                errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
             #read data on MTP ADAPT CPLD SCAN LOW BYTE
-            rc = self.nic_read_swm_mtp_adapt_cpld(mtp_adapt_scan_reg0, read_data)
+            rc = self.nic_read_mtp_adapt_cpld(mtp_adapt_scan_reg0, read_data)
             if not rc: 
-                errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False 
             if read_data[0] != row[1]:
@@ -1773,9 +1773,9 @@ class nic_ctrl():
                 return False
 
             #read data on MTP ADAPT CPLD SCAN HIGH BYTE
-            rc = self.nic_read_swm_mtp_adapt_cpld(mtp_adapt_scan_reg1, read_data)
+            rc = self.nic_read_mtp_adapt_cpld(mtp_adapt_scan_reg1, read_data)
             if not rc:
-                errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed") 
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed") 
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             if read_data[0] != row[2]:
@@ -1807,9 +1807,9 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            rc = self.nic_read_swm_mtp_adapt_cpld(MTPADAPTREG04H, read_data)
+            rc = self.nic_read_mtp_adapt_cpld(MTPADAPTREG04H, read_data)
             if not rc: 
-                errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False 
             if i == 0:
@@ -1833,9 +1833,9 @@ class nic_ctrl():
     def nic_naples25swm_high_power_mode_test(self, errlist):
         read_data = [0]
 
-        rc = self.nic_read_swm_mtp_adapt_cpld(0x01, read_data)
+        rc = self.nic_read_mtp_adapt_cpld(0x01, read_data)
         if not rc: 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         if (read_data[0] & 0x08) != 0x08:
@@ -1863,16 +1863,16 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        rc = self.nic_read_swm_mtp_adapt_cpld(0x00, read_data)
+        rc = self.nic_read_mtp_adapt_cpld(0x00, read_data)
         if not rc: 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         mtp_adapt_cpld_rev = read_data[0]
 
-        rc = self.nic_read_swm_mtp_adapt_cpld(0x04, read_data)
+        rc = self.nic_read_mtp_adapt_cpld(0x04, read_data)
         if not rc: 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False 
 
@@ -1891,8 +1891,8 @@ class nic_ctrl():
     def nic_naples25swm_low_power_mode_test(self, errlist):
         read_data = [0]
 
-        if not self.nic_read_swm_mtp_adapt_cpld(0x01, read_data): 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+        if not self.nic_read_mtp_adapt_cpld(0x01, read_data): 
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         if (read_data[0] & 0x08) != 0x00:
@@ -1918,14 +1918,14 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_read_swm_mtp_adapt_cpld(0x00, read_data): 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+        if not self.nic_read_mtp_adapt_cpld(0x00, read_data): 
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         mtp_adapt_cpld_rev = read_data[0]
 
-        if not self.nic_read_swm_mtp_adapt_cpld(0x04, read_data): 
-            errlist.append(" ERROR: nic_read_swm_mtp_adapt_cpld Failed")
+        if not self.nic_read_mtp_adapt_cpld(0x04, read_data): 
+            errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False 
 
@@ -2043,7 +2043,10 @@ class nic_ctrl():
         print(" PING PASSED")
         return True
 
-    def nic_read_swm_mtp_adapt_cpld(self, reg_addr, read_data):
+    #
+    # Used for SWM and OCP MTP ADAPTER TO READ the ADAPTER CPLD
+    #
+    def nic_read_mtp_adapt_cpld(self, reg_addr, read_data):
         cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
@@ -2058,7 +2061,10 @@ class nic_ctrl():
             read_data[0] = int(match[0], 16)
         return True
 
-    def nic_write_swm_mtp_adapt_cpld(self, reg_addr, write_data):
+    #
+    # Used for SWM and OCP MTP ADAPTER TO READ the ADAPTER CPLD
+    #
+    def nic_write_mtp_adapt_cpld(self, reg_addr, write_data):
         cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
@@ -2100,4 +2106,235 @@ class nic_ctrl():
         return True
 
 
+    def nic_naples25ocp_signal_test(self, errlist):
+        adapt_read_data = [0]
+        ocp_read_data = [0]
 
+        rc = self.nic_write_cpld(0x1E, 0x1F)    #ENABLE IRQ    MASK=0x1F
+        if not rc:
+            errlist.append(" ERROR: nic_write_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        rc = self.nic_read_cpld(0x1F, ocp_read_data)    #MAKE SURE NO IRQ SET ON OCP
+        if not rc:
+            errlist.append(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if ocp_read_data[0] != 0x00 :
+            errlist.append(" ERROR: OCP CPLD REG 0x1F (IRQ REG):  READ 0x{:X}  Expect 0x00".format(ocp_read_data[0]) )
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        #ADAPTER BIT TO READ (SIGNAL SHOULD BE HIGH AND DOES NOT TOGGLE)
+        data = [[0x40, 0x08], \
+                [0x42, 0x02], \
+                [0x42, 0x04], \
+                [0x42, 0x08]]
+        for row in data:
+            rc = self.nic_read_mtp_adapt_cpld(row[0], adapt_read_data)
+            if not rc:
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            if (adapt_read_data[0] & row[1]) != row[1]:
+                errlist.append(" ERROR: MTP ADAPTER CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} Set".format(row[0], adapt_read_data[0], row[1]) )
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+
+        #MTP BIT TO READ (SIGNAL SHOULD BE HIGH AND DOES NOT TOGGLE)
+        data = [[0x40, 0x01], \
+                [0x41, 0x08]]
+        for row in data:
+            rc = self.nic_read_cpld(row[0], ocp_read_data)
+            if not rc:
+                errlist.append(" ERROR: nic_read_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            if (ocp_read_data[0] & row[1]) != row[1]:
+                errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} Set".format(row[0], ocp_read_data[0], row[1]) )
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+        #ADAPTER REG/BIT TO SET/ DEFAULT STATE ->    OCP REG/BIT TO READ
+        data = [[0x40, 0x02, True,  0x40, 0x02], \
+                [0x40, 0x04, True,  0x40, 0x04], \
+                [0x40, 0x40, False, 0x42, 0x01], \
+                [0x40, 0x80, False, 0x42, 0x02], \
+                [0x41, 0x01, False, 0x41, 0x01], \
+                [0x41, 0x02, False, 0x41, 0x02], \
+                [0x41, 0x04, False, 0x41, 0x04], \
+                [0x41, 0x10, False, 0x41, 0x10], \
+                [0x41, 0x20, False, 0x41, 0x20], \
+                [0x41, 0x40, False, 0x41, 0x40]]
+
+        for row in data:
+            rc = self.nic_read_mtp_adapt_cpld(row[0], adapt_read_data)
+            if not rc:
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            rc = self.nic_read_cpld(row[3], ocp_read_data)
+            if not rc:
+                errlist.append(" ERROR: nic_read_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            if row[2] == True:  # Should be high by default
+                if (adapt_read_data[0] & row[1]) != row[1]:
+                    errlist.append(" ERROR: MTP ADAPTER CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} SET".format(row[0], adapt_read_data[0], row[1]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                if (ocp_read_data[0] & row[4]) != row[4]:
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} SET".format(row[3], ocp_read_data[0], row[4]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                #Clear BIT
+                adapt_read_data[0] = adapt_read_data[0] & (~row[1])
+                rc = self.nic_write_mtp_adapt_cpld(row[0], adapt_read_data[0])
+                if not rc:
+                    errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                #Check OCP CPLD
+                rc = self.nic_read_cpld(row[3], ocp_read_data)
+                if not rc:
+                    errlist.append(" ERROR: nic_read_cpld Failed") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                if (ocp_read_data[0] & row[4]) == row[4]:
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} Clear".format(row[3], adapt_read_data[0], row[4]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                #Set BIT
+                adapt_read_data[0] = adapt_read_data[0] | row[1]
+                rc = self.nic_write_mtp_adapt_cpld(row[0], adapt_read_data[0])
+                if not rc:
+                    errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                #Check OCP CPLD
+                rc = self.nic_read_cpld(row[3], ocp_read_data)
+                if not rc:
+                    errlist.append(" ERROR: nic_read_cpld Failed") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                if (ocp_read_data[0] & row[4]) != row[4]:
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} SET".format(row[3], ocp_read_data[0], row[4]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+            else:  # Should be low by default
+                if (adapt_read_data[0] & row[1]) == row[1]:
+                    errlist.append(" ERROR: MTP ADAPTER CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} CLEAR".format(row[0], adapt_read_data[0], row[1]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                if (ocp_read_data[0] & row[4]) == row[4]:
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} CLEAR".format(row[3], adapt_read_data[0], row[4]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                #SET BIT
+                adapt_read_data[0] = adapt_read_data[0] | row[1]
+                rc = self.nic_write_mtp_adapt_cpld(row[0], adapt_read_data[0])
+                if not rc:
+                    errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                #Check OCP CPLD
+                rc = self.nic_read_cpld(row[3], ocp_read_data)
+                if not rc:
+                    errlist.append(" ERROR: nic_read_cpld Failed") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                if (ocp_read_data[0] & row[4]) != row[4]:
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} SET".format(row[3], ocp_read_data[0], row[4]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                #CLEAR BIT
+                adapt_read_data[0] = adapt_read_data[0] & (~row[1])
+                rc = self.nic_write_mtp_adapt_cpld(row[0], adapt_read_data[0])
+                if not rc:
+                    errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                #Check OCP CPLD
+                rc = self.nic_read_cpld(row[3], ocp_read_data)
+                if not rc:
+                    errlist.append(" ERROR: nic_read_cpld Failed") 
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                if (ocp_read_data[0] & row[4]) == row[4]:
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} CLEAR".format(row[3], ocp_read_data[0], row[4]) )
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+        #Check OCP CPLD for MAIN POWER ON, MAIN POWER OFF, PWRBRK_L IRQ SET
+        #These bits were toggled in the test above
+        rc = self.nic_read_cpld(0x1F, ocp_read_data)    
+        if not rc:
+            errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if ocp_read_data[0] != 0x13 :
+            errlist.append(" ERROR: OCP CPLD REG 0x1F (IRQ REG):  READ 0x{:X}  Expect 0x13".format(ocp_read_data[0]) )
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        #TEST SCAN CHAIN
+        #REG 0x43 BIT0 & BIT5 & BIT6 SHOULD BE IGNORED.  BIT1,2,3,4,6 ARE ALWAYS HIGH.  BIT7 ALWAYS LOW
+        #REG 0x44 ALL BITS CAN BE SET HIGH OR LOW
+        scan_chain_reg0_mask = 0xFE
+        scan_chain_reg0_exp  = 0x5E
+        data = [[0x44, 0xFF, 0x45, 0xFF], \
+                [0x44, 0x00, 0x45, 0x00], \
+                [0x44, 0xAA, 0x45, 0xAA], \
+                [0x44, 0x55, 0x45, 0x55], \
+                [0x44, 0x01, 0x45, 0x01], \
+                [0x44, 0x80, 0x45, 0x80]]
+
+        for row in data:    
+            # Write Scan Chain Reg 1     
+            rc = self.nic_write_cpld(row[0], row[1])    
+            if not rc:
+                errlist.append(" ERROR: nic_write_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            # Initiate a scan chain
+            rc = self.nic_write_mtp_adapt_cpld(0x43, 0x01)  
+            if not rc:
+                errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            # Scan Chain Reg 0
+            rc = self.nic_read_mtp_adapt_cpld(0x44, adapt_read_data)
+            if not rc:
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            if (adapt_read_data[0] & scan_chain_reg0_mask) != scan_chain_reg0_exp:
+                errlist.append(" ERROR: MTP ADAPTER CPLD REG 0x44:  READ 0x{:X}  Mask=0x{:X} Expect 0x{:X}".format(adapt_read_data[0], scan_chain_reg0_mask, scan_chain_reg0_exp) )
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            # Scan Chain Reg 1
+            rc = self.nic_read_mtp_adapt_cpld(0x45, adapt_read_data)
+            if not rc:
+                errlist.append(" ERROR: nic_read_mtp_adapt_cpld Failed") 
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            if (adapt_read_data[0] & row[3]) != row[3]:
+                errlist.append(" ERROR: MTP ADAPTER CPLD REG 0x{:X}:  READ 0x{:X}  Expect 0x{:X}".format(row[2], adapt_read_data[0], row[3]) )
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+        return True
+        

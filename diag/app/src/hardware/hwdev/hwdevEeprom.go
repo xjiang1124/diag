@@ -125,6 +125,10 @@ func EepromUpdatePn(devName string, bus uint32, devAddr byte, pn string) (err in
     hwinfo.EnableHubChannelExclusive(devName)
 
     pn1 := make([]byte, 13)
+
+    for i := 0; i < len(pn1); i++ {
+        pn1[i] = 0x20    //Pad out any remaining p/n length with spaces in case the p/n is not 13 characters
+    }
     copy(pn1, []byte(pn))
     err = eeprom.UpdatePn(devName, bus, devAddr, pn1)
     if err != errType.SUCCESS {

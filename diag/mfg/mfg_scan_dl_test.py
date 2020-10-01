@@ -158,8 +158,7 @@ def main():
     else:
         verbosity = False
 
-    swmtestmode = Swm_Test_Mode.SWMALOM
-    #swmtestmode = Swm_Test_Mode.IBM
+    swmtestmode = Swm_Test_Mode.SW_DETECT
     if args.swm:
         swmtestmode = args.swm
 

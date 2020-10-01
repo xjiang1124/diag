@@ -146,8 +146,7 @@ def main():
 
     mtp_cfg_db = load_mtp_cfg()
 
-    swmtestmode = Swm_Test_Mode.SWMALOM
-    #swmtestmode = Swm_Test_Mode.IBM 
+    swmtestmode = Swm_Test_Mode.SW_DETECT
     if args.swm:
         swmtestmode = args.swm
 

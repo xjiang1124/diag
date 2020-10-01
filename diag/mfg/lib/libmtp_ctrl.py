@@ -759,8 +759,9 @@ class mtp_ctrl():
             if self._swmtestmode[slot] == Swm_Test_Mode.SW_DETECT:
                 read_data[0] = 0x00
                 #See if we can read the MTP Adapter CPLD ID.  This would indicate an ALOM should be present
-                rc = self._nic_ctrl_list[slot].nic_read_swm_mtp_adapt_cpld(0x80, read_data)
+                rc = self._nic_ctrl_list[slot].nic_read_mtp_adapt_cpld(0x80, read_data)
                 if read_data[0] == 0x1b:
+                    self.cli_log_slot_inf(slot, "NAPLES25SWM ALOM DETECTED")
                     self._swmtestmode[slot] = Swm_Test_Mode.SWMALOM
                 else:
                     self._swmtestmode[slot] = Swm_Test_Mode.SWM
@@ -2896,6 +2897,11 @@ class mtp_ctrl():
                     return MTP_DIAG_Error.NIC_DIAG_FAIL
             else:
                 return "SUCCESS"
+        elif intf == "NIC_OCP_SIGNALS":
+            if self.mtp_nic_naples25ocp_signal_test(slot):
+                return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
         else:
             self.cli_log_slot_err(slot, "Unknown pre diag check module")
             return MTP_DIAG_Error.NIC_DIAG_FAIL
@@ -3181,6 +3187,14 @@ class mtp_ctrl():
     def mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(self, slot):
         errlist = list()
         rc = self._nic_ctrl_list[slot].nic_naples25swm_cpld_reg_test(errlist)
+        if rc == False:
+            for errstr in errlist:
+                self.cli_log_slot_err(slot, "{:s}".format(errstr))
+        return rc
+
+    def mtp_nic_naples25ocp_signal_test(self, slot):
+        errlist = list()
+        rc = self._nic_ctrl_list[slot].nic_naples25ocp_signal_test(errlist)
         if rc == False:
             for errstr in errlist:
                 self.cli_log_slot_err(slot, "{:s}".format(errstr))

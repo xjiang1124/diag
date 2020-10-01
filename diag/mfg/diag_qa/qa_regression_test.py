@@ -235,7 +235,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner, swm_test_mode):
     for loop in range(1, iteration+1):
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} start".format(loop), level=0)
         # go to mtp_regression and Start the regression
@@ -243,7 +243,7 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         #cmd += " --psu-check"
 
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, corner, swm_test_mode)
         if stop_on_err:
             cmd += " --stop-on-error"
         if skip_test:
@@ -293,6 +293,7 @@ def main():
     parser.add_argument("--skip-test", help="Test will not run", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond))
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
     args = parser.parse_args()
 
@@ -303,6 +304,7 @@ def main():
     pwr_cycle = False
     skip_test = False
     corner = Env_Cond.MFG_QA
+    swmtestmode = Swm_Test_Mode.SW_DETECT
 
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")
@@ -320,6 +322,8 @@ def main():
         skip_test = True
     if args.corner:
         corner = args.corner
+    if args.swm:
+        swmtestmode = args.swm
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = get_mtpid_list(mtp_cfg_db)
@@ -402,7 +406,7 @@ def main():
 
     mtp_thread_list = list()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_regression_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner))
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_regression_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner, swmtestmode))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

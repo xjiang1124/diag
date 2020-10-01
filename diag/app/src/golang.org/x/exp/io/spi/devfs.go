@@ -156,8 +156,7 @@ func (c *devfsConn) SPI_WR_RD(w []byte, r []byte) error {
     if r == nil {
         fmt.Printf(" ERROR: r cannot be nil");
     }
-    //fmt.Printf(" **Spi READ\n");
-    //fmt.Printf(" **Spi RX Len(w)=%d   Len(r)=%d\n", len(w), len(r));
+    //fmt.Printf(" **Spi WR_RD Len(w)=%d   Len(r)=%d\n", len(w), len(r));
     p := []payload{
 	payload{
             tx:       uint64(uintptr(unsafe.Pointer(&w[0]))),

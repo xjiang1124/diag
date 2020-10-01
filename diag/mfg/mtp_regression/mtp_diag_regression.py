@@ -513,8 +513,6 @@ def main():
     skip_test = False
     corner = Env_Cond.MFG_NT
     swm_lp_boot_mode = False
-    #swmtestmode = Swm_Test_Mode.SWMALOM
-    #swmtestmode = Swm_Test_Mode.IBM
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -819,10 +817,9 @@ def main():
             mtp_exp_capability = 0x2
             test_db = naples25swm_test_db
             if len(nic_list):
-                if (mtp_mgmt_ctrl.mtp_get_swmtestmode(nic_list[0]) == Swm_Test_Mode.SWMALOM or mtp_mgmt_ctrl.mtp_get_swmtestmode(nic_list[0]) == Swm_Test_Mode.ALOM):
-                    swm_lp_boot_mode=True
-                else:
-                    swm_lp_boot_mode=False
+                for var in range(len(nic_list)):
+                    if (mtp_mgmt_ctrl.mtp_get_swmtestmode(nic_list[var]) == Swm_Test_Mode.SWMALOM or mtp_mgmt_ctrl.mtp_get_swmtestmode(nic_list[var]) == Swm_Test_Mode.ALOM):
+                        swm_lp_boot_mode=True
             else:
                 swm_lp_boot_mode=False
 
