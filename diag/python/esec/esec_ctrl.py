@@ -77,6 +77,10 @@ def parse_args_diag():
         "-efuse_test", "--efuse_test", 
         action='store_true',
         help="Test efuse by burning bit[127]")
+    group.add_argument(
+        "-sysrst_test", "--sysrst_test", 
+        action='store_true',
+        help="Test sysreset with puf error")
     #======================
     parser.add_argument(
         "-k", "--client_key",
@@ -473,6 +477,12 @@ PRIVEK <ek.sk>"""
             print "=== ESEC PROG FAILED ==="
             return -1
 
+        ret = self.sysrst_test(int(slot))
+        if ret != 0:
+           print "sysreset test failed"
+           print "=== ESEC PROG FAILED ==="
+           return -1
+
         ret = self.efuse_test(int(slot))
         if ret != 0:
             print "=== Efuse test failed ==="
@@ -564,6 +574,17 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def sysrst_test(self, slot):
+        ret = 0
+        session = common.session_start()
+        ret = self.nic_con.sysreset(session, slot)
+        session = common.session_stop(session)
+        if ret == 0:
+            print "systest TEST PASSED"
+        else:
+            print "systest TEST FAILED"
+        return ret
+
 if __name__ == "__main__":
     args = parse_args_diag()
     esec_ctrl = esec_ctrl()
@@ -621,6 +642,10 @@ if __name__ == "__main__":
     if args.boot_test == True:
         esec_ctrl.boot_test(args.sn, args.slot)
  
+    if args.sysrst_test == True:
+        esec_ctrl.sysrst_test(int(args.slot))
+        sys.exit()
+
     if args.show_sts == True:
         esec_ctrl.show_status(args.sn, args.slot)
         sys.exit()

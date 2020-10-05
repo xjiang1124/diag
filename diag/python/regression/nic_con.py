@@ -5,6 +5,7 @@ import pexpect
 import re
 import sys
 import time
+import subprocess
 from time import sleep
 
 sys.path.append("../lib")
@@ -260,6 +261,85 @@ class nic_con:
 
         if ret == -1:
             print "=== Failed to enter uboot ==="
+        return ret
+
+    def sysreset(self, session, slot=0, rate=115200, timeout=300):
+        ret = 0 
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session.timeout = timeout
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        cmd = "turn_on_slot.sh off {}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        cmd = "turn_on_hub.sh {}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        cmd = "turn_on_slot_3v3.sh on {}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x34".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        cmd = "turn_on_slot.sh on {}".format(slot)
+        common.session_cmd(session, cmd) 
+        print "turn on slot, wait for 30 seconds\n"
+        time.sleep(30)
+
+        uartsession = common.session_start()
+        uartsession.timeout = timeout
+
+        for retry in range(10):
+            print "iteration %d\n" % (retry + 1)
+            try:
+                self.uart_session_start(uartsession, rate)
+                cmd = "sysreset.sh"
+                uartsession.sendline(cmd)
+                uartsession.expect("capri login:", 300)
+                self.uart_session_stop(uartsession)
+
+            except:
+                self.uart_session_stop(uartsession)
+                print "=== TIMEOUT: failed to sysreset NIC in slot {}".format(slot)
+                return -1;
+
+            cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x2a".format(slot)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()            
+            res = output.split(";")
+            reg = res[1].split("=")
+            if int(reg[1],16) != 0:
+                print "Puf error counter is no zero %s\n" % reg[1]
+                return -1;
+
+            cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x21".format(slot)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()            
+            res = output.split(";")
+            reg = res[1].split("=")
+            if reg[1] != "0x35\n":
+                print "Register 0x21 value is not expected %s\n" % reg[1]
+                return -1;
+
+            cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x20".format(slot)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()            
+            res = output.split(";")
+            reg = res[1].split("=")
+            if reg[1] != "0x7\n":
+                print "Register 0x20 value is not expected %s\n" % reg[1]
+                return -1;
+
+            cmd = "inventory -sts -slot {}".format(slot)
+            common.session_cmd(session, cmd) 
+            time.sleep(1)
         return ret
 
     def enter_uboot_after_reset(self, session, slot=0, rate=115200, timeout=30,):
