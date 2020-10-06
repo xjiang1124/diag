@@ -220,6 +220,8 @@ def get_err_code(err_info, err_dsrp):
         err_code = "EXTRA_PART"
     elif "Bad Rework" in err_info:
         err_code = "BAD_REWORK"
+    elif "COMP DAMAGED" in err_info:
+        err_code = "COMP_DMG"
     elif "Gold finger Damaged" in err_info:
         err_code = "GOLD_FNGR_DMG"
     else:
@@ -243,6 +245,10 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     xls = pd.ExcelFile(filename)
     sheet = xls.parse('RCCA')
     #wk_list = sheet['WW']
+
+    my_list = sheet.columns.values.tolist()
+    print(my_list )
+
     fail_code_list = sheet['Failure Code']
     fail_dsrp_list = sheet['Failure Description']
     stage_list = sheet['Impacted Station ']
@@ -253,12 +259,12 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
     #print(sn_list)
 
-    f_dl  = open(prefix+"_"+card_type.lower()+"_dl.txt","w+")
-    f_4c  = open(prefix+"_"+card_type.lower()+"_4c.txt","w+")
-    f_p2c = open(prefix+"_"+card_type.lower()+"_p2c.txt","w+")
-    f_swi = open(prefix+"_"+card_type.lower()+"_swi.txt","w+")
-    f_fst = open(prefix+"_"+card_type.lower()+"_fst.txt","w+")
-    f_all = open(prefix+"_"+card_type.lower()+"_all.txt","w+")
+    f_dl  = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_dl.txt","w+")
+    f_4c  = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_4c.txt","w+")
+    f_p2c = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_p2c.txt","w+")
+    f_swi = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_swi.txt","w+")
+    f_fst = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_fst.txt","w+")
+    f_all = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_all.txt","w+")
 
     stage_new_list = []
     record_dict = dict()
@@ -582,7 +588,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     # Output to csv file
     # stage - date - MTP_ID - SN - err_code
 
-    fmt_anal_file = "anal_{}_{}{}.csv"
+    fmt_anal_file = "OUTPUT/anal_{}_{}{}.csv"
     fmt_anal_output = "{},{},{},{},{},{},{},{},{}\n"
     fmt_date = "{}-{}-{}"
 
@@ -673,10 +679,10 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     #total_tested["FST"]  = 944.0
 
     #WK34 NAPLES25SWM
-    #total_tested["ICT"]  = 276.0
-    #total_tested["DL"]   = 77.0
-    total_tested["P2C"]  = 230.0
-    total_tested["4C-H"] = 47.0
+    total_tested["ICT"]  = 3.0
+    total_tested["DL"]   = 10.0
+    total_tested["P2C"]  = 10.0
+    total_tested["4C-H"] = 785.0
     #total_tested["4C-L"] = 273.0
     total_tested["SWI"]  = 216.0
     total_tested["FST"]  = 226.0
@@ -742,7 +748,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
 
     # Output
-    fmt_stat_file = "stat_{}_{}{}.csv"
+    fmt_stat_file = "OUTPUT/stat_{}_{}{}.csv"
     fmt_stat_output = "{},{},{}\n"
 
     stat_file = fmt_stat_file.format(card_type, prefix, "_".join(stage_tgt_list))
@@ -934,6 +940,9 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
     print(files_found)
     if parse_mode == "FW_REV":
         parse_fw_rev(files_found[0], sn, verbose, cleanup, raw)
+    elif parse_mode == "DIE_ID":
+        print("DIE_ID")
+        parse_die_id(files_found[0], sn, verbose, cleanup)
     else:
         ret = parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path, raw)
 
@@ -1219,6 +1228,50 @@ def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
         cmd = cmd + " -verb"
     if raw == True:
         cmd = cmd + " -raw"
+
+    print(cmd)
+    ret_str = run_bash_cmd(cmd)
+    if ret_str == "":
+        ret_str = "No error found. Please check manually"
+    print(ret_str)
+
+    os.chdir(cwd_top)
+
+    if cleanup == True:
+        rm_cmd(card_log_path)
+
+def parse_die_id(file_fullname, sn, verbose, cleanup):
+    cwd_top = os.getcwd()
+    dir_name1 = os.path.dirname(file_fullname)
+    file_name = os.path.basename(file_fullname)
+    
+    tgt_dir = cwd_top+"/test_logs"
+    if not os.path.exists(tgt_dir):
+        os.mkdir(tgt_dir)
+    os.chdir(cwd_top+"/test_logs")
+    
+    untar(file_fullname)
+    
+    dir_name = file_name.split(".")[0]
+
+    card_log_path = cwd_top+"/test_logs/"+dir_name
+    os.chdir(card_log_path)
+    logfile_path = "./asic_logs/"
+    logfile_pattern = "*l1*"+sn+"*.log"
+
+    if verbose == True:
+        print(logfile_path, logfile_pattern)
+    log_filename = ""
+    for path in Path(logfile_path).rglob(logfile_pattern):
+        log_filename = str(path.parent)+'/'+str(path.name)
+
+    if verbose == True:
+        print("log_filename:", log_filename)
+
+    fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
+    cmd = fmt_cmd.format("DIE_ID", log_filename)
+    if verbose == True:
+        cmd = cmd + " -verb"
 
     print(cmd)
     ret_str = run_bash_cmd(cmd)

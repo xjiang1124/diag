@@ -152,7 +152,9 @@ then
     #grep -a -A100 -e "tclsh8.6 set_avs.tcl" $FN | grep ""FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
     grep -a -A300 -e "tclsh8.6 set_avs.tcl" $FN | grep "FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
 
-
+elif [[ $MODE == "DIE_ID" ]]
+then
+    grep -a -A15 "DIE_ID" $FN
 else
     echo "Unsupported error code SEARCH!" $MODE
 fi

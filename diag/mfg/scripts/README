@@ -62,11 +62,11 @@ FPN2018022D    NAPLES100    P2C
 # Output SN list will be in format "prefix_cardtype_stage.txt"
 
 # Example
-python3 ./failure_anal.py -fn Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -prefix wk34 -sl dl,p2c,swi -logroot $LOGROOT
+python3 ./failure_anal.py -fn INPUT/Naples_25_SWM_Aug_WW34_Yield_Report.xlsx -fetch -prefix wk34 -sl dl,p2c,swi -logroot $LOGROOT
 
 # Generate Yield report
 # Output file is in csv format
-python3 ./failure_anal.py -fn SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c,4c-h,swi -logroot $LOGROOT
+python3 ./failure_anal.py -fn INPUT/SN_Naples_100_Aug_WW33_Yield_Report.xlsx -fy -prefix wk33 -sl p2c,4c-h,swi -logroot $LOGROOT
 
 #=============================================
 # Parse error from specified SN

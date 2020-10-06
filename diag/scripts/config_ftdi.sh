@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rmmod ftdi_sio
+
 bus=$(lsusb | grep "Future Technology"|  awk -F " " '{print $2}')
 dev=$(lsusb | grep "Future Technology"|  awk -F " " '{print $4}')
 
