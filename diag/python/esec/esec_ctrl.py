@@ -565,7 +565,7 @@ PRIVEK <ek.sk>"""
             (output, err) = p.communicate()
             res = output.split(";")
             reg = res[1].split("=")
-            if reg[1] != "0x35\n":
+            if int(reg[1], 16) & 0xfe != 0x34:
                 print "Register 0x21 value is not expected %s\n" % reg[1]
                 return -1;
 
