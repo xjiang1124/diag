@@ -155,6 +155,11 @@ then
 elif [[ $MODE == "DIE_ID" ]]
 then
     grep -a -A15 "DIE_ID" $FN
+
+elif [[ $MODE == "PAC" ]]
+then
+    grep -a "ESEC Optimal PAC passed" $FN
+
 else
     echo "Unsupported error code SEARCH!" $MODE
 fi

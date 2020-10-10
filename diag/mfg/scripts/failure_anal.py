@@ -232,6 +232,150 @@ def get_err_code(err_info, err_dsrp):
     err_code = err_code+","+volt_lvl
     return err_code
 
+def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
+    xls = pd.ExcelFile(filename)
+    sheet = xls.parse('Shipment with SN')
+
+    my_list = sheet.columns.values.tolist()
+    #print(my_list )
+
+    date_list = sheet['Date']
+    pn_list = sheet['Item']
+    sn_list = sheet['SN']
+
+    #print(pn_list)
+
+    f_all = open("OUTPUT/pac_all.txt","w+")
+
+    stage_new_list = []
+    record_dict = dict()
+    swi_sn_dict = dict()
+
+    if fetch == True:
+        for idx, sn in sn_list.items():
+            stage_new_list.append("NA")
+            if pd.isna(sn) == True:
+                print("Reached end of file")
+                break
+
+            stage = "SWI"
+
+            pn = pn_list[idx] 
+            if pn == "68-0005-04":
+                card_type = "NAPLES25"
+            elif pn == "P18669-001":
+                card_type = "NAPLES25"
+            elif pn == "P26968-001":
+                card_type = "NAPLES25SWM"
+            else:
+                print("Unknow PN:", pn)
+                sys.exit(0)
+
+            stage_new_list[idx] = stage
+            f_all.write(sn+" "+card_type+" "+stage+"\n")
+
+        f_all.close()
+        sys.exit(0)
+
+    cwd_top = os.getcwd()
+    try:
+        shutil.rmtree(cwd_top+'/test_logs')
+    except os.error:
+        print("no test_logs folder, will be created")
+
+    record_dict = dict()
+    for idx, sn in sn_list.items():
+        print("=== SN:", sn, "===")
+
+        if pd.isna(sn) == True:
+            break
+
+        pn = pn_list[idx] 
+        if pn == "68-0005-04":
+            card_type = "NAPLES25"
+        elif pn == "P18669-001":
+            card_type = "NAPLES25"
+        elif pn == "P26968-001":
+            card_type = "NAPLES25SWM"
+        else:
+            print("Unknow PN:", pn)
+            sys.exit(0)
+
+        path = log_root+card_type+"/SWI/"
+        dir_name = path+sn
+        #print(dir_name)
+        files_found = find_file('*gz', dir_name)
+
+        sn_info_dict = dict()
+        sn_info_dict["PN"] = pn_list[idx]
+        sn_info_dict["PAC"] = "NO"
+        if files_found == []:
+            print(sn, "No log file found")
+
+            sn_info_dict["PAC"] = "NO_LOG"
+            sn_info_dict["DATE"] = "NA"
+            record_dict[sn] = sn_info_dict
+            continue
+
+        # Use last fond log
+        log_time_list = []
+        log_date_list = []
+        for idx, file_fullname in enumerate(files_found):
+            dir_name1 = os.path.dirname(file_fullname)
+            file_name = os.path.basename(file_fullname)
+
+            m = re.compile("^([\D\d]+)_(MTP[S]*-\d+)_(\d\d\d\d)-(\d\d)-(\d\d)_(\d\d)-(\d\d)-(\d\d).*")
+            result = m.match(file_name)
+
+            log_file_dict = dict()
+            log_file_dict["STAGE"]  = result.group(1)
+            log_file_dict["MTP_NO"] = result.group(2)
+            log_file_dict["YEAR"]   = result.group(3)
+            log_file_dict["MONTH"]  = result.group(4)
+            log_file_dict["DAY"]    = result.group(5)
+            log_file_dict["HOUR"]   = result.group(6)
+            log_file_dict["MIN"]    = result.group(7)
+            log_file_dict["SEC"]    = result.group(8)
+            log_time = "{}-{}-{}-{}-{}".format(log_file_dict["YEAR"], log_file_dict["MONTH"],log_file_dict["DAY"],log_file_dict["HOUR"], log_file_dict["MIN"])
+            log_time_list.append(log_time)
+            log_date = "{}-{}-{}".format(log_file_dict["YEAR"], log_file_dict["MONTH"],log_file_dict["DAY"])
+            log_date_list.append(log_date)
+        first_log_time="0000-00-00-00-00"
+        first_log_time_idx=0
+        for i in range(len(log_time_list)):
+            if log_time_list[i] > first_log_time:
+                first_log_time = log_time_list[i]
+                first_log_time_idx = i
+                date = log_date_list[i]
+
+        sn_info_dict["DATE"] = date
+
+        files_found = [files_found[first_log_time_idx]]
+
+        ret_str = parse_fw_rev(files_found[0], sn, False, cleanup, False, "PAC")
+        if 'PAC' in ret_str:
+            sn_info_dict["PAC"] = "YES"
+        record_dict[sn] = sn_info_dict
+        
+    print(record_dict)
+
+    fmt_anal_output = "{},{},{},{}\n"
+
+    anal_file = "OUTPUT/pac_result.csv"
+    f = open(anal_file, "w+") 
+    anal_output = fmt_anal_output.format("PN", "SN", "PAC", "DATE")
+    f.write(anal_output)
+
+    for sn, sn_info in record_dict.items():
+        pn = sn_info["PN"]
+        pac = sn_info["PAC"]
+        date = sn_info["DATE"]
+        output = fmt_anal_output.format(pn, sn, pac, date)
+        f.write(output)
+
+    f.close()
+
+
 def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fetch, verbose):
     if "SWM" in filename:
         card_type = "NAPLES25SWM"
@@ -1169,7 +1313,9 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
         rm_cmd(card_log_path)
     return ret
 
-def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
+def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw, mode="fw_rev"):
+    mode = mode.upper()
+
     cwd_top = os.getcwd()
     dir_name1 = os.path.dirname(file_fullname)
     file_name = os.path.basename(file_fullname)
@@ -1209,7 +1355,8 @@ def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
 
     if found_flag == False:
         print("Unable to find record:", sn)
-        return
+        os.chdir(cwd_top)
+        return "Unable to find record"
     logfile_path = "./"
     logfile_pattern = "diag_"+nic_info["SLOT"]+"_swi.log"
 
@@ -1223,7 +1370,8 @@ def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
         print("log_filename:", log_filename)
 
     fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
-    cmd = fmt_cmd.format("FW_REV", log_filename)
+
+    cmd = fmt_cmd.format(mode, log_filename)
     if verbose == True:
         cmd = cmd + " -verb"
     if raw == True:
@@ -1239,6 +1387,8 @@ def parse_fw_rev(file_fullname, sn, verbose, cleanup, raw):
 
     if cleanup == True:
         rm_cmd(card_log_path)
+
+    return ret_str
 
 def parse_die_id(file_fullname, sn, verbose, cleanup):
     cwd_top = os.getcwd()
@@ -1283,6 +1433,7 @@ def parse_die_id(file_fullname, sn, verbose, cleanup):
 
     if cleanup == True:
         rm_cmd(card_log_path)
+    return ret_str
 
 def cleanup_all():
     cwd_top = cwd_top = os.getcwd()
@@ -1298,6 +1449,7 @@ if __name__ == "__main__":
     parser.add_argument("-fy", "--first_yield", help="Parse first fail", action='store_true')
     parser.add_argument("-verbose", "--verbose", help="Print all output", action='store_true')
     parser.add_argument("-parse", "--parse", help="Parse error of specific sn", action='store_true')
+    parser.add_argument("-parse_pac", "--parse_pac", help="Parse pac specified sn", action='store_true')
     parser.add_argument("-cl", "--cl", help="Delete logs after processing", action='store_true')
     parser.add_argument("-cl_all", "--cl_all", help="Delete logs after processing", action='store_true')
     parser.add_argument("-sv", "--save", help="Save log to target location", action='store_true')
@@ -1342,6 +1494,8 @@ if __name__ == "__main__":
     if filename != "":
         if file_mode == "YIELD":
             parse_yield_file(filename, prefix, log_root, args.cm, args.stage_list, args.first_yield, args.fetch, verbose)
+        elif file_mode == "PAC":
+            parse_pac_from_file_top(filename, log_root, args.cm, args.fetch, cl)
         else:
             parse_log_from_file(filename, file_mode, log_root, parse_mode, card_type, stage, tgt_log, verbose, cl, args.save, args.save_path, args.raw, args.out_fn)
         sys.exit(0)
