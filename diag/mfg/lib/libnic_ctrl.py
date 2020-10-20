@@ -2142,7 +2142,7 @@ class nic_ctrl():
                 return False
 
 
-        #MTP BIT TO READ (SIGNAL SHOULD BE HIGH AND DOES NOT TOGGLE)
+        #OCP BIT TO READ (SIGNAL SHOULD BE HIGH AND DOES NOT TOGGLE)
         data = [[0x40, 0x01], \
                 [0x41, 0x08]]
         for row in data:
@@ -2336,5 +2336,33 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
+        #Test OCP Slot_ID[] Pins
+        data = [[0x40, 0x3F, 0x50], \
+                [0x40, 0x7F, 0x52], \
+                [0x40, 0xBF, 0x54], \
+                [0x40, 0xFF, 0x56], \
+                [0x40, 0x3F, 0x50]]
+
+        for row in data:
+            rc = self.nic_write_mtp_adapt_cpld(row[0], row[1])  
+            if not rc:
+                errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+
+            cmd = "turn_on_hub.sh {:d}".format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return False
+
+            cmd = "i2cset -y 0 0x{:X} 0x00 0x00".format(row[2])
+            if not self.mtp_exec_cmd(cmd):
+                return False
+            
+            match = re.findall(r"Error", self.nic_get_cmd_buf())
+            if match:
+                errlist.append(" ERROR: OCP Signal Slot_ID[] test failed. MTP ADAPTER REG 0x{:X} = 0x{:X}  I2C ACCESS TO EEPROM FAILED.  I2CSET DID NOT RETURN 0".format(row[0], row[1]) )
+                return False
+            
         return True
         

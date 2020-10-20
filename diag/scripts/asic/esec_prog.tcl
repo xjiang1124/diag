@@ -246,22 +246,20 @@ proc efuse_test {slot} {
     diag_open_j2c_if 10 $slot
     regrd 0 0x6a000000
     set card_type [cap_get_card_type]
-    if {$card_type == "NAPLES25"} {
-        set freq 417
-    } else {
-        set freq 833
-    }
+    
+    #Set to 417 for now.  With CPLD's where EFUSE VDDQ can be disabled/enabled.  On a SWM it will not set an efuse bit at 833Mhz if we enable EFUSE VDDQ after asic reset
+    set freq 417
 
     set cpld_rev [ssi_cpld_read 0x00]
     set cpld_ver [ssi_cpld_read 0x80]
     
+    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
+
     if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM:  SET EFUSE VDDQ ENABLE
         set cpld_data [ssi_cpld_read 0x10]
         set cpld_data [expr {$cpld_data | 0x20}]
         ssi_cpld_write 0x10 $cpld_data
     }
-
-    cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
 
     cpu_force_global_flags 1
     set bit_read_back [cap_efuse_get_bit $bit_loc]

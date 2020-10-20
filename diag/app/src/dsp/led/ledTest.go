@@ -25,6 +25,18 @@ import (
 
 
 const MVSW_PORT3    uint8 = 0x13
+const MVSW_PORT4    uint8 = 0x14
+const MVSW_GLOBAL2  uint8 = 0x1C
+const MVSW_GLOBAL2_MISC_SCR_REG         uint8 = 0x1A
+const MVSW_GLOBAL2_MISC_SCR_DATA_SHIFT  uint16 = 0x00
+const MVSW_GLOBAL2_MISC_SCR_DATA_MASK   uint16 = 0xFF
+const MVSW_GLOBAL2_MISC_SCR_REG_SHIFT   uint16 = 8
+const MVSW_GLOBAL2_MISC_SCR_REG_MASK    uint16 = 0x7F
+const MVSW_GLOBAL2_MISC_SCR_WR_BIT      uint16 = (1 << 15)
+
+const MVSW_GLOBAL2_MISC_CFG_DATA1_REG   uint8 = 0x71
+const MVSW_GLOBAL2_MISC_CFG_DATA1_LED0_SEL uint16 = 0x01
+const MVSW_GLOBAL2_MISC_CFG_DATA1_LED1_SEL uint16 = 0x02
 
 const MVSW_SW_LED_CTRL_REG	        uint8  = 0x16
 const MVSW_SW_LED_CTRL_DATA_SHFT	uint16 = 0
@@ -55,10 +67,23 @@ const (
     LED_ALL_OFF
 )
 
+func IsDualMgmtBoard(dualmgmt *uint32) (error int) {
+    cardInfo := diagEngine.GetCardInfo()
+    cardType := cardInfo.CardType
+    if ((cardType == "NAPLES100") || (cardType == "NAPLES100IBM") || (cardType == "NAPLES100HPE")) {
+        *dualmgmt = 1
+    }
+    return 0
+}
+
 
 func SetLEDs(port_ctrl uint32, port_rate uint32 , sys_ctrl uint32, led_state uint32) (error int) {
     var pc_val, pr_val, mvsw_led_reg_val uint32 = 0, 0, 0
     var err int
+    var dual_management_port uint32 = 0
+
+    IsDualMgmtBoard(&dual_management_port)
+
 
     if led_state == LED_ALL_GRN || led_state == LED_ALL_AMB || led_state == LED_ALL_OFF {
         /* No blinnking */
@@ -68,88 +93,91 @@ func SetLEDs(port_ctrl uint32, port_rate uint32 , sys_ctrl uint32, led_state uin
             return errType.FAIL
         }
     } else {
-        err = spi.CpldWrite(port_rate, 0xFF)
+        err = spi.CpldWrite(port_rate, 0x55)
         if err != 0 {
             dcli.Println("e", " ERROR: CPLD WRITE FAILED" )
             return errType.FAIL
         }
     }
 
-    /*
-    # ./cpld -mdiowr 0x16 0x13 0x6000
-    # ./cpld -mdiord 0x16 0x13
-    0x6012
-    #
-    #
-    #
-    # ./cpld -mdiowr 0x16 0x13 0xE712
-    #
-    # ./cpld -mdiowr 0x16 0x13 0x6000
-    # ./cpld -mdiord 0x16 0x13
-    0x6712
-    #
-    */
-    /* WR LED CTRL.  SET STRETCH BITS SO WE CAN READ THAT BLOCK */
-    mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_PTR_STRETCH)
-dcli.Printf("i", " LED: MVSW WR Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
-    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), mvsw_led_reg_val, uint32(MVSW_PORT3)) 
+    //Check LED Strappings Mode on Marvell Switch.. LEDs will not work correctly if this is ever wrong
+    mvsw_led_reg_val = uint32((uint16(MVSW_GLOBAL2_MISC_CFG_DATA1_REG) & MVSW_GLOBAL2_MISC_SCR_REG_MASK)<<MVSW_GLOBAL2_MISC_SCR_REG_SHIFT)
+    err = spi.MvlRegWrite(uint32(MVSW_GLOBAL2_MISC_SCR_REG), mvsw_led_reg_val, uint32(MVSW_GLOBAL2)) 
+    if err != 0 {
+        dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
+        return errType.FAIL
+    }
+    err = spi.MvlRegRead(uint32(MVSW_GLOBAL2_MISC_SCR_REG), &mvsw_led_reg_val, uint32(MVSW_GLOBAL2))
+    if err != 0 {
+        dcli.Println("e", " ERROR: MARVELL SWITCH READ FAILED" )
+        return errType.FAIL
+    } 
+
+    {
+        var exp_led_sel uint32 = uint32(MVSW_GLOBAL2_MISC_CFG_DATA1_LED0_SEL | MVSW_GLOBAL2_MISC_CFG_DATA1_LED1_SEL)
+        if (mvsw_led_reg_val & exp_led_sel) != exp_led_sel {
+            dcli.Println("e", " ERROR: MARVELL SWITCH LED STRAPPING MODE IS INCORRECT: REG READ=",  mvsw_led_reg_val, " EXP MASK=", exp_led_sel)
+            return errType.FAIL
+        }
+    }
+
+    //SET SLOWER BLINK RATE ON MVSW (default is very fast)
+    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), 0xE014, uint32(MVSW_PORT3)) 
     if err != 0 {
         dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
         return errType.FAIL
     }
 
-    /* RD LED CTRL TO READ DEFAULT STRETCH SETTINGS */
-    err = spi.MvlRegRead(uint32(MVSW_SW_LED_CTRL_REG), &mvsw_led_reg_val, uint32(MVSW_PORT3))
-    if err != 0 {
-        dcli.Println("e", " ERROR: MARVELL SWITCH READ FAILED" )
-        return errType.FAIL
-    } 
-dcli.Printf("i", " LED: MVSW RD Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
-     
-
-    mvsw_led_reg_val = uint32((mvsw_led_reg_val & uint32(MVSW_SW_LED_CTRL_DATA_MASK)) | 
-                                                      uint32(MVSW_SW_LED_CTRL_UPDATE) | 
-                                                uint32(MVSW_SW_LED_CTRL_PTR_STRETCH)) |
-                                                                              0x0700   //DATA FOR STRETCH PAGE: SKIP COLUMN .. SET TO ALL 1's
-dcli.Printf("i", " LED: MVSW WR Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
-    err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), mvsw_led_reg_val, uint32(MVSW_PORT3)) 
-    if err != 0 {
-        dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
-        return errType.FAIL
-    }
-
-
-    err = spi.MvlRegRead(uint32(MVSW_SW_LED_CTRL_REG), &mvsw_led_reg_val, uint32(MVSW_PORT3))
-    if err != 0 {
-        dcli.Println("e", " ERROR: MARVELL SWITCH READ FAILED" )
-        return errType.FAIL
-    } 
-dcli.Printf("i", " LED: MVSW RD Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_CTRL_REG, mvsw_led_reg_val)
 
     switch led_state {
     	case LED_ALL_GRN:
     	    dcli.Println("i", " LED: Setting Solid Green" )
             pc_val = 0x05
-            pr_val = 0x04
-            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            pr_val = 0x14
+            if dual_management_port > 0 {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
+                                         (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED0_SHIFT) | 
+                                         (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            } else {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            }
     	case LED_ALL_AMB:
     	    dcli.Println("i", " LED: Setting Solid Amber" )
             pc_val = 0x0A
             pr_val = 0x20
-            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED0_SHIFT))
+            if dual_management_port > 0 {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
+                                         (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED0_SHIFT) | 
+                                         (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            } else {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_ON << MVSW_SW_LED_CTRL_LED0_SHIFT))
+            }
         case LED_ALL_BLK_GRN:
+            dcli.Println("i", " LED: Setting Blinking Green" )
             pc_val = 0x05
-            pr_val = 0x07
-            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            pr_val = 0x15
+            if dual_management_port > 0 {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
+                                         (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED0_SHIFT) | 
+                                         (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            } else {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            }
         case LED_ALL_BLK_AMB:
             dcli.Println("i", " LED: Setting Blinking Amber" )
             pc_val = 0x0A
-            pr_val = 0x38
-            mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED0_SHIFT))
+            pr_val = 0x28
+            if dual_management_port > 0 {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
+                                         (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED0_SHIFT) | 
+                                         (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED1_SHIFT))
+            } else {
+                mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | (MVSW_SW_LED_CTRL_FORCE_BLINK << MVSW_SW_LED_CTRL_LED0_SHIFT))
+            }
         case LED_ALL_OFF:
             dcli.Println("i", " LED: Setting All LED to OFF" )
             pc_val = 0x00
-            pr_val = 0x00
+            pr_val = 0x12
             mvsw_led_reg_val = uint32(MVSW_SW_LED_CTRL_UPDATE | 
                            (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED0_SHIFT) | 
                            (MVSW_SW_LED_CTRL_FORCE_OFF << MVSW_SW_LED_CTRL_LED1_SHIFT))
@@ -157,7 +185,6 @@ dcli.Printf("i", " LED: MVSW RD Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_
     		return errType.FAIL
 	}
 
-    dcli.Println("i", " LED: Setting Green Solid" )
     err = spi.CpldWrite(port_ctrl, pc_val)
     if err != 0 {
         dcli.Println("e", " ERROR: CPLD WRITE FAILED" )
@@ -173,8 +200,17 @@ dcli.Printf("i", " LED: MVSW RD Port%d  Reg-0x%x=0x%x", MVSW_PORT3, MVSW_SW_LED_
         dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
         return errType.FAIL
     }
+    if dual_management_port > 0 {
+        err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), mvsw_led_reg_val, uint32(MVSW_PORT4)) 
+        if err != 0 {
+            dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
+            return errType.FAIL
+        }
+    }
     return errType.SUCCESS
 }
+
+
 
 func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) (error int) {
     cardInfo := diagEngine.GetCardInfo()
@@ -195,7 +231,7 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_ctrl = forioCpld.REG_LED_PORT_CTRL
         *port_rate = forioCpld.REG_LED_PORT_RATE
         *sys_ctrl = forioCpld.REG_LED_SYS_CTRL
-    } else if (cardType == "VOMERO") {
+    } else if (cardType == "VOMERO" || cardType == "VOMERO2") {
         *port_ctrl = vomeroCpld.REG_LED_PORT_CTRL
         *port_rate = vomeroCpld.REG_LED_PORT_RATE
         *sys_ctrl = vomeroCpld.REG_LED_SYS_CTRL
@@ -224,6 +260,9 @@ func LedLedHdl(argList []string) {
     var err int
     var data uint32 = 0
     var port_ctrl, port_rate, sys_ctrl uint32 = 0,0,0
+    var dual_management_port uint32 = 0
+
+    IsDualMgmtBoard(&dual_management_port)
 
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
 
@@ -278,7 +317,9 @@ func LedLedHdl(argList []string) {
     if err != 0 {
         goto endLedTest
     }
-    err = spi.CpldWrite(sys_ctrl, 0x40)
+
+    dcli.Println("i", " LED: Setting System LED and Mgmt Port LED's back to default" )
+    err = spi.CpldWrite(sys_ctrl, 0x20)
     if err != 0 {
         dcli.Println("e", " ERROR: CPLD WRITE FAILED" )
         goto endLedTest
@@ -290,6 +331,13 @@ func LedLedHdl(argList []string) {
     if err != 0 {
         dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
         goto endLedTest
+    }
+    if dual_management_port > 0 {
+        err = spi.MvlRegWrite(uint32(MVSW_SW_LED_CTRL_REG), data, uint32(MVSW_PORT4)) 
+        if err != 0 {
+            dcli.Println("e", " ERROR: MARVELL SWITCH WRITE FAILED" )
+            goto endLedTest
+        }
     }
 
 endLedTest:

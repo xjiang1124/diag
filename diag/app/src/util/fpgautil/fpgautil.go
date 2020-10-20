@@ -153,9 +153,7 @@ var APB_REG_s = []ABP_I2C_REGISTERS {
 
 
 
-//"     mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n"
-//"     mappedi2c bus i2c_addr r len                              -- read\n"
-//"     mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n"
+
 
 const errhelp = "\nfpgautil:\n" +
         "### READ / WRITE FPGA CS0 ###\n" +
@@ -166,6 +164,9 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil ee r  <addr> \n" +
         "fpgautil ee w  <addr> <data>\n" +
         "fpgautil apbdump < bus>\n" +
+        "mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
+        "mappedi2c bus i2c_addr r len                              -- read\n" +
+        "mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
         "### 32-bit and 64-bit memory read/write ###\n" +
         "fpgautil mem r32 <addr>\n" +
         "fpgautil mem w32 <addr> <data>\n" +
@@ -305,6 +306,12 @@ func main() {
             fmt.Printf(" %s \n", errhelp)
             os.Exit(-1);
         }
+    } else if os.Args[1] == "mappedi2c" {
+        "mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
+        "mappedi2c bus i2c_addr r len                              -- read\n" +
+        "mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
+        //arg2 = bus
+
     } else if os.Args[1] == "mem" {
         //"fpgautil mem r32 <addr>\n" +
         //"fpgautil mem w32 <addr> <data>\n" +
@@ -535,11 +542,14 @@ func fpga_dump_abp(bus uint8) error {
     return err
 }
 
+
+/* 
+Hmm, probably a better way to do this in GoLang 
+*/ 
 func s2i_poll_apb_reg(bus uint8, reg uint8, bit uint32) error {
     var rc int = -2
     var err error = nil
     var data32 uint32 = 0;
-    //mx := new(sync.Mutex)
     go func() {   
         for ((data32 & bit) != bit) {
             err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(reg),  &data32)
@@ -591,72 +601,62 @@ func s2i_transaction_eeprom (bus uint16, i2caddr uint8, ee_addr uint16, data *ui
 
     /* Check transmit FIFO is empty */
     err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
-    if err != nil {
-        return err
-    }
+    if err != nil { return err }
 
    
     spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32((ee_addr>>8)&0xFF))
     /* Check transmit FIFO is empty */
-    data32=0
-    for ((data32 & 0x2) != 0x2) {
-        err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-    }
+    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
+    if err != nil { return err }
 
     spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32(ee_addr & 0xFF))
     /* Check transmit FIFO is empty */
-    data32=0
-    for ((data32 & 0x2) != 0x2) {
-        err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-    }
+    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
+    if err != nil { return err }
 
     if WR == true {  //WRITE
 
         spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32(*data & 0xFF))
+
         /* Check transmit FIFO is empty */
-        data32=0
-        for ((data32 & 0x2) != 0x2) {
-            err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-        }
+        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
+        if err != nil { return err }
+
         spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32((*data>>8) & 0xFF) | 0x200)
 
     } else {  //READ
 
         spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), 0x500)
         /* Check transmit FIFO is empty */
-        data32=0
-        for ((data32 & 0x2) != 0x2) {
-            err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-        }
+        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
+        if err != nil { return err }
 
         spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), 0x300)
 
-        /* Check transmit FIFO is empty */
-        data32=0
-        for ((data32 & 0x8) != 0x8) {
-            err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-        }
+        /* Check Rx FIFO is not empty */
+        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x8)
+        if err != nil { return err }
 
         spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), &data32)
         *data = uint16(data32 & 0xFF)
 
-        /* Check transmit FIFO is empty */
-        data32=0
-        for ((data32 & 0x8) != 0x8) {
-            err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-        }
+        /* Check Rx FIFO is not empty */
+        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x8)
+        if err != nil { return err }
+
         spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), &data32)
         *data |= uint16((data32 & 0xFF)<<8)
     }
 
-    data32=0
-    for ((data32 & 0x1) == 0x1) {
-        err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_STATUS),  &data32)
-    }
+
+    /* Check Rx FIFO is not empty */
+    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x1)
+    if err != nil { return err }
     
     spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_RAW_INTR_STAT),  &data32)
     if (data32 & 0x40) == 0x40 {
        fmt.Printf("s2i_transaction_eeprom:ERROR: No target response!\n");
+       return(errors.New(" ERROR"))
    }
 
    return err   
