@@ -234,14 +234,14 @@ def get_err_code(err_info, err_dsrp):
 
 def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
     xls = pd.ExcelFile(filename)
-    sheet = xls.parse('Shipment with SN')
+    sheet = xls.parse('Shipment SN Detials')
 
     my_list = sheet.columns.values.tolist()
     #print(my_list )
 
     date_list = sheet['Date']
     pn_list = sheet['Item']
-    sn_list = sheet['SN']
+    sn_list = sheet['Serial Number']
 
     #print(pn_list)
 
@@ -267,6 +267,9 @@ def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
                 card_type = "NAPLES25"
             elif pn == "P26968-001":
                 card_type = "NAPLES25SWM"
+            elif pn == "68-0003-05":
+                card_type = "NAPLES100"
+
             else:
                 print("Unknow PN:", pn)
                 sys.exit(0)
@@ -297,6 +300,9 @@ def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
             card_type = "NAPLES25"
         elif pn == "P26968-001":
             card_type = "NAPLES25SWM"
+        elif pn == "68-0003-05":
+            card_type = "NAPLES100"
+
         else:
             print("Unknow PN:", pn)
             sys.exit(0)
@@ -402,6 +408,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     action_list = sheet['ACTION']
 
     #print(sn_list)
+    #print(location_list)
 
     f_dl  = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_dl.txt","w+")
     f_4c  = open("OUTPUT/"+prefix+"_"+card_type.lower()+"_4c.txt","w+")
@@ -572,7 +579,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
             if args.first_yield == True:
                 log_time_list = []
-                for idx, file_fullname in enumerate(files_found):
+                for _, file_fullname in enumerate(files_found):
                     dir_name1 = os.path.dirname(file_fullname)
                     file_name = os.path.basename(file_fullname)
 
@@ -826,8 +833,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     total_tested["ICT"]  = 3.0
     total_tested["DL"]   = 10.0
     total_tested["P2C"]  = 10.0
-    total_tested["4C-H"] = 785.0
-    #total_tested["4C-L"] = 273.0
+    total_tested["4C-H"] = 22.0
+    total_tested["4C-L"] = 46.0
     total_tested["SWI"]  = 216.0
     total_tested["FST"]  = 226.0
 
