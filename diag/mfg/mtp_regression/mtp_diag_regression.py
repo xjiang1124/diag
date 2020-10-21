@@ -599,6 +599,9 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
+    # find any slots to skip
+    mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
+
     # load the diag test config
     naples100_test_cfg_file = "config/naples100_mtp_test_cfg.yaml"
     naples100ibm_test_cfg_file = "config/naples100ibm_mtp_test_cfg.yaml"
@@ -714,6 +717,7 @@ def main():
                              diag_cmd_log_filep = mtp_diag_cmd_log_filep,
                              mgmt_cfg = mtp_mgmt_cfg,
                              apc_cfg = mtp_apc_cfg,
+                             slots_to_skip = mtp_slots_to_skip,
                              dbg_mode = verbosity)
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):

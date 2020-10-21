@@ -55,7 +55,7 @@ from libdefs import Swm_Test_Mode
 from libnic_ctrl import nic_ctrl
 
 class mtp_ctrl():
-    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, dbg_mode = False):
+    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
         self._id = mtpid
         self._ts_handle = None
         self._mgmt_handle = None
@@ -68,6 +68,7 @@ class mtp_ctrl():
         self._valid_type_list = MFG_VALID_NIC_TYPE_LIST
         self._proto_type_list = MFG_PROTO_NIC_TYPE_LIST
         self._slots = MTP_Const.MTP_SLOT_NUM
+        self._slots_to_skip = slots_to_skip
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
 
@@ -2401,6 +2402,8 @@ class mtp_ctrl():
 
                 if not self._nic_ctrl_list[slot].nic_check_status():
                     self.cli_log_slot_err(slot, "NIC in failure state")
+            elif self._slots_to_skip[slot]:
+                self.cli_log_slot_err(slot, "NIC is Skipped")
             else:
                 self.cli_log_slot_err(slot, "NIC is Absent")
         self.cli_log_inf("End MTP NIC Info Dump\n")
@@ -2684,74 +2687,113 @@ class mtp_ctrl():
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
-                slot = int(match[idx]) - 1     
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES100
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100)
+                slot = int(match[idx]) - 1
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES100
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100IBM, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES100IBM
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100IBM)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES100IBM
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100IBM)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100HPE, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES100HPE
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100HPE)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES100HPE
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100HPE)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES25
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES25
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_FORIO, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.FORIO
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.FORIO)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.FORIO
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.FORIO)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.VOMERO
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO)
-
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.VOMERO
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO2, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.VOMERO2
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO2)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.VOMERO2
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.VOMERO2)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES25SWM
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWM)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES25SWM
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWM)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25OCP, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES25OCP
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25OCP)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES25OCP
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25OCP)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWMDELL, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
                 slot = int(match[idx]) - 1
-                self._nic_prsnt_list[slot] = True
-                self._nic_type_list[slot] = NIC_Type.NAPLES25SWMDELL
-                self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWMDELL)
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES25SWMDELL
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWMDELL)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         return True
 
 

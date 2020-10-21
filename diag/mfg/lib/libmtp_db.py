@@ -25,6 +25,8 @@ class mtp_db():
         self._userid = dict()
         self._passwd = dict()
         self._capability = dict()
+        self._max_slots = dict()
+        self._slots_to_skip = dict()
         self._mtpid_list = list()
 
         mtp_cfg = libmfg_utils.load_cfg_from_yaml_file_list(mtp_cfg_file_list)
@@ -53,6 +55,11 @@ class mtp_db():
             self._userid[mtpid] = mtp_cfg[mtpid]["USERID"]
             self._passwd[mtpid] = mtp_cfg[mtpid]["PASSWORD"]
 
+            self._max_slots[mtpid] = mtp_cfg[mtpid]["SLOTS"]
+            self._slots_to_skip[mtpid] = [False]*self._max_slots[mtpid] #True=skip, False=dont skip
+            if "SKIP_SLOTS" in mtp_cfg[mtpid].keys(): # for backward compatability with configs without SKIP_SLOTS field
+                for slot in libmfg_utils.expand_range_of_numbers(mtp_cfg[mtpid]["SKIP_SLOTS"], range_min=1, range_max=self._max_slots[mtpid], dev=mtpid):
+                    self._slots_to_skip[mtpid][slot-1] = True
             self._capability[mtpid] = mtp_cfg[mtpid]["CAPABILITY"]
 
             self._mtpid_list.append(mtpid)
@@ -118,3 +125,8 @@ class mtp_db():
 
         return self._capability[mtpid]
 
+    def get_mtp_slots_to_skip(self, mtpid):
+        if not self.mtpid_valid(mtpid):
+            libmfg_utils.sys_exit("Invalid mtpid: " + mtpid)
+
+        return self._slots_to_skip[mtpid]

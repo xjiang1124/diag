@@ -347,6 +347,43 @@ def load_cfg_from_yaml_file_list(yaml_file_list):
 
     return cfg
 
+def expand_range_of_numbers(data, range_min=1, range_max=10, dev=None):
+    '''
+    Expands a string "1-3,5,7" as list of integers [1,2,3,5,7]
+    Can provide a min and max possible value.
+    '''
+    expanded = []
+    try:
+        if not data:
+            return expanded
+        if isinstance(data, int):
+            #single element that yaml parser read as integer.
+            expanded.append(data)
+        else:
+            for yaml_field in data.split(","):
+                if "-" not in yaml_field:
+                    #individual integer
+                    expanded.append(int(yaml_field))
+                else:
+                    #range of integers: expand them
+                    start,end = map(int, yaml_field.split("-"))
+                    if start < end:
+                        expanded = expanded + range(start,end+1)
+                    else:
+                        sys_exit("{:s} Invalid slot range '{:s}-{:s}' in config file".format(dev, start, end))
+
+        #remove duplicates
+        expanded = list(set(expanded))
+        #range check
+        if not all(x >= range_min and x <= range_max for x in expanded):
+            sys_exit("{:s} Invalid slot in config file: must be between {:s}-{:s}".format(dev, range_min, range_max))
+
+    except ValueError as e:
+        #not a number
+        sys_exit(dev+" Invalid slot "+str(e.message.split(":")[-1])+" in config file")
+
+    return expanded
+
 
 def load_cfg_from_yaml(yaml_file):
     if not os.path.exists(yaml_file):
