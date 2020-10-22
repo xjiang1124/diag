@@ -2804,6 +2804,9 @@ class mtp_ctrl():
     def mtp_get_nic_prsnt_list(self):
         return self._nic_prsnt_list
 
+    def mtp_get_nic_skip_list(self):
+        return self._slots_to_skip
+
 
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]

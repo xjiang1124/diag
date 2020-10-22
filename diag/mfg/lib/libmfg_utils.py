@@ -1111,8 +1111,10 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
 
     nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
     nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
+    nic_skip_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP)
     fail_match = re.findall(nic_fail_reg_exp, buf)
     pass_match = re.findall(nic_pass_reg_exp, buf)
+    skip_match = re.findall(nic_skip_reg_exp, buf)
 
     log_hard_copy_flag = True
     log_relative_link = None
@@ -1174,6 +1176,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
+    for slot in skip_match:
+        mtp_test_summary.append((slot, True))
 
     for slot, nic_type, sn in fail_match:
         mtp_test_summary.append((slot, sn, nic_type, False))

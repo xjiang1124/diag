@@ -752,6 +752,7 @@ def main():
     naples25swmdell_nic_list = list()
     pass_nic_list = list()
     fail_nic_list = list()
+    skip_nic_list = list()
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
@@ -792,6 +793,11 @@ def main():
     
     nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL]
     nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list]
+
+    nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
+    for slot in range(len(nic_skipped_list)):
+        if nic_skipped_list[slot]:
+            skip_nic_list.append(slot)
 
     # check if MTP support present NIC
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
@@ -1203,6 +1209,10 @@ def main():
         if card_type == NIC_Type.NAPLES25SWM and (swmtestmode == Swm_Test_Mode.ALOM):
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
+    for slot in skip_nic_list:
+        key = libmfg_utils.nic_key(slot)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(key, MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP), level=0)
 
     mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_PASS, open_file_track_list)
 

@@ -188,6 +188,14 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner, durat
                     report_body += "        ---- Test ({:s}, {:s}) Result: {:s}\n".format(dsp, test, result)
                 report_body += "\n"
 
+        if MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP in buf:
+            nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP)
+            match = re.findall(nic_pass_reg_exp, buf)
+            for slot in match:
+                nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
+                report_body += nic_cli_id_str + " Diag Regression Test Skipped\n"
+                report_body += "\n"
+
     # testbed info
     match = re.findall(r"==> (.*) <==", buf)
     if match:
