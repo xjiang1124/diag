@@ -74,13 +74,17 @@ def config_eth():
     time.sleep(1)
     return card_slot_list
 
-def fst_general_old():
+def fst_general_old(fst):
     naples_env = os.environ.copy()
     naples_env["NAPLES_URL"] = "http://169.254.0.1"
     
-    slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
-    
-    eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
+    if fst == 1:
+        slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
+        eth_list = {'enp46s0', 'enp12s0', 'enp101s0', 'enp37s0', 'enp69s0'}
+    else:
+        slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
+        eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
+
     for eth in eth_list:
         subprocess.call(["ifconfig", eth, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
@@ -153,13 +157,17 @@ def fst_general_old():
             print("goldfw:", firmware["all-installed-fw"]["goldfw"]["kernel_fit"]["software_version"])
             cleanup(eth)
 
-def fst_general():
+def fst_general(fst):
     naples_env = os.environ.copy()
     naples_env["NAPLES_URL"] = "http://169.254.0.1"
     
-    slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
+    if fst == 1:
+        slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
+        eth_list = {'enp46s0', 'enp12s0', 'enp101s0', 'enp37s0', 'enp69s0'}
+    else:
+        slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
+        eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
     
-    eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
     for eth in eth_list:
         subprocess.call(["ifconfig", eth, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
@@ -253,8 +261,13 @@ def fst_general():
             print("goldfw:", firmware["all-installed-fw"]["goldfw"]["kernel_fit"]["software_version"])
             cleanup(eth)
 
-def fst_general_oracle():
-    slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
+def fst_general_oracle(fst):
+    if fst == 1:
+        slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
+        slot_bus_dict = {1:42, 2:8, 3:97, 4:33, 5:65}
+    else:
+        slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
+        slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
     card_slot_list = config_eth()
     card_info_dict = dict()
@@ -282,8 +295,6 @@ def fst_general_oracle():
 
         card_info_dict[slot] = sn+':'+product_name
 
-    slot_bus_dict1 = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
-
     for slot, sn_pn in card_info_dict.items():
         sn = sn_pn.split(":")[0]
         product_name = sn_pn.split(":")[1]
@@ -302,7 +313,7 @@ def fst_general_oracle():
             print("Speed and Width are failed")
             print(result1.replace("\n", ""))
 
-def fst_cloud_fetch_sn(card_type):
+def fst_cloud_fetch_sn(card_type, fst):
     print("Fetching SN with goldfw")
 
     try:
@@ -310,7 +321,10 @@ def fst_cloud_fetch_sn(card_type):
     except OSError:
         print("card_info_dict.txt not exist")
       
-    slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
+    if fst == 1:
+        slot_bus_dict = {1:42, 2:8, 3:97, 4:33, 5:65}
+    else:
+        slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
     card_slot_list = config_eth()
     card_info_dict = dict()
@@ -360,11 +374,14 @@ def fst_cloud_fetch_sn(card_type):
 
     json.dump(card_info_dict, open("/home/diag/mtp_fst_script/card_info_dict.txt",'w'))
 
-def fst_cloud_check_pcie():
+def fst_cloud_check_pcie(fst):
 
     card_info_dict = json.load(open("/home/diag/mtp_fst_script/card_info_dict.txt")) 
 
-    slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
+    if fst == 1:
+        slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
+    else:
+        slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
 
     for slot, sn_pn in card_info_dict.items():
         sn = sn_pn.split(":")[0]
@@ -396,22 +413,24 @@ def main():
     parser = argparse.ArgumentParser(description="MTP Final Stage Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
     parser.add_argument("-stage", "--stage", help="stage: fetch_sn/check_pcie", type=str, default="fetch_sn")
+    parser.add_argument("-fst", "--fst", help="fst type", type=int, default=0)
     args = parser.parse_args()
 
     card_type = args.card_type.upper()
     stage = args.stage.upper()
+    fst_type = args.fst
 
     if card_type == "GENERAL":
-        fst_general()
+        fst_general(fst_type)
     elif card_type == "GENERAL_OLD":
-        fst_general_old()
+        fst_general_old(fst_type)
     elif card_type == "ORACLE":
-        fst_general_oracle()
+        fst_general_oracle(fst_type)
     elif card_type == "NAPLES100IBM" or "CLOUD" in card_type:
         if stage == "FETCH_SN":
-            fst_cloud_fetch_sn(card_type)
+            fst_cloud_fetch_sn(card_type, fst_type)
         elif stage == "CHECK_PCIE":
-            fst_cloud_check_pcie()
+            fst_cloud_check_pcie(fst_type)
         else:
             print("Wrong stage:", stage)
     else:

@@ -63,6 +63,11 @@ def main():
 
     mtp_cfg_db = load_mtp_cfg()
 
+    mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
+    fst = 0
+    if mtp_capability == 0x4:
+        fst=1
+
     # local log files
     log_filep_list = list()
     test_log_file = "test_fst.log"
@@ -94,7 +99,7 @@ def main():
     start_ts = libmfg_utils.timestamp_snapshot()
 
     if card_type == "GENERAL" or card_type == "GENERAL_OLD" or card_type == "ORACLE":
-        cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage)
+        cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
         #cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
@@ -114,7 +119,7 @@ def main():
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
     elif "CLOUD" in card_type:
-        cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage)
+        cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
             logfile_close(log_filep_list)
