@@ -265,6 +265,46 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+    # Check if image update is needed
+    mtp_dl_image_list = list()
+    mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE)
+    mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100)
+    mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100)
+    mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2)
+    mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL)
+    mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP)
+    if (mtp_capability & 0x1):
+        # FIXME: Xin - Dedicated image
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100HPE_CPLD_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE)
+    if (mtp_capability & 0x2):
+        # FIXME: Xin - Dedicated image
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE)    
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE)
+    onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+    if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
+        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
+
+    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
+    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
