@@ -8,6 +8,7 @@ import oyaml as yaml
 import os
 import time
 import pexpect
+import glob
 
 from libdefs import MTP_Const
 from libdefs import FF_Stage
@@ -1009,6 +1010,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         test_log_file = "{:s}test_swi.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_test_swi.log".format(mtp_id)
+        # copy csp files from MTP to Server
+        test_onboard_csp_log_files = MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES
     elif stage == FF_Stage.FF_FST:
         # log subdir
         sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
@@ -1118,8 +1121,13 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
 
     log_hard_copy_flag = True
     log_relative_link = None
+    temp_nic_type = None
+    upload_csp = False
+    csp_log_dir = None
     for slot, nic_type, sn in fail_match + pass_match:
         # report doesn't have valid serial number
+        if nic_type:
+            temp_nic_type = nic_type
         if sn == "None":
             continue
         if stage == FF_Stage.FF_DL:
@@ -1143,10 +1151,13 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
         elif stage == FF_Stage.FF_SWI:
+            upload_csp = True
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SWI_LOG_DIR_FMT.format(nic_type, sn)
+                csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_CSP_LOG_DIR_FMT.format(nic_type)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SWI_LOG_DIR_FMT.format(nic_type, sn)
+                csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_CSP_LOG_DIR_FMT.format(nic_type)
         elif stage == FF_Stage.FF_FST:
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(nic_type, sn)
@@ -1156,6 +1167,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             pass
 
         cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
+        os.system(cmd)
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(csp_log_dir)
         os.system(cmd)
         # copy the onboard logs only once
         if log_hard_copy_flag:
@@ -1176,8 +1189,28 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
+            
     for slot in skip_match:
         mtp_test_summary.append((slot, True))
+        
+    if upload_csp:
+        # csp log files    
+        cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp*"
+     
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        listoffileoutput = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        listoffile = listoffileoutput.split()
+        
+        listcspfiletoupload = list()
+        for cspfile in listoffile:
+            if 'txt' in cspfile:
+                listcspfiletoupload.append(cspfile)
+        for cspfilepath in listcspfiletoupload:
+            mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(os.path.basename(cspfilepath)))
+            csp_log_file = csp_log_dir + os.path.basename(cspfilepath)
+            if not network_get_file(ipaddr, userid, passwd, csp_log_file, cspfilepath):
+                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(cspfilepath), level=0)
+                continue
 
     for slot, nic_type, sn in fail_match:
         mtp_test_summary.append((slot, sn, nic_type, False))
@@ -1188,7 +1221,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     # clear the onboard logs
     logfile_list.append(log_pkg_file)
     logfile_list.append(log_dir+sub_dir)
-    cmd = "rm -rf {:s}".format(" ".join(logfile_list))
+    #cmd = "rm -rf {:s}".format(" ".join(logfile_list))
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
         return None

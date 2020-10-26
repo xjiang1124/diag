@@ -80,7 +80,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         if test == "FRU_PROG":
             if not (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):  #If SWM and only asking for ALOM, skip SWM FRU PROGRAMMING
                 ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
-            if pn == 'P26968-001':
+            if pn == '000000-000':
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
@@ -217,7 +217,7 @@ def main():
             sn = scan_rslt[key]["NIC_SN"]
             pn = scan_rslt[key]["NIC_PN"]
             mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
-            if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
+            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
                 alom_sn = scan_rslt[key]["SN_ALOM"]
                 alom_pn = scan_rslt[key]["PN_ALOM"]
                 if swmtestmode == Swm_Test_Mode.ALOM:
@@ -275,6 +275,15 @@ def main():
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    # init the nic diag environment
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if nic_prsnt_list[slot]:
+            if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
+                continue
+    
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # init nic diag env.
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
@@ -301,7 +310,7 @@ def main():
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
         pn = nic_fru_cfg[mtp_id][key]["PN"]
         mac_ui = libmfg_utils.mac_address_format(mac)
-        if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
+        if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
@@ -355,7 +364,7 @@ def main():
             return
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-        if card_type == NIC_Type.NAPLES25SWM:
+        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
@@ -495,7 +504,7 @@ def main():
         exp_mac = "-".join(re.findall("..", mac))
         exp_pn = pn
         exp_date = prog_date
-        if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
+        if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             exp_alom_sn = alom_sn
@@ -509,7 +518,7 @@ def main():
         testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES25SWM:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "FRU_ALOM_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
             if swmtestmode == Swm_Test_Mode.ALOM:
                 testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
         for test in testlists:
@@ -617,7 +626,7 @@ def main():
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
-        if nic_type == NIC_Type.NAPLES25SWM:
+        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             if not alom_sn:
                 continue

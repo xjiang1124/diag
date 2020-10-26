@@ -179,6 +179,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     NIC_ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
+    ONBOARD_CSP_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*txt"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
@@ -196,13 +197,14 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_4C_LOG_DIR_FMT = "/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_SWI_LOG_DIR_FMT = "/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
-
+    DIAG_MFG_CSP_LOG_DIR_FMT = "/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_CFG_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/CFG/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
     DIAG_MFG_MODEL_4C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/4C/{:s}/{:s}/"
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
+    DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"                                                                                                                             
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -226,6 +228,7 @@ class MTP_DIAG_Path:
     ONBOARD_MTP_ASIC_PATH = "/home/diag/diag/scripts/asic/"
     ONBOARD_MTP_MTP_DIAG_PATH = "/home/diag/diag/"
     ONBOARD_MTP_NIC_DIAG_PATH = "/home/diag/nic_diag/"
+    ONBOARD_MTP_CSP_PATH = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh"
     ONBOARD_NIC_UTIL_PATH = "/home/diag/diag/util/"
     ONBOARD_NIC_DIAG_PATH = "/home/diag/"
     ONBOARD_NIC_DIAG_UTIL_PATH = "/data/"
@@ -320,6 +323,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_GOLD_BOOT_FMT = "fwupdate -s goldfw"
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
     NIC_DATE_SET_FMT = "date --set='{:s}'"
+    NIC_SYS_CLEAN_FMT = "{:s}scripts/sys_clean.sh"
 
     NIC_ESEC_ERR_CHECK_FMT = "inventory -esec -slot {:d}"
     NIC_ESEC_PROG_PRE_FMT = "./esec_ctrl.py -slot {:d} -img_prog"
@@ -391,6 +395,8 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
     NIC_DIAG_FINI_FMT = "rm -r /data/debug*"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
+    NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
+    NIC_DIAG_STOP_PICOCOM_FMT = "killall picocom"
     NIC_DIAG_CONFIG_FMT = "source /data/nic_arm/nic_config.sh"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"

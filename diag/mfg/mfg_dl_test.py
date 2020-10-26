@@ -127,6 +127,7 @@ def main():
         mtp_dl_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2)

@@ -77,7 +77,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
             ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             #skip ALOM programming if Naples25 SWM test mode is SWM only
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode != Swm_Test_Mode.SWM:  
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:  
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
@@ -240,7 +240,7 @@ def main():
                         tmp_fru_cfg[key]["NIC_SN"] = nic_fru_info[0]
                         tmp_fru_cfg[key]["NIC_MAC"] = nic_fru_info[1].replace('-', '')
                         tmp_fru_cfg[key]["NIC_PN"] = nic_fru_info[2]
-                        if card_type == NIC_Type.NAPLES25SWM:
+                        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                             nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_alom_fru(slot)
                             tmp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
                             tmp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
@@ -248,14 +248,14 @@ def main():
                         tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
                         tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
                         tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
-                        if card_type == NIC_Type.NAPLES25SWM:
+                        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                             tmp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
                             tmp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
             else:
                     tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
                     tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
                     tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
-                    if card_type == NIC_Type.NAPLES25SWM:
+                    if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         tmp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
                         tmp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
         else:
@@ -287,7 +287,7 @@ def main():
         alom_sn = None
         alom_pn = None
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES25SWM:
+        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
            if "SN_ALOM" in nic_fru_cfg[mtp_id][key]:
                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
@@ -340,9 +340,9 @@ def main():
             return
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-        if card_type == NIC_Type.NAPLES25SWM:
-            #alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-            #alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+            alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+            alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
@@ -457,6 +457,8 @@ def main():
         logfile_close(log_filep_list)
         return
     #set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list)
+    # power cycle all nic
+    mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -482,13 +484,13 @@ def main():
         exp_alom_pn = None
         exp_assettag = None
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES25SWM:
+        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             exp_alom_sn = alom_sn
             exp_alom_pn = alom_pn
             exp_assettag = 'C0'
-            hpe_pn = "P26966-B21"
+            hpe_pn = "000000-000"
 
         #for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET", "PCIE_DIS"]:
         testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]

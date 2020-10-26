@@ -1096,6 +1096,10 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to remove previous ASIC test logfile", level=0)
             return False
+        cmd = "rm -f {:s}".format(MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to remove previous CSP test logfile", level=0)
+            return False
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -2261,6 +2265,14 @@ class mtp_ctrl():
             return False
 
         return True
+    def mtp_mgmt_nic_diag_sys_clean(self, slot):
+        self.cli_log_slot_inf_lock(slot, "NIC Diag Sys Clean")
+        if not self._nic_ctrl_list[slot].nic_diag_clean():
+            self.cli_log_slot_err_lock(slot, "NIC Diag Sys Clean failed")
+            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            return False
+
+        return True
 
 
     def mtp_mgmt_start_nic_diag(self, slot, aapl):
@@ -2349,7 +2361,13 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
         return True
 
-
+            
+    def mtp_mgmt_set_nic_goldfw_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_goldfw_boot():
+            self.cli_log_slot_err_lock(slot, "Set NIC default gold boot failed")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
+        return True
     def mtp_nic_load_scan_fru(self, nic_fru_cfg=None):
         self.cli_log_inf("Load NIC FRU config")
         if not nic_fru_cfg:
@@ -3407,9 +3425,9 @@ class mtp_ctrl():
 
 
             if swmtestmode == Swm_Test_Mode.ALOM:  #if only scanning Alom we need to manually put in the SWM part number
-                pn="P26968-001"
+                pn="000000-000"
 
-            if pn == 'P26968-001':
+            if pn == '000000-000':
                 while True:
                     usr_prompt = "Please Scan {:s} ALOM Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
@@ -3440,7 +3458,7 @@ class mtp_ctrl():
             nic_scan_rslt["NIC_MAC"] = mac
             nic_scan_rslt["NIC_PN"] = pn
             nic_scan_rslt["NIC_TS"] = libmfg_utils.get_fru_date()
-            if pn == 'P26968-001' or swmtestmode == Swm_Test_Mode.ALOM:
+            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
                 nic_scan_rslt["SN_ALOM"] = alom_sn
                 nic_scan_rslt["PN_ALOM"] = alom_pn
             mtp_scan_rslt[key] = nic_scan_rslt
@@ -3455,7 +3473,7 @@ class mtp_ctrl():
 
 
     # generate the local barcode config file
-    def gen_barcode_config_file(self, file_p, scan_rslt):
+    def gen_barcode_config_file(self, file_p, scan_rslt, swmtestmode=Swm_Test_Mode.ALOM):
         config_lines = [str(scan_rslt["MTP_ID"]) + ":"]
         tmp = "    TS: " +  scan_rslt["MTP_TS"]
         config_lines.append(tmp)
@@ -3476,7 +3494,7 @@ class mtp_ctrl():
                 tmp = "        TS: \"" + scan_rslt[key]["NIC_TS"] + "\""
                 config_lines.append(tmp)
                 pn = scan_rslt[key]["NIC_PN"]
-                if pn == 'P26968-001':
+                if pn == '000000-000':
                     tmp = "        SN_ALOM: \"" + scan_rslt[key]["SN_ALOM"] + "\""
                     config_lines.append(tmp)
                     tmp = "        PN_ALOM: \"" + scan_rslt[key]["PN_ALOM"] + "\""

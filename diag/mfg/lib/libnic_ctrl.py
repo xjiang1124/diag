@@ -387,6 +387,33 @@ class nic_ctrl():
             return False
 
         return True
+    def nic_set_goldfw_boot(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # set default to goldfw boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
 
 
     def nic_sw_cleanup_shutdown(self):
@@ -1078,7 +1105,15 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_err_msg(self._nic_handle.before)
                 return False
+                
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        nic_cmd_list.append(nic_cmd)
 
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
         return True
 
 
@@ -1117,10 +1152,19 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
+        cmd = "/home/diag/diag/scripts/sys_clean.sh"
+        self._nic_handle.sendline(cmd)
 
         return True
 
 
+    def nic_diag_clean(self):
+  
+        cmd = MFG_DIAG_CMDS.NIC_SYS_CLEAN_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_MTP_DIAG_PATH)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+        return True
     def nic_kill_hal(self):
         for x in range(6):
             nic_cmd_list = list()

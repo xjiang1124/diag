@@ -275,6 +275,7 @@ def main():
     dsp = FF_Stage.FF_SWI
     pass_nic_list = list()
     fail_nic_list = list()
+    NAPLES100IBM = 0
 
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -294,6 +295,7 @@ def main():
             cpld_img_file = naples100ibm_cpld_img_file                        
             sec_cpld_img_file = naples100ibm_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
+            NAPLES100IBM=1
         elif card_type == NIC_Type.NAPLES100HPE:
             cpld_img_file = naples100hpe_cpld_img_file                        
             sec_cpld_img_file = naples100hpe_sec_cpld_img_file
@@ -740,25 +742,26 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped\n", level=0)
 
     # INIt the sw mgmt port
-    for slot in range(len(nic_prsnt_list)):
-        if not nic_prsnt_list[slot]:
-            continue
-        if slot in fail_nic_list:
-            continue
+    if not NAPLES100IBM:
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list:
+                continue
 
-        if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
-            pass_nic_list.remove(slot)
-            fail_nic_list.append(slot)
+            if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
+                pass_nic_list.remove(slot)
+                fail_nic_list.append(slot)
 
-    if not mtp_mgmt_ctrl.mtp_nic_mgmt_mac_refresh():
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP mac address refresh failed, test abort...")
-        logfile_close(log_filep_list)
-        return
+        if not mtp_mgmt_ctrl.mtp_nic_mgmt_mac_refresh():
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP mac address refresh failed, test abort...")
+            logfile_close(log_filep_list)
+            return
 
-    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP detect duplicate mac address, test abort...")
-        logfile_close(log_filep_list)
-        return
+        if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP detect duplicate mac address, test abort...")
+            logfile_close(log_filep_list)
+            return
 
     # Verify the NIC Software boot
     if nic_profile:
@@ -780,7 +783,7 @@ def main():
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES100IBM:
                     if ret:
-                        ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_gold_boot(slot)
+                        ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
             elif test == "SW_PROFILE"and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
             elif test == "SW_SHUTDOWN":

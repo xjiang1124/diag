@@ -1,8 +1,55 @@
+###############################
+##### Flex Milpitas setup #####
+###############################
+
+MTPS-400:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.125"
+    APC1_PORT: "23"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.1.139"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps400"
+    SLOTS: 4
+    CAPABILITY: 0x3
+
+MTPS-401:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.125"
+    APC1_PORT: "22"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.1.178"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps401"
+    SLOTS: 4
+    CAPABILITY: 0x3
+
+
 #############################
 ##### Flex Penang setup #####
 #############################
 
-MTPS-901:
+MTPS-900:
     MODE: ""
     TS: ""
     TS_PORT: ""
@@ -16,10 +63,10 @@ MTPS-901:
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.3.53"
+    IP: "192.168.3.54"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtps901"
+    ALIAS: "mtps900"
     SLOTS: 4
     CAPABILITY: 0x3
 
@@ -64,7 +111,8 @@ MTPS-903:
     ALIAS: "mtps903"
     SLOTS: 4
     CAPABILITY: 0x3
-    
+
+
 MTPS-904:
     MODE: ""
     TS: ""
@@ -82,9 +130,10 @@ MTPS-904:
     IP: "192.168.3.204"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtps901"
-    SLOTS: 4
+    ALIAS: "mtps904"
+    SLOTS: 4 
     CAPABILITY: 0x3
+
 
 MTPS-905:
     MODE: ""
@@ -106,3 +155,20 @@ MTPS-905:
     ALIAS: "mtps905"
     SLOTS: 4
     CAPABILITY: 0x3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
