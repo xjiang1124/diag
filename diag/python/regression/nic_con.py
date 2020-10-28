@@ -21,7 +21,7 @@ class nic_con:
     def uart_session_start(self, session, baud=115200):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
-        expstr = ["capri login:", "\#"]
+        expstr = ["capri login:", "elba-gold login:", "elba-haps login:", "\#"]
         session.sendline(cmd)
         for ite in range(2):
             print "ite: ", ite
@@ -29,10 +29,11 @@ class nic_con:
 
             try:
                 #session.expect("Terminal ready")
+                print("sending r")
                 session.send("\r")
 
                 i = session.expect(expstr, timeout)
-                if i == 0:
+                if i == 0 or i == 1 or i == 2:
                     session.sendline(self.usr)
                     session.expect("assword:")
                     session.sendline(self.pwd)
@@ -185,6 +186,9 @@ class nic_con:
             common.session_cmd(session, cmd) 
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x15".format(slot)
+            common.session_cmd(session, cmd)
+
             #time.sleep(2)
             cmd = self.fmt_con_cmd.format(rate)
             session.sendline(cmd)
@@ -285,6 +289,40 @@ class nic_con:
                 ret = -1
 
 	return ret
+
+    def boot_goldfw_uboot(self, slot=0, rate=115200, timeout=30):
+        session = common.session_start()
+        ret = self.enter_uboot(session, slot, rate, timeout)
+        if ret != 0:
+            print("Failed to enter uboot")
+            common.session_stop(session)
+            return ret
+
+        #ret = self.uart_session_start(session, slot)
+        #if ret != 0:
+        #    print("Failed to start uart session")
+        #    common.session_stop(session)
+        #    return ret
+
+        ret = self.conn_uboot(session)
+        if ret != 0:
+            print("Failed to connect uboot")
+            common.session_stop(session)
+            return ret
+
+        session.sendline("boot goldfw")
+        time.sleep(3)
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return 0
+
+        #self.uart_session_cmd(session, "mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
+
+        ## Calculate IP
+        #ip_int = 100+int(slot)
+        #ip = "10.1.1."+str(ip_int)
+        #self.uart_session.cmd(session, "ifconfig oob_mnic0 "+ip+" netmask 255.255.255.0")
+        #self.uart_session_stop(session)
 
     def conn_uboot(self, session, rate=115200):
         exprStr = "Capri# "

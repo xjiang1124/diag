@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+import math
 import pexpect
 import re
 import sys
@@ -244,7 +245,7 @@ class nic_test:
         if mgmt == True or aapl == True:
             if len(nic_list) != 0:
                  print "Sleep 30 sec"
-                 time.sleep(30)
+                 time.sleep(31)
             
         if aapl == True:
             for slot in nic_list:
@@ -295,6 +296,74 @@ class nic_test:
         for slot in nic_list:
             if ret_list[int(slot)-1] == 0:
                 nic_list_remain.remove(slot)
+
+        for slot_ret in ret_list:
+            ret = ret + slot_ret
+
+        if ret != 1:
+            print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
+        else:
+            print "===  setup_env_multi Passed ==="
+
+        print "timestamp", datetime.datetime.now().time()
+        return ret, nic_list_remain
+
+    def setup_env_multi_goldfw(self, nic_list=[], mgmt=False, timeout=30):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        nic_list_remain = nic_list[:]
+        slot_list = ",".join(nic_list)
+
+        for slot in nic_list:
+            ret = self.nic_con.boot_goldfw_uboot(int(slot))
+            #print("ret", ret)
+            ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] != 0:
+                nic_list.remove(slot)
+
+        if mgmt == True:
+            print("sleep 30 sec for goldfw being ready")
+            time.sleep(30)
+            session = common.session_start()
+            for slot in nic_list:
+                self.nic_con.switch_console(slot)
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    print("Failed to start uart!")
+                    self.nic_con.uart_session_stop(session)
+                    ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+                    continue
+
+                self.nic_con.uart_session_cmd(session, "mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
+                # Calculate IP
+                ip_int = 100+int(slot)
+                ip = "10.1.1."+str(ip_int)
+
+                for i in range(10):
+        	    session.sendline("ifconfig -a")
+        	    session.expect("\#")
+        	    temp = session.after
+        	    if 'oob_mnic0' in session.before:
+        	        print 'oob_mnic0 ready'
+                        break
+                    else:
+                        print("Wait for 5 seconds for mnic0 being ready")
+                        time.sleep(5)
+
+                self.nic_con.uart_session_cmd(session, "ifconfig oob_mnic0 "+ip+" netmask 255.255.255.0")
+                self.nic_con.uart_session_stop(session)
+                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+            common.session_stop(session)
+
+            for slot in nic_list:
+                if ret_list[int(slot)-1] != 0:
+                    nic_list.remove(slot)
 
         for slot_ret in ret_list:
             ret = ret + slot_ret
@@ -620,6 +689,221 @@ class nic_test:
         common.session_cmd(session, "ping hw-srv1", timeout)
         common.session_stop(session)
 
+    def set_mtp_fan_speed(self, fan_speed):
+        mtp_session = common.session_start()
+        fan_cmd_fmt = "devmgr -dev=fan -speed -pct={}"
+        common.session_cmd(mtp_session, fan_cmd_fmt.format(fan_speed))
+        time.sleep(3)
+        common.session_cmd(mtp_session, "devmgr -dev=fan -status")
+
+        common.session_stop(mtp_session)
+
+    def die_temp_ctrl(self, tgt_die_temp, init_speed, buf):
+        # Fan control session
+        fan_cmd_fmt = "devmgr -dev=fan -speed -pct={}"
+
+        fan_speed = init_speed
+        print("tgt_die_temp:", tgt_die_temp, "init_speed:", init_speed)
+
+        mtp_session = common.session_start()
+        common.session_cmd(mtp_session, "devmgr -dev=fan -status")
+
+        #print("xxxxx")
+        #print(buf)
+        #print("xxxxx")
+        p = re.compile(r'.*elb_get_temp :: temp:([\d]+\.[\d]+).*', re.DOTALL)
+
+        m = p.match(buf)
+        if m:
+            cur_temp = m.group(1)
+
+            temp_diff = tgt_die_temp - float(cur_temp)
+            temp_diff = math.copysign(1, temp_diff) * (min(abs(temp_diff), 10))
+
+            fan_speed = fan_speed - temp_diff
+            fan_speed = max(fan_speed, 40)
+            fan_speed = min(fan_speed, 100)
+            fan_speed = int(fan_speed)
+
+            print("Die Temp:", cur_temp, "tgt_temp:", tgt_die_temp, "fan_speed:", fan_speed)
+            common.session_cmd(mtp_session, fan_cmd_fmt.format(fan_speed))
+            time.sleep(3)
+            common.session_cmd(mtp_session, "devmgr -dev=fan -status")
+        else:
+            print("Failed to retried die temp")
+
+        common.session_stop(mtp_session)
+        return fan_speed
+
+    def skew_test(self, nic_list=[], fan_ctrl=False, tgt_die_temp=80):
+        print "=== NIC Skew Test ==="
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        slot_list = ",".join(nic_list)
+        print("slot_list:", slot_list)
+        self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 1)
+
+        print("fan_ctrl:", fan_ctrl, "tgt_die_temp:", tgt_die_temp)
+        if fan_ctrl == False:
+            fan_speed = 40
+        else:
+            fan_speed = 50
+        self.set_mtp_fan_speed(fan_speed)
+
+        session = common.session_start()
+
+        for slot in nic_list:
+            cmd = "turn_on_hub.sh {}; i2cset -y 0 0x4a 0x21 0x15".format(slot)
+            common.session_cmd(session, cmd)
+        print("Wait 30 sec for cards booting up")
+        time.sleep(30)
+
+        card_info_dict = dict()
+        card_info_dict['1'] = "No41"
+        card_info_dict['2'] = "No42"
+        card_info_dict['3'] = "No43"
+        card_info_dict['10'] = "No45"
+        card_info_dict['6'] = "No46"
+        card_info_dict['7'] = "No47"
+        card_info_dict['9'] = "No49"
+        core_freq = 1100
+        arm_freq = 300
+        core_volt = 760
+        arm_volt = 858
+        volt_mode = "hod"
+        #chamber_temp = "50_temp_ctrl_80"
+        chamber_temp = "0"
+
+        test_result = OrderedDict()
+        # Start snake
+        for slot in nic_list:
+            card_no = card_info_dict[slot]
+
+            self.nic_con.switch_console(slot)
+
+            try:
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    print("Faied to enter uart session")
+                self.nic_con.uart_session_cmd(session, "mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
+                self.nic_con.uart_session_cmd(session, "cd /data/elba/nic/fake_root_target/nic")
+                self.nic_con.uart_session_cmd(session, "export ASIC_LIB_BUNDLE=`pwd`")
+                self.nic_con.uart_session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+                self.nic_con.uart_session_cmd(session, "source $ASIC_LIB_BUNDLE/asic_lib/source_env_path")
+                self.nic_con.uart_session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
+
+                # TCL commands
+                self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
+                self.nic_con.uart_session_cmd(session, "source .tclrc.diag.elb.arm", 60, "%")
+                self.nic_con.uart_session_cmd(session, "set ::env(CARD_ENV) ARM", 10, "%")
+                self.nic_con.uart_session_cmd(session, "set ::env(CARD_TYPE) BIODONA", 10, "%")
+                self.nic_con.uart_session_cmd(session, "set ::env(MTP_REV) REV_4", 10, "%")
+                self.nic_con.uart_session_cmd(session, "elb_appl_set_srds_int_timeout  5000", 10, "%")
+                self.nic_con.uart_session_cmd(session, "sleep 1", 10, "%")
+                self.nic_con.uart_session_cmd(session, "set die_temp [elb_get_temp]", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set core_freq [get_freq]", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set arm_freq [elb_top_sbus_get_cpu_freq  0 0]", 30, "%")
+                self.nic_con.uart_session_cmd(session, 'plog_msg "die_temp $die_temp; core_freq $core_freq; arm_freq $arm_freq"', 30, "%")
+
+                self.nic_con.uart_session_cmd(session, "set core_freq {}.0".format(core_freq), 10, "%")
+                self.nic_con.uart_session_cmd(session, "set arm_freq {}".format(arm_freq), 10, "%")
+                self.nic_con.uart_session_cmd(session, "set core_volt {}".format(core_volt), 10, "%")
+                self.nic_con.uart_session_cmd(session, "set arm_volt {}".format(arm_volt), 10, "%")
+                self.nic_con.uart_session_cmd(session, "set volt_mode {}".format(volt_mode), 10, "%")
+                self.nic_con.uart_session_cmd(session, "set core_freq1 [elb_core_freq_for_mode $volt_mode]", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set stg_freq  [elb_stg_freq_for_mode $volt_mode]", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set eth_freq  900", 10, "%")
+                self.nic_con.uart_session_cmd(session, "elb_set_freq $core_freq1", 30, "%")
+                self.nic_con.uart_session_cmd(session, "elb_soc_stg_pll_init 0 0 $stg_freq", 30, "%")
+                self.nic_con.uart_session_cmd(session, "elb_mm_eth_pll_init  0 0 $eth_freq", 30, "%")
+                self.nic_con.uart_session_cmd(session, "elb_top_sbus_cpu_${arm_freq} 0 0", 30, "%")
+                self.nic_con.uart_session_cmd(session, "get_freq", 30, "%")
+                self.nic_con.uart_session_cmd(session, "elb_top_sbus_get_cpu_freq  0 0", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set card_no {}".format(card_info_dict[slot]), 30, "%")
+                self.nic_con.uart_session_cmd(session, "set chamber_temp {}".format(chamber_temp), 30, "%")
+                self.nic_con.uart_session_cmd(session, "set card_config core_freq_${core_freq}_arm_freq_${arm_freq}_core_volt_${core_volt}_arm_volt_${arm_volt}_chamber_${chamber_temp}", 30, "%")
+                self.nic_con.uart_session_cmd(session, "puts $card_config", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set duration 900", 30, "%")
+                self.nic_con.uart_session_cmd(session, "plog_start hbm_pktgen_pcie_lb_100g_${card_no}_${card_config}.log", 30, "%")
+                #self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq), 30, "parseKnobFile")
+                if fan_ctrl == False:
+                    self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq), 2400, "SNAKE DONE")
+                else:
+                    cmd = "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq)
+                    expstr = ["SNAKE DONE", "Done Pulling"]
+                    timeout = 1200
+                    session.sendline(cmd)
+
+                    while True:
+                        i = session.expect(expstr, timeout)
+                        print("=== i:", i)
+                        if i == 0:
+                            break
+                        else:
+                            timeout = 900
+                            i = session.expect(expstr, timeout)
+                            print("==== FOUND PULL ====")
+                            #common.session_cmd(mtp_session, "devmgr -dev=fan -status")
+                            #m = p.match(session.before)
+                            #if m:
+                            #    temp = m.group(1)
+                            #    print("Die Temp:", temp)
+                            #else:
+                            #    print("Failed to retried die temp")
+                            if i == 1:
+                                fan_speed = self.die_temp_ctrl(tgt_die_temp, fan_speed, session.before)
+                            session.send("temp ")
+
+                self.nic_con.uart_session_cmd(session, "puts 'xxx'", 300, "%")
+                self.nic_con.uart_session_cmd(session, "plog_stop", 30, "%")
+                self.nic_con.uart_session_cmd(session, "exit", 120)
+                self.nic_con.uart_session_cmd(session, "sync", 30)
+                self.nic_con.uart_session_cmd(session, "sync", 30)
+
+                self.nic_con.uart_session_stop(session)
+                test_result[slot] = "PASS"
+            except pexpect.TIMEOUT:
+                print(slot, "skew test failed")
+                test_result[slot] = "FAIL"
+                self.nic_con.uart_session_stop(session)
+
+        #common.session_stop(mtp_session)
+        common.session_stop(session)
+
+        result_fmt = "Slot {:<2}: {:<5}"
+        print "\n====== TEST RESULT: {:<5} {:<5} ======".format("SLOT", "RESULT")
+        for slot, result in test_result.items():
+            print result_fmt.format(slot, result)
+
+    def skew_test_exit(self, nic_list=[]):
+
+        slot_list = ",".join(nic_list)
+
+        session = common.session_start()
+        cmd = self.nic_con.fmt_con_cmd.format(self.baud_rate)
+        session.sendline(cmd)
+
+        # Quite tcl shell
+        for slot in nic_list:
+            self.nic_con.switch_console(slot)
+            try:
+                ret = self.nic_con.uart_session_cmd(session, "puts 'xxx'", 3, "%")
+                if ret != 0:
+                    print("Slot", slot, "Still running")
+                    continue
+                self.nic_con.uart_session_cmd(session, "plog_stop", 30, "%")
+                self.nic_con.uart_session_cmd(session, "exit", 120)
+                self.nic_con.uart_session_cmd(session, "sync", 30)
+                self.nic_con.uart_session_cmd(session, "sync", 30)
+
+            except pexpect.TIMEOUT:
+                print("Slot", slot, "TIMEOUT")
+
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
@@ -646,6 +930,8 @@ if __name__ == "__main__":
                        help="Disable uboot PCIe for mutiple cards", 
                        action='store_true')
     group.add_argument("-test_t", "--test_timeout", help="Test timeout", action='store_true')
+    group.add_argument("-skew", "--skew", help="Run nic skew test on multile nics", action='store_true')
+    group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -659,7 +945,12 @@ if __name__ == "__main__":
     parser.add_argument("-swm_lp", "--swm_lp", help="Power Up SWM in Low Power Mode", action='store_true')
     parser.add_argument("-aapl", "--aapl", help="Setup AAPL", action='store_true')
     parser.add_argument("-mainfw", "--mainfw", help="Setup for mainfw", action='store_true')
+    parser.add_argument("-goldfw", "--goldfw", help="Setup for goldfw", action='store_true')
     parser.add_argument("-switch_fw", "--switch-fw", help="Switch FW on Naples", action='store_true')
+
+    # Skew test parameters
+    parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
+    parser.add_argument("-tgt_die_temp", "--tgt_die_temp", help="Target Die temperature", type=int, default=80)
 
     args = parser.parse_args()
 
@@ -698,6 +989,8 @@ if __name__ == "__main__":
         slot_list = args.slot_list.split(',')
         if args.mainfw == True:
             test.setup_env_multi_mainfw(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle)
+        elif args.goldfw == True:
+            test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
             test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp)
         sys.exit()
@@ -723,3 +1016,12 @@ if __name__ == "__main__":
         test.switch_fw(args.slot)
         sys.exit()
 
+    if args.skew == True:
+        slot_list = args.slot_list.split(',')
+        test.skew_test(slot_list, args.fan_ctrl, args.tgt_die_temp)
+        sys.exit()
+
+    if args.skew_exit == True:
+        slot_list = args.slot_list.split(',')
+        test.skew_test_exit(slot_list)
+        sys.exit()
