@@ -327,6 +327,107 @@ var Vomero2Tbl = []entry {
     entry{"Board Info Area Checksum",               INT8,        407,        1,    []byte{0x00}},
 } 
 
+var OrtanoTbl = []entry {
+    entry{"Class Code",                             INT8,        0,          3,    []byte{0x00, 0x80, 0x02}},
+    entry{"PCI-SIG Vendor ID",                      INT8,        3,          2,    []byte{0xD8, 0x1D}},
+    entry{"Serial Number",                          STRING,      5,          20,   []byte{0x20, 0x20, 0x20, 0x20, 0x20,
+          0x20, 020, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Model Number",                           STRING,      25,         40,   []byte{0x44, 0x53, 0x43, 0x32, 0x2d,
+          0x32, 0x30, 0x30, 0x20, 0x32, 0x78, 0x32, 0x30, 0x30, 0x47, 0x62, 0x45, 0x20, 0x44, 0x75, 0x61, 0x6C, 0x20, 0x51, 
+	  0x53, 0x46, 0x50, 0x35, 0x36, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Port 0 Maximum Link Speed",              INT8,        65,         1,    []byte{0x04}},
+    entry{"Port 0 Maximum Link Width",              INT8,        66,         1,    []byte{0x0F}},
+    entry{"Port 1 Maximum Link Speed",              INT8,        67,         1,    []byte{0x04}},
+    entry{"Port 1 Maximum Link Width",              INT8,        68,         1,    []byte{0x08}},
+    entry{"12V Power Rail Initial Power",           INT8,        69,         1,    []byte{0x3C}},
+    entry{"Reserved",                               INT8,        70,         1,    []byte{0x00}},
+    entry{"Reserved",                               INT8,        71,         1,    []byte{0x00}},
+    entry{"12V Power Rail Maximum Power",           INT8,        72,         1,    []byte{0x3C}},
+    entry{"Reserved",                               INT8,        73,         1,    []byte{0x00}},
+    entry{"Reserved",                               INT8,        74,         1,    []byte{0x00}},
+    entry{"Cap List Pointer",                       INT8,        75,         2,    []byte{0x50, 0x00}},
+    entry{"",                                       INT8,        77,         1,    []byte{0x00}},
+    entry{"",                                       INT8,        78,         1,    []byte{0x00}},
+    entry{"",                                       INT8,        79,         1,    []byte{0x00}},
+    entry{"VU Cap ID",                              INT8,        80,         1,    []byte{0xA2}},
+    entry{"VU Cap ID",                              INT8,        81,         1,    []byte{0x00}},
+    entry{"Next Cap address",                       INT8,        82,         1,    []byte{0x00}},
+    entry{"Next Cap address",                       INT8,        83,         1,    []byte{0x00}},
+    entry{"Sensor Type",                            INT8,        84,         1,    []byte{0x50}},
+    entry{"Sensor Address",                         INT8,        85,         1,    []byte{0x94}},
+    entry{"Sensor 1 Address Offset",                INT8,        86,         1,    []byte{0x18}},
+    entry{"Reserved",                               INT8,        87,         1,    []byte{0x16}},
+    entry{"Warning Threshold LSB",                  INT8,        88,         1,    []byte{0x5F}},
+    entry{"Warning Threshold MSB",                  INT8,        89,         1,    []byte{0x00}},
+    entry{"Over Temp Threshold LSB",                INT8,        90,         1,    []byte{0x69}},
+    entry{"Over Temp Threshold MSB",                INT8,        91,         1,    []byte{0x00}},
+    entry{"PCIE Vendor ID - LSB",                   INT8,        92,         1,    []byte{0xD8}},
+    entry{"PCIE Vendor ID - MSB",                   INT8,        93,         1,    []byte{0x1D}},
+    entry{"PCIE Vendor ID - LSB",                   INT8,        94,         1,    []byte{0x00}},
+    entry{"PCIE Vendor ID - MSB",                   INT8,        95,         1,    []byte{0x10}},
+    entry{"PCIE Subsystem Vendor ID - LSB",         INT8,        96,         1,    []byte{0xD8}},
+    entry{"PCIE Subsystem Vendor ID - MSB",         INT8,        97,         1,    []byte{0x1D}},
+    entry{"PCIE Subsystem ID - LSB",                INT8,        98,         1,    []byte{0x09}},
+    entry{"PCIE Subsystem ID - MSB",                INT8,        99,         1,    []byte{0x40}},
+    entry{"PAD",                                    STRING,      100,        156,  []byte{0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }},
+    entry{"Common Format Version",                  INT8,        256,        1,    []byte{0x01}},
+    entry{"Internal Use Area Offset",               INT8,        257,        1,    []byte{0x00}},
+    entry{"Chassis Area Offset",                    INT8,        258,        1,    []byte{0x00}},
+    entry{"Board Info Offset",                      INT8,        259,        1,    []byte{0x01}},
+    entry{"Product Area Offset",                    INT8,        260,        1,    []byte{0x00}},
+    entry{"Multi-Record Area Offset",               INT8,        261,        1,    []byte{0x00}},
+    entry{"PAD",                                    INT8,        262,        1,    []byte{0x00}},
+    entry{"Common Header Checksum",                 INT8,        263,        1,    []byte{0x00}},
+    entry{"Board Info Format Version",              INT8,        264,        1,    []byte{0x01}},
+    entry{"Board Area Length",                      INT8,        265,        1,    []byte{0x12}},
+    entry{"Language Code",                          INT8,        266,        1,    []byte{0x19}},
+    entry{"Manufacturing Date/Time",                INT8,        267,        3,    []byte{0x00, 0x00, 0x00}},
+    entry{"Manufacturing Type/Length",              INT8,        270,        1,    []byte{0xC8}},
+    entry{"Manufacturer",                           STRING,      271,        8,    []byte{0x50, 0x65, 0x6E, 0x73,
+        0x61, 0x6E, 0x64, 0x6F}},
+    entry{"Product Name Type/Length",               INT8,        279,        1,    []byte{0xE8}},
+    entry{"Product Name",                           STRING,      280,        26,   []byte{0x44, 0x53, 0x43, 0x2D,
+        0x31, 0x30, 0x30, 0x56, 0x20, 0x35, 0x30, 0x2F, 0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53,
+        0x46, 0x50, 0x32, 0x38}},
+    entry{"PAD",                                    STRING,      306,        14,   []byte{0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Serial Number Type/Length",              INT8,        320,        1,    []byte{0xCB}},
+    entry{"Serial Number",                          STRING,      321,        11,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"Part Number Type/Length",                INT8,        332,        1,    []byte{0xD9}},
+    entry{"Part Number",                            STRING,      333,        22,   []byte{0x44, 0x53, 0x43, 0x32,
+        0x2D, 0x32, 0x51, 0x32, 0x30, 0x30, 0x2D, 0x33, 0x32, 0x52, 0x33, 0x32, 0x46, 0x36, 0x34, 0x50, 0x2D, 0x52}},
+    entry{"PAD",                                    STRING,      355,        3,    []byte{0x20, 0x20, 0x20}},
+    entry{"FRU File ID Type/Length",                INT8,        358,        1,    []byte{0xC8}},
+    entry{"06/03/20",                               STRING,      359,        8,    []byte{0x30, 0x39, 0x2F, 0x32,
+        0x39, 0x2F, 0x32, 0x30}},
+    entry{"Board ID Type/Length",                   INT8,        367,        1,    []byte{0x04}},
+    entry{"Board ID",                               INT8,        368,        4,    []byte{0x06, 0x00, 0x00, 0x00}},
+    entry{"Engineering Change Level Type/Length",   INT8,        372,        1,    []byte{0xC2}},
+    entry{"Engineering Change Level",               INT8,        373,        2,    []byte{0x00, 0x00}},
+    entry{"Number of MAC Address Type/Length",      INT8,        375,        1,    []byte{0x02}},
+    entry{"Number of MAC Address",                  INT8,        376,        2,    []byte{0x18, 0x00}},
+    entry{"MAC Address Base Type/Length",           INT8,        378,        1,    []byte{0x06}},
+    entry{"MAC Address Base",                       INT8,        379,        6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 
+         0x00}},
+    entry{"Assembly Number Type/Length",            INT8,        385,        1,    []byte{0xCD}},
+    entry{"Assembly Number",                        STRING,      386,        13,   []byte{0x36, 0x38, 0x2D, 0x30, 0x30, 
+         0x31, 0x35, 0x2D, 0x30, 0x31, 0x20, 0x30, 0x31}},
+    entry{"End of Field",                           INT8,        399,        1,    []byte{0xC1}},
+    entry{"PAD",                                    STRING,      400,        7,    []byte{0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00}},
+    entry{"Board Info Area Checksum",               INT8,        407,        1,    []byte{0x00}},
+} 
+
 /*
 var HpeTbl = []entry {
     entry{"Board Info Format Version",              INT8,       128,        1,  []byte{1}},
@@ -877,14 +978,14 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "DELLSWM" && CustType != "DELLOCP" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" || CustType == "DELLOCP" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1082,7 +1183,7 @@ func updateIntChk() () {
         }
     }
 
-    if CustType == "ORACLE" {
+    if CustType == "ORACLE" || CustType == "ORTANO" {
         brdInfoChk = 0
         productInfoChk = 0
         cmnHeadChk = 0
@@ -1209,7 +1310,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "DELLSWM" && CustType != "DELLOCP" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1217,7 +1318,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 }
             }
 
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" || CustType == "DELLOCP" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1228,7 +1329,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             if entry.Name == "Serial Number" {
                 // Not a good solution to set SN padding
                 var snInitVal byte
-                if CustType == "ORACLE" {
+                if CustType == "ORACLE" || CustType == "ORTANO" {
                     snInitVal = 0x20
                 } else {
                     snInitVal = 0x0
@@ -1326,7 +1427,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM"  || CustType == "DELLOCP" ) {
+        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM"  || CustType == "DELLOCP" ) {
             copy(an_ptr, pn)
         } else {
             copy(pn_ptr, pn)
@@ -1386,7 +1487,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             }
         }
 
-        if CustType == "IBM" || CustType == "ORACLE" || CustType == "DELLSWM" || CustType == "DELLOCP" {
+        if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1499,7 +1600,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 continue
             }
         } else if(field == "PN") {
-            if ( CustType == "IBM" || CustType == "ORACLE" ) {
+            if ( CustType == "IBM" || CustType == "ORACLE" ) || CustType == "ORTANO" {
                 if entry.Name != "Assembly Number" {
                     continue
                 }

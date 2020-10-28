@@ -19,6 +19,7 @@ const (
     ID_NAPLES25SWM_DELL= 0x20
     ID_BIODONA_D4      = 0x40
     ID_BIODONA_D5      = 0x41
+    ID_ORTANO          = 0x43
 )
 
 const (

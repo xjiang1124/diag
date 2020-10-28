@@ -53,6 +53,29 @@ var Naples100MtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
 }
 
+var OrtanoTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName     HubPort 
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"SPD",            "TPS53659",  0x0,   0x50,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"VRD",            "TPS53659",  0x0,   0x62,    0x1,    "HUB_NONE", 0},
+    I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"DDR_VDDQ",       "TPS544B25", 0x0,   0x24,    0x0,    "HUB_NONE", 0},
+
+    I2cInfo {"QSFP_1",         "QSFP",      0x1,   0x50,    0x0,    "HUB_CPLD", 0},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_CPLD", 0},
+
+    I2cInfo {"QSFP_2",         "QSFP",      0x2,   0x50,    0x0,    "HUB_CPLD", 0},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD", 0},
+}
+
+var OrtanoMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName     HubPort 
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE", 0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE", 0},
+}
+
 // Naples100 I2C table on MTP SMBus
 var Naples100HPEMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName     HubPort 
@@ -215,6 +238,7 @@ func init() {
     Naples25MtpTbl  = append(Naples25MtpTbl, MtpHubI2cTbl...)
     ForioMtpTbl     = append(ForioMtpTbl, MtpHubI2cTbl...)
     BiodonaMtpTbl     = append(BiodonaMtpTbl, MtpHubI2cTbl...)
+    OrtanoMtpTbl = append(OrtanoMtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
@@ -236,6 +260,8 @@ func init() {
         I2cTbl = ForioTbl
     } else if CardType == "BIODONA_D4" || CardType == "BIODONA_D5" {
         I2cTbl = BiodonaTbl
+    } else if CardType == "ORTANO" {
+        I2cTbl = OrtanoTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -349,6 +375,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = Vomero2MtpTbl
     } else if uutType == "BIODONA_D4" || uutType == "BIODONA_D5" {
         CurI2cTbl = BiodonaMtpTbl
+    } else if uutType == "ORTANO" {
+        CurI2cTbl = OrtanoMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

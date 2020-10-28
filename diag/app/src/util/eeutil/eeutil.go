@@ -59,6 +59,10 @@ func eepromTlbInit(uut string) {
                eeprom.CustType = "ORACLE"
                eeprom.EepromTbl = eeprom.Vomero2Tbl
             }
+            if (cardType == "ORTANO") {
+               eeprom.CustType = "ORTANO"
+               eeprom.EepromTbl = eeprom.OrtanoTbl
+            }
             if (cardType == "NAPLES100IBM") {
                eeprom.CustType = "IBM"
                eeprom.EepromTbl = eeprom.Naples100IBMTbl
@@ -99,6 +103,10 @@ func eepromTlbInit(uut string) {
             eeprom.CustType = "ORACLE"
             eeprom.EepromTbl = eeprom.Vomero2Tbl
         }
+	if (cardType == "ORTANO") {
+            eeprom.CustType = "ORTANO"
+            eeprom.EepromTbl = eeprom.OrtanoTbl
+        }
         if (cardType == "NAPLES100IBM") {
            eeprom.CustType = "IBM"
            eeprom.EepromTbl = eeprom.Naples100IBMTbl
@@ -113,7 +121,7 @@ func eepromTlbInit(uut string) {
         }
     }
 
-    if cardType == "NAPLES25SWM" || cardType == "NAPLES25SWMDELL" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" || cardType == "NAPLES100HPE" {
+    if cardType == "NAPLES25SWM" || cardType == "NAPLES25SWMDELL" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" || cardType == "ORTANO" || cardType == "NAPLES100HPE" {
         eeprom.I2cAddr16 = true
     }
 
