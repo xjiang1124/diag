@@ -328,3 +328,19 @@ func I2c16_ReadWriteBlk(rws string, devName string, regAddr uint64, data uint64,
     return
 }
 
+func Calc_crc8(data []byte, numByte uint64) (crc8 byte) {
+    var crc byte
+
+    crc = 0x00
+    for i :=0; uint64(i) < numByte; i++ {
+        crc ^= data[i]
+        for j :=0; j < 8; j++ {
+            if ((crc & 0x80) != 0) {
+                crc = (crc << 1 ) ^ 0x07
+            } else {
+                crc <<=1
+            }
+        }
+    }
+    return crc
+}
