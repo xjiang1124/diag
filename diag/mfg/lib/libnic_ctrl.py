@@ -780,6 +780,31 @@ class nic_ctrl():
 
         return True
 
+    def nic_copy_compressed_image(self, src_directory, src_img, dst_directory):
+        """
+        Send file to NIC from MTP.
+
+        Same function as nic_copy_image but uses ssh connection to transfer characters, 
+        while doing tar & untar before & after. Tar on MTP and untar on NIC.
+        """
+
+        cmd = MFG_DIAG_CMDS.NIC_SCP_COMPRESSED_FMT.format(src_directory, src_img, NIC_MGMT_USERNAME, libmfg_utils.get_nic_ip_addr(self._slot), libmfg_utils.get_ssh_option(), dst_directory)
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        if idx < 0:
+            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return False
+
+        return True
 
     def nic_sw_profile(self, profile):
         if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
@@ -1069,14 +1094,18 @@ class nic_ctrl():
 
         nic_diag_list = ["diag", "start_diag.arm64.sh"]
         for util in nic_diag_list:
-            img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
-            if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
+            if not self.nic_copy_compressed_image(
+                src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
+                src_img=util,
+                dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
                 return False
 
         nic_diag_list = ["nic_arm", "nic_util"]
         for util in nic_diag_list:
-            img = MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH + util
-            if not self.nic_copy_image(img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+            if not self.nic_copy_compressed_image(
+                src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
+                src_img=util,
+                dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
                 return False
 
         return True
