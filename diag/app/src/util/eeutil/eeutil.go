@@ -44,6 +44,12 @@ func eepromTlbInit(uut string) {
                 eeprom.EepromTbl = eeprom.HpeTblSWM
                 eeprom.EepromExtTbl = eeprom.HpeTblSWMext
             }
+            if eeprom.HpeSwmC == 1 {
+                eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
+                eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
+                eeprom.HpeSwm = 1
+                eeprom.HpeSwmC = 0
+            }
             if eeprom.HpeOcp == 1 {
                 eeprom.EepromTbl = eeprom.HpeTblOCP
                 eeprom.EepromExtTbl = eeprom.HpeTblOCPext
@@ -87,6 +93,12 @@ func eepromTlbInit(uut string) {
         if eeprom.HpeSwm == 1 {
             eeprom.EepromTbl = eeprom.HpeTblSWM
             eeprom.EepromExtTbl = eeprom.HpeTblSWMext
+        }
+        if eeprom.HpeSwmC == 1 {
+            eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
+            eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
+            eeprom.HpeSwm = 1
+            eeprom.HpeSwmC = 0
         }
         if eeprom.HpeOcp == 1 {
             eeprom.EepromTbl = eeprom.HpeTblOCP
@@ -134,6 +146,7 @@ func main() {
     infoPtr    := flag.Bool  ("info",   false,      "Display device info")
     dispPtr    := flag.Bool  ("disp",   false,      "Display eeprom content")
     updatePtr  := flag.Bool  ("update", false,      "Update eeprom")
+    veriryPtr  := flag.Bool  ("verify", false,      "Verify eeprom checksums")
     erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
     dumpPtr    := flag.Bool  ("dump",    false,      "Dump FRU")
     macPtr     := flag.String("mac",    "",         "MAC address")
@@ -145,6 +158,7 @@ func main() {
     majorPtr   := flag.String("maj",    "",         "Hardware major reversion")
     hpePtr     := flag.Bool  ("hpe",    false,      "HPE eeprom operation option")
     hpeSwmPtr  := flag.Bool  ("hpeSwm", false,      "HPE SWM eeprom operation option")
+    hpeSwmCPtr := flag.Bool  ("hpeSwmC", false,      "HPE SWM CLOUD eeprom operation option")
     hpeAlomPtr := flag.Bool  ("hpeAlom",false,      "HPE ALOM eeprom operation option")
     hpeOcpPtr  := flag.Bool  ("hpeOcp", false,      "HPE OCP eeprom operation option")
     DellOcpPtr := flag.Bool  ("DellOcp", false,     "Dell OCP eeprom operation option")
@@ -177,6 +191,10 @@ func main() {
 
     if *hpeSwmPtr == true {
         eeprom.HpeSwm = 1
+    }
+
+    if *hpeSwmCPtr == true {
+        eeprom.HpeSwmC = 1
     }
 
     if *hpeAlomPtr == true {
@@ -272,7 +290,6 @@ func main() {
                 fmt.Printf(" FIXING NAPLES25 HPE\n")
                 hwdev.EepromFixNaples25HPE(devName, iInfo.Bus, iInfo.DevAddr)
                 //hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, 256)
-
             }
         }
 
@@ -289,6 +306,11 @@ func main() {
 
     if *dumpPtr == true {
         hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
+        return
+    }
+
+    if *veriryPtr == true {
+        hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr)
         return
     }
 

@@ -236,7 +236,7 @@ func I2C16WriteByte(devName string, offset uint16, data byte) (err int) {
 
     _, errgo := smbInfo.smb.Write_i2c_block_data(wOffset, wData)
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C WR ERROR Dev=", smbInfo.devName," @ Offset=", offset, "  Errno=", errgo)
         err = errType.SMB_WRITE_FAIL
         return
     }
@@ -251,7 +251,7 @@ func I2C16ReadByte(devName string, offset uint16) (data byte, err int) {
 
     _, errgo := smbInfo.smb.Write_i2c_block_data(wOffset, wData)
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C RD ERROR Dev=", smbInfo.devName, "@ Offset=", offset, "  Errno=", errgo)
         err = errType.SMB_WRITE_FAIL
         return
     }
@@ -269,6 +269,7 @@ func I2C16WriteBlock(devName string, offset uint16, buf []byte) (err int) {
     _, errgo := smbInfo.smb.Write_i2c_block_data(wOffset, wData)
     if errgo != nil {
         cli.Println("f", errgo)
+        cli.Println("f", "I2C WR BLK ERROR Dev=", smbInfo.devName," @ Offset=", offset, "  Errno=", errgo)
         err = errType.SMB_WRITE_FAIL
         return
     }
@@ -283,7 +284,7 @@ func I2C16ReadBlock(devName string, offset uint16, buf []byte) (byteCnt int, err
 
     _, errgo := smbInfo.smb.Write_i2c_block_data(wOffset, wData)
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C RD BLK ERROR Dev=", smbInfo.devName, "@ Offset=", offset, "  Errno=", errgo)
         err = errType.SMB_WRITE_FAIL
         return
     }

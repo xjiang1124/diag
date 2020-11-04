@@ -75,7 +75,7 @@ func ReadByte(devName string, regAddr uint64) (data byte, err int) {
     }
     data, errgo := smbInfo.smb.Read_byte_data(byte(regAddr))
     if errgo != nil {
-        cli.Println("e", errgo)
+        cli.Println("e", "I2C ERROR Dev=", smbInfo.devName," @ Offset=", regAddr, "  Errno=", errgo)
         err = errType.SMB_READ_FAIL
         return
     }
@@ -90,7 +90,7 @@ func WriteByte(devName string, regAddr uint64, data byte) (err int) {
     }
     errgo := smbInfo.smb.Write_byte_data(byte(regAddr), data)
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C ERROR Dev=", smbInfo.devName," @ Offset=", regAddr, "  Errno=", errgo)
         err = errType.SMB_WRITE_FAIL
         return
     }
