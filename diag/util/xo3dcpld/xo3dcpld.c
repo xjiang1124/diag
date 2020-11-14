@@ -89,8 +89,8 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 unsigned char lsc_idcode_cmd[]			= {0xE0, 0x0, 0x0, 0x0};
 unsigned char lsc_enable_cmd[]			= {0x74, 0x8, 0x0, 0x0};
 unsigned char lsc_erase_cmd[]			= {0x0E, 0x4, 0x0, 0x0};
-unsigned char lsc_erase0_cmd[]			= {0x0E, 0x0, 0x1, 0x0};
-unsigned char lsc_erase1_cmd[]			= {0x0E, 0x0, 0x2, 0x0};
+unsigned char lsc_erase0_cmd[]			= {0x0E, 0x4, 0x1, 0x0};
+unsigned char lsc_erase1_cmd[]			= {0x0E, 0x4, 0x2, 0x0};
 unsigned char lsc_init_cmd[]			= {0x46, 0x0, 0x0, 0x0};
 unsigned char lsc_init0_cmd[]			= {0x46, 0x0, 0x1, 0x0};
 unsigned char lsc_init1_cmd[]			= {0x46, 0x0, 0x2, 0x0};
@@ -304,7 +304,8 @@ cpld_write_flash(uint32_t fd, uint8_t* data, uint32_t size)
     memset(msg, 0, sizeof(msg));
     msg[0].tx_buf = (intptr_t)data;
     msg[0].len = size;
-    msg[0].speed_hz = 12000000;
+    /* msg[0].speed_hz = 12000000; */
+    msg[0].speed_hz = 5000000;
 
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
 
@@ -386,7 +387,7 @@ static int flash_read(uint32_t fd, uint8_t *buf, uint32_t size)
     uint32_t count = 0;
 
     txbuf[0] = 0x73;
-    txbuf[1] = 0x1;
+    txbuf[1] = 0x00;
     txbuf[2] = 0;
     txbuf[3] = 1;
 
@@ -394,6 +395,7 @@ static int flash_read(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].tx_buf = (intptr_t)txbuf;
     msg[0].len = 4;
     msg[0].speed_hz = 12000000;
+    /* msg[0].speed_hz = 5000000; */
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 16;
 
@@ -448,7 +450,6 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
         }
 
         usleep(1000);
-        printf("row %d\n", ++row);
         buf = buf + FLASH_TRANS_SIZE;
         size -= FLASH_TRANS_SIZE;
     } while ( size > 0 );
@@ -462,8 +463,8 @@ static int flash_id(uint32_t fd) {
     memset(msg, 0, sizeof (msg));
     msg[0].tx_buf = (intptr_t)lsc_idcode_cmd;
     msg[0].len = 4;
-    /* msg[0].speed_hz = 12000000; */
-    msg[0].speed_hz = 5000000;
+    /* msg[0].speed_hz = 5000000; */ 
+    msg[0].speed_hz = 12000000; 
 
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 4;
@@ -757,6 +758,7 @@ main(int argc, char *argv[])
 	int i;
         uint8_t cpldId = cpld_read(CPLD_ID_REG);
         unsigned char *buf;
+        unsigned char *data;
 
 	printf("cpld id = %x\n", cpldId);
 	cpldId = ID_VOMERO2;
@@ -803,26 +805,28 @@ main(int argc, char *argv[])
 	    return -1;
 	}
 
+	data = buf;
 	for ( i = 0; i < cpldSize; i++ ) {
-	    read_byte = fread(buf, 1, 1, fptr);
+	    read_byte = fread(data, 1, 1, fptr);
 	    if ( read_byte != 1 )
 	        break;
 	    numBytes++;
-	    buf++;
+	    data++;
 	}
         fclose(fptr);
         printf("file size %d\n", numBytes);
 
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+	data = buf;
     	flash_enable(fd);
     	flash_init(fd, cfgRegion);
     	flash_erase(fd, cfgRegion);
-    	flash_program(fd, buf, numBytes, cfgRegion);
+    	flash_program(fd, data, numBytes, cfgRegion);
         flash_program_done(fd);
 	sleep(1);
         flash_disable(fd);
         close(fd);
-        free(buf);
+        free(buf); 
     } else if (strcmp(argv[1], "-erase") == 0) {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 	int cfgRegion = 0;
@@ -837,6 +841,7 @@ main(int argc, char *argv[])
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
         FILE* fptr = fopen(argv[2], "wb");
     	uint8_t *buf;
+    	uint8_t *cpld_data;
         int cfgRegion;
 
         if ( fptr == NULL ) {
@@ -854,10 +859,11 @@ main(int argc, char *argv[])
 
     	flash_enable(fd);
     	flash_init(fd, cfgRegion);
-    	memset(buf, 0, sizeof(buf));
-    	flash_read(fd, buf, sizeof(buf));
+    	memset(buf, 0, 200656);
+	cpld_data = buf;
+    	flash_read(fd, cpld_data, 200656);
     	flash_disable(fd);
-    	fwrite(buf, sizeof(buf), 1, fptr);
+    	fwrite(buf, 200656, 1, fptr);
 	free(buf);
         close(fd);
         fclose(fptr);
