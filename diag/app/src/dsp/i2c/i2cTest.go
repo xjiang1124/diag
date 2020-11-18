@@ -7,6 +7,7 @@ import (
 
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
+    "device/powermodule/tps544b25"
     "device/rtc/pcf85263a"
     "device/tempsensor/tmp42123"
 
@@ -60,6 +61,14 @@ func testPcf85263a(devName string) (err int) {
     return
 }
 
+func testTps544b25(devName string) (err int) {
+    _, err = tps544b25.ReadStatus(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+    }
+    return
+}
+
 
 func I2cI2cHdl(argList []string) {
     var ret int
@@ -95,6 +104,11 @@ func I2cI2cHdl(argList []string) {
             }
         case "PCF85263A":
             err = testPcf85263a(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "TPS544B25":
+            err = testTps53659(devName)
             if err != errType.SUCCESS {
                 ret = err
             }

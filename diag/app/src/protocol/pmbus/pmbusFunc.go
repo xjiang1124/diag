@@ -99,6 +99,24 @@ func Linear16(exp uint64, man uint16) (integer uint64, dec uint64, err int) {
     return
 }
 
+ //mantissa = trgtVolt / exponent 
+func GetMantissa(exp uint16, targetVoltage float64) (mantissa uint16, err int) {
+    var expInt int64
+    var expOutFloat float64
+
+    expInt, err = misc.TwoCmplBits64(uint64(exp & 0x1F), 5)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    expOutFloat = math.Pow(2, float64(expInt))
+
+    mantissa = uint16(targetVoltage / expOutFloat)
+
+
+    return
+}
+
 /*
     READ_VOUT in Linear16 format
  */

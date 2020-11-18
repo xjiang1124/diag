@@ -7,6 +7,7 @@ import (
     "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
+    "device/powermodule/tps544b25"
     "device/psu/pet1600"
     "device/tempsensor/tmp42123"
 
@@ -227,7 +228,7 @@ func init() {
     ortanoDispStaList = make(map[string]DispStaFunc)
     ortanoDispStaList["ELB0_CORE"] = tps53659.DispStatus
     ortanoDispStaList["ELB0_ARM"]  = tps53659.DispStatus
-    //ortanoDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
+    ortanoDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
     ortanoDispStaList["VDD_DDR"]   = tps549a20.DispStatus
     ortanoDispStaList["TSENSOR"]   = tmp42123.DispStatus
 

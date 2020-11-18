@@ -244,12 +244,19 @@ func EepromDump(devName string, bus uint32, devAddr byte, numBytes int) {
 }
 
 
+func EepromMatchSearchFruPN(devName string, bus uint32, devAddr byte, pn string) (err int) {
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.MatchSearchFruPartnumber(devName, bus, devAddr, pn)
+    return err
+}
+
 func EepromVerifyCSUM(devName string, bus uint32, devAddr byte) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
     err = eeprom.VerifyFruCSUM(devName, bus, devAddr)
     if err != errType.SUCCESS {
-        cli.Println("f", "Verify EEPROM Checksums failed!")
+        cli.Println("f", "Verify EEPROM Checksum(s) failed!")
         return
     }
     return

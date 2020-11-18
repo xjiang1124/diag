@@ -8,6 +8,7 @@ import (
     "common/errType"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
+    "device/powermodule/tps544b25"
 
     "hardware/i2cinfo"
     "hardware/hwinfo"
@@ -48,6 +49,8 @@ func margin(devName string, pct int, lockFlag bool) (err int){
         err = tps53659.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS549A20" {
        err = tps549a20.SetVMargin(devName, pct)
+    } else if i2cif.Comp == "TPS544B25" {
+       err = tps544b25.SetVMargin(devName, pct)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM

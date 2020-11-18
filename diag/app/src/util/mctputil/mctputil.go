@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "flag"
     "strings"
     "strconv"
@@ -28,6 +29,7 @@ func gen_packet(mctpinfo nicCpldCommon.MctpCmd, addr byte) (data []byte){
         pec = utillib.Calc_crc8(dataBuf, mctpinfo.Len + 2)
         dataBuf = append(dataBuf, pec)
     }
+
     dataBuf = append(dataBuf[:0], dataBuf[2:]...)
 
     return dataBuf
@@ -76,6 +78,7 @@ func main() {
 
     if *udid_direct == true {
         dataBuf := make([]byte, nicCpldCommon.GetUDIDdirect.ResLen)
+        fmt.Printf(" Querying UDID Direct\n");
         byteCnt, err = smbusNew.ReadBlock("CPLD_MCTP", (uint64)(iInfo.DevAddr << 1), dataBuf)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to get udid in direct mode, err code=", err)
@@ -90,6 +93,7 @@ func main() {
 
     if *udid_gen == true {
         dataBuf := make([]byte, nicCpldCommon.GetUDIDgen.ResLen)
+        fmt.Printf(" Querying UDID\n");
         byteCnt, err = smbusNew.ReadBlock("CPLD_MCTP", nicCpldCommon.GetUDIDgen.Cmd, dataBuf)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to get udid in general mode, err code=", err)
@@ -105,6 +109,7 @@ func main() {
     if ( *clearAP == true ) {
         dataBuf := make([]byte, nicCpldCommon.ClearAp.Len)
         dataBuf = gen_packet(nicCpldCommon.ClearAp, iInfo.DevAddr)
+        fmt.Printf(" Issueing ClearAP\n");
         err = smbusNew.WriteByte("CPLD_MCTP", nicCpldCommon.ClearAp.Cmd, dataBuf[0])
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to send clear ap command, err code=", err)
@@ -116,6 +121,8 @@ func main() {
     if ( *reset == true ) {
         dataBuf := make([]byte, nicCpldCommon.Reset.Len)
         dataBuf = gen_packet(nicCpldCommon.Reset, iInfo.DevAddr)
+        fmt.Printf(" Issueing Reset\n");
+
         err = smbusNew.WriteByte("CPLD_MCTP", nicCpldCommon.Reset.Cmd, dataBuf[0])
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to send reset command, err code=", err)
@@ -147,7 +154,14 @@ func main() {
                    dataBuf[nicCpldCommon.SetAddr.Len - 1], devAddr)
 	dataBuf[nicCpldCommon.SetAddr.Len - 1] = (byte)(devAddr)
         dataBuf = gen_packet(nicCpldCommon.SetAddr, iInfo.DevAddr)
-        dataBuf = append(dataBuf[:0], dataBuf[1:]...)
+        //dataBuf = append(dataBuf[:0], dataBuf[1:]...)
+        {
+            fmt.Printf("\n")
+            for i:=0; i<len(dataBuf);i++ {
+                fmt.Printf(" 0x%.02x", dataBuf[i])
+            }
+            fmt.Printf("\n")
+        }
         byteCnt, err = smbusNew.WriteBlock("CPLD_MCTP", nicCpldCommon.SetAddr.Cmd, dataBuf)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to send set address command, err code=", err)
