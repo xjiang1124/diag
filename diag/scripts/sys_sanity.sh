@@ -3,12 +3,12 @@
 printf "====== jtag_cpurd_debug ======\n"
 mtp_id_cmd=$(cpldutil -cpld-rd -addr=0x80)
 mtp_id_str=($mtp_id_cmd)
-mtp_id=${$mtp_id_str[-1]}
+mtp_id=${mtp_id_str[-1]}
 if [ $1 -eq 10 ]
 then
     portnum=0xa
 else
-    partnum=$1
+    portnum=$1
 fi
 
 if [ $mtp_id == "0x42" ]
