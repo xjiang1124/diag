@@ -1609,9 +1609,6 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int
 
 func MatchSearchFruPartnumber(devName string, bus uint32, devAddr byte, pn string) (err int) {
     
-    var MatchSearchBIA []byte
-    var MatchSearchEEread byte
-
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return

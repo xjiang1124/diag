@@ -23,6 +23,9 @@ const NAPLES25SWMPEN_TAA string  = "68-0017-01 01"   //SWM Pesnando TAA Sku
 const NAPLES25SWMHPE_E   string  = "P26968-001"      //SWM HPE Enterprise
 const NAPLES25SWMHPE_C   string  = "P41851-001"      //SWM HPE Cloud
 
+const NAPLES25OCPHPE_E   string  = "P37689-001"
+const NAPLES25OCPHPE_C   string  = "P41857-001"
+
 
 
 const NAPLES100HPE_E string  = "P37692-001"   //Enterprise
@@ -102,9 +105,27 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 }
             } 
         }
-        if eeprom.HpeOcp == 1 {
-            eeprom.EepromTbl = eeprom.HpeTblOCP
-            eeprom.EepromExtTbl = eeprom.HpeTblOCPext
+        if eeprom.HpeOcp == 1 || (cardType == "NAPLES25OCP") {
+            if update == true {
+                if pn == "" {
+                    cli.Println("e", "For Programming Naples25OCP HPE, you must enter a part number")
+                    return -1;
+                }
+                if pn == NAPLES25OCPHPE_E {          //ENTERPRISE
+                    eeprom.EepromTbl = eeprom.HpeTblOCP
+                    eeprom.EepromExtTbl = eeprom.HpeTblOCPext
+                    eeprom.HpeOcp = 1
+                    fmt.Printf(" HPE OCP ENTERPRISE\n");
+                } else if pn == NAPLES25OCPHPE_C {   
+                    eeprom.EepromTbl = eeprom.HpeTblOCPcloud
+                    eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
+                    eeprom.HpeOcp = 1
+                    fmt.Printf(" HPE OCP CLOUD\n");
+                } else {
+                    cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming Naples25 OCP HPE")
+                    return -1;
+                }
+            } 
         }
         if eeprom.DellOcp == 1 {
             eeprom.CustType = "DELLOCP"
@@ -128,11 +149,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         if (cardType == "NAPLES100HPE") {
             eeprom.CustType = "HPE"
             eeprom.EepromTbl = eeprom.Naples100HPETbl
-
-            //This card support multiple part numbers which unfortunately do not use the same formated table.  
-            //Need to sort out which table to use based on the part number the user provided 
             if update == true {
-                //FOR NOW JUST MAKE THEM ENTER A PART NUMBER, BUT WE CAN DIG THIS OUT OF A PROGRAMMED FRU...
                 if pn == "" {
                     cli.Println("e", "For Programming Naples100HPE, you must enter a part number")
                     return -1;
@@ -204,8 +221,7 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             }
             cli.Println("e", "Unable to determine naples25 SWM fru type.  Please program it with a valid part number")
             return -1;
-        }
-        if (cardType == "NAPLES100HPE") {
+        } else if (cardType == "NAPLES100HPE") {
             rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100HPE_E)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.Naples100HPETbl
@@ -214,6 +230,24 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100HPE_C)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.Naples100HPECLOUDTbl
+                return(0)
+            }
+
+            cli.Println("e", "Unable to determine naples100 HPE fru type.  Please program it with a valid part number")
+            return -1;
+        } else if (cardType == "NAPLES25OCP") {
+            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCPHPE_E)
+            if rc == errType.SUCCESS {
+                eeprom.EepromTbl = eeprom.HpeTblOCP
+                eeprom.EepromExtTbl = eeprom.HpeTblOCPext
+                eeprom.HpeOcp = 1
+                return(0)
+            }
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCPHPE_C)
+            if rc == errType.SUCCESS {
+                eeprom.EepromTbl = eeprom.HpeTblOCPcloud
+                eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
+                eeprom.HpeOcp = 1
                 return(0)
             }
 

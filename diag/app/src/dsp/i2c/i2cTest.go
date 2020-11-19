@@ -108,7 +108,7 @@ func I2cI2cHdl(argList []string) {
                 ret = err
             }
         case "TPS544B25":
-            err = testTps53659(devName)
+            err = testTps544b25(devName)
             if err != errType.SUCCESS {
                 ret = err
             }
