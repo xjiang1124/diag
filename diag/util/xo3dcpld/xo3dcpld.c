@@ -457,7 +457,7 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
     return status;
 }
 
-static int flash_id(uint32_t fd) {
+static int flash_id(uint32_t fd, char *id) {
     struct spi_ioc_transfer msg[2];
     uint8_t rxbuf[8];
     memset(msg, 0, sizeof (msg));
@@ -471,9 +471,11 @@ static int flash_id(uint32_t fd) {
 
     e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
     for( int i = 0; i < 4; i++ ) {
-        printf("%02x ", rxbuf[i]);
+	id[i] = rxbuf[i];
+        /* printf("%02x ", rxbuf[i]); */
     }
-    printf("\n");
+    /* printf("\n"); */
+    return 0;
 }
 
 //static int
@@ -703,11 +705,47 @@ static void flash_refresh(uint32_t fd)
 {
     cpld_write_flash(fd, lsc_refresh_cmd, sizeof(lsc_refresh_cmd));
 }
+
+typedef struct cpld_region {
+    char name[10];
+    int index;
+    int size;
+} _cpld_region;
+
+struct cpld_region cpld_region_list[] = {
+    {"cfg0", 0, 200656},
+    {"cfg1", 1, 200656},
+    {"ufm0", 2, 57312},
+    {"ufm1", 3, 57312},
+    {"fea", 4, 16},
+    {"", 0, 0}
+};
+
+char xo3d_id[4] = {0x21, 0x2e, 0x30, 0x43};
+
+int get_region_index_from_name(char *region_name)
+{
+    struct cpld_region *region = cpld_region_list;
+    int region_index = -1;
+
+    do {
+        if ( !strcmp(region_name, region->name) ) {
+            region_index = region->index;
+            break;
+        }
+	region++;
+    } while ( strcmp(region->name, "") );
+    return region_index;
+}
+
 static void
 usage(void)
 {
     printf("cpld (-r addr | -w addr data | -wf addr data offset mask)\n");
-    printf("cpld (-prog input_file region | -file output_file region | -refresh | -erase region | -id)\n");
+    printf("cpld (-prog input_file region(cfg0/cfg1/ufm0/ufm1/fea) ) \n");
+    printf("cpld (-file output_file region(cfg0/cfg1/ufm0/ufm1/fea) )  \n");
+    printf("cpld (-erase region(cfg0/cfg1/ufm0/umf1/fea) ) \n");
+    printf("cpld (-refresh | -id)\n");
     printf("cpld (-mdiord addr phy | -mdiowr addr phy | -smird addr phy | -smiwr addr phy data | -cnt port)\n");
     printf("cpld (-led [green|yellow] [on|off])\n");
     exit(1);
@@ -748,50 +786,26 @@ main(int argc, char *argv[])
         mask = strtoul(argv[5], NULL, 0);
         cpld_write_field(addr, data, offset, mask);
     } else if ( strcmp(argv[1], "-prog" ) == 0 ) {
-        // CPLD size table
-        // Naples25-SWM: 4000K
-        // Others: 2000K
         int cpldSize;
 	int cfgRegion;
 	int read_byte = 0;
 	int numBytes = 0;
 	int i;
-        uint8_t cpldId = cpld_read(CPLD_ID_REG);
         unsigned char *buf;
         unsigned char *data;
+        char cpldId[4];
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-	printf("cpld id = %x\n", cpldId);
-	cpldId = ID_VOMERO2;
-
-        if ( (cpldId == ID_NAPLES100)    ||
-             (cpldId == ID_NAPLES100IBM) ||
-             (cpldId == ID_NAPLES100HPE) ||
-             (cpldId == ID_NAPLES25)     ||
-             (cpldId == ID_VOMERO)
-           )
-        {
-            cpldSize = 2000000;
-        } 
-        else if (
-            (cpldId == ID_NAPLES25_SWM) ||
-            (cpldId == ID_VOMERO2)      ||
-            (cpldId == ID_NAPLES25_OCP) || 
-            (cpldId == ID_NAPLES25_SWM_DELL)
-            )
-        {
-            cpldSize = 4000000;
-        }
-        else
-        {
-            printf("Invalid CPLD id 0x%x\n", cpldId);
+	flash_id(fd, cpldId);
+	if ( memcmp(cpldId, xo3d_id, 4) ) {
+            printf("Invalid cpld id %8x\n", *(uint32_t *)cpldId);
             return -1;
-        }
-	cpldSize = 200656;
-        printf("cpldSize %d\n", cpldSize);
-     
-        cfgRegion = strtoul(argv[3], NULL, 0);
-	if ( cfgRegion > 1 ) {
-            printf("Invalid Region\n");
+	}
+
+        cfgRegion = get_region_index_from_name(argv[3]);
+	cpldSize = cpld_region_list[cfgRegion].size;
+	if ( cfgRegion > 1 || cfgRegion < 0 ) {
+            printf("Region function has not been implemented yet\n");
 	    return -1;
 	}
 
@@ -814,9 +828,13 @@ main(int argc, char *argv[])
 	    data++;
 	}
         fclose(fptr);
-        printf("file size %d\n", numBytes);
+        if ( numBytes != cpldSize ) {
+            printf("wrong file size\n");
+            printf("cpldSize %d\n", cpldSize);
+            printf("File Size %d\n", numBytes);
+	    return -1;
+	}
 
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 	data = buf;
     	flash_enable(fd);
     	flash_init(fd, cfgRegion);
@@ -869,8 +887,19 @@ main(int argc, char *argv[])
         fclose(fptr);
     } else if ( strcmp(argv[1], "-id" ) == 0 ) {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
-    	flash_id(fd);
+	char id[4];
+	int rc = 0, i;
+
+    	rc = flash_id(fd, id);
     	close(fd);
+	if ( rc ) 
+            printf("Error getting cpld id\n");
+        else {
+            printf("CPLD ID: ");
+	    for ( i = 0; i < 4; i++ )
+                printf("%2x ", id[i]);
+	    printf("\n");
+        }
     } else if (strcmp(argv[1], "-mdiord") == 0) {
     	addr = strtoul(argv[2], NULL, 0);
     	uint8_t phy = strtoul(argv[3], NULL, 0);
