@@ -15,7 +15,15 @@ PATH=$PATH:/data/nic_arm/
 
 CORECLK417MHZ=0
 
-cpld_id="$(cpld -r 0x80)"
+cpld_id="$(xo3dcpld -r 0x80)"
+if [[ $cpld_id == "0x0" ]]
+then
+    echo "Capri CPLD"
+    cpld_id="$(cpld -r 0x80)"
+else
+    echo "Elba CPLD"
+fi
+
 echo "P0: cpld_id $cpld_id"
 cpld_id="${cpld_id}"
 echo "P1: cpld_id $cpld_id"
