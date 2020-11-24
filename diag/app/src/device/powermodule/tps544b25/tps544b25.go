@@ -102,11 +102,29 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
+func ReadPout(devName string) (integer uint64, dec uint64, err int) {
+    voutInt, voutFrac, err := ReadVout(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    ioutInt, ioutFrac, err := ReadIout(devName)
+    if err != errType.SUCCESS {
+        return
+    }
 
+    voutFloat := float64(voutInt) + float64(voutFrac)/1000
+    ioutFloat := float64(ioutInt) + float64(ioutFrac)/1000
+    poutFloat := voutFloat * ioutFloat
+
+    integer = uint64(poutFloat)
+    dec = uint64((poutFloat - float64(uint64(poutFloat)))*1000)
+
+    return
+}
 
 func DispStatus(devName string) (err int) {
 
-    vrmTitle := []string {"TARGET", "VOUT", "IOUT", "STATUS"}
+    vrmTitle := []string {"POUT", "VOUT_TGT", "VOUT", "IOUT", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -123,7 +141,11 @@ func DispStatus(devName string) (err int) {
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, _ := ReadTargetVoltage(devName)
+    dig, frac, _ := ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadTargetVoltage(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

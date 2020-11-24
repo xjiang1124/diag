@@ -83,7 +83,7 @@ func DispStatus(devName string) (err int) {
     tempTitle := []string {"LOCAL", "REMOTE1",}
     var titleStr string
     for _, title := range(tempTitle) {
-        tmpStr := fmt.Sprintf("%-15s", title+degSym)
+        tmpStr := fmt.Sprintf("%-20s", title+degSym)
         titleStr = titleStr + tmpStr
     }
     cli.Println("i", titleStr)
@@ -95,7 +95,7 @@ func DispStatus(devName string) (err int) {
             return err
         }
         tmpStr := fmt.Sprintf("%d.%04d", integer, dec)
-        tmpStr = fmt.Sprintf("%-15s", tmpStr)
+        tmpStr = fmt.Sprintf("%-20s", tmpStr)
         outStr = outStr + tmpStr
     }
     cli.Println("i", outStr)
