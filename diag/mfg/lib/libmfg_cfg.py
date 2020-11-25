@@ -53,7 +53,10 @@ class NIC_CPLD_Version:
     NAPLES25OCP_SEC_VERSION = "0x83"
     NAPLES25OCP_SEC_TIMESTAMP = "09-22"
     
-
+    ORTANO_VERSION = "0x2"      #major rev
+    ORTANO_TIMESTAMP = "0x08"    #minor rev
+    ORTANO_SEC_VERSION = ""
+    ORTANO_SEC_TIMESTAMP = ""
 
 
 # MFG release images
@@ -79,6 +82,8 @@ class MFG_IMAGE_FILES:
     NIC_GOLDFW_IMAGE_VOMERO2 = "naples_minigoldfw_1.7.4-C-7_0702.tar"
     NIC_DIAGFW_IMAGE_NAPLES100 = "naples_diagfw_12172019.tar"
     NIC_GOLDFW_IMAGE_NAPLES100 = "naples_goldfw_09182019.tar"
+    NIC_DIAGFW_IMAGE_ORTANO = "elba_diagfw_1.17.0-26-5_1112.tar"
+    NIC_GOLDFW_IMAGE_ORTANO = "naples_goldfw_1.17.0-11-2_1118.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_rev9_06222020.bin"
     NAPLES25_SEC_CPLD_IMAGE = "naples25_rev89_06172020.bin"
@@ -106,6 +111,9 @@ class MFG_IMAGE_FILES:
     VOMERO_SEC_CPLD_IMAGE = "vomero_cpld_rev84_02102020.bin"
     VOMERO2_CPLD_IMAGE = "vomero2_rev5_07242020.bin"
     VOMERO2_SEC_CPLD_IMAGE = "vomero2_rev85_07242020.bin"
+
+    ORTANO_CPLD_IMAGE = "ortano_rev28_cfg0.bin"
+    ORTANO_SEC_CPLD_IMAGE = "" 
 
 class PART_NUMBERS_MATCH:
     N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"   #68-0003-01 01    PENSANDO
@@ -145,9 +153,8 @@ class PART_NUMBERS_MATCH:
     VOMERO2_MT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
 
 
-
-MFG_MTP_CPLD_IO_VERSION = "0x5"
-MFG_MTP_CPLD_JTAG_VERSION = "0x3"
+MFG_MTP_CPLD_IO_VERSION = "0x1" #0x5
+MFG_MTP_CPLD_JTAG_VERSION = "0x1" #"0x3"
 
 MFG_QSPI_TIMESTAMP = "05-21-2020"
 MFG_GOLD_TIMESTAMP = "04-18-2020"
@@ -162,6 +169,7 @@ MFG_GOLD_IBM_TIMESTAMP = "05-12-2020"
 MFG_QSPI_NAPLES100HPE_TIMESTAMP = "08-24-2020"
 MFG_GOLD_NAPLES100HPE_TIMESTAMP = "07-31-2020"
 MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP = "08-24-2020"
+MFG_QSPI_ORTANO_TIMESTAMP = "11-12-2020"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
@@ -171,7 +179,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.ORTANO]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 # please check the label specification
@@ -198,6 +206,7 @@ NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 IBM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 DELLSWM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{2})"
 VOMERO2_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
+ORTANO_DISP_ASSEMBLY_FMT = VOMERO2_DISP_ASSEMBLY_FMT
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 #NAPLES_DISP_PN_FMT = r"(Part|Assembly) Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"

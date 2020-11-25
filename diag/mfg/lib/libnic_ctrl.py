@@ -25,6 +25,7 @@ from libmfg_cfg import HPESWM_DISP_ASSET_FMT
 from libmfg_cfg import IBM_DISP_ASSEMBLY_FMT
 from libmfg_cfg import DELLSWM_DISP_ASSEMBLY_FMT
 from libmfg_cfg import VOMERO2_DISP_ASSEMBLY_FMT
+from libmfg_cfg import ORTANO_DISP_ASSEMBLY_FMT
 from libdefs import NIC_Type
 from libdefs import NIC_Vendor
 from libdefs import MTP_DIAG_Error
@@ -1463,6 +1464,8 @@ class nic_ctrl():
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(DELLSWM_DISP_ASSEMBLY_FMT, fru_buf)
+            elif self._nic_type == NIC_Type.ORTANO:
+                match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             else:
                 match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
 
@@ -1560,7 +1563,7 @@ class nic_ctrl():
                     match = re.findall(IBM_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
              
                                                  
-                elif self._nic_type == NIC_Type.VOMERO2:
+                elif self._nic_type == NIC_Type.VOMERO2 or self._nic_type == NIC_Type.ORTANO:
                     match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                     match = re.findall(DELLSWM_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())

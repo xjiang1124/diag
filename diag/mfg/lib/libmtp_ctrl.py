@@ -30,6 +30,7 @@ from libmfg_cfg import MFG_QSPI_VOMERO2_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
+from libmfg_cfg import MFG_QSPI_ORTANO_TIMESTAMP
 #from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
@@ -1135,6 +1136,11 @@ class mtp_ctrl():
             vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
             vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
 
+            ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
+            ortano_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
+            ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
+            #ortano_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_SEC_CPLD_IMAGE
+
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
@@ -1147,16 +1153,19 @@ class mtp_ctrl():
                 img_list += [vomero2_cpld_img_file, vomero2_qspi_img_file]
                 img_list += [naples100ibm_cpld_img_file, naples100ibm_qspi_img_file]
                 img_list += [naples100hpe_cpld_img_file, naples100hpe_qspi_img_file]
+                img_list += [ortano_cpld_img_file, ortano_qspi_img_file]
             elif stage == FF_Stage.FF_CFG:
                 img_list = [naples100_cpld_img_file]
                 img_list += [vomero_cpld_img_file]
                 img_list += [vomero2_cpld_img_file]
+                img_list += [ortano_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
                 img_list += [vomero2_sec_cpld_img_file, vomero2_gold_img_file]
                 img_list += [naples100ibm_sec_cpld_img_file, naples100ibm_gold_img_file]
                 img_list += [naples100hpe_sec_cpld_img_file, naples100hpe_gold_img_file]
+                #img_list += [ortano_sec_cpld_img_file, ortano_gold_img_file]
             else:
                 img_list = []
 
@@ -1518,6 +1527,8 @@ class mtp_ctrl():
             expected_timestam = MFG_GOLD_VOMERO2_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO:
             expected_timestam = MFG_GOLD_TIMESTAMP
+        elif nic_type == NIC_Type.ORTANO:
+            expected_timestam = MFG_GOLD_ORTANO_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -1666,7 +1677,6 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_power_off():
             self.cli_log_slot_err(slot, "Failed to power off NIC")
             return False
-        self.cli_log_slot_inf(slot, "Power off NIC")
         return True
 
 
@@ -1813,6 +1823,8 @@ class mtp_ctrl():
             exp_pn = VOMERO_FMT_ALL
         elif nic_type == NIC_Type.VOMERO2:
             exp_pn = VOMERO2_FMT_ALL
+        elif nic_type == NIC_Type.ORTANO:
+            exp_pn = ORTANO_FMT_ALL
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -1871,6 +1883,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.VOMERO2:
             exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
             exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
+        elif nic_type == NIC_Type.ORTANO:
+            exp_ver = NIC_CPLD_Version.ORTANO_VERSION
+            exp_timestamp = NIC_CPLD_Version.ORTANO_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2052,6 +2067,13 @@ class mtp_ctrl():
             else:
                 exp_ver = NIC_CPLD_Version.VOMERO_VERSION
                 exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
+        elif nic_type == NIC_Type.ORTANO:
+            if sec_cpld:
+                exp_ver = NIC_CPLD_Version.ORTANO_SEC_VERSION
+                exp_timestamp = NIC_CPLD_Version.ORTANO_SEC_TIMESTAMP
+            else:
+                exp_ver = NIC_CPLD_Version.ORTANO_VERSION
+                exp_timestamp = NIC_CPLD_Version.ORTANO_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2138,6 +2160,8 @@ class mtp_ctrl():
             expected_timestam = MFG_QSPI_VOMERO2_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO:
             expected_timestam = MFG_QSPI_VOMERO_TIMESTAMP
+        elif nic_type == NIC_Type.ORTANO:
+            expected_timestam = MFG_QSPI_ORTANO_TIMESTAMP
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2812,6 +2836,17 @@ class mtp_ctrl():
                 else:
                     self._nic_prsnt_list[slot] = False
                     self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.ORTANO
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.ORTANO)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         return True
 
 
@@ -3191,6 +3226,10 @@ class mtp_ctrl():
             #NAPLES25OCP uses same setting as Naples25
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO:  
+            #NAPLES25OCP uses same setting as Naples25
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False

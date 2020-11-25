@@ -69,6 +69,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25SWM:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
+    if nic_type == NIC_Type.ORTANO:
+        testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -90,6 +92,12 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        # extra powercycle to refresh CPLD
+        elif test == "NIC_PWRCYC":
+            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+            #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+            # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
@@ -113,7 +121,7 @@ def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
         if str.upper(valid) != "YES":
             continue
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if not card_type == NIC_Type.VOMERO2:
+        if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO):
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
@@ -174,6 +182,7 @@ def main():
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
+    #mtp_asic_support = mtp_mgmt_ctrl.mtp_get_asic_support()
 
     # get the absolute file path
     naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
@@ -194,6 +203,8 @@ def main():
     naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
     naples25swmdell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
     naples25swmdell_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL
+    ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
+    ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
                                                                                                         
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
@@ -313,6 +324,10 @@ def main():
             mtp_exp_capability = 0x1
             cpld_img_file = vomero2_cpld_img_file
             qspi_img_file = vomero2_qspi_img_file
+        elif card_type == NIC_Type.ORTANO:
+            mtp_exp_capability = 0x1
+            cpld_img_file = ortano_cpld_img_file
+            qspi_img_file = ortano_qspi_img_file
         elif card_type == NIC_Type.NAPLES25:
             mtp_exp_capability = 0x2
             cpld_img_file = naples25_cpld_img_file
@@ -344,6 +359,12 @@ def main():
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
+        if card_type == NIC_Type.ORTANO:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
@@ -422,6 +443,9 @@ def main():
         elif card_type == NIC_Type.NAPLES25SWMDELL:
             qspi_img_file = naples25swmdell_qspi_img_file
             cpld_img_file = naples25swmdell_cpld_img_file
+        elif card_type == NIC_Type.ORTANO:
+            qspi_img_file = ortano_qspi_img_file
+            cpld_img_file = ortano_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -497,6 +521,8 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES25SWM:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+        if card_type == NIC_Type.ORTANO:
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         for test in testlists:
         
         
