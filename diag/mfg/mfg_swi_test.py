@@ -46,7 +46,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary):
+def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, sw_pn):
     # go to mtp_swi_script and start the test
     cmd = "cd {:s}".format(mtp_swi_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -55,9 +55,9 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     if profile_cfg_file:
-        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s}".format(nic_sw_img_file, profile_cfg_file, mtp_id)
+        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s} --swpn {:s}".format(nic_sw_img_file, profile_cfg_file, mtp_id, sw_pn)
     else:
-        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s}".format(nic_sw_img_file, mtp_id)
+        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s} --swpn {:s}".format(nic_sw_img_file, mtp_id, sw_pn)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_SW_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
@@ -162,7 +162,6 @@ def main():
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NAPLES25SWMDELL_SEC_CPLD_IMAGE)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM)
             mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP)
-            mtp_swi_image_list.append(MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
@@ -216,7 +215,8 @@ def main():
                                                                             profile_cfg_file,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
-                                                                            mfg_swi_summary[mtp_id]))
+                                                                            mfg_swi_summary[mtp_id],
+                                                                            sw_pn))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

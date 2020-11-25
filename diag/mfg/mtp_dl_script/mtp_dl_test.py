@@ -198,11 +198,10 @@ def main():
     vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
     vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2                                                                                                
     naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
-    naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
+    naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWM
     naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
     naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
     naples25swmdell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
-    naples25swmdell_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL
     ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
     ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
                                                                                                         
@@ -343,7 +342,7 @@ def main():
         elif card_type == NIC_Type.NAPLES25SWMDELL:
             mtp_exp_capability = 0x2
             cpld_img_file = naples25swmdell_cpld_img_file
-            qspi_img_file = naples25swmdell_qspi_img_file
+            qspi_img_file = naples25swm_qspi_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -441,7 +440,7 @@ def main():
             qspi_img_file = naples25ocp_qspi_img_file
             cpld_img_file = naples25ocp_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWMDELL:
-            qspi_img_file = naples25swmdell_qspi_img_file
+            qspi_img_file = naples25swm_qspi_img_file
             cpld_img_file = naples25swmdell_cpld_img_file
         elif card_type == NIC_Type.ORTANO:
             qspi_img_file = ortano_qspi_img_file

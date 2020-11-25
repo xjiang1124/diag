@@ -173,6 +173,9 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--image", help="NIC eMMC image", required=True)
     parser.add_argument("--profile", help="NIC Profile")
+    parser.add_argument("--swpn", help="Software Part Number")
+
+    
 
     nic_profile = None
     args = parser.parse_args()
@@ -183,6 +186,9 @@ def main():
     if args.profile:
         #nic_profile = args.profile
         nic_profile = ntpath.basename(args.profile)
+    if args.swpn:
+        sw_pn = args.swpn 
+    print(" ADD DEBUG:  sw pn = {:s}".format(sw_pn))
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -242,7 +248,6 @@ def main():
     naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
     naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
     naples25swmdell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
-    naples25swmdell_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL
     emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + img_file
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_SWI):
@@ -322,7 +327,7 @@ def main():
         elif card_type == NIC_Type.NAPLES25SWMDELL:
             cpld_img_file = naples25swmdell_cpld_img_file                        
             sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL 
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
@@ -336,11 +341,13 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
 
-        for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]:
+        for test in ["SW_PN_CHECK", "NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
+            if test == "SW_PN_CHECK":
+                ret = mtp_mgmt_ctrl.check_swi_software_image(slot, sw_pn)
             # nic power status check
-            if test == "NIC_POWER":
+            elif test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
             # nic type check
             elif test == "NIC_TYPE":
@@ -405,7 +412,7 @@ def main():
             #qspi_img_file = naples25ocp_qspi_img_file
             cpld_img_file = naples25ocp_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWMDELL:
-            #qspi_img_file = naples25swmdell_qspi_img_file
+            #qspi_img_file = naples25swm_qspi_img_file
             cpld_img_file = naples25swmdell_cpld_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
@@ -701,6 +708,9 @@ def main():
     
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
+        if slot in fail_nic_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass FAILED slot for setting MAINFW\n")
+            continue
         if not nic_prsnt_list[slot]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot for setting MAINFW\n")
             continue
@@ -764,6 +774,7 @@ def main():
             return
 
     # Verify the NIC Software boot
+    
     if nic_profile:
         sw_test_list = ["SW_BOOT", "SW_PROFILE", "SW_SHUTDOWN"]
     else:
@@ -774,6 +785,7 @@ def main():
         if slot in fail_nic_list:
             continue
 
+        isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         for test in sw_test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
@@ -781,13 +793,13 @@ def main():
             if test == "SW_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES100IBM:
+                if (card_type == NIC_Type.NAPLES100IBM) or (isCloud == True):
                     if ret:
                         ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
             elif test == "SW_PROFILE"and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
             elif test == "SW_SHUTDOWN":
-                ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot)
+                ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
                 continue
@@ -800,6 +812,7 @@ def main():
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
 
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()

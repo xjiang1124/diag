@@ -428,7 +428,9 @@ class nic_ctrl():
         # 4. umount
         emmc_fsck_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
         emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
-        nic_shutdown_cmd_list = ["clear_nic_config.sh factory-default"]
+        nic_shutdown_cmd_list = [emmc_fsck_cmd,
+                                 emmc_mount_cmd,
+                                 "clear_nic_config.sh factory-default"]
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -447,7 +449,7 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
-    def nic_sw_shutdown(self):
+    def nic_sw_shutdown(self, cloud=False):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -474,13 +476,14 @@ class nic_ctrl():
                 self.nic_console_detach()
                 return False
 
-        # poweroff
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-        if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
-            self.nic_console_detach()
-            return False
+        # poweroff ... Cloud build do not support this command
+        if cloud == False:
+            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_err_msg(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
 
         self.nic_console_detach()
         return True
@@ -1582,7 +1585,8 @@ class nic_ctrl():
                 print(" SN  " + self._sn + " " + sn)
                 print(" MAC " + self._mac + " " + mac)
                 print(" PN  " + self._pn + " " + pn)
-                print(" DT  " + self._date + " " + date)
+                if date != None:
+                    print(" DT  " + self._date + " " + date)
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 

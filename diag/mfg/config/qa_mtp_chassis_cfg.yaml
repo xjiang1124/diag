@@ -146,7 +146,7 @@ MTP-028:
     PASSWORD: "lab123"
     ALIAS: "mtp028"
     SLOTS: 10
-    CAPABILITY: 0x2
+    CAPABILITY: 0x3
     
 MTP-030:
     MODE: ""

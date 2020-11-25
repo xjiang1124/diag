@@ -69,15 +69,14 @@ class MFG_IMAGE_FILES:
     
     NIC_DIAGFW_IMAGE = "naples_diagfw_05212020.tar"
     NIC_GOLDFW_IMAGE = "naples_goldfw_1.3.1-E-19_0717.tar"
-    NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.3.1-E-19_0717.tar"
-    NIC_DIAGFW_IMAGE_HPE_OCP = "naples_diagfw_1.3.1-E-27.tar"
-    NIC_GOLDFW_IMAGE_HPE_OCP = "naples_goldfw_1.3.1-E-28_0731.tar"
-    NIC_DIAGFW_IMAGE_SWMDELL = "naples_diagfw_1.3.1-E-31_0824.tar"
-    NIC_GOLDFW_IMAGE_SWMDELL = "naples_goldfw_1.3.1-E-31_0824.tar"
+    NIC_DIAGFW_IMAGE_SWM = "naples_diagfw_1.3.1-E-42_1119.tar"
+    NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.3.1-E-42_1119.tar"
+    NIC_DIAGFW_IMAGE_HPE_OCP = "naples_diagfw_1.3.1-E-42_1119.tar"
+    NIC_GOLDFW_IMAGE_HPE_OCP = "naples_goldfw_1.3.1-E-42_1119.tar"
     NIC_GOLDFW_IMAGE_IBM = "naples_goldfw1.3.1-E-20_0514.tar"
     NIC_GOLDFW_IMAGE_HPE = "naples_goldfw1_1.3.1-E-28_0731.tar"
-    NIC_DIAGFW_IMAGE_HPE_NAPLES100 = "naples_diagfw_1.3.1-E-31_0824.tar"
-    NIC_GOLDFW_IMAGE_HPE_NAPLES100 = "naples_goldfw_1.3.1-E-28_0731.tar"
+    NIC_DIAGFW_IMAGE_HPE_NAPLES100 = "naples_diagfw_1.3.1-E-42_1119.tar"
+    NIC_GOLDFW_IMAGE_HPE_NAPLES100 = "naples_goldfw_1.3.1-E-42_1119.tar"
     NIC_DIAGFW_IMAGE_VOMERO2 = "naples_diagfw_w_uboot_1.3.1-E-26_0620.tar"
     NIC_GOLDFW_IMAGE_VOMERO2 = "naples_minigoldfw_1.7.4-C-7_0702.tar"
     NIC_DIAGFW_IMAGE_NAPLES100 = "naples_diagfw_12172019.tar"
@@ -116,41 +115,48 @@ class MFG_IMAGE_FILES:
     ORTANO_SEC_CPLD_IMAGE = "" 
 
 class PART_NUMBERS_MATCH:
-    N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"   #68-0003-01 01    PENSANDO
-    N100_NET_PN_FMT = r"111-04635"                     #111-04635        NETAPP
+    N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"        #68-0003-01 01    NAPLES 100 PENSANDO
+    N100_NET_PN_FMT = r"111-04635"                            #111-04635        NAPLES 100 NETAPP
     N100_PN_FMT_ALL = r"{:s}|{:s}".format(N100_PEN_PN_FMT,N100_NET_PN_FMT)
 
-    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [0-9]{2}"   #68-0013-01 03       IBM
+    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [0-9]{2}"           #68-0013-01 03    NAPLES100 IBM
     N100_IBM_FMT_ALL = r"{:s}".format(N100_IBM_PN_FMT)
-    exp_pn = N100_IBM_FMT_ALL
 
-    N100_HPE_PN_FMT = r"P37692-00[0-9]{1}"            #P37692-001       HPE 
-    N100_HPE_FMT_ALL = r"{:s}".format(N100_HPE_PN_FMT)
+    N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                #P37692-001       NAPLES100 HPE 
+    N100_HPE_CLD_PN_FMT = r"P41854-00[0-9]{1}"                #P41854-001       NAPLES100 HPE CLOUD
+    N100_HPE_FMT_ALL = r"{:s}|{:s}".format(N100_HPE_PN_FMT, N100_HPE_CLD_PN_FMT)
 
-    N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [A-Z0-9]{2}" #68-0005-03 01    PENSANDO
-    N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"             #P18669-001       HPE
-    N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"    #68-0008-xx yy    EQUINIX
+    N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [A-Z0-9]{2}"         #68-0005-03 01    NAPLES25 PENSANDO
+    N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"                     #P18669-001       NAPLES25 HPE
+    N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"            #68-0008-xx yy    NAPLES25 EQUINIX
     N25_PN_FMT_ALL = r"{:s}|{:s}|{:s}".format(N25_PEN_PN_FMT,N25_HPE_PN_FMT,N25_EQI_PN_FMT)
 
-    N25_SWM_HPE_PN_FMT = r"P26968-00[0-9]{1}"            #P26968-001       HPE SWM
-    N25_SWM_HPE_FMT_ALL = r"{:s}".format(N25_SWM_HPE_PN_FMT)
+    N25_SWM_HPE_PN_FMT     = r"P26968-00[0-9]{1}"             #P26968-001       NAPLES25 SWM HPE 
+    N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"             #P41851-001       NAPLES25 SWM HPE CLOUD
+    N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}" #68-0016-01 01    NAPLES25 SWM PENSANDO 
+    N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}" #68-0017-01 01    NAPLES25 SWM PENSANDO TAA 
+    N25_SWM_HPE_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_SWM_HPE_PN_FMT, N25_SWM_HPE_CLD_PN_FMT, N25_SWM_PEN_PN_FMT, N25_SWM_PEN_TAA_PN_FMT)
 
-    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [0-9]{2}"   #68-0014-01 00       DELL SWM
+    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [0-9]{2}"        #68-0014-01 00       NAPLES25 SWM DELL
     N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)
 
-    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [0-9]{2}"   #68-0010-xx       PENSANDO
-    N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"            #P37689-001       HPE
-    N25_OCP_DEL_PN_FMT = r"P18671-00[0-9]{1}"            #P18671-001       DELL
-    N25_OCP_PN_FMT_ALL = r"{:s}|{:s}|{:s}".format(N25_OCP_PEN_PN_FMT,N25_OCP_HPE_PN_FMT,N25_OCP_DEL_PN_FMT)    
+    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [0-9]{2}"        #68-0010-xx       NAPLES25 OCP PENSANDO
+    N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
+    N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
+    N25_OCP_DEL_PN_FMT = r"P18671-00[0-9]{1}"                 #P18671-001       NAPLES25 OCP DELL
+    N25_OCP_PN_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_OCP_PEN_PN_FMT,N25_OCP_HPE_PN_FMT, N25_OCP_HPE_CLD_PN_FMT, N25_OCP_DEL_PN_FMT)    
 
-    FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"   #68-0007-01 01
+    FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"              #68-0007-01 01    FORIO
     FORIO_FMT_ALL = r"{:s}".format(FORIO_PN_FMT)
 
-    VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"   #68-0009-01 01
-    VOMERO_MT_ALL = r"{:s}".format(VOMERO_PN_FMT)
+    VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"             #68-0009-01 01    VOMERO
+    VOMERO_FMT_ALL = r"{:s}".format(VOMERO_PN_FMT)
 
-    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [0-9]{2}"   #68-0011-01 01
-    VOMERO2_MT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
+    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [0-9]{2}"            #68-0011-01 01    VOMERO2
+    VOMERO2_FMT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
+
+    ORTANO_PN_FMT = r”68-0015-0[0-9]{1} [0-9]{2}”             #68-0015-01 01    ORTANO
+    ORTANO_FMT_ALL = r”{:s}“.format(ORTANO_PN_FMT)
 
 
 MFG_MTP_CPLD_IO_VERSION = "0x1" #0x5
@@ -170,6 +176,8 @@ MFG_QSPI_NAPLES100HPE_TIMESTAMP = "08-24-2020"
 MFG_GOLD_NAPLES100HPE_TIMESTAMP = "07-31-2020"
 MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP = "08-24-2020"
 MFG_QSPI_ORTANO_TIMESTAMP = "11-12-2020"
+MFG_QSPI_NAPLES25_SWM_TIMESTAMP = "11-18-2020"
+MFG_GOLD_NAPLES25_SWM_TIMESTAMP = "11-18-2020"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"

@@ -131,8 +131,8 @@ def main():
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWMDELL)
         mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO)
+        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWM)
         if (mtp_capability & 0x1):
             # FIXME: Xin - Dedicated image
             mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)

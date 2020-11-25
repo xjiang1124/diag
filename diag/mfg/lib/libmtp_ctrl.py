@@ -31,6 +31,8 @@ from libmfg_cfg import MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_ORTANO_TIMESTAMP
+from libmfg_cfg import MFG_QSPI_NAPLES25_SWM_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_NAPLES25_SWM_TIMESTAMP
 #from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
@@ -1512,15 +1514,15 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES100IBM:
             expected_timestam = MFG_GOLD_IBM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES100HPE:
-            expected_timestam = MFG_GOLD_NAPLES100HPE_TIMESTAMP
+            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25:
             expected_timestam = MFG_GOLD_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25SWM:
-            expected_timestam = MFG_GOLD_TIMESTAMP
+            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            expected_timestam = MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
+            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25OCP:
-            expected_timestam = MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
+            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.FORIO:
             expected_timestam = MFG_GOLD_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO2:
@@ -1799,44 +1801,151 @@ class mtp_ctrl():
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         
         if not naples_pn:
-            self.cli_log_slot_err_lock(slot, "Verify NIC {:s} PN Failed".format(name))
+            self.cli_log_slot_err_lock(slot, "Verify NIC:  Retreive PN Failed")
             return False
 
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.NAPLES100:
-            exp_pn = N100_PN_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.N100_PN_FMT_ALL
         elif nic_type == NIC_Type.NAPLES100IBM:
-            exp_pn = N100_IBM_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.N100_IBM_FMT_ALL
         elif nic_type == NIC_Type.NAPLES100HPE:
-            exp_pn = N100_HPE_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.N100_HPE_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25:
-            exp_pn = N25_PN_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.N25_PN_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25SWM:
-            exp_pn = N25_SWM_HPE_PN_FMT
+            exp_pn = PART_NUMBERS_MATCH.N25_SWM_HPE_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            exp_pn = N25_SWM_DEL_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.N25_SWM_DEL_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25OCP:
-            exp_pn = N25_OCP_PN_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.N25_OCP_PN_FMT_ALL
         elif nic_type == NIC_Type.FORIO:
-            exp_pn = FORIO_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.FORIO_FMT_ALL
         elif nic_type == NIC_Type.VOMERO:
-            exp_pn = VOMERO_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.VOMERO_FMT_ALL
         elif nic_type == NIC_Type.VOMERO2:
-            exp_pn = VOMERO2_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.VOMERO2_FMT_ALL
         elif nic_type == NIC_Type.ORTANO:
-            exp_pn = ORTANO_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.ORTANO_FMT_ALL
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
         match = re.findall(exp_pn, naples_pn)
         if match:
-            self.cli_log_slot_inf_lock(slot, "Verify Naples_PN Pass, naples_pn={:s}".format(naples_pn))
+            self.cli_log_slot_inf_lock(slot, "==> Verify Naples_PN Pass, naples_pn={:s}".format(naples_pn))
             return True
         else:
             self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, Read {:s}".format(naples_pn))
             return False
+
+
+    #Check the SWI scanned in software part number to see if it's a cloud image or not.
+    #Cloud images have slight deviation on how SWI runs
+    def check_is_cloud_software_image(self, slot, software_pn):
+        print(" Check if software image is cloud: {:s}".format(software_pn))            
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002")):       
+            return True
+        return False
             
+                    
+    #Check if the loaded image correct for the cards p/n.  i.e. cloud card gets a cloud image, 
+    #and etnerprise card get an enterprise image
+    def check_swi_software_image(self, slot, software_pn):
+        naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
+        if not naples_pn:
+            self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
+            return False
+        self.cli_log_slot_inf_lock(slot, "==> Check SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))   
+        if naples_pn[0:7] == "68-0003":        #NAPLES 100 PENSANDO
+            if software_pn != "90-0002-0003":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:9] == "111-04635": #NAPLES 100 NETAPP
+            if software_pn != "90-0001-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:7] == "68-0013":   #NAPLES100 IBM
+            if software_pn != "90-0004-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:6] == "P37692":    #NAPLES100 HPE 
+            if software_pn != "90-0007-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False    
+        elif naples_pn[0:6] == "P41854":    #NAPLES100 HPE CLOUD
+            if software_pn != "90-0006-0002":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False    
+        elif naples_pn[0:7] == "68-0005":    #NAPLES25 PENSANDO
+            if software_pn != "90-0002-0005":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False 
+        elif naples_pn[0:6] == "P18669":     #NAPLES25 HPE
+            if software_pn != "90-0006-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False 
+        elif naples_pn[0:7] == "68-0008":    #NAPLES25 EQUINIX
+            if software_pn != "90-0006-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False 
+        elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
+            if software_pn != "90-0002-0004":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False 
+        elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
+            if software_pn != "90-0006-0002":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):     #NAPLES25 SWM PENSANDO
+            if software_pn != "90-0002-0005":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:7] == "68-0014":     #NAPLES25 SWM DELL
+            if software_pn != "90-0008-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False  
+        elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP PENSANDO
+            if software_pn != "90-0005-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
+            if software_pn != "90-0005-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
+            if software_pn != "90-0006-0002":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:6] == "P18671":      #NAPLES25 OCP DELL
+            if software_pn != "90-0005-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
+            if software_pn != "90-0003-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        else:
+            self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
+            return False             
+        '''
+        90-0001-0001   netapp  PNSO-1.0.0-E-7-netapp-09162019-1911.tar
+        90-0002-0001   goldman  PNSO-1.1.1-E-15-goldman-10042019-1722.tar ??
+        90-0002-0002    PNSO-1.3.2-E-3-basicdsc-ga-022420202-1611
+        90-0002-0003   naples_fw_1.8.0-E-48_B-_0608.tar
+        90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
+        90-0002-0005   //standup swm (no file assigned)
+        90-0003-0001   //Oracle Capri cards.. dont care
+        90-0004-0001   //IBM  naples_fw_PNSO-1.15.0-C-1-sdn-eval-09102020.tar
+        90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
+        90-0006-0001   //CLOUD-A  naples_fw_apulu_1.10.3-C-26_CloudA_0806.tar
+        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD
+        90-0007-0001   //naples_fw_iris_1.14.0-E-25_2020.08.31.tar
+        90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
+        '''
+        return True
+
+
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()
 
@@ -2145,15 +2254,15 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES100IBM:
             expected_timestam = MFG_QSPI_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES100HPE:
-            expected_timestam = MFG_QSPI_NAPLES100HPE_TIMESTAMP
+            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25:
             expected_timestam = MFG_QSPI_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25SWM:
-            expected_timestam = MFG_QSPI_TIMESTAMP
+            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            expected_timestam = MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
+            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.NAPLES25OCP:
-            expected_timestam = MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
+            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
         elif nic_type == NIC_Type.FORIO:
             expected_timestam = MFG_QSPI_TIMESTAMP
         elif nic_type == NIC_Type.VOMERO2:
@@ -2905,8 +3014,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_nic_sw_shutdown(self, slot):
-        if not self._nic_ctrl_list[slot].nic_sw_shutdown():
+    def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
+        isCloud =  self.check_is_cloud_software_image(slot, software_pn)
+        if not self._nic_ctrl_list[slot].nic_sw_shutdown(isCloud):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)

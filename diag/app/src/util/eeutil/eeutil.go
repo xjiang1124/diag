@@ -18,18 +18,18 @@ import (
 )
 
 
-const NAPLES25SWMPEN     string  = "68-0016-01 01"   //SWM Pesnando Sku
-const NAPLES25SWMPEN_TAA string  = "68-0017-01 01"   //SWM Pesnando TAA Sku
-const NAPLES25SWMHPE_E   string  = "P26968-001"      //SWM HPE Enterprise
-const NAPLES25SWMHPE_C   string  = "P41851-001"      //SWM HPE Cloud
+const NAPLES25SWM_PEN     string  = "68-0016-01 01"   //SWM Pesnando Sku
+const NAPLES25SWM_PEN_TAA string  = "68-0017-01 01"   //SWM Pesnando TAA Sku
+const NAPLES25SWM_HPE_E   string  = "P26968-001"      //SWM HPE Enterprise
+const NAPLES25SWM_HPE_C   string  = "P41851-001"      //SWM HPE Cloud
 
-const NAPLES25OCPHPE_E   string  = "P37689-001"
-const NAPLES25OCPHPE_C   string  = "P41857-001"
+const NAPLES25OCP_HPE_E   string  = "P37689-001"
+const NAPLES25OCP_HPE_C   string  = "P41857-001"
+const NAPLES25OCP_PEN     string  = "68-0010-01 01"
+const NAPLES25OCP_DELL    string  = "P18671-001"
 
-
-
-const NAPLES100HPE_E string  = "P37692-001"   //Enterprise
-const NAPLES100HPE_C string  = "P41854-001"   //Cloud
+const NAPLES100_HPE_E     string  = "P37692-001"   //Enterprise
+const NAPLES100_HPE_C     string  = "P41854-001"   //Cloud
 
 func init() {
     //procNameTemp := strings.Split(os.Args[0], "/")
@@ -77,23 +77,23 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     cli.Println("e", "For Programming Naples25 SWM, you must enter a part number")
                     return -1;
                 }
-                if pn == NAPLES25SWMHPE_E {          //ENTERPRISE
+                if pn == NAPLES25SWM_HPE_E {          //ENTERPRISE
                     eeprom.EepromTbl = eeprom.HpeTblSWM
                     eeprom.EepromExtTbl = eeprom.HpeTblSWMext
                     eeprom.HpeSwm = 1  
                     fmt.Printf(" HPE 25 SWM\n");
-                } else if pn == NAPLES25SWMHPE_C {   //CLOUD
+                } else if pn == NAPLES25SWM_HPE_C {   //CLOUD
                     eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
                     eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
                     eeprom.HpeSwm = 1  
                     fmt.Printf(" HPE 25 SWM CLOUD\n");
-                } else if pn[0:10] == NAPLES25SWMPEN_TAA[0:10] {      
+                } else if pn[0:10] == NAPLES25SWM_PEN_TAA[0:7] {      
                     eeprom.EepromTbl = eeprom.PenTblSWMTAA
                     eeprom.HpeSwm = 2  
                     eeprom.CustType = "PENSWM"
                     //NO EXTENDED TABLE (Product Information Area)
                     fmt.Printf(" PEN SWM TAA\n");
-                } else if pn[0:10] == NAPLES25SWMPEN[0:10] {   
+                } else if pn[0:10] == NAPLES25SWM_PEN[0:7] {   
                     eeprom.EepromTbl = eeprom.PenTblSWM
                     eeprom.HpeSwm = 2  
                     eeprom.CustType = "PENSWM"
@@ -105,31 +105,32 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 }
             } 
         }
-        if eeprom.HpeOcp == 1 || (cardType == "NAPLES25OCP") {
+        if eeprom.HpeOcp == 1 || eeprom.DellOcp == 1 || (cardType == "NAPLES25OCP") {
             if update == true {
                 if pn == "" {
                     cli.Println("e", "For Programming Naples25OCP HPE, you must enter a part number")
                     return -1;
                 }
-                if pn == NAPLES25OCPHPE_E {          //ENTERPRISE
+                const NAPLES25OCP_DELL    string  = "P18671-001"
+                if pn == NAPLES25OCP_HPE_E {          //ENTERPRISE
                     eeprom.EepromTbl = eeprom.HpeTblOCP
                     eeprom.EepromExtTbl = eeprom.HpeTblOCPext
                     eeprom.HpeOcp = 1
                     fmt.Printf(" HPE OCP ENTERPRISE\n");
-                } else if pn == NAPLES25OCPHPE_C {   
+                } else if pn == NAPLES25OCP_HPE_C {   
                     eeprom.EepromTbl = eeprom.HpeTblOCPcloud
                     eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
                     eeprom.HpeOcp = 1
                     fmt.Printf(" HPE OCP CLOUD\n");
+                } else if pn == NAPLES25OCP_DELL {
+                    eeprom.CustType = "DELLOCP"
+                    eeprom.EepromTbl = eeprom.DellTblOcp
+                    eeprom.DellOcp = 1
                 } else {
                     cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming Naples25 OCP HPE")
                     return -1;
                 }
             } 
-        }
-        if eeprom.DellOcp == 1 {
-            eeprom.CustType = "DELLOCP"
-            eeprom.EepromTbl = eeprom.DellTblOcp
         }
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
@@ -154,10 +155,10 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     cli.Println("e", "For Programming Naples100HPE, you must enter a part number")
                     return -1;
                 }
-                if pn == NAPLES100HPE_E {          //ENTERPRISE
+                if pn == NAPLES100_HPE_E {          //ENTERPRISE
                     eeprom.EepromTbl = eeprom.Naples100HPETbl
                     fmt.Printf(" HPE 100 ENTERPRISE\n");
-                } else if pn == NAPLES100HPE_C {   
+                } else if pn == NAPLES100_HPE_C {   
                     eeprom.EepromTbl = eeprom.Naples100HPECLOUDTbl
                     eeprom.CustType = "HPE100CLOUD"
                     fmt.Printf(" HPE 100 CLOUD\n");
@@ -193,27 +194,27 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
     }
     if (cardType != "MTP") {
         if (cardType == "NAPLES25SWM") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWMHPE_E)
+            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.HpeTblSWM
                 eeprom.EepromExtTbl = eeprom.HpeTblSWMext
                 eeprom.HpeSwm = 1
                 return(0)
             }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWMHPE_C)
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_C)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
                 eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
                 eeprom.HpeSwm = 1
                 return(0)
             }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWMPEN[0:10])
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_PEN[0:7])
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.PenTblSWM
                 eeprom.CustType = "PENSWM"
                 return(0)
             }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWMPEN_TAA[0:10])
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_PEN_TAA[0:7])
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.PenTblSWMTAA
                 eeprom.CustType = "PENSWM"
@@ -222,12 +223,12 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             cli.Println("e", "Unable to determine naples25 SWM fru type.  Please program it with a valid part number")
             return -1;
         } else if (cardType == "NAPLES100HPE") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100HPE_E)
+            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100_HPE_E)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.Naples100HPETbl
                 return(0)
             }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100HPE_C)
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100_HPE_C)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.Naples100HPECLOUDTbl
                 return(0)
@@ -236,14 +237,21 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             cli.Println("e", "Unable to determine naples100 HPE fru type.  Please program it with a valid part number")
             return -1;
         } else if (cardType == "NAPLES25OCP") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCPHPE_E)
+            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_DELL)
+            if rc == errType.SUCCESS {
+                eeprom.CustType = "DELLOCP"
+                eeprom.EepromTbl = eeprom.DellTblOcp
+                eeprom.DellOcp = 1
+                return(0)
+            }
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_HPE_E)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.HpeTblOCP
                 eeprom.EepromExtTbl = eeprom.HpeTblOCPext
                 eeprom.HpeOcp = 1
                 return(0)
             }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCPHPE_C)
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_HPE_C)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.HpeTblOCPcloud
                 eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
