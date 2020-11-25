@@ -621,6 +621,7 @@ def main():
     naples25swm_test_cfg_file = "config/naples25swm_mtp_test_cfg.yaml"
     naples25ocp_test_cfg_file = "config/naples25ocp_mtp_test_cfg.yaml"
     naples25swmdell_test_cfg_file = "config/naples25swmdell_mtp_test_cfg.yaml"
+    ortano_test_cfg_file = "config/ortano_mtp_test_cfg.yaml"
     
     naples100_test_db = diag_db(corner, naples100_test_cfg_file)
     naples100ibm_test_db = diag_db(corner, naples100ibm_test_cfg_file)
@@ -632,6 +633,7 @@ def main():
     naples25swm_test_db = diag_db(corner, naples25swm_test_cfg_file)
     naples25ocp_test_db = diag_db(corner, naples25ocp_test_cfg_file)
     naples25swmdell_test_db = diag_db(corner, naples25swmdell_test_cfg_file)
+    ortano_test_db = diag_db(corner, ortano_test_cfg_file)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -692,6 +694,12 @@ def main():
     naples25swmdell_para_test_list = naples25swmdell_test_db.get_diag_para_test_list()
     naples25swmdell_pre_test_check_list = naples25swmdell_test_db.get_pre_diag_test_intf_list()
     naples25swmdell_post_test_check_list = naples25swmdell_test_db.get_post_diag_test_intf_list()
+
+    ortano_seq_test_list = ortano_test_db.get_diag_seq_test_list()
+    ortano_mtp_para_test_list = ortano_test_db.get_mtp_para_test_list()
+    ortano_para_test_list = ortano_test_db.get_diag_para_test_list()
+    ortano_pre_test_check_list = ortano_test_db.get_pre_diag_test_intf_list()
+    ortano_post_test_check_list = ortano_test_db.get_post_diag_test_intf_list()
 
 
     # logfiles
@@ -758,6 +766,7 @@ def main():
     naples25swm_nic_list = list()
     naples25ocp_nic_list = list()
     naples25swmdell_nic_list = list()
+    ortano_nic_list = list()
     pass_nic_list = list()
     fail_nic_list = list()
     skip_nic_list = list()
@@ -795,12 +804,15 @@ def main():
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWMDELL:
                 naples25swmdell_nic_list.append(slot)
                 pass_nic_list.append(slot)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
+                ortano_nic_list.append(slot)
+                pass_nic_list.append(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
-    
-    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL]
-    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list]
+
+    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.ORTANO]
+    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, ortano_nic_list]
 
     nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
     for slot in range(len(nic_skipped_list)):
@@ -849,6 +861,9 @@ def main():
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
             mtp_exp_capability = 0x2
             test_db = naples25swmdell_test_db
+        elif nic_type == NIC_Type.ORTANO:
+            mtp_exp_capability = 0x1
+            test_db = ortano_test_db
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
             continue
@@ -948,6 +963,8 @@ def main():
                 pre_test_check_list = naples25ocp_pre_test_check_list
             elif nic_type == NIC_Type.NAPLES25SWMDELL:
                 pre_test_check_list = naples25swmdell_pre_test_check_list
+            elif nic_type == NIC_Type.ORTANO:
+                pre_test_check_list = ortano_pre_test_check_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -1001,6 +1018,9 @@ def main():
             elif nic_type == NIC_Type.NAPLES25SWMDELL:
                 nic_para_test_list = naples25swmdell_para_test_list[:]
                 test_db = naples25swmdell_test_db
+            elif nic_type == NIC_Type.ORTANO:
+                nic_para_test_list = ortano_para_test_list[:]
+                test_db = ortano_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -1071,6 +1091,8 @@ def main():
                 mtp_para_test_list = naples25ocp_mtp_para_test_list
             elif nic_type == NIC_Type.NAPLES25SWMDELL:
                 mtp_para_test_list = naples25swmdell_mtp_para_test_list
+            elif nic_type == NIC_Type.ORTANO:
+                mtp_para_test_list = ortano_mtp_para_test_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
@@ -1124,6 +1146,9 @@ def main():
             elif nic_type == NIC_Type.NAPLES25SWMDELL:
                 nic_seq_test_list = naples25swmdell_seq_test_list[:]
                 test_db = naples25swmdell_test_db
+            elif nic_type == NIC_Type.ORTANO:
+                nic_seq_test_list = ortano_seq_test_list[:]
+                test_db = ortano_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
