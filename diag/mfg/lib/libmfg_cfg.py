@@ -155,8 +155,8 @@ class PART_NUMBERS_MATCH:
     VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [0-9]{2}"            #68-0011-01 01    VOMERO2
     VOMERO2_FMT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
 
-    ORTANO_PN_FMT = r”68-0015-0[0-9]{1} [0-9]{2}”             #68-0015-01 01    ORTANO
-    ORTANO_FMT_ALL = r”{:s}“.format(ORTANO_PN_FMT)
+    ORTANO_PN_FMT = r"68-0015-0[0-9]{1} [0-9]{2}"             #68-0015-01 01    ORTANO
+    ORTANO_FMT_ALL = r"{:s}".format(ORTANO_PN_FMT)
 
 
 MFG_MTP_CPLD_IO_VERSION = "0x1" #0x5
