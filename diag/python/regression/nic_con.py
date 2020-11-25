@@ -21,7 +21,7 @@ class nic_con:
     def uart_session_start(self, session, baud=115200):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
-        expstr = ["capri login:", "elba-gold login:", "elba-haps login:", "\#"]
+        expstr = ["capri login:", "elba-gold login:", "elba-haps login:", "elba login:", "\#"]
         session.sendline(cmd)
         for ite in range(2):
             print "ite: ", ite
@@ -33,7 +33,7 @@ class nic_con:
                 session.send("\r")
 
                 i = session.expect(expstr, timeout)
-                if i == 0 or i == 1 or i == 2:
+                if i != len(expstr)-1:
                     session.sendline(self.usr)
                     session.expect("assword:")
                     session.sendline(self.pwd)
@@ -186,7 +186,7 @@ class nic_con:
             common.session_cmd(session, cmd) 
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x15".format(slot)
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
             common.session_cmd(session, cmd)
 
             #time.sleep(2)
@@ -194,7 +194,7 @@ class nic_con:
             session.sendline(cmd)
             #session.expect("Terminal ready")
 
-            for i in range(40):
+            for i in range(60):
                 session.timeout = 0.5
                 try:
                     print "C+C", i
@@ -247,7 +247,7 @@ class nic_con:
             session.sendline(cmd)
             #session.expect("Terminal ready")
 
-            for i in range(40):
+            for i in range(60):
                 session.timeout = 0.5
                 try:
                     print "C+C", i

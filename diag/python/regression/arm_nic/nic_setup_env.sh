@@ -1,6 +1,13 @@
 source /data/nic_arm/nic_config.sh
 
-cpld_id="$(cpld -r 0x80)"
+cpld_id="$(xo3dcpld -r 0x80)"
+if [[ $cpld_id == "0x0" ]]
+then
+    echo "Capri CPLD"
+	cpld_id="$(cpld -r 0x80)"
+else
+    echo "Elba CPLD"
+fi
 cpld_id="${cpld_id}"
 
 elba_flag=$(($cpld_id & 0x40))

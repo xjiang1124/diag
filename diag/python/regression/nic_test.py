@@ -131,14 +131,16 @@ class nic_test:
 
         return ret
 
-    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False):
+    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False):
         numRetry = 5
         nic_list_remain = nic_list[:]
+        timeout = 60
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
             print "timestamp", datetime.datetime.now().time()
             ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp)
+            timeout += retry*10
             if ret == 0:
                 break
 
@@ -206,10 +208,10 @@ class nic_test:
         slot_list = ",".join(nic_list)
 
         if pwr_cycle == True:
-            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 30, swm_lp)
+            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, timeout, swm_lp)
 
         for slot in nic_list:
-            ret = self.setup_env(int(slot), False, 30, False, False, False)
+            ret = self.setup_env(int(slot), False, timeout, False, False, False)
             ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
         for slot in nic_list:

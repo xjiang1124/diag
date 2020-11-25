@@ -826,8 +826,15 @@ class nic_ctrl():
         img_name = os.path.basename(cpld_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name)
-        nic_cmd_list.append(nic_cmd)
+        # Elba-based:
+        if self._nic_type == NIC_Type.ORTANO:
+            #cfg0 partition A
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, "cfg0"))
+            #cfg0 partition B (backup)
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, "cfg1"))
+        # Capri-based:
+        else:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
@@ -835,7 +842,11 @@ class nic_ctrl():
 
 
     def nic_refresh_cpld(self):
+        # Capri-based:
         nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        # Elba-based:
+        if self._nic_type == NIC_Type.ORTANO:
+            nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
@@ -1668,24 +1679,35 @@ class nic_ctrl():
             return False
         self._cpld_ver = "0x{:X}".format(read_data[0])
 
-        # get the month timestamp
-        read_data = [0]
-        rc = self.nic_read_cpld(0x22, read_data)
-        if not rc:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        month = read_data[0]
+        if self._nic_type == NIC_Type.ORTANO:
+            # there are no CPLD timestamps; use major revision + minor revision
+            # FIXME: Nab - store minor revision in self._minor_revision to avoid confusion..
+            read_data = [0]
+            rc = self.nic_read_cpld(0x1e, read_data)
+            if not rc:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            self._cpld_timestamp = "0x{:02d}".format(read_data[0])
+            return True
+        else:
+            # get the month timestamp
+            read_data = [0]
+            rc = self.nic_read_cpld(0x22, read_data)
+            if not rc:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            month = read_data[0]
 
-        # get the date timestamp
-        read_data = [0]
-        rc = self.nic_read_cpld(0x23, read_data)
-        if not rc:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        date = read_data[0]
+            # get the date timestamp
+            read_data = [0]
+            rc = self.nic_read_cpld(0x23, read_data)
+            if not rc:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+            date = read_data[0]
 
-        self._cpld_timestamp = "{:02d}-{:02d}".format(month, date)
-        return True
+            self._cpld_timestamp = "{:02d}-{:02d}".format(month, date)
+            return True
     
     
     def nic_get_cpld(self):
@@ -1741,6 +1763,8 @@ class nic_ctrl():
 
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
+        if self._nic_type == NIC_Type.ORTANO:
+            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
@@ -1755,6 +1779,8 @@ class nic_ctrl():
 
     def nic_write_cpld(self, reg_addr, write_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
+        if self._nic_type == NIC_Type.ORTANO:
+            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
