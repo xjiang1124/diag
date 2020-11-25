@@ -18,6 +18,8 @@ from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
 from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
+from libmfg_cfg import MFG_MTP_CPLD_IO_ELBA_VERSION
+from libmfg_cfg import MFG_MTP_CPLD_JTAG_ELBA_VERSION
 from libmfg_cfg import MFG_QSPI_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_IBM_TIMESTAMP
@@ -92,6 +94,7 @@ class mtp_ctrl():
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
+        self._asic_support = "CAPRI"
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
@@ -185,6 +188,11 @@ class mtp_ctrl():
             self.cli_log_err("Unable to retrieve MTP JTAG-CPLD Version")
             return False
         self.cli_log_report_inf("MTP JTAG-CPLD Version: {:s}".format(self._jtag_cpld_ver))
+
+        if not self._asic_support:
+            self.cli_log_err("Unable to retrieve ASIC version supported by CPLD")
+            return False
+        self.cli_log_report_inf("MTP CPLD supports: {:s}".format(self._asic_support))
 
         if not self._os_ver:
             self.cli_log_err("Unable to retrieve MTP Kernel Version")
@@ -697,6 +705,18 @@ class mtp_ctrl():
             self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level = 0)
             return False
 
+        # MTP_TYPE
+        cmd = MFG_DIAG_CMDS.MTP_ASIC_SUPPORTED_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to send command for getting asic supported version", level = 0)
+            return False
+        match = re.findall(r"MTP_TYPE=MTP_([a-zA-Z]{4}.?)", self.mtp_get_cmd_buf())
+        if match:
+            self._asic_support = match[0].upper()
+        else:
+            self.cli_log_err("Failed to get asic supported version", level = 0)
+            return False
+
         # MTP OS version
         cmd = MFG_DIAG_CMDS.MTP_IMG_VER_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -735,6 +755,8 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_get_asic_support(self):
+        return self._asic_support
 
     def mtp_get_hw_version(self):
         return [self._io_cpld_ver, self._jtag_cpld_ver]
@@ -1323,14 +1345,19 @@ class mtp_ctrl():
             self.cli_log_err("Unable to retrieve MTP CPLD version")
             self.cli_log_err("MTP CPLD test failed")
             return False
+        io_version = MFG_MTP_CPLD_IO_VERSION
+        jtag_version = MFG_MTP_CPLD_JTAG_VERSION
+        if self._asic_support.startswith("ELBA"):
+            io_version = MFG_MTP_CPLD_IO_ELBA_VERSION
+            jtag_version = MFG_MTP_CPLD_JTAG_ELBA_VERSION
 
-        if int(cpld_ver_list[0],16) < int(MFG_MTP_CPLD_IO_VERSION,16):
-            self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], MFG_MTP_CPLD_IO_VERSION))
+        if int(cpld_ver_list[0],16) < int(io_version,16):
+            self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], io_version))
             self.cli_log_err("MTP CPLD test failed")
             return False
 
-        if cpld_ver_list[1] != MFG_MTP_CPLD_JTAG_VERSION:
-            self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1], MFG_MTP_CPLD_JTAG_VERSION))
+        if cpld_ver_list[1] != jtag_version:
+            self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1], jtag_version))
             self.cli_log_err("MTP CPLD test failed")
             return False
         self.cli_log_inf("MTP CPLD test passed")
