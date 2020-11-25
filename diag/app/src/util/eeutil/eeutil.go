@@ -68,7 +68,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         if eeprom.HpeNaples == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTbl
         }
-        if eeprom.HpeSwm == 1 || (cardType == "NAPLES25SWM") {
+        if (eeprom.HpeSwm == 1 || (cardType == "NAPLES25SWM")) && eeprom.HpeAlom != true {
             //This card support multiple part numbers which unfortunately do not use the same formated table.  
             //Need to sort out which table to use based on the part number the user provided 
             if update == true {
@@ -193,7 +193,7 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         cardType = os.Getenv(uut)
     }
     if (cardType != "MTP") {
-        if (cardType == "NAPLES25SWM") {
+        if (eeprom.HpeSwm == 1 || (cardType == "NAPLES25SWM")) && eeprom.HpeAlom != true {
             rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E)
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.HpeTblSWM
