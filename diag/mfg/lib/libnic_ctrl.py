@@ -1646,7 +1646,11 @@ class nic_ctrl():
                 
         return True
         
+    def nic_disp_fru(self):
+        nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        fru_buf = self.nic_get_info(nic_cmd)
         
+        return True
 
     def nic_get_fru(self):
         if not self._sn or not self._mac or not self._pn or not self._vendor:

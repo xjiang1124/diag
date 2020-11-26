@@ -862,7 +862,7 @@ def main():
             mtp_exp_capability = 0x2
             test_db = naples25swmdell_test_db
         elif nic_type == NIC_Type.ORTANO:
-            mtp_exp_capability = 0x1
+            mtp_exp_capability = 0x2
             test_db = ortano_test_db
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)

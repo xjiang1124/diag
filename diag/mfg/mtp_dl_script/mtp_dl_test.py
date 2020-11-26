@@ -324,7 +324,7 @@ def main():
             cpld_img_file = vomero2_cpld_img_file
             qspi_img_file = vomero2_qspi_img_file
         elif card_type == NIC_Type.ORTANO:
-            mtp_exp_capability = 0x1
+            mtp_exp_capability = 0x2
             cpld_img_file = ortano_cpld_img_file
             qspi_img_file = ortano_qspi_img_file
         elif card_type == NIC_Type.NAPLES25:

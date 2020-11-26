@@ -1732,6 +1732,9 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn, nic_type):
             self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
             return False
+        if not self._nic_ctrl_list[slot].nic_disp_fru():
+            self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
+            return False
         return True
 
     def mtp_program_nic_alom_fru(self, slot, date, alom_sn, alom_pn):
