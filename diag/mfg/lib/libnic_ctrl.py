@@ -23,7 +23,7 @@ from libmfg_cfg import ALOM_DISP_BIA_PN_FMT
 from libmfg_cfg import ALOM_DISP_PIA_PN_FMT
 from libmfg_cfg import HPESWM_DISP_ASSET_FMT
 from libmfg_cfg import IBM_DISP_ASSEMBLY_FMT
-from libmfg_cfg import DELLSWM_DISP_ASSEMBLY_FMT
+from libmfg_cfg import PEN_DISP_ASSEMBLY_FMT
 from libmfg_cfg import VOMERO2_DISP_ASSEMBLY_FMT
 from libmfg_cfg import ORTANO_DISP_ASSEMBLY_FMT
 from libdefs import NIC_Type
@@ -1459,18 +1459,20 @@ class nic_ctrl():
             else:
                 match = re.findall(HP_DISP_PN_FMT, fru_buf)
         else:
-         
             if self._nic_type == NIC_Type.NAPLES100IBM:
                 match = re.findall(IBM_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.VOMERO2:
                 print("fru_buf 5 match: ")
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
-                match = re.findall(DELLSWM_DISP_ASSEMBLY_FMT, fru_buf)
+                match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.ORTANO:
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             else:
                 match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
+                if not match:
+                    #Try a 2nd match for the new FRU format which moves the pensando part number into the assembly field
+                    match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
 
         if match:
             self._pn = match[0]
@@ -1569,9 +1571,12 @@ class nic_ctrl():
                 elif self._nic_type == NIC_Type.VOMERO2 or self._nic_type == NIC_Type.ORTANO:
                     match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
-                    match = re.findall(DELLSWM_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
+                    match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 else:
                     match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
+                    if not match:
+                        #Try a 2nd match for the new FRU format which moves the pensando part number into the assembly field
+                        match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
             if match:
                 pn = match[0]
             else:

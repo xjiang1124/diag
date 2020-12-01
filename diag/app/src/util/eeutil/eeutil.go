@@ -87,13 +87,13 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
                     eeprom.HpeSwm = 1  
                     fmt.Printf(" HPE 25 SWM CLOUD\n");
-                } else if pn[0:10] == NAPLES25SWM_PEN_TAA[0:7] {      
+                } else if pn[0:7] == NAPLES25SWM_PEN_TAA[0:7] {      
                     eeprom.EepromTbl = eeprom.PenTblSWMTAA
                     eeprom.HpeSwm = 2  
                     eeprom.CustType = "PENSWM"
                     //NO EXTENDED TABLE (Product Information Area)
                     fmt.Printf(" PEN SWM TAA\n");
-                } else if pn[0:10] == NAPLES25SWM_PEN[0:7] {   
+                } else if pn[0:7] == NAPLES25SWM_PEN[0:7] {   
                     eeprom.EepromTbl = eeprom.PenTblSWM
                     eeprom.HpeSwm = 2  
                     eeprom.CustType = "PENSWM"

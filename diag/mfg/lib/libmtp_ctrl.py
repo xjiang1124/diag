@@ -1959,12 +1959,13 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return False             
         '''
+        *** AS OF 11/30/2020.. 
         90-0001-0001   netapp  PNSO-1.0.0-E-7-netapp-09162019-1911.tar
         90-0002-0001   goldman  PNSO-1.1.1-E-15-goldman-10042019-1722.tar ??
         90-0002-0002    PNSO-1.3.2-E-3-basicdsc-ga-022420202-1611
         90-0002-0003   naples_fw_1.8.0-E-48_B-_0608.tar
         90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
-        90-0002-0005   //standup swm (no file assigned)
+        90-0002-0005   //standup swm naples_fw_iris_1.17.0-54_1120.tar
         90-0003-0001   //Oracle Capri cards.. dont care
         90-0004-0001   //IBM  naples_fw_PNSO-1.15.0-C-1-sdn-eval-09102020.tar
         90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
