@@ -21,6 +21,7 @@ import (
     "device/cpld/naples25Cpld"
     "device/cpld/naples25swmCpld"
     "device/cpld/vomeroCpld"
+    "device/cpld/ortanoCpld"
 )
 
 
@@ -235,6 +236,10 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_ctrl = vomeroCpld.REG_LED_PORT_CTRL
         *port_rate = vomeroCpld.REG_LED_PORT_RATE
         *sys_ctrl = vomeroCpld.REG_LED_SYS_CTRL
+    } else if (cardType == "ORTANO") {
+        *port_ctrl = ortanoCpld.REG_LED_PORT_CTRL
+        *port_rate = ortanoCpld.REG_LED_PORT_RATE
+        *sys_ctrl = ortanoCpld.REG_LED_SYS_CTRL
     } else if (cardType == "NAPLES25") {
         *port_ctrl = naples25Cpld.REG_LED_PORT_CTRL
         *port_rate = naples25Cpld.REG_LED_PORT_RATE
