@@ -25,7 +25,8 @@ func testTps53659(devName string) (err int) {
         return
     }
 
-    if devID != tps53659.DEVICE_ID {
+    /* hack for now. Probably need to based on device rev */
+    if (devID != tps53659.DEVICE_ID) && (devID != 0x5a) {
         dcli.Println("F", devName, " Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)
         return errType.FAIL
     }
