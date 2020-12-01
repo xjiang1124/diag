@@ -712,7 +712,7 @@ class mtp_ctrl():
             return False
         match = re.findall(r"MTP_TYPE=MTP_([a-zA-Z]{4}.?)", self.mtp_get_cmd_buf())
         if match:
-            self._asic_support = match[0].upper()
+            self._asic_support = match[0].strip().upper()
         else:
             self.cli_log_err("Failed to get asic supported version", level = 0)
             return False
@@ -1160,11 +1160,6 @@ class mtp_ctrl():
             vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
             vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
 
-            ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
-            ortano_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
-            ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
-            #ortano_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_SEC_CPLD_IMAGE
-
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
@@ -1177,19 +1172,16 @@ class mtp_ctrl():
                 img_list += [vomero2_cpld_img_file, vomero2_qspi_img_file]
                 img_list += [naples100ibm_cpld_img_file, naples100ibm_qspi_img_file]
                 img_list += [naples100hpe_cpld_img_file, naples100hpe_qspi_img_file]
-                img_list += [ortano_cpld_img_file, ortano_qspi_img_file]
             elif stage == FF_Stage.FF_CFG:
                 img_list = [naples100_cpld_img_file]
                 img_list += [vomero_cpld_img_file]
                 img_list += [vomero2_cpld_img_file]
-                img_list += [ortano_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
                 img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
                 img_list += [vomero2_sec_cpld_img_file, vomero2_gold_img_file]
                 img_list += [naples100ibm_sec_cpld_img_file, naples100ibm_gold_img_file]
                 img_list += [naples100hpe_sec_cpld_img_file, naples100hpe_gold_img_file]
-                #img_list += [ortano_sec_cpld_img_file, ortano_gold_img_file]
             else:
                 img_list = []
 
@@ -1214,6 +1206,12 @@ class mtp_ctrl():
             naples25_hpeocp_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP
             naples25_hpeocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
             naples25_hpeocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE
+
+            ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
+            ortano_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
+            ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
+            ortano_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_SEC_CPLD_IMAGE
+
             cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
@@ -1223,12 +1221,15 @@ class mtp_ctrl():
             if stage == FF_Stage.FF_DL:
                 img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
                 img_list += [naples25swm_cpld_img_file, naples25swm_qspi_img_file]
+                img_list += [ortano_cpld_img_file, ortano_qspi_img_file]
             elif stage == FF_Stage.FF_CFG:
                 img_list = [naples25_cpld_img_file]
                 img_list += [naples25swm_cpld_img_file]
+                img_list += [ortano_cpld_img_file]
             elif stage == FF_Stage.FF_SWI:
                 img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
                 img_list += [naples25swm_sec_cpld_img_file, naples25swm_gold_img_file]
+                img_list += [ortano_sec_cpld_img_file, ortano_gold_img_file]
             else:
                 img_list = []
 
@@ -1437,7 +1438,7 @@ class mtp_ctrl():
         err_msg_list = list()
         pass_count = 0
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
-        logfile_exp = r"cap_l1_screen_board_{:s}.*log".format(sn)
+        logfile_exp = r"(cap|elb)_l1_screen_board_{:s}.*log".format(sn)
         for filename in os.listdir(path):
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
@@ -2704,15 +2705,16 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        asic_type = "elba" if self._asic_support == "ELBA" else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if aapl:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param, asic_type)
         else:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if swm_lp:
                 cmd = "".join((cmd, " -swm_lp")) 
 
@@ -3091,6 +3093,8 @@ class mtp_ctrl():
         if intf == "NIC_JTAG":
             cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(slot+1)
             sig_list = ["valid bit 0x1", "error 0x00"]
+            if self._asic_support == "ELBA":
+                sig_list = ["status bit 0x1"]
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
             else:

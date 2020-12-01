@@ -415,7 +415,11 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         if dsp == "ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
             # L1 sub test count is 11, err_msg_list should be empty
-            if pass_count != 9:
+            number_of_l1_tests = 9
+            # But for Elba, there are 17 sub tests
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
+                number_of_l1_tests = 17
+            if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
                     ret = "FAIL"
@@ -1045,6 +1049,12 @@ def main():
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
+
+                ## <-- no aapl tests for Ortano P0C
+                if nic_type == NIC_Type.ORTANO:
+                    mtp_mgmt_ctrl.cli_log_err("Skip AAPL tests for ORTANO", level=0)
+                    continue
+                ## --> no aapl tests for Ortano P0C
 
                 # second round, aapl tests
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True):
