@@ -224,8 +224,10 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     if aapl:
         sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
     else:
-        sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
-        sub_test_list.remove(("NIC_ASIC","ETH_PRBS"))
+        if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
+            sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
+        if ("NIC_ASIC","ETH_PRBS") in sub_test_list:
+            sub_test_list.remove(("NIC_ASIC","ETH_PRBS"))
 
     fail_list = list()
 
