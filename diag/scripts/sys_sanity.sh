@@ -15,7 +15,7 @@ if [ $mtp_id == "0x42" ]
 then
     jtag_cpurd_v2 rst 0xa $portnum
     jtag_cpurd_v2 ena 0xa $portnum
-    jtag_cpurd_v2 rd  0xa $portnum 0x6a000000 2
+    jtag_cpurd_v2 rd  0xa $portnum 0x307c0000 2
 else
     jtag_cpurd_debug rst 0xa $portnum 
     jtag_cpurd_debug ena 0xa $portnum

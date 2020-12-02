@@ -16,7 +16,7 @@
  *     cl jtag.c ftd2xx.lib -I..
  * and run jtag.exe.
  */
-#include "acc.h"
+#include "acc_v2.h"
 #define HAPS
 int main(int argc, char *argv[])
 {
