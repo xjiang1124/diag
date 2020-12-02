@@ -284,6 +284,23 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
+func ReadPinMax10(devName string) (integer uint64, dec uint64, err int) {
+    integer = 0
+    dec = 0
+    for i := 0; i < 10; i++ {
+        integer1, dec1, _ := ReadRegLnr11(devName, pmbus.READ_PIN)
+        if integer1 > integer {
+            integer = integer1
+            dec = dec1
+        } else if integer1 == integer {
+            if dec1 > dec {
+                dec = dec1
+            }
+        }
+    }
+    return
+}
+
 func ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
     integer, dec, err = ReadRegLnr11(devName, MFR_SPECIFIC_04)
     return
@@ -592,7 +609,7 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPin(devName)
+    dig, frac, _ = ReadPinMax10(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
