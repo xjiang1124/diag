@@ -139,7 +139,7 @@ class nic_test:
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
             print "timestamp", datetime.datetime.now().time()
-            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp)
+            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type)
             timeout += retry*10
             if ret == 0:
                 break
@@ -197,7 +197,7 @@ class nic_test:
         return ret, nic_list_remain
 
 
-    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False):
+    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri"):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
@@ -221,7 +221,7 @@ class nic_test:
         if mgmt == True:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
-                ret = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+                ret = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on, asic_type)
                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
             for slot in nic_list:
@@ -749,34 +749,35 @@ class nic_test:
 
         print("fan_ctrl:", fan_ctrl, "tgt_die_temp:", tgt_die_temp)
         if fan_ctrl == False:
-            fan_speed = 40
+            fan_speed = 80
         else:
-            fan_speed = 50
+            fan_speed = 100
         self.set_mtp_fan_speed(fan_speed)
 
         session = common.session_start()
 
-        for slot in nic_list:
-            cmd = "turn_on_hub.sh {}; i2cset -y 0 0x4a 0x21 0x15".format(slot)
-            common.session_cmd(session, cmd)
-        print("Wait 30 sec for cards booting up")
-        time.sleep(30)
+        #for slot in nic_list:
+        #    cmd = "turn_on_hub.sh {}; i2cset -y 0 0x4a 0x21 0x15".format(slot)
+        #    common.session_cmd(session, cmd)
+        print("Wait 60 sec for cards booting up")
+        time.sleep(60)
 
         card_info_dict = dict()
-        card_info_dict['1'] = "No41"
-        card_info_dict['2'] = "No42"
-        card_info_dict['3'] = "No43"
-        card_info_dict['10'] = "No45"
-        card_info_dict['6'] = "No46"
-        card_info_dict['7'] = "No47"
-        card_info_dict['9'] = "No49"
-        core_freq = 1100
-        arm_freq = 300
-        core_volt = 760
-        arm_volt = 858
-        volt_mode = "hod"
-        #chamber_temp = "50_temp_ctrl_80"
-        chamber_temp = "0"
+        card_info_dict['1'] = "OT33"
+        card_info_dict['2'] = "OT32"
+        card_info_dict['3'] = "OT31"
+        card_info_dict['4'] = "OT34"
+        card_info_dict['5'] = "OT35"
+        card_info_dict['6'] = "OT36"
+        card_info_dict['7'] = "OT38"
+        card_info_dict['8'] = "OT37"
+        card_info_dict['9'] = "OT39"
+        core_freq = 833
+        arm_freq = 2000
+        core_volt = 713
+        arm_volt = 736
+        volt_mode = "nod"
+        chamber_temp = "50_temp_ctrl_{}".format(tgt_die_temp)
 
         test_result = OrderedDict()
         # Start snake
@@ -790,6 +791,11 @@ class nic_test:
                 if ret != 0:
                     print("Faied to enter uart session")
                 self.nic_con.uart_session_cmd(session, "mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
+                self.nic_con.uart_session_cmd(session, "export CARD_TYPE=ORTANO")
+                self.nic_con.uart_session_cmd(session, "/data/devmgr -status")
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x4f -mode w -wr -data=0x80")
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x51 -mode w -wr -data=0x78")
+
                 self.nic_con.uart_session_cmd(session, "cd /data/elba/nic/fake_root_target/nic")
                 self.nic_con.uart_session_cmd(session, "export ASIC_LIB_BUNDLE=`pwd`")
                 self.nic_con.uart_session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
@@ -800,7 +806,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
                 self.nic_con.uart_session_cmd(session, "source .tclrc.diag.elb.arm", 60, "%")
                 self.nic_con.uart_session_cmd(session, "set ::env(CARD_ENV) ARM", 10, "%")
-                self.nic_con.uart_session_cmd(session, "set ::env(CARD_TYPE) BIODONA", 10, "%")
+                self.nic_con.uart_session_cmd(session, "set ::env(CARD_TYPE) ORTANO", 10, "%")
                 self.nic_con.uart_session_cmd(session, "set ::env(MTP_REV) REV_4", 10, "%")
                 self.nic_con.uart_session_cmd(session, "elb_appl_set_srds_int_timeout  5000", 10, "%")
                 self.nic_con.uart_session_cmd(session, "sleep 1", 10, "%")
@@ -827,7 +833,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "set chamber_temp {}".format(chamber_temp), 30, "%")
                 self.nic_con.uart_session_cmd(session, "set card_config core_freq_${core_freq}_arm_freq_${arm_freq}_core_volt_${core_volt}_arm_volt_${arm_volt}_chamber_${chamber_temp}", 30, "%")
                 self.nic_con.uart_session_cmd(session, "puts $card_config", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set duration 900", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set duration 400", 30, "%")
                 self.nic_con.uart_session_cmd(session, "plog_start hbm_pktgen_pcie_lb_100g_${card_no}_${card_config}.log", 30, "%")
                 #self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq), 30, "parseKnobFile")
                 if fan_ctrl == False:
@@ -949,6 +955,7 @@ if __name__ == "__main__":
     parser.add_argument("-mainfw", "--mainfw", help="Setup for mainfw", action='store_true')
     parser.add_argument("-goldfw", "--goldfw", help="Setup for goldfw", action='store_true')
     parser.add_argument("-switch_fw", "--switch-fw", help="Switch FW on Naples", action='store_true')
+    parser.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="capri")
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -994,7 +1001,7 @@ if __name__ == "__main__":
         elif args.goldfw == True:
             test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
-            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp)
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type)
         sys.exit()
 
     if args.pwr_cycle_test == True:

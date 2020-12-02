@@ -406,7 +406,22 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False):
+    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False, asic_type="elba"):
+        fmt_dummy_fru_json = """
+{{
+    "manufacturing-date": "1555977600",
+    "manufacturer": "PENSANDO SYSTEMS INC.",
+    "product-name": "ELBA HAPS",
+    "serial-number": "FLM20350006",
+    "part-number": "elba-haps",
+    "engineering-change-level": "0",
+    "board-id": "2",
+    "num-mac-address": "24",
+    "mac-address": "00:11:22:33:{:02}:00"
+}}
+
+        """
+        #fmt_dummy_fru_json = '"mac-address": "00:11:22:33:{:02}:00"'
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -421,11 +436,20 @@ class nic_con:
         cmd_mac = "echo \'00:11:22:33:{:02}:00\' > /sysconfig/config0/sysuuid"
         cmd_mac = cmd_mac.format(slot)
         #print "MAC:", cmd_mac
-        if first_pwr_on == True:
-            self.uart_session_cmd(session, "cd /nic/conf/")
-            self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
-
         try:
+            if first_pwr_on == True:
+                if asic_type == "capri":
+                    self.uart_session_cmd(session, "cd /nic/conf/")
+                    self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
+                    self.uart_session_cmd(session, cmd_mac)
+                else:
+                    dummy_fru_json = fmt_dummy_fru_json.format(slot)
+                    session.send("cat > /tmp/fru.json")
+                    session.send("\r")
+                    session.send(dummy_fru_json)
+                    session.send(chr(3))
+                    session.expect("#")
+
             session.sendline("ifconfig -a")
             session.expect("\#")
             temp = session.after
@@ -433,7 +457,6 @@ class nic_con:
                 print 'oob_mnic0 enabled'
             else:
                 self.uart_session_cmd(session, cmd_pre)
-                self.uart_session_cmd(session, cmd_mac)
                 self.uart_session_cmd(session, "sysinit.sh classic hw diag", 15)
 
         except pexpect.TIMEOUT:
