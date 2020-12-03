@@ -1189,9 +1189,6 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
-            
-    for slot in skip_match:
-        mtp_test_summary.append((slot, True))
         
     if upload_csp:
         # csp log files    
@@ -1211,6 +1208,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             if not network_get_file(ipaddr, userid, passwd, csp_log_file, cspfilepath):
                 mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(cspfilepath), level=0)
                 continue
+
+    for slot in skip_match:
+        mtp_test_summary.append((slot, "SKIPPED", "SLOT", True))
 
     for slot, nic_type, sn in fail_match:
         mtp_test_summary.append((slot, sn, nic_type, False))
