@@ -1163,6 +1163,7 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
         "interrupt-non-zero for reg:MS_M_AM_STS:",
         "interrupt-non-zero for reg:AR_M_AM_STS",
         "PRP2() error_count non-zero",
+        "MS::AXI_RD error_count non-zero",
         "stall_timeout_error"]
 
     if pass_flag == False:

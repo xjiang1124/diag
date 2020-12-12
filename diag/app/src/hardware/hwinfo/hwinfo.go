@@ -434,6 +434,7 @@ func init() {
         CpldInfo = &t
 
     default:
+        QsfpTbl = nil
         // Do nothing
     }
 }

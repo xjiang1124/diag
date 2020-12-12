@@ -425,7 +425,7 @@ func SnakePost(mode string) (err int) {
     }
     defer file.Close()
 
-    expErrList := make([]string, 6)
+    expErrList := make([]string, 7)
 
     expErrList[0] = "cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1"
     expErrList[1] = "Unexpected int set: cap0.ms.em"
@@ -433,6 +433,7 @@ func SnakePost(mode string) (err int) {
     expErrList[3] = "interrupt-non-zero for reg:AR_M_AM_STS"
     expErrList[4] = "PRP2() error_count non-zero"
     expErrList[5] = "stall_timeout_error"
+    expErrList[6] = "MS::AXI_RD error_count non-zero"
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
 

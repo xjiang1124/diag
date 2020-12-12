@@ -44,6 +44,13 @@ func QsfpI2CHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
+    if  hwinfo.QsfpTbl == nil {
+        dcli.Println("f", "Empty device table 1")
+        ret = errType.INVALID_PARAM
+        diagEngine.FuncMsgChan <- ret
+        return
+    }
+
     //for _, devName := range(qsfpTestList) {
     for _, qsfpInfo := range hwinfo.QsfpTbl {
         devName := qsfpInfo.DevName
