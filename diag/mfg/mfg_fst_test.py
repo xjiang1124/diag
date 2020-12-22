@@ -180,18 +180,17 @@ def main():
 
     # for Cloud, we need to reboot and do stage II test
     if "CLOUD" in card_type:
-        print("Rebooting")
-        # reboot
+        print("Power Cycle FST Server")
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_reboot():
+            if not mtp_mgmt_ctrl.mtp_power_cycle():
                 mtp_mgmt_ctrl.cli_log_err("Unable to reboot MTP Chassis", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
                 mtpid_fail_list.append(mtp_id)
             else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is rebooted", level=0)
-
-        # connect MTP
+                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is power cycled", level=0)
+                mtp_mgmt_ctrl.cli_log_inf("Disconnect MTP chassis...", level=0)
+                mtp_mgmt_ctrl.mtp_mgmt_disconnect()
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

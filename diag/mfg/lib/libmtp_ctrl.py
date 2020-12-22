@@ -546,6 +546,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None):
         retries = self._mgmt_timeout / 30
+        retries = retries + 4
         if not self._mgmt_cfg:
             self.cli_log_err("management port config is empty")
             return None
@@ -870,7 +871,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute reboot command")
             return False
 
-        self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_REBOOT_DELAY), level=0)
+        self.cli_log_inf("Reboot occured, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_REBOOT_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_REBOOT_DELAY)
 
         return True
@@ -895,6 +896,7 @@ class mtp_ctrl():
         self.mtp_apc_pwr_on()
         self.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        return True
 
 
     def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
@@ -1921,7 +1923,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
-            if software_pn != "90-0002-0004":
+            if software_pn != "90-0002-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
@@ -1968,10 +1970,10 @@ class mtp_ctrl():
         90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
         90-0002-0005   //standup swm naples_fw_iris_1.17.0-54_1120.tar
         90-0003-0001   //Oracle Capri cards.. dont care
-        90-0004-0001   //IBM  naples_fw_PNSO-1.15.0-C-1-sdn-eval-09102020.tar
+        90-0004-0001   //IBM  naples_fw_apulu_1.17.0-42_1117.tar
         90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
         90-0006-0001   //CLOUD-A  naples_fw_apulu_1.10.3-C-26_CloudA_0806.tar
-        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD
+        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.17.0-12_1109.tar
         90-0007-0001   //naples_fw_iris_1.14.0-E-25_2020.08.31.tar
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
         '''

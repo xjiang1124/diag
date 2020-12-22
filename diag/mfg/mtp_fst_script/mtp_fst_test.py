@@ -7,6 +7,7 @@ import pexpect
 import threading
 import argparse
 import re
+import copy
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -71,11 +72,17 @@ def main():
     # local log files
     log_filep_list = list()
     test_log_file = "test_fst.log"
-    test_log_filep = open(test_log_file, "w+", buffering=0)
+    if "CLOUD" in card_type and stage != "FETCH_SN":
+        test_log_filep = open(test_log_file, "a+", buffering=0)
+    else:
+        test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
     diag_log_file = "diag_fst.log"
-    diag_log_filep = open(diag_log_file, "w+", buffering=0)
+    if "CLOUD" in card_type and stage != "FETCH_SN":
+        diag_log_filep = open(diag_log_file, "a+", buffering=0)
+    else:
+        diag_log_filep = open(diag_log_file, "w+", buffering=0)
     log_filep_list.append(diag_log_filep)
 
     diag_nic_log_filep_list = list()
@@ -137,16 +144,11 @@ def main():
         pass_match = re.findall(pass_reg_exp, result)
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
-        test = "PCIE_LINK"
 
         if stage == "FETCH_SN":
-            cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
-            cmd = "cp /home/diag/mtp_fst_script/test_fst.log /home/diag/mtp_fst_script/test_fst.log.0"
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
-
-            logfile_close(log_filep_list)
-            return
+            test = "FETCH_SN"
+        else:
+            test = "PCIE_LINK"
 
     for _slot, _sn, _nic_type in fail_match:
         slot = int(_slot) - 1
@@ -157,6 +159,35 @@ def main():
         slot = int(_slot) - 1
         sn = _sn.strip()
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    if "CLOUD" in card_type:
+        if stage == "FETCH_SN":
+            cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+            cmd = "cp /home/diag/mtp_fst_script/test_fst.log /home/diag/mtp_fst_script/test_fst.log.0"
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+
+            logfile_close(log_filep_list)
+            return
+        else:
+            #get the first pass results for the final diag result
+            f = open("diag_fst.log.0", "r")
+            file_buf = f.read() # Read whole file in the file_content string
+            f.close()
+            fail_match1 = re.findall(fail_reg_exp, file_buf)
+            pass_match1 = re.findall(pass_reg_exp, file_buf)
+            if fail_match1:
+                #remove anything that failed first pass from pass_match in case it's there
+                for n in fail_match1:
+                    print(n)
+                    pass_match = [x for x in pass_match if x!= n]
+                #add anything from first pass failed match (failed_match1) to the failed_match if not there
+                for n in fail_match1:
+                    if n not in fail_match:
+                        fail_match.append(n)
+                #sort it based on slot number
+                fail_match.sort(key = lambda x: x[0])
+
 
     for _slot, _sn, _nic_type in fail_match:
         key = libmfg_utils.nic_key(int(_slot), base=0)

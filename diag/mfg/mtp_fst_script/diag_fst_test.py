@@ -5,6 +5,8 @@ import json
 import os
 import time
 import subprocess
+import re
+import sys
 
 def cleanup(eth):
     subprocess.call(["ifconfig", eth, "down"])
@@ -37,6 +39,20 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES100HPE"
     elif "68-0014-01" in pn:
         product_name = "NAPLES25SWMDELL"
+    elif "P41851-001" in pn:
+        product_name = "NAPLES25SWM"
+    elif "P41854-001" in pn:
+        product_name = "NAPLES100HPE"    
+    elif "68-0017-01" in pn:
+        product_name = "NAPLES25SWM"
+    elif "68-0013-01" in pn:
+        product_name = "NAPLES25SWM"
+    elif "68-0014-01" in pn:
+        product_name = "NAPLES25SWM"
+    elif "P37689-001" in pn:
+        product_name = "NAPLES25OCP"
+    elif "P41857-001" in pn:
+        product_name = "NAPLES25OCP"
     elif "DSC1-2S25-4H8P-DS" in pn:
         product_name = "SSH_DETECT"
     else:
@@ -45,10 +61,17 @@ def get_product_name_from_pn(pn):
 
     return product_name
 
-def config_eth():
-    slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
+def config_eth(fst):
+
+    if fst == 1:
+        slot_bus_dict = { 1:'2a:00.0', 2:'08:00.0', 3:'61:00.0', 4:'21:00.0', 5:'41:00.0' }
+        eth_list = {'enp46s0', 'enp12s0', 'enp101s0', 'enp37s0', 'enp69s0'}
+    else:
+        slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
+        eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
+
     
-    eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
+    
     for eth in eth_list:
         subprocess.call(["ifconfig", eth, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
@@ -269,7 +292,7 @@ def fst_general_oracle(fst):
         slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
         slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
-    card_slot_list = config_eth()
+    card_slot_list = config_eth(fst)
     card_info_dict = dict()
 
     for slot in card_slot_list:
@@ -326,7 +349,7 @@ def fst_cloud_fetch_sn(card_type, fst):
     else:
         slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
-    card_slot_list = config_eth()
+    card_slot_list = config_eth(fst)
     card_info_dict = dict()
 
     for slot in card_slot_list:
@@ -340,6 +363,7 @@ def fst_cloud_fetch_sn(card_type, fst):
         except subprocess.CalledProcessError as e:
             print("slot"+str(slot), "failed to fetch SN") 
             print("Get FRU failed")
+            print("slot:", slot, "sn: SN_UNKNOWN type: UNKNOWN failed")
             print(e.output)
             continue
 
@@ -347,19 +371,56 @@ def fst_cloud_fetch_sn(card_type, fst):
         print(output1)
         fru = json.loads(output1)
         sn = fru["serial-number"]
-        if card_type == "NAPLES25HPECLOUD":
-            pn = fru["part-number"]
-        else:
+        match = re.findall("board-assembly-area", output1 )
+        if match:
             pn = fru["board-assembly-area"]
+        else:
+            pn = fru["part-number"]
+
         print(sn, pn)
         product_name =  get_product_name_from_pn(pn)
 
         if product_name == "UNKNOWN":
             print("slot:", slot, "sn:", sn, "type:", product_name, "failed")
+            continue
         else:
             print("slot:", slot, "sn:", sn, "type:", product_name, "pass")
 
         card_info_dict[slot] = sn+':'+product_name
+
+        # Display all firmware versions
+        cmd = "/nic/tools/fwupdate -l"
+        ssh_cmd = get_ssh_cmd(ip, cmd)
+        try:
+            output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print(output.decode("utf-8"))
+            print("slot:", str(slot), "sn", sn, "failed to execute fwupdate -l") 
+            continue
+        output1 = output.decode("utf-8")
+        fwlist = json.loads(output1)
+        print("---------")
+        if "boot0" in fwlist:
+            print("boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
+        else:
+            print("[ERROR] FWLIST missing boot0 info")
+        if "mainfwa" in fwlist:
+            print("mainfwa:   {:15s}   {:s} ".format(fwlist["mainfwa"]["kernel_fit"]["software_version"], fwlist["mainfwa"]["kernel_fit"]["build_date"]) )
+        else:
+            print("[ERROR] FWLIST missing mainfwa info")
+        if "mainfwb" in fwlist:
+            print("mainfwb:   {:15s}   {:s} ".format(fwlist["mainfwb"]["kernel_fit"]["software_version"], fwlist["mainfwb"]["kernel_fit"]["build_date"]) )
+        else:
+            print("[ERROR] FWLIST missing mainfwb info")
+        if "goldfw" in fwlist:
+            print("goldfw:    {:15s}   {:s} ".format(fwlist["goldfw"]["kernel_fit"]["software_version"], fwlist["goldfw"]["kernel_fit"]["build_date"]) )
+        else:
+            print("[ERROR] FWLIST missing goldfw info")
+        if "diagfw" in fwlist:
+            print("diagfw:    {:15s}   {:s} ".format(fwlist["diagfw"]["kernel_fit"]["software_version"], fwlist["diagfw"]["kernel_fit"]["build_date"]) )
+        else:
+            print("[ERROR] FWLIST missing diagfw info")
+        print("---------")
 
         # Switch to mainfw
         cmd = "/nic/tools/fwupdate -s mainfwa"
@@ -374,14 +435,15 @@ def fst_cloud_fetch_sn(card_type, fst):
 
     json.dump(card_info_dict, open("/home/diag/mtp_fst_script/card_info_dict.txt",'w'))
 
+
 def fst_cloud_check_pcie(fst):
 
-    card_info_dict = json.load(open("/home/diag/mtp_fst_script/card_info_dict.txt")) 
+    card_info_dict = json.load(open("/home/diag/mtp_fst_script/card_info_dict.txt"))
 
     if fst == 1:
-        slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
+        slot_bus_dict = { 1:'2a:00.0', 2:'08:00.0', 3:'61:00.0', 4:'21:00.0', 5:'41:00.0' }
     else:
-        slot_bus_pair = [(1, '18:00.0'), (2, '3b:00.0'), (3, 'd8:00.0'), (4, 'af:00.0')]
+        slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
 
     for slot, sn_pn in card_info_dict.items():
         sn = sn_pn.split(":")[0]
