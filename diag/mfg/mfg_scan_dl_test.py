@@ -59,7 +59,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, fail_nic_list, pass_nic_list, swmtestmode):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, fail_nic_list, pass_nic_list, swmtestmode, skip_testlist):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -76,6 +76,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         test_list = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF", "NIC_PWRCYC"]
     dsp = FF_Stage.FF_DL
 
+    for skipped_test in skip_testlist:
+        if skipped_test in test_list:
+            test_list.remove(skipped_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -158,6 +161,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*")
 
     args = parser.parse_args()
     if args.verbosity:
@@ -439,7 +443,11 @@ def main():
         pass_nic_list.append(slot)
 
         # DL precheck
-        for test in ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]:
+        pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
+        for skipped_test in args.skip_test:
+            if skipped_test in pre_check_testlist:
+                pre_check_testlist.remove(skipped_test)
+        for test in pre_check_testlist:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "NIC_POWER":
@@ -525,7 +533,8 @@ def main():
                                                                               slot,
                                                                               fail_nic_list,
                                                                               pass_nic_list,
-                                                                              swmtestmode))
+                                                                              swmtestmode,
+                                                                              args.skip_test))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -587,6 +596,9 @@ def main():
                 testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
         if card_type == NIC_Type.ORTANO:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
+        for skipped_test in args.skip_test:
+            if skipped_test in testlists:
+                testlists.remove(skipped_test)
         for test in testlists:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()

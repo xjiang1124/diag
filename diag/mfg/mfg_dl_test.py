@@ -49,7 +49,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode):
+def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode, skip_testlist):
 
     # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
@@ -60,8 +60,11 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
 
     cmd = None
-    
-    cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
+    if skip_testlist:
+        skipped_testlist = "--skip-test {:s}".format('"'+'" "'.join(skip_testlist).strip()+'"')
+    else:
+        skipped_testlist = ""
+    cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s} {:s}".format(mtp_id, swm_test_mode, skipped_testlist)
 
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_DL_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
@@ -82,6 +85,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG MTP DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*")
 
     verbosity = False
     args = parser.parse_args()
@@ -199,7 +203,8 @@ def main():
                                                                            mtp_mgmt_ctrl,
                                                                            mtp_id,
                                                                            mfg_dl_summary[mtp_id],
-                                                                           swmtestmode))
+                                                                           swmtestmode,
+                                                                           args.skip_test))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
