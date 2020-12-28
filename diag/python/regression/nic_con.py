@@ -2,6 +2,7 @@
 
 import argparse
 import pexpect
+import os
 import re
 import sys
 import time
@@ -427,6 +428,15 @@ class nic_con:
             print "Invalid slot number:", slot
             return -1
 
+        # Get AISC type
+        uut = "UUT_"+str(slot)
+        card_type = os.environ[uut]
+        if card_type == "ORTANO" or card_type == "BIODONA":
+            asic_type = "ELBA"
+        else:
+            asic_type = "CAPRI"
+        print("asic_type:", asic_type)
+
         session = common.session_start()
         self.uart_session_start(session, rate)
 
@@ -438,7 +448,7 @@ class nic_con:
         #print "MAC:", cmd_mac
         try:
             if first_pwr_on == True:
-                if asic_type == "capri":
+                if asic_type == "CAPRI":
                     self.uart_session_cmd(session, "cd /nic/conf/")
                     self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
                     self.uart_session_cmd(session, cmd_mac)
