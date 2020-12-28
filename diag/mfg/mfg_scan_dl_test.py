@@ -125,7 +125,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 
 
 def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
-    
+    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
+    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+        mtp_mgmt_ctrl.cli_log_err("Set NIC pSLC mode failed: no connection to NICs", level=0)
+        return False
     dsp = FF_Stage.FF_DL
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -342,6 +345,12 @@ def main():
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
+    # if applicable, set pslc mode and powercycle
+    if set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        logfile_close(log_filep_list)
+        return
+
     # init nic diag env.
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
     if not rc:
@@ -554,14 +563,12 @@ def main():
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
-    #set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:

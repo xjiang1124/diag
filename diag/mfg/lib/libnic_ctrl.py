@@ -876,7 +876,6 @@ class nic_ctrl():
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             return False
-         
         if MFG_DIAG_SIG.NIC_PARTITION1_OK_SIG in cmd_buf:
             return True
         elif MFG_DIAG_SIG.NIC_PARTITION_OK_SIG in cmd_buf:
@@ -1042,6 +1041,7 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
         nic_cmd_list.append(nic_cmd)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_PARTITION_DISP_FMT)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
@@ -1059,7 +1059,27 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
             
+    def nic_emmc_perf_mode(self):
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
 
+        # check if successful
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE_CHECK
+        nic_cmd_list.append(nic_cmd)
+        perf_sig = MFG_DIAG_SIG.NIC_EMMC_PERF_MODE_OK_SIG
+        perf_buf = self.nic_get_info(nic_cmd)
+        if perf_buf:
+            if perf_sig in perf_buf:
+                return True
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                self.nic_set_err_msg(perf_buf)
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
  
 
     def nic_program_emmc(self, emmc_img):

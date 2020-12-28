@@ -114,38 +114,28 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
-    
-    dsp = FF_Stage.FF_DL
-    
+def set_pslc(mtp_mgmt_ctrl,mtp_id):
+    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
+    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+        mtp_mgmt_ctrl.cli_log_err("Set NIC pSLC mode failed: no connection to NICs", level=0)
+        return False
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot in fail_nic_list:
-            continue    
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) != "YES":
-            continue
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO):
             continue
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
-        mac = nic_fru_cfg[mtp_id][key]["MAC"]
-        pn = nic_fru_cfg[mtp_id][key]["PN"]
-        prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
-      
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, 'SET_PSLC'))
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Set NIC pSLC mode')
         
         start_ts = libmfg_utils.timestamp_snapshot()        
         ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
         if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, 'SET_PSLC', "FAILED", duration))
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
-            break
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, 'Set NIC pSLC mode FAILED')
+            return 1
         else:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, 'SET_PSLC', duration))
+            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Set NIC pSLC mode complete')
+    mtp_mgmt_ctrl.mtp_power_on_nic()
     return 0
 
 def main():
@@ -231,8 +221,13 @@ def main():
             if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
                 continue
 
-
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
+
+    # if applicable, set pslc mode and powercycle
+    if set_pslc(mtp_mgmt_ctrl,mtp_id):
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        logfile_close(log_filep_list)
+        return
     
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
     if not rc:
@@ -494,14 +489,12 @@ def main():
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
-    #set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list)
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 

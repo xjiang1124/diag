@@ -2061,11 +2061,14 @@ class mtp_ctrl():
 
         return True
     def mtp_setting_partition(self, slot):
-        
+        # Run command twice: first time does it, 2nd time says 'already partitioned'
         if not self._nic_ctrl_list[slot].nic_setting_partition():
-            self.cli_log_slot_err_lock(slot, "Setting PSLC failed")
+            self.cli_log_slot_err_lock(slot, "Could not complete partition command")
             return False
-        self.cli_log_slot_inf_lock(slot, "Setting PSLC Pass")
+        if not self._nic_ctrl_list[slot].nic_setting_partition(): 
+            self.cli_log_slot_err_lock(slot, "Partition table was not updated")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Partition table updated")
         return True
         
     def mtp_nic_partition_check(self, slot):
@@ -2477,6 +2480,7 @@ class mtp_ctrl():
 
 
     def mtp_nic_emmc_init(self, slot, emmc_format=False):
+        nic_type = self.mtp_get_nic_type(slot)
         if emmc_format:
             msg = "Format and Init NIC EMMC"
         else:
@@ -2490,6 +2494,17 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_emmc_perf_mode(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.ORTANO:
+            msg = "Setting NIC EMMC in performance mode"
+            self.cli_log_slot_inf_lock(slot, msg)
+            if not self._nic_ctrl_list[slot].nic_emmc_perf_mode():
+                self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
+                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+                self.mtp_dump_err_msg(err_msg)
+                return False
+        return True
 
     def mtp_nic_fru_init(self, slot, init_date=True, nic_type=None):
         if init_date:
