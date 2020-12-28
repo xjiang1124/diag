@@ -163,6 +163,9 @@ def main():
     if args.swm:
         swmtestmode = args.swm
 
+    if not args.skip_test:
+        args.skip_test = []
+
     # local log files
     log_filep_list = list()
     test_log_file = "test_dl.log"
@@ -385,7 +388,9 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
             if test == "NIC_POWER":
-                ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+                ret = True
+                if card_type != NIC_Type.NAPLES100IBM:
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
             # nic type check
             elif test == "NIC_TYPE":
                 ret = mtp_mgmt_ctrl.mtp_nic_type_valid(slot)
@@ -541,7 +546,9 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             # nic power status check
             if test == "NIC_POWER":
-                ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+                ret = True
+                if card_type != NIC_Type.NAPLES100IBM:
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)    
             # nic present check
             elif test == "NIC_PRSNT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)

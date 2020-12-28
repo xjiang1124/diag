@@ -61,8 +61,8 @@ class NIC_CPLD_Version:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_12012020.tar"
-    MTP_ARM64_IMAGE = "image_arm64_12012020.tar"
+    MTP_AMD64_IMAGE = "image_amd64_12112020.tar"
+    MTP_ARM64_IMAGE = "image_arm64_12112020.tar"
     
     MTP_PENCTL_IMAGE = "penctl.linux.0915"
     MTP_PENCTL_TOKEN = "penctl.token"
@@ -119,7 +119,7 @@ class PART_NUMBERS_MATCH:
     N100_NET_PN_FMT = r"111-04635"                            #111-04635        NAPLES 100 NETAPP
     N100_PN_FMT_ALL = r"{:s}|{:s}".format(N100_PEN_PN_FMT,N100_NET_PN_FMT)
 
-    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [0-9]{2}"           #68-0013-01 03    NAPLES100 IBM
+    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [A-Z0-9]{2}"           #68-0013-01 03    NAPLES100 IBM
     N100_IBM_FMT_ALL = r"{:s}".format(N100_IBM_PN_FMT)
 
     N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                #P37692-001       NAPLES100 HPE 
@@ -137,10 +137,10 @@ class PART_NUMBERS_MATCH:
     N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}" #68-0017-01 01    NAPLES25 SWM PENSANDO TAA 
     N25_SWM_HPE_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_SWM_HPE_PN_FMT, N25_SWM_HPE_CLD_PN_FMT, N25_SWM_PEN_PN_FMT, N25_SWM_PEN_TAA_PN_FMT)
 
-    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [0-9]{2}"        #68-0014-01 00       NAPLES25 SWM DELL
+    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"        #68-0014-01 00       NAPLES25 SWM DELL
     N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)
 
-    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [0-9]{2}"        #68-0010-xx       NAPLES25 OCP PENSANDO
+    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"        #68-0010-xx       NAPLES25 OCP PENSANDO
     N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
     N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
     N25_OCP_DEL_PN_FMT = r"P18671-00[0-9]{1}"                 #P18671-001       NAPLES25 OCP DELL
@@ -152,10 +152,10 @@ class PART_NUMBERS_MATCH:
     VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"             #68-0009-01 01    VOMERO
     VOMERO_FMT_ALL = r"{:s}".format(VOMERO_PN_FMT)
 
-    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [0-9]{2}"            #68-0011-01 01    VOMERO2
+    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [A-Z0-9]{2}"            #68-0011-01 01    VOMERO2
     VOMERO2_FMT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
 
-    ORTANO_PN_FMT = r"68-0015-0[0-9]{1} [0-9]{2}"             #68-0015-01 01    ORTANO
+    ORTANO_PN_FMT = r"68-0015-0[0-9]{1} [A-Z0-9]{2}"             #68-0015-01 01    ORTANO
     ORTANO_FMT_ALL = r"{:s}".format(ORTANO_PN_FMT)
 
 
