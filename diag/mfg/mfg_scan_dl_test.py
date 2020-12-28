@@ -59,7 +59,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, fail_nic_list, pass_nic_list, swmtestmode, skip_testlist):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, fail_nic_list, pass_nic_list, swmtestmode, skip_testlist = []):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -152,16 +152,18 @@ def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, 'SET_PSLC', "FAILED", duration))
             fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
-            break
         else:
+            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, 'SET_PSLC', duration))
-    return 0
+            pass_nic_list.append(slot)
+    mtp_mgmt_ctrl.mtp_power_on_nic()
+    return len(fail_nic_list)
+
 def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test", nargs="*")
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     args = parser.parse_args()
     if args.verbosity:

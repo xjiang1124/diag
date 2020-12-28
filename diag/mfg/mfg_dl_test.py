@@ -49,7 +49,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode, skip_testlist):
+def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode, skip_testlist = []):
 
     # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
@@ -85,7 +85,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG MTP DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test", nargs="*")
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     verbosity = False
     args = parser.parse_args()
