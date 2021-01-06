@@ -118,8 +118,6 @@ def get_err_code(err_info, err_dsrp):
         err_code = "RD_FRU"
     elif "AVS_SET FAILED" in err_info:
         err_code = "AVS"
-    elif "Init NIC boot info failed" in err_info:
-        err_code = "NIC_BOOT_FAIL"
     elif "Program NIC FRU failed" in err_info:
         err_code = "PROG_NIC_FRU"
     elif "Bad Component" in err_info:
@@ -172,10 +170,10 @@ def get_err_code(err_info, err_dsrp):
         err_code = "ETH_PRBS"
     elif "PCIE_PRBS" in err_info:
         err_code = "PCIE_PRBS"
-    elif "SNAKE_PCIE" in err_info:
-        err_code = "SNAKE_PCIE"
     elif "SNAKE_HBM" in err_info:
         err_code = "SNAKE_HBM"
+    elif "SNAKE_PCIE" in err_info:
+        err_code = "SNAKE_PCIE"
     elif "MVL STUB FAIL" in err_info:
         err_code = "MVL"
     elif "RTC FAIL" in err_info:
@@ -206,6 +204,10 @@ def get_err_code(err_info, err_dsrp):
         err_code = "BOOT_UP"
     elif "SFP Loose" in err_info:
         err_code = "SFP_LOOSE"
+    elif "Init NIC boot info failed" in err_info:
+        err_code = "NIC_BOOT_FAIL"
+    elif "PRE_CHECK" in err_info:
+        err_code = "PRE_CHECK"
 
     # ICT error code
     elif "Test Point" in err_info:
@@ -432,6 +434,8 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
         if pd.isna(sn) == True or pd.isna(fail_code_list[idx]) == True:
             break
 
+        print("sn:", sn)
+
         # Temp solution: Penang yield report has extra records of old data
         #if idx < 1640:
         #    continue
@@ -449,7 +453,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
             stage = "4C-H"
         elif "4C-L" in stage_list[idx]:
             stage = "4C-L"
-        elif "SWI" in stage_list[idx]:
+        elif "SWI" in stage_list[idx] or "swi" in  stage_list[idx]:
             stage = "SWI"
         elif "FST" in stage_list[idx]:
             stage = "FST"
@@ -832,10 +836,10 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     #WK34 NAPLES25SWM
     total_tested["ICT"]  = 3.0
     total_tested["DL"]   = 10.0
-    total_tested["P2C"]  = 10.0
+    total_tested["P2C"]  = 185.0
     total_tested["4C-H"] = 22.0
     total_tested["4C-L"] = 46.0
-    total_tested["SWI"]  = 216.0
+    total_tested["SWI"]  = 20.0
     total_tested["FST"]  = 226.0
 
     #WK32 NAPLES100
@@ -1239,6 +1243,9 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
     elif "SNAKE_PCIE" in err_code:
         logfile_path = prefix+"asic_logs/"
         logfile_pattern = sn+"_snake_pcie.log"
+    elif "SNAKE_HBM" in err_code:
+        logfile_path = prefix+"asic_logs/"
+        logfile_pattern = sn+"_snake_hbm.log"
     elif "AVS" in err_code:
         logfile_path = "./"
         logfile_pattern = "diag_"+nic_info["SLOT"]+"_dl.log"
@@ -1255,6 +1262,9 @@ def parse_log_file(file_fullname, sn, stage, verbose, cleanup, save, save_path, 
     elif "PCIE_LINK" in err_code:
         logfile_path = "./"
         logfile_pattern = "diag_fst.log"
+    elif "PRE_CHECK" in err_code:
+        logfile_path = "./"
+        logfile_pattern = "mtp_test.log"
 
     else:
         print("Unsupported error code!")
