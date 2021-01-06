@@ -473,9 +473,9 @@ class nic_test:
             sys.exit(0)
 
         if test_type == "snake" and mode == "hbm":
-            test_cmd = "/data/nic_util/asicutil -snake -mode hbm_lb 2>&1 >  asicutil_hbm.log &"
+            test_cmd = "/data/nic_util/asicutil -snake -mode hbm_lb 2>&1 >  /data/nic_util/asicutil_hbm.log &"
         elif test_type == "snake" and mode == "pcie":
-            test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > asicutil_pcie.log &"
+            test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > /data/nic_util/asicutil_pcie.log &"
         else:
             print "Invalid test_type {} and mode {}".format(test_type, mode)
             sys.exit(0)
@@ -749,9 +749,9 @@ class nic_test:
 
         print("fan_ctrl:", fan_ctrl, "tgt_die_temp:", tgt_die_temp)
         if fan_ctrl == False:
-            fan_speed = 80
-        else:
             fan_speed = 100
+        else:
+            fan_speed = 60
         self.set_mtp_fan_speed(fan_speed)
 
         session = common.session_start()
@@ -774,10 +774,10 @@ class nic_test:
         card_info_dict['9'] = "OT39"
         core_freq = 833
         arm_freq = 2000
-        core_volt = 713
-        arm_volt = 736
+        core_volt = 665
+        arm_volt = 689
         volt_mode = "nod"
-        chamber_temp = "50_temp_ctrl_{}".format(tgt_die_temp)
+        chamber_temp = "0_temp_ctrl_{}".format(tgt_die_temp)
 
         test_result = OrderedDict()
         # Start snake
@@ -793,8 +793,17 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
                 self.nic_con.uart_session_cmd(session, "export CARD_TYPE=ORTANO")
                 self.nic_con.uart_session_cmd(session, "/data/devmgr -status")
-                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x4f -mode w -wr -data=0x80")
-                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x51 -mode w -wr -data=0x78")
+
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x0 -mode b -wr -data=0xFF")
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x0 -mode b -rd")
+
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x4f -mode w -wr -data=0x8C")
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x51 -mode w -wr -data=0x87")
+
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x4f -mode w -rd")
+                self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x51 -mode w -rd")
+
+                self.set_mtp_fan_speed(100)
 
                 self.nic_con.uart_session_cmd(session, "cd /data/elba/nic/fake_root_target/nic")
                 self.nic_con.uart_session_cmd(session, "export ASIC_LIB_BUNDLE=`pwd`")
@@ -833,7 +842,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "set chamber_temp {}".format(chamber_temp), 30, "%")
                 self.nic_con.uart_session_cmd(session, "set card_config core_freq_${core_freq}_arm_freq_${arm_freq}_core_volt_${core_volt}_arm_volt_${arm_volt}_chamber_${chamber_temp}", 30, "%")
                 self.nic_con.uart_session_cmd(session, "puts $card_config", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set duration 400", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set duration 600", 30, "%")
                 self.nic_con.uart_session_cmd(session, "plog_start hbm_pktgen_pcie_lb_100g_${card_no}_${card_config}.log", 30, "%")
                 #self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq), 30, "parseKnobFile")
                 if fan_ctrl == False:
