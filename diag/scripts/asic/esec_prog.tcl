@@ -255,7 +255,12 @@ proc efuse_test {slot} {
     
     cap_jtag_chip_rst 10 $slot 0 "" 1 1 0 $freq 2200
 
-    if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM:  SET EFUSE VDDQ ENABLE
+    if {   $cpld_ver == 0x17 && $cpld_rev > 0xa     #NAPLES25SWM:  SET EFUSE VDDQ ENABLE
+       ||  $cpld_ver == 0x13 && $cpld_rev > 0x9     #NAPLES25
+       ||  $cpld_ver == 0x20 && $cpld_rev > 0x2     #NAPLES25 SWM DELL
+       ||  $cpld_ver == 0x12 && $cpld_rev > 0xc     #NAPLES100
+       ||  $cpld_ver == 0x1C && $cpld_rev > 0x3     #NAPLES100 IBM
+       ||  $cpld_ver == 0x1F && $cpld_rev > 0x1  } {   #NAPLES100 HPE
         set cpld_data [ssi_cpld_read 0x10]
         set cpld_data [expr {$cpld_data | 0x20}]
         ssi_cpld_write 0x10 $cpld_data
@@ -274,7 +279,12 @@ proc efuse_test {slot} {
         set return -1
     }
 
-    if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM
+    if {   $cpld_ver == 0x17 && $cpld_rev > 0xa     #NAPLES25SWM:  SET EFUSE VDDQ ENABLE
+       ||  $cpld_ver == 0x13 && $cpld_rev > 0x9     #NAPLES25
+       ||  $cpld_ver == 0x20 && $cpld_rev > 0x2     #NAPLES25 SWM DELL
+       ||  $cpld_ver == 0x12 && $cpld_rev > 0xc     #NAPLES100
+       ||  $cpld_ver == 0x1C && $cpld_rev > 0x3     #NAPLES100 IBM
+       ||  $cpld_ver == 0x1F && $cpld_rev > 0x1  } {   #NAPLES100 HPE
         set cpld_data [ssi_cpld_read 0x10]
         set cpld_data [expr {$cpld_data & 0xDF}]
         ssi_cpld_write 0x10 $cpld_data
