@@ -56,7 +56,7 @@ FPN2018022D    NAPLES100    P2C
 
 #------------------------------
 # Yield report parser
-# Before generating yield report, logs have to fetched to local directory using mfg.py
+# Before generating yield report, logs have to fetched to be local directory using mfg.py
 
 # Generate SN list
 # Output SN list will be in format "prefix_cardtype_stage.txt"

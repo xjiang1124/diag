@@ -55,7 +55,7 @@ then
 
 elif [[ $MODE == "L1" ]]
 then
-    grep "ERROR ::" $FN
+    grep "ERROR ::" $FN | sed 's/^.*ERROR/ERROR/g'
 
 elif [[ $MODE == "L1_ESEC" ]]
 then
@@ -70,7 +70,7 @@ then
         done
     done <<< "${output1}"
 
-    grep "ERROR ::" $FN | grep -e "cap_puf_dppm_chk:" -e "cap_esec_chk_boot_step :: expected_val:0x20 got_val" | sort -t: -u -k1,1
+    grep "ERROR ::" $FN | grep -e "cap_puf_dppm_chk:" -e "cap_esec_chk_boot_step :: expected_val:0x20 got_val" | sort -t: -u -k1,1 | sed 's/^.*ERROR/ERROR/g'
 
 elif [[ $MODE == "L1_HBM" ]]
 then
@@ -86,16 +86,16 @@ then
 
 elif [[ $MODE == "SNAKE" ]]
 then
-    grep -e "ERROR ::" $FN | grep -v "cap0.ms.em.int_groups.intreg: axi_interrupt" | grep -v "Unexpected int set: cap0.ms.em" | grep -v "interrupt-non-zero for reg:MS_M_AM_STS" | grep -v "interrupt-non-zero for reg:AR_M_AM_STS" | grep -v "PRP2() error_count non-zero" | grep -v "stall_timeout_error"
+    grep -e "ERROR ::" $FN | grep -v "cap0.ms.em.int_groups.intreg: axi_interrupt" | grep -v "Unexpected int set: cap0.ms.em" | grep -v "interrupt-non-zero for reg:MS_M_AM_STS" | grep -v "interrupt-non-zero for reg:AR_M_AM_STS" | grep -v "PRP2() error_count non-zero" | grep -v "stall_timeout_error" | sed 's/^.*ERROR/ERROR/g'
 
 elif [[ $MODE == "AVS" ]]
 then
     #grep -a -A100 -e "tclsh8.6 set_avs.tcl" $FN | grep ""FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
-    grep -a -A300 -e "tclsh8.6 set_avs.tcl" $FN | grep "FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1
+    grep -a -A300 -e "tclsh8.6 set_avs.tcl" $FN | grep "FAILED: could not set gval 0x6a000000" | sort -t: -u -k1,1 | sed 's/^.*ERROR/ERROR/g'
 
 elif [[ $MODE == "ETH_PRBS" ]]
 then
-    grep "ERROR" $FN
+    grep "ERROR" $FN | sed 's/^.*ERROR/ERROR/g'
 
 elif [[ $MODE == "FW_REV" ]]
 then
@@ -159,6 +159,10 @@ then
 elif [[ $MODE == "PAC" ]]
 then
     grep -a "ESEC Optimal PAC passed" $FN
+
+elif [[ $MODE == "PRE_CHECK" ]]
+then
+    grep -a -B4 -A1 "No route to host" $FN
 
 else
     echo "Unsupported error code SEARCH!" $MODE
