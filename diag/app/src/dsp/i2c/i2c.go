@@ -14,7 +14,7 @@ const (
 )
 
 var naples100TestList = []string {
-    "CAP0_CORE_DVDD", "CAP0_CORE_AVDD", "CAP0_HBM", "CAP0_ARM", "CAP0_3V3",
+    "CAP0_CORE_DVDD", "CAP0_CORE_AVDD", "CAP0_HBM", "CAP0_ARM", "CAP0_3V3", "FRU",
 }
 
 var biodonaTestList = []string {
@@ -37,6 +37,7 @@ func init() {
     i2cTestMap["NAPLES25"]        = naples100TestList
     i2cTestMap["NAPLES25SWM"]     = naples100TestList
     i2cTestMap["NAPLES25SWMDELL"] = naples100TestList
+    i2cTestMap["NAPLES25SWM833"]  = naples100TestList
     i2cTestMap["NAPLES25OCP"]     = naples100TestList
     i2cTestMap["FORIO"]           = naples100TestList
     i2cTestMap["VOMERO"]          = naples100TestList

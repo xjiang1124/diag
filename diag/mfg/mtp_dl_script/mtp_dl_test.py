@@ -59,7 +59,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, swmtestmode, skip_testlist):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -109,6 +109,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         duration = str(stop_ts - start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            nic_test_rslt_list[slot] = False
             break
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -419,6 +420,7 @@ def main():
 
     # program the NIC firmware
     nic_thread_list = list()
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
@@ -468,7 +470,8 @@ def main():
                                                                               qspi_img_file,
                                                                               slot,
                                                                               swmtestmode,
-                                                                              args.skip_test))
+                                                                              args.skip_test,
+                                                                              nic_test_rslt_list))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -483,6 +486,11 @@ def main():
                 nic_thread.join()
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not nic_test_rslt_list[slot]:
+            fail_nic_list.append(slot)
+            pass_nic_list.remove(slot)
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()

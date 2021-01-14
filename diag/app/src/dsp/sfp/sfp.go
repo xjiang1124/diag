@@ -32,6 +32,7 @@ func init() {
     sfpTestMap["NAPLES25"] = naples25SfpList
     sfpTestMap["NAPLES25SWM"] = naples25SfpList
     sfpTestMap["NAPLES25SWMDELL"] = naples25SfpList
+    sfpTestMap["NAPLES25SWM833"] = naples25SfpList
     sfpTestMap["NAPLES25OCP"] = naples25SfpList
 
     sfpTestList = sfpTestMap[cardType]

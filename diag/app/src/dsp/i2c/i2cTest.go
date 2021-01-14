@@ -1,6 +1,10 @@
 package main
 
 import (
+    "os/exec"
+    "regexp"
+
+    "common/cli"
     "common/dcli"
     "common/diagEngine"
     "common/errType"
@@ -70,6 +74,25 @@ func testTps544b25(devName string) (err int) {
     return
 }
 
+func testFru(devName string, bus uint32, devAddr byte) (err int) {
+    err = errType.FAIL
+    out, errGo := exec.Command("/data/nic_util/eeutil", "-dev=fru", "-verify").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+    }
+    outStr := string(out)
+    dcli.Println("i","------------\n")
+    dcli.Println("i","%s\n", outStr)
+    dcli.Println("i","------------\n")
+    re :=regexp.MustCompile("FRU Checkum and Type/Length Checks Passed")
+    match :=re.MatchString(outStr)
+    if match == true {
+        err = errType.SUCCESS
+    } 
+    return
+}
+
 
 func I2cI2cHdl(argList []string) {
     var ret int
@@ -110,6 +133,11 @@ func I2cI2cHdl(argList []string) {
             }
         case "TPS544B25":
             err = testTps544b25(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "AT24C02C":
+            err = testFru(devName, i2cInfo.Bus, i2cInfo.DevAddr)
             if err != errType.SUCCESS {
                 ret = err
             }

@@ -62,6 +62,7 @@
 #define ID_NAPLES100IBM             0x1C
 #define ID_NAPLES100HPE             0x1F
 #define ID_NAPLES25_SWM_DELL        0x20
+#define ID_NAPLES25_SWM_833         0x21
 
 #ifndef _GPIO_H_
 struct gpiohandle_request {
@@ -785,7 +786,8 @@ main(int argc, char *argv[])
             (cpldId == ID_NAPLES25_SWM) ||
             (cpldId == ID_VOMERO2)      ||
             (cpldId == ID_NAPLES25_OCP) || 
-            (cpldId == ID_NAPLES25_SWM_DELL)
+            (cpldId == ID_NAPLES25_SWM_DELL) ||
+            (cpldId == ID_NAPLES25_SWM_833)
             )
         {
             cpldSize = 4000000;
@@ -826,9 +828,18 @@ main(int argc, char *argv[])
     	flash_program(fd, buf, read_byte);
 		flash_program_done(fd);
 		flash_disable(fd);
+
+        //OCP needs a refresh within 64ms of flashing the image so run it inline in the program command
+        if(cpldId == ID_NAPLES25_OCP) {
+            cpld_write(0x42, 0x80);
+            usleep(20000);
+            cpld_write_flash(fd, lsc_refresh_cmd, sizeof(lsc_refresh_cmd));
+        }
 		close(fd);
 		fclose(fptr);
         free(buf);
+
+        
     } else if (strcmp(argv[1], "-erase") == 0) {
 		uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
     	flash_enable(fd);

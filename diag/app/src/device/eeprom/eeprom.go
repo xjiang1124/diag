@@ -172,10 +172,12 @@ var Naples100HPETbl = []entry {
     entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x45, 0x4E, 0x53,
         0x41, 0x4E, 0x44, 0x4F}},
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xEC}},
-    entry{"Product Name",                           STRING,      24,       44,   []byte{0x50, 0x43, 0x41, 0x20,
-        0x50, 0x65, 0x6E, 0x73, 0x61, 0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2d, 
-	0x31, 0x30, 0x30, 0x20, 0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32,
-        0x38, 0x20, 0x43, 0x61, 0x72, 0x64}},
+    entry{"Product Name",                           STRING,      24,       44,   []byte{
+        0x50, 0x43, 0x41, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 
+        0x43, 0x31, 0x30, 0x30, 0x20, 0x45, 0x6e, 0x74, 0x20, 0x31, 
+        0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 
+        0x50, 0x32, 0x38, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        68,       1,    []byte{0xCB}},
     entry{"Serial Number",                          STRING,      69,       10,   []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
@@ -207,15 +209,16 @@ var Naples100HPETbl = []entry {
     entry{"Manufacturer Name Type/Length",          INT8,       131,       1,    []byte{0xC3}},
     entry{"Manufacturer",                           STRING,     132,       3,    []byte{0x48, 0x50, 0x45}},
     entry{"Product Name Type/Length",               INT8,       135,       1,    []byte{0xE8}},
-    entry{"Product Name",                           STRING,     136,       40,   []byte{0x50, 0x65, 0x6E, 0x73,
-        0x61, 0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2D, 0x31, 0x30, 0x30, 0x20,
-        0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32, 0x38, 0x20, 0x43, 0x61,
-        0x72, 0x64}},
+    entry{"Product Name",                           STRING,     136,       40,   []byte{
+        0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e, 0x64, 0x6f, 0x20, 0x44, 
+        0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2d, 0x31, 0x30, 0x30, 
+        0x20, 0x45, 0x6e, 0x74, 0x20, 0x31, 0x30, 0x30, 0x47, 0x62, 
+        0x20, 0x43, 0x61, 0x72, 0x64, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"PCA Product Number Type/Length",         INT8,       176,       1,    []byte{0xCA}},
     entry{"Product Number",                         STRING,     177,       10,   []byte{0x50, 0x33, 0x37, 0x36,
         0x39, 0x30, 0x2D, 0x42, 0x32, 0x31}},
     entry{"Product Version Type/Length",            INT8,       187,       1,    []byte{0xC2}},
-    entry{"Product Version",                        INT8,       188,       2,    []byte{0x30, 0x31}},
+    entry{"Product Version",                        STRING,     188,       2,    []byte{0x30, 0x41}},
     entry{"PCA Serial Number Type/Length",          INT8,       190,       1,    []byte{0xCA}},
     entry{"Serial Number",                          STRING,     191,       10,   []byte{0x35, 0x55, 0x50, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
@@ -247,10 +250,12 @@ var Naples100HPECLOUDTbl = []entry {
     entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x45, 0x4E, 0x53,
         0x41, 0x4E, 0x44, 0x4F}},
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xF0}},
-    entry{"Product Name",                           STRING,      24,       48,   []byte{0x50, 0x43, 0x41, 0x20,
-        0x50, 0x65, 0x6E, 0x73, 0x61, 0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2d, 
-	0x31, 0x30, 0x30, 0x20, 0x31, 0x30, 0x30, 0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32,
-        0x38, 0x20, 0x43, 0x61, 0x72, 0x64, 0x20, 0x53, 0x50, 0x20}},
+    entry{"Product Name",                           STRING,      24,       48,   []byte{
+        0x50, 0x43, 0x41, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 
+        0x43, 0x31, 0x30, 0x30, 0x20, 0x43, 0x6c, 0x64, 0x2d, 0x53, 
+        0x50, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32, 
+        0x38, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        72,       1,    []byte{0xCB}},
     entry{"Serial Number",                          STRING,      73,       10,   []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
@@ -281,15 +286,16 @@ var Naples100HPECLOUDTbl = []entry {
     entry{"Manufacturer Name Type/Length",          INT8,       131,       1,    []byte{0xC3}},
     entry{"Manufacturer",                           STRING,     132,       3,    []byte{0x48, 0x50, 0x45}},
     entry{"Product Name Type/Length",               INT8,       135,       1,    []byte{0xEC}},
-    entry{"Product Name",                           STRING,     136,       44,   []byte{0x50, 0x65, 0x6E, 0x73,
-        0x61, 0x6E, 0x64, 0x6F, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 
-        0x53, 0x43, 0x2D, 0x31, 0x30, 0x30, 0x20, 0x31, 0x30, 0x30, 
-        0x47, 0x20, 0x32, 0x70, 0x20, 0x51, 0x53, 0x46, 0x50, 0x32, 
-        0x38, 0x20, 0x43, 0x61, 0x72, 0x64, 0x20, 0x53, 0x50, 0x20}},
+    entry{"Product Name",                           STRING,     136,       44,   []byte{
+        0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e, 0x64, 0x6f, 0x20, 0x44, 
+        0x53, 0x50, 0x20, 0x44, 0x53, 0x43, 0x2d, 0x31, 0x30, 0x30, 
+        0x20, 0x43, 0x6c, 0x64, 0x2d, 0x53, 0x50, 0x20, 0x31, 0x30, 
+        0x30, 0x47, 0x62, 0x20, 0x43, 0x61, 0x72, 0x64, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20 }},
     entry{"PCA Product Number Type/Length",         INT8,       180,       1,    []byte{0xCA}},
     entry{"Product Number",                         STRING,     181,       10,   []byte{0x50, 0x34, 0x31, 0x38, 0x35, 0x32, 0x2d, 0x42, 0x32, 0x31}},
     entry{"Product Version Type/Length",            INT8,       191,       1,    []byte{0xC2}},
-    entry{"Product Version",                        INT8,       192,       2,    []byte{0x30, 0x31}},
+    entry{"Product Version",                        STRING,     192,       2,    []byte{0x30, 0x41}},
     entry{"PCA Serial Number Type/Length",          INT8,       194,       1,    []byte{0xCA}},
     entry{"Serial Number",                          STRING,     195,       10,   []byte{0x35, 0x55, 0x50, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
@@ -571,7 +577,7 @@ var HpeTbl = []entry {
         0x34, 0x2F, 0x31, 0x39}},
     entry{"OEM Revision Type/Length",               INT8,       216,        1,  []byte{0x3}},
     entry{"HP OEM Record ID",                       INT8,       217,        1,  []byte{0xD2}},
-    entry{"Revision Code",                          STRING,     218,        2,  []byte{0x30, 0x41}},
+    entry{"Revision Code",                          STRING,     218,        2,  []byte{0x30, 0x42}},
     entry{"Board ID Type/Length",                   INT8,       220,        1,  []byte{0x4}},
     entry{"Board ID",                               INT8,       221,        4,  []byte{0x2, 0x0, 0x0, 0x0}},
     entry{"Engineering Change Level Type/Length",   INT8,       225,        1,  []byte{0xC2}},
@@ -762,12 +768,12 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
         } else if entry.Name == "Record Checksum" {
             updateIntChk()
             entry.Value[0] = byte(0x100 - mraChk[multiRecordNumber] % 0x100)
-            fmt.Printf("RECORD [%d] = %x\n", multiRecordNumber, mraChk[multiRecordNumber]) 
+            //fmt.Printf("RECORD [%d] = %x\n", multiRecordNumber, mraChk[multiRecordNumber]) 
             updateIntChk() //Have it go re-calculate the header checksum now that the record checksum is in place
         } else if entry.Name == "Header Checksum" {
             updateIntChk()
             entry.Value[0] = byte(0x100 - mraHdrChk[multiRecordNumber] % 0x100)
-            fmt.Printf("HEADER [%d] = %x\n", multiRecordNumber, mraHdrChk[multiRecordNumber]) 
+            //fmt.Printf("HEADER [%d] = %x\n", multiRecordNumber, mraHdrChk[multiRecordNumber]) 
             multiRecordNumber++
         }
 
@@ -1689,47 +1695,263 @@ func GetFruPartnumber(devName string, bus uint32, devAddr byte, pn []uint8) (err
 }
 
 
-func VerifyFruCSUM(devName string, bus uint32, devAddr byte) (err int) {
+//Take care of 8 bit vs 16 bit eeprom reads
+func eeRead(devName string, offset uint16) (data byte, err int) {
+    if I2cAddr16 == true {
+        data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
+    } else {
+        data, err = smbusNew.ReadByte(devName, uint64(offset))
+    }
+    return
+}
 
+func fruGenerateChecksum(data []byte, length uint16) (checksum uint8) {
+
+    for i:=0; i<int(length); i++ {
+        checksum += data[i]
+    }
+    checksum = uint8(0x100 - uint16(checksum))
+    return
+}
+
+func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool) (err int) {
+
+    const CMN_HDR_IU_OFFSET  uint8 = 1
+    const CMN_HDR_CHS_OFFSET uint8 = 2
+    const CMN_HDR_BIA_OFFSET uint8 = 3
+    const CMN_HDR_PIA_OFFSET uint8 = 4    
+    const CMN_HDR_MR_OFFSET  uint8 = 5
+    const CMN_HDR_LENGTH     uint8 = 8
+    const MR_HDR_FORMAT_OFFSET   uint8 = 1
+    const MR_HDR_LENGTH_OFFSET   uint8 = 2
+    const MR_HDR_CSUM_OFFSET     uint8 = 3
+    const MR_HDR_HDR_CSUM_OFFSET uint8 = 4
+    const MR_HDR_LENGTH          uint8 = 5
+    const BIAsize                uint16 = 256
     header := make([]byte, 8)
-    var rdByteCnt int = 0
+    board_info_area := make([]byte, BIAsize)
+    var bia_length uint16 = 0
+    product_info_area := make([]byte, BIAsize)
+    var pia_length uint16 = 0
+    var mr_length uint16 = 0
+    var i uint16 = 0
+    var data8, hdr_csum, bia_csum, pia_csum, mr_csum, mr_header_csum  uint8  = 0, 0, 0, 0, 0, 0
+    var offset, offset_add uint16 = 0, 0
 
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
     defer smbusNew.Close()
-    
-    if I2cAddr16 == true {
-        rdByteCnt, err = smbusNew.I2C16ReadBlock(devName, uint16(0x00), header)
-        if rdByteCnt != 8 {
-            cli.Println("e", "Number of bytes read=", rdByteCnt," Expect=8")
-            return
-        }
+
+    //Oracle cards start their Fru information at offset 256
+    if CardType == "VOMERO2"  || CardType == "ORTANO" {
+        offset_add = 256
+    }
+
+    for offset = 0; offset < uint16(CMN_HDR_LENGTH); offset++ {
+        header[offset], err = eeRead(devName, offset + offset_add)
         if err != errType.SUCCESS {
-            return -1
+            cli.Println("e", "Failed to read device", devName, "field at offset", offset + offset_add) 
+            return errType.FAIL
         }
+    }
+
+    
+    hdr_csum = fruGenerateChecksum(header, uint16(CMN_HDR_LENGTH) - 1)
+    if hdr_csum == header[CMN_HDR_LENGTH-1] {
+        if OutputEnabled == true { cli.Printf("i","%s Common Header Checksum Passed  Calculated 0x%.02x    Read 0x%.02x\n", devName, hdr_csum, header[CMN_HDR_LENGTH-1]) }
     } else {
-        for i := 0; i < 8; i++ {
-            header[i], err = smbusNew.ReadByte(devName, uint64(0x00+i))
+        cli.Printf("e","%s Common Header Checksum Failed  Calculated 0x%.02x    Read 0x%.02x\n", devName, hdr_csum, header[CMN_HDR_LENGTH-1])
+        return errType.FAIL
+    }
+
+    //board information area
+    if header[CMN_HDR_BIA_OFFSET] > 0 {
+        //read the length
+        offset = uint16(header[CMN_HDR_BIA_OFFSET] * 8) + 1 + offset_add
+
+        data8, err = eeRead(devName, offset)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to read device", devName, "field at offset", offset)
+            return errType.FAIL
+        }
+        bia_length = uint16(data8 * 8)
+        if bia_length > BIAsize {
+            cli.Println("e", " Board Information Area Length > ", BIAsize,"for device", devName, " BIA Length = ", bia_length)
+            return errType.FAIL
+        }
+        for i, offset = 0, uint16(header[CMN_HDR_BIA_OFFSET] * 8) + offset_add; i < bia_length; offset, i = offset+1, i+1 {
+            board_info_area[i], err = eeRead(devName, offset)
             if err != errType.SUCCESS {
-                return -1
+                cli.Println("e", "Failed to read device ", devName, " field at offset", offset)
+                return errType.FAIL
             }
         }
-    }
-    for i:=0; i<len(header);i++ {
-        fmt.Printf(" %.02x", header[i])
-    }
-    fmt.Printf("\n")
 
-    //common format version
-    //internal use
-    //chassis area
-    //board info area
-    //product info area
-    //mutli-record
-    //pad
-    //checksum
+        bia_csum = fruGenerateChecksum(board_info_area, bia_length - 1)
+        if bia_csum == board_info_area[bia_length-1] {
+            if OutputEnabled == true { cli.Printf("i","%s Board Information Area Checksum Passed  Calculated 0x%.02x    Read 0x%.02x\n", devName, bia_csum, board_info_area[bia_length-1]) }
+        } else {
+            cli.Printf("e", "%s Board Information Area Checksum Failed  Calculated 0x%.02x    Read 0x%.02x\n", devName, bia_csum, board_info_area[bia_length-1])
+            return errType.FAIL
+        }
+    }
 
-    return
+    //product information area
+    if header[CMN_HDR_PIA_OFFSET] > 0 {
+        //read the length
+        offset = uint16(header[CMN_HDR_PIA_OFFSET] * 8) + 1
+        data8, err = eeRead(devName, offset)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to read device", devName, "field at offset", offset)
+            return errType.FAIL
+        }
+        pia_length = uint16(data8 * 8)
+        if pia_length > BIAsize {
+            cli.Println("e", " ERROR: Product Information Area Length >",BIAsize,"for device", devName, "PIA Length = ", pia_length)
+            return errType.FAIL
+        }
+        for i, offset = 0, uint16(header[CMN_HDR_PIA_OFFSET] * 8) + offset_add; i < pia_length; offset, i = offset+1, i+1 {
+            product_info_area[i], err = eeRead(devName, offset)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read device", devName, "field at offset", offset)
+                return errType.FAIL
+            }
+        }
+
+        pia_csum = fruGenerateChecksum(product_info_area, pia_length - 1)
+        if pia_csum == product_info_area[pia_length-1] {
+            if OutputEnabled == true { cli.Printf("i", "%s Product Information Area Checksum Passed  Calculated 0x%.02x    Read 0x%.02x\n", devName, pia_csum, product_info_area[pia_length-1]) }
+        } else {
+            cli.Printf("e", "%s Product Information Area Checksum Failed  Calculated 0x%.02x    Read 0x%.02x\n", devName, pia_csum, product_info_area[pia_length-1])
+            return errType.FAIL
+        }
+    }
+
+    //multi-record offset
+    if header[CMN_HDR_MR_OFFSET] > 0 {
+        var mr_offset uint16 = 0
+        mrRecords := 0
+        
+        mr_offset = uint16(header[CMN_HDR_MR_OFFSET])
+        mr_offset = (mr_offset * 8)         
+        for mrRecords = 0; mrRecords < 10; mrRecords++ {
+            multi_record_area := make([]byte, BIAsize)
+
+            //read the length
+            data8, err = eeRead(devName, mr_offset + uint16(MR_HDR_LENGTH_OFFSET) + offset_add)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read device", devName, "field at offset", offset)
+                return errType.FAIL
+            }
+            mr_length = uint16(data8) + uint16(MR_HDR_LENGTH)
+            if mr_length > BIAsize {
+                cli.Println("e", " ERROR: Product Information Area Length >",BIAsize,"for device", devName, "Multi-Record Length = ", mr_length)
+                return errType.FAIL
+            }
+            for i, offset = 0, mr_offset + offset_add; i < mr_length; offset, i = offset+1, i+1 {
+                multi_record_area[i], err = eeRead(devName, offset)
+                if err != errType.SUCCESS {
+                    cli.Println("e", "Failed to read device", devName, "field at offset", offset)
+                    return errType.FAIL
+                }
+            }
+            mr_csum = fruGenerateChecksum(multi_record_area[5:], mr_length - uint16(MR_HDR_LENGTH))
+            if mr_csum == multi_record_area[MR_HDR_CSUM_OFFSET] {
+                if OutputEnabled == true { cli.Printf("i", "%s Multi-record Entry-%d Checksum Passed  Calculated 0x%.02x    Read 0x%.02x\n", devName, mrRecords, mr_csum, multi_record_area[MR_HDR_CSUM_OFFSET]) }
+            } else {
+                cli.Printf("e", "%s Multi-record Entry-%d Checksum Failed  Calculated 0x%.02x    Read 0x%.02x\n", devName, mrRecords, mr_csum, multi_record_area[MR_HDR_CSUM_OFFSET])
+                return errType.FAIL
+            }
+            mr_header_csum = fruGenerateChecksum(multi_record_area[0:5], uint16(MR_HDR_LENGTH) - 1)
+            if mr_header_csum == multi_record_area[MR_HDR_HDR_CSUM_OFFSET] {
+                if OutputEnabled == true { cli.Printf("i", "%s Multi-record Entry-%d Header Checksum Passed  Calculated 0x%.02x    Read 0x%.02x\n", devName, mrRecords, mr_header_csum, multi_record_area[MR_HDR_HDR_CSUM_OFFSET]) }
+            } else {
+                cli.Printf("e", "%s Multi-record Entry-%d Header Checksum Failed  Calculated 0x%.02x    Read 0x%.02x\n", devName, mrRecords, mr_header_csum, multi_record_area[MR_HDR_HDR_CSUM_OFFSET])
+                return errType.FAIL
+            }
+
+            if (multi_record_area[MR_HDR_FORMAT_OFFSET] & 0x80) == 0x80 {
+                break;
+            }
+            mr_offset = mr_offset + mr_length
+        }
+
+        if mrRecords > 9 {
+            cli.Println("e", "Finding to many multi-record entries.  Something is wrong!!")
+            return errType.FAIL
+        }
+    }
+
+    if header[CMN_HDR_BIA_OFFSET] > 0 {
+        var length uint16 = 6
+        var found_C1 bool = false
+        var tmp, i, j uint8 = 0, 0, 0
+        if OutputEnabled == true { cli.Printf("i", "Checking Board Info Area Type/Lengths\n") }
+        for length, i = 6, 0; length < bia_length; i++ {
+            tmp = board_info_area[length]
+            if tmp == 0xC1 {
+                found_C1 = true
+                length++
+                for j=uint8(length); j<uint8(bia_length)-1; j++ {
+                    if(board_info_area[j]!=0){
+                        cli.Printf("e", " BIA Padding not equal to zero\n")
+                        return errType.FAIL
+                    }
+                }
+                break
+            } else if tmp & 0xC0 == 0xC0 {
+                length++
+                if OutputEnabled == true { cli.Printf("i","[%.02x] %s\n", tmp, board_info_area[length:length+uint16(tmp & 0x3F)]) }
+            } else {
+                length++
+                if OutputEnabled == true {  cli.Printf("i","[%.02x] %x\n", tmp, board_info_area[length:length+uint16(tmp & 0x3F)]) }
+            }
+            length+= (uint16(tmp & 0x3F))
+        }
+        if(found_C1 == false){
+            cli.Println("e", " Failed to find BIA end marker (0xC1)\n")
+            return errType.FAIL
+        }
+    }
+
+    if header[CMN_HDR_PIA_OFFSET] > 0 {
+        var length uint16 = 6
+        var found_C1 bool = false
+        var tmp, i, j uint8 = 0, 0, 0
+
+        if OutputEnabled == true { cli.Printf("i", "Checking Product Info Area Type/Lengths\n") }
+        for length, i = 3, 0; length < pia_length; i++ {
+            tmp = product_info_area[length]
+            if tmp == 0xC1 {
+                found_C1 = true
+                length++
+                for j=uint8(length); j<uint8(pia_length)-1; j++ {
+                    if(product_info_area[j]!=0){
+                        cli.Printf("e", " PIA Padding not equal to zero\n")
+                        return errType.FAIL
+                    }
+                }
+                break
+            } else if tmp & 0xC0 == 0xC0 {
+                length++
+                if OutputEnabled == true { cli.Printf("i","[%.02x] %s\n", tmp, product_info_area[length:length+uint16(tmp & 0x3F)]) }
+            } else {
+                length++
+                if OutputEnabled == true { cli.Printf("i","[%.02x] %x\n", tmp, product_info_area[length:length+uint16(tmp & 0x3F)]) }
+            }
+            length+= (uint16(tmp & 0x3F))
+        }
+        if(found_C1 == false){
+            cli.Println("e", " Failed to find PIA end marker (0xC1)\n")
+            return errType.FAIL
+        }
+    }
+    cli.Println("i", "FRU Checkum and Type/Length Checks Passed\n")
+
+
+
+    return errType.SUCCESS
 }
+

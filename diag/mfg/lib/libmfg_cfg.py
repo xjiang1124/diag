@@ -48,10 +48,10 @@ class NIC_CPLD_Version:
     NAPLES25SWMDELL_SEC_VERSION = "0x82"
     NAPLES25SWMDELL_SEC_TIMESTAMP = "00"
 
-    NAPLES25OCP_VERSION = "0x3"
-    NAPLES25OCP_TIMESTAMP = "09-22"
-    NAPLES25OCP_SEC_VERSION = "0x83"
-    NAPLES25OCP_SEC_TIMESTAMP = "09-22"
+    NAPLES25OCP_VERSION = "0x8"
+    NAPLES25OCP_TIMESTAMP = "01-12"
+    NAPLES25OCP_SEC_VERSION = "0x88"
+    NAPLES25OCP_SEC_TIMESTAMP = "01-12"
     
     ORTANO_VERSION = "0x2"      #major rev
     ORTANO_TIMESTAMP = "0x08"    #minor rev
@@ -69,13 +69,14 @@ class MFG_IMAGE_FILES:
     
     NIC_DIAGFW_IMAGE = "naples_diagfw_05212020.tar"
     NIC_GOLDFW_IMAGE = "naples_goldfw_1.3.1-E-19_0717.tar"
-    NIC_DIAGFW_IMAGE_SWM = "naples_diagfw_1.3.1-E-42_1119.tar"
+    NIC_DIAGFW_IMAGE_SWM = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
     NIC_GOLDFW_IMAGE_SWM = "naples_goldfw_1.3.1-E-42_1119.tar"
-    NIC_DIAGFW_IMAGE_HPE_OCP = "naples_diagfw_1.3.1-E-42_1119.tar"
+    NIC_GOLDFW_IMAGE_SWMDELL = "naples_goldfw_iris_1.14.1-E-12_1025.tar"
+    NIC_DIAGFW_IMAGE_HPE_OCP = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
     NIC_GOLDFW_IMAGE_HPE_OCP = "naples_goldfw_1.3.1-E-42_1119.tar"
     NIC_GOLDFW_IMAGE_IBM = "naples_goldfw_apulu_1.17.0-42_1117.tar"
     NIC_GOLDFW_IMAGE_HPE = "naples_goldfw1_1.3.1-E-28_0731.tar"
-    NIC_DIAGFW_IMAGE_HPE_NAPLES100 = "naples_diagfw_1.3.1-E-42_1119.tar"
+    NIC_DIAGFW_IMAGE_HPE_NAPLES100 = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
     NIC_GOLDFW_IMAGE_HPE_NAPLES100 = "naples_goldfw_1.3.1-E-42_1119.tar"
     NIC_DIAGFW_IMAGE_VOMERO2 = "naples_diagfw_w_uboot_1.3.1-E-26_0620.tar"
     NIC_GOLDFW_IMAGE_VOMERO2 = "naples_minigoldfw_1.7.4-C-7_0702.tar"
@@ -93,8 +94,8 @@ class MFG_IMAGE_FILES:
     NAPLES25SWMDELL_CPLD_IMAGE = "naples25_swmdell_rev2_08202020.bin"
     NAPLES25SWMDELL_SEC_CPLD_IMAGE = "naples25_swmdell_rev82_08202020.bin"
 
-    NAPLES25_HPE_OCP_CPLD_IMAGE = "naples25_ocp_rev03_09222020.bin"
-    NAPLES25_HPE_OCP_SEC_CPLD_IMAGE = "naples25_ocp_rev83_09222020.bin"
+    NAPLES25_HPE_OCP_CPLD_IMAGE = "naples25_ocp_rev08_011221.bin"
+    NAPLES25_HPE_OCP_SEC_CPLD_IMAGE = "naples25_ocp_rev88_011221.bin"
     
     NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
     NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"

@@ -192,7 +192,7 @@ func SetVMargin(devName string, pct int) (err int) {
     if cardType == "ORTANO" {
         targetvoltage = 1.20 
     } else {
-        cli.Println("e", "Voltage Margin Percent Needs to be +/- 10% MAX", devName)
+        cli.Println("e", "Uknown Card Type.   Need to touch up go file and add the card type for this card", devName)
         err = errType.FAIL
         return
     }

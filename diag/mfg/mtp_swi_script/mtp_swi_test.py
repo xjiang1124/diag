@@ -188,7 +188,6 @@ def main():
         nic_profile = ntpath.basename(args.profile)
     if args.swpn:
         sw_pn = args.swpn 
-    print(" ADD DEBUG:  sw pn = {:s}".format(sw_pn))
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -327,7 +326,7 @@ def main():
         elif card_type == NIC_Type.NAPLES25SWMDELL:
             cpld_img_file = naples25swmdell_cpld_img_file                        
             sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWM
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue

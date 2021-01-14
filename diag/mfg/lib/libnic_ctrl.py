@@ -687,6 +687,13 @@ class nic_ctrl():
                 if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                     #print("****MTP FRU PROG 4th****")
                     return False
+            #VERIFY FRU PROGRAMMING
+            match = re.findall(r"FRU Checkum and Type/Length Checks Passed", self.nic_get_cmd_buf())
+            if not match:
+                print(" FRU PROGRAMMING FAILED\n")
+                print(" BUF =  {:s}".format(self.nic_get_cmd_buf()))
+                return False
+
                
 
         nic_cmd_list = list()
@@ -718,8 +725,14 @@ class nic_ctrl():
             nic_cmd_list.append(nic_cmd)
   
             
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-   
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            return False
+        #VERIFY FRU PROGRAMMING
+        match = re.findall(r"FRU Checkum and Type/Length Checks Passed", cmd_buf)
+        if not match:
+            print(" FRU PROGRAMMING FAILED\n")
+            print(" BUF =  {:s}".format(cmd_buf))
             return False
 
         return True
@@ -1462,7 +1475,6 @@ class nic_ctrl():
             if self._nic_type == NIC_Type.NAPLES100IBM:
                 match = re.findall(IBM_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.VOMERO2:
-                print("fru_buf 5 match: ")
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
@@ -2397,8 +2409,8 @@ class nic_ctrl():
             errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        if ocp_read_data[0] != 0x13 :
-            errlist.append(" ERROR: OCP CPLD REG 0x1F (IRQ REG):  READ 0x{:X}  Expect 0x13".format(ocp_read_data[0]) )
+        if ocp_read_data[0] != 0x11 :
+            errlist.append(" ERROR: OCP CPLD REG 0x1F (IRQ REG):  READ 0x{:X}  Expect 0x11".format(ocp_read_data[0]) )
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 

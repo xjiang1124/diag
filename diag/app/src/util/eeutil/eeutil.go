@@ -59,8 +59,16 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         eeprom.EepromTbl = eeprom.MtpTbl
     } else {
 
-        if cardType == "NAPLES25SWM" || cardType == "NAPLES25SWMDELL" || cardType == "NAPLES25OCP" || cardType == "VOMERO2" || cardType == "ORTANO" || cardType == "NAPLES100HPE" {
+        if cardType == "NAPLES25SWM" || 
+           cardType == "NAPLES25SWMDELL" || 
+           cardType == "NAPLES25SWM833" || 
+           cardType == "NAPLES25OCP" || 
+           cardType == "VOMERO2" || 
+           cardType == "ORTANO" || 
+           cardType == "NAPLES100HPE" {
+
             eeprom.I2cAddr16 = true
+
         }
         
 
@@ -167,6 +175,10 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     return -1;
                 }
             } 
+        }
+        if (cardType == "NAPLES25SWM833") {
+            eeprom.CustType = "PENSWM"
+            eeprom.EepromTbl = eeprom.PenTblSWM833Mhz
         }
         if (cardType == "NAPLES25SWMDELL") {
             eeprom.CustType = "DELLSWM"
@@ -391,6 +403,7 @@ func main() {
 
         if *updatePtr == true {
             misc.SleepInUSec(1000)
+            cli.Printf("i", "Programming/Updating Fru\n")
             if mac != "" && eeprom.HpeAlom == false {
                 hwdev.EepromUpdateMac(devName, iInfo.Bus, iInfo.DevAddr, mac)
                 misc.SleepInUSec(500000)
@@ -422,6 +435,12 @@ func main() {
                 hwdev.EepromFixNaples25HPE(devName, iInfo.Bus, iInfo.DevAddr)
                 //hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, 256)
             }
+            rc := hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr, false)
+            if rc != 0 {
+                os.Exit(-1)
+            } else {
+                os.Exit(0)
+            }
         }
 
         // FIXME
@@ -441,8 +460,13 @@ func main() {
     }
 
     if *veriryPtr == true {
-        hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr)
-        return
+        rc := hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr, true)
+        if rc != 0 {
+            os.Exit(-1)
+        } else {
+            os.Exit(0)
+        }
+
     }
 
     flag.Usage()

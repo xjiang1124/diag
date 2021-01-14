@@ -14,6 +14,8 @@ import (
     "hardware/hwinfo"
     "hardware/i2cinfo"
 
+    "os/exec"
+
 )
 
 // Naples25SW need to choose SMBus between NIC and ALOM
@@ -34,6 +36,15 @@ func SelSmbFromAdaptor(uutName string, HpeAlom bool) (err int) {
         // Do nothing
         return
     }
+
+
+    //Probe for the CPLD
+    _ , errGo := exec.Command("/usr/sbin/i2cget","-y","0","0x4b", "0x80").Output()
+    if errGo != nil {
+        return
+    } 
+    cli.Printf("i", "SET ALOM CPLD MUX FOR FRU ACCESS\n")
+
 
     ctrlVal, err = cpldSmb.ReadSmb("CPLD_ADAP", naples25swmAdapCpld.REG_CTRL)
     if HpeAlom == false {
@@ -251,10 +262,10 @@ func EepromMatchSearchFruPN(devName string, bus uint32, devAddr byte, pn string)
     return err
 }
 
-func EepromVerifyCSUM(devName string, bus uint32, devAddr byte) (err int) {
+func EepromVerifyCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.VerifyFruCSUM(devName, bus, devAddr)
+    err = eeprom.VerifyFruCSUM(devName, bus, devAddr, OutputEnabled)
     if err != errType.SUCCESS {
         cli.Println("f", "Verify EEPROM Checksum(s) failed!")
         return
