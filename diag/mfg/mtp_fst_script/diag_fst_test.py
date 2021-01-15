@@ -170,6 +170,8 @@ def fst_general_old(fst):
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
+                elif "16GT/s" in new_str and "x16" in new_str:
+                    print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
                 else:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "failed")
                     print("Speed and Width are failed")
