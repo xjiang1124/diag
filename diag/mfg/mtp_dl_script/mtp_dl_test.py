@@ -260,7 +260,6 @@ def main():
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-    #mtp_asic_support = mtp_mgmt_ctrl.mtp_get_asic_support()
 
     # get the absolute file path
     naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE

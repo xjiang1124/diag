@@ -1641,12 +1641,14 @@ class nic_ctrl():
                     match = re.findall(IBM_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
              
                                                  
-                elif self._nic_type == NIC_Type.VOMERO2 or self._nic_type == NIC_Type.ORTANO:
+                elif self._nic_type == NIC_Type.VOMERO2:
                     match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                     match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
+                elif self._nic_type == NIC_Type.ORTANO:
+                    match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 else:
                     match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
                     if not match:
@@ -1823,7 +1825,6 @@ class nic_ctrl():
 
         if self._nic_type == NIC_Type.ORTANO:
             # there are no CPLD timestamps; use major revision + minor revision
-            # FIXME: Nab - store minor revision in self._minor_revision to avoid confusion..
             read_data = [0]
             rc = self.nic_read_cpld(0x1e, read_data)
             if not rc:

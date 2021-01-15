@@ -35,6 +35,7 @@ from libmfg_cfg import MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_ORTANO_TIMESTAMP
 from libmfg_cfg import MFG_QSPI_NAPLES25_SWM_TIMESTAMP
 from libmfg_cfg import MFG_GOLD_NAPLES25_SWM_TIMESTAMP
+from libmfg_cfg import MFG_GOLD_ORTANO_TIMESTAMP
 #from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
 from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
@@ -1983,6 +1984,10 @@ class mtp_ctrl():
             if software_pn != "90-0003-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
+        elif naples_pn[0:7] == "68-0015":     #ORTANO
+            if software_pn != "90-00xx":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return False             
@@ -3411,7 +3416,6 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO:  
-            #NAPLES25OCP uses same setting as Naples25
             vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)
         else:

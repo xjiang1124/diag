@@ -55,8 +55,8 @@ class NIC_CPLD_Version:
     
     ORTANO_VERSION = "0x2"      #major rev
     ORTANO_TIMESTAMP = "0x08"    #minor rev
-    ORTANO_SEC_VERSION = ""
-    ORTANO_SEC_TIMESTAMP = ""
+    ORTANO_SEC_VERSION = "0x2"
+    ORTANO_SEC_TIMESTAMP = "0x08"#placeholder version for testing
 
 
 # MFG release images
@@ -83,7 +83,7 @@ class MFG_IMAGE_FILES:
     NIC_DIAGFW_IMAGE_NAPLES100 = "naples_diagfw_12172019.tar"
     NIC_GOLDFW_IMAGE_NAPLES100 = "naples_goldfw_09182019.tar"
     NIC_DIAGFW_IMAGE_ORTANO = "elba_diagfw_1.17.0-26-5_1112.tar"
-    NIC_GOLDFW_IMAGE_ORTANO = "naples_goldfw_1.17.0-11-2_1118.tar"
+    NIC_GOLDFW_IMAGE_ORTANO = "naples_goldfw_1.17.0-11-2_1108.tar"
 
     NAPLES25_CPLD_IMAGE = "naples25_rev9_06222020.bin"
     NAPLES25_SEC_CPLD_IMAGE = "naples25_rev89_06172020.bin"
@@ -182,6 +182,7 @@ MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP = "08-24-2020"
 MFG_QSPI_ORTANO_TIMESTAMP = "11-12-2020"
 MFG_QSPI_NAPLES25_SWM_TIMESTAMP = "11-18-2020"
 MFG_GOLD_NAPLES25_SWM_TIMESTAMP = "11-18-2020"
+MFG_GOLD_ORTANO_TIMESTAMP = "11-08-2020"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
@@ -218,7 +219,7 @@ NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 IBM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 PEN_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{2})"
 VOMERO2_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-ORTANO_DISP_ASSEMBLY_FMT = VOMERO2_DISP_ASSEMBLY_FMT
+ORTANO_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 #NAPLES_DISP_PN_FMT = r"(Part|Assembly) Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"

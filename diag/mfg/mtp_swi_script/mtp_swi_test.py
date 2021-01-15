@@ -338,6 +338,10 @@ def main():
             cpld_img_file = naples25swmdell_cpld_img_file                        
             sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_SWMDELL
+        elif card_type == NIC_Type.ORTANO:
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_SEC_CPLD_IMAGE
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
             continue
@@ -424,6 +428,8 @@ def main():
         elif card_type == NIC_Type.NAPLES25SWMDELL:
             #qspi_img_file = naples25swm_qspi_img_file
             cpld_img_file = naples25swmdell_cpld_img_file
+        elif card_type == NIC_Type.ORTANO:
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -464,6 +470,11 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         for test in ["SEC_KEY_PROG"]:
+            #skip secure key programming for Ortano
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skipping SEC_KEY_PROG for ORTANO")
+                continue
+
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SEC_KEY_PROG":
@@ -501,6 +512,10 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        #skip for Ortano until we have a sec_cpld image
+        if card_type == NIC_Type.ORTANO:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skipping Secure CPLD programming for ORTANO")
+            continue
         if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
             sec_cpld_img_file = naples100_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES100IBM:
@@ -519,6 +534,8 @@ def main():
             sec_cpld_img_file = naples25ocp_sec_cpld_img_file
         elif card_type == NIC_Type.NAPLES25SWMDELL:
             sec_cpld_img_file = naples25swmdell_sec_cpld_img_file
+        elif card_type == NIC_Type.ORTANO:
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_SEC_CPLD_IMAGE
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
@@ -555,6 +572,10 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        #skipped secure key programming for Ortano
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skipping SEC_PROG_VERIFY for ORTANO")
+            continue
         for test in ["SEC_PROG_VERIFY"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
@@ -592,6 +613,10 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.ORTANO:
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
+
         nic_thread = threading.Thread(target = single_nic_copy_gold_program, args = (mtp_mgmt_ctrl,
                                                                                 gold_img_file,
                                                                                 slot,
@@ -660,6 +685,10 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.ORTANO:
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
+
         nic_thread = threading.Thread(target = single_nic_gold_program, args = (mtp_mgmt_ctrl,
                                                                                 gold_img_file,
                                                                                 slot,
@@ -806,7 +835,7 @@ def main():
                 if (card_type == NIC_Type.NAPLES100IBM) or (isCloud == True):
                     if ret:
                         ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
-            elif test == "SW_PROFILE"and nic_profile:
+            elif test == "SW_PROFILE" and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
             elif test == "SW_SHUTDOWN":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
