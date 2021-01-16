@@ -224,6 +224,7 @@ HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
 HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
+OCP_DELL_DISP_PN_FMT = r"Assembly Number +([A-Z0-9]{6}-[0-9]{3})"
 HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
 
 NIC_MGMT_USERNAME = "root"
