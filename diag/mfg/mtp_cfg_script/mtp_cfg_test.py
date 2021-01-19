@@ -158,7 +158,7 @@ def main():
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)

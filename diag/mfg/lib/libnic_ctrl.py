@@ -85,7 +85,9 @@ class nic_ctrl():
 
 
     def nic_set_err_msg(self, err_msg):
-        self._err_msg = err_msg
+        if not self._err_msg:
+            self._err_msg = ""
+        self._err_msg += "\n" + err_msg
 
 
     def nic_set_cmd_buf(self, cmd_buf):
@@ -235,7 +237,9 @@ class nic_ctrl():
 
 
     def nic_get_err_msg(self):
-        return self._err_msg
+        ret = self._err_msg
+        self._err_msg = "" #clear it out
+        return ret
 
 
     def nic_get_cmd_buf(self):
@@ -712,8 +716,9 @@ class nic_ctrl():
             #VERIFY FRU PROGRAMMING
             match = re.findall(r"FRU Checkum and Type/Length Checks Passed", self.nic_get_cmd_buf())
             if not match:
-                print(" FRU PROGRAMMING FAILED\n")
-                print(" BUF =  {:s}".format(self.nic_get_cmd_buf()))
+                self.nic_set_err_msg(" SMB FRU PROGRAMMING FAILED\n")
+                self.nic_set_err_msg(" BUF =  {:s}".format(self.nic_get_cmd_buf()))
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
                
@@ -750,8 +755,9 @@ class nic_ctrl():
         #VERIFY FRU PROGRAMMING
         match = re.findall(r"FRU Checkum and Type/Length Checks Passed", cmd_buf)
         if not match:
-            print(" FRU PROGRAMMING FAILED\n")
-            print(" BUF =  {:s}".format(cmd_buf))
+            self.nic_set_err_msg(" ASIC FRU PROGRAMMING FAILED\n")
+            self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         return True
@@ -1466,6 +1472,7 @@ class nic_ctrl():
         fru_buf = self.nic_get_info(nic_cmd)
         if not fru_buf:
             print ("fru_buf 1 match: ")
+            self.nic_set_err_msg("Unable to read ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = None
@@ -1482,6 +1489,7 @@ class nic_ctrl():
             self._sn = match[0]
         else:
             print ("fru_buf 2: {}".format(fru_buf))
+            self.nic_set_err_msg("Serial number doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = None
@@ -1491,6 +1499,7 @@ class nic_ctrl():
             self._mac = match[0]
         else:
             print ("fru_buf 3 match: ")
+            self.nic_set_err_msg("MAC address doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         match = None
@@ -1501,6 +1510,7 @@ class nic_ctrl():
                 self._date = match[0].replace('/','')
             else:
                 print ("fru_buf 4 match: ")
+                self.nic_set_err_msg("Date field doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
         else:
@@ -1536,6 +1546,7 @@ class nic_ctrl():
             self._pn = match[0]
         else:
             print ("fru_buf 6 match: ")
+            self.nic_set_err_msg("Assembly/Part number doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
         
@@ -1577,6 +1588,7 @@ class nic_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 print ("fru_buf 7 match: ")
+                self.nic_set_err_msg("Unable to read SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary SN
@@ -1592,6 +1604,7 @@ class nic_ctrl():
                 sn = match[0]
             else:
                 print ("fru_buf 8 match: ")
+                self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
                 
@@ -1601,6 +1614,7 @@ class nic_ctrl():
                 mac = match[0]
             else:
                 print ("fru_buf 9 match: ")
+                self.nic_set_err_msg("MAC address doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             # secondary date
@@ -1610,6 +1624,7 @@ class nic_ctrl():
                     date = match[0].replace('/','')
                 else:
                     print ("fru_buf 10 match: ")
+                    self.nic_set_err_msg("Date field doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
             else:
@@ -1641,18 +1656,20 @@ class nic_ctrl():
                 pn = match[0]
             else:
                 print ("fru_buf 11 match: ")
+                self.nic_set_err_msg("Assembly/Part number doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
             
 
             if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
-                print(" ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU ")
-                print(" SN  " + self._sn + " " + sn)
-                print(" MAC " + self._mac + " " + mac)
-                print(" PN  " + self._pn + " " + pn)
+                err_msg = " ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU \n"
+                err_msg += " SN  " + self._sn + " " + sn + "\n"
+                err_msg += " MAC " + self._mac + " " + mac + "\n"
+                err_msg += " PN  " + self._pn + " " + pn + "\n"
                 if date != None:
-                    print(" DT  " + self._date + " " + date)
+                    err_msg += " DT  " + self._date + " " + date + "\n"
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                self.nic_set_err_msg(err_msg)
                 return False
 
 
@@ -1663,6 +1680,7 @@ class nic_ctrl():
                 rc = self.nic_swm_check_alom_present(errlist)
                 if not rc:
                     print(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
+                    self.nic_set_err_msg(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
                 else:
@@ -1672,6 +1690,7 @@ class nic_ctrl():
                 
                 if not fru_buf:
                     print ("fru_buf 12: {}".format(nic_cmd))
+                    self.nic_set_err_msg("Unable to read ALOM FRU")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False        
                 
@@ -1681,6 +1700,7 @@ class nic_ctrl():
                     self._alom_sn = match[0]
                 else:
                     print ("fru_buf 13: {}".format(fru_buf))
+                    self.nic_set_err_msg("ALOM Serial number doesn't match any known formats:\n {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 
@@ -1691,6 +1711,8 @@ class nic_ctrl():
                     self._alom_pn = match[0]
                 else:
                     print ("fru_buf 14: {}".format(fru_buf))
+
+                    self.nic_set_err_msg("ALOM BIA part number doesn't match any known formats:\n {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
             
@@ -1705,6 +1727,8 @@ class nic_ctrl():
                     #print("******************************")
                 else:
                     print ("fru_buf 15: {}".format(fru_buf))
+
+                    self.nic_set_err_msg("ALOM PIA part number doesn't match any known formats:\n {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
             

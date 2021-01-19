@@ -296,7 +296,7 @@ def main():
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -719,13 +719,13 @@ def main():
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
         if slot in fail_nic_list:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass FAILED slot for setting MAINFW\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass FAILED slot for setting MAINFW")
             continue
         if not nic_prsnt_list[slot]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot for setting MAINFW\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot for setting MAINFW")
             continue
         if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot):
-            mtp_mgmt_ctrl.mtp_diag_fail_report(slot, "Failed to set slot to MAINFW\n")
+            mtp_mgmt_ctrl.mtp_diag_fail_report(slot, "Failed to set slot to MAINFW")
             continue
     
     # monitor all the thread
@@ -757,9 +757,9 @@ def main():
 
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Started\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Started", level=0)
     libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped", level=0)
 
     # INIt the sw mgmt port
     if not NAPLES100IBM:

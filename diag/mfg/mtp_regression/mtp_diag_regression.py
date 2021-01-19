@@ -876,7 +876,7 @@ def main():
 
         if nic_list:
             if not mtp_capability & mtp_exp_capability:
-                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP <{:x}> doesn't support {:s}".format(mtp_capability, nic_type))
+                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP capability 0x<{:x}> doesn't support {:s}".format(mtp_capability, nic_type))
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
                 return
             naples_diag_cfg_show(nic_type, test_db, mtp_mgmt_ctrl)

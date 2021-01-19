@@ -445,7 +445,7 @@ def main():
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
@@ -778,7 +778,7 @@ def main():
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
         os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
         if log_hard_copy_flag:
-            libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, log_pkg_file))
+            libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
             log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
             log_hard_copy_flag = False

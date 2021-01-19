@@ -188,6 +188,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             nic_test_rslt_list[slot] = False
+            mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
             break
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -368,7 +369,7 @@ def main():
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
             continue
 
         sn = nic_fru_cfg[mtp_id][key]["SN"]
@@ -582,7 +583,7 @@ def main():
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot\n")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
             continue
 
         # DL Verify process
