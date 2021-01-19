@@ -667,11 +667,7 @@ class nic_ctrl():
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                         #print("****MTP FRU PROG 1st****")
                         return False
-                                              
-                    cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
-                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        #print("****MTP FRU PROG 2nd****")
-                        return False
+
                 elif nic_type == NIC_Type.NAPLES100HPE:
                     cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
@@ -707,9 +703,6 @@ class nic_ctrl():
             elif nic_type == NIC_Type.NAPLES25SWM:
                 #In NIC Program HPE SWM
                 nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-                nic_cmd_list.append(nic_cmd)
-      
-                nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
                 nic_cmd_list.append(nic_cmd)
          
             elif nic_type == NIC_Type.NAPLES100HPE:
