@@ -9,6 +9,7 @@ import (
     "common/cli"
     "common/errType"
     "device/powermodule/tps53659"
+    "device/powermodule/tps53659a"
     "device/powermodule/tps549a20"
     "device/powermodule/tpsAll"
 
@@ -39,6 +40,7 @@ func init() {
 func devInfo(devName string) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -48,6 +50,8 @@ func devInfo(devName string) {
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -62,6 +66,7 @@ func devInfo(devName string) {
 func dispStatus(devName string) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -70,6 +75,8 @@ func dispStatus(devName string) {
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -84,11 +91,14 @@ func dispStatus(devName string) {
 func dispStatusAll() {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -109,6 +119,7 @@ func list() {
 func margin(devName string, pct int) (err int){
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -117,6 +128,8 @@ func margin(devName string, pct int) (err int){
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -133,6 +146,7 @@ func margin(devName string, pct int) (err int){
 func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode string) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
     var tps549a20 tps549a20.TPS549A20
     var dataB byte
 
@@ -149,6 +163,8 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -192,6 +208,7 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
 func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
     var byteCnt int
     dataLen := 6
     dataBuf := make([]byte, dataLen)
@@ -202,6 +219,8 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err 
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else {
             continue
         }
@@ -235,6 +254,7 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err 
 func program (devName string, fileName string, verbose bool) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
 
     for _, vrm := range(hwInfo.vrmTbl) {
         if devName != vrm.Name {
@@ -242,6 +262,8 @@ func program (devName string, fileName string, verbose bool) (err int) {
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else {
             continue
         }
@@ -256,6 +278,7 @@ func program (devName string, fileName string, verbose bool) (err int) {
 func verify (devName string, fileName string, verbose bool) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
+    var tps53659a tps53659a.TPS53659A
 
     for _, vrm := range(hwInfo.vrmTbl) {
         if devName != vrm.Name {
@@ -263,6 +286,8 @@ func verify (devName string, fileName string, verbose bool) (err int) {
         }
         if vrm.Comp == "TPS53659" {
             tps = &tps53659
+        } else if vrm.Comp == "TPS53659A" {
+            tps = &tps53659a
         } else {
             continue
         }

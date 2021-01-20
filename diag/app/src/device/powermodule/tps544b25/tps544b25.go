@@ -215,3 +215,45 @@ func SetVMargin(devName string, pct int) (err int) {
     return
 }
 
+func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
+    var cardType string
+    var targetvoltage float64 = 0 
+    var mantissa uint16 = 0
+    var VMODE byte
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    targetvoltage = float64(tgtVoutMv) / 1000
+    cli.Println("i", "Set Voltage Margin to", targetvoltage)
+    cardType = os.Getenv("CARD_TYPE")
+    //Check the card type to set the target voltage... long term should go into I2C table maybe
+    if cardType == "ORTANO" {
+        if ( targetvoltage > 1.20 * 1.10 ) || ( targetvoltage < 1.20 * 0.90 ) {
+            cli.Println("e", "Voltage Margin Needs to be between 1080mv and 1320mv", devName)
+            err = errType.FAIL
+            return
+	}
+    } else {
+        cli.Println("e", "Voltage Margin doesn't applied to the card type with the device", devName)
+        err = errType.FAIL
+        return
+    }
+
+    VMODE, err = pmbus.ReadByte(devName, VOUT_MODE)
+    VMODE = VMODE & 0x1F  //mask exponent
+
+    mantissa, err = pmbus.GetMantissa(uint16(VMODE & 0x1F), targetvoltage)
+
+    err = pmbus.WriteWord(devName, VOUT_COMMAND, mantissa)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    return
+}

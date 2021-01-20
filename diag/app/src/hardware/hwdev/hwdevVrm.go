@@ -7,6 +7,7 @@ import (
     //"common/dmutex"
     "common/errType"
     "device/powermodule/tps53659"
+    "device/powermodule/tps53659a"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
 
@@ -47,6 +48,8 @@ func margin(devName string, pct int, lockFlag bool) (err int){
 
     if i2cif.Comp == "TPS53659" {
         err = tps53659.SetVMargin(devName, pct)
+    } else if i2cif.Comp == "TPS53659A" {
+        err = tps53659a.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS549A20" {
        err = tps549a20.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS544B25" {
@@ -101,6 +104,8 @@ func updateVboot(devName string, tgtVbootMv uint64, lockFlag bool) (err int){
 
     if i2cif.Comp == "TPS53659" {
         err = tps53659.UpdateVboot(devName, tgtVbootMv)
+    } else if i2cif.Comp == "TPS53659A" {
+        err = tps53659a.UpdateVboot(devName, tgtVbootMv)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -151,6 +156,8 @@ func findVid(devName string, tgtVoutMv uint64, lockFlag bool) (vid byte, err int
 
     if i2cif.Comp == "TPS53659" {
         vid, err = tps53659.FindVid(devName, tgtVoutMv)
+    } else if i2cif.Comp == "TPS53659A" {
+        vid, err = tps53659a.FindVid(devName, tgtVoutMv)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -201,6 +208,10 @@ func marginByValue(devName string, tgtVoutMv uint64, lockFlag bool) (err int){
 
     if i2cif.Comp == "TPS53659" {
         err = tps53659.SetVMarginByValue(devName, tgtVoutMv)
+    } else if i2cif.Comp == "TPS53659A" {
+        err = tps53659a.SetVMarginByValue(devName, tgtVoutMv)
+    } else if i2cif.Comp == "TPS544B25" {
+        err = tps544b25.SetVMarginByValue(devName, tgtVoutMv)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -247,6 +258,8 @@ func program (devName string, fileName string, verbose bool, lockFlag bool) (err
 
     if i2cif.Comp == "TPS53659" {
         tps53659.ProgramVerifyNvm(devName, fileName, "PROGRAM", verbose)
+    } else if i2cif.Comp == "TPS53659A" {
+        tps53659a.ProgramVerifyNvm(devName, fileName, "PROGRAM", verbose)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -292,6 +305,8 @@ func verify (devName string, fileName string, verbose bool, lockFlag bool) (err 
 
     if i2cif.Comp == "TPS53659" {
         err = tps53659.ProgramVerifyNvm(devName, fileName, "VERIFY", verbose)
+    } else if i2cif.Comp == "TPS53659A" {
+        err = tps53659a.ProgramVerifyNvm(devName, fileName, "VERIFY", verbose)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -344,6 +359,10 @@ func readVout(devName string, lockFlag bool) (voutMv uint64, err int){
 
     if i2cif.Comp == "TPS53659" {
         integer, dec, err = tps53659.ReadVout(devName)
+    } else if i2cif.Comp == "TPS53659A" {
+        integer, dec, err = tps53659a.ReadVout(devName)
+    } else if i2cif.Comp == "TPS544B25" {
+        integer, dec, err = tps544b25.ReadVout(devName)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -397,6 +416,8 @@ func readIout(devName string, lockFlag bool) (ioutMa uint64, err int){
 
     if i2cif.Comp == "TPS53659" {
         integer, dec, err = tps53659.ReadIout(devName)
+    } else if i2cif.Comp == "TPS53659A" {
+        integer, dec, err = tps53659a.ReadIout(devName)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM

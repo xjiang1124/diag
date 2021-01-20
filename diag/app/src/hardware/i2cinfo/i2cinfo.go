@@ -69,8 +69,8 @@ var OrtanoTbl = []I2cInfo {
     I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"ELB0_CORE",      "TPS53659",  0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"ELB0_ARM",       "TPS53659",  0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
     I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"VDDQ_DDR",       "TPS544B25", 0x0,   0x24,    0x0,    "HUB_NONE",  0,    0},
 

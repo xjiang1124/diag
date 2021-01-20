@@ -10,6 +10,7 @@ import (
     "common/errType"
 
     "device/powermodule/tps53659"
+    "device/powermodule/tps53659a"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
     "device/rtc/pcf85263a"
@@ -30,7 +31,26 @@ func testTps53659(devName string) (err int) {
     }
 
     /* hack for now. Probably need to based on device rev */
-    if (devID != tps53659.DEVICE_ID) && (devID != 0x5a) {
+    if (devID != tps53659.DEVICE_ID) {
+        dcli.Println("F", devName, " Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)
+        return errType.FAIL
+    }
+    return
+}
+
+/*
+    Read Device ID and compare with expected one
+ */
+func testTps53659a(devName string) (err int) {
+    devID, err := tps53659a.ReadDeviceID(devName)
+
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+        return
+    }
+
+    /* hack for now. Probably need to based on device rev */
+    if (devID != tps53659a.DEVICE_ID) {
         dcli.Println("F", devName, " Invalid Device ID: expected", tps53659.DEVICE_ID, "read", devID)
         return errType.FAIL
     }
@@ -113,6 +133,11 @@ func I2cI2cHdl(argList []string) {
         switch i2cInfo.Comp {
         case "TPS53659":
             err = testTps53659(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "TPS53659A":
+            err = testTps53659a(devName)
             if err != errType.SUCCESS {
                 ret = err
             }
