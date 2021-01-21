@@ -16,6 +16,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libdefs import FF_Stage
@@ -74,6 +75,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+    if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
+        ### REWORK VERIFICATION FOR CAP CHANGE ###
+        ### PERFORM AFTER FRU_VERIFY ###
+        testseqlist.insert(1, "REWORK_VERIFY")
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -89,6 +94,74 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
+        elif test == "REWORK_VERIFY":
+            ### REWORK VERIFICATION FOR CAP CHANGE ###
+            ### For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42 ###
+            nic_fru_info = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_fru()
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            nic_vendor = nic_fru_info[4]
+            if nic_type == NIC_Type.NAPLES25 and nic_vendor == NIC_Vendor.HPE:
+                arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
+                if not arm_fru:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
+                    ret1 = False
+                arm_match = re.findall("\] Revision Code +([0-9A-Za-z]*)[ \n\r]", arm_fru)
+                if arm_match:
+                    if arm_match[0] == "0B":
+                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Revision Code = 0B on ASIC FRU")
+                        ret1 = True
+                    else:
+                        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Revision Code = 0B, got {}".format(arm_match[0]))
+                        ret1 = False
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Revision Code field in: \n{}".format(arm_fru))
+                    ret1 = False
+
+                mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(slot+1))
+                smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
+                smb_match = re.findall("\] Revision Code +([0-9A-Za-z]*)[ \n\r]", smb_fru)
+                if smb_match:
+                    if smb_match[0] == "0B":
+                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Revision Code = 0B on SMB FRU")
+                        ret2 = True
+                    else:
+                        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Revision Code = 0B, got {}".format(smb_match[0]))
+                        ret2 = False
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Revision Code field in: \n{}".format(smb_fru))
+                    ret2 = False
+
+            if nic_type == NIC_Type.NAPLES25SWM and nic_vendor == NIC_Vendor.HPE:
+                arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
+                if not arm_fru:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
+                    ret1 = False
+                arm_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", arm_fru)
+                if arm_match:
+                    if arm_match[0] == "0B":
+                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Product Version = 0B on ASIC FRU")
+                        ret1 = True
+                    else:
+                        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Product Version = 0B, got {}".format(arm_match[0]))
+                        ret1 = False
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(arm_fru))
+                    ret1 = False
+
+                mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(slot+1))
+                smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
+                smb_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", smb_fru)
+                if smb_match:
+                    if smb_match[0] == "0B":
+                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Product Version = 0B on SMB FRU")
+                        ret2 = True
+                    else:
+                        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Product Version = 0B, got {}".format(smb_match[0]))
+                        ret2 = False
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(smb_fru))
+                    ret2 = False
+            ret = ret1 and ret2
         # program CPLD
         elif test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
