@@ -1682,9 +1682,51 @@ class nic_ctrl():
         return True
         
     def nic_disp_fru(self):
-        nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        if self._nic_type == NIC_Type.NAPLES25SWM:
+            nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        elif self._nic_type == NIC_Type.NAPLES100HPE:
+            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        elif self._vendor == NIC_Vendor.HPE:
+            nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        else:
+            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        '''
+        if self._nic_type == NIC_Type.NAPLES25SWM and 
+        (swmtestmode == Swm_Test_Mode.SWMALOM or swmtestmode == Swm_Test_Mode.ALOM):
+                errlist = list()
+                rc = self.nic_swm_check_alom_present(errlist)
+                if not rc:
+                    print(" NIC_FRU_DISPLAY: ALOM IS NOT SHOWING PRESENT")
+                    self.nic_set_err_msg(" NIC_FRU_DISPLAY: ALOM IS NOT SHOWING PRESENT")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                fru_buf = self.mtp_read_alom_fru(self._slot)
+                if not fru_buf:
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+        '''
         fru_buf = self.nic_get_info(nic_cmd)
-        
+        if not fru_buf:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        return True
+
+    def nic_disp_2nd_fru(self):
+        #SMB FRU dump
+        if self._nic_type == NIC_Type.NAPLES25OCP:
+            cmd = MFG_DIAG_CMDS.MTP_HP_OCP_FRU_DISP_FMT.format(self._slot+1)
+        elif self._nic_type == NIC_Type.NAPLES25SWM:
+            cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
+        elif self._nic_type == NIC_Type.NAPLES100HPE:
+            cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
+        elif self._vendor == NIC_Vendor.HPE:
+            cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
         return True
 
     def nic_get_fru(self):

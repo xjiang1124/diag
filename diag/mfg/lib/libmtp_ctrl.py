@@ -1735,7 +1735,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn, nic_type):
             self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
             return False
-        if not self.exec_cmd(MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(slot+1)):
+        if not self._nic_ctrl_list[slot].nic_disp_2nd_fru():
             self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
             return False
         if not self._nic_ctrl_list[slot].nic_disp_fru():
