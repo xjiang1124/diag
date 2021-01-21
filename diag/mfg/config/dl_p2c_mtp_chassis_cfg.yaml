@@ -1,3 +1,24 @@
+MTP-001:
+    MODE: ""
+    TS: "192.168.74.208"
+    TS_PORT: "2008"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: "192.168.70.161"
+    APC2_PORT: "12"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.68.182"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp001"
+    SLOTS: 10
+    CAPABILITY: 0x2
+    
 ###############################
 ##### Flex Milpitas setup #####
 ###############################
