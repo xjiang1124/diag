@@ -307,11 +307,10 @@ func main() {
             os.Exit(-1);
         }
     } else if os.Args[1] == "mappedi2c" {
-        "mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
-        "mappedi2c bus i2c_addr r len                              -- read\n" +
-        "mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
+        //"mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
+        //"mappedi2c bus i2c_addr r len                              -- read\n" +
+        //"mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
         //arg2 = bus
-
     } else if os.Args[1] == "mem" {
         //"fpgautil mem r32 <addr>\n" +
         //"fpgautil mem w32 <addr> <data>\n" +
@@ -360,8 +359,6 @@ func main() {
 
     return
 }
-
-    
 
 //export c_elba_fpga_wr
 func c_elba_fpga_wr(addr byte, data byte) int {

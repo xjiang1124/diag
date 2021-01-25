@@ -26,6 +26,7 @@ AMD64_SRC_DIR=			\
 	util/mctputil		\
 	util/inventory		\
 	util/mtptest		\
+	util/swmadaputil	\
 	util/pcieswutil
 
 AMD64_C_SRC_DIR=		\

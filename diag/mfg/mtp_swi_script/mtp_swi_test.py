@@ -54,7 +54,12 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     
 def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_list):
     dsp = FF_Stage.FF_SWI
-    for test in ["CPLD_PROG", "CPLD_REF"]:
+    testseqlist = ["CPLD_PROG", "CPLD_REF"]                                                                
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.NAPLES25OCP:
+        testseqlist = ["CPLD_PROG"]
+
+    for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program CPLD
@@ -77,7 +82,12 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_
 
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
     dsp = FF_Stage.FF_SWI
-    for test in ["SEC_CPLD_PROG", "SEC_CPLD_REF"]:
+
+    testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF"]                                                                
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.NAPLES25OCP:
+        testseqlist = ["SEC_CPLD_PROG"]
+    for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program secure cpld

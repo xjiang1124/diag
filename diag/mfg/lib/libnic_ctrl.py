@@ -846,8 +846,13 @@ class nic_ctrl():
         # Capri-based:
         else:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            return False
+
+        if self._nic_type == NIC_Type.NAPLES25OCP:
+            if not self.nic_exec_rst_cmd(nic_cmd_list[0], timeout=MTP_Const.OS_CMD_DELAY):
+                return False
+        else:
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                return False
 
         return True
 
