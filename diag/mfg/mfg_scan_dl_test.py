@@ -17,6 +17,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmtp_db import mtp_db
@@ -111,9 +112,11 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         elif test == "REWORK_VERIFY":
             ### REWORK VERIFICATION FOR CAP CHANGE ###
             ### For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42 ###
-            nic_fru_info = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_fru()
+            if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_vendor_init():
+                return False
+            nic_vendor = mtp_mgmt_ctrl._nic_ctrl_list[slot]._vendor
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            nic_vendor = nic_fru_info[4]
+            
             if nic_type == NIC_Type.NAPLES25 and nic_vendor == NIC_Vendor.HPE:
                 arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
                 if not arm_fru:
@@ -175,9 +178,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(smb_fru))
                     ret2 = False
-            else:
-                ret1 = True
-                ret2 = True
             ret = ret1 and ret2
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
@@ -668,7 +668,7 @@ def main():
             exp_alom_pn = alom_pn
             exp_assettag = 'C0'
 
-        # power cycle all nic (Debug Power Failure Issue)
+        # power cycle all nic (Debug Power Failure Issue)   #NZ: but why inside for loop -> cycling 10 times?
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
     
         # nic power status check
