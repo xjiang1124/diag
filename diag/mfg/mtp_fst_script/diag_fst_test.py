@@ -53,6 +53,10 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES25OCP"
     elif "P41857-001" in pn:
         product_name = "NAPLES25OCP"
+    elif "DSC1-2S25-4H8P-S" in pn:
+        product_name = "NAPLES25SWM"
+    elif "DSC1-2S25-4H8P-ST" in pn:
+        product_name = "NAPLES25SWM"
     elif "DSC1-2S25-4H8P-DS" in pn:
         product_name = "SSH_DETECT"
     else:
