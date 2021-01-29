@@ -849,7 +849,7 @@ main(int argc, char *argv[])
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 	int cfgRegion = 0;
 
-        cfgRegion = strtoul(argv[2], NULL, 0);
+        cfgRegion = get_region_index_from_name(argv[2]);
     	flash_enable(fd);
     	flash_init(fd, cfgRegion);
     	flash_erase(fd, cfgRegion);
@@ -867,7 +867,7 @@ main(int argc, char *argv[])
             return -1;
         }
 
-        cfgRegion = strtoul(argv[3], NULL, 0);
+        cfgRegion = get_region_index_from_name(argv[3]);
 	if ( cfgRegion > 1 ) {
             printf("Invalid Region\n");
 	    return -1;
