@@ -431,7 +431,7 @@ class nic_con:
         # Get AISC type
         uut = "UUT_"+str(slot)
         card_type = os.environ[uut]
-        if card_type == "ORTANO" or card_type == "BIODONA":
+        if card_type == "ORTANO" or card_type == "ORTANO2" or card_type == "BIODONA":
             asic_type = "ELBA"
         else:
             asic_type = "CAPRI"

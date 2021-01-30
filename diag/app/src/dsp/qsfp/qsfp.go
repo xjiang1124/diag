@@ -33,6 +33,7 @@ func init() {
     qsfpTestMap["VOMERO"] = naples100QsfpList
     qsfpTestMap["VOMERO2"] = naples100QsfpList
     qsfpTestMap["ORTANO"] = naples100QsfpList
+    qsfpTestMap["ORTANO2"] = naples100QsfpList
     qsfpTestMap["NAPLES100_IBM"] = naples100QsfpList
 
     qsfpTestList = qsfpTestMap[cardType]

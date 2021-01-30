@@ -75,6 +75,9 @@ then
 elif [[ $cpld_id == "0x43" ]]
 then
     type="ORTANO"
+elif [[ $cpld_id == "0x44" ]]
+then
+    type="ORTANO2"
 fi
 
 echo "$type Detected!"

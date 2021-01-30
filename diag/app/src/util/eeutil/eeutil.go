@@ -65,6 +65,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
            cardType == "NAPLES25OCP" || 
            cardType == "VOMERO2" || 
            cardType == "ORTANO" || 
+           cardType == "ORTANO2" || 
            cardType == "NAPLES100HPE" {
 
             eeprom.I2cAddr16 = true
@@ -148,6 +149,10 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
             eeprom.EepromTbl = eeprom.Vomero2Tbl
         }
         if (cardType == "ORTANO") {
+            eeprom.CustType = "ORTANO"
+            eeprom.EepromTbl = eeprom.OrtanoTbl
+        }
+        if (cardType == "ORTANO2") {
             eeprom.CustType = "ORTANO"
             eeprom.EepromTbl = eeprom.OrtanoTbl
         }

@@ -3,7 +3,7 @@
 set_vmarg()
 {
     echo $CARD_TYPE
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
         for dev in ELB0_CORE ELB0_ARM VDD_DDR VDDQ_DDR
         do

@@ -841,14 +841,14 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "ORTANO2" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1046,7 +1046,7 @@ func updateIntChk() () {
         }
     }
 
-    if CustType == "ORACLE" || CustType == "ORTANO" {
+    if CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" {
         brdInfoChk = 0
         productInfoChk = 0
         cmnHeadChk = 0
@@ -1188,7 +1188,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "ORTANO2" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1196,7 +1196,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 }
             }
 
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1207,7 +1207,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             if entry.Name == "Serial Number" {
                 // Not a good solution to set SN padding
                 var snInitVal byte
-                if CustType == "ORACLE" || CustType == "ORTANO" {
+                if CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2"  {
                     snInitVal = 0x20
                 } else {
                     snInitVal = 0x0
@@ -1305,7 +1305,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" ) {
+        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" ) {
             copy(an_ptr, pn)
         } else {
             copy(pn_ptr, pn)
@@ -1358,7 +1358,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
     data := make([]byte, 3)
     for _, entry := range(EepromTbl) {
 
-        if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
+        if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "ORTANO2" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
             if entry.Name == "Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1366,7 +1366,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             }
         }
 
-        if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+        if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1479,7 +1479,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 continue
             }
         } else if(field == "PN") {
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
                 if entry.Name != "Assembly Number" {
                     continue
                 }
@@ -1745,7 +1745,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     defer smbusNew.Close()
 
     //Oracle cards start their Fru information at offset 256
-    if CardType == "VOMERO2"  || CardType == "ORTANO" {
+    if CardType == "VOMERO2"  || CardType == "ORTANO" || CardType == "ORTANO2" {
         offset_add = 256
     }
 

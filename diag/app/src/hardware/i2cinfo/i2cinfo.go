@@ -276,6 +276,8 @@ func init() {
         I2cTbl = BiodonaTbl
     } else if CardType == "ORTANO" {
         I2cTbl = OrtanoTbl
+    } else if CardType == "ORTANO2" {
+        I2cTbl = OrtanoTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -392,6 +394,8 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "BIODONA_D4" || uutType == "BIODONA_D5" {
         CurI2cTbl = BiodonaMtpTbl
     } else if uutType == "ORTANO" {
+        CurI2cTbl = OrtanoMtpTbl
+    } else if uutType == "ORTANO2" {
         CurI2cTbl = OrtanoMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)

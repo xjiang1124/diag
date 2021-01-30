@@ -48,6 +48,7 @@ func init() {
     i2cTestMap["BIODONA_D4"]      = biodonaTestList
     i2cTestMap["BIODONA_D5"]      = biodonaTestList
     i2cTestMap["ORTANO"]          = biodonaTestList
+    i2cTestMap["ORTANO2"]         = biodonaTestList
 
     i2cTestList = i2cTestMap[cardType]
 }

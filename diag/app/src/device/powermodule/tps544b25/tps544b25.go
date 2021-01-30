@@ -189,7 +189,7 @@ func SetVMargin(devName string, pct int) (err int) {
 
     cardType = os.Getenv("CARD_TYPE")
     //Check the card type to set the target voltage... long term should go into I2C table maybe
-    if cardType == "ORTANO" {
+    if cardType == "ORTANO" || cardType == "ORTANO2" {
         targetvoltage = 1.20 
     } else {
         cli.Println("e", "Uknown Card Type.   Need to touch up go file and add the card type for this card", devName)
@@ -232,7 +232,7 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     cli.Println("i", "Set Voltage Margin to", targetvoltage)
     cardType = os.Getenv("CARD_TYPE")
     //Check the card type to set the target voltage... long term should go into I2C table maybe
-    if cardType == "ORTANO" {
+    if cardType == "ORTANO" || cardType == "ORTANO2" {
         if ( targetvoltage > 1.20 * 1.10 ) || ( targetvoltage < 1.20 * 0.90 ) {
             cli.Println("e", "Voltage Margin Needs to be between 1080mv and 1320mv", devName)
             err = errType.FAIL

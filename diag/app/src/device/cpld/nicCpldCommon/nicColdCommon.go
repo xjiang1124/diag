@@ -21,6 +21,7 @@ const (
     ID_BIODONA_D4      = 0x40
     ID_BIODONA_D5      = 0x41
     ID_ORTANO          = 0x43
+    ID_ORTANO2         = 0x44
 )
 
 const (

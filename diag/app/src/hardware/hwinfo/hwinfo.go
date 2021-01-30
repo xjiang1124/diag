@@ -312,6 +312,7 @@ func init() {
     dispMap["BIODONA_D4"]  = biodonaDispStaList
     dispMap["BIODONA_D5"]  = biodonaDispStaList
     dispMap["ORTANO"]     =  ortanoDispStaList
+    dispMap["ORTANO2"]     =  ortanoDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
@@ -337,6 +338,7 @@ func init() {
     eepromMap["BIODONA_D4"]    = naplesEepList
     eepromMap["BIODONA_D5"]    = naplesEepList
     eepromMap["ORTANO"]    = naplesEepList
+    eepromMap["ORTANO2"]    = naplesEepList
     //===============================
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
@@ -362,7 +364,8 @@ func init() {
     // Elba
     i2cHubMap["BIODONA_D4"]     = naples100I2cHubMap
     i2cHubMap["BIODONA_D5"]     = naples100I2cHubMap
-    i2cHubMap["ORTANO"]        = naples100I2cHubMap
+    i2cHubMap["ORTANO"]         = naples100I2cHubMap
+    i2cHubMap["ORTANO2"]        = naples100I2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"]           = mtpI2cHubList
@@ -385,6 +388,7 @@ func init() {
     i2cHubListMap["BIODONA_D4"]    = forioI2cHubList
     i2cHubListMap["BIODONA_D5"]    = forioI2cHubList
     i2cHubListMap["ORTANO"]        = forioI2cHubList
+    i2cHubListMap["ORTANO2"]       = forioI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
@@ -407,6 +411,7 @@ func init() {
     psuListMap["BIODONA_D4"]   = nicPsuList
     psuListMap["BIODONA_D5"]   = nicPsuList
     psuListMap["ORTANO"]   = nicPsuList
+    psuListMap["ORTANO2"]   = nicPsuList
 
     //===============================
     // Platform specified list
