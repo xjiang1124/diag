@@ -188,7 +188,7 @@ def fst_general_old(fst):
 
 def fst_general(fst):
     naples_env = os.environ.copy()
-    naples_env["NAPLES_URL"] = "http://169.254.0.1"
+    naples_env["DSC_URL"] = "http://169.254.0.1"
     
     if fst == 1:
         slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
@@ -218,10 +218,10 @@ def fst_general(fst):
             tmp = subprocess.call(["ifconfig", eth, "169.254."+str(bus_int)+".2/24"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.call(["ifconfig", eth, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             nic_ip = "169.254."+str(bus_int)+".1"
-            naples_env["NAPLES_URL"] = "http://"+nic_ip
+            naples_env["DSC_URL"] = "http://"+nic_ip
             time.sleep(1)
             try:
-                x = subprocess.check_output("/home/diag/penctl.linux.0302 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                x = subprocess.check_output("/home/diag/penctl.linux.02012021 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
                 print("slot:", str(a), b, "sn: unknown", "type: unknown", "failed") 
                 print("Get FRU failed")
@@ -260,7 +260,7 @@ def fst_general(fst):
                 product_name = get_product_name_from_pn(pn)
 
             try:
-                x = subprocess.check_output("/home/diag/penctl.linux.0302 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                x = subprocess.check_output("/home/diag/penctl.linux.02012021 show firmware-version", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
                 print("slot:", str(a), "sn:", sn, "type:", product_name, "failed")
                 print("Get firmware failed")
