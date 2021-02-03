@@ -5,6 +5,7 @@ import (
     "flag"
     "os"
     "strings"
+    "unicode"
 
     "common/cli"
     "common/errType"
@@ -347,6 +348,15 @@ func main() {
         eeprom.DellOcp = 1
     }
 
+    if len(uut) < 5 {
+        cli.Println("e", "Invalid UUT.  UUT Needs to be UUT_NONE or UUT_#.", devName)
+        return
+    }
+    if unicode.IsDigit(rune(uut[4])) == false &&  uut != "UUT_NONE" {
+        cli.Println("e", "Invalid UUT.  UUT Needs to be UUT_NONE or UUT_#.  You Entered %s", devName, uut)
+        return
+    }
+
     if uut != "UUT_NONE" {
         i2cinfo.SwitchI2cTbl(uut)
     }
@@ -440,11 +450,15 @@ func main() {
                 hwdev.EepromFixNaples25HPE(devName, iInfo.Bus, iInfo.DevAddr)
                 //hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, 256)
             }
-            rc := hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr, false)
-            if rc != 0 {
-                os.Exit(-1)
-            } else {
-                os.Exit(0)
+
+            //No Checksum on MTP eeprom
+            if !(os.Getenv("CARD_TYPE") == "MTP" && uut == "UUT_NONE") {
+                rc := hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr, false)
+                if rc != 0 {
+                    os.Exit(-1)
+                } else {
+                    os.Exit(0)
+                }
             }
         }
 
