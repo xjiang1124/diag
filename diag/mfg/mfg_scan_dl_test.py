@@ -428,6 +428,7 @@ def main():
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
@@ -582,6 +583,7 @@ def main():
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
@@ -724,7 +726,7 @@ def main():
             log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
             log_hard_copy_flag = False
         else:
-            libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(sn, log_relative_link))
+            libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             chdir_cmd = "cd {:s}".format(mfg_log_dir)
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)

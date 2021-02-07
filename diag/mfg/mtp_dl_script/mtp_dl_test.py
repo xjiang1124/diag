@@ -288,8 +288,10 @@ def main():
     mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
     if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
         mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         return False
     if not set_pslc(mtp_mgmt_ctrl,mtp_id):
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
@@ -297,6 +299,7 @@ def main():
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
@@ -499,6 +502,7 @@ def main():
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return

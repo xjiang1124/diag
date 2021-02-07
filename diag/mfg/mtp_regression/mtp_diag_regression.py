@@ -379,6 +379,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         return False
 
     mtp_mgmt_ctrl.cli_log_inf("Collecting MTP parallel test logfiles....", level=0)
@@ -951,6 +952,7 @@ def main():
         #if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             return
 
@@ -973,6 +975,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_inf("Setting Naples25 SWM Back to High Power Mode (requires a nic reboot)", level=0)
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=False):
                     mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                     mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
                     return
 
@@ -1106,6 +1109,7 @@ def main():
                     aapl = True
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl):
                     mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
+                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                     mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
                     return
 

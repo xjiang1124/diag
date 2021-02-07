@@ -253,6 +253,7 @@ def main():
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
@@ -398,6 +399,7 @@ def main():
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return
@@ -474,6 +476,7 @@ def main():
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return

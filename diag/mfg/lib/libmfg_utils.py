@@ -773,7 +773,24 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
     mtp_mgmt_ctrl.cli_log_inf("Update FST PENCTL image complete\n", level=0)
 
     return True
-                                                                           
+
+def fail_all_slots(mtp_mgmt_ctrl):
+    """
+     Call this function when failing a script BEFORE any dsp test results have come.
+     e.g. whole MTP fails: report as all cards failed
+     e.g. connection problem: report as all cards failed
+    """
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl._nic_prsnt_list[slot]:
+            continue
+        key = nic_key(slot)
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES25SWM and mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) == Swm_Test_Mode.ALOM:
+            alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
 def email_report(email_to, title, body = None):
     if not email_to:
@@ -1126,14 +1143,14 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     log_hard_copy_flag = True
     log_relative_link = None
     temp_nic_type = None
-    upload_csp = False
     csp_log_dir = None
+
     for slot, nic_type, sn in fail_match + pass_match:
         # report doesn't have valid serial number
         if nic_type:
             temp_nic_type = nic_type
         if sn == "None":
-            continue
+            sn = NIC_Type.UNKNOWN
         if stage == FF_Stage.FF_DL:
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
@@ -1155,7 +1172,6 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
         elif stage == FF_Stage.FF_SWI:
-            upload_csp = True
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SWI_LOG_DIR_FMT.format(nic_type, sn)
                 csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_CSP_LOG_DIR_FMT.format(nic_type)
@@ -1170,17 +1186,34 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         else:
             pass
 
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
-        os.system(cmd)
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(csp_log_dir)
-        os.system(cmd)
+        if GLB_CFG_MFG_TEST_MODE:
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
+            os.system(cmd)
+        else:
+            err_code = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
+            if not err_code:
+                # try to change permission of the stage if this is first time created
+                # this will fail if someone else created them...ask them to chmod 777
+                os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
+                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+                    # since 4C directory is organized as /mfg_log/type/4C/4C-H/...
+                    os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
+            else:
+                # chdir from mfg_log/type/stage/sn --> mfg_log/MERGE/type/stage/sn
+                mfg_log_dir = mfg_log_dir.replace(nic_type, "MERGE/"+nic_type)
+                os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
+                os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
+                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+                    os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
+
         # copy the onboard logs only once
         if log_hard_copy_flag:
             qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
-            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, qa_log_pkg_file))
             if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
-                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(log_pkg_file), level=0)
+                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file to {:}".format(qa_log_pkg_file), level=0)
                 continue
+
+            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, qa_log_pkg_file))
 
             # It is fine to do hard copy
             #log_hard_copy_flag = False
@@ -1188,13 +1221,13 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
         # create hard link
         else:
-            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Create link log file {:s}".format(sn, log_relative_link))
+            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             chdir_cmd = "cd {:s}".format(mfg_log_dir)
             ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
         
-    if upload_csp:
+    if stage == FF_Stage.FF_SWI:
         # csp log files    
         cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp*"
      
@@ -1207,11 +1240,22 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             if 'txt' in cspfile:
                 listcspfiletoupload.append(cspfile)
         for cspfilepath in listcspfiletoupload:
-            mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(os.path.basename(cspfilepath)))
+            if GLB_CFG_MFG_TEST_MODE:
+                cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(csp_log_dir)
+                os.system(cmd)
+            else:
+                err_code = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(csp_log_dir))
+                if not err_code:
+                    os.system("chmod 777 {:s}".format(csp_log_dir+"/.."))
+                else:
+                    csp_log_dir = csp_log_dir.replace("CSP_REC", "MERGE/CSP_REC")
+                    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(csp_log_dir))
+                    os.system("chmod 777 {:s}".format(csp_log_dir+"/.."))
             csp_log_file = csp_log_dir + os.path.basename(cspfilepath)
             if not network_get_file(ipaddr, userid, passwd, csp_log_file, cspfilepath):
-                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(cspfilepath), level=0)
+                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(csp_log_file), level=0)
                 continue
+            mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(csp_log_file))
 
     for slot in skip_match:
         mtp_test_summary.append((slot, "SKIPPED", "SLOT", True))
