@@ -645,6 +645,8 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
     image_dir = "/home/diag/"
 
     for image in image_list:
+        if image == "":
+            continue
         if image not in image_on_mtp:
             image_rel_path = "release/{:s}".format(image)
             if not file_exist(image_rel_path):

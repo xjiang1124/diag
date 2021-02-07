@@ -19,6 +19,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import NIC_IMAGES
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -261,27 +262,6 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
-    # get the absolute file path
-    naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
-    naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-    naples100ibm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE
-    naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-    naples100hpe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100HPE_CPLD_IMAGE
-    naples100hpe_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100
-    naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
-    naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-    vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
-    vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-    vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
-    vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2                                                                                                
-    naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
-    naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWM
-    naples25ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
-    naples25ocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
-    naples25swmdell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
-    ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
-    ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
-                                                                                                        
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
@@ -385,50 +365,30 @@ def main():
                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
+
+        if (
+            card_type == NIC_Type.NAPLES100
+            or card_type == NIC_Type.NAPLES100IBM
+            or card_type == NIC_Type.NAPLES100HPE
+            or card_type == NIC_Type.FORIO
+            or card_type == NIC_Type.VOMERO
+            or card_type == NIC_Type.VOMERO2
+            ):
             mtp_exp_capability = 0x1
-            cpld_img_file = naples100_cpld_img_file
-            qspi_img_file = naples100_qspi_img_file
-        elif card_type == NIC_Type.NAPLES100IBM:
-            mtp_exp_capability = 0x1
-            cpld_img_file = naples100ibm_cpld_img_file
-            qspi_img_file = naples100ibm_qspi_img_file
-        elif card_type == NIC_Type.NAPLES100HPE:
-            mtp_exp_capability = 0x1
-            cpld_img_file = naples100hpe_cpld_img_file
-            qspi_img_file = naples100hpe_qspi_img_file
-        elif card_type == NIC_Type.VOMERO:
-            mtp_exp_capability = 0x1
-            cpld_img_file = vomero_cpld_img_file
-            qspi_img_file = vomero_qspi_img_file
-        elif card_type == NIC_Type.VOMERO2:
-            mtp_exp_capability = 0x1
-            cpld_img_file = vomero2_cpld_img_file
-            qspi_img_file = vomero2_qspi_img_file
-        elif card_type == NIC_Type.ORTANO:
+        elif (
+            card_type == NIC_Type.NAPLES25
+            or card_type == NIC_Type.NAPLES25SWM
+            or card_type == NIC_Type.NAPLES25OCP
+            or card_type == NIC_Type.NAPLES25SWMDELL
+            or card_type == NIC_Type.NAPLES25SWM833
+            or card_type == NIC_Type.ORTANO
+            ):
             mtp_exp_capability = 0x2
-            cpld_img_file = ortano_cpld_img_file
-            qspi_img_file = ortano_qspi_img_file
-        elif card_type == NIC_Type.NAPLES25:
-            mtp_exp_capability = 0x2
-            cpld_img_file = naples25_cpld_img_file
-            qspi_img_file = naples25_qspi_img_file
-        elif card_type == NIC_Type.NAPLES25SWM:
-            mtp_exp_capability = 0x2
-            cpld_img_file = naples25swm_cpld_img_file
-            qspi_img_file = naples25swm_qspi_img_file
-        elif card_type == NIC_Type.NAPLES25OCP:
-            mtp_exp_capability = 0x2
-            cpld_img_file = naples25ocp_cpld_img_file
-            qspi_img_file = naples25ocp_qspi_img_file
-        elif card_type == NIC_Type.NAPLES25SWMDELL:
-            mtp_exp_capability = 0x2
-            cpld_img_file = naples25swmdell_cpld_img_file
-            qspi_img_file = naples25swm_qspi_img_file
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
-
         if not mtp_capability & mtp_exp_capability:
             mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(card_type))
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
@@ -503,39 +463,8 @@ def main():
             continue
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES100 or card_type == NIC_Type.FORIO:
-            qspi_img_file = naples100_qspi_img_file
-            cpld_img_file = naples100_cpld_img_file
-        elif card_type == NIC_Type.NAPLES100IBM:
-            qspi_img_file = naples100ibm_qspi_img_file
-            cpld_img_file = naples100ibm_cpld_img_file
-        elif card_type == NIC_Type.NAPLES100HPE:
-            qspi_img_file = naples100hpe_qspi_img_file
-            cpld_img_file = naples100hpe_cpld_img_file
-        elif card_type == NIC_Type.VOMERO:
-            qspi_img_file = vomero_qspi_img_file
-            cpld_img_file = vomero_cpld_img_file
-        elif card_type == NIC_Type.VOMERO2:
-            qspi_img_file = vomero2_qspi_img_file
-            cpld_img_file = vomero2_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25:
-            qspi_img_file = naples25_qspi_img_file
-            cpld_img_file = naples25_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25SWM:
-            qspi_img_file = naples25swm_qspi_img_file
-            cpld_img_file = naples25swm_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25OCP:
-            qspi_img_file = naples25ocp_qspi_img_file
-            cpld_img_file = naples25ocp_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25SWMDELL:
-            qspi_img_file = naples25swm_qspi_img_file
-            cpld_img_file = naples25swmdell_cpld_img_file
-        elif card_type == NIC_Type.ORTANO:
-            qspi_img_file = ortano_qspi_img_file
-            cpld_img_file = ortano_cpld_img_file
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
-            continue
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                               nic_fru_cfg[mtp_id][key],

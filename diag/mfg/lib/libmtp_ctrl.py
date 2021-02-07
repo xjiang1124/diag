@@ -20,27 +20,10 @@ from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_IO_ELBA_VERSION
 from libmfg_cfg import MFG_MTP_CPLD_JTAG_ELBA_VERSION
-from libmfg_cfg import MFG_QSPI_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_IBM_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_NAPLES100_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_NAPLES100HPE_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_NAPLES100HPE_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_VOMERO2_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_VOMERO_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_VOMERO2_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_NAPLES25_HPE_OCP_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_NAPLES25_HPE_OCP_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_NAPLES25_SWMDELL_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_ORTANO_TIMESTAMP
-from libmfg_cfg import MFG_QSPI_NAPLES25_SWM_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_NAPLES25_SWM_TIMESTAMP
-from libmfg_cfg import MFG_GOLD_ORTANO_TIMESTAMP
-#from libmfg_cfg import MFG_QSPI_IBM_TIMESTAMP
-from libmfg_cfg import NIC_CPLD_Version
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
 from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PART_NUMBERS_MATCH
 
 from libdefs import NIC_Type
@@ -1143,107 +1126,153 @@ class mtp_ctrl():
             return False
 
         # check if firmware image exist
-        if mtp_capability & 0x1:
-            naples100_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100
-            naples100_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_NAPLES100
-            naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
-            naples100_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_SEC_CPLD_IMAGE
-            naples100ibm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            naples100ibm_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_IBM
-            naples100ibm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE
-            naples100ibm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100IBM_SEC_CPLD_IMAGE
-            naples100hpe_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100
-            naples100hpe_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_NAPLES100
-            naples100hpe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100HPE_CPLD_IMAGE
-            naples100hpe_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100HPE_SEC_CPLD_IMAGE
+        img_list = []
+        if (mtp_capability & 0x1):
+            for card_type in [
+            NIC_Type.NAPLES100,
+            NIC_Type.NAPLES100IBM,
+            NIC_Type.NAPLES100HPE,
+            NIC_Type.VOMERO,
+            NIC_Type.VOMERO2
+            ]:
+                if stage == FF_Stage.FF_DL:
+                    # CPLD and diagfw images
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        img = NIC_IMAGES.diagfw_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                        pass
+                elif stage == FF_Stage.FF_CFG:
+                    # CPLD image
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
+                elif stage == FF_Stage.FF_SWI:
+                    # Secure CPLD and goldfw images
+                    try:
+                        img = NIC_IMAGES.sec_cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        img = NIC_IMAGES.goldfw_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                        pass
+                else:
+                    # no images needed in this stage
+                    continue
 
-            vomero_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            vomero_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-            vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
-            vomero_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_SEC_CPLD_IMAGE
-            vomero2_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2
-            vomero2_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_VOMERO2
-            vomero2_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE
-            vomero2_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO2_SEC_CPLD_IMAGE
-
-            cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
-            if not self.mtp_mgmt_exec_cmd(cmd):
-                self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
-                return False
-            cmd_buf = self.mtp_get_cmd_buf()
-
-            if stage == FF_Stage.FF_DL:
-                img_list = [naples100_cpld_img_file, naples100_qspi_img_file]
-                img_list += [vomero_cpld_img_file, vomero_qspi_img_file]
-                img_list += [vomero2_cpld_img_file, vomero2_qspi_img_file]
-                img_list += [naples100ibm_cpld_img_file, naples100ibm_qspi_img_file]
-                img_list += [naples100hpe_cpld_img_file, naples100hpe_qspi_img_file]
-            elif stage == FF_Stage.FF_CFG:
-                img_list = [naples100_cpld_img_file]
-                img_list += [vomero_cpld_img_file]
-                img_list += [vomero2_cpld_img_file]
-            elif stage == FF_Stage.FF_SWI:
-                img_list = [naples100_sec_cpld_img_file, naples100_gold_img_file]
-                img_list += [vomero_sec_cpld_img_file, vomero_gold_img_file]
-                img_list += [vomero2_sec_cpld_img_file, vomero2_gold_img_file]
-                img_list += [naples100ibm_sec_cpld_img_file, naples100ibm_gold_img_file]
-                img_list += [naples100hpe_sec_cpld_img_file, naples100hpe_gold_img_file]
-            else:
-                img_list = []
-
-            for img_file in img_list:
-                if not os.path.basename(img_file) in cmd_buf:
-                    self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
-                    self.mtp_dump_err_msg(cmd_buf)
+                cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
                     return False
+                cmd_buf = self.mtp_get_cmd_buf()
+                for img_file in img_list:
+                    if not os.path.basename(img_file) in cmd_buf:
+                        self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
+                        return False
+                
 
-        if mtp_capability & 0x2:
-            naples25_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            naples25_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-            naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
-            naples25_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_SEC_CPLD_IMAGE
-            
-            naples25swm_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE
-            naples25swm_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE
-            naples25swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
-            naples25swm_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_SEC_CPLD_IMAGE
-            
-            naples25_hpeocp_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP
-            naples25_hpeocp_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_HPE_OCP
-            naples25_hpeocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
-            naples25_hpeocp_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_SEC_CPLD_IMAGE
+        if (mtp_capability & 0x2):
+            for card_type in [
+            NIC_Type.NAPLES25,
+            NIC_Type.NAPLES25SWM,
+            NIC_Type.NAPLES25SWMDELL,
+            NIC_Type.NAPLES25SWM833,
+            NIC_Type.NAPLES25OCP,
+            NIC_Type.ORTANO
+            ]:
+                if stage == FF_Stage.FF_DL:
+                    # CPLD and diagfw images
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        img = NIC_IMAGES.diagfw_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                        pass
+                elif stage == FF_Stage.FF_CFG:
+                    # CPLD image
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
+                elif stage == FF_Stage.FF_SWI:
+                    # Secure CPLD and goldfw images
+                    try:
+                        img = NIC_IMAGES.sec_cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        if card_type == NIC_Type.ORTANO:
+                            img = NIC_IMAGES.fail_cpld_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        img = NIC_IMAGES.goldfw_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                        pass
+                else:
+                    # no images needed in this stage
+                    continue
 
-            ortano_qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO
-            ortano_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NIC_GOLDFW_IMAGE_ORTANO
-            ortano_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE
-            ortano_sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ORTANO_SEC_CPLD_IMAGE
-
-            cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
-            if not self.mtp_mgmt_exec_cmd(cmd):
-                self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
-                return False
-            cmd_buf = self.mtp_get_cmd_buf()
-
-            if stage == FF_Stage.FF_DL:
-                img_list = [naples25_cpld_img_file, naples25_qspi_img_file]
-                img_list += [naples25swm_cpld_img_file, naples25swm_qspi_img_file]
-                img_list += [ortano_cpld_img_file, ortano_qspi_img_file]
-            elif stage == FF_Stage.FF_CFG:
-                img_list = [naples25_cpld_img_file]
-                img_list += [naples25swm_cpld_img_file]
-                img_list += [ortano_cpld_img_file]
-            elif stage == FF_Stage.FF_SWI:
-                img_list = [naples25_sec_cpld_img_file, naples25_gold_img_file]
-                img_list += [naples25swm_sec_cpld_img_file, naples25swm_gold_img_file]
-                img_list += [ortano_sec_cpld_img_file, ortano_gold_img_file]
-            else:
-                img_list = []
-
-            for img_file in img_list:
-                if not os.path.basename(img_file) in cmd_buf:
-                    self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
-                    self.mtp_dump_err_msg(cmd_buf)
+                cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
                     return False
+                cmd_buf = self.mtp_get_cmd_buf()
+                for img_file in img_list:
+                    if not os.path.basename(img_file) in cmd_buf:
+                        self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
+                        return False
 
         self.cli_log_inf("Post Diag SW Environment Init complete\n", level=0)
         # naples100 dsp check
@@ -1557,38 +1586,18 @@ class mtp_ctrl():
 
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type == NIC_Type.NAPLES100:
-            expected_timestam = MFG_GOLD_NAPLES100_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100IBM:
-            expected_timestam = MFG_GOLD_IBM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100HPE:
-            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25:
-            expected_timestam = MFG_GOLD_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25OCP:
-            expected_timestam = MFG_GOLD_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.FORIO:
-            expected_timestam = MFG_GOLD_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO2:
-            expected_timestam = MFG_GOLD_VOMERO2_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO:
-            expected_timestam = MFG_GOLD_TIMESTAMP
-        elif nic_type == NIC_Type.ORTANO:
-            expected_timestam = MFG_GOLD_ORTANO_TIMESTAMP
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+        try:
+            expected_timestamp = NIC_IMAGES.goldfw_dat[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw timestamp for {:s}".format(nic_type))
             return False
 
         if ( boot_image != "goldfw" ):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
             return False
 
-        if ( expected_timestam != kernel_timestamp ):
-            self.cli_log_slot_err_lock(slot, "goldfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestam, kernel_timestamp))
+        if ( expected_timestamp != kernel_timestamp ):
+            self.cli_log_slot_err_lock(slot, "goldfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
             return False
 
         self.cli_log_slot_inf(slot, "NIC boot from {:s}({:s})".format(boot_image, kernel_timestamp))
@@ -2024,58 +2033,24 @@ class mtp_ctrl():
         cur_ver = nic_cpld_info[0]
         cur_timestamp = nic_cpld_info[1]
         nic_type = self.mtp_get_nic_type(slot)
-
-        if nic_type == NIC_Type.NAPLES100:
-            exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100IBM:
-            exp_ver = NIC_CPLD_Version.NAPLES100IBM_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES100IBM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100HPE:
-            exp_ver = NIC_CPLD_Version.NAPLES100HPE_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES100HPE_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25:
-            exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            cpld_has_timestamp = 0
-            exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_MINOR_VERSION
-        elif nic_type == NIC_Type.NAPLES25OCP:
-            exp_ver = NIC_CPLD_Version.NAPLES25OCP_VERSION
-            exp_timestamp = NIC_CPLD_Version.NAPLES25OCP_TIMESTAMP
-        elif nic_type == NIC_Type.FORIO:
-            exp_ver = NIC_CPLD_Version.FORIO_VERSION
-            exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO:
-            exp_ver = NIC_CPLD_Version.VOMERO_VERSION
-            exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO2:
-            exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
-            exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
-        elif nic_type == NIC_Type.ORTANO:
-            exp_ver = NIC_CPLD_Version.ORTANO_VERSION
-            exp_timestamp = NIC_CPLD_Version.ORTANO_TIMESTAMP
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+        try:
+            expected_version = NIC_IMAGES.cpld_ver[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
+            return False
+        try:
+            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
 
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
             return True
 
-        if cpld_has_timestamp > 0:
-            if cur_ver == exp_ver and cur_timestamp == exp_timestamp:
-                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
-                return True
-        else:
-            if cur_ver == exp_ver and cur_timestamp[:len(exp_timestamp)] == exp_timestamp:  
-                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
-                return True
-
+        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-do-date")
+            return True
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
@@ -2174,97 +2149,32 @@ class mtp_ctrl():
         cur_timestamp = nic_cpld_info[1]
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type == NIC_Type.NAPLES100:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES100_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES100_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100IBM:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES100IBM_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100IBM_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES100IBM_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100IBM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100HPE:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES100HPE_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100HPE_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES100HPE_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES100HPE_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES25_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES25_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES25SWM_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES25SWM_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            cpld_has_timestamp = 0
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES25SWMDELL_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25SWMDELL_MINOR_VERSION
-  
-
-        elif nic_type == NIC_Type.NAPLES25OCP:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.NAPLES25OCP_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25OCP_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.NAPLES25OCP_VERSION
-                exp_timestamp = NIC_CPLD_Version.NAPLES25OCP_TIMESTAMP
-        elif nic_type == NIC_Type.FORIO:
-            exp_ver = NIC_CPLD_Version.FORIO_VERSION
-            exp_timestamp = NIC_CPLD_Version.FORIO_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO2:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.VOMERO2_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.VOMERO2_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.VOMERO2_VERSION
-                exp_timestamp = NIC_CPLD_Version.VOMERO2_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.VOMERO_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.VOMERO_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.VOMERO_VERSION
-                exp_timestamp = NIC_CPLD_Version.VOMERO_TIMESTAMP
-        elif nic_type == NIC_Type.ORTANO:
-            if sec_cpld:
-                exp_ver = NIC_CPLD_Version.ORTANO_SEC_VERSION
-                exp_timestamp = NIC_CPLD_Version.ORTANO_SEC_TIMESTAMP
-            else:
-                exp_ver = NIC_CPLD_Version.ORTANO_VERSION
-                exp_timestamp = NIC_CPLD_Version.ORTANO_TIMESTAMP
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+        try:
+            expected_version = NIC_IMAGES.cpld_ver[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
-
-        if cpld_has_timestamp > 0:
-            if cur_ver != exp_ver or cur_timestamp != exp_timestamp:
-                self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
-                self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
-                self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp))
+        try:
+            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
+            return False
+        if sec_cpld:
+            try:
+                expected_version = NIC_IMAGES.sec_cpld_ver[nic_type]
+            except KeyError:
+                self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
                 return False
-        else: 
-            if cur_ver != exp_ver or cur_timestamp[:len(exp_timestamp)] != exp_timestamp:
+            try:
+                expected_timestamp = NIC_IMAGES.sec_cpld_dat[nic_type]
+            except KeyError:
+                self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
+                return False
+
+        if cur_ver != expected_version or cur_timestamp != expected_timestamp:
                 self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
-                self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(exp_ver, cur_ver))
-                self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(exp_timestamp, cur_timestamp[:len(exp_timestamp)]))
+                self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(expected_version, cur_ver))
+                self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(expected_timestamp, cur_timestamp))
                 return False
 
         return True
@@ -2316,38 +2226,18 @@ class mtp_ctrl():
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type == NIC_Type.NAPLES100:
-            expected_timestam = MFG_QSPI_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100IBM:
-            expected_timestam = MFG_QSPI_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES100HPE:
-            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25:
-            expected_timestam = MFG_QSPI_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.NAPLES25OCP:
-            expected_timestam = MFG_QSPI_NAPLES25_SWM_TIMESTAMP
-        elif nic_type == NIC_Type.FORIO:
-            expected_timestam = MFG_QSPI_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO2:
-            expected_timestam = MFG_QSPI_VOMERO2_TIMESTAMP
-        elif nic_type == NIC_Type.VOMERO:
-            expected_timestam = MFG_QSPI_VOMERO_TIMESTAMP
-        elif nic_type == NIC_Type.ORTANO:
-            expected_timestam = MFG_QSPI_ORTANO_TIMESTAMP
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
+        try:
+            expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw timestamp for {:s}".format(nic_type))
             return False
 
         if ( boot_image != "diagfw" ):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))
             return False
 
-        if ( expected_timestam != kernel_timestamp ):
-            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestam, kernel_timestamp))
+        if ( expected_timestamp != kernel_timestamp ):
+            self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
             return False
 
         return True

@@ -20,6 +20,7 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import NIC_IMAGES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
@@ -130,27 +131,43 @@ def main():
         # Check if image updated is needed
         mtp_dl_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_OCP)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_HPE_NAPLES100)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_NAPLES100)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_VOMERO2)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_ORTANO)
-        mtp_dl_image_list.append(MFG_IMAGE_FILES.NIC_DIAGFW_IMAGE_SWM)
         if (mtp_capability & 0x1):
-            # FIXME: Xin - Dedicated image
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100IBM_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES100HPE_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.VOMERO2_CPLD_IMAGE)
+            for card_type in [
+            NIC_Type.NAPLES100,
+            NIC_Type.NAPLES100IBM,
+            NIC_Type.NAPLES100HPE,
+            NIC_Type.VOMERO,
+            NIC_Type.VOMERO2
+            ]:
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
+                except KeyError:
+                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
+                    continue
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
+                except KeyError:
+                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                    continue
         if (mtp_capability & 0x2):
-            # FIXME: Xin - Dedicated image
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE)    
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE)
-            mtp_dl_image_list.append(MFG_IMAGE_FILES.ORTANO_CPLD_IMAGE)
+            for card_type in [
+            NIC_Type.NAPLES25,
+            NIC_Type.NAPLES25SWM,
+            NIC_Type.NAPLES25SWMDELL,
+            NIC_Type.NAPLES25SWM833,
+            NIC_Type.NAPLES25OCP,
+            NIC_Type.ORTANO
+            ]:
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
+                except KeyError:
+                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
+                    continue
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
+                except KeyError:
+                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                    continue
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)

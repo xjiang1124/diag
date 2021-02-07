@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import NIC_IMAGES
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -123,14 +124,6 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
-    # get the absolute file path
-    naples100_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES100_CPLD_IMAGE
-    naples25_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_CPLD_IMAGE
-    naples25_swm_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWM_CPLD_IMAGE
-    naples25_hpe_ocp_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25_HPE_OCP_CPLD_IMAGE
-    naples25_swm_dell_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.NAPLES25SWMDELL_CPLD_IMAGE
-    vomero_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.VOMERO_CPLD_IMAGE
-
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_CFG):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
@@ -163,17 +156,23 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES100:
+        if (
+            card_type == NIC_Type.NAPLES100
+            or card_type == NIC_Type.NAPLES100IBM
+            or card_type == NIC_Type.NAPLES100HPE
+            or card_type == NIC_Type.FORIO
+            or card_type == NIC_Type.VOMERO
+            or card_type == NIC_Type.VOMERO2
+            ):
             mtp_exp_capability = 0x1
-        elif card_type == NIC_Type.VOMERO:
-            mtp_exp_capability = 0x1
-        elif card_type == NIC_Type.NAPLES25:
-            mtp_exp_capability = 0x2
-        elif card_type == NIC_Type.NAPLES25SWM:
-            mtp_exp_capability = 0x2
-        elif card_type == NIC_Type.NAPLES25OCP:
-            mtp_exp_capability = 0x2
-        elif card_type == NIC_Type.NAPLES25SWMDELL:
+        elif (
+            card_type == NIC_Type.NAPLES25
+            or card_type == NIC_Type.NAPLES25SWM
+            or card_type == NIC_Type.NAPLES25OCP
+            or card_type == NIC_Type.NAPLES25SWMDELL
+            or card_type == NIC_Type.NAPLES25SWM833
+            or card_type == NIC_Type.ORTANO
+            ):
             mtp_exp_capability = 0x2
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
@@ -227,20 +226,12 @@ def main():
             continue
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES100:
-            cpld_img_file = naples100_cpld_img_file
-        elif card_type == NIC_Type.VOMERO:
-            cpld_img_file = vomero_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25:
-            cpld_img_file = naples25_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25SWM:
-            naples25_swm_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25OCP:
-            naples25_hpe_ocp_cpld_img_file
-        elif card_type == NIC_Type.NAPLES25SWMDELL:
-            naples25_swm_dell_cpld_img_file
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
+        try:
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
+            fail_nic_list.append(slot)
+            pass_nic_list.remove(slot)
             continue
 
         nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)

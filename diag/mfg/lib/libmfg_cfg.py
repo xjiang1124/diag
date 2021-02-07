@@ -4,6 +4,151 @@ GLB_CFG_MFG_TEST_MODE = True
 
 MFG_BYPASS_PSU_CHECK = True
 
+class NIC_IMAGES:
+    ### IMAGES VERSION CONTROL FOR DL AND SWI:
+    cpld_img = dict()
+    cpld_ver = dict()
+    cpld_dat = dict()
+    sec_cpld_img = dict()
+    sec_cpld_ver = dict()
+    sec_cpld_dat = dict()
+    diagfw_img = dict()
+    diagfw_dat = dict()
+    goldfw_img = dict()
+    goldfw_dat = dict()
+
+    cpld_img["NAPLES25"] = "naples25_rev9_06222020.bin"
+    cpld_ver["NAPLES25"] = "0x9"
+    cpld_dat["NAPLES25"] = "06-17"
+    sec_cpld_img["NAPLES25"] = "naples25_rev89_06172020.bin"
+    sec_cpld_ver["NAPLES25"] = "0x89"
+    sec_cpld_dat["NAPLES25"] = "06-17"
+    diagfw_img["NAPLES25"] = "naples_diagfw_05212020.tar"
+    diagfw_dat["NAPLES25"] = "05-21-2020"
+    goldfw_img["NAPLES25"] = "naples_goldfw_iris_RELB_1.12.0-E-52_0728.tar"
+    goldfw_dat["NAPLES25"] = "06-18-2020"
+
+    cpld_img["NAPLES25SWM"] = "naples25_swm_rev9_04142020.bin"
+    cpld_ver["NAPLES25SWM"] = "0x9"
+    cpld_dat["NAPLES25SWM"] = "04-20"
+    sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev89_04142020.bin"
+    sec_cpld_ver["NAPLES25SWM"] = "0x89"
+    sec_cpld_dat["NAPLES25SWM"] = "04-20"
+    diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["NAPLES25SWM"] = "11-18-2020"
+    goldfw_img["NAPLES25SWM"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    goldfw_dat["NAPLES25SWM"] = "11-18-2020"
+
+    cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev4_02112021.bin"
+    cpld_ver["NAPLES25SWMDELL"] = "0x4"
+    cpld_dat["NAPLES25SWMDELL"] = "00"
+    sec_cpld_ver["NAPLES25SWMDELL"] = "0x84"
+    sec_cpld_dat["NAPLES25SWMDELL"] = "00"
+    sec_cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev84_02112021.bin"
+    diagfw_img["NAPLES25SWMDELL"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["NAPLES25SWMDELL"] = "11-18-2020"
+    goldfw_img["NAPLES25SWMDELL"] = "naples_goldfw_iris_1.14.1-E-12_1025.tar"
+    goldfw_dat["NAPLES25SWMDELL"] = "11-18-2020"
+
+    cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0A_022221.bin"
+    cpld_ver["NAPLES25OCP"] = "0xA"
+    cpld_dat["NAPLES25OCP"] = "02-22"
+    sec_cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV8A_022221.bin"
+    sec_cpld_ver["NAPLES25OCP"] = "0x8A"
+    sec_cpld_dat["NAPLES25OCP"] = "02-22"
+    diagfw_img["NAPLES25OCP"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["NAPLES25OCP"] = "11-18-2020"
+    goldfw_img["NAPLES25OCP"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    goldfw_dat["NAPLES25OCP"] = "11-18-2020"
+
+    cpld_img["NAPLES25SWM833"] = "naples25_833_rev2_02112021.bin"
+    cpld_ver["NAPLES25SWM833"] = "0x2"
+    cpld_dat["NAPLES25SWM833"] = "02-11"
+    sec_cpld_img["NAPLES25SWM833"] = "naples25_833_rev82_02112021.bin"
+    sec_cpld_ver["NAPLES25SWM833"] = "0x82"
+    sec_cpld_dat["NAPLES25SWM833"] = "02-11"
+    diagfw_img["NAPLES25SWM833"] = "naples_diagfw-1.3.1-E-43_20210109.tar"
+    diagfw_dat["NAPLES25SWM833"] = "01-09-2021"
+    goldfw_img["NAPLES25SWM833"] = "naples_goldfw-1.3.1-E-43_20210109.tar"
+    goldfw_dat["NAPLES25SWM833"] = "01-09-2020"
+
+    cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
+    cpld_ver["NAPLES100"] = "0x9"
+    cpld_dat["NAPLES100"] = "05-41"
+    sec_cpld_img["NAPLES100"] = "naples100_cpld_rev89_06032019.bin"
+    sec_cpld_ver["NAPLES100"] = "0x89"
+    sec_cpld_dat["NAPLES100"] = "06-23"
+    diagfw_img["NAPLES100"] = "naples_diagfw_05212020.tar"
+    diagfw_dat["NAPLES100"] = "05-21-2020"
+    goldfw_img["NAPLES100"] = "naples_goldfw_09182019.tar"
+    goldfw_dat["NAPLES100"] = "09-17-2019"
+
+    cpld_img["NAPLES100HPE"] = "naples100_hpe_rev3_02112021.bin"
+    cpld_ver["NAPLES100HPE"] = "0x3"
+    cpld_dat["NAPLES100HPE"] = "02-11"
+    sec_cpld_img["NAPLES100HPE"] = "naples100_hpe_rev83_02112021.bin"
+    sec_cpld_ver["NAPLES100HPE"] = "0x83"
+    sec_cpld_dat["NAPLES100HPE"] = "02-11"
+    diagfw_img["NAPLES100HPE"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["NAPLES100HPE"] = "11-18-2020"
+    goldfw_img["NAPLES100HPE"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    goldfw_dat["NAPLES100HPE"] = "11-18-2020"
+
+    cpld_img["NAPLES100IBM"] = "naples100_ibm_rev5_02112021.bin"
+    cpld_ver["NAPLES100IBM"] = "0x5"
+    cpld_dat["NAPLES100IBM"] = "02-11"
+    sec_cpld_img["NAPLES100IBM"] = "naples100_ibm_rev85_02112021.bin"
+    sec_cpld_ver["NAPLES100IBM"] = "0x85"
+    sec_cpld_dat["NAPLES100IBM"] = "02-11"
+    diagfw_img["NAPLES100IBM"] = "naples_diagfw_1.3.1-E-21_0521.tar"
+    diagfw_dat["NAPLES100IBM"] = "05-21-2020"
+    goldfw_img["NAPLES100IBM"] = "naples_goldfw_apulu_1.17.0-42_1117.tar"
+    goldfw_dat["NAPLES100IBM"] = "10-17-2020"
+
+    cpld_img["FORIO"] = ""
+    cpld_ver["FORIO"] = "0x4"
+    cpld_dat["FORIO"] = "04-11"
+    sec_cpld_img["FORIO"] = ""
+    sec_cpld_ver["FORIO"] = ""
+    sec_cpld_dat["FORIO"] = ""
+    diagfw_img["FORIO"] = ""
+    diagfw_dat["FORIO"] = "05-21-2020"
+    goldfw_img["FORIO"] = ""
+    goldfw_dat["FORIO"] = "04-18-2020"
+
+    cpld_img["VOMERO"] = "vomero_rev4_02072020.bin"
+    cpld_ver["VOMERO"] = ""
+    cpld_dat["VOMERO"] = ""
+    sec_cpld_img["VOMERO"] = "vomero_rev84_02102020.bin"
+    sec_cpld_ver["VOMERO"] = ""
+    sec_cpld_dat["VOMERO"] = ""
+    diagfw_img["VOMERO"] = "naples_diagfw_05212020.tar"
+    diagfw_dat["VOMERO"] = "02-03-2020"
+    goldfw_img["VOMERO"] = ""
+    goldfw_dat["VOMERO"] = "04-18-2020"
+
+    cpld_img["VOMERO2"] = "vomero2_rev5_07242020.bin"
+    cpld_ver["VOMERO2"] = "0x5"
+    cpld_dat["VOMERO2"] = "00-192"
+    sec_cpld_img["VOMERO2"] = "vomero2_rev85_07242020.bin"
+    sec_cpld_ver["VOMERO2"] = "0x85"
+    sec_cpld_dat["VOMERO2"] = "00-194"
+    diagfw_img["VOMERO2"] = "naples_diagfw_w_uboot_1.3.1-E-26_0620.tar"
+    diagfw_dat["VOMERO2"] = "06-18-2020"
+    goldfw_img["VOMERO2"] = "naples_minigoldfw_1.7.4-C-7_0702.tar"
+    goldfw_dat["VOMERO2"] = "07-01-2020"
+
+    cpld_img["ORTANO"] = "ortano_rev3.0_02102021.bin"
+    cpld_ver["ORTANO"] = "0x3"
+    cpld_dat["ORTANO"] = "0x00"
+    sec_cpld_img["ORTANO"] = "ortano_rev83.0_02102021.bin"
+    sec_cpld_ver["ORTANO"] = "0x3"
+    sec_cpld_dat["ORTANO"] = "0x00"
+    diagfw_img["ORTANO"] = "elba_diagfw_1.17.0-26-5_1112.tar"
+    diagfw_dat["ORTANO"] = "11-12-2020"
+    goldfw_img["ORTANO"] = "naples_goldfw_1.17.0-11-2_1108.tar"
+    goldfw_dat["ORTANO"] = "11-08-2020"
+
 # MFG release version control
 class NIC_CPLD_Version:
     NAPLES100_VERSION = "0x9"
@@ -99,7 +244,6 @@ class MFG_IMAGE_FILES:
 
     NAPLES100_CPLD_IMAGE = "naples100_cpld_rev9_05312019.bin"
     NAPLES100_SEC_CPLD_IMAGE = "naples100_cpld_rev89_06032019.bin"
-
     
     NAPLES100IBM_CPLD_IMAGE = "naples100_ibm_rev4_01052021.bin"
     NAPLES100IBM_SEC_CPLD_IMAGE = "naples100_ibm_rev84_01052021.bin"
@@ -115,6 +259,7 @@ class MFG_IMAGE_FILES:
 
     ORTANO_CPLD_IMAGE = "ortano_rev28_cfg0.bin"
     ORTANO_SEC_CPLD_IMAGE = "" 
+
 
 class PART_NUMBERS_MATCH:
     N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"        #68-0003-01 01    NAPLES 100 PENSANDO
