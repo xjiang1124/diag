@@ -921,6 +921,115 @@ class nic_test:
         self.nic_con.uart_session_stop(session)
         common.session_stop(session)
 
+    def emmc_test(self, nic_list=[], num_ite=1):
+        print "=== NIC eMMC Test ==="
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        fan_speed = 50
+        self.set_mtp_fan_speed(fan_speed)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 1)
+
+            session = common.session_start()
+
+            #for slot in nic_list:
+            #    cmd = "turn_on_hub.sh {}; i2cset -y 0 0x4a 0x21 0x15".format(slot)
+            #    common.session_cmd(session, cmd)
+            print("Wait 60 sec for cards booting up")
+            time.sleep(60)
+
+            core_volt=750
+            arm_volt=860
+            core_freq = 833
+            arm_freq = 2000
+            volt_mode = "nod"
+
+            for slot in nic_list:
+                common.session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
+
+                # TCL command
+                common.session_cmd(session, "tclsh", 20, False, "%")
+                common.session_cmd(session, "source .tclrc.diag.elb", 60, False, "tclsh]")
+
+                try:
+                    common.session_cmd(session, "diag_open_j2c_if 10 "+slot, 10, False, "tclsh]")
+                    common.session_cmd(session, "elb_get_vout arm", 30, False, "tclsh]")
+                    common.session_cmd(session, "elb_get_vout vdd", 30, False, "tclsh]")
+                    common.session_cmd(session, "elb_appl_set_srds_int_timeout  5000", 10, False, "tclsh]")
+                    common.session_cmd(session, "sleep 1", 10, False, "tclsh]")
+                    common.session_cmd(session, "set die_temp [elb_get_temp]", 30, False, "tclsh]")
+                    common.session_cmd(session, "set core_freq [get_freq]", 30, False, "tclsh]")
+                    common.session_cmd(session, "set arm_freq [elb_top_sbus_get_cpu_freq  0 0]", 30, False, "tclsh]")
+                    common.session_cmd(session, 'plog_msg "die_temp $die_temp; core_freq $core_freq; arm_freq $arm_freq"', 30, False, "tclsh]")
+
+                    common.session_cmd(session, "set core_freq {}.0".format(core_freq), 10, False, "tclsh]")
+                    common.session_cmd(session, "set arm_freq {}".format(arm_freq), 10, False, "tclsh]")
+                    common.session_cmd(session, "set core_volt {}".format(core_volt), 10, False, "tclsh]")
+                    common.session_cmd(session, "set arm_volt {}".format(arm_volt), 10, False, "tclsh]")
+                    common.session_cmd(session, "set volt_mode {}".format(volt_mode), 10, False, "tclsh]")
+                    common.session_cmd(session, "set core_freq1 [elb_core_freq_for_mode $volt_mode]", 30, False, "tclsh]")
+                    common.session_cmd(session, "set stg_freq  [elb_stg_freq_for_mode $volt_mode]", 30, False, "tclsh]")
+                    common.session_cmd(session, "set eth_freq  900", 10, False, "tclsh]")
+                    common.session_cmd(session, "elb_set_freq $core_freq1", 30, False, "tclsh]")
+                    common.session_cmd(session, "elb_soc_stg_pll_init 0 0 $stg_freq", 30, False, "tclsh]")
+                    common.session_cmd(session, "elb_mm_eth_pll_init  0 0 $eth_freq", 30, False, "tclsh]")
+                    common.session_cmd(session, "elb_top_sbus_cpu_${arm_freq} 0 0", 120, False, "tclsh]")
+                    common.session_cmd(session, "get_freq", 30, False, "tclsh]")
+                    common.session_cmd(session, "elb_top_sbus_get_cpu_freq  0 0", 60, False, "tclsh]")
+                    common.session_cmd(session, "diag_close_j2c_if 10 "+slot, 10, False, "tclsh]")
+                    common.session_cmd(session, "exit", 11)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "eMMC test failed")
+                    common.session_stop(session)
+                    return
+            common.session_stop(session)
+
+
+            print("Wait for 10 sec after freq change")
+            time.sleep(10)
+
+            session = common.session_start()
+            for slot in nic_list:
+                self.nic_con.switch_console(slot)
+                try:
+                    ret = self.nic_con.uart_session_start(session)
+                    if ret != 0:
+                        print("Faied to enter uart session")
+
+                    session.sendline("mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
+                    session.expect("\#")
+                    if "superblock" in session.before:
+                        print("Super Block is bad!")
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        return
+
+                    self.nic_con.uart_session_cmd(session, "sync")
+                    self.nic_con.uart_session_stop(session)
+                except pexpect.TIMEOUT:
+                    print(slot, "NIC console timeout")
+                    self.nic_con.session_stop(session)
+                    return
+
+            common.session_stop(session)
+
+    def enter_tclsh(self, slot):
+        session = common.session_start()
+        self.nic_con.switch_console(slot)
+        self.nic_con.uart_session_start(session)
+        self.nic_con.uart_session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
+        self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
+        self.nic_con.uart_session_cmd(session, "source .tclrc.diag.arm", 60, "%")
+        self.nic_con.uart_session_stop(session)
+        self.nic_con.session_stop(session)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
@@ -949,6 +1058,8 @@ if __name__ == "__main__":
     group.add_argument("-test_t", "--test_timeout", help="Test timeout", action='store_true')
     group.add_argument("-skew", "--skew", help="Run nic skew test on multile nics", action='store_true')
     group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
+    group.add_argument("-emmc", "--emmc", help="Run nic emmc test on multile nics", action='store_true')
+    group.add_argument("-enter_tclsh", "--enter_tclsh", help="Enter ARM tclsh", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -965,6 +1076,7 @@ if __name__ == "__main__":
     parser.add_argument("-goldfw", "--goldfw", help="Setup for goldfw", action='store_true')
     parser.add_argument("-switch_fw", "--switch-fw", help="Switch FW on Naples", action='store_true')
     parser.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="capri")
+    parser.add_argument("-num_ite", "--num_ite", help="Number of iterations", type=int, default=1)
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -1043,3 +1155,13 @@ if __name__ == "__main__":
         slot_list = args.slot_list.split(',')
         test.skew_test_exit(slot_list)
         sys.exit()
+
+    if args.emmc == True:
+        slot_list = args.slot_list.split(',')
+        test.emmc_test(slot_list, args.num_ite)
+        sys.exit()
+
+    if args.enter_tclsh == True:
+        test.enter_tclsh(args.slot)
+        sys.exit()
+
