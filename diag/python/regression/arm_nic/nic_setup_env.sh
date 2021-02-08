@@ -1,18 +1,17 @@
 source /data/nic_arm/nic_config.sh
 
-cpld_id="$(xo3dcpld -r 0x80)"
+cpld_id="$(/data/nic_util/xo3dcpld -r 0x80)"
 if [[ $cpld_id == "0x0" ]]
 then
-    echo "Capri CPLD"
-	cpld_id="$(cpld -r 0x80)"
+    echo "Try Capri CPLD"
+	cpld_id="$(/data/nic_util/cpld -r 0x80)"
 else
     echo "Elba CPLD"
 fi
-cpld_id="${cpld_id}"
+cpld_id="$(($cpld_id))"
+echo "cpld id: $cpld_id"
 
-elba_flag=$(($cpld_id & 0x40))
-
-if [[ $elba_flag == "0x40" ]]
+if [[ $cpld_id -ge 64 ]]
 then
     export ASIC_LIB_BUNDLE=/data/nic_arm/elba
 else
