@@ -258,14 +258,14 @@ PRIVEK <ek.sk>"""
         print "ret:", ret
         return ret
 
-    def sign_ek(self, sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url):
-        cmd_fmt = "/home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn {} -pn {} -mac {} -brd_name {} -mtp {} -k {} -c {} -t {} -b {}"
+    def sign_ek(self, sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
+        cmd_fmt = "/home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn {} -pn {} -mac {} -card_type {} -mtp {} -k {} -c {} -t {} -b {}"
         ret = 0
         num_retry = 3
 
         url_list = backend_url.split("#")
         for url in url_list:
-            cmd = cmd_fmt.format(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, url)
+            cmd = cmd_fmt.format(sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, url)
             print cmd
 
             for retry in range(num_retry):
@@ -352,12 +352,19 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def key_prog_all(self, sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url):
+    def key_prog_all(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all\
-            -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
-            -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
-            format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        if card_type == "ORTANO":
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+                format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        else:
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+                format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+
         print cmd
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
@@ -365,12 +372,19 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
         return ret
 
-    def key_prog_all_pac(self, sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url):
+    def key_prog_all_pac(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all_pac\
-            -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
-            -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+        if card_type == "ORTANO":
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all_pac\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
             format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        else:
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all_pac\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+                format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+
         print cmd
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
@@ -387,7 +401,7 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, brd_name, mtp, sku, fast_path):
+    def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, card_type, mtp, sku, fast_path):
         self.create_otp_cm_fmt(sn, slot)
         numRetry = 3
 
@@ -402,7 +416,7 @@ PRIVEK <ek.sk>"""
                     print "=== ESEC PROG FAILED ==="
                     return ret
 
-                ret = self.sign_ek(sn, pn, mac, brd_name, mtp, client_key, client_cert, trust_roots, backend_url)
+                ret = self.sign_ek(sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
                 if ret != 0:
                     print "=== Failed to sign pub_ek ==="
                     print "=== ESEC PROG FAILED ==="
@@ -444,9 +458,9 @@ PRIVEK <ek.sk>"""
                     break
 
             if fast_path == True:
-                ret = self.key_prog_all(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+                ret = self.key_prog_all(sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
             else:
-                ret = self.key_prog_all_pac(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+                ret = self.key_prog_all_pac(sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
             if ret != 0:
                 print "=== ESEC PROG FAILED ==="
                 return ret
@@ -669,6 +683,9 @@ if __name__ == "__main__":
     args = parse_args_diag()
     esec_ctrl = esec_ctrl()
 
+    card_type = os.environ['UUT_{}'.format(args.slot)]    
+    print("CARD_TYPE:", card_type)
+
     if args.otp_cm_fmt == True:
         esec_ctrl.create_otp_cm_fmt(args.sn, args.slot)
         sys.exit()
@@ -678,7 +695,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.sign_ek == True:
-        esec_ctrl.sign_ek(args.sn, args.pn, args.mac, args.brd_name, args.mtp, args.client_key, args.client_cert, args.trust_roots, args.backend_url)
+        esec_ctrl.sign_ek(args.sn, args.pn, args.mac, card_type, args.mtp, args.client_key, args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 
     if args.gen_otp == True:
@@ -691,7 +708,7 @@ if __name__ == "__main__":
 
     if args.esec_prog == True:
         esec_ctrl.esec_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
-                args.sn, args.slot, args.pn, args.mac, args.brd_name, args.mtp, args.sku, args.fast_path)
+                args.sn, args.slot, args.pn, args.mac, card_type, args.mtp, args.sku, args.fast_path)
         sys.exit()
 
     if args.cleanup == True:
@@ -711,7 +728,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.key_prog_all == True:
-        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, args.mtp, args.client_key,\
+        esec_ctrl.key_prog_all(int(args.slot), args.sn, args.pn, args.mac, card_type, args.mtp, args.client_key,\
                 args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 

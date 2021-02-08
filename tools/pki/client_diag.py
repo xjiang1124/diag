@@ -85,6 +85,11 @@ def parse_args_diag():
         "--sku",
         default="SKU",
         help="SKU")
+    parser.add_argument(
+        "-id",
+        "--id",
+        default="v1",
+        help="Key ID version")
 
     return parser.parse_args()
 
@@ -125,7 +130,7 @@ try:
     newfile.write(data)
     newfile.close()
     
-    keys_req = keys_pb2.FetchKeySetRequest(ID="v1")
+    keys_req = keys_pb2.FetchKeySetRequest(ID=args.id)
     keys_resp = keys_client.FetchKeySet(keys_req)
     print "Fetched keys"
     

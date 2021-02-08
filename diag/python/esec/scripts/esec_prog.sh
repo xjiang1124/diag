@@ -2,14 +2,26 @@
 
 enroll_puf () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
+    else
+        tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
+    fi
 }
 
 hsm_sign_ek () {
     cd $DIAG_HOME/diag/tools/pki
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
-    python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $BRD_NAME -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/
+    echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/"
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        id="elba.v1"
+    else
+        id="v1"
+    fi
+    python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id
 
 
     cp signed_ek.pub.bin signed_ek.pub.org.bin
@@ -19,6 +31,7 @@ hsm_sign_ek () {
 }
 
 check_sign_ek () {
+    echo "Check Signed EK"
     cd $DIAG_HOME/diag/tools/pki
     openssl x509 -in signed_ek.pub.org.bin -inform DER -text -noout
 }
@@ -46,17 +59,32 @@ gen_otp () {
 
 otp_init () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+    else
+        tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+    fi
 }
 
 post_check () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -stage POST_CHECK -slot $SLOT -sn $SN
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        tclsh ./esec_prog_elba.tcl -stage POST_CHECK -slot $SLOT -sn $SN
+    else
+        tclsh ./esec_prog.tcl -stage POST_CHECK -slot $SLOT -sn $SN
+    fi
 }
 
 show_status () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -stage SHOW_STS -slot $SLOT -sn $SN
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        tclsh ./esec_prog_elba.tcl -stage SHOW_STS -slot $SLOT -sn $SN
+    else
+        tclsh ./esec_prog.tcl -stage SHOW_STS -slot $SLOT -sn $SN
+    fi
 }
 
 img_prog () {
@@ -78,13 +106,22 @@ img_prog () {
     fi
     echo "slot: $SLOT; esec_img: $esec_img; host_img: $host_img; card_type: $card_type"
 
-
-    tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        tclsh ./esec_prog_elba.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+    else
+        tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+    fi
 }
 
 efuse_test () {
     cd $DIAG_HOME/diag/scripts/asic/
-    tclsh ./esec_prog.tcl -stage EFUSE_TEST -slot $SLOT
+    if [[ $CARD_TYPE == "ORTANO" ]]
+    then
+        tclsh ./esec_prog_elba.tcl -stage EFUSE_TEST -slot $SLOT
+    else
+        tclsh ./esec_prog.tcl -stage EFUSE_TEST -slot $SLOT
+    fi
 }
 
 cleanup () {
@@ -136,8 +173,8 @@ case $key in
     shift # past value
     ;;
     #-------------
-    -brd_name|--board_name)
-    BRD_NAME="$2"
+    -card_type|--card_type)
+    CARD_TYPE="$2"
     shift # past argument
     shift # past value
     ;;
@@ -247,7 +284,7 @@ echo "SLOT:        ${SLOT}"
 echo "SN:          ${SN}"
 echo "PN:          ${PN}"
 echo "MAC:         ${MAC}"
-echo "BRD_NAME:    ${BRD_NAME}"
+echo "CARD_TYPE:   ${CARD_TYPE}"
 echo "MTP:         ${MTP}"
 echo "CLIENT_KEY:  ${CLIENT_KEY}"
 echo "CLIENT_CERT: ${CLIENT_CERT}"

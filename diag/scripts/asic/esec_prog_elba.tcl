@@ -326,7 +326,7 @@ proc esec_gather_pac {sn usb_port slot PN MAC MTP
         set DIAG_HOME $::env(DIAG_HOME)
         cd $DIAG_HOME/diag/tools/pki
 
-        if { [catch {exec /home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn $SN -pn "$PN" -mac $MAC -brd_name $card_type -mtp MTP -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL} msg ]} {
+        if { [catch {exec /home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn $SN -pn "$PN" -mac $MAC -card_type $card_type -mtp MTP -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL} msg ]} {
             plog_msg "Information about it: $::errorInfo"
         }
         
@@ -564,7 +564,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
     cd $DIAG_HOME/diag/tools/pki
     #exec cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
-    if { [catch {exec /home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn $SN -pn "$PN" -mac $MAC -brd_name $card_type -mtp MTP -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL} msg ]} {
+    if { [catch {exec /home/diag/diag/python/esec/scripts/esec_prog.sh -sign_ek -sn $SN -pn "$PN" -mac $MAC -card_type $card_type -mtp MTP -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL} msg ]} {
         plog_msg "Information about it: $::errorInfo"
     }
     
