@@ -1,0 +1,5 @@
+# cpld_nvm_partition_no 0/1; 0: CFG/UFM0; 1: CFG/UFM1
+# input_image: jed file
+# output_image: there will be two image outputs: _cfg.bin and _ufm.bin
+./convert_xo3d.py cpld_nvm_partition_no input_image output_image
+
