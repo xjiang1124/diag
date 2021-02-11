@@ -5,17 +5,19 @@
 ASIC_TYPE=$1
 ARCH=$2
 
-ASIC_TYPE=${ASIC_TYPE^^}
-ARCH=${ARCH^^}
+ASIC_TYPE=${ASIC_TYPE,,}
+ARCH=${ARCH,,}
 
 ASIC_REPO="/home/xguo2/workspace/asic/"
 ASIC_TMP="/home/xguo2/workspace/temp/"
 
-if [[ $ASIC_TYPE == "CAPRI" ]]
+DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic/"
+
+if [[ $ASIC_TYPE == "capri" ]]
 then
-    if [[ $ARCH == "AMD64" ]]
+    if [[ $ARCH == "amd64" ]]
     then
-        DIAG_REPO="/vol/hw/diag/diag_repo/asic/capri/amd64/"
+        DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
         ASIC_GEN="/vol/dump/xguo2/workspace/asic/ip/cosim/diag/nic/"
         ASIC_IMG="/vol/dump/xguo2/workspace/capri_amd64/ip/cosim/diag/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic
@@ -26,7 +28,7 @@ then
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
 else
-    if [[ $ARCH == "AMD64" ]]
+    if [[ $ARCH == "amd64" ]]
     then
         DIAG_REPO="/vol/hw/diag/diag_repo/asic/elba/amd64/"
         #ASIC_GEN="/vol/dump/xguo2/workspace/asic/ip/cosim/diag/nic/"
@@ -39,6 +41,8 @@ else
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
 fi
+
+mkdir -p $DIAG_REPO
 
 echo "DIAG_REPO: $DIAG_REPO"
 echo "ASIC_IMG: $ASIC_IMG"

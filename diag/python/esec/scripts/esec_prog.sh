@@ -94,19 +94,30 @@ img_prog () {
     orcl_host_img="images/orcl_boot_nonsec_v1_k0_packed.hex"
     generic_esec_img="images/esecure_firmware_packed.hex"
     generic_host_img="images/boot_nonsec_packed.hex"
+    elba_esec_img="images/elba_esecure_firmware_m0_packed.hex"
+
     uut="UUT_$SLOT"
     card_type="${!uut}"
-    if [[ $card_type = "VOMERO2" ]]
+
+    if [[ $card_type == "ORTANO" ]]
     then
-        esec_img=$orcl_esec_img
+        echo "ORTANO"
+        esec_img=$elba_esec_img
         host_img=$orcl_host_img
     else
-        esec_img=$generic_esec_img
-        host_img=$generic_host_img
+        echo "CAPRI"
+        if [[ $card_type = "VOMERO2" ]]
+        then
+            esec_img=$orcl_esec_img
+            host_img=$orcl_host_img
+        else
+            esec_img=$generic_esec_img
+            host_img=$generic_host_img
+        fi
     fi
     echo "slot: $SLOT; esec_img: $esec_img; host_img: $host_img; card_type: $card_type"
 
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $card_type == "ORTANO" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
     else
