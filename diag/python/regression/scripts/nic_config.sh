@@ -14,7 +14,7 @@ PATH=$PATH:/data/nic_util/
 PATH=$PATH:/data/nic_arm/
 
 CORECLK417MHZ=0
-
+CORECLK833MHZ=0
 cpld_id="$(xo3dcpld -r 0x80)"
 if [[ $cpld_id == "0x0" ]]
 then
@@ -66,6 +66,10 @@ elif [[ $cpld_id == "0x20" ]]
 then
     type="NAPLES25SWMDELL"
     CORECLK417MHZ=1
+elif [[ $cpld_id == "0x21" ]]
+then
+    type="NAPLES25SWM833"
+    CORECLK833MHZ=1
 elif [[ $cpld_id == "0x40" ]]
 then
     type="BIODONA_D4"
@@ -99,6 +103,16 @@ EOF
 
 fi
 
+if [[ $CORECLK833MHZ -eq 1 ]]
+then
+
+echo "Setting Core Clock to 833Mhz"
+/platform/bin/capview << EOF
+secure on
+fset ms_cfg_clk__S pll_select_core=0x0
+EOF
+
+fi
 
 
 echo "nic_config done"

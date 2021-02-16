@@ -22,6 +22,9 @@ set card_type $::env(CARD_TYPE)
 if { ( $card_type == "NAPLES25" ) || ( $card_type == "NAPLES25SWM" )  || ( $card_type == "NAPLES25OCP" ) || ( $card_type == "NAPLES25SWMDELL" )} {
     set MAC_SPEED "mac25g_ext_port2port_lpbk"
     set CORE_CLK 417.0
+} elseif {$card_type == "NAPLES25SWM833"} {
+    set MAC_SPEED "mac25g_ext_port2port_lpbk"
+    set CORE_CLK 833.0
 } elseif {$card_type == "NAPLES100"} {
     set MAC_SPEED "mac100g"
     set CORE_CLK 833.0

@@ -2474,7 +2474,7 @@ class nic_ctrl():
             errlist.append(" ERROR: nic_write_mtp_adapt_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        if ocp_read_data[0] != 0x11 :
+        if ocp_read_data[0] != 0x13 :
             errlist.append(" ERROR: OCP CPLD REG 0x1F (IRQ REG):  READ 0x{:X}  Expect 0x11".format(ocp_read_data[0]) )
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False

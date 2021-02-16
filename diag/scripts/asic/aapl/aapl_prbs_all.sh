@@ -175,6 +175,23 @@ function get_card_config() {
             echo "Wrong INF $INF"
             exit 1
         fi
+    elif [ $card_type = "NAPLES25SWM833" ]
+    then
+        if [ $INF = "ETH" ]
+        then
+            sbus_list=("${sbus_list_naples25swm_eth[@]}")
+            atten_list=("${atten_list_naples25swm_eth[@]}")
+            pre_list=("${pre_list_naples25swm_eth[@]}")
+            post_list=("${post_list_naples25swm_eth[@]}")
+            tx_inv_list=("${tx_inv_list_naples25swm_eth[@]}")
+            rx_inv_list=("${rx_inv_list_naples25swm_eth[@]}")
+        elif [ $INF = "PCIE" ]
+        then
+            sbus_list=("${sbus_list_naples25swm_pcie[@]}")
+        else
+            echo "Wrong INF $INF"
+            exit 1
+        fi
 
         
     else

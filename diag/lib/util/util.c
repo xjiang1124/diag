@@ -28,7 +28,7 @@ cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
     size_t pagesize = getpagesize();
     size_t pagemask = pagesize - 1;
     
-    printf("ADD DEBUG: %s", __FUNCTION__);    
+    //printf("ADD DEBUG: %s", __FUNCTION__);    
 
     if(access_type==MEM_ACCESS_32) {
         if((address%4) != 0) {
@@ -56,7 +56,7 @@ cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
 
     membase = (uint64_t * ) mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd,  offset);
     if (membase == MAP_FAILED) {
-        perror("MMAP failed:  Error:");
+        printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
         close(fd);
         return(-1);
     } 
@@ -66,6 +66,12 @@ cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
         *rd_data = ((uint64_t *)membase)[diff/8];
     }
     
+
+    if (munmap((void*)membase, pagesize)  < 0) {
+        printf("ERROR %s: munmap failed.  Errno=%d  ", __FUNCTION__, errno); 
+        close(fd);
+        return(-1);
+    }
     close(fd);
     return(0);
 }
@@ -79,7 +85,7 @@ int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
     size_t pagesize = getpagesize();
     size_t pagemask = pagesize - 1;
     
-    printf("ADD DEBUG: %s", __FUNCTION__);
+    //printf("ADD DEBUG: %s", __FUNCTION__);
 
     if(access_type==MEM_ACCESS_32){
         if((address%4) != 0) {
@@ -109,7 +115,7 @@ int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
 
     membase = (uint64_t * ) mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd,  offset);
     if (membase == MAP_FAILED) {
-        perror("MMAP Failed:  Error:");
+        printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
         close(fd);
         return(-1);
     }
@@ -118,6 +124,12 @@ int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
         ((uint32_t *) membase)[diff/4] = data&0xFFFFFFFF;
     } else {
         ((uint64_t *) membase)[diff/8] = data;
+    }
+
+    if (munmap((void*)membase, pagesize)  < 0) {
+        printf("ERROR %s: munmap failed.  Errno=%d  ", __FUNCTION__, errno); 
+        close(fd);
+        return(-1);
     }
 
     close(fd);
