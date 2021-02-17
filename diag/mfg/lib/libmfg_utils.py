@@ -1308,3 +1308,21 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+
+def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
+    """
+     Same as mfg_summary_disp, but lists by MTP instead of NIC.
+     Meant to be used for MTP-only scripts (like convert) or future projects.
+    """
+    cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
+    cli_inf("---------- Report: ----------")
+    # summary_dict[MTP_ID] = [MTP_ID, SN, MTP_TYPE, PASS/FAIL]  ### MTP_ID stored twice because reusing same func as nic (mtp_id in place of slot)
+    for mtp_id in summary_dict.keys():
+        for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+            if rc:
+                cli_inf("{:s} {:s} {:s} PASS".format(slot, sn, nic_type))
+            else:
+                cli_err("{:s} {:s} {:s} FAIL".format(slot, sn, nic_type))
+    cli_inf("--------- Report End --------\n")
+    for mtp_id in mtp_fail_list:
+        cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))

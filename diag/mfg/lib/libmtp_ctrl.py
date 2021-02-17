@@ -81,7 +81,8 @@ class mtp_ctrl():
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
-        self._asic_support = "CAPRI"
+        self._asic_support = None
+        self._mtp_rev = None
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
@@ -180,6 +181,11 @@ class mtp_ctrl():
             self.cli_log_err("Unable to retrieve ASIC version supported by CPLD")
             return False
         self.cli_log_report_inf("MTP CPLD supports: {:s}".format(self._asic_support))
+
+        if not self._mtp_rev:
+            self.cli_log_err("Unable to retrieve MTP revision")
+            return False
+        self.cli_log_report_inf("MTP Rev: Rev_{:s}".format(self._mtp_rev))
 
         if not self._os_ver:
             self.cli_log_err("Unable to retrieve MTP Kernel Version")
@@ -703,6 +709,18 @@ class mtp_ctrl():
             self._asic_support = match[0].strip().upper()
         else:
             self.cli_log_err("Failed to get asic supported version", level = 0)
+            return False
+
+        # MTP_REV
+        cmd = MFG_DIAG_CMDS.MTP_REV_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to send command for getting MTP revision", level = 0)
+            return False
+        match = re.findall(r"MTP_REV=REV_([0-9]{2}|NONE)", self.mtp_get_cmd_buf())
+        if match:
+            self._mtp_rev = match[0]
+        else:
+            self.cli_log_err("Failed to get MTP revision", level = 0)
             return False
 
         # MTP OS version

@@ -257,6 +257,7 @@ class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"
     MTP_LOGIN_VERIFY_FMT = "echo $USER"
     MTP_ASIC_VERSION_FMT = "head /home/diag/diag/asic/asic_version.txt"
+    MTP_REV_FMT =  "env | grep MTP_REV | cat"
     MTP_ASIC_SUPPORTED_FMT =  "env | grep MTP_TYPE | cat"
     MTP_FAN_STATUS_FMT = "devmgr -dev FAN -status"
     MTP_FAN_SET_SPD_FMT = "devmgr -dev=fan -speed -pct={:d}"
