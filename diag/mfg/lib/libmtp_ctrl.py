@@ -1808,9 +1808,10 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_dump_nic_pll_sta(self, slot):
-        reg_data_list = self._nic_ctrl_list[slot].nic_get_capri_pll_sta()
+        reg_data_list = self._nic_ctrl_list[slot].nic_get_pll_sta()
         if not reg_data_list:
-            self.cli_log_slot_err(slot, "Failed to extract Capri PLL status")
+            self.cli_log_slot_err(slot, "Failed to extract ASIC PLL status")
+            self.cli_log_err(self._nic_ctrl_list[slot].nic_get_cmd_buf())
             return
 
         reg26_data = reg_data_list[0]
@@ -1820,19 +1821,22 @@ class mtp_ctrl():
         flash_pll_lock = reg26_data & 0x4
         proto_mode = reg26_data & 0x20
         if not core_pll_lock:
-            self.cli_log_slot_err(slot, "Capri core pll is not locked")
+            self.cli_log_slot_err(slot, "ASIC core pll is not locked")
         if not cpu_pll_lock:
-            self.cli_log_slot_err(slot, "Capri cpu pll is not locked")
+            self.cli_log_slot_err(slot, "ASIC cpu pll is not locked")
         if not flash_pll_lock:
-            self.cli_log_slot_err(slot, "Capri flash pll is not locked")
+            self.cli_log_slot_err(slot, "ASIC flash pll is not locked")
         if proto_mode:
-            self.cli_log_slot_err(slot, "Capri proto mode is set")
+            self.cli_log_slot_err(slot, "ASIC proto mode is set")
 
         reg28_data = reg_data_list[1]
         self.cli_log_slot_inf(slot, "CPLD 0x28 = {:x}".format(reg28_data))
         pcie_pll_lock = reg28_data & 0x40
         if not pcie_pll_lock:
-            self.cli_log_slot_err(slot, "Capri pcie pll is not locked")
+            self.cli_log_slot_err(slot, "ASIC pcie pll is not locked")
+        if not (core_pll_lock or cpu_pll_lock or flash_pll_lock or pcie_pll_lock):
+            # print some more debug info
+            self.mtp_mgmt_set_nic_avs_post(slot)
 
 
 # 3. Routines that need spi bus, can not be run in parallel

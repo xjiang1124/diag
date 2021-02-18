@@ -1887,18 +1887,37 @@ class nic_ctrl():
             return [self._boot_image, self._kernel_timestamp]
 
 
-    def nic_get_capri_pll_sta(self):
-        pll_sta_reg_exp = r"data=(0x[0-9a-fA-F]+)"
+    def nic_get_pll_sta(self):
+        pll_sta_reg_exp = r"addr 0x%x; data=(0x[0-9a-fA-F]+)"
 
+        """
+        NZ: weird hack, have to do this command twice so pexpect picks up the correct buffer.
+        some timing or buffer window issue I couldn't solve.
+
+        Originally (fails):
+        1) turn_on_uut.sh
+        2) cpldutil -cpld-rd
+
+        Fix:
+        1) turn_on_uut.sh
+        2) turn_on_uut.sh ; cpldutil -cpld-rd
+
+        Removing (1) from original picks up the output of the command executed before entering this function.
+        Removing (1) and joining it in (2) picks up only half of the output of turn_on_uut
+            and none from cpldutil.
+        Delaying (1) delays the buffer also, so nothing changes.
+        Adding delay after (1) misses the output of cpldutil.
+
+        """
         cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
 
         reg_addr = 0x26
-        cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
-        match = re.findall(pll_sta_reg_exp, self.nic_get_cmd_buf())
+        match = re.findall(pll_sta_reg_exp % reg_addr, self.nic_get_cmd_buf())
         if not match:
             return None
         else:
@@ -1908,7 +1927,7 @@ class nic_ctrl():
         cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
-        match = re.findall(pll_sta_reg_exp, self.nic_get_cmd_buf())
+        match = re.findall(pll_sta_reg_exp % reg_addr, self.nic_get_cmd_buf())
         if not match:
             return None
         else:
