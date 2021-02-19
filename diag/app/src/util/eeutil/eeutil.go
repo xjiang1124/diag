@@ -152,10 +152,11 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         if (cardType == "ORTANO") {
             eeprom.CustType = "ORTANO"
             eeprom.EepromTbl = eeprom.OrtanoTbl
+            
         }
         if (cardType == "ORTANO2") {
             eeprom.CustType = "ORTANO"
-            eeprom.EepromTbl = eeprom.OrtanoTbl
+            eeprom.EepromTbl = eeprom.OrtanoTbl_V2
         }
         if (cardType == "NAPLES100IBM") {
             eeprom.CustType = "IBM"
