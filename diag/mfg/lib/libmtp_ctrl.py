@@ -76,6 +76,7 @@ class mtp_ctrl():
         self._slots_to_skip = slots_to_skip
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
+        self._fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD    # variable to track the fan speed (%) set by the script
 
         self._nic_ctrl_list = [None] * self._slots
         self._nic_alom_ctrl_list = [None] * self._slots
@@ -975,6 +976,8 @@ class mtp_ctrl():
         if not rc:
             self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_spd))
 
+        self._fanspd = fan_spd          # update class variable
+
         # Fan status dump
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1256,6 +1259,14 @@ class mtp_ctrl():
 
 
     def mtp_hw_init(self, fan_spd):
+        """
+         Elba cards need higher fan_spd
+         40% -> 50%     : elba LT, NT
+         90% -> 100%    : elba HT
+         max = 100%
+        """
+        if self._asic_support == "ELBA":
+            fan_spd = min(100, fan_spd + 10)
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
@@ -1434,6 +1445,12 @@ class mtp_ctrl():
             self.cli_log_err("Unable to get inlet temperature")
             return None
 
+    def mtp_get_fanspd(self):
+        """
+         Returns the fanspeed (in percent) that had been set by the script.
+         Does NOT return live status --> use mtp_get_inlet_temp() for that.
+        """
+        return self._fanspd
 
     # return list of error message
     def mtp_mgmt_retrieve_nic_l1_err(self, sn):

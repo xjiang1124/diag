@@ -894,6 +894,7 @@ def main():
         # stop the next vmarg corner if stop_on_err is set and some nic fails
         if fail_nic_list and stop_on_err:
             break
+        fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
         inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
         if vmarg > 0:
