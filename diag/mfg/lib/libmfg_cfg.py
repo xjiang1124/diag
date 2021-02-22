@@ -12,6 +12,9 @@ class NIC_IMAGES:
     sec_cpld_img = dict()
     sec_cpld_ver = dict()
     sec_cpld_dat = dict()
+    fail_cpld_img = dict()
+    fail_cpld_ver = dict()
+    fail_cpld_dat = dict()
     diagfw_img = dict()
     diagfw_dat = dict()
     goldfw_img = dict()
@@ -142,12 +145,16 @@ class NIC_IMAGES:
     cpld_ver["ORTANO"] = "0x3"
     cpld_dat["ORTANO"] = "0x00"
     sec_cpld_img["ORTANO"] = "ortano_rev83.0_02102021.bin"
-    sec_cpld_ver["ORTANO"] = "0x3"
+    sec_cpld_ver["ORTANO"] = "0x83"
     sec_cpld_dat["ORTANO"] = "0x00"
-    diagfw_img["ORTANO"] = "elba_diagfw_1.17.0-26-5_1112.tar"
-    diagfw_dat["ORTANO"] = "11-12-2020"
-    goldfw_img["ORTANO"] = "naples_goldfw_1.17.0-11-2_1108.tar"
-    goldfw_dat["ORTANO"] = "11-08-2020"
+    fail_cpld_img["ORTANO"] = "ortano_rev83.0_failsafe_02102021.bin"
+    fail_cpld_ver["ORTANO"] = "0x83"
+    fail_cpld_dat["ORTANO"] = "0x00"
+    diagfw_img["ORTANO"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
+    diagfw_dat["ORTANO"] = "03-06-2021"
+    goldfw_img["ORTANO"] = "elba_goldfw_1.22.0-26-12-gbd3da13-dirty_2021.03.06.tar"
+    goldfw_dat["ORTANO"] = "03-06-2021"
+
     cpld_img["ORTANO2"] = "ortano2_rev3.0_02102021.bin"
     cpld_ver["ORTANO2"] = "0x3"
     cpld_dat["ORTANO2"] = "0x00"

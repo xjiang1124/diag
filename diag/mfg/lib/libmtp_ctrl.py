@@ -1132,7 +1132,7 @@ class mtp_ctrl():
         if (mtp_capability & 0x1):
             for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 if stage == FF_Stage.FF_DL:
-                    # CPLD and diagfw images
+                    # CPLD and diagfw images. Failsafe image for Elba cards
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
                         if img.strip() == "":
@@ -1262,6 +1262,15 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                         pass
+                    try:
+                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                            img = NIC_IMAGES.fail_cpld_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
+                        pass
 
                     # In addition to images, check the version & timestamp fields as well here
                     try:
@@ -1285,6 +1294,14 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
                         return False
+                    try:
+                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                            expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
+                            if expected_timestamp.strip() == "":
+                                raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
+                        pass
                 elif stage == FF_Stage.FF_CFG:
                     # CPLD image
                     try:
@@ -1311,7 +1328,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
                         return False
                 elif stage == FF_Stage.FF_SWI:
-                    # Secure CPLD and goldfw images. Failsafe image for Elba cards
+                    # Secure CPLD and goldfw images
                     try:
                         img = NIC_IMAGES.sec_cpld_img[card_type]
                         if img.strip() == "":
@@ -1327,15 +1344,6 @@ class mtp_ctrl():
                         img_list.append(img)
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                        pass
-                    try:
-                        if card_type == NIC_Type.ORTANO:
-                            img = NIC_IMAGES.fail_cpld_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                         pass
 
                     # In addition to images, check the version & timestamp fields as well here
@@ -1360,14 +1368,6 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
                         return False
-                    try:
-                        if card_type == NIC_Type.ORTANO:
-                            expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
-                            if expected_timestamp.strip() == "":
-                                raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
-                        pass
 
                 else:
                     # no images needed in this stage
@@ -2170,6 +2170,24 @@ class mtp_ctrl():
             return True
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
+            return False
+
+        return True
+
+    def mtp_program_nic_failsafe_cpld(self, slot, cpld_img):
+        nic_type = self.mtp_get_nic_type(slot)
+        if not nic_type == NIC_Type.ORTANO and not nic_type == NIC_Type.ORTANO2:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no failsafe CPLD for {:s}".format(nic_type))
+            return False
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip failsafe CPLD update for Proto NIC")
+            return True
+
+        # can't check the version without loading backup partition into the running partition
+        self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
+
+        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg1"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
             return False
 

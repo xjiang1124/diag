@@ -415,14 +415,6 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[card_type]
 
-        ###
-        # Elba cards have a failsafe image as well.
-        ###
-        if card_type == NIC_Type.ORTANO:
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[card_type]
-        else:
-            failsafe_cpld_img_file = ""
-
         nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                     sec_cpld_img_file,
                                                                                     slot,

@@ -63,7 +63,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, qspi_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -76,8 +76,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG"]
     if nic_type == NIC_Type.NAPLES25SWM:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
-    if nic_type == NIC_Type.ORTANO:
-        testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+        testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
         ### REWORK VERIFICATION FOR CAP CHANGE ###
         ### PERFORM AFTER FRU_VERIFY ###
@@ -171,6 +171,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
         # program CPLD
         elif test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # program failsafe CPLD
+        elif test == "FSAFE_CPLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
@@ -369,6 +372,9 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
+        failsafe_cpld_img_file = ""
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[card_type]
 
         if card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
@@ -391,7 +397,7 @@ def main():
         if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
         else:
@@ -453,10 +459,14 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
+        failsafe_cpld_img_file = ""
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[card_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                               nic_fru_cfg[mtp_id][key],
                                                                               cpld_img_file,
+                                                                              failsafe_cpld_img_file,
                                                                               qspi_img_file,
                                                                               slot,
                                                                               swmtestmode,

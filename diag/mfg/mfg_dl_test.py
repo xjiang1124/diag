@@ -157,6 +157,13 @@ def main():
                 except KeyError:
                     self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                     continue
+
+                if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                    try:
+                        mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
+                        continue
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)

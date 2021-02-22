@@ -862,18 +862,22 @@ class nic_ctrl():
         return True
 
 
-    def nic_program_cpld(self, cpld_img):
+    def nic_program_cpld(self, cpld_img, partition="cfg0"):
+        """
+          Program CPLD or Secure CPLD
+        """
         if not self.nic_copy_image(cpld_img):
             return False
         img_name = os.path.basename(cpld_img)
+        # failsafe_name = os.path.basename(failsafe_img)
 
         nic_cmd_list = list()
         # Elba-based:
-        if self._nic_type == NIC_Type.ORTANO:
-            #cfg0 partition A
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, "cfg0"))
-            #cfg0 partition B (backup)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, "cfg1"))
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+            # if not failsafe_name:
+            #     # for non-secure CPLD: program same image to both partitions
+            #     failsafe_name = img_name
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
         # Capri-based:
         else:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
