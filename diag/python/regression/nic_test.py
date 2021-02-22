@@ -78,8 +78,12 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
-                self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
-                self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
+                if cpldID[0] == "0x43" or cpldID[0] == "0x44":
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xe")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+                else:
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
                 self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
