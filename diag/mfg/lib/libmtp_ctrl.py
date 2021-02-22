@@ -1672,6 +1672,11 @@ class mtp_ctrl():
         else:
             return True
 
+    def mtp_check_nic_jtag(self, slot):
+        if not self._nic_ctrl_list[slot].nic_check_jtag(self._asic_support):
+            return False
+        else:
+            return True
 
 # 2. Routines that need smb bus, can not be run in parallel
     def mtp_mgmt_check_nic_pwr_status(self, slot):
@@ -3128,14 +3133,10 @@ class mtp_ctrl():
 
     def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=0):
         if intf == "NIC_JTAG":
-            cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(slot+1)
-            sig_list = ["valid bit 0x1", "error 0x00"]
-            if self._asic_support == "ELBA":
-                sig_list = ["status bit 0x1"]
-            if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-            else:
+            if self.mtp_check_nic_jtag(slot):
                 return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
         elif intf == "NIC_POWER":
             if self.mtp_mgmt_check_nic_pwr_status(slot):
                 return "SUCCESS"

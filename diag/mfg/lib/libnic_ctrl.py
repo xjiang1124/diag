@@ -631,6 +631,31 @@ class nic_ctrl():
         else:
             return False
 
+    def nic_check_jtag(self, asic_support):
+        cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
+
+        sig_list = ["valid bit 0x1", "error 0x00"]
+        if asic_support == "ELBA":
+            sig_list = ["status bit 0x1"]
+
+        error_flag = False
+
+        if not self.mtp_exec_cmd(cmd):
+            error_flag = True
+
+        if not True in [sig in self.nic_get_cmd_buf() for sig in sig_list]:
+            error_flag = True
+
+        if error_flag:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+
+            # Some additional error printing
+            if not self.mtp_exec_cmd("inventory -sts -slot {:d}".format(self._slot)):
+                self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+
+        return True
 
     def nic_power_check(self):
         cmd = MFG_DIAG_CMDS.NIC_POWER_CHECK_FMT.format(self._slot+1)
