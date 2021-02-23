@@ -20,6 +20,8 @@ from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
+from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -368,23 +370,9 @@ def main():
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
 
-        if (
-            card_type == NIC_Type.NAPLES100
-            or card_type == NIC_Type.NAPLES100IBM
-            or card_type == NIC_Type.NAPLES100HPE
-            or card_type == NIC_Type.FORIO
-            or card_type == NIC_Type.VOMERO
-            or card_type == NIC_Type.VOMERO2
-            ):
+        if card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
-        elif (
-            card_type == NIC_Type.NAPLES25
-            or card_type == NIC_Type.NAPLES25SWM
-            or card_type == NIC_Type.NAPLES25OCP
-            or card_type == NIC_Type.NAPLES25SWMDELL
-            or card_type == NIC_Type.NAPLES25SWM833
-            or card_type == NIC_Type.ORTANO
-            ):
+        elif card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x2
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")

@@ -21,6 +21,8 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
+from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -136,51 +138,38 @@ def main():
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         mtp_swi_image_list.append(nic_sw_img_file)
         if (mtp_capability & 0x1):
-            for card_type in [
-            NIC_Type.NAPLES100,
-            NIC_Type.NAPLES100IBM,
-            NIC_Type.NAPLES100HPE,
-            NIC_Type.VOMERO,
-            NIC_Type.VOMERO2
-            ]:
+            for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
-                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
+                    self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                     continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                 except KeyError:
-                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing secure cpld image for {:s}".format(card_type))
+                    self.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                     continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                 except KeyError:
-                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                    self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                     continue
         if (mtp_capability & 0x2):
-            for card_type in [
-            NIC_Type.NAPLES25,
-            NIC_Type.NAPLES25SWM,
-            NIC_Type.NAPLES25SWMDELL,
-            NIC_Type.NAPLES25SWM833,
-            NIC_Type.NAPLES25OCP,
-            NIC_Type.ORTANO
-            ]:
+            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
-                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
+                    self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                     continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                 except KeyError:
-                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing secure cpld image for {:s}".format(card_type))
+                    self.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                     continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                 except KeyError:
-                    self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                    self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                     continue
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
