@@ -61,8 +61,8 @@ class NIC_CPLD_Version:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_12112020.tar"
-    MTP_ARM64_IMAGE = "image_arm64_12112020.tar"
+    MTP_AMD64_IMAGE = "image_amd64_02102021-snakefix.tar"
+    MTP_ARM64_IMAGE = "image_arm64_02102021-snakefix.tar"
     
     MTP_PENCTL_IMAGE = "penctl.linux.0915"
     MTP_PENCTL_TOKEN = "penctl.token"
