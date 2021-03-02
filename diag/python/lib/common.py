@@ -207,9 +207,9 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
             time.sleep(0.1)
             session.expect(bash_prompt)
             #print session.before
-        session.sendline("echo $?")
-        time.sleep(0.05)
-        session.expect(bash_prompt)
+        #session.sendline("echo $?")
+        #time.sleep(0.05)
+        #session.expect(bash_prompt)
         if session.before == "0":
             return 0
         else:

@@ -216,6 +216,7 @@ class nic_con:
         return ret
 
     def enter_uboot_esec(self, session, slot=0, rate=115200, timeout=30):
+        expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -236,7 +237,7 @@ class nic_con:
             common.session_cmd(session, cmd)
             cmd = "turn_on_slot_3v3.sh on {}".format(slot)
             common.session_cmd(session, cmd)
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x34".format(slot)
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
             common.session_cmd(session, cmd)
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
             common.session_cmd(session, cmd)
@@ -253,7 +254,7 @@ class nic_con:
                 try:
                     print "C+C", i
                     session.send(chr(3))
-                    session.expect("Capri# ")
+                    i = session.expect(expstr)
                     #time.sleep(1)
                     ret = 0
                     break
@@ -326,7 +327,8 @@ class nic_con:
         #self.uart_session_stop(session)
 
     def conn_uboot(self, session, rate=115200):
-        exprStr = "Capri# "
+        #exprStr = "Capri# "
+        expstr = ["Capri# ", "DSC# "]
         session.timeout = 15
         ret = 0
         try:
@@ -334,7 +336,7 @@ class nic_con:
             session.sendline(cmd)
             #session.expect("Terminal ready")
             session.sendline("\r")
-            session.expect(exprStr)
+            session.expect(expstr)
         except pexpect.TIMEOUT:
             print "Failed to connet uboot"
             self.uart_session_stop(session)

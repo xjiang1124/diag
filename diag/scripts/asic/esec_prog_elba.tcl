@@ -103,7 +103,7 @@ proc read_pub_ek { sn slot fn } {
         return -1
     }
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
 
     set pub_ek [elb_chlng_read_pub_ek_str]
     set fp [open $fn w]
@@ -123,7 +123,7 @@ proc puf_enroll { sn slot fn } {
         return -1
     }
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
     set card_type [elb_get_card_type]
     if {$card_type == "NAPLES25"} {
         set freq 417
@@ -155,7 +155,7 @@ proc otp_init { sn slot cm_file sm_file } {
         return -1
     }
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
 
     set cmd_cm [list elb_chlng_init_otpf_str 0 0 0 0 439 $cm_file]
     set cmd_sm [list elb_chlng_init_otpf_str 0 0 1 0 70  $sm_file]
@@ -173,7 +173,7 @@ proc post_check { sn slot } {
     plog_start post_check_${sn}_slot${slot}.log
 
     elb_open_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
 
     set ret [elb_secure_post_check 10 10 $slot]
     elb_close_if 10 $slot
@@ -185,7 +185,7 @@ proc show_status { sn slot } {
     plog_start show_status_${sn}_slot${slot}.log
 
     elb_open_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
 
     elb_show_esec_pins
     elb_dump_cpld_sts_spi
@@ -200,7 +200,7 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     plog_start puf_enroll_slot${slot}.log
 
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
     set card_type [elb_get_card_type]
     if {$card_type == "NAPLES25"} {
         set freq 417
@@ -214,21 +214,25 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
         plog_msg "Failed to program fw_ptr"
         return $ret
     }
+    plog_msg $esec_1
     set ret [elb_prog_qspi $esec_1 0x70020000]
     if {$ret != 0} {
         plog_msg "Failed to program esec_1"
         return $ret
     }
+    plog_msg $esec_2
     set ret [elb_prog_qspi $esec_2 0x70040000]
     if {$ret != 0} {
         plog_msg "Failed to program esec_2"
         return $ret
     }
+    plog_msg $host_1
     set ret [elb_prog_qspi $host_1 0x70060000]
     if {$ret != 0} {
         plog_msg "Failed to program host_1"
         return $ret
     }
+    plog_msg $host_2
     set ret [elb_prog_qspi $host_2 0x70080000]
     if {$ret != 0} {
         plog_msg "Failed to program host_2"
@@ -244,7 +248,7 @@ proc efuse_test {slot} {
     set bit_loc 127
 
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
     set card_type [elb_get_card_type]
     
     #Set to 417 for now.  With CPLD's where EFUSE VDDQ can be disabled/enabled.  On a SWM it will not set an efuse bit at 833Mhz if we enable EFUSE VDDQ after asic reset
@@ -457,7 +461,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     plog_start esec_all_${sn}_slot${slot}.log
 
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
     set card_type [elb_get_card_type]
     if {$card_type == "NAPLES25" ||
         $card_type == "NAPLES25SWM" ||
@@ -531,7 +535,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
     plog_start esec_all_${sn}_slot${slot}.log
 
     diag_open_j2c_if 10 $slot
-    regrd 0 0x6a000000
+    _msrd
     set card_type [elb_get_card_type]
     if {$card_type == "NAPLES25" ||
         $card_type == "NAPLES25SWM" ||

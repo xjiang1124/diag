@@ -1,3 +1,10 @@
+#================================
+# XO2 CPLD image generator
+# ./file_convert.py jed_file_name bin_file_name
+
+
+#================================
+# XO3 CPLD image generator
 # cpld_nvm_partition_no 0/1; 0: CFG/UFM0; 1: CFG/UFM1
 # input_image: jed file
 # output_image: there will be two image outputs: _cfg.bin and _ufm.bin

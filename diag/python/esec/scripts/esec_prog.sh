@@ -95,17 +95,20 @@ img_prog () {
     generic_esec_img="images/esecure_firmware_packed.hex"
     generic_host_img="images/boot_nonsec_packed.hex"
     elba_esec_img="images/elba_esecure_firmware_m0_packed.hex"
+    elba_host_img="images/elba_boot_nonsec_packed.hex"
 
     uut="UUT_$SLOT"
     card_type="${!uut}"
 
-    if [[ $card_type == "ORTANO" ]]
+    if [[ $card_type == "ORTANO" || $card_type == "ORTANO2" ]]
     then
         echo "ORTANO"
+        tcl_file="./esec_prog_elba.tcl"
         esec_img=$elba_esec_img
-        host_img=$orcl_host_img
+        host_img=$elba_host_img
     else
         echo "CAPRI"
+        tcl_file="./esec_prog.tcl"
         if [[ $card_type = "VOMERO2" ]]
         then
             esec_img=$orcl_esec_img
@@ -117,12 +120,13 @@ img_prog () {
     fi
     echo "slot: $SLOT; esec_img: $esec_img; host_img: $host_img; card_type: $card_type"
 
-    if [[ $card_type == "ORTANO" ]]
-    then
-        tclsh ./esec_prog_elba.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
-    else
-        tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
-    fi
+    tclsh $tcl_file -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+#    if [[ $card_type == "ORTANO" ]]
+#    then
+#        tclsh ./esec_prog_elba.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+#    else
+#        tclsh ./esec_prog.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+#    fi
 }
 
 efuse_test () {

@@ -343,8 +343,8 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def boot_test(self, sn, slot):
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -post_check -sn {} -slot {}".format(sn, slot)
+    def boot_test(self, sn, slot, card_type):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -post_check -sn {} -slot {} -card_type {}".format(sn, slot, card_type)
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
@@ -446,7 +446,7 @@ PRIVEK <ek.sk>"""
                     print "=== ESEC PROG FAILED ==="
                     return ret
 
-                ret = self.boot_test(sn, slot)
+                ret = self.boot_test(sn, slot, card_type)
                 if ret != 0:
                     # Enter retry
                     print "=== Bad OTP init ==="
@@ -598,6 +598,7 @@ PRIVEK <ek.sk>"""
         return ret
 
     def check_uboot_esec(self, slot, post_check=False):
+        expstr = ["Capri# ", "DSC# "]
         ret = 0
         crc32_ek = ""
         session = common.session_start()
@@ -610,14 +611,14 @@ PRIVEK <ek.sk>"""
             print "Failed to connect uboot"
             return ret
 
-        self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, "Capri# ")
-        self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, "Capri# ")
-        self.nic_con.uart_session_cmd(session, "esec read_boot_status", 30, "Capri# ")
-        self.nic_con.uart_session_cmd(session, "esec read_chip_cert crc32", 30, "Capri# ")
+        self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, expstr)
+        self.nic_con.uart_session_cmd(session, "esec read_tamper_status", 30, expstr)
+        self.nic_con.uart_session_cmd(session, "esec read_boot_status", 30, expstr)
+        self.nic_con.uart_session_cmd(session, "esec read_chip_cert crc32", 30, expstr)
 
         # Find CRC32
         session.sendline("esec read_chip_cert crc32")
-        session.expect("Capri# ")
+        session.expect(expstr)
         ma = re.compile(r".*0x([a-fA-F0-9]+).*")
         src_str = "".join(session.before.splitlines())
         result = ma.match(src_str)
@@ -737,7 +738,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.boot_test == True:
-        esec_ctrl.boot_test(args.sn, args.slot)
+        esec_ctrl.boot_test(args.sn, args.slot, card_type)
  
     if args.sysrst_test == True:
         esec_ctrl.sysrst_test(int(args.slot))
