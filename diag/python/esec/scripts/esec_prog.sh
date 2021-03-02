@@ -2,7 +2,7 @@
 
 enroll_puf () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     else
@@ -15,7 +15,7 @@ hsm_sign_ek () {
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
     echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/"
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
         id="elba.v1"
     else
