@@ -3494,6 +3494,12 @@ class mtp_ctrl():
 
     def mtp_mgmt_dump_avs_info(self, slot, buf):
         self.cli_log_slot_inf(slot, "AVS Set Result Dump:")
+        # find any error
+        avs_passed_flag = re.findall(r"SET AVS PASSED", buf)
+        if not avs_passed_flag:
+            self.cli_log_slot_inf(slot, buf, level=0)
+            return False
+
         # find the die id
         die_id_match = re.findall(r"(ASIC_DIE_ID: +0x[0-9a-fA-F]+)", buf)
         if die_id_match:
@@ -3507,6 +3513,7 @@ class mtp_ctrl():
         vdd_arm_offset_match = re.findall(r"(vdd_arm_offset: +[0-9a-fA-F]+)", buf)
         if vdd_arm_offset_match:
             self.cli_log_slot_inf(slot, vdd_arm_offset_match[0], level=1)
+        return True
 
 
     def mtp_mgmt_set_nic_avs(self, slot):
