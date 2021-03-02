@@ -1994,6 +1994,8 @@ class mtp_ctrl():
             exp_pn = PART_NUMBERS_MATCH.N25_SWM_HPE_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
             exp_pn = PART_NUMBERS_MATCH.N25_SWM_DEL_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES25SWM833:
+            exp_pn = PART_NUMBERS_MATCH.N25_SWM_833_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25OCP:
             exp_pn = PART_NUMBERS_MATCH.N25_OCP_PN_FMT_ALL
         elif nic_type == NIC_Type.FORIO:
@@ -2081,7 +2083,11 @@ class mtp_ctrl():
         elif naples_pn[0:7] == "68-0014":     #NAPLES25 SWM DELL
             if software_pn != "90-0008-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False  
+                return False
+        elif naples_pn[0:7] == "68-0019":     #NAPLES25 SWM 833
+            if software_pn != "90-0008-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP PENSANDO
             if software_pn != "90-0005-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
@@ -3025,6 +3031,17 @@ class mtp_ctrl():
                 else:
                     self._nic_prsnt_list[slot] = False
                     self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM833, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES25SWM833
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES25SWM833)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -3414,6 +3431,9 @@ class mtp_ctrl():
             #NAPLES25OCP uses same setting as Naples25
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.NAPLES25SWM833:
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO:  
             vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)

@@ -70,7 +70,7 @@ class NIC_IMAGES:
     diagfw_img["NAPLES25SWM833"] = "naples_diagfw-1.3.1-E-43_20210109.tar"
     diagfw_dat["NAPLES25SWM833"] = "01-09-2021"
     goldfw_img["NAPLES25SWM833"] = "naples_goldfw-1.3.1-E-43_20210109.tar"
-    goldfw_dat["NAPLES25SWM833"] = "01-09-2020"
+    goldfw_dat["NAPLES25SWM833"] = "01-09-2021"
 
     cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
     cpld_ver["NAPLES100"] = "0x9"
@@ -287,6 +287,9 @@ class PART_NUMBERS_MATCH:
     N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"        #68-0014-01 00       NAPLES25 SWM DELL
     N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)
 
+    N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"        #68-0019-01 01       NAPLES25 SWM 833 PENSANDO
+    N25_SWM_833_FMT_ALL = r"{:s}".format(N25_SWM_833_PN_FMT)
+
     N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"        #68-0010-xx       NAPLES25 OCP PENSANDO
     N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
     N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
@@ -337,7 +340,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.ORTANO]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.VOMERO2]
