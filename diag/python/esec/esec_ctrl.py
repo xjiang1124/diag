@@ -684,6 +684,11 @@ if __name__ == "__main__":
     args = parse_args_diag()
     esec_ctrl = esec_ctrl()
 
+    # cleanup does not need slot
+    if args.cleanup == True:
+        esec_ctrl.cleanup()
+        sys.exit()
+
     card_type = os.environ['UUT_{}'.format(args.slot)]    
     print("CARD_TYPE:", card_type)
 
@@ -710,10 +715,6 @@ if __name__ == "__main__":
     if args.esec_prog == True:
         esec_ctrl.esec_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
                 args.sn, args.slot, args.pn, args.mac, card_type, args.mtp, args.sku, args.fast_path)
-        sys.exit()
-
-    if args.cleanup == True:
-        esec_ctrl.cleanup()
         sys.exit()
 
     if args.check_uboot == True:
