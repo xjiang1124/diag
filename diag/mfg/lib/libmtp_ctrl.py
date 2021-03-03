@@ -2085,15 +2085,15 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0019":     #NAPLES25 SWM 833
-            if software_pn != "90-0008-0001":
+            if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP PENSANDO
-            if software_pn != "90-0005-0001":
+            if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0005-0001":
+            if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
@@ -2101,7 +2101,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P18671":      #NAPLES25 OCP DELL
-            if software_pn != "90-0005-0001":
+            if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
@@ -2123,6 +2123,7 @@ class mtp_ctrl():
         90-0002-0003   naples_fw_1.8.0-E-48_B-_0608.tar
         90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
         90-0002-0005   //standup swm naples_fw_iris_1.17.0-54_1120.tar
+        90-0002-0007   //RelB++ (SWM833, OCP). Updated 03/02/2021
         90-0003-0001   //Oracle Capri cards.. dont care
         90-0004-0001   //IBM  naples_fw_apulu_1.17.0-42_1117.tar
         90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
