@@ -554,10 +554,11 @@ PRIVEK <ek.sk>"""
         for retry in range(10):
             print "iteration %d\n" % (retry + 1)
             try:
+                expstr = ["capri login:", "elba login:"]
                 self.nic_con.uart_session_start(uartsession, rate)
                 cmd = "sysreset.sh"
                 uartsession.sendline(cmd)
-                uartsession.expect("capri login:", 300)
+                uartsession.expect(expstr, 300)
                 self.nic_con.uart_session_stop(uartsession)
 
             except:
