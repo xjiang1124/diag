@@ -23,6 +23,10 @@ var powerStatNameSWM = []string{"capri vdd", "capri avdd", "capri vdd arm", "cap
                             "nic p1v8", "nic p2v5", "efuse p2v5", "nic p3v3", "nic p5v0", "p12v", "pwr ok",
                             "VRD Fault", "alom cbl prsn", "temp trip"}
 
+var OrtanoPowerFail0 = []string{"p12v", "p5v0_nic", "vdd_core", "vdd_arm", "ddr_vddq", "vdd_ddr", "p3v3_nic", "p1v8_nic"}
+var OrtanoPowerFail1 = []string{"avdd_pcie", "avddh_pcie", "pll_avdd_pcie", "p0v8_nw", "pod_pll", "p3v3_aod", "ddr_vtt", "ddr_vpp"}
+var OrtanoPowerFail2 = []string{"vdd_mac", "avdd_d6", "avddh_d6", "rtvdd", "pvdd", "tvddh", "p1v8_aod_se", "p1v8_aod_pll"}
+
 func init() {
 }
 
@@ -277,6 +281,27 @@ func statusDump(slot int)  {
     return
 }
 
+func dispPowerStatus(pwrStatName[] string, reg_value byte) {
+    for i := 0; i < len(pwrStatName); i++ {
+        cli.Printf("i","%-15s%d\n", pwrStatName[i], (reg_value >> uint(i)) & 1)
+    }
+}
+
+func powerStatusDumpOrtano(uutName string)  {
+
+    cli.DisableVerbose()
+    stat0, _ := hwdev.NaplesCpldRd("CPLD", uint64(naples100Cpld.REG_POWER_POST), uutName)
+    stat1, _ := hwdev.NaplesCpldRd("CPLD", uint64(naples100Cpld.REG_POWER_STAT0), uutName)
+    stat2, _ := hwdev.NaplesCpldRd("CPLD", uint64(naples100Cpld.REG_POWER_STAT1), uutName)
+    cli.EnableVerbose()
+
+    dispPowerStatus(OrtanoPowerFail0, stat0) 
+    dispPowerStatus(OrtanoPowerFail1, stat1) 
+    dispPowerStatus(OrtanoPowerFail2, stat2) 
+
+    return
+}
+
 func powerStatusDump(slot int)  {
     devName := "CPLD"
     uutName := "UUT_"+strconv.Itoa(slot)
@@ -286,7 +311,10 @@ func powerStatusDump(slot int)  {
 
     if cardType == "NAPLES25SWM" {
         pwrStatName = powerStatNameSWM
-    } 
+    } else if cardType == "ORTANO" || cardType == "ORTANO2" {
+        powerStatusDumpOrtano(uutName)
+        return
+    }
 
     cli.DisableVerbose()
     stat0, _ := hwdev.NaplesCpldRd(devName, uint64(naples100Cpld.REG_POWER_STAT0), uutName)
