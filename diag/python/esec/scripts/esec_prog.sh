@@ -59,7 +59,7 @@ gen_otp () {
 
 otp_init () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     else
@@ -69,7 +69,7 @@ otp_init () {
 
 post_check () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" ||  $CARD_TYPE == "ORTANO2" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     else
@@ -79,7 +79,7 @@ post_check () {
 
 show_status () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     else
@@ -131,7 +131,7 @@ img_prog () {
 
 efuse_test () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage EFUSE_TEST -slot $SLOT
     else

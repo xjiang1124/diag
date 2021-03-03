@@ -125,11 +125,11 @@ proc puf_enroll { sn slot fn } {
     diag_open_j2c_if 10 $slot
     _msrd
     set card_type [elb_get_card_type]
-    if {$card_type == "NAPLES25"} {
-        set freq 417
-    } else {
-        set freq 833
-    }
+    #if {$card_type == "NAPLES25"} {
+    #    set freq 417
+    #} else {
+    #    set freq 833
+    #}
     elb_jtag_chip_rst 10 $slot 0 0 "" 1 1
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
@@ -202,11 +202,11 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     diag_open_j2c_if 10 $slot
     _msrd
     set card_type [elb_get_card_type]
-    if {$card_type == "NAPLES25"} {
-        set freq 417
-    } else {
-        set freq 833
-    }
+    #if {$card_type == "NAPLES25"} {
+    #    set freq 417
+    #} else {
+    #    set freq 833
+    #}
     elb_jtag_chip_rst 10 $slot 0 0 "" 1 1
 
     set ret [elb_prog_qspi $fw_ptr 0x70010000]
@@ -252,37 +252,30 @@ proc efuse_test {slot} {
     set card_type [elb_get_card_type]
     
     #Set to 417 for now.  With CPLD's where EFUSE VDDQ can be disabled/enabled.  On a SWM it will not set an efuse bit at 833Mhz if we enable EFUSE VDDQ after asic reset
-    set freq 417
+    #set freq 417
 
     set cpld_rev [ssi_cpld_read 0x00]
     set cpld_ver [ssi_cpld_read 0x80]
     
     elb_jtag_chip_rst 10 $slot 0 0 "" 1 1
 
-    if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM:  SET EFUSE VDDQ ENABLE
-        set cpld_data [ssi_cpld_read 0x10]
-        set cpld_data [expr {$cpld_data | 0x20}]
-        ssi_cpld_write 0x10 $cpld_data
-    }
-
     cpu_force_global_flags 1
-    set bit_read_back [elb_efuse_get_bit $bit_loc]
+
+    elb_efuse_vddq_enable
+
+    set bit_read_back [elb_efuse_get_bit $bit_loc 10 $slot]
     if {$bit_read_back == 1} {
         plog_msg "Efuse bit $bit_loc is already programmed; read back $bit_read_back"
     }
 
-    elb_efuse_set_bit $bit_loc
-    set bit_read_back [elb_efuse_get_bit $bit_loc]
+    elb_efuse_set_bit $bit_loc 10 $slot
+    set bit_read_back [elb_efuse_get_bit $bit_loc 10 $slot]
     if {$bit_read_back != 1} {
         plog_err "Failed to valid efuse bit; read back $bit_read_back"
         set return -1
     }
 
-    if { $cpld_rev > 0xa && $cpld_ver == 0x17 } {  #NAPLES25SWM
-        set cpld_data [ssi_cpld_read 0x10]
-        set cpld_data [expr {$cpld_data & 0xDF}]
-        ssi_cpld_write 0x10 $cpld_data
-    }
+    elb_efuse_vddq_disable
 
     diag_close_j2c_if 10 $slot
 
@@ -463,14 +456,14 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     diag_open_j2c_if 10 $slot
     _msrd
     set card_type [elb_get_card_type]
-    if {$card_type == "NAPLES25" ||
-        $card_type == "NAPLES25SWM" ||
-        $card_type == "NAPLES25SWMDELL" ||
-        $card_type == "NAPLES25OCP"} {
-        set freq 417
-    } else {
-        set freq 833
-    }
+    #if {$card_type == "NAPLES25" ||
+    #    $card_type == "NAPLES25SWM" ||
+    #    $card_type == "NAPLES25SWMDELL" ||
+    #    $card_type == "NAPLES25OCP"} {
+    #    set freq 417
+    #} else {
+    #    set freq 833
+    #}
     elb_jtag_chip_rst 10 $slot 0 0 "" 1 1
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
@@ -537,14 +530,14 @@ proc esec_all {sn usb_port slot PN MAC MTP
     diag_open_j2c_if 10 $slot
     _msrd
     set card_type [elb_get_card_type]
-    if {$card_type == "NAPLES25" ||
-        $card_type == "NAPLES25SWM" ||
-        $card_type == "NAPLES25SWMDELL" ||
-        $card_type == "NAPLES25OCP"} {
-        set freq 417
-    } else {
-        set freq 833
-    }
+    #if {$card_type == "NAPLES25" ||
+    #    $card_type == "NAPLES25SWM" ||
+    #    $card_type == "NAPLES25SWMDELL" ||
+    #    $card_type == "NAPLES25OCP"} {
+    #    set freq 417
+    #} else {
+    #    set freq 833
+    #}
     elb_jtag_chip_rst 10 $slot 0 0 "" 1 1
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin

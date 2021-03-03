@@ -498,7 +498,7 @@ PRIVEK <ek.sk>"""
            print "=== ESEC PROG FAILED ==="
            return -1
 
-        ret = self.efuse_test(int(slot))
+        ret = self.efuse_test(int(slot), card_type)
         if ret != 0:
             print "=== Efuse test failed ==="
 
@@ -651,9 +651,9 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def efuse_test(self, slot):
+    def efuse_test(self, slot, card_type):
         self.nic_con.power_cycle_multi(115200, str(slot), 5)
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_test -slot {}".format(slot)
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_test -slot {} -card_type {}".format(slot, card_type)
         ret = 0
 
         pass_sign = "ESEC PROG PASSED"
@@ -750,7 +750,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.efuse_test == True:
-        esec_ctrl.efuse_test(int(args.slot))
+        esec_ctrl.efuse_test(int(args.slot), card_type)
         sys.exit()
 
     print "Invalid input"
