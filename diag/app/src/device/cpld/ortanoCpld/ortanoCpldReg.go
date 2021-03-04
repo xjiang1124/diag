@@ -31,6 +31,8 @@ const (
     REG_ASIC_FATAL_TEMP    = 0x1D
     REG_CPLD_SUB_VER       = 0x1E
     REG_ASIC_PSST          = 0x20
+    REG_ASIC_PIN_STAT0     = 0x27
+    REG_ASIC_PIN_STAT1     = 0x28
     REG_POWER_STAT0        = 0x30
     REG_POWER_STAT1        = 0x31
     REG_POWER_STAT2        = 0x32

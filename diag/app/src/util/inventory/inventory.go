@@ -13,6 +13,7 @@ import (
     "common/misc"
     "device/cpld/naples100Cpld"
     "device/cpld/nicCpldCommon"
+    "device/cpld/ortanoCpld"
     "hardware/hwdev"
 )
 
@@ -141,14 +142,10 @@ func present() (err int) {
     return
 }
 
-func powerStatusCheck(slot int)  {
-    devName := "CPLD"
-    addr := uint64(naples100Cpld.REG_POWER_STAT1)
-    uutName := "UUT_"+strconv.Itoa(slot)
-    var powerGood bool
+func getPowerGoodOrtano(uutName string) (powerGood bool) {
+    addr := uint64(ortanoCpld.REG_ASIC_PIN_STAT1)
 
-    cli.DisableVerbose()
-    stat1, err := hwdev.NaplesCpldRd(devName, addr, uutName)
+    stat1, err := hwdev.NaplesCpldRd("CPLD", addr, uutName)
     if err != errType.SUCCESS {
         powerGood = false
     } else {
@@ -157,6 +154,38 @@ func powerStatusCheck(slot int)  {
         } else {
             powerGood = false
         }
+    }
+    return
+}
+
+func getPowerGood(uutName string) (powerGood bool) {
+    addr := uint64(naples100Cpld.REG_POWER_STAT1)
+
+    stat1, err := hwdev.NaplesCpldRd("CPLD", addr, uutName)
+    if err != errType.SUCCESS {
+        powerGood = false
+    } else {
+        if (stat1 & 0x8) != 0 && (stat1 & 0x1) != 0 {
+            powerGood = true
+        } else {
+            powerGood = false
+        }
+    }
+    return
+}
+
+func powerStatusCheck(slot int)  {
+    uutName := "UUT_"+strconv.Itoa(slot)
+    var powerGood bool
+
+    cardType := os.Getenv(uutName)
+    fmt.Printf(" CardType=%s\n", cardType)
+
+    cli.DisableVerbose()
+    if cardType == "ORTANO" || cardType == "ORTANO2" {
+        powerGood = getPowerGoodOrtano(uutName)
+    } else {
+        powerGood = getPowerGood(uutName)
     }
     cli.EnableVerbose()
 
@@ -290,9 +319,9 @@ func dispPowerStatus(pwrStatName[] string, reg_value byte) {
 func powerStatusDumpOrtano(uutName string)  {
 
     cli.DisableVerbose()
-    stat0, _ := hwdev.NaplesCpldRd("CPLD", uint64(naples100Cpld.REG_POWER_POST), uutName)
-    stat1, _ := hwdev.NaplesCpldRd("CPLD", uint64(naples100Cpld.REG_POWER_STAT0), uutName)
-    stat2, _ := hwdev.NaplesCpldRd("CPLD", uint64(naples100Cpld.REG_POWER_STAT1), uutName)
+    stat0, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT0), uutName)
+    stat1, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT1), uutName)
+    stat2, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT1), uutName)
     cli.EnableVerbose()
 
     dispPowerStatus(OrtanoPowerFail0, stat0) 
