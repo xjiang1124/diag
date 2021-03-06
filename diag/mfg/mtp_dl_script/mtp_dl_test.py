@@ -197,10 +197,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 def set_pslc(mtp_mgmt_ctrl,mtp_id):
-    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
-    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
-        mtp_mgmt_ctrl.cli_log_err("Set NIC pSLC mode failed: no connection to NICs", level=0)
-        return False
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO):
@@ -213,12 +209,12 @@ def set_pslc(mtp_mgmt_ctrl,mtp_id):
         duration = str(stop_ts - start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, 'Set NIC pSLC mode FAILED')
-            return 1
+            return False
         else:
             mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Set NIC pSLC mode complete')
     mtp_mgmt_ctrl.mtp_power_on_nic()
-    return 0
+    return True
 
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
@@ -284,7 +280,11 @@ def main():
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # if applicable, set pslc mode and powercycle
-    if set_pslc(mtp_mgmt_ctrl,mtp_id):
+    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
+    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+        mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
+        return False
+    if not set_pslc(mtp_mgmt_ctrl,mtp_id):
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
         return

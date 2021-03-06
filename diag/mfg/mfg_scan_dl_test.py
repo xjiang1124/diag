@@ -205,10 +205,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 
 
 def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
-    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
-    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
-        mtp_mgmt_ctrl.cli_log_err("Set NIC pSLC mode failed: no connection to NICs", level=0)
-        return False
     dsp = FF_Stage.FF_DL
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -408,6 +404,10 @@ def main():
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # if applicable, set pslc mode and powercycle
+    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
+    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+        mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
+        return False
     if set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
         logfile_close(log_filep_list)
@@ -443,33 +443,12 @@ def main():
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        try:
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
-            continue
-        try:
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw image for {:s}".format(card_type))
-            continue
-        if (
-            card_type == NIC_Type.NAPLES100
-            or card_type == NIC_Type.NAPLES100IBM
-            or card_type == NIC_Type.NAPLES100HPE
-            or card_type == NIC_Type.FORIO
-            or card_type == NIC_Type.VOMERO
-            or card_type == NIC_Type.VOMERO2
-            ):
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
+
+        if card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
-        elif (
-            card_type == NIC_Type.NAPLES25
-            or card_type == NIC_Type.NAPLES25SWM
-            or card_type == NIC_Type.NAPLES25OCP
-            or card_type == NIC_Type.NAPLES25SWMDELL
-            or card_type == NIC_Type.NAPLES25SWM833
-            or card_type == NIC_Type.ORTANO
-            ):
+        elif card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x2
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
@@ -553,20 +532,8 @@ def main():
             continue
 
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        try:
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing cpld image for {:s}".format(card_type))
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
-            continue
-        try:
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw image for {:s}".format(card_type))
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
-            continue
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                               nic_fru_cfg[mtp_id][key],
