@@ -86,8 +86,15 @@ fi
 
 echo "$type Detected!"
 echo "export CARD_TYPE=\"$type\"" >> /etc/profile
+echo "export CARD_ENV=\"ARM\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
+
+echo "export ASIC_LIB_BUNDLE=/data/nic_arm/nic" >> /etc/profile
+echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> /etc/profile
+echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> /etc/profile
+echo "export ASIC_GEN=\$ASIC_SRC" >> /etc/profile
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB:$ASIC_LIB_BUNDLE/depend_libs/nic/hal/third-party/judy/aarch64/lib/:$ASIC_LIB_BUNDLE/depend_libs/tool/toolchain/asic_third_party/lib/:$ASIC_LIB_BUNDLE/depend_libs/nic/hal/third-party/zmq/aarch64/:$ASIC_LIB_BUNDLE/depend_libs/nic/hal/third-party/sknobs/aarch64/lib/:/platform/lib/" >> /etc/profile
 
 #This piece of code is a bit odd.. it cannot be indented so need to run it outside an if statement
 #DO NOT INDENT CODE IN THE IF STATEMENT

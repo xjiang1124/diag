@@ -170,6 +170,7 @@ class nic_con:
         return ret
 
     def enter_uboot(self, session, slot=0, rate=115200, timeout=30):
+        expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -200,7 +201,7 @@ class nic_con:
                 try:
                     print "C+C", i
                     session.send(chr(3))
-                    session.expect("Capri# ")
+                    session.expect(expstr)
                     #time.sleep(1)
                     ret = 0
                     break
@@ -602,6 +603,7 @@ class nic_con:
         return ret
 
     def disable_pcie_uboot(self, slot):
+        expstr = ["Capri# ", "DSC# "]
         ret = 0
         session = common.session_start()
         ret = self.enter_uboot(session, slot)
@@ -613,14 +615,15 @@ class nic_con:
             print "Failed to connect uboot"
             return ret
 
-        self.uart_session_cmd(session, "setenv pcie_poll_disable 1", 30, "Capri# ")
-        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
-        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
+        self.uart_session_cmd(session, "setenv pcie_poll_disable 1", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
         self.uart_session_stop(session)
         common.session_stop(session)
         return ret
 
     def enable_pcie_uboot(self, slot):
+        expstr = ["Capri# ", "DSC# "]
         ret = 0
         session = common.session_start()
         ret = self.enter_uboot(session, slot)
@@ -632,9 +635,9 @@ class nic_con:
             print "Failed to connect uboot"
             return ret
 
-        self.uart_session_cmd(session, "setenv pcie_poll_disable", 30, "Capri# ")
-        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
-        self.uart_session_cmd(session, "saveenv", 30, "Capri# ")
+        self.uart_session_cmd(session, "setenv pcie_poll_disable", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
         self.uart_session_stop(session)
         common.session_stop(session)
         return ret
