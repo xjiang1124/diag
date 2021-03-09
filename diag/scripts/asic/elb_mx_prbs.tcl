@@ -1,4 +1,4 @@
-source .tclrc.diag.elb.arm
+source .tclrc.diag.elb.arm.nointv
 
 set DURATION [lindex $argv 0]
 set INT_LB   [lindex $argv 1]
