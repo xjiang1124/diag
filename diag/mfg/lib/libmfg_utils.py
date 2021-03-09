@@ -559,17 +559,17 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
         mtp_mgmt_ctrl.cli_log_err("Copy Test script failed... Abort")
         return False
     # remove the stale test script
-    cmd = "rm -rf {:s}".format(mtp_script_dir)
+    cmd = "rm -rf {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
         return False
     # unpack the test script pkg
-    cmd = "tar zxf {:s}".format(mtp_script_pkg)
+    cmd = "tar zxf {:s} -C {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
         return False
     # remove the test script pkg
-    cmd = "rm -f {:s}".format(mtp_script_pkg)
+    cmd = "rm -f {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_pkg)
     os.system(cmd)
     return True
 
