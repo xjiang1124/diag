@@ -47,8 +47,8 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev84_02112021.bin"
     diagfw_img["NAPLES25SWMDELL"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
     diagfw_dat["NAPLES25SWMDELL"] = "11-18-2020"
-    goldfw_img["NAPLES25SWMDELL"] = "naples_goldfw_iris_1.14.1-E-12_1025.tar"
-    goldfw_dat["NAPLES25SWMDELL"] = "11-18-2020"
+    goldfw_img["NAPLES25SWMDELL"] = "naples_fw_RELB++_1.14.2-E-24_2021.02.01.tar"
+    goldfw_dat["NAPLES25SWMDELL"] = "01-09-2021"
 
     cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0A_022221.bin"
     cpld_ver["NAPLES25OCP"] = "0xA"
@@ -69,7 +69,7 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES25SWM833"] = "02-11"
     diagfw_img["NAPLES25SWM833"] = "naples_diagfw-1.3.1-E-43_20210109.tar"
     diagfw_dat["NAPLES25SWM833"] = "01-09-2021"
-    goldfw_img["NAPLES25SWM833"] = "naples_goldfw-1.3.1-E-43_20210109.tar"
+    goldfw_img["NAPLES25SWM833"] = "naples_fw_RELB++_1.14.2-E-24_2021.02.01.tar"
     goldfw_dat["NAPLES25SWM833"] = "01-09-2021"
 
     cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
