@@ -91,6 +91,10 @@ export CARD_TYPE=$type
 export CARD_ENV="ARM"
 
 ASIC_LIB_BUNDLE="/data/nic_arm/nic"
+ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src
+ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib
+ASIC_GEN=$ASIC_SRC
+
 echo "export ASIC_LIB_BUNDLE=/data/nic_arm/nic" >> /etc/profile
 echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> /etc/profile
 echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> /etc/profile
