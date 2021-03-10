@@ -168,6 +168,7 @@ do
         cp $TOP_DIR/diag/scripts/asic/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/elb*prbs.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/snake_elba.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     fi
