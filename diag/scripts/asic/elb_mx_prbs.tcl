@@ -10,6 +10,8 @@ plog_start $LOG_FN
 
 plog_msg "MX PRBS DURATION: $DURATION, INT_LB: $INT_LB"
 
+set in_err [plog_get_err_count]
+
 set pod 0
 set aod 1
 set pcie_upload 0
@@ -22,7 +24,13 @@ elb_aapl_rom_crc_chk 0x308
 set lane_list [elb_get_mx_lane_list]
 elb_mx_srds_prbs $lane_list $DURATION 25g,50g $INT_LB
 
-plog_msg "MX PRBS PASSED"
+set out_err [plog_get_err_count]
+
+if { $in_err != $out_err } {
+    plog_msg "MX PRBS FAILED"
+} else {
+    plog_msg "MX PRBS PASSED"
+}
 
 plog_stop
 
