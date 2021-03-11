@@ -78,7 +78,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
     if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):  #If SWM and only asking for ALOM, skip SWM FRU PROGRAMMING
         test_list = ["FRU_PROG"]
 
-    if nic_type == NIC_Type.ORTANO:
+    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
         test_list = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
         ### REWORK VERIFICATION FOR CAP CHANGE ###
@@ -215,7 +215,7 @@ def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
         if str.upper(valid) != "YES":
             continue
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO):
+        if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2):
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         mac = nic_fru_cfg[mtp_id][key]["MAC"]
@@ -470,7 +470,7 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             
-        if card_type == NIC_Type.ORTANO:
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
@@ -601,7 +601,7 @@ def main():
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
             if swmtestmode == Swm_Test_Mode.ALOM:
                 testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
-        if card_type == NIC_Type.ORTANO:
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         for skipped_test in args.skip_test:
             if skipped_test in testlists:

@@ -417,8 +417,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             # L1 sub test count is 11, err_msg_list should be empty
             number_of_l1_tests = 9
             # But for Elba, there are 17 sub tests
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
-                number_of_l1_tests = 17
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
+                number_of_l1_tests = 18
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
@@ -825,6 +825,9 @@ def main():
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
                 ortano_nic_list.append(slot)
                 pass_nic_list.append(slot)
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
+                ortano_nic_list.append(slot)
+                pass_nic_list.append(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
@@ -883,6 +886,9 @@ def main():
             mtp_exp_capability = 0x2
             test_db = naples25swm833_test_db
         elif nic_type == NIC_Type.ORTANO:
+            mtp_exp_capability = 0x2
+            test_db = ortano_test_db
+        elif nic_type == NIC_Type.ORTANO2:
             mtp_exp_capability = 0x2
             test_db = ortano_test_db
         else:
@@ -989,6 +995,8 @@ def main():
                 pre_test_check_list = naples25swm833_pre_test_check_list
             elif nic_type == NIC_Type.ORTANO:
                 pre_test_check_list = ortano_pre_test_check_list
+            elif nic_type == NIC_Type.ORTANO2:
+                pre_test_check_list = ortano_pre_test_check_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -1048,6 +1056,9 @@ def main():
             elif nic_type == NIC_Type.ORTANO:
                 nic_para_test_list = ortano_para_test_list[:]
                 test_db = ortano_test_db
+            elif nic_type == NIC_Type.ORTANO2:
+                nic_para_test_list = ortano_para_test_list[:]
+                test_db = ortano_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -1072,8 +1083,8 @@ def main():
                         pass_nic_list.remove(slot)
 
                 ## <-- no aapl tests for Ortano P0C
-                if nic_type == NIC_Type.ORTANO:
-                    mtp_mgmt_ctrl.cli_log_err("Skip AAPL tests for ORTANO", level=0)
+                if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+                    mtp_mgmt_ctrl.cli_log_err("Skip AAPL tests for {:s}".format(nic_type), level=0)
                     continue
                 ## --> no aapl tests for Ortano P0C
 
@@ -1127,6 +1138,8 @@ def main():
             elif nic_type == NIC_Type.NAPLES25SWM833:
                 mtp_para_test_list = naples25swm833_mtp_para_test_list
             elif nic_type == NIC_Type.ORTANO:
+                mtp_para_test_list = ortano_mtp_para_test_list
+            elif nic_type == NIC_Type.ORTANO2:
                 mtp_para_test_list = ortano_mtp_para_test_list
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
@@ -1184,6 +1197,9 @@ def main():
                 nic_seq_test_list = naples25swm833_seq_test_list[:]
                 test_db = naples25swmdell_test_db
             elif nic_type == NIC_Type.ORTANO:
+                nic_seq_test_list = ortano_seq_test_list[:]
+                test_db = ortano_test_db
+            elif nic_type == NIC_Type.ORTANO2:
                 nic_seq_test_list = ortano_seq_test_list[:]
                 test_db = ortano_test_db
             else:

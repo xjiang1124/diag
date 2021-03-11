@@ -372,7 +372,7 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         for test in ["SEC_KEY_PROG"]:
             #skip secure key programming for Ortano
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skipping SEC_KEY_PROG for ORTANO")
                 continue
 
@@ -456,7 +456,7 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         #skipped secure key programming for Ortano
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skipping SEC_PROG_VERIFY for ORTANO")
             continue
         for test in ["SEC_PROG_VERIFY"]:

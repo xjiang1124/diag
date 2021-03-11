@@ -2006,6 +2006,8 @@ class mtp_ctrl():
             exp_pn = PART_NUMBERS_MATCH.VOMERO2_FMT_ALL
         elif nic_type == NIC_Type.ORTANO:
             exp_pn = PART_NUMBERS_MATCH.ORTANO_FMT_ALL
+        elif nic_type == NIC_Type.ORTANO2:
+            exp_pn = PART_NUMBERS_MATCH.ORTANO_FMT_ALL
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2023,11 +2025,10 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002")):       
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-ortano")):
             return True
         return False
             
-                    
     #Check if the loaded image correct for the cards p/n.  i.e. cloud card gets a cloud image, 
     #and etnerprise card get an enterprise image
     def check_swi_software_image(self, slot, software_pn):
@@ -2109,7 +2110,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-00xx":
+            if software_pn != "90-ortano":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -2532,7 +2533,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO:
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
             msg = "Setting NIC EMMC in performance mode"
             self.cli_log_slot_inf_lock(slot, msg)
             if not self._nic_ctrl_list[slot].nic_emmc_perf_mode():
@@ -3054,6 +3055,17 @@ class mtp_ctrl():
                 else:
                     self._nic_prsnt_list[slot] = False
                     self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.ORTANO2
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.ORTANO2)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         return True
 
 
@@ -3436,6 +3448,9 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO:  
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO2:
             vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)
         else:

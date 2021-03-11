@@ -199,7 +199,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, qspi_img_file, 
 def set_pslc(mtp_mgmt_ctrl,mtp_id):
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO):
+        if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2):
             continue
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Set NIC pSLC mode')
         
@@ -388,7 +388,7 @@ def main():
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
-        if card_type == NIC_Type.ORTANO:
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(cpld_img_file))
@@ -530,7 +530,7 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.NAPLES25SWM:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
-        if card_type == NIC_Type.ORTANO:
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         for skip_test in args.skip_test:
             if skip_test in testlists:

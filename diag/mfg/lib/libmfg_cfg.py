@@ -148,6 +148,19 @@ class NIC_IMAGES:
     diagfw_dat["ORTANO"] = "11-12-2020"
     goldfw_img["ORTANO"] = "naples_goldfw_1.17.0-11-2_1108.tar"
     goldfw_dat["ORTANO"] = "11-08-2020"
+    cpld_img["ORTANO2"] = "ortano2_rev3.0_02102021.bin"
+    cpld_ver["ORTANO2"] = "0x3"
+    cpld_dat["ORTANO2"] = "0x00"
+    sec_cpld_img["ORTANO2"] = "ortano2_rev83.0_02102021.bin"
+    sec_cpld_ver["ORTANO2"] = "0x83"
+    sec_cpld_dat["ORTANO2"] = "0x00"
+    fail_cpld_img["ORTANO2"] = "ortano2_rev83.0_failsafe_02102021.bin"
+    fail_cpld_ver["ORTANO2"] = "0x83"
+    fail_cpld_dat["ORTANO2"] = "0x00"
+    diagfw_img["ORTANO2"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
+    diagfw_dat["ORTANO2"] = "03-06-2021"
+    goldfw_img["ORTANO2"] = "elba_goldfw_1.22.0-26-12-gbd3da13-dirty_2021.03.06.tar"
+    goldfw_dat["ORTANO2"] = "03-06-2021"
 
 # MFG release version control
 class NIC_CPLD_Version:
@@ -340,12 +353,12 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.VOMERO2]
-MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO]
-MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO]
+MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO, NIC_Type.ORTANO2]
+MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO, NIC_Type.ORTANO2]
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
