@@ -70,12 +70,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     prog_date = str(fru_cfg["TS"])
 
     dsp = FF_Stage.FF_DL
-    testseqlist = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]                                                                
+    testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG"]
-    if nic_type == NIC_Type.NAPLES25SWM:
-        testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:

@@ -68,11 +68,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
-    test_list = ["FRU_PROG", "CPLD_PROG", "QSPI_PROG", "CPLD_REF"]
+    test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type == NIC_Type.NAPLES25SWM:
-        test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG"]
     if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):  #If SWM and only asking for ALOM, skip SWM FRU PROGRAMMING
