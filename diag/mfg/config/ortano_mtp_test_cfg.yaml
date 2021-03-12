@@ -60,6 +60,22 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    MVL:
+        ACC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        STUB:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+                VMARG: No
     NIC_ASIC:
         PCIE_PRBS:
             INIT: ""
