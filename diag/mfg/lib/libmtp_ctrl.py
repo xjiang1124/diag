@@ -538,7 +538,8 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None):
-        retries = self._mgmt_timeout / 30
+        delay = 30
+        retries = self._mgmt_timeout / delay
         retries = retries + 4
         if not self._mgmt_cfg:
             self.cli_log_err("management port config is empty")
@@ -557,8 +558,8 @@ class mtp_ctrl():
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"])
             if idx < 0:
                 if retries > 0:
-                    self.cli_log_inf("Connect to mtp timeout, wait 30s and retry...", level = 0)
-                    time.sleep(30)
+                    self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level = 0)
+                    time.sleep(delay)
                     retries -= 1
                     self._mgmt_handle = pexpect.spawn(ssh_cmd)
                     continue
@@ -3217,6 +3218,12 @@ class mtp_ctrl():
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
 
+    def mtp_set_nic_type(self, slot, nic_type):
+        """
+         Don't use this function for MTP. Instead use mtp_init_nic_type().
+         This is only for, for e.g. FST setup, which does not have `inventory` command.
+        """
+        self._nic_type_list[slot] = nic_type
 
     def mtp_nic_type_valid(self, slot):
         return self._nic_type_list[slot] in self._valid_type_list

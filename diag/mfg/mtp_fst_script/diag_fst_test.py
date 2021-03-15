@@ -19,8 +19,12 @@ def get_ssh_cmd(ip, cmd):
     ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
     return ssh_cmd
 
-def get_bus_list():
-    result = subprocess.check_output("lspci -d 1dd8:1000 | awk '{print $1}'", shell=True)
+def get_bus_list(card_type="CAPRI"):
+    if card_type == "ORTANO":
+        upstream_port = "0002"
+    else:
+        upstream_port = "1000"
+    result = subprocess.check_output("lspci -d 1dd8:"+upstream_port+" | awk '{print $1}'", shell=True)
     new_str = result.decode("utf-8")
     bus_list = [y for y in (x.strip() for x in new_str.splitlines()) if y]
     print("Found", len(bus_list), "devices", "\n")
@@ -61,6 +65,8 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES25SWM"
     elif "DSC2-2Q200-32R32F64P-R" in pn:
         product_name = "ORTANO2"
+    elif "68-0015-02" in pn:
+        product_name = "ORTANO2"
     elif "DSC1-2S25-4H8P-DS" in pn:
         product_name = "SSH_DETECT"
     else:
@@ -69,7 +75,7 @@ def get_product_name_from_pn(pn):
 
     return product_name
 
-def config_eth(fst):
+def config_eth(card_type="", fst=0):
 
     if fst == 1:
         slot_bus_dict = { 1:'2a:00.0', 2:'08:00.0', 3:'61:00.0', 4:'21:00.0', 5:'41:00.0' }
@@ -84,7 +90,7 @@ def config_eth(fst):
         subprocess.call(["ifconfig", eth, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
     
-    bus_list = get_bus_list()
+    bus_list = get_bus_list(card_type)
 
     card_slot_list = []
     
@@ -148,7 +154,7 @@ def fst_general_old(fst):
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot"+str(a), b, "sn: unknown", "type: unknown", "failed") 
+                print("slot"+str(a), b, "sn: UNKNOWN", "type: UNKNOWN", "failed")
                 print("Get FRU failed")
                 print(str(e))
                 cleanup(eth)
@@ -227,7 +233,7 @@ def fst_general(fst):
             try:
                 x = subprocess.check_output("/home/diag/penctl.linux.02012021 show naples", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
-                print("slot:", str(a), b, "sn: unknown", "type: unknown", "failed") 
+                print("slot:", str(a), b, "sn: UNKNOWN", "type: UNKNOWN", "failed")
                 print("Get FRU failed")
                 cleanup(eth)
                 continue
@@ -249,7 +255,7 @@ def fst_general(fst):
                     z = subprocess.check_output(ssh_cmd, env=naples_env, shell=True, stderr=subprocess.DEVNULL)
                 except:
                     print("Failed to use ssh to detect PN")
-                    print("slot:", str(a), b, "sn: unknown", "type: unknown", "failed") 
+                    print("slot:", str(a), b, "sn: UNKNOWN", "type: UNKNOWN", "failed")
                     cleanup(eth)
                     continue
 
@@ -274,7 +280,7 @@ def fst_general(fst):
             y = x.decode("utf-8")
             firmware = json.loads(y)
 
-            if product_name == "NAPLES25" or product_name == "NAPLES25SWM" or product_name == "NAPLES25SWMDELL" or product_name == "NAPLES25SWM833" or product_name == "NAPLES25OCP" or product_name == "ORTANO2":
+            if product_name == "NAPLES25" or product_name == "NAPLES25SWM" or product_name == "NAPLES25SWMDELL" or product_name == "NAPLES25SWM833" or product_name == "NAPLES25OCP":
                 if "8GT/s" in new_str and "x8" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
@@ -359,7 +365,7 @@ def fst_cloud_fetch_sn(card_type, fst):
     else:
         slot_bus_dict = {1:24, 2:59, 3:216, 4:175}
     
-    card_slot_list = config_eth(fst)
+    card_slot_list = config_eth(card_type, fst)
     card_info_dict = dict()
 
     for slot in card_slot_list:
@@ -410,37 +416,52 @@ def fst_cloud_fetch_sn(card_type, fst):
         output1 = output.decode("utf-8")
         fwlist = json.loads(output1)
         print("---------")
-        if "boot0" in fwlist:
-            print("boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
-        else:
-            print("[ERROR] FWLIST missing boot0 info")
-        if "mainfwa" in fwlist:
-            print("mainfwa:   {:15s}   {:s} ".format(fwlist["mainfwa"]["kernel_fit"]["software_version"], fwlist["mainfwa"]["kernel_fit"]["build_date"]) )
-        else:
-            print("[ERROR] FWLIST missing mainfwa info")
-        if "mainfwb" in fwlist:
-            print("mainfwb:   {:15s}   {:s} ".format(fwlist["mainfwb"]["kernel_fit"]["software_version"], fwlist["mainfwb"]["kernel_fit"]["build_date"]) )
-        else:
-            print("[ERROR] FWLIST missing mainfwb info")
-        if "goldfw" in fwlist:
-            print("goldfw:    {:15s}   {:s} ".format(fwlist["goldfw"]["kernel_fit"]["software_version"], fwlist["goldfw"]["kernel_fit"]["build_date"]) )
-        else:
-            print("[ERROR] FWLIST missing goldfw info")
-        if "diagfw" in fwlist:
-            print("diagfw:    {:15s}   {:s} ".format(fwlist["diagfw"]["kernel_fit"]["software_version"], fwlist["diagfw"]["kernel_fit"]["build_date"]) )
-        else:
-            print("[ERROR] FWLIST missing diagfw info")
+        try:
+            if "boot0" in fwlist:
+                print("boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
+            else:
+                print("[ERROR] FWLIST missing boot0 info")
+            if "mainfwa" in fwlist:
+                print("mainfwa:   {:15s}   {:s} ".format(fwlist["mainfwa"]["kernel_fit"]["software_version"], fwlist["mainfwa"]["kernel_fit"]["build_date"]) )
+            else:
+                print("[ERROR] FWLIST missing mainfwa info")
+            if "mainfwb" in fwlist:
+                print("mainfwb:   {:15s}   {:s} ".format(fwlist["mainfwb"]["kernel_fit"]["software_version"], fwlist["mainfwb"]["kernel_fit"]["build_date"]) )
+            else:
+                print("[ERROR] FWLIST missing mainfwb info")
+            if "goldfw" in fwlist:
+                print("goldfw:    {:15s}   {:s} ".format(fwlist["goldfw"]["kernel_fit"]["software_version"], fwlist["goldfw"]["kernel_fit"]["build_date"]) )
+            else:
+                print("[ERROR] FWLIST missing goldfw info")
+            if "diagfw" in fwlist:
+                print("diagfw:    {:15s}   {:s} ".format(fwlist["diagfw"]["kernel_fit"]["software_version"], fwlist["diagfw"]["kernel_fit"]["build_date"]) )
+            else:
+                print("[ERROR] FWLIST missing diagfw info")
+        except KeyError as e:
+            print("[ERROR] FWLIST missing info")
+            print(e)
         print("---------")
 
-        # Switch to mainfw
-        cmd = "/nic/tools/fwupdate -s mainfwa"
-        ssh_cmd = get_ssh_cmd(ip, cmd)
-        try:
-            output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            print(output.decode("utf-8"))
-            print("slot:", str(slot), "sn", sn, "failed to switch to mainfw") 
-            continue
+        if product_name == "ORTANO2":
+            # Ensure performance mode even though it's already set in SWI
+            cmd = "touch /sysconfig/config0/.perf_mode"
+            ssh_cmd = get_ssh_cmd(ip, cmd)
+            try:
+                output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                print(output.decode("utf-8"))
+                print("slot:", str(slot), "sn", sn, "failed to set performance mode")
+                continue
+
+        # # Switch to mainfw
+        # cmd = "/nic/tools/fwupdate -s mainfwa"
+        # ssh_cmd = get_ssh_cmd(ip, cmd)
+        # try:
+        #     output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
+        # except subprocess.CalledProcessError as e:
+        #     print(output.decode("utf-8"))
+        #     print("slot:", str(slot), "sn", sn, "failed to switch to mainfw") 
+        #     continue
         print("slot", slot, "sn:", sn, "switched to mainfwa")
 
     json.dump(card_info_dict, open("/home/diag/mtp_fst_script/card_info_dict.txt",'w'))
@@ -473,7 +494,12 @@ def fst_cloud_check_pcie(fst):
         else:
             tgt_width = 'x16'
 
-        if "8GT/s" in result1 and tgt_width in result1:
+        if "ORTANO" in product_name:
+            tgt_speed = "16GT/s"
+        else:
+            tgt_speed = "8GT/s"
+
+        if tgt_speed in result1 and tgt_width in result1:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
         else:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
@@ -498,7 +524,7 @@ def main():
         fst_general_old(fst_type)
     elif card_type == "ORACLE":
         fst_general_oracle(fst_type)
-    elif card_type == "NAPLES100IBM" or "CLOUD" in card_type:
+    elif card_type == "NAPLES100IBM" or "CLOUD" in card_type or "ORTANO" in card_type:
         if stage == "FETCH_SN":
             fst_cloud_fetch_sn(card_type, fst_type)
         elif stage == "CHECK_PCIE":

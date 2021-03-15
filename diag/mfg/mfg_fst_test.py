@@ -179,7 +179,7 @@ def main():
         time.sleep(5)
 
     # for Cloud, we need to reboot and do stage II test
-    if "CLOUD" in card_type:
+    if "CLOUD" in card_type or card_type == "ORTANO":
         print("Power Cycle FST Server")
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_power_cycle():
