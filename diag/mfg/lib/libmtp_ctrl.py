@@ -2899,6 +2899,49 @@ class mtp_ctrl():
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
         return True
 
+    def mtp_single_nic_emmc_reformat(self, slot, nic_rslt_list, emmc_format=True):
+        if not self.mtp_nic_emmc_init(slot, emmc_format):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
+            nic_rslt_list[slot] = False
+            return
+
+        if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to copy diag")
+            nic_rslt_list[slot] = False
+            return
+
+    def mtp_nic_emmc_reformat(self, nic_rslt_list, emmc_format=True):
+        """
+          copy of mtp_nic_diag_init(), but without the FRU, CPLD inits.
+          re-init emmc after a desctructive emmc test, to prepare for next stage.
+        """
+        self.mtp_nic_mgmt_para_init(aapl=False)
+        if not self.mtp_mgmt_nic_mac_validate():
+            return False
+
+        nic_thread_list = list()
+        for slot in range(self._slots):
+            nic_type = self.mtp_get_nic_type(slot)
+            if not (nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO):
+                continue
+            if not self._nic_prsnt_list[slot]:
+                continue
+            nic_thread = threading.Thread(target = self.mtp_single_nic_emmc_reformat,
+                                          args = (slot, nic_rslt_list, emmc_format))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        return nic_rslt_list
 
     # check if any duplicate mac address in the internal network
     def mtp_mgmt_nic_mac_validate(self):

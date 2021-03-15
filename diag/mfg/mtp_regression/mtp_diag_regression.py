@@ -782,6 +782,7 @@ def main():
     naples25swmdell_nic_list = list()
     naples25swm833_nic_list = list()
     ortano_nic_list = list()
+    ortano2_nic_list = list()
     pass_nic_list = list()
     fail_nic_list = list()
     skip_nic_list = list()
@@ -826,14 +827,14 @@ def main():
                 ortano_nic_list.append(slot)
                 pass_nic_list.append(slot)
             elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
-                ortano_nic_list.append(slot)
+                ortano2_nic_list.append(slot)
                 pass_nic_list.append(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                 continue
 
-    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO]
-    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, naples25swm833_nic_list, ortano_nic_list]
+    nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2]
+    nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, naples25swm833_nic_list, ortano_nic_list, ortano2_nic_list]
 
     nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
     for slot in range(len(nic_skipped_list)):
@@ -1259,6 +1260,21 @@ def main():
         # clean up logfiles for the next run
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+        if not stop_on_err:
+            # Re-init EMMC for Elba cards after L1's destructive emmc test
+            nic_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+            mtp_mgmt_ctrl.mtp_power_off_nic()
+            mtp_mgmt_ctrl.mtp_power_on_nic()
+            mtp_mgmt_ctrl.mtp_nic_emmc_reformat(nic_rslt_list=nic_rslt_list)
+
+            for slot in range(MTP_Const.MTP_SLOT_NUM):
+                if not nic_rslt_list[slot]:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
     # Enable PCIe poll
     #ADD - Bypass shutting down slot right now for debug

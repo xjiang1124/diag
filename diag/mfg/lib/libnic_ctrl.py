@@ -47,7 +47,7 @@ class nic_ctrl():
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._nic_status = NIC_Status.NIC_STA_POWEROFF
-        self._nic_con_prompt = "#"
+        self._nic_con_prompt = "# "
 
         self._diag_ver = None
         self._diag_util_ver = None
