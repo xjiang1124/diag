@@ -46,6 +46,7 @@ func CpldWrite(offset uint32, data uint32) (err int) {
 
     cardType = os.Getenv("CARD_TYPE")
     if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+        retC = C.cpld_write(C.uchar(offset), C.uchar(data))
     } else {
         retC = C.Cpld_write(C.uchar(offset), C.uchar(data))
         if retC != 0 {
@@ -59,7 +60,15 @@ func CpldWrite(offset uint32, data uint32) (err int) {
 func MvlRegRead(offset uint32, data* uint32, phy uint32) (err int) {
     var retC C.int
     var rd C.ushort
-    retC = C.Mdio_rd(C.uchar(offset), &rd, C.uchar(phy))
+    var cardType string
+
+    cardType = os.Getenv("CARD_TYPE")
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+        retC = C.mdio_rd(C.uchar(offset), &rd, C.uchar(phy))
+    } else {
+        retC = C.Mdio_rd(C.uchar(offset), &rd, C.uchar(phy))
+    }
+
     if retC != 0 {
         cli.Println("e", "Failed to read Marvell register")
     }
@@ -70,7 +79,15 @@ func MvlRegRead(offset uint32, data* uint32, phy uint32) (err int) {
 
 func MvlRegWrite(offset uint32, data uint32, phy uint32) (err int) {
     var retC C.int
-    retC = C.Mdio_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
+    var cardType string
+
+    cardType = os.Getenv("CARD_TYPE")
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+        retC = C.mdio_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
+    } else {
+        retC = C.Mdio_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
+    }
+
     if retC != 0 {
         cli.Println("e", "Failed to write Marvell register")
     }
@@ -81,7 +98,15 @@ func MvlRegWrite(offset uint32, data uint32, phy uint32) (err int) {
 func MvlSmiRegRead(offset uint32, data* uint32, phy uint32) (err int) {
     var retC C.int
     var rd C.ushort
-    retC = C.Mdio_smi_rd(C.uchar(offset), &rd, C.uchar(phy))
+    var cardType string
+
+    cardType = os.Getenv("CARD_TYPE")
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+        retC = C.mdio_smi_rd(C.uchar(offset), &rd, C.uchar(phy))
+    } else {
+        retC = C.Mdio_smi_rd(C.uchar(offset), &rd, C.uchar(phy))
+    }
+
     if retC != 0 {
         cli.Println("e", "Failed to read Marvell smi register")
     }
@@ -92,7 +117,15 @@ func MvlSmiRegRead(offset uint32, data* uint32, phy uint32) (err int) {
 
 func MvlSmiRegWrite(offset uint32, data uint32, phy uint32) (err int) {
     var retC C.int
-    retC = C.Mdio_smi_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
+    var cardType string
+
+    cardType = os.Getenv("CARD_TYPE")
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+        retC = C.mdio_smi_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
+    } else {
+        retC = C.Mdio_smi_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
+    }
+
     if retC != 0 {
         cli.Println("e", "Failed to write Marvell smi register")
     }
