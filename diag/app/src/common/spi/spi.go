@@ -6,6 +6,7 @@ import (
     //"config"
     "common/errType"
     "common/cli"
+    "os"
 )
 
 // #cgo CFLAGS: -I../../../../../include
@@ -26,17 +27,30 @@ func SpiWrite(offset uint32, data uint32) int {
 
 func CpldRead(offset uint32, data* uint32) {
     var rd C.int
-    rd = C.Cpld_read(C.uchar(offset))
-    *data = uint32(rd)
+    var cardType string
+
+    cardType = os.Getenv("CARD_TYPE")
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+        *data = 0xffffffff
+    } else {
+        rd = C.Cpld_read(C.uchar(offset))
+        *data = uint32(rd)
+    }
 }
 
 func CpldWrite(offset uint32, data uint32) (err int) {
     var retC C.int
-    retC = C.Cpld_write(C.uchar(offset), C.uchar(data))
-    if retC != 0 {
-        cli.Println("e", "Failed to write CPLD")
+    var cardType string
+
+    cardType = os.Getenv("CARD_TYPE")
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    } else {
+        retC = C.Cpld_write(C.uchar(offset), C.uchar(data))
+        if retC != 0 {
+            cli.Println("e", "Failed to write CPLD")
+        }
+        err = int(retC)
     }
-    err = int(retC)
     return
 }
 
