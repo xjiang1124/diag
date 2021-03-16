@@ -1083,14 +1083,13 @@ def main():
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
 
-                ## <-- no aapl tests for Ortano P0C
-                if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-                    mtp_mgmt_ctrl.cli_log_err("Skip AAPL tests for {:s}".format(nic_type), level=0)
-                    continue
-                ## --> no aapl tests for Ortano P0C
 
                 # second round, aapl tests
-                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=True):
+                if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+                    aapl = False
+                else:
+                    aapl = True
+                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl):
                     mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
                     mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
                     return
@@ -1261,12 +1260,12 @@ def main():
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-        if not stop_on_err:
+        if not stop_on_err and pass_nic_list:
             # Re-init EMMC for Elba cards after L1's destructive emmc test
             nic_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
             mtp_mgmt_ctrl.mtp_power_off_nic()
             mtp_mgmt_ctrl.mtp_power_on_nic()
-            mtp_mgmt_ctrl.mtp_nic_emmc_reformat(nic_rslt_list=nic_rslt_list)
+            mtp_mgmt_ctrl.mtp_nic_emmc_reformat(nic_rslt_list=nic_rslt_list, nic_list=pass_nic_list)
 
             for slot in range(MTP_Const.MTP_SLOT_NUM):
                 if not nic_rslt_list[slot]:

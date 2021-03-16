@@ -1182,13 +1182,14 @@ class nic_ctrl():
                 dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
                 return False
 
-        nic_diag_list = ["nic_arm", "nic_util"]
-        for util in nic_diag_list:
-            if not self.nic_copy_compressed_image(
-                src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
-                src_img=util,
-                dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-                return False
+        if emmc_utils:
+            nic_diag_list = ["nic_arm", "nic_util"]
+            for util in nic_diag_list:
+                if not self.nic_copy_compressed_image(
+                    src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
+                    src_img=util,
+                    dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                    return False
 
         return True
 

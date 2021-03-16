@@ -14,11 +14,11 @@ PARAMS:
     P2C:
         - "MTP1#ASIC#L1#timeout=5000"
 #        - "MTP1#ASIC#L1#zmq_en=1"
-        - "MTP1#ASIC#L1#offload=0"
+        - "MTP1#ASIC#L1#offload=1"
     4C:
         - "MTP1#ASIC#L1#timeout=5000"
 #        - "MTP1#ASIC#L1#zmq_en=1"
-        - "MTP1#ASIC#L1#offload=0"
+        - "MTP1#ASIC#L1#offload=1"
 
 MTP_PRE:
     NIC_POWER: True
@@ -60,6 +60,22 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    NIC_ASIC:
+        PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        ETH_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+
 
 MTP_PARA:
     SNAKE_HBM: False

@@ -2910,7 +2910,7 @@ class mtp_ctrl():
             nic_rslt_list[slot] = False
             return
 
-    def mtp_nic_emmc_reformat(self, nic_rslt_list, emmc_format=True):
+    def mtp_nic_emmc_reformat(self, nic_rslt_list, nic_list, emmc_format=True):
         """
           copy of mtp_nic_diag_init(), but without the FRU, CPLD inits.
           re-init emmc after a desctructive emmc test, to prepare for next stage.
@@ -2920,7 +2920,7 @@ class mtp_ctrl():
             return False
 
         nic_thread_list = list()
-        for slot in range(self._slots):
+        for slot in nic_list:
             nic_type = self.mtp_get_nic_type(slot)
             if not (nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO):
                 continue
