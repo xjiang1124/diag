@@ -109,4 +109,4 @@ MTP_SEQ:
                 VMARG: Yes
 
 MTP_POST:
-    NIC_MEM:  True
+    NIC_MEM:  False
