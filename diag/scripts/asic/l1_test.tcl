@@ -50,7 +50,7 @@ puts "sn: $sn; slot: $slot"
 cd $ASIC_SRC/ip/cosim/tclsh
 if {$MTP_TYPE == "MTP_ELBA"} {
     puts "Elba MTP"
-    set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+    set l1_cmd "elb_l1_screen_diag $sn 10 $slot hod 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
     #set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 0" 
     source .tclrc.diag.elb.new
 } else {
