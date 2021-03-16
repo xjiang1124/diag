@@ -1838,6 +1838,20 @@ func fruGenerateChecksum(data []byte, length uint16) (checksum uint8) {
     return
 }
 
+
+func fruDumpData(data []byte) {
+    var s2 string
+    for i:=0; i<len(data); i++ {
+        if (i % 0x10) == 0 {
+            s2 = s2 + fmt.Sprintf("\n%.04x: ", i)
+        }
+        s2 = s2 + fmt.Sprintf("%.02x ", data[i])
+    }
+    fmt.Printf("%s\n", s2);
+    
+    return
+}
+
 func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool) (err int) {
 
     const CMN_HDR_IU_OFFSET  uint8 = 1
@@ -1852,10 +1866,12 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     const MR_HDR_HDR_CSUM_OFFSET uint8 = 4
     const MR_HDR_LENGTH          uint8 = 5
     const BIAsize                uint16 = 256
-    header := make([]byte, 8)
-    board_info_area := make([]byte, BIAsize)
+    rawFru := []byte{}//make([]byte, 0)
+    
+    header := make([]byte, 0)
+    board_info_area := make([]byte, 0)
+    product_info_area := make([]byte, 0)
     var bia_length uint16 = 0
-    product_info_area := make([]byte, BIAsize)
     var pia_length uint16 = 0
     var mr_length uint16 = 0
     var i uint16 = 0
@@ -1866,7 +1882,12 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     if err != errType.SUCCESS {
         return
     }
-    defer smbusNew.Close()
+    defer func() {
+        if err != errType.SUCCESS {
+            fruDumpData(rawFru)
+        }
+        smbusNew.Close()
+    } ()
 
     //Oracle cards start their Fru information at offset 256
     if CardType == "VOMERO2"  || CardType == "ORTANO" || CardType == "ORTANO2" {
@@ -1874,12 +1895,14 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     }
 
     for offset = 0; offset < uint16(CMN_HDR_LENGTH); offset++ {
-        header[offset], err = eeRead(devName, offset + offset_add)
+        data8, err = eeRead(devName, offset + offset_add)
+        header = append(header, data8)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to read device", devName, "field at offset", offset + offset_add) 
             return errType.FAIL
         }
     }
+    rawFru = append(rawFru, header...)
 
     
     hdr_csum = fruGenerateChecksum(header, uint16(CMN_HDR_LENGTH) - 1)
@@ -1906,12 +1929,14 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             return errType.FAIL
         }
         for i, offset = 0, uint16(header[CMN_HDR_BIA_OFFSET] * 8) + offset_add; i < bia_length; offset, i = offset+1, i+1 {
-            board_info_area[i], err = eeRead(devName, offset)
+            data8, err = eeRead(devName, offset)
+            board_info_area = append(board_info_area, data8)
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device ", devName, " field at offset", offset)
                 return errType.FAIL
             }
         }
+        rawFru = append(rawFru, board_info_area...)
 
         bia_csum = fruGenerateChecksum(board_info_area, bia_length - 1)
         if bia_csum == board_info_area[bia_length-1] {
@@ -1937,12 +1962,14 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             return errType.FAIL
         }
         for i, offset = 0, uint16(header[CMN_HDR_PIA_OFFSET] * 8) + offset_add; i < pia_length; offset, i = offset+1, i+1 {
-            product_info_area[i], err = eeRead(devName, offset)
+            data8, err = eeRead(devName, offset)
+            product_info_area = append(product_info_area, data8)
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device", devName, "field at offset", offset)
                 return errType.FAIL
             }
         }
+        rawFru = append(rawFru, product_info_area...)
 
         pia_csum = fruGenerateChecksum(product_info_area, pia_length - 1)
         if pia_csum == product_info_area[pia_length-1] {
@@ -1961,7 +1988,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
         mr_offset = uint16(header[CMN_HDR_MR_OFFSET])
         mr_offset = (mr_offset * 8)         
         for mrRecords = 0; mrRecords < 10; mrRecords++ {
-            multi_record_area := make([]byte, BIAsize)
+            multi_record_area := make([]byte, 0)
 
             //read the length
             data8, err = eeRead(devName, mr_offset + uint16(MR_HDR_LENGTH_OFFSET) + offset_add)
@@ -1975,12 +2002,15 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
                 return errType.FAIL
             }
             for i, offset = 0, mr_offset + offset_add; i < mr_length; offset, i = offset+1, i+1 {
-                multi_record_area[i], err = eeRead(devName, offset)
+                data8, err = eeRead(devName, offset)
+                multi_record_area = append(multi_record_area, data8)
                 if err != errType.SUCCESS {
                     cli.Println("e", "Failed to read device", devName, "field at offset", offset)
                     return errType.FAIL
                 }
             }
+            rawFru = append(rawFru, multi_record_area...)
+
             mr_csum = fruGenerateChecksum(multi_record_area[5:], mr_length - uint16(MR_HDR_LENGTH))
             if mr_csum == multi_record_area[MR_HDR_CSUM_OFFSET] {
                 if OutputEnabled == true { cli.Printf("i", "%s Multi-record Entry-%d Checksum Passed  Calculated 0x%.02x    Read 0x%.02x\n", devName, mrRecords, mr_csum, multi_record_area[MR_HDR_CSUM_OFFSET]) }
@@ -2073,8 +2103,6 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
         }
     }
     cli.Println("i", "FRU Checkum and Type/Length Checks Passed\n")
-
-
 
     return errType.SUCCESS
 }
