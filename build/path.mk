@@ -50,7 +50,8 @@ ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\
 	util/capricpld		\
 	util/xo3dcpld		\
-	lib/capricpld
+	lib/capricpld		\
+	lib/xo3dcpld
 
 
 

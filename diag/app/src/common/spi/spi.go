@@ -11,8 +11,10 @@ import (
 
 // #cgo CFLAGS: -I../../../../../include
 // #cgo LDFLAGS: -lcpld
+// #cgo LDFLAGS: -lxo3dcpld
 // #include <stdlib.h>
 // #include "../../../../lib/capricpld/cpld.h"
+// #include "../../../../lib/xo3dcpld/xo3dcpld.h"
 import "C"
 //import "unsafe"
 
@@ -31,11 +33,11 @@ func CpldRead(offset uint32, data* uint32) {
 
     cardType = os.Getenv("CARD_TYPE")
     if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
-        *data = 0xffffffff
+        rd = C.cpld_read(C.uchar(offset))
     } else {
         rd = C.Cpld_read(C.uchar(offset))
-        *data = uint32(rd)
     }
+    *data = uint32(rd)
 }
 
 func CpldWrite(offset uint32, data uint32) (err int) {

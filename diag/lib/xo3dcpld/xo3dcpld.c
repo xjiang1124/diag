@@ -86,19 +86,19 @@ static const char spidev_path0[] = "/dev/spidev0.0";
 static const char spidev_path1[] = "/dev/spidev0.3";
 
 //lsc commands definition
-unsigned char lsc_idcode_cmd[]			= {0xE0, 0x0, 0x0, 0x0};
-unsigned char lsc_enable_cmd[]			= {0x74, 0x8, 0x0, 0x0};
-unsigned char lsc_erase_cmd[]			= {0x0E, 0x4, 0x0, 0x0};
-unsigned char lsc_erase0_cmd[]			= {0x0E, 0x4, 0x1, 0x0};
-unsigned char lsc_erase1_cmd[]			= {0x0E, 0x4, 0x2, 0x0};
-unsigned char lsc_init_cmd[]			= {0x46, 0x0, 0x0, 0x0};
-unsigned char lsc_init0_cmd[]			= {0x46, 0x0, 0x1, 0x0};
-unsigned char lsc_init1_cmd[]			= {0x46, 0x0, 0x2, 0x0};
-unsigned char lsc_disable_cmd[]			= {0x26, 0x0, 0x0};
-unsigned char lsc_prog_done_cmd[]		= {0x5E, 0x0, 0x0, 0x0};
-unsigned char lsc_cfg_add_cmd[]			= {0x46, 0x0, 0x0, 0x0};
+static unsigned char lsc_idcode_cmd[]			= {0xE0, 0x0, 0x0, 0x0};
+static unsigned char lsc_enable_cmd[]			= {0x74, 0x8, 0x0, 0x0};
+static unsigned char lsc_erase_cmd[]			= {0x0E, 0x4, 0x0, 0x0};
+static unsigned char lsc_erase0_cmd[]			= {0x0E, 0x4, 0x1, 0x0};
+static unsigned char lsc_erase1_cmd[]			= {0x0E, 0x4, 0x2, 0x0};
+static unsigned char lsc_init_cmd[]			= {0x46, 0x0, 0x0, 0x0};
+static unsigned char lsc_init0_cmd[]			= {0x46, 0x0, 0x1, 0x0};
+static unsigned char lsc_init1_cmd[]			= {0x46, 0x0, 0x2, 0x0};
+static unsigned char lsc_disable_cmd[]			= {0x26, 0x0, 0x0};
+static unsigned char lsc_prog_done_cmd[]		= {0x5E, 0x0, 0x0, 0x0};
+static unsigned char lsc_cfg_add_cmd[]			= {0x46, 0x0, 0x0, 0x0};
 //unsigned char lsc_read_cmd[]			= {0x73, 0x0, 0x0, 0x0};
-unsigned char lsc_read_cmd[]			= {0x73, 0x0, 0x0, 0x0,
+static unsigned char lsc_read_cmd[]			= {0x73, 0x0, 0x0, 0x0,
 											0x0, 0x0, 0x0, 0x0,
 											0x0, 0x0};
 //											0x0, 0x0,
@@ -106,11 +106,11 @@ unsigned char lsc_read_cmd[]			= {0x73, 0x0, 0x0, 0x0,
 //											0x0, 0x0, 0x0, 0x0
 //											};
 
-unsigned char lsc_acc_mode_cmd[]		= {0xC6, 0x8, 0x0};
-unsigned char lsc_refresh_cmd[]			= {0x79, 0x0, 0x0};
-unsigned char lsc_no_op_cmd[]			= {0xFF, 0xFF, 0xFF, 0xFF};
-unsigned char lsc_prog_incr_cmd[]		= {0x70, 0x0, 0x0, 0x0};
-unsigned char lsc_status_cmd[]			= {0x3C, 0x0, 0x0, 0x0};
+static unsigned char lsc_acc_mode_cmd[]		= {0xC6, 0x8, 0x0};
+static unsigned char lsc_refresh_cmd[]			= {0x79, 0x0, 0x0};
+static unsigned char lsc_no_op_cmd[]			= {0xFF, 0xFF, 0xFF, 0xFF};
+static unsigned char lsc_prog_incr_cmd[]		= {0x70, 0x0, 0x0, 0x0};
+static unsigned char lsc_status_cmd[]			= {0x3C, 0x0, 0x0, 0x0};
 
 static int _e_ioctl(int fd, const char *name, unsigned long req, void *arg)
 {
@@ -165,7 +165,7 @@ read_gpios(int d, uint32_t mask)
     return r;
 }
 
-int write_gpios(int gpio, uint32_t data)
+static int write_gpios(int gpio, uint32_t data)
 {
     struct gpiochip_info ci;
     struct gpiohandle_request hr;
@@ -210,8 +210,7 @@ read_cpld_gpios(void)
     return (read_gpios(1, 0x3f) << 2) | read_gpios(0, 0xc0);
 }
 
-static int
-cpld_read(uint8_t addr)
+int cpld_read(u_int8_t addr)
 {
     struct spi_ioc_transfer msg[2];
     uint8_t txbuf[4];
@@ -238,8 +237,7 @@ cpld_read(uint8_t addr)
     return rxbuf[0];
 }
 
-static int
-cpld_write(uint8_t addr, uint8_t data)
+int cpld_write(u_int8_t addr, u_int8_t data)
 {
     struct spi_ioc_transfer msg[1];
     uint8_t txbuf[3];
@@ -490,7 +488,7 @@ static int flash_id(uint32_t fd, char *id) {
 //	}
 //}
 
-static int mdio_rd(uint8_t addr, uint16_t* data, uint8_t phy)
+int mdio_rd(u_int8_t addr, u_int16_t* data, u_int8_t phy)
 {
 	uint8_t data_lo, data_hi;
 	cpld_write(MDIO_CRTL_HI_REG, addr);
@@ -505,7 +503,7 @@ static int mdio_rd(uint8_t addr, uint16_t* data, uint8_t phy)
 	return 0;
 }
 
-static int mdio_wr(uint8_t addr, uint16_t data, uint8_t phy)
+int mdio_wr(u_int8_t addr, u_int16_t data, u_int8_t phy)
 {
 	cpld_write(MDIO_CRTL_HI_REG, addr);
 	cpld_write(MDIO_DATA_LO_REG, (data & 0xFF));
@@ -517,7 +515,7 @@ static int mdio_wr(uint8_t addr, uint16_t data, uint8_t phy)
 	return 0;
 }
 
-static int mdio_smi_rd(uint8_t addr, uint16_t* data, uint8_t phy)
+int mdio_smi_rd(u_int8_t addr, u_int16_t* data, u_int8_t phy)
 {
 	uint16_t tmp;
 
@@ -530,7 +528,7 @@ static int mdio_smi_rd(uint8_t addr, uint16_t* data, uint8_t phy)
 	return 0;
 }
 
-static int mdio_smi_wr(uint8_t addr, uint16_t data, uint8_t phy)
+int mdio_smi_wr(uint8_t addr, uint16_t data, uint8_t phy)
 {
 	uint16_t tmp;
 
@@ -741,6 +739,7 @@ int get_region_index_from_name(char *region_name)
     return region_index;
 }
 
+#if 0
 static void
 usage(void)
 {
@@ -965,3 +964,4 @@ main(int argc, char *argv[])
 
     return 0;
 }
+#endif
