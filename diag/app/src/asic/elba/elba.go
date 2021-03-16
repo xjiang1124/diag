@@ -31,8 +31,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
     if mode == "PCIE" {
         passSign := "PCIE PRBS PASSED"
         failSign := "PCIE PRBS FAILED"
-        // err = runCmd.Run(passSign, failSign, cmd, "PCIE", strconv.Itoa(duration))
-        err = runCmd.Run(passSign, failSign, cmd, "PCIE", "10")
+        err = runCmd.Run(passSign, failSign, cmd, "PCIE", strconv.Itoa(duration))
     } else if mode == "ETH" {
         passSign := "MX PRBS PASSED"
         failSign := "MX PRBS FAILED"
