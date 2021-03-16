@@ -437,7 +437,7 @@ func init() {
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
-    case "FORIO", "VOMERO", "VOMERO2":
+    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2":
         QsfpTbl = forioQsfpTbl
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)
