@@ -88,6 +88,13 @@ var OrtanoMtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
+var Ortano2MtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x61,    0x0,    "HUB_NONE",  0,    0},  
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
 // Naples100 I2C table on MTP SMBus
 var Naples100HPEMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
@@ -251,6 +258,7 @@ func init() {
     ForioMtpTbl     = append(ForioMtpTbl, MtpHubI2cTbl...)
     BiodonaMtpTbl     = append(BiodonaMtpTbl, MtpHubI2cTbl...)
     OrtanoMtpTbl = append(OrtanoMtpTbl, MtpHubI2cTbl...)
+    Ortano2MtpTbl = append(Ortano2MtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
@@ -396,7 +404,7 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "ORTANO" {
         CurI2cTbl = OrtanoMtpTbl
     } else if uutType == "ORTANO2" {
-        CurI2cTbl = OrtanoMtpTbl
+        CurI2cTbl = Ortano2MtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
