@@ -26,8 +26,8 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES25"] = "naples25_rev89_06172020.bin"
     sec_cpld_ver["NAPLES25"] = "0x89"
     sec_cpld_dat["NAPLES25"] = "06-17"
-    diagfw_img["NAPLES25"] = "naples_diagfw_05212020.tar"
-    diagfw_dat["NAPLES25"] = "05-21-2020"
+    diagfw_img["NAPLES25"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["NAPLES25"] = "03-03-2021"
     goldfw_img["NAPLES25"] = "naples_goldfw_iris_RELB_1.12.0-E-52_0728.tar"
     goldfw_dat["NAPLES25"] = "06-18-2020"
 
@@ -37,8 +37,8 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev89_04142020.bin"
     sec_cpld_ver["NAPLES25SWM"] = "0x89"
     sec_cpld_dat["NAPLES25SWM"] = "04-20"
-    diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    diagfw_dat["NAPLES25SWM"] = "11-18-2020"
+    diagfw_img["NAPLES25SWM"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["NAPLES25SWM"] = "03-03-2021"
     goldfw_img["NAPLES25SWM"] = "naples_goldfw_1.3.1-E-42_1119.tar"
     goldfw_dat["NAPLES25SWM"] = "11-18-2020"
 
@@ -77,12 +77,12 @@ class NIC_IMAGES:
 
     cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
     cpld_ver["NAPLES100"] = "0x9"
-    cpld_dat["NAPLES100"] = "05-41"
+    cpld_dat["NAPLES100"] = "05-31"
     sec_cpld_img["NAPLES100"] = "naples100_cpld_rev89_06032019.bin"
     sec_cpld_ver["NAPLES100"] = "0x89"
     sec_cpld_dat["NAPLES100"] = "06-23"
-    diagfw_img["NAPLES100"] = "naples_diagfw_05212020.tar"
-    diagfw_dat["NAPLES100"] = "05-21-2020"
+    diagfw_img["NAPLES100"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["NAPLES100"] = "03-03-2021"
     goldfw_img["NAPLES100"] = "naples_goldfw_09182019.tar"
     goldfw_dat["NAPLES100"] = "09-17-2019"
 
@@ -92,8 +92,8 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES100HPE"] = "naples100_hpe_rev81_07222020.bin"
     sec_cpld_ver["NAPLES100HPE"] = "0x81"
     sec_cpld_dat["NAPLES100HPE"] = "07-22"
-    diagfw_img["NAPLES100HPE"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    diagfw_dat["NAPLES100HPE"] = "11-18-2020"
+    diagfw_img["NAPLES100HPE"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["NAPLES100HPE"] = "03-03-2021"
     goldfw_img["NAPLES100HPE"] = "naples_goldfw_1.3.1-E-42_1119.tar"
     goldfw_dat["NAPLES100HPE"] = "11-18-2020"
 
