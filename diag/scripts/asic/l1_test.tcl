@@ -59,6 +59,8 @@ if {$MTP_TYPE == "MTP_ELBA"} {
     source .tclrc.diag.new
 }
 
+set err_cnt_init [ plog_get_err_count ]
+
 # esec_l1 reboot wati time
 set ::CAP_GPIO3_PWR_OFF_DUR 5000
 
@@ -81,12 +83,14 @@ if {$use_zmq == 0} {
 
 }
 
+set err_cnt_fnl [ plog_get_err_count ]
+
 # Print twice for DSP to capture signature
-if {$err_cnt == 0} {
-    puts "L1 TEST PASSED"
-    puts "L1 TEST PASSED"
+if { $err_cnt_init != $err_cnt_fnl } {
+    puts "L1 TEST FAILED"
+    puts "L1 TEST FAILED"
 } else {
-    puts "L1 TEST FAILED"
-    puts "L1 TEST FAILED"
+    puts "L1 TEST PASSED"
+    puts "L1 TEST PASSED"
 }
 
