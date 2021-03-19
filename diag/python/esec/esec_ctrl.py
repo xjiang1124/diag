@@ -652,6 +652,22 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def efuse_prog(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_prog -slot {} -sn {}".format(slot, sn)
+        ret = 0
+        pass_sign = "ESEC PROG PASSED"
+
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 600)
+        common.session_stop(session)
+
+        if ret == 0:
+            print "IMG PROG PASSED"
+        else:
+            print "IMG PROG FAILED"
+
+        return ret
+
     def efuse_test(self, slot, card_type):
         self.nic_con.power_cycle_multi(115200, str(slot), 5)
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_test -slot {} -card_type {}".format(slot, card_type)
@@ -737,6 +753,11 @@ if __name__ == "__main__":
 
     if args.img_prog == True:
         esec_ctrl.img_prog(int(args.slot))
+        sys.exit()
+
+    if args.efuse_prog == True:
+        esec_ctrl.efuse_prog(int(args.slot), args.sn, args.pn, args.mac, card_type, args.mtp, args.client_key,\
+                args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 
     if args.boot_test == True:

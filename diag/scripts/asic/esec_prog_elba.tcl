@@ -243,6 +243,25 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     return $ret
 }
 
+proc efuse_prog {slot sn} {
+    plog_start efuse_prog_slot${slot}_sn_${sn}.log
+
+    diag_open_j2c_if 10 $slot
+    _msrd
+    set card_type [elb_get_card_type]
+    #if {$card_type == "NAPLES25"} {
+    #    set freq 417
+    #} else {
+    #    set freq 833
+    #}
+    elb_jtag_chip_rst 10 $slot 0 0 "" 1 1
+
+    set ret [elb_prog_efuse rand_sn_${sn}.txt 10 $slot]
+
+    plog_stop
+    return $ret
+}
+
 proc efuse_test {slot} {
     set ret 0
     set bit_loc 127
@@ -701,6 +720,9 @@ switch $stage {
     }
     "ESEC_ALL_PAC" {
         set ret [esec_all_pac $sn 10 $slot $pn $mac $mtp $client_key $client_cert $trust_roots $backend_url]
+    }
+    "EFUSE_PROG" {
+        set ret [efuse_prot $slot $sn]
     }
     default {
         plog_msg "Invalide stage: $stage"

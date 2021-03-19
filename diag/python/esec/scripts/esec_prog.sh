@@ -121,6 +121,38 @@ img_prog () {
     echo "slot: $SLOT; esec_img: $esec_img; host_img: $host_img; card_type: $card_type"
 
     tclsh $tcl_file -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+}
+
+efuse_prog () {
+    cd $DIAG_HOME/diag/tools/pki
+
+    echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -hsm_rn -n 256"
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+    then
+        id="elba.v1"
+    else
+        id="v1"
+    fi
+    python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id -hsm_rn -n 256
+
+    cd $DIAG_HOME/diag/scripts/asic/
+    uut="UUT_$SLOT"
+    card_type="${!uut}"
+
+    if [[ $card_type == "ORTANO" || $card_type == "ORTANO2" ]]
+    then
+        echo "ORTANO"
+        tcl_file="./esec_prog_elba.tcl"
+    else
+        echo "Unsupported card type $card_type"
+        return 1
+    fi
+    echo "slot: $SLOT; sn: $SN"
+
+    echo "quit before efuse prog"
+    return 0
+
+    tclsh $tcl_file -stage EFUSE_PROG -slot $SLOT -sn $SN
 #    if [[ $card_type == "ORTANO" ]]
 #    then
 #        tclsh ./esec_prog_elba.tcl -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
@@ -265,6 +297,11 @@ case $key in
     shift # past argument
     ;;
     #-------------
+    -efuse_prog|--efuse_prog)
+    EFUSE_PROG=TRUE
+    shift # past argument
+    ;;
+    #-------------
     -post_check|--post_check)
     POST_CHECK=TRUE
     shift # past argument
@@ -349,6 +386,11 @@ fi
 if [[ $IMG_PROG == TRUE ]]
 then
     img_prog
+fi
+
+if [[ $EFUSE_PROG == TRUE ]]
+then
+    efuse_prog
 fi
 
 if [[ $EFUSE_TEST == TRUE ]]
