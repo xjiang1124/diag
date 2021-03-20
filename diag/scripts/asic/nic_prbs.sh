@@ -13,7 +13,7 @@ then
         ./diag.exe elb_pcie_prbs.tcl $2
     elif [[ $1 == "ETH" ]] 
     then
-        ./diag.exe elb_mx_prbs.tcl $2 1
+        ./diag.exe elb_mx_prbs.tcl $2 0
     else
 	echo "INVALID MODE" $1
     fi
