@@ -2677,6 +2677,7 @@ class mtp_ctrl():
                 else:
                     self.cli_log_slot_inf(slot, "==> Diag version: {:s}".format(diag_info_list[0]))
                     self.cli_log_slot_inf(slot, "==> EMMC Util version: {:s}".format(diag_info_list[1]))
+                    self.cli_log_slot_inf(slot, "==> NIC ASIC version: {:s}".format(diag_info_list[2]))
 
                 if not self._nic_ctrl_list[slot].nic_check_status():
                     self.cli_log_slot_err(slot, "NIC in failure state")

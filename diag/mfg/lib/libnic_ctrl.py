@@ -51,6 +51,7 @@ class nic_ctrl():
 
         self._diag_ver = None
         self._diag_util_ver = None
+        self._diag_asic_ver = None
         self._cpld_ver = None
         self._cpld_timestamp = None
         self._sn = None
@@ -71,6 +72,8 @@ class nic_ctrl():
         self._err_msg = None
         self._cmd_buf = None
 
+        self._asic_type = None
+
 
     def nic_handle_init(self, handle, prompt):
         self._nic_handle = handle
@@ -82,7 +85,7 @@ class nic_ctrl():
     def nic_set_type(self, nic_type):
         self._nic_type = nic_type
         self._nic_status = NIC_Status.NIC_STA_OK
-
+        self.nic_set_asic_type()
 
     def nic_set_err_msg(self, err_msg):
         if not self._err_msg:
@@ -104,6 +107,13 @@ class nic_ctrl():
         else:
             return False
 
+    def nic_set_asic_type(self):
+        if self._nic_type == None:
+            self._asic_type = None
+        elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+            self._asic_type = "elba"
+        else:
+            self._asic_type = "capri"
 
     def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
         self._nic_handle.sendline(cmd)
@@ -1316,11 +1326,23 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
 
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            print("Unable to stop HAL")
             return False
 
         # Start NIC DSP
         cmd = MFG_DIAG_CMDS.NIC_DSP_START_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+            print("Unable to start diagmgr")
+            return False
+
+        # get asic lib version
+        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_ASIC_VERSION_FMT.format(self._asic_type)
+        cmd_buf = self.nic_get_info(nic_cmd)
+        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        if match:
+            self._diag_asic_ver = match[0]
+        else:
+            print("Unable to find nic asic version")
             return False
 
         # get emmc nic utils version
@@ -1330,6 +1352,7 @@ class nic_ctrl():
         if match:
             self._diag_util_ver = match[0]
         else:
+            print("Unable to find nic utils version")
             return False
 
         # get nic diag version
@@ -1339,6 +1362,7 @@ class nic_ctrl():
         if match:
             self._diag_ver = match[0]
         else:
+            print("Unable to find nic diag version")
             return False
 
         # check if hal is running
@@ -1351,6 +1375,7 @@ class nic_ctrl():
 
         # aapl and hal_running should be both True or both False
         if hal_running != aapl:
+            print("AAPL or HAL not running")
             return False
 
         return True
@@ -1875,10 +1900,10 @@ class nic_ctrl():
 
 
     def nic_get_diag(self):
-        if not self._diag_ver or not self._diag_util_ver:
+        if not self._diag_ver or not self._diag_util_ver or not self._diag_asic_ver:
             return None
         else:
-            return [self._diag_ver, self._diag_util_ver]
+            return [self._diag_ver, self._diag_util_ver, self._diag_asic_ver]
 
 
     def nic_get_boot_info(self):
