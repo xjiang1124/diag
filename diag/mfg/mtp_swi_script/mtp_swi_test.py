@@ -691,7 +691,12 @@ def main():
         sw_test_list = ["SW_BOOT", "SW_PROFILE", "SW_SHUTDOWN"]
     else:
         sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
+
     for slot in range(len(nic_prsnt_list)):
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+            sw_test_list.insert(-1, "PERF_MODE")
+
         if not nic_prsnt_list[slot]:
             continue
         if slot in fail_nic_list:
@@ -704,12 +709,13 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SW_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
-                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if (card_type == NIC_Type.NAPLES100IBM) or (isCloud == True):
                     if ret:
                         ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
             elif test == "SW_PROFILE" and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
+            elif test == "PERF_MODE":
+                ret = mtp_mgmt_ctrl.mtp_nic_emmc_set_perf_mode(slot)
             elif test == "SW_SHUTDOWN":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
             else:

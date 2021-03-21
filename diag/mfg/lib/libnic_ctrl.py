@@ -1102,7 +1102,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
             
-    def nic_emmc_perf_mode(self):
+    def nic_emmc_set_perf_mode(self):
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE
         nic_cmd_list.append(nic_cmd)
@@ -1124,6 +1124,19 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
  
+    def nic_emmc_check_perf_mode(self):
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE_CHECK
+        perf_sig = MFG_DIAG_SIG.NIC_EMMC_PERF_MODE_OK_SIG
+        perf_buf = self.nic_get_info(nic_cmd)
+        if perf_buf:
+            if perf_sig in perf_buf:
+                return True
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                self.nic_set_err_msg(perf_buf)
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
 
     def nic_program_emmc(self, emmc_img):
         if not self.nic_copy_image(emmc_img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):

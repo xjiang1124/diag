@@ -2569,18 +2569,37 @@ class mtp_ctrl():
             self.mtp_dump_err_msg(err_msg)
             return False
 
+        if emmc_format:
+            if not self.mtp_nic_emmc_set_perf_mode(slot):
+                return False
+        else:
+            if not self.mtp_nic_emmc_check_perf_mode(slot):
+                return False
+
         return True
 
-    def mtp_nic_emmc_perf_mode(self, slot):
+    def mtp_nic_emmc_set_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-            msg = "Setting NIC EMMC in performance mode"
-            self.cli_log_slot_inf_lock(slot, msg)
-            if not self._nic_ctrl_list[slot].nic_emmc_perf_mode():
+            msg = "Set NIC in performance mode"
+            if not self._nic_ctrl_list[slot].nic_emmc_set_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
                 err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
                 self.mtp_dump_err_msg(err_msg)
                 return False
+            self.cli_log_slot_inf_lock(slot, msg)
+        return True
+
+    def mtp_nic_emmc_check_perf_mode(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+            msg = "NIC in performance mode"
+            if not self._nic_ctrl_list[slot].nic_emmc_check_perf_mode():
+                self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
+                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+                self.mtp_dump_err_msg(err_msg)
+                return False
+            self.cli_log_slot_inf_lock(slot, msg)
         return True
 
     def mtp_nic_fru_init(self, slot, init_date=True, nic_type=None):

@@ -202,18 +202,18 @@ def set_pslc(mtp_mgmt_ctrl,mtp_id):
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2):
             continue
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Set NIC pSLC mode')
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, 'Set NIC pSLC mode')
         
         start_ts = libmfg_utils.timestamp_snapshot()        
         ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
         if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, 'Set NIC pSLC mode FAILED')
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, 'Set NIC pSLC mode FAILED')
             return False
         else:
             mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Set NIC pSLC mode complete')
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, 'Set NIC pSLC mode complete')
     mtp_mgmt_ctrl.mtp_power_on_nic()
     return True
 
