@@ -644,10 +644,11 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
     mtp_passwd = mtp_mgmt_cfg[2]
     image_dir = "/home/diag/"
 
+    done_list = []
     for image in image_list:
         if image == "":
             continue
-        if image not in image_on_mtp:
+        if image not in image_on_mtp and image not in done_list:
             image_rel_path = "release/{:s}".format(image)
             if not file_exist(image_rel_path):
                 mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(image_rel_path), level=0)
@@ -658,6 +659,7 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
                 mtp_mgmt_ctrl.cli_log_err("Copy Firmware image {:s} failed... Abort".format(image), level=0)
                 return False
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s} complete".format(image), level=0)
+            done_list.append(image)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Firmware image {:s} on MTP is up-to-date".format(image), level=0)
 

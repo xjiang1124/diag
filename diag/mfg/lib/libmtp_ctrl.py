@@ -1116,11 +1116,11 @@ class mtp_ctrl():
 
 
     def mtp_diag_get_img_files(self):
-        cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+        cmd = "ls --color=never {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
             return False
-        cmd_buf = self.mtp_get_cmd_buf()
+        cmd_buf = self.mtp_get_cmd_buf().split()
         return cmd_buf
 
 
