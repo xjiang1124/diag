@@ -144,8 +144,10 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, intf, ret, duration))
                     mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             
-
-
+    if GLB_CFG_MFG_TEST_MODE:
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Complete\n".format(nic_type), level=0)
 
     return fail_list
@@ -212,6 +214,10 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp, test, err_msg))
+    if GLB_CFG_MFG_TEST_MODE:
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Complete\n".format(nic_type), level=0)
 
     return fail_list
@@ -259,6 +265,11 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     for slot in nic_list:
         if not nic_test_rslt_list[slot]:
             fail_list.append(slot)
+    
+    if GLB_CFG_MFG_TEST_MODE:
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
 
     # Collect NIC onboard logfiles
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC onboard diag logfiles...", level=0)
@@ -354,6 +365,10 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         if not nic_test_rslt_list[slot]:
             fail_list.append(slot)
 
+    if GLB_CFG_MFG_TEST_MODE:
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
     return fail_list
 
