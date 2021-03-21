@@ -949,8 +949,13 @@ def main():
         # power cycle all the NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        #if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg):
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode):
+        if not GLB_CFG_MFG_TEST_MODE:
+            # Format the EMMC and get latest diag image for QA only
+            nic_util = True
+        else:
+            # Don't format EMMC to keep diag image installed in previous (DL) stage
+            nic_util = False
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=nic_util):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)

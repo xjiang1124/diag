@@ -2866,7 +2866,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False):
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -2886,6 +2886,10 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_nic_mac_validate():
             return False
+
+        if nic_util:
+            # for QA only not DL: do mgmt para init but do emmc format. 
+            emmc_format = True
 
         nic_thread_list = list()
         for slot in range(self._slots):
