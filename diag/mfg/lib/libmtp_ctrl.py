@@ -3580,7 +3580,15 @@ class mtp_ctrl():
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
-
+    def mtp_nic_fix_vrm(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.ORTANO2:
+            if not self._nic_ctrl_list[slot].nic_fix_vrm():
+                self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+                self.mtp_dump_err_msg(err_msg)
+                return False
+        return True
 
     def mtp_nic_naples25swm_alom_cable_signal_test(self, slot, highpowertest):
         errlist = list()

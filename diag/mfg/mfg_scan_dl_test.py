@@ -76,8 +76,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):  #If SWM and only asking for ALOM, skip SWM FRU PROGRAMMING
         test_list = ["FRU_PROG"]
 
-    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+    if nic_type == NIC_Type.ORTANO:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+    if nic_type == NIC_Type.ORTANO2:
+        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
         ### REWORK VERIFICATION FOR CAP CHANGE ###
         ### PERFORM AFTER FRU_VERIFY ###
@@ -185,6 +187,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(smb_fru))
                     ret2 = False
             ret = ret1 and ret2
+        elif test == "FIX_VRM":
+            ret = mtp_mgmt_ctrl.mtp_nic_fix_vrm(slot)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
             continue

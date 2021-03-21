@@ -74,8 +74,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG"]
-    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+    if nic_type == NIC_Type.ORTANO:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+    if nic_type == NIC_Type.ORTANO2:
+        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
         ### REWORK VERIFICATION FOR CAP CHANGE ###
         ### PERFORM AFTER FRU_VERIFY ###
@@ -184,6 +186,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
             #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
             # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
+        elif test == "FIX_VRM":
+            ret = mtp_mgmt_ctrl.mtp_nic_fix_vrm(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
@@ -533,11 +537,8 @@ def main():
             exp_assettag = 'C0'
             hpe_pn = "000000-000"
 
-        #for test in ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET", "PCIE_DIS"]:
         testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES25SWM:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         for skip_test in args.skip_test:

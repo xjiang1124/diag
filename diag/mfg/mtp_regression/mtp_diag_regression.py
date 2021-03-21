@@ -431,9 +431,9 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
             # L1 sub test count is 11, err_msg_list should be empty
             number_of_l1_tests = 9
-            # But for Elba, there are 17 sub tests
+            # But for Elba, there are 13 sub tests
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
-                number_of_l1_tests = 18
+                number_of_l1_tests = 13
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":

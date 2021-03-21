@@ -2678,4 +2678,13 @@ class nic_ctrl():
                 return False
             
         return True
-        
+
+    def nic_fix_vrm(self):
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT)
+        if "Ortano2 VRM fix done" not in cmd_buf:
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
