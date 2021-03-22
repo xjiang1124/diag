@@ -3518,6 +3518,8 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         sn = self.mtp_get_nic_sn(slot)
 
+        vdd_avs_cmd, arm_avs_cmd = None, None
+
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
             return True
@@ -3554,27 +3556,28 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25SWM833:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.ORTANO:  
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.ORTANO2:
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.ORTANO_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:  
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
 
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.mtp_mgmt_set_nic_avs_post(slot)
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
-            return False
-        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
-
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-            self.mtp_mgmt_set_nic_avs_post(slot)
-            self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
-            return False
-        self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot))
+        if vdd_avs_cmd:
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+                self.mtp_mgmt_set_nic_avs_post(slot)
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(vdd_avs_cmd))
+                return False
+            if not self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot)):
+                self.cli_log_slot_err(slot, "SET VDD AVS FAILED")
+                return False
+        if arm_avs_cmd:
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
+                self.mtp_mgmt_set_nic_avs_post(slot)
+                self.cli_log_slot_err(slot, "Failed to execute command {:s}".format(arm_avs_cmd))
+                return False
+            if not self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot)):
+                self.cli_log_slot_err(slot, "SET ARM AVS FAILED")
+                return False
         self.mtp_mgmt_set_nic_avs_post(slot)
 
         return True
