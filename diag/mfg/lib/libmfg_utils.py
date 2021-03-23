@@ -1049,7 +1049,8 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         return None
 
     # local dir to temporarily store test summary
-    err = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/"))
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/")
+    err = os.system(cmd)
     if err:
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s}".format(cmd), level=0)
         return None
