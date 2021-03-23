@@ -1048,7 +1048,12 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
 
-    # temperary dir for log files
+    # local dir to temporarily store test summary
+    err = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/"))
+    if err:
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s}".format(cmd), level=0)
+        return None
+    # temporary dir for log files on MTP
     cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
