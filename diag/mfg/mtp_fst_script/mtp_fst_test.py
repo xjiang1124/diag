@@ -37,6 +37,14 @@ def load_mtp_cfg():
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
+def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
+    usb_serial = []
+    for port in range(5):
+        port_pre = os.system("ls /dev/ttyUSB{} > /dev/null 2>&1".format(port))
+        if port_pre == 0:
+            usb_serial.append("ttyUSB{}".format(port))
+            mtp_mgmt_ctrl.cli_log_info("Found /dev/ttyUSB{}".format(port))
+    return usb_serial
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -104,6 +112,10 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Start", level=0)
     start_ts = libmfg_utils.timestamp_snapshot()
+
+    serial_port = []
+    if card_type == "ORTANO":
+        serial_port = load_mtp_usb_serial_port(mtp_mgmt_trl)
 
     if card_type == "GENERAL" or card_type == "GENERAL_OLD" or card_type == "ORACLE":
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
@@ -201,6 +213,26 @@ def main():
         sn = _sn.strip()
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
 
+    if  card_type == "ORTANO":
+        for port in serial_port:
+            print (port)
+            cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
+                mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
+            result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+            pass_reg_exp = re.compile("ROT test PASSED")
+            fail_reg_exp = re.compile("ROT test FAILED")
+            pass_match = pass_reg_exp.search(result)
+            fail_match = file_reg_exp.search(result)
+            if pass_match:
+                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(port, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+            elif fail_match:
+                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(port, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(port, MTP_DIAG_Report.NIC_DIAG_REGRESSION_UNFINISH), level=0)
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+            mtp_mgmt_ctrl.cli_log_inf("MTP ROT Tests Complete", level=0)
     logfile_close(log_filep_list)
     return
 
