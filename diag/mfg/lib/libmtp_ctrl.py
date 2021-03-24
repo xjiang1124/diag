@@ -1423,7 +1423,7 @@ class mtp_ctrl():
          max = 100%
         """
         if self._asic_support == "ELBA":
-            fan_spd = min(100, fan_spd + 10)
+            fan_spd = min(100, fan_spd + 20)
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
