@@ -466,6 +466,16 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp_disp, test, ret, duration))
                     mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+            # if tests reported PASS in L1 but dsp reported FAIL due to another error,
+            # then err_msg_list will be empty. (actually the name err_msg_list is deceiving - it's a l1_tests_failed_list.)
+            # In this case, print fail without any error message, for test summary/FlexFlow to catch.
+            if len(err_msg_disp_list) == 0:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
+                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp_disp, test, ret, duration))
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             if stop_on_err:
                 break;
     if lock:
