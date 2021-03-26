@@ -2934,6 +2934,11 @@ class mtp_ctrl():
             nic_rslt_list[slot] = False
             return
 
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd("sync"):
+            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_err_msg(err_msg)
+            return
+
     def mtp_nic_emmc_reformat(self, nic_rslt_list, nic_list, emmc_format=True):
         """
           copy of mtp_nic_diag_init(), but without the FRU, CPLD inits.

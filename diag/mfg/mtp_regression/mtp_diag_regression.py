@@ -434,7 +434,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             number_of_l1_tests = 9
             # But for Elba, there are 13 sub tests
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
-                number_of_l1_tests = 13
+                number_of_l1_tests = 12
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
@@ -964,7 +964,7 @@ def main():
             nic_util = True
         else:
             # Don't format EMMC to keep diag image installed in previous (DL) stage
-            nic_util = False
+            nic_util = True #False
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=nic_util):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
