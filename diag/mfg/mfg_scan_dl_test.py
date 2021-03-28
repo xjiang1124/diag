@@ -77,9 +77,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FRU_PROG"]
 
     if nic_type == NIC_Type.ORTANO:
-        testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
         ### REWORK VERIFICATION FOR CAP CHANGE ###
         ### PERFORM AFTER FRU_VERIFY ###
@@ -209,7 +209,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
 
-def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
+def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list):
     dsp = FF_Stage.FF_DL
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -228,7 +228,6 @@ def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
         prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
       
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, 'SET_PSLC'))
-        
         start_ts = libmfg_utils.timestamp_snapshot()        
         ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
         stop_ts = libmfg_utils.timestamp_snapshot()
@@ -239,7 +238,6 @@ def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
         else:
             mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, 'SET_PSLC', duration))
-            pass_nic_list.append(slot)
     mtp_mgmt_ctrl.mtp_power_on_nic()
     return len(fail_nic_list)
 
@@ -335,8 +333,6 @@ def main():
 
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-    pass_nic_list = list()
-    fail_nic_list = list()
 
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
@@ -414,15 +410,15 @@ def main():
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
+    pass_nic_list = list()
+    fail_nic_list = list()
+
     # if applicable, set pslc mode and powercycle
     mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
     if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
         mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
         return False
-    if set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list,pass_nic_list):
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
+    set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list)
 
     # init nic diag env.
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
@@ -437,10 +433,10 @@ def main():
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
     dsp = FF_Stage.FF_DL
-    pass_nic_list = list()
-    fail_nic_list = list()
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":

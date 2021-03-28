@@ -201,7 +201,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-def set_pslc(mtp_mgmt_ctrl,mtp_id):
+def set_pslc(mtp_mgmt_ctrl,mtp_id, fail_nic_list):
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2):
@@ -214,12 +214,12 @@ def set_pslc(mtp_mgmt_ctrl,mtp_id):
         duration = str(stop_ts - start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, 'Set NIC pSLC mode FAILED')
-            return False
+            fail_nic_list.append(slot)
         else:
             mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, 'Set NIC pSLC mode complete')
     mtp_mgmt_ctrl.mtp_power_on_nic()
-    return True
+    return len(fail_nic_list)
 
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
@@ -284,17 +284,16 @@ def main():
 
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
+    fail_nic_list = list()
+    pass_nic_list = list()
+
     # if applicable, set pslc mode and powercycle
     mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
     if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
         mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         return False
-    if not set_pslc(mtp_mgmt_ctrl,mtp_id):
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
+    set_pslc(mtp_mgmt_ctrl,mtp_id, fail_nic_list)
     
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
     if not rc:
@@ -310,6 +309,8 @@ def main():
     tmp_fru_cfg["MTP_ID"] = mtp_id
     tmp_fru_cfg["MTP_TS"] = libmfg_utils.get_timestamp()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
         key = libmfg_utils.nic_key(slot)
         tmp_fru_cfg[key] = dict()
         if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
@@ -351,10 +352,9 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
 
-    fail_nic_list = list()
-    pass_nic_list = list()
-
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
