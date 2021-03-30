@@ -224,7 +224,11 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
 
 def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode):
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Start".format(nic_type), level=0)
+    if aapl == False:
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel DSP Test Start".format(nic_type), level=0)
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel PRBS Test Start".format(nic_type), level=0)
+
     sub_test_list = test_list[:]
 
     if aapl:
@@ -277,7 +281,11 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot, aapl):
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Test Complete\n".format(nic_type), level=0)
+    if aapl == False:
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel DSP Test Complete\n".format(nic_type), level=0)
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel PRBS Test Complete\n".format(nic_type), level=0)
+
     return fail_list
 
 
@@ -551,6 +559,7 @@ def main():
     stop_on_err = False
     verbosity = False
     skip_test = False
+    do_once = 0
     corner = Env_Cond.MFG_NT
     swm_lp_boot_mode = False
     if args.mtpid:
@@ -1050,7 +1059,7 @@ def main():
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
         
-        # NIC Parallel test
+        # NIC Parallel test NON HAL / NON APPL
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_type == NIC_Type.NAPLES100:
                 nic_para_test_list = naples100_para_test_list[:]
@@ -1116,17 +1125,65 @@ def main():
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
 
+        # NIC Parallel test 2nd loop with HAL/APPL for Capri
+        for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            if nic_type == NIC_Type.NAPLES100:
+                nic_para_test_list = naples100_para_test_list[:]
+                test_db = naples100_test_db
+            elif nic_type == NIC_Type.NAPLES100IBM:
+                nic_para_test_list = naples100ibm_para_test_list[:]
+                test_db = naples100ibm_test_db
+            elif nic_type == NIC_Type.NAPLES100HPE:
+                nic_para_test_list = naples100hpe_para_test_list[:]
+                test_db = naples100hpe_test_db
+            elif nic_type == NIC_Type.NAPLES25:
+                nic_para_test_list = naples25_para_test_list[:]
+                test_db = naples25_test_db
+            elif nic_type == NIC_Type.FORIO:
+                nic_para_test_list = forio_para_test_list[:]
+                test_db = forio_test_db
+            elif nic_type == NIC_Type.VOMERO:
+                nic_para_test_list = vomero_para_test_list[:]
+                test_db = vomero_test_db
+            elif nic_type == NIC_Type.VOMERO2:
+                nic_para_test_list = vomero2_para_test_list[:]
+                test_db = vomero2_test_db
+            elif nic_type == NIC_Type.NAPLES25SWM:
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    continue
+                nic_para_test_list = naples25swm_para_test_list[:]
+                test_db = naples25swm_test_db
+            elif nic_type == NIC_Type.NAPLES25OCP:
+                nic_para_test_list = naples25ocp_para_test_list[:]
+                test_db = naples25ocp_test_db
+            elif nic_type == NIC_Type.NAPLES25SWMDELL:
+                nic_para_test_list = naples25swmdell_para_test_list[:]
+                test_db = naples25swmdell_test_db
+            elif nic_type == NIC_Type.NAPLES25SWM833:
+                nic_para_test_list = naples25swm833_para_test_list[:]
+                test_db = naples25swmdell_test_db
+            elif nic_type == NIC_Type.ORTANO:
+                nic_para_test_list = ortano_para_test_list[:]
+                test_db = ortano_test_db
+            elif nic_type == NIC_Type.ORTANO2:
+                nic_para_test_list = ortano_para_test_list[:]
+                test_db = ortano_test_db
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+                continue
 
+            if nic_list:
                 # second round, aapl tests
                 if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
                     aapl = False
                 else:
                     aapl = True
-                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl):
-                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
-                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-                    return
+                if do_once == 0:
+                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl):
+                        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
+                        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                        return
+                    do_once = 1
 
                 diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
                                                             nic_type,

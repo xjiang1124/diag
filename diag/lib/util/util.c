@@ -17,18 +17,50 @@
 #include "../../include/diag.h"
 
 
+
+int 
+cpu_mmap(uint64_t *membase, int *fd, uint64_t address, uint32_t size)
+{
+    *fd = open("/dev/mem", O_RDWR|O_SYNC); 
+    if (*fd < 0) {
+        printf("ERROR %s: open /dev/memp failed.  Errno=%d : %s  ", __FUNCTION__, errno, strerror(errno)); 
+        return(-1);
+    }
+
+    membase = (uint64_t * ) mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, *fd,  address);
+    if (membase == MAP_FAILED) {
+        printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
+        close(*fd);
+        return(errno);
+    } 
+    return(0);
+}
+
+
+int 
+cpu_munmmap(uint64_t *membase, int *fd, uint32_t size)
+{
+    if (munmap((void*)membase, size)  < 0) {
+        printf("ERROR %s: munmap failed.  Errno=%d %s  ", __FUNCTION__, errno, strerror(errno)); 
+        close(*fd);
+        return(errno);
+    }
+    close(*fd);
+    return(0);
+}
+
+
    
 int 
-cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
+cpu_mem_read(uint64_t address, uint64_t * rd_data, uint32_t access_type)
 {
     volatile uint64_t *membase;
-    int fd = open("/dev/mem", O_RDWR|O_SYNC); 
+    int fd = 0;
     off_t offset;
-    uint32_t phymem, diff;
+    off_t phymem, diff;
     size_t pagesize = getpagesize();
     size_t pagemask = pagesize - 1;
     
-    //printf("ADD DEBUG: %s", __FUNCTION__);    
 
     if(access_type==MEM_ACCESS_32) {
         if((address%4) != 0) {
@@ -45,8 +77,9 @@ cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
         return(-1);
     }
 
+    fd = open("/dev/mem", O_RDWR|O_SYNC);
     if (fd < 0) {
-        perror("Open /dev/mem failed.. Error:");
+        printf("ERROR %s: open /dev/memp failed.  Errno=%d : %s  ", __FUNCTION__, errno, strerror(errno)); 
         return(-1);
     }
 
@@ -58,7 +91,7 @@ cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
     if (membase == MAP_FAILED) {
         printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
         close(fd);
-        return(-1);
+        return(errno);
     } 
     if(access_type==MEM_ACCESS_32) {
         *rd_data = ((uint32_t *)membase)[diff/4];
@@ -68,25 +101,22 @@ cpu_mem_read(uint32_t address, uint64_t * rd_data, uint32_t access_type)
     
 
     if (munmap((void*)membase, pagesize)  < 0) {
-        printf("ERROR %s: munmap failed.  Errno=%d  ", __FUNCTION__, errno); 
+        printf("ERROR %s: munmap failed.  Errno=%d %s  ", __FUNCTION__, errno, strerror(errno)); 
         close(fd);
-        return(-1);
+        return(errno);
     }
     close(fd);
     return(0);
 }
 
-int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
+int cpu_mem_write(uint64_t address, uint64_t data, uint32_t access_type)
 {
     volatile uint64_t *membase;
-    int fd = open("/dev/mem", O_RDWR|O_SYNC);
-    off_t offset;
-    uint32_t phymem, diff;
+    int fd = 0;
+    off_t offset, phymem, diff;
     size_t pagesize = getpagesize();
     size_t pagemask = pagesize - 1;
     
-    //printf("ADD DEBUG: %s", __FUNCTION__);
-
     if(access_type==MEM_ACCESS_32){
         if((address%4) != 0) {
             printf(" ERROR: %s: 32-bit Access type must mod by 4", __FUNCTION__);
@@ -104,10 +134,12 @@ int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
         return(-1);
     }
 
+    fd = open("/dev/mem", O_RDWR|O_SYNC);
     if (fd < 0) {
-        perror("Open /dev/mem failed.. Error:");
+        printf("ERROR %s: open /dev/memp failed.  Errno=%d : %s  ", __FUNCTION__, errno, strerror(errno)); 
         return(-1);
     }
+
 
     phymem = address;
     diff = phymem - (phymem & (~pagemask));
@@ -115,9 +147,9 @@ int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
 
     membase = (uint64_t * ) mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd,  offset);
     if (membase == MAP_FAILED) {
-        printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
+        printf("ERROR %s: mmap failed.  Errno=%d : %s  ", __FUNCTION__, errno, strerror(errno)); 
         close(fd);
-        return(-1);
+        return(errno);
     }
 
     if(access_type==MEM_ACCESS_32){
@@ -127,9 +159,9 @@ int cpu_mem_write(uint32_t address, uint64_t data, uint32_t access_type)
     }
 
     if (munmap((void*)membase, pagesize)  < 0) {
-        printf("ERROR %s: munmap failed.  Errno=%d  ", __FUNCTION__, errno); 
+        printf("ERROR %s: munmap failed.  Errno=%d : %s  ", __FUNCTION__, errno, strerror(errno)); 
         close(fd);
-        return(-1);
+        return(errno);
     }
 
     close(fd);

@@ -204,13 +204,14 @@ func main() {
         fmt.Printf(" %s \n", errhelp)
         os.Exit(-1);
     }
-    arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
-    if err != nil {
-        fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-    }
+
 
     if os.Args[1][0] == 'r' || os.Args[1][0] == 'r' {
         var err1 error
+        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+        }
         err1 = elba_fpga_rd(byte(arg2), &data8)
         if err1 == nil {
             fmt.Printf("FPGA RD [0x%.02x] = 0x%.02x\n", arg2, data8)
@@ -222,6 +223,10 @@ func main() {
     } else if os.Args[1][0] == 'w' || os.Args[1][0] == 'W' {
         if argc < 3 {
             fmt.Printf(" ERROR fpgautil w:  Not enough args\n");  os.Exit(-1)
+        }
+        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
         }
         data, err := strconv.ParseUint(os.Args[3], 0, 32)
         if err != nil {
@@ -237,6 +242,10 @@ func main() {
     } else if os.Args[1] == "apbr" {
         var data uint32 = 0
         var err1 error
+        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+        }
         err1 = spi_read_fpga_apb(uint16(arg2) + (S2I_BUS_STRIDE * uint16(I2C_BUS)), &data)
         if err1 == nil {
             fmt.Printf("APB RD [0x%.04x] = 0x%.08x\n", arg2, data)
@@ -248,6 +257,10 @@ func main() {
     } else if os.Args[1] == "apbw" {
         if argc < 3 {
             fmt.Printf(" ERROR apbw:  Not enough args\n");  os.Exit(-1)
+        }
+        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
         }
         data, err := strconv.ParseUint(os.Args[3], 0, 32)
         if err != nil {
@@ -263,6 +276,10 @@ func main() {
     } else if os.Args[1] == "apbdump" {
         if argc < 3 {
             fmt.Printf(" ERROR apbdump <bus>:  Not enough args\n");  os.Exit(-1)
+        }
+        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
         }
         if(uint8(arg2)>I2C_BUS){
             fmt.Printf(" ERROR: Bus entered is to large.  Max BUS Number is %d\n", I2C_BUS); os.Exit(-1)
@@ -331,7 +348,7 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
             }
-            rc = C.cpu_mem_read(C.uint32_t(addr), &data64, acc_type)
+            rc = C.cpu_mem_read(C.uint64_t(addr), &data64, acc_type)
             if rc != 0 {
                 os.Exit(-1);
             }
@@ -345,7 +362,7 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
             }
-            rc = C.cpu_mem_write(C.uint32_t(addr), C.uint64_t(data), acc_type)
+            rc = C.cpu_mem_write(C.uint64_t(addr), C.uint64_t(data), acc_type)
             if rc != 0 {
                 os.Exit(-1);
             }
@@ -359,6 +376,7 @@ func main() {
 
     return
 }
+
 
 //export c_elba_fpga_wr
 func c_elba_fpga_wr(addr byte, data byte) int {
