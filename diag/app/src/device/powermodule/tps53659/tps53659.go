@@ -398,6 +398,13 @@ func UpdateVboot(devName string, tgtVoutMv uint64) (err int) {
         cli.Println("e", "Failed to find vid")
         return
     }
+
+    err = pmbus.WriteByte(devName, pmbus.VOUT_COMMAND, vbootVid)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VBOOT")
+        return
+    }
+
     err = pmbus.WriteByte(devName, MFR_SPECIFIC_11, vbootVid)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to update VBOOT")
