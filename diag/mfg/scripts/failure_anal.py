@@ -1098,6 +1098,9 @@ def parse_log_file_top(log_root, parse_mode, card_type, stage, sn, tgt_log, verb
     elif parse_mode == "DIE_ID":
         print("DIE_ID")
         parse_die_id(files_found[0], sn, verbose, cleanup)
+    elif parse_mode == "DIE_ID_DL":
+        print("DIE_ID_DL")
+        parse_die_id_dl(files_found[0], sn, verbose, cleanup)
     else:
         ret = parse_log_file(files_found[0], sn, stage, verbose, cleanup, save, save_path, raw)
 
@@ -1438,6 +1441,67 @@ def parse_die_id(file_fullname, sn, verbose, cleanup):
 
     fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
     cmd = fmt_cmd.format("DIE_ID", log_filename)
+    if verbose == True:
+        cmd = cmd + " -verb"
+
+    print(cmd)
+    ret_str = run_bash_cmd(cmd)
+    if ret_str == "":
+        ret_str = "No error found. Please check manually"
+    print(ret_str)
+
+    os.chdir(cwd_top)
+
+    if cleanup == True:
+        rm_cmd(card_log_path)
+    return ret_str
+
+def parse_die_id_dl(file_fullname, sn, verbose, cleanup):
+    cwd_top = os.getcwd()
+    dir_name1 = os.path.dirname(file_fullname)
+    file_name = os.path.basename(file_fullname)
+    
+    tgt_dir = cwd_top+"/test_logs"
+    if not os.path.exists(tgt_dir):
+        os.mkdir(tgt_dir)
+    os.chdir(cwd_top+"/test_logs")
+    
+    untar(file_fullname)
+    
+    dir_name = file_name.split(".")[0]
+
+    card_log_path = cwd_top+"/test_logs/"+dir_name
+    os.chdir(card_log_path)
+
+    test_stage_log = "test_dl.log"
+    # find slot number
+    fmt_pattern_fail = "^.*{}.*NIC_DIAG_REGRESSION_TEST_FAIL.*"
+    fmt_pattern_pass = "^.*{}.*NIC_DIAG_REGRESSION_TEST_PASS.*"
+    pattern_fail = fmt_pattern_fail.format(sn)
+    pattern_pass = fmt_pattern_pass.format(sn)
+    nic_info = dict()
+    for line in open(test_stage_log, 'r'):
+        # Somehow we do have first log as pass
+        if re.search(pattern_pass, line) or re.search(pattern_fail, line):
+            m = re.compile("^.*(NIC-[\d]+) ([\D\d]+) ([\D\d]+) .*")
+            result = m.match(line)
+            if m:
+                nic_info["SLOT"]      = result.group(1)
+                nic_info["CARD_TYPE"] = result.group(2)
+                nic_info["SN"]        = result.group(3)
+                break
+
+    if nic_info["SN"] == "":
+        print("Failed to fine DL log:", sn)
+
+    log_filename = card_log_path+"/diag_{}_dl.log".format(nic_info["SLOT"])
+
+    if verbose == True:
+        print("log_filename:", log_filename)
+
+
+    fmt_cmd = cwd_top+"/search_file.sh -mode {} -fn {}" 
+    cmd = fmt_cmd.format("DIE_ID_DL", log_filename)
     if verbose == True:
         cmd = cmd + " -verb"
 
