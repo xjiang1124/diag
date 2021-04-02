@@ -50,22 +50,29 @@ def parse_args_diag():
         action="store_true",
         help="Get RN from HSM")
 
-    parser.add_argument("-k", "--client-key", required=True,
-                        help="path to the file containing the client key")
+    parser.add_argument(
+        "-k", 
+        "--client-key", 
+        default="certs/client.key.pem",
+        #required=True,
+        help="path to the file containing the client key")
     parser.add_argument(
         "-c",
         "--client-cert",
-        required=True,
+        default="certs/client-bundle.cert.pem",
+        #required=True,
         help="path to the file containing the client certificates")
     parser.add_argument(
         "-t",
         "--trust-roots",
-        required=True,
+        default="certs/rootca.cert.pem",
+        #required=True,
         help="path to the file containing the trust bundle to verify server certificate")
     parser.add_argument(
         "-b",
         "--backend-url",
-        required=True,
+        default="192.168.67.213:12266#192.168.67.214:12266",
+        #required=True,
         help="comma-separated list of backend URLs")
     parser.add_argument(
         "-s",

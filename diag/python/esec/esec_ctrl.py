@@ -4,6 +4,7 @@ import argparse
 import os
 import pexpect
 import re
+import shlex
 import sys
 import time
 import subprocess
@@ -74,6 +75,10 @@ def parse_args_diag():
         "-show_sts", "--show_sts", 
         action='store_true',
         help="Show ESEC related info")
+    group.add_argument(
+        "-efuse_prog", "--efuse_prog", 
+        action='store_true',
+        help="Program pac to efuse")
     group.add_argument(
         "-efuse_test", "--efuse_test", 
         action='store_true',
@@ -354,7 +359,7 @@ PRIVEK <ek.sk>"""
 
     def key_prog_all(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        if card_type == "ORTANO":
+        if card_type == "ORTANO" or card_type == "ORTANO2":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
@@ -653,22 +658,58 @@ PRIVEK <ek.sk>"""
         return ret
 
     def efuse_prog(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_prog -slot {} -sn {}".format(slot, sn)
         ret = 0
-        pass_sign = "ESEC PROG PASSED"
 
+        os.chdir("/home/diag/diag/tools/pki")
+        cmd_fmt = "python ./client_diag.py -sn {} -pdn {} -pn \"{}\" -mac {} -mid {} -n 32 -hsm_rn"
+        cmd = cmd_fmt.format(sn, card_type, pn, mac, mtp)
+        cmd_list = shlex.split(cmd)
+        output = subprocess.check_output(cmd_list)
+        print(output)
+        
+        ma = re.compile(r".*Fetched 32 random bytes:(.*)PKI.*")
+        src_str = "".join(output.splitlines())
+        result = ma.match(src_str)
+        if result == None:
+            print "HSM RN not found"
+            return -1
+        else:
+            hsm_rn = result.group(1)
+            hsm_rn = hsm_rn.upper()
+            print "HSM RN:", hsm_rn
+
+        nic_con1 = nic_con()
+        nic_con1.switch_console(int(slot))
         session = common.session_start()
-        ret = common.session_cmd_pass(session, cmd, pass_sign, 600)
+        session.timeout = 60
+        baud_rate = 115200
+        nic_con1.uart_session_start(session, baud_rate)
+        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x2a")
+        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+        nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
+
+        cmd = "./diag.exe elb_efuse_prog.tcl {}".format(hsm_rn)
+        ret = nic_con1.uart_session_cmd_sig(session, cmd, timeout=120, sig=["EFUSE PROG PASSED", "EFUSE PROG FAILED"])
+
+        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xa")
+        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+
+        nic_con1.uart_session_stop(session)
         common.session_stop(session)
 
         if ret == 0:
-            print "IMG PROG PASSED"
+            print "EFUSE PROG PASSED"
         else:
-            print "IMG PROG FAILED"
+            print "EFUSE PROG FAILED"
 
         return ret
 
     def efuse_test(self, slot, card_type):
+        if card_type == "ORTANO2":
+            print("Skip efuse test for Elba cards")
+            print("EFUSE TEST PASSED")
+            return 0
+
         self.nic_con.power_cycle_multi(115200, str(slot), 5)
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -efuse_test -slot {} -card_type {}".format(slot, card_type)
         ret = 0
@@ -756,7 +797,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.efuse_prog == True:
-        esec_ctrl.efuse_prog(int(args.slot), args.sn, args.pn, args.mac, card_type, args.mtp, args.client_key,\
+        esec_ctrl.efuse_prog(args.sn, int(args.slot), args.pn, args.mac, card_type, args.mtp, args.client_key,\
                 args.client_cert, args.trust_roots, args.backend_url)
         sys.exit()
 

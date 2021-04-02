@@ -165,7 +165,7 @@ efuse_test () {
     cd $DIAG_HOME/diag/scripts/asic/
     if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
-        tclsh ./esec_prog_elba.tcl -stage EFUSE_TEST -slot $SLOT
+        echo "Skip efuse test for Elba cards"
     else
         tclsh ./esec_prog.tcl -stage EFUSE_TEST -slot $SLOT
     fi

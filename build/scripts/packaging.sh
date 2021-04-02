@@ -119,6 +119,7 @@ do
     DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$asic/$arch
     #SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
     ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
+    ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2020.03.30/$asic/$arch
     
     if [[ $arch == "amd64" ]]
     then
@@ -170,6 +171,7 @@ do
         cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/elb*prbs.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/elb_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/snake_elba.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     fi
