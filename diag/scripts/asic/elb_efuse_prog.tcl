@@ -1,6 +1,7 @@
 source .tclrc.diag.elb.arm.nointv
 
 set hsm_rn [lindex $argv 0]
+set dry_run [lindex $argv 1]
 
 set card_type $::env(CARD_TYPE)
 set LOG_FN ${card_type}_pac_efuse_prog.log
@@ -17,7 +18,7 @@ if { $pac_rn == -1} {
     return
 }
 
-elb_fuse_prog $pac_rn
+elb_fuse_prog $pac_rn $dry_run
 
 set out_err [plog_get_err_count]
 

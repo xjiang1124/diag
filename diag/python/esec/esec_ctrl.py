@@ -153,6 +153,11 @@ def parse_args_diag():
         "--fast_path", 
         action='store_true',
         help="Fast path of key programming")
+    parser.add_argument(
+        "-d",
+        "--dry_run", 
+        action='store_true',
+        help="Efuse prog dry run")
 
     #parser.add_argument(
     #    "-pub_ek",
@@ -657,8 +662,11 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def efuse_prog(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
+    def efuse_prog(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url, dry_run):
         ret = 0
+        dr = 0
+        if dry_run == True:
+            dr = 1
 
         os.chdir("/home/diag/diag/tools/pki")
         cmd_fmt = "python ./client_diag.py -sn {} -pdn {} -pn \"{}\" -mac {} -mid {} -n 32 -hsm_rn"
@@ -688,7 +696,7 @@ PRIVEK <ek.sk>"""
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
         nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
 
-        cmd = "./diag.exe elb_efuse_prog.tcl {}".format(hsm_rn)
+        cmd = "./diag.exe elb_efuse_prog.tcl {} {}".format(hsm_rn, dr)
         ret = nic_con1.uart_session_cmd_sig(session, cmd, timeout=120, sig=["EFUSE PROG PASSED", "EFUSE PROG FAILED"])
 
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xa")
@@ -798,7 +806,7 @@ if __name__ == "__main__":
 
     if args.efuse_prog == True:
         esec_ctrl.efuse_prog(args.sn, int(args.slot), args.pn, args.mac, card_type, args.mtp, args.client_key,\
-                args.client_cert, args.trust_roots, args.backend_url)
+                args.client_cert, args.trust_roots, args.backend_url, args.dry_run)
         sys.exit()
 
     if args.boot_test == True:
