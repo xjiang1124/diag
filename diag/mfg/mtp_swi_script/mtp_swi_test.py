@@ -251,7 +251,7 @@ def main():
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
 
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         mtp_mgmt_ctrl.mtp_chassis_shutdown()
@@ -363,20 +363,53 @@ def main():
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
+    # Ensure nic_util and nic_arm as needed for elba's efuse script
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+        mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        logfile_close(log_filep_list)
+        return
+
+    # Efuse programming for Elba
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
+            continue
+
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        for test in ["EFUSE_PROG"]:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = libmfg_utils.timestamp_snapshot()
+            if test == "EFUSE_PROG":
+                ret = mtp_mgmt_ctrl.mtp_program_nic_efuse(slot)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
+                continue
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                break
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
     # Secure key programming
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
             continue
         if slot in fail_nic_list:
             continue
-
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["SEC_KEY_PROG"]:
-            #skip secure key programming for Ortano
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Skipping SEC_KEY_PROG for ORTANO")
                 continue
-
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        for test in ["SEC_KEY_PROG"]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SEC_KEY_PROG":
@@ -450,7 +483,7 @@ def main():
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         #skipped secure key programming for Ortano
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Skipping SEC_PROG_VERIFY for ORTANO")
             continue
         for test in ["SEC_PROG_VERIFY"]:
@@ -680,11 +713,13 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_mgmt_mac_refresh():
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP mac address refresh failed, test abort...")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             logfile_close(log_filep_list)
             return
 
         if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP detect duplicate mac address, test abort...")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             logfile_close(log_filep_list)
             return
 
@@ -698,7 +733,7 @@ def main():
     for slot in range(len(nic_prsnt_list)):
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
-            sw_test_list.insert(-1, "PERF_MODE")
+            sw_test_list.insert(-1, "PERF_MODE") # second last step
 
         if not nic_prsnt_list[slot]:
             continue
@@ -718,6 +753,15 @@ def main():
             elif test == "SW_PROFILE" and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
             elif test == "PERF_MODE":
+                if isCloud:
+                    # powercycle out of mainfw into goldfw, if Cloud.
+                    mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                    mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+                    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
+                    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
+                        mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
+                        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                        return
                 ret = mtp_mgmt_ctrl.mtp_nic_emmc_set_perf_mode(slot)
             elif test == "SW_SHUTDOWN":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)

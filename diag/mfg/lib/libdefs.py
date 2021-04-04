@@ -127,6 +127,7 @@ class MTP_Const:
     NIC_SW_BOOTUP_DELAY = 120
     NIC_AVS_SET_DELAY = 600
     NIC_ESEC_PROG_DELAY = 1800
+    NIC_EFUSE_PROG_DELAY = 1800
     NIC_POWER_ON_DELAY = 180
     NIC_POWER_OFF_DELAY = 10
 
@@ -341,12 +342,15 @@ class MFG_DIAG_CMDS:
     NIC_SCP_COMPRESSED_FMT = "tar c -C {:s} {:s} | ssh {:s}@{:s} {:s} \"tar x -C {:s}\"" #format(srcdir,img,user,ip,sshoptions,dstdir)
     NIC_SYS_CLEAN_FMT = "{:s}scripts/sys_clean.sh"
 
-    NIC_ESEC_ERR_CHECK_FMT = "inventory -esec -slot {:d}"
-    NIC_ESEC_PROG_PRE_FMT = "./esec_ctrl.py -slot {:d} -img_prog"
-    NIC_ESEC_PROG_POST_FMT = "./esec_ctrl.py -cleanup"
-    NIC_ESEC_CPLD_CHECK_FMT = "./esec_ctrl.py -check_uboot -slot {:d} -post_check"
-    NIC_ESEC_PROG_FMT = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
-    NIC_ESEC_PROG_DUMP_FMT = "./esec_ctrl.py -show_sts -sn {:s} -slot {:d}"
+    NIC_ESEC_ERR_CHECK_FMT        = "inventory -esec -slot {:d}"
+    NIC_ESEC_PROG_PRE_FMT         = "./esec_ctrl.py -slot {:d} -img_prog"
+    NIC_ESEC_PROG_POST_FMT        = "./esec_ctrl.py -cleanup"
+    NIC_ESEC_CPLD_CHECK_FMT       = "./esec_ctrl.py -check_uboot -slot {:d} -post_check"
+    NIC_EFUSE_PROG_ELBA_MODEL_FMT = "./esec_ctrl.py -efuse_prog -d -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s}"
+    NIC_EFUSE_PROG_ELBA_FMT       = "./esec_ctrl.py -efuse_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s}"
+    NIC_ESEC_PROG_FMT             = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
+    NIC_ESEC_PROG_ELBA_FMT        = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s} -fast"
+    NIC_ESEC_PROG_DUMP_FMT        = "./esec_ctrl.py -show_sts -sn {:s} -slot {:d} -brd_name {:s}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -472,6 +476,8 @@ class MFG_DIAG_SIG:
     NIC_POWER_OK_SIG = "power good"
     NIC_OS_SHUTDOWN_OK_SIG = "halted"
     NIC_MOUNT_OK_SIG = "/dev/mmcblk0p10 on /data"
+    NIC_EFUSE_PROG_SIG = "EFUSE PROG PASSED"
+    NIC_EFUSE_PROG_FAIL_SIG = "EFUSE PROG FAILED"
     NIC_ESEC_PROG_PRE_SIG = "IMG PROG PASSED"
     NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
     NIC_ESEC_CPLD_VERIFY_SIG = "EK validated"

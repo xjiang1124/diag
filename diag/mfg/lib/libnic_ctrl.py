@@ -3,6 +3,7 @@ import os
 import libmfg_utils
 import re
 from datetime import datetime
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
 from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
 from libmfg_cfg import NIC_MGMT_USERNAME
@@ -884,9 +885,6 @@ class nic_ctrl():
         nic_cmd_list = list()
         # Elba-based:
         if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
-            # if not failsafe_name:
-            #     # for non-secure CPLD: program same image to both partitions
-            #     failsafe_name = img_name
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
         # Capri-based:
         else:
@@ -961,7 +959,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DUMP_FMT.format(self._sn, self._slot+1)
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DUMP_FMT.format(self._sn, self._slot+1, self._nic_type)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -994,13 +992,21 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        # program secure key with (slot, sn, pn, mac, type, mtpid)
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_FMT.format(self._slot+1,
-                                                     self._sn,
-                                                     self._pn,
-                                                     self._mac.replace('-',':'),
-                                                     self._nic_type,
-                                                     mtpid)
+        if self._nic_type == NIC_Type.ORTANO2:
+            cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_ELBA_FMT.format(self._slot+1,
+                                                         self._sn,
+                                                         self._pn,
+                                                         self._mac.replace('-',':'),
+                                                         self._nic_type,
+                                                         mtpid)
+        else:
+            # program secure key with (slot, sn, pn, mac, type, mtpid)
+            cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_FMT.format(self._slot+1,
+                                                         self._sn,
+                                                         self._pn,
+                                                         self._mac.replace('-',':'),
+                                                         self._nic_type,
+                                                         mtpid)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -1025,6 +1031,38 @@ class nic_ctrl():
 
         return True
 
+    def nic_program_efuse(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if not self._nic_type == NIC_Type.ORTANO2:
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_FMT.format(self._slot+1,
+                                                     self._sn,
+                                                     self._pn,
+                                                     self._mac.replace('-',':'),
+                                                     self._nic_type)
+        if not GLB_CFG_MFG_TEST_MODE:
+            cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_MODEL_FMT.format(self._slot+1,
+                                                                     self._sn,
+                                                                     self._pn,
+                                                                     self._mac.replace('-',':'),
+                                                                     self._nic_type)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_EFUSE_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_FAIL_SIG in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
 
     def nic_program_qspi(self, qspi_img):
         if not self.nic_copy_image(qspi_img):

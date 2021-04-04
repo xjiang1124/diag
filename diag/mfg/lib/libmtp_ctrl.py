@@ -2047,7 +2047,7 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-ortano")):
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0009-0001")):
             return True
         return False
             
@@ -2132,7 +2132,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-ortano":
+            if software_pn != "90-0009-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -2154,6 +2154,7 @@ class mtp_ctrl():
         90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.17.0-12_1109.tar
         90-0007-0001   //naples_fw_iris_1.14.0-E-25_2020.08.31.tar
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
+        90-0009-0001   //Ortano2 dsc_fw_iris_elba_1.15.6-C-6_2021.04.06.tar
         '''
         return True
 
@@ -2270,6 +2271,18 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_program_nic_efuse(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type != NIC_Type.ORTANO2:
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_program_efuse():
+            self.cli_log_slot_err(slot, "Program NIC Efuse failed")
+            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+            return False
+
+        self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+        return True
 
     def mtp_program_nic_sec_key(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
