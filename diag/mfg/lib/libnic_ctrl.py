@@ -1442,6 +1442,11 @@ class nic_ctrl():
 
         return True
 
+    def nic_display_voltage(self):
+        nic_cmd = [MFG_DIAG_CMDS.NIC_DISP_VOLT_FMT]
+        if not self.nic_exec_cmds(nic_cmd):
+            return False
+        return True
 
     def nic_set_sw_boot(self):
         nic_cmd_list = list()

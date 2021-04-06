@@ -2568,6 +2568,12 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_display_voltage(self, slot):
+        if not self._nic_ctrl_list[slot].nic_display_voltage():
+            self.cli_log_slot_err_lock(slot, "Voltage display failed")
+            return False
+
+        return True
 
     def mtp_nic_emmc_init(self, slot, emmc_format=False):
         nic_type = self.mtp_get_nic_type(slot)
@@ -2784,6 +2790,9 @@ class mtp_ctrl():
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
         if not self.mtp_set_nic_vmarg(slot, vmargin):
+            return
+
+        if not self.mtp_nic_display_voltage(slot):
             return
 
         return
