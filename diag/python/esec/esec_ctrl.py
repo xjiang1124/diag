@@ -87,6 +87,10 @@ def parse_args_diag():
         "-sysrst_test", "--sysrst_test", 
         action='store_true',
         help="Test sysreset with puf error")
+    group.add_argument(
+        "-get_pn", "--get_pn", 
+        action='store_true',
+        help="Get Pensando internal PN")
     #======================
     parser.add_argument(
         "-k", "--client_key",
@@ -239,8 +243,11 @@ PRIVEK <ek.sk>"""
             output = sn.ljust(tgt_sn_len, '\0')
 
             # If Oracle card, add 'O' to SN
-            card_type = os.environ['UUT_'+str(slot)]
-            if card_type == "VOMERO" or card_type == "VOMERO2":
+            pn = get_pn(slot)
+            if pn == "UNKNOWN":
+                return -1
+
+            if pn = "68-0015-02":
                 output1 = list(output)
                 print("Adding Oracle signature")
                 output1[15] = 'O'
@@ -257,6 +264,25 @@ PRIVEK <ek.sk>"""
 
         print "=== Creating OTP_content_CM done"
         return ret
+
+    def get_pn(self, slot):
+        ret = 0
+        cmd = 'eeutil -disp -uut=UUT_{}'.format(slot)
+        cmd_list = shlex.split(cmd)
+        output = subprocess.check_output(cmd_list)
+        #print(output)
+
+        ma = re.compile(r".*Assembly Number.*([\d]{2}-[\d]{4}-[\d]{2}) .*")
+        src_str = "".join(output.splitlines())
+        result = ma.match(src_str)
+        if result == None:
+            print "PN not found"
+            pn = "UNKNOWN"
+        else:
+            pn = result.group(1)
+
+        print "PN:", pn
+        return pn
 
     def enroll_puf(self, sn, slot):
         cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -enroll_puf -sn {} -slot {}".format(sn, slot)
@@ -412,7 +438,12 @@ PRIVEK <ek.sk>"""
         return ret
 
     def esec_prog(self, client_key, client_cert, trust_roots, backend_url, sn, slot, pn, mac, card_type, mtp, sku, fast_path):
-        self.create_otp_cm_fmt(sn, slot)
+        ret = self.create_otp_cm_fmt(sn, slot)
+        if ret != 0:
+            print("Failed to create OTP CM")
+            print "=== ESEC PROG FAILED ==="
+            return -1
+
         numRetry = 3
 
         for retry in range(numRetry):
@@ -822,6 +853,10 @@ if __name__ == "__main__":
 
     if args.efuse_test == True:
         esec_ctrl.efuse_test(int(args.slot), card_type)
+        sys.exit()
+
+    if args.get_pn == True:
+        esec_ctrl.get_pn(int(args.slot))
         sys.exit()
 
     print "Invalid input"
