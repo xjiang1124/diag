@@ -2162,6 +2162,23 @@ class mtp_ctrl():
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()
 
+    def mtp_setting_partition(self, slot):
+        # Run command twice: first time does it, 2nd time says 'already partitioned'
+        if not self._nic_ctrl_list[slot].nic_setting_partition():
+            self.cli_log_slot_err_lock(slot, "Could not complete partition command")
+            return False
+        if not self._nic_ctrl_list[slot].nic_setting_partition(): 
+            self.cli_log_slot_err_lock(slot, "Partition table was not updated")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Partition table updated")
+        return True
+
+    def mtp_nic_partition_check(self, slot):
+        if not self._nic_ctrl_list[slot].nic_verify_partition():
+            self.cli_log_slot_err_lock(slot, "PSLC Verify failed")
+            return False
+        self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
+        return True
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
         # check the current cpld version
@@ -2223,24 +2240,6 @@ class mtp_ctrl():
             return False
 
         return True
-    def mtp_setting_partition(self, slot):
-        # Run command twice: first time does it, 2nd time says 'already partitioned'
-        if not self._nic_ctrl_list[slot].nic_setting_partition():
-            self.cli_log_slot_err_lock(slot, "Could not complete partition command")
-            return False
-        if not self._nic_ctrl_list[slot].nic_setting_partition(): 
-            self.cli_log_slot_err_lock(slot, "Partition table was not updated")
-            return False
-        self.cli_log_slot_inf_lock(slot, "Partition table updated")
-        return True
-        
-    def mtp_nic_partition_check(self, slot):
-        if not self._nic_ctrl_list[slot].nic_verify_partition():
-            self.cli_log_slot_err_lock(slot, "PSLC Verify failed")
-            return False
-        self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
-        return True
-
 
     def mtp_program_nic_sec_cpld(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
@@ -2723,7 +2722,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "NIC is Skipped")
             else:
                 self.cli_log_slot_err(slot, "NIC is Absent")
-        self.cli_log_inf("End MTP NIC Info Dump\n")
+        self.cli_log_inf("End MTP NIC Info Dump")
 
 
     def mtp_nic_init(self):
