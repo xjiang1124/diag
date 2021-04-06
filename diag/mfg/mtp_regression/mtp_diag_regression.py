@@ -558,8 +558,6 @@ def main():
     mtp_id = "MTP-000"
     stop_on_err = False
     verbosity = False
-    skip_test = False
-    do_once = 0
     corner = Env_Cond.MFG_NT
     swm_lp_boot_mode = False
     if args.mtpid:
@@ -948,6 +946,7 @@ def main():
     diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
 
     for vmarg in vmarg_list:
+        do_once = 0
         # stop the next vmarg corner if stop_on_err is set and some nic fails
         if fail_nic_list and stop_on_err:
             break
