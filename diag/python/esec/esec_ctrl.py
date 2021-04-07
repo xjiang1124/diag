@@ -440,8 +440,8 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
         return ret
 
-    def show_status(self, sn, slot):
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -show_sts -sn {} -slot {}".format(sn, slot)
+    def show_status(self, sn, slot, card_type):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -show_sts -sn {} -slot {} -card_type {}".format(sn, slot, card_type)
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
@@ -863,7 +863,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.show_sts == True:
-        esec_ctrl.show_status(args.sn, args.slot)
+        esec_ctrl.show_status(args.sn, args.slot, card_type)
         sys.exit()
 
     if args.efuse_test == True:
