@@ -533,11 +533,14 @@ PRIVEK <ek.sk>"""
             print "=== ESEC PROG FAILED ==="
             return -1
 
-        ret = self.sysrst_test(int(slot))
-        if ret != 0:
-           print "sysreset test failed"
-           print "=== ESEC PROG FAILED ==="
-           return -1
+        if card_type == "ORTANO" or card_type == "ORTANO2":
+            print("Skip sys reset test")
+        else:
+            ret = self.sysrst_test(int(slot))
+            if ret != 0:
+               print "sysreset test failed"
+               print "=== ESEC PROG FAILED ==="
+               return -1
 
         ret = self.efuse_test(int(slot), card_type)
         if ret != 0:
