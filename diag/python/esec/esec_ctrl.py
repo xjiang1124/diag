@@ -276,7 +276,19 @@ PRIVEK <ek.sk>"""
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:
-            print "PN not found"
+            print "PN not found with Assembly Number"
+            pn = "UNKNOWN"
+        else:
+            pn = result.group(1)
+            print "PN:", pn
+            return pn
+
+        # Some cards does not have Assembly Number, they use Part Number instead
+        ma = re.compile(r".*Part Number.*([\d]{2}-[\d]{4}-[\d]{2}) .*")
+        src_str = "".join(output.splitlines())
+        result = ma.match(src_str)
+        if result == None:
+            print "PN not found with Part Number"
             pn = "UNKNOWN"
         else:
             pn = result.group(1)
