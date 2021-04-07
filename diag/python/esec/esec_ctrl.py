@@ -243,11 +243,11 @@ PRIVEK <ek.sk>"""
             output = sn.ljust(tgt_sn_len, '\0')
 
             # If Oracle card, add 'O' to SN
-            pn = get_pn(slot)
+            pn = self.get_pn(slot)
             if pn == "UNKNOWN":
                 return -1
 
-            if pn = "68-0015-02":
+            if pn == "68-0015-02":
                 output1 = list(output)
                 print("Adding Oracle signature")
                 output1[15] = 'O'
