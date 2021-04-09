@@ -716,6 +716,61 @@ var HpeTbl = []entry {
 }
 
 
+
+
+var OrtanoPensandoTbl = []entry {
+    entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
+    entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
+    entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},
+    entry{"Board Info Offset",                      INT8,        3,        1,    []byte{0x01}},
+    entry{"Product Area Offset",                    INT8,        4,        1,    []byte{0x00}},
+    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0x00}},
+    entry{"PAD",                                    INT8,        6,        1,    []byte{0x00}},
+    entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0x00}},
+
+    entry{"Board Info Format Version",              INT8,        8,        1,    []byte{0x01}},
+    entry{"Board Area Length",                      INT8,        9,        1,    []byte{0x12}},
+    entry{"Language Code",                          INT8,        10,       1,    []byte{0x19}},
+    entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
+    entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
+    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x65, 0x6E, 0x73,
+        0x61, 0x6E, 0x64, 0x6F}},
+    entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xE8}},
+    entry{"Product Name",                           STRING,      24,      40,    []byte{0x44, 0x53, 0x43, 0x32, 
+        0x2d, 0x32, 0x30, 0x30, 0x2c, 0x32, 0x78, 0x51, 0x53, 0x46, 
+        0x50, 0x35, 0x36, 0x2c, 0x33, 0x32, 0x67, 0x52, 0x41, 0x4d, 
+        0x2c, 0x36, 0x34, 0x47, 0x65, 0x4d, 0x4d, 0x43, 0x20, 0x20, 
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Serial Number Type/Length",              INT8,        64,       1,    []byte{0xCB}},
+    entry{"Serial Number",                          STRING,      65,       11,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"Part Number Type/Length",                INT8,        76,       1,    []byte{0xD9}},
+    entry{"Part Number",                            STRING,      77,       25,   []byte{0x44, 0x53, 0x43, 0x32, 
+        0x2d, 0x32, 0x51, 0x32, 0x30, 0x30, 0x2d, 0x33, 0x32, 0x52, 
+        0x33, 0x32, 0x46, 0x36, 0x34, 0x50, 0x20, 0x20, 0x20, 0x20, 
+        0x20}},
+    entry{"FRU File ID Type/Length",                INT8,       102,       1,    []byte{0xC8}},
+    entry{"FRU ID",                                 STRING,     103,       8,    []byte{0x30, 0x34, 0x2f, 0x30, 
+        0x36, 0x2f, 0x32, 0x31}},
+    entry{"Board ID Type/Length",                   INT8,       111,       1,    []byte{0x04}},
+    entry{"Board ID",                               INT8,       112,       4,    []byte{0x01, 0x00, 0x00, 0x00}},
+    entry{"Engineering Change Level Type/Length",   INT8,       116,       1,    []byte{0xC2}},
+    entry{"Engineering Change Level",               INT8,       117,       2,    []byte{0x00, 0x00}},
+    entry{"Number of MAC Address Type/Length",      INT8,       119,       1,    []byte{0x02}},
+    entry{"Number of MAC Address",                  INT8,       120,       2,    []byte{0x18, 0x00}},
+    entry{"MAC Address Base Type/Length",           INT8,       122,       1,    []byte{0x06}},
+    entry{"MAC Address Base",                       INT8,       123,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
+        0x00, 0x00}},
+    entry{"Assembly Number Type/Length",            INT8,       129,       1,    []byte{0xCD}},
+    entry{"Assembly Number",                        STRING,     130,      13,    []byte{0x36, 0x38, 0x2d, 0x30, 
+        0x30, 0x32, 0x31, 0x2d, 0x30, 0x32, 0x20, 0x30, 0x31}}, 
+    entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,       144,       7,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00}},
+    entry{"Board Info Area Checksum",               INT8,       151,       1,    []byte{0x00}},
+}
+
+
 var MatchSearchBIA []byte
 var MatchSearchEEread byte
 
@@ -965,14 +1020,14 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "ORTANO2" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "PENORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1157,7 +1212,7 @@ func updateIntChk() () {
     }
 
 
-    if CustType == "IBM" ||  CustType == "DELLSWM" {
+    if CustType == "IBM" ||  CustType == "DELLSWM" || CustType == "PENORTANO" {
         brdInfoChk = 0
         productInfoChk = 0
         cmnHeadChk = 0
@@ -1170,7 +1225,7 @@ func updateIntChk() () {
         }
     }
 
-    if CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" {
+    if CustType == "ORACLE" || CustType == "ORTANO" {
         brdInfoChk = 0
         productInfoChk = 0
         cmnHeadChk = 0
@@ -1312,7 +1367,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "ORTANO2" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
+            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "PENORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1320,7 +1375,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
                 }
             }
 
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1331,7 +1386,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             if entry.Name == "Serial Number" {
                 // Not a good solution to set SN padding
                 var snInitVal byte
-                if CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2"  {
+                if CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO"  {
                     snInitVal = 0x20
                 } else {
                     snInitVal = 0x0
@@ -1429,7 +1484,7 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" ) {
+        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" ) {
             copy(an_ptr, pn)
         } else {
             copy(pn_ptr, pn)
@@ -1482,7 +1537,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
     data := make([]byte, 3)
     for _, entry := range(EepromTbl) {
 
-        if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "ORTANO2" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
+        if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "PENORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" {
             if entry.Name == "Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1490,7 +1545,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
             }
         }
 
-        if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+        if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1603,7 +1658,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 continue
             }
         } else if(field == "PN") {
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "ORTANO2" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
+            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" {
                 if entry.Name != "Assembly Number" {
                     continue
                 }
@@ -1890,7 +1945,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     } ()
 
     //Oracle cards start their Fru information at offset 256
-    if CardType == "VOMERO2"  || CardType == "ORTANO" || CardType == "ORTANO2" {
+    if CardType == "VOMERO2"  || CustType == "ORTANO" {
         offset_add = 256
     }
 

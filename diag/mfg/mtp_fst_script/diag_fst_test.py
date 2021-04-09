@@ -274,7 +274,7 @@ def fst_general(fst):
             y = x.decode("utf-8")
             firmware = json.loads(y)
 
-            if product_name == "NAPLES25" or product_name == "NAPLES25SWM" or product_name == "NAPLES25SWMDELL" or product_name == "NAPLES25SWM833" or product_name == "ORTANO2":
+            if product_name == "NAPLES25" or product_name == "NAPLES25SWM" or product_name == "NAPLES25SWMDELL" or product_name == "NAPLES25SWM833" or product_name == "NAPLES25OCP" or product_name == "ORTANO2":
                 if "8GT/s" in new_str and "x8" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
                 else:
