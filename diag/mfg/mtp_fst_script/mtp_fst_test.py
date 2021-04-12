@@ -589,17 +589,18 @@ def main():
                 #sort it based on slot number
                 fail_match.sort(key = lambda x: x[0])
 
-            for _slot, _sn, _nic_type in fail_match:
-                if _slot in pass_nic_list:
-                    pass_nic_list.remove(_slot)
-                if _slot not in fail_nic_list:
-                    fail_nic_list.append(_slot)
+    if "ORTANO" not in card_type:
+        for _slot, _sn, _nic_type in fail_match:
+            if _slot in pass_nic_list:
+                pass_nic_list.remove(_slot)
+            if _slot not in fail_nic_list:
+                fail_nic_list.append(_slot)
 
-            for _slot, _sn, _nic_type in pass_match:
-                if _slot in fail_nic_list:
-                    continue
-                if _slot not in pass_nic_list:
-                    pass_nic_list.append(_slot)
+        for _slot, _sn, _nic_type in pass_match:
+            if _slot in fail_nic_list:
+                continue
+            if _slot not in pass_nic_list:
+                pass_nic_list.append(_slot)
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
