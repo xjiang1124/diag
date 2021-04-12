@@ -733,7 +733,8 @@ def main():
     for slot in range(len(nic_prsnt_list)):
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
-            sw_test_list.insert(-1, "PERF_MODE") # second last step
+            if "PERF_MODE" not in sw_test_list:
+                sw_test_list.insert(-1, "PERF_MODE") # second last step
 
         if not nic_prsnt_list[slot]:
             continue

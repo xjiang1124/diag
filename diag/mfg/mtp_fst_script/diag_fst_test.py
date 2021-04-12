@@ -83,8 +83,6 @@ def config_eth(card_type="", fst=0):
     else:
         slot_bus_dict = {1:'18:00.0', 2:'3b:00.0', 3:'d8:00.0', 4:'af:00.0'}
         eth_list = {'enp179s0', 'enp220s0', 'enp28s0', 'enp63s0'}
-
-    
     
     for eth in eth_list:
         subprocess.call(["ifconfig", eth, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -414,6 +412,7 @@ def fst_cloud_fetch_sn(card_type, fst):
             print("slot:", str(slot), "sn", sn, "failed to execute fwupdate -l") 
             continue
         output1 = output.decode("utf-8")
+        print(output1)
         fwlist = json.loads(output1)
         print("---------")
         try:
@@ -442,26 +441,15 @@ def fst_cloud_fetch_sn(card_type, fst):
             print(e)
         print("---------")
 
-        if product_name == "ORTANO2":
-            # Ensure performance mode even though it's already set in SWI
-            cmd = "touch /sysconfig/config0/.perf_mode"
-            ssh_cmd = get_ssh_cmd(ip, cmd)
-            try:
-                output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
-                print(output.decode("utf-8"))
-                print("slot:", str(slot), "sn", sn, "failed to set performance mode")
-                continue
-
-        # # Switch to mainfw
-        # cmd = "/nic/tools/fwupdate -s mainfwa"
-        # ssh_cmd = get_ssh_cmd(ip, cmd)
-        # try:
-        #     output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
-        # except subprocess.CalledProcessError as e:
-        #     print(output.decode("utf-8"))
-        #     print("slot:", str(slot), "sn", sn, "failed to switch to mainfw") 
-        #     continue
+        # Switch to mainfw
+        cmd = "/nic/tools/fwupdate -s mainfwa"
+        ssh_cmd = get_ssh_cmd(ip, cmd)
+        try:
+            output = subprocess.check_output(ssh_cmd, shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print(output.decode("utf-8"))
+            print("slot:", str(slot), "sn", sn, "failed to switch to mainfw") 
+            continue
         print("slot", slot, "sn:", sn, "switched to mainfwa")
 
     json.dump(card_info_dict, open("/home/diag/mtp_fst_script/card_info_dict.txt",'w'))
@@ -524,7 +512,7 @@ def main():
         fst_general_old(fst_type)
     elif card_type == "ORACLE":
         fst_general_oracle(fst_type)
-    elif card_type == "NAPLES100IBM" or "CLOUD" in card_type or "ORTANO" in card_type:
+    elif card_type == "NAPLES100IBM" or "CLOUD" in card_type:
         if stage == "FETCH_SN":
             fst_cloud_fetch_sn(card_type, fst_type)
         elif stage == "CHECK_PCIE":

@@ -8,6 +8,7 @@ import threading
 import argparse
 import re
 import copy
+import json
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -22,6 +23,315 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
+def get_nic_ssh_cmd(ip, cmd):
+    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p pen123 ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
+    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p pen123 ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' root@{} {}"
+    ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
+    return ssh_cmd
+
+def get_slot_bus_list(mtp_mgmt_ctrl, card_type):
+    if card_type == "ORTANO":
+        # elba
+        cmd = "lspci -d 1dd8:0002"
+    else:
+        # capri
+        cmd = "lspci -d 1dd8:1000"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
+    mtp_mgmt_ctrl.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
+
+    if len(bus_list_match):
+        bus_list = list()
+        for bus in bus_list_match:
+            bus_list.append(bus)
+        slot_bus_list = decode_pci_slot(bus_list)
+    else:
+        mtp_mgmt_ctrl.cli_log_err("No devices found")
+        slot_bus_list = []
+
+    return slot_bus_list
+
+def decode_pci_slot(bus_list):
+    """
+        41:00.0         slot 5  (top)   enp69s0
+        21:00.0         slot 4          enp35s0  // 21+offset if slot 1 is taken
+        61:00.0         slot 3          enp99s0
+        08:00.0         slot 2          enp10s0
+        21:00.0         slot 1  (lowest)enp35s0
+    """
+    old_fst = ['18:00.0', '3b:00.0', 'd8:00.0', 'af:00.0']
+    new_fst = ['21:00.0', '08:00.0', '61:00.0', '41:00.0']
+    slot_bus_list = []
+
+    for bus in bus_list:
+        if bus in new_fst:
+            slot_bus_list.append((new_fst.index(bus), bus))
+        elif bus in old_fst:
+            slot_bus_list.append((old_fst.index(bus), bus))
+        else:
+            if "21:00.0" in bus_list: #slot 1 of new fst occupied already
+                slot_bus_list.append((3, bus))
+            else:
+                print("Unknown pci bus! "+bus)
+
+    return slot_bus_list
+
+def check_pcie_link(mtp_mgmt_ctrl, slot, bus, card_type):
+    if card_type == "ORTANO":
+        expected_speed = "16"
+        expected_width = "16"
+    else:
+        expected_speed = "8"
+        expected_width = "8"
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("lspci -vv -s {:s} | grep LnkSta:".format(bus)):
+        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve link speed and width")
+        return False
+    else:
+        result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        if "Speed {:s}GT/s".format(expected_speed) in result:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "PCIE link speed pass")
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "PCIE link speed fails")
+            return False
+
+        if "Width x{:s}".format(expected_width) in result:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "PCIE link width pass")
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "PCIE link width fails")
+            return False
+    return True
+
+def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
+    bus_str = bus.split(":", 1)[0]
+    bus_int = int(bus_str, 16)+4
+    eth = "enp"+str(bus_int)+"s0"
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
+
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("ifconfig {:s} down".format(eth))
+    time.sleep(1)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("ifconfig {:s} 169.254.{:d}.2/24".format(eth, bus_int))
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("ifconfig {:s} up".format(eth))
+    time.sleep(1)
+    if eth+": ERROR" in mtp_mgmt_ctrl.mtp_get_cmd_buf():
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to enable NIC mnic")
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("ifconfig {:s} down".format(eth))
+        time.sleep(1)
+        return ""
+    return "169.254.{:d}.1".format(bus_int)
+
+def get_product_name_from_pn(pn):
+    if "DSC2-2Q200-32R32F64P-R" in pn:
+        product_name = "ORTANO2"
+    elif "68-0015-02" in pn:
+        product_name = "ORTANO2"
+    else:
+        product_name = "UNKNOWN"
+        print("Unknown PN:", pn)
+
+    return product_name
+
+def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Retrieve FW info")
+    cmd = "/nic/tools/fwupdate -l"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -l")
+        mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        return False
+    fw_json = re.findall(r"{.+}", mtp_mgmt_ctrl.mtp_get_cmd_buf(),re.DOTALL)
+    if not fw_json:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -l")
+        mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        return False
+    fwlist = json.loads(fw_json[0])
+    try:
+        print_fwlist = ""
+        if "boot0" in fwlist:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
+        if "mainfwa" in fwlist:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "mainfwa:   {:15s}   {:s} ".format(fwlist["mainfwa"]["kernel_fit"]["software_version"], fwlist["mainfwa"]["kernel_fit"]["build_date"]) )
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing mainfwa info")
+        if "mainfwb" in fwlist:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "mainfwb:   {:15s}   {:s} ".format(fwlist["mainfwb"]["kernel_fit"]["software_version"], fwlist["mainfwb"]["kernel_fit"]["build_date"]) )
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing mainfwb info")
+        if "goldfw" in fwlist:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "goldfw:    {:15s}   {:s} ".format(fwlist["goldfw"]["kernel_fit"]["software_version"], fwlist["goldfw"]["kernel_fit"]["build_date"]) )
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing goldfw info")
+        if "diagfw" in fwlist:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "diagfw:    {:15s}   {:s} ".format(fwlist["diagfw"]["kernel_fit"]["software_version"], fwlist["diagfw"]["kernel_fit"]["build_date"]) )
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing diagfw info")
+
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, print_fwlist)
+    except KeyError as e:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing info")
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, e)
+        return False
+    return True
+
+def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
+    usb_serial = []
+    for port in range(5):
+        port_pre = os.system("ls /dev/ttyUSB{} > /dev/null 2>&1".format(port))
+        if port_pre == 0:
+            usb_serial.append("ttyUSB{}".format(port))
+            mtp_mgmt_ctrl.cli_log_inf("Found /dev/ttyUSB{}".format(port))
+    return usb_serial
+
+def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
+    pass_list, fail_list = [], []
+
+    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type)
+    if len(slot_bus_list) == 0:
+        logfile_close(log_filep_list)
+        return
+
+    for slot, bus in slot_bus_list:
+        pass_list.append(slot)
+
+        ### DECODE ETH
+        nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, slot, bus)
+        if not nic_mgmt_ip:
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+
+        ### GET FRU
+        cmd = "cat /tmp/fru.json"
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to fetch SN")
+            mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+        fru_json = re.findall(r"{.+}", mtp_mgmt_ctrl.mtp_get_cmd_buf(),re.DOTALL)
+        if not fru_json:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Get FRU failed")
+            mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+        fru = json.loads(fru_json[0])
+
+        if fru["serial-number"]:
+            sn = fru["serial-number"]
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to parse serial-number from FRU")
+            SN = "SN_UNKNOWN"
+
+        try:
+            pn = fru["board-assembly-area"]
+        except KeyError:
+            try:
+                pn = fru["part-number"]
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to parse part-number from FRU")
+                pn = ""
+
+        product_name = get_product_name_from_pn(pn)
+
+        if product_name == "UNKNOWN":
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, product_name))
+            continue
+
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, product_name))
+
+        # for flexflow/logging purposes:
+        mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
+        mtp_mgmt_ctrl.mtp_set_nic_type(slot, product_name)
+
+
+        ### GET FW INFO
+        if not get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+
+        ### SET PEFORMANCE MODE
+        if product_name == "ORTANO2":
+            # Ensure performance mode even though this step is not needed with newer mainfw anymore.
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
+            cmd = "touch /sysconfig/config0/.perf_mode"
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to set performance mode")
+                mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+                # fail_list.append(slot)
+                # pass_list.remove(slot)
+                # continue
+
+        ### SWITCH TO MAINFW
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
+        cmd = "/nic/tools/fwupdate -s mainfwa"
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to mainfw")
+            mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+
+    return pass_list, fail_list
+
+def check_pcie_stage(mtp_mgmt_ctrl, card_type):
+    pass_list, fail_list = [], []
+    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type)
+    if len(slot_bus_list) == 0:
+        logfile_close(log_filep_list)
+        return
+
+    for slot, bus in slot_bus_list:
+        pass_list.append(slot)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Retrieve PCIE link {:s} properties".format(bus))
+        if not check_pcie_link(mtp_mgmt_ctrl, slot, bus, card_type):
+            fail_list.append(slot)
+            pass_list.remove(slot)
+
+    return pass_list, fail_list
+
+def check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list, fail_nic_list):
+    pass_list, fail_list = [], []
+    serial_ports = []
+    if card_type == "ORTANO":
+        serial_ports = load_mtp_usb_serial_port(mtp_mgmt_ctrl)
+    else:
+        return
+
+    result = ""
+    for port in serial_ports:
+        cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
+            mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
+        result += mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    pass_reg_exp_rot = re.compile("ROT test PASSED ([A-Za-z0-9]*)")
+    fail_reg_exp_rot = re.compile("ROT test FAILED ([A-Za-z0-9]*)")
+    pass_match_rot = pass_reg_exp_rot.findall(result)
+    fail_match_rot = fail_reg_exp_rot.findall(result)
+
+    # Matching game
+    # match slot to SN, finding missing ones.
+    for slot in pass_nic_list + fail_nic_list:
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        if sn in pass_match_rot:
+            pass_list.append(slot)
+        elif sn in fail_match_rot:
+            fail_list.append(slot)
+        else:
+            fail_list.append(slot)
+
+    # Save the logs
+    for sn in pass_match_rot + fail_match_rot:
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mtp_fst_script/rot_{:s}.log".format(sn, sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("rm /home/diag/{:s}.log".format(sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+    for port in serial_ports:
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mtp_fst_script/rot_{:s}.log".format(port, port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("rm /home/diag/{:s}.log".format(port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+
+    return pass_list, fail_list
 
 def logfile_close(filep_list):
     for fp in filep_list:
@@ -36,15 +346,6 @@ def load_mtp_cfg():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
-
-def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
-    usb_serial = []
-    for port in range(5):
-        port_pre = os.system("ls /dev/ttyUSB{} > /dev/null 2>&1".format(port))
-        if port_pre == 0:
-            usb_serial.append("ttyUSB{}".format(port))
-            mtp_mgmt_ctrl.cli_log_inf("Found /dev/ttyUSB{}".format(port))
-    return usb_serial
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -113,12 +414,31 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Start", level=0)
     start_ts = libmfg_utils.timestamp_snapshot()
 
+
+
     pass_nic_list = list()
     fail_nic_list = list()
 
-    serial_port = []
-    if card_type == "ORTANO":
-        serial_port = load_mtp_usb_serial_port(mtp_mgmt_ctrl)
+    # rebuild pass/fail with previous stage.
+    test_records = []
+    if stage != "FETCH_SN" and card_type == "ORTANO":
+        with open(".tmp.json", "r") as fh:
+            test_records = json.loads(fh.read())
+
+        for record in test_records:
+            slot = record[0]
+            sn = record[1]
+            nic_type = record[2]
+            result = record[3]
+
+            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
+            mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
+            if result == "PASS":
+                pass_nic_list.append(slot)
+            if result == "FAIL":
+                fail_nic_list.append(slot)
+
+
 
     if card_type == "GENERAL" or card_type == "GENERAL_OLD" or card_type == "ORACLE":
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
@@ -140,7 +460,7 @@ def main():
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
-    elif "CLOUD" in card_type or "ORTANO" in card_type:
+    elif "CLOUD" in card_type:
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
@@ -164,98 +484,84 @@ def main():
             test = "FETCH_SN"
         else:
             test = "PCIE_LINK"
+    elif card_type == "ORTANO":
+        dsp = FF_Stage.FF_FST
+
+        if stage == "FETCH_SN":
+            testlist = ["FETCH_SN"]
+        elif stage == "CHECK_PCIE":
+            testlist = ["PCIE_LINK", "ROT"]
+        else:
+            testlist = []
+
+        for test in testlist:
+            mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
+            start_ts = libmfg_utils.timestamp_snapshot()
+
+            if test == "FETCH_SN":
+                test_pass_list, test_fail_list = fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type)
+            elif test == "PCIE_LINK":
+                test_pass_list, test_fail_list = check_pcie_stage(mtp_mgmt_ctrl, card_type)
+            elif test == "ROT":
+                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list, fail_nic_list)
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
+                continue
+
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+
+            for slot in test_pass_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+                # update global result list also.
+                if slot not in pass_nic_list and slot not in fail_nic_list:
+                    pass_nic_list.append(slot)
+
+            for slot in test_fail_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+
+                # update global result list also.
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                    fail_nic_list.append(slot)
+
+                if slot not in pass_nic_list and slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown card type", level=0)
         mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
         logfile_close(log_filep_list)
         return
 
-    for _slot, _sn, _nic_type in fail_match:
-        slot = int(_slot) - 1
-        sn = _sn.strip()
-        nic_type = _nic_type.strip()
-        mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-        mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-        fail_nic_list.append(slot)
+    if stage == "FETCH_SN" and card_type == "ORTANO":
+        ## save variables needed through the powercycle.
+        save_record = list()
+        for slot in pass_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            save_record.append((slot, sn, nic_type, "PASS"))
+        for slot in fail_nic_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            save_record.append((slot, sn, nic_type, "FAIL"))
+        with open(".tmp.json", "w") as fh:
+            json.dump(save_record, fh, allow_nan=True)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("sync")
 
-    for _slot, _sn, _nic_type in pass_match:
-        slot = int(_slot) - 1
-        sn = _sn.strip()
-        nic_type = _nic_type.strip()
-        mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-        mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-        pass_nic_list.append(slot)
+        cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        cmd = "cp /home/diag/mtp_fst_script/test_fst.log /home/diag/mtp_fst_script/test_fst.log.0"
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
 
-    if card_type == "ORTANO" and stage == "PCIE_LINK":
-        dsp = FF_Stage.FF_FST
-        test = "ROT"
-        mtp_mgmt_ctrl.cli_log_inf("MTP ROT Tests Started", level=0)
-        for port in serial_port:
-            start_ts = libmfg_utils.timestamp_snapshot()
-            cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
-                mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
-            result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
-            pass_reg_exp = re.compile("ROT test PASSED ([A-Za-z0-9]*) /dev/ttyUSB(..?)")
-            fail_reg_exp = re.compile("ROT test FAILED ([A-Za-z0-9]*) /dev/ttyUSB(..?)")
-            pass_match = pass_reg_exp.search(result)
-            fail_match = fail_reg_exp.search(result)
-            
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
+        # end the test here
+        logfile_close(log_filep_list)
+        return
 
-            if pass_match:
-                sn = pass_match.group(1)
-
-                # Merge rot result into nic_list. have to traverse since rot slot =/= nic slot.
-                slot = ""
-                for _slot in pass_nic_list+fail_nic_list:
-                    if sn == mtp_mgmt_ctrl.mtp_get_nic_sn(_slot):
-                        slot = _slot
-                        break
-                if not slot:
-                    # this SN not encountered before, means pcie not detected but serial detected.
-                    # unknown slot.
-                    mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-            elif fail_match:
-                sn = fail_match.group(1)
-
-                # Merge rot result into nic_list. have to traverse since rot slot =/= nic slot.
-                slot = ""
-                for _slot in fail_nic_list:
-                    if sn == mtp_mgmt_ctrl.mtp_get_nic_sn(_slot):
-                        # failed previously, nothing to change.
-                        slot = _slot
-                        break
-                for _slot in pass_nic_list:
-                    if sn == mtp_mgmt_ctrl.mtp_get_nic_sn(_slot):
-                        # pass previously, fail now
-                        pass_nic_list.remove(_slot)
-                        fail_nic_list.append(_slot)
-                        slot = _slot
-                        break
-                if not slot:
-                    # this SN not encountered before, means pcie not detected but serial detected.
-                    # unknown slot.
-                    mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-
-            else:
-                # found the serial port, but cannot connect to either ROT or arm console
-                # unknown slot, sn.
-                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(port, dsp, test, "INCOMPLETE", duration))
-        if len(fail_nic_list + pass_nic_list) > len(serial_port):
-            mtp_mgmt_ctrl.cli_log_err("Missing serial connection: expected {:d} connections, got {:d}".format(len(fail_nic_list + pass_nic_list), len(serial_port)))
-            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("unknown", dsp, test, "INCOMPLETE", duration))
-        mtp_mgmt_ctrl.cli_log_inf("MTP ROT Tests Complete", level=0)
-
-    if "CLOUD" in card_type or "ORTANO" in card_type:
+    if "CLOUD" in card_type:
         if stage == "FETCH_SN":
             cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
@@ -282,6 +588,18 @@ def main():
                         fail_match.append(n)
                 #sort it based on slot number
                 fail_match.sort(key = lambda x: x[0])
+
+            for _slot, _sn, _nic_type in fail_match:
+                if _slot in pass_nic_list:
+                    pass_nic_list.remove(_slot)
+                if _slot not in fail_nic_list:
+                    fail_nic_list.append(_slot)
+
+            for _slot, _sn, _nic_type in pass_match:
+                if _slot in fail_nic_list:
+                    continue
+                if _slot not in pass_nic_list:
+                    pass_nic_list.append(_slot)
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)

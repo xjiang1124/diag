@@ -61,7 +61,7 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     # For cloud card, collect logs at CHECK_PCIE stage
-    if "CLOUD" in card_type:
+    if "CLOUD" in card_type or card_type == "ORTANO":
         if stage == "FETCH_SN":
             return
     
