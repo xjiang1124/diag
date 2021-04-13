@@ -79,7 +79,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
                 if cpldID[0] == "0x43" or cpldID[0] == "0x44":
-                    self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xe")
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x0")
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
                 else:
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
@@ -259,38 +259,39 @@ class nic_test:
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
-        time.sleep(5)
-        for slot in nic_list:
-            if ret_list[int(slot)-1] != 0:
-                continue
+        if mgmt == True:
+            time.sleep(5)
+            for slot in nic_list:
+                if ret_list[int(slot)-1] != 0:
+                    continue
 
-            self.nic_con.switch_console(slot)
-            session = common.session_start()
-            ret = self.nic_con.uart_session_start(session)
-            if ret != 0:
+                self.nic_con.switch_console(slot)
+                session = common.session_start()
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+                    continue
+
+                # Disable link manager
+                # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
+                try:
+                    self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
+                    self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+                    #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
+                    #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
+                except:
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    ret = -1
+                    ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+                    continue
+                
+                self.nic_con.uart_session_cmd(session, "halctl show port status")
+                sleep(0.5)
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
-                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
-                continue
-
-            # Disable link manager
-            # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
-            try:
-                self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-                self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-                #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
-                #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
-            except:
-                self.nic_con.uart_session_stop(session)
-                common.session_stop(session)
-                ret = -1
-                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
-                continue
-            
-            self.nic_con.uart_session_cmd(session, "halctl show port status")
-            sleep(0.5)
-            self.nic_con.uart_session_stop(session)
-            common.session_stop(session)
 
         if mgmt == True:
             for slot in nic_list:
