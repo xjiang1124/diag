@@ -2030,7 +2030,7 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.ORTANO:
             exp_pn = PART_NUMBERS_MATCH.ORTANO_FMT_ALL
         elif nic_type == NIC_Type.ORTANO2:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO_FMT_ALL
+            exp_pn = PART_NUMBERS_MATCH.ORTANO2_FMT_ALL
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
