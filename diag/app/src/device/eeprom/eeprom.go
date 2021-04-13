@@ -568,7 +568,7 @@ var OrtanoTbl_V2 = []entry {
     entry{"VU Cap ID",                              INT8,       120,         2,    []byte{0xA2, 0x00}},
     entry{"Next Cap Address",                       INT8,       122,         2,    []byte{0x00, 0x00}},
     entry{"Sensor Type",                            INT8,       124,         1,    []byte{0x51}},
-    entry{"Sensor Address",                         INT8,       125,         1,    []byte{0xEC}},
+    entry{"Sensor Address",                         INT8,       125,         1,    []byte{0x94}},
     entry{"Sensor #1 Address Offset",               INT8,       126,         1,    []byte{0x1A}},
     entry{"Reserved",                               INT8,       127,         1,    []byte{0x00}},
     entry{"Warning Thresh",                         INT8,       128,         2,    []byte{0x00, 0x37}},
