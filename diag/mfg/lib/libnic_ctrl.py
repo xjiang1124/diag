@@ -1500,6 +1500,7 @@ class nic_ctrl():
             self._vendor = NIC_Vendor.HPE
             return True
 
+        self.nic_set_err_msg(fru_buf)
         self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
         return False
 
