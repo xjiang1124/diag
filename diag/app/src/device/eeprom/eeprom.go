@@ -806,7 +806,7 @@ func init () {
     DellOcp = 0
     I2cAddr16 = false
 
-    MatchSearchBIA = make([]byte, 256)
+    MatchSearchBIA = make([]byte, 512)
     MatchSearchEEread = 0
 }
 
@@ -1793,17 +1793,23 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int
 
 
 func MatchSearchFruPartnumber(devName string, bus uint32, devAddr byte, pn string) (err int) {
-    
+    var rdLength int = 256
+
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
     defer smbusNew.Close()
 
+    if CardType == "ORTANO2" {
+        fmt.Printf("Adjust read lenghth for Ortano2")
+        rdLength = 512
+    }
+
     //Read out 256 bytes.. should be enough to get the part number
     //128 would be enough but Oracle starts their BIA at offset 128
     if(MatchSearchEEread==0) {
-        for i := 0; i < 256; i++ {
+        for i := 0; i < rdLength; i++ {
             if I2cAddr16 == true {
                 MatchSearchBIA[i], err = smbusNew.I2C16ReadByte(devName, uint16(i))
             } else {
