@@ -1,6 +1,4 @@
-if { [catch {source .tclrc.diag.elb.arm} errMsg]} {
-    puts $errMsg
-}
+source .tclrc.diag.elb.arm.nointv
 
 set SNAKE_MODE [lindex $argv 0]
 set DURATION [lindex $argv 1]
@@ -9,10 +7,8 @@ set INT_LPBK [lindex $argv 2]
 set SNAKE_MODE [string tolower $SNAKE_MODE]
 
 if { $SNAKE_MODE == "hod" } {
-    set core_freq 1100
     set arm_freq 3000
 } elseif {$SNAKE_MODE == "nod"} {
-    set core_freq 833
     set arm_freq 2000
 } else {
     plog_msg "Invalide snake mode $SNAKE_MODE"
@@ -29,10 +25,6 @@ plog_msg "SNAKE_MDOE: $SNAKE_MODE; DURATION: $DURATION"
 elb_appl_set_srds_int_timeout 5000
 sleep 1
 set volt_mode $SNAKE_MODE
-set die_temp [elb_get_temp]
-set core_freq [get_freq]
-set arm_freq [elb_top_sbus_get_cpu_freq  0 0]
-plog_msg "die_temp $die_temp; core_freq $core_freq; arm_freq $arm_freq"
 
 #set core_freq {}.0".format(core_freq)
 #set arm_freq {}".format(arm_freq)
@@ -45,7 +37,8 @@ elb_mm_eth_pll_init  0 0 $eth_freq
 elb_top_sbus_cpu_${arm_freq} 0 0
 get_freq
 elb_top_sbus_get_cpu_freq  0 0
-elb_snake_test_mtp 6 4096 $INT_LPBK 1 $core_freq 1 $DURATION
+
+elb_snake_test_mtp 6 4096 $INT_LPBK 1 $core_freq1 1 $DURATION
 
 plog_msg "Snake Done"
 plog_msg "Snake Done"
