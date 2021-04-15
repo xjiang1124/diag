@@ -152,8 +152,8 @@ class NIC_IMAGES:
     fail_cpld_dat["ORTANO"] = "0x02"
     diagfw_img["ORTANO"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
     diagfw_dat["ORTANO"] = "03-06-2021"
-    goldfw_img["ORTANO"] = "elba_goldfw_1.22.0-26-12-gbd3da13-dirty_2021.03.04.tar"
-    goldfw_dat["ORTANO"] = "03-04-2021"
+    goldfw_img["ORTANO"] = "elba_goldfw_1.15.6-C-9-2-g6869aee_2021.04.15.tar"
+    goldfw_dat["ORTANO"] = "04-15-2021"
 
     cpld_img["ORTANO2"] = "naples200_ortano2_rev3_4_03302021.bin"
     cpld_ver["ORTANO2"] = "0x3"
@@ -166,8 +166,8 @@ class NIC_IMAGES:
     fail_cpld_dat["ORTANO2"] = "0x04"
     diagfw_img["ORTANO2"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
     diagfw_dat["ORTANO2"] = "03-06-2021"
-    goldfw_img["ORTANO2"] = "elba_goldfw_1.22.0-26-12-gbd3da13-dirty_2021.03.04.tar"
-    goldfw_dat["ORTANO2"] = "03-04-2021"
+    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.6-C-9-2-g6869aee_2021.04.15.tar"
+    goldfw_dat["ORTANO2"] = "04-15-2021"
 
 # MFG release version control
 class NIC_CPLD_Version:
