@@ -2117,7 +2117,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0002-0007":
+            if software_pn != "90-0007-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
@@ -2153,12 +2153,11 @@ class mtp_ctrl():
         90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
         90-0006-0001   //CLOUD-A  naples_fw_apulu_1.10.3-C-26_CloudA_0806.tar
         90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.17.0-12_1109.tar
-        90-0007-0001   //naples_fw_iris_1.14.0-E-25_2020.08.31.tar
+        90-0007-0001   //naples_fw_iris_1.14.4-E-12_20210408.tar. Updated 04/12/2021
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
         90-0009-0001   //Ortano2 dsc_fw_iris_elba_1.15.6-C-6_2021.04.06.tar
         '''
         return True
-
 
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()

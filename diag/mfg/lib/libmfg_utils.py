@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import FLX_Factory
 from libdefs import MFG_DIAG_CMDS
+from libdefs import Swm_Test_Mode
 from libmfg_cfg import *
 
 def get_linux_prompt_list():
