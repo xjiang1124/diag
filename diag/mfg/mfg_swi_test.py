@@ -49,7 +49,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, sw_pn):
+def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, sw_pn, skip_testlist = []):
     # go to mtp_swi_script and start the test
     cmd = "cd {:s}".format(mtp_swi_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -61,6 +61,11 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
         cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s} --swpn {:s}".format(nic_sw_img_file, profile_cfg_file, mtp_id, sw_pn)
     else:
         cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s} --swpn {:s}".format(nic_sw_img_file, mtp_id, sw_pn)
+    if skip_testlist:
+        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_testlist).strip()+'"')
+    else:
+        skipped_testlist = ""
+    cmd += skipped_testlist
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_SW_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
@@ -80,6 +85,7 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
 def main():
     parser = argparse.ArgumentParser(description="MFG Software Install Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     args = parser.parse_args()
     if args.verbosity:
@@ -225,7 +231,8 @@ def main():
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
                                                                             mfg_swi_summary[mtp_id],
-                                                                            sw_pn))
+                                                                            sw_pn,
+                                                                            args.skip_test))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

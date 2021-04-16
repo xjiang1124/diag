@@ -54,13 +54,15 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
     
-def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_list):
+def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
     testseqlist = ["CPLD_PROG", "CPLD_REF"]                                                                
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["CPLD_PROG"]
-
+    for skip_test in skip_testlist:
+        if skip_test in testseqlist:
+            testseqlist.remove(skip_test)
     for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -82,13 +84,16 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list):
+def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
 
     testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF"]                                                                
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["SEC_CPLD_PROG"]
+    for skip_test in skip_testlist:
+        if skip_test in testseqlist:
+            testseqlist.remove(skip_test)
     for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
@@ -110,9 +115,13 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
+def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    for test in ["SEC_CPLD_VERIFY", "COPY_GOLD"]:
+    testseqlist = ["SEC_CPLD_VERIFY", "COPY_GOLD"]
+    for skip_test in skip_testlist:
+        if skip_test in testseqlist:
+            testseqlist.remove(skip_test)
+    for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         if test == "SEC_CPLD_VERIFY":
@@ -132,9 +141,13 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list):
+def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    for test in ["SW_INSTALL"]:
+    testseqlist = ["SW_INSTALL"]
+    for skip_test in skip_testlist:
+        if skip_test in testseqlist:
+            testseqlist.remove(skip_test)
+    for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program sw image onto EMMC
@@ -156,9 +169,13 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list):
+def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    for test in ["GOLD_PROG"]:
+    testseqlist = ["GOLD_PROG"]
+    for skip_test in skip_testlist:
+        if skip_test in testseqlist:
+            testseqlist.remove(skip_test)
+    for test in testseqlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         if test == "GOLD_PROG":
@@ -186,8 +203,7 @@ def main():
     parser.add_argument("--image", help="NIC eMMC image", required=True)
     parser.add_argument("--profile", help="NIC Profile")
     parser.add_argument("--swpn", help="Software Part Number")
-
-    
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     nic_profile = None
     args = parser.parse_args()
@@ -200,6 +216,8 @@ def main():
         nic_profile = ntpath.basename(args.profile)
     if args.swpn:
         sw_pn = args.swpn 
+    if not args.skip_test:
+        args.skip_test = []
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -289,7 +307,12 @@ def main():
         if card_type == NIC_Type.NAPLES100IBM:
             NAPLES100IBM = 1
 
-        for test in ["SW_PN_CHECK", "NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]:
+        test_list = ["SW_PN_CHECK", "NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+
+        for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SW_PN_CHECK":
@@ -340,7 +363,8 @@ def main():
                                                                               cpld_img_file,
                                                                               slot,
                                                                               sn,
-                                                                              prog_fail_nic_list))
+                                                                              prog_fail_nic_list,
+                                                                              args.skip_test))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -364,12 +388,13 @@ def main():
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     # Ensure nic_util and nic_arm as needed for elba's efuse script
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
-        mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
+    if "EFUSE_PROG" not in args.skip_test:
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+            mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_mgmt_ctrl.mtp_chassis_shutdown()
+            logfile_close(log_filep_list)
+            return
 
     # Efuse programming for Elba
     for slot in range(len(nic_prsnt_list)):
@@ -381,7 +406,11 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["EFUSE_PROG"]:
+        test_list = ["EFUSE_PROG"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "EFUSE_PROG":
@@ -409,7 +438,11 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Skipping SEC_KEY_PROG for ORTANO")
                 continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["SEC_KEY_PROG"]:
+        test_list = ["SEC_KEY_PROG"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SEC_KEY_PROG":
@@ -428,7 +461,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # power cycle NIC
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    if "EFUSE_PROG" not in args.skip_test and "SEC_KEY_PROG" not in args.skip_test:
+        mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -454,7 +488,8 @@ def main():
                                                                                     sec_cpld_img_file,
                                                                                     slot,
                                                                                     sn,
-                                                                                    prog_fail_nic_list))
+                                                                                    prog_fail_nic_list,
+                                                                                    args.skip_test))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -486,7 +521,11 @@ def main():
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Skipping SEC_PROG_VERIFY for ORTANO")
             continue
-        for test in ["SEC_PROG_VERIFY"]:
+        test_list = ["SEC_PROG_VERIFY"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SEC_PROG_VERIFY":
@@ -531,7 +570,8 @@ def main():
                                                                                 gold_img_file,
                                                                                 slot,
                                                                                 sn,
-                                                                                prog_fail_nic_list))
+                                                                                prog_fail_nic_list,
+                                                                                args.skip_test))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -565,7 +605,8 @@ def main():
                                                                                 emmc_img_file,
                                                                                 slot,
                                                                                 sn,
-                                                                                prog_fail_nic_list))
+                                                                                prog_fail_nic_list,
+                                                                                args.skip_test))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -602,7 +643,8 @@ def main():
                                                                                 gold_img_file,
                                                                                 slot,
                                                                                 sn,
-                                                                                prog_fail_nic_list))
+                                                                                prog_fail_nic_list,
+                                                                                args.skip_test))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -633,7 +675,11 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        for test in ["GOLD_BOOT"]:
+        test_list = ["GOLD_BOOT"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "GOLD_BOOT":
@@ -652,7 +698,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # power cycle NIC
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    if "GOLD_BOOT" not in args.skip_test:
+        mtp_mgmt_ctrl.mtp_power_cycle_nic()
     
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
@@ -743,6 +790,9 @@ def main():
 
         isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        for skipped_test in args.skip_test:
+            if skipped_test in sw_test_list:
+                sw_test_list.remove(skipped_test)
         for test in sw_test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
