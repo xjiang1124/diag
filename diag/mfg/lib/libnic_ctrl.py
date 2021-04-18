@@ -88,6 +88,9 @@ class nic_ctrl():
         self._nic_status = NIC_Status.NIC_STA_OK
         self.nic_set_asic_type()
 
+    def nic_set_pn(self, new_pn):
+        self._pn = new_pn
+
     def nic_set_err_msg(self, err_msg):
         if not self._err_msg:
             self._err_msg = ""
@@ -158,11 +161,17 @@ class nic_ctrl():
 
         self._nic_handle.sendline(nic_rst_cmd)
         # Here ssh should disconnected automatically
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, self._nic_con_prompt], timeout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_err_msg(self._nic_handle.before)
             return False
+        if idx == 1:
+            print("CPLD refresh needs powercycle")
+            self._nic_handle.sendline("exit")
+            print(self._nic_handle.before)
+            self.nic_set_err_msg(self._nic_handle.before)
+            return True
         else:
             return True
 

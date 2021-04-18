@@ -1996,7 +1996,63 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "assettag Verify Failed, get {:s}, expect {:s}".format(assettag, exp_assettag))
         self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
         return True
+
+    def mtp_reverse_lookup_naples_pn(self, slot):
+        """
+         Get NIC type from PN
+        """
+        naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         
+        if not naples_pn:
+            self.cli_log_slot_err_lock(slot, "Verify NIC:  Retreive PN Failed")
+            return False
+
+        if re.match(PART_NUMBERS_MATCH.N100_PN_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES100
+
+        elif re.match(PART_NUMBERS_MATCH.N100_IBM_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES100IBM
+
+        elif re.match(PART_NUMBERS_MATCH.N100_HPE_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES100HPE
+
+        elif re.match(PART_NUMBERS_MATCH.N25_PN_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES25
+
+        elif re.match(PART_NUMBERS_MATCH.N25_SWM_HPE_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES25SWM
+
+        elif re.match(PART_NUMBERS_MATCH.N25_SWM_DEL_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES25SWMDELL
+
+        elif re.match(PART_NUMBERS_MATCH.N25_SWM_833_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES25SWM833
+
+        elif re.match(PART_NUMBERS_MATCH.N25_OCP_PN_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES25OCP
+
+        elif re.match(PART_NUMBERS_MATCH.FORIO_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.FORIO
+
+        elif re.match(PART_NUMBERS_MATCH.VOMERO_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.VOMERO
+
+        elif re.match(PART_NUMBERS_MATCH.VOMERO2_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.VOMERO2
+
+        elif re.match(PART_NUMBERS_MATCH.ORTANO_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.ORTANO
+
+        elif re.match(PART_NUMBERS_MATCH.ORTANO2_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.ORTANO2
+
+        else:
+            self.cli_log_slot_err_lock(slot, "Unknown NIC Type for PN {:s}".format(naples_pn))
+            return False
+
+        self.mtp_set_nic_type(slot, nic_type)
+        return True
+
     def mtp_verify_naples_pn(self, slot):
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         
@@ -2352,7 +2408,6 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
             return False
-        self.cli_log_slot_inf_lock(slot, "Program NIC QSPI passed")
         return True
         
     def mtp_copy_nic_gold(self, slot, gold_img):
@@ -3048,6 +3103,7 @@ class mtp_ctrl():
 
 
     def mtp_init_nic_type(self):
+        self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to init NIC presence")
@@ -3212,6 +3268,12 @@ class mtp_ctrl():
     def mtp_get_nic_skip_list(self):
         return self._slots_to_skip
 
+    def mtp_get_nic_pn(self, slot):
+        return self._nic_ctrl_list[slot].nic_get_naples_pn()
+
+    def mtp_set_nic_pn(self, slot, pn):
+        self.cli_log_slot_inf(slot, "Set PN to {:s}".format(pn))
+        self._nic_ctrl_list[slot].nic_set_pn(pn)
 
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
@@ -3220,8 +3282,11 @@ class mtp_ctrl():
         """
          Don't use this function for MTP. Instead use mtp_init_nic_type().
          This is only for, for e.g. FST setup, which does not have `inventory` command.
+         and for rework script which changes the type during runtime.
         """
+        self.cli_log_slot_inf(slot, "Set TYPE to {:s}".format(nic_type))
         self._nic_type_list[slot] = nic_type
+        self._nic_ctrl_list[slot].nic_set_type(nic_type)
 
     def mtp_nic_type_valid(self, slot):
         return self._nic_type_list[slot] in self._valid_type_list
