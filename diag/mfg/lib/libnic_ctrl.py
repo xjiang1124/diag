@@ -928,13 +928,11 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
-        print(self.nic_get_cmd_buf())
         match = re.findall(MFG_DIAG_CMDS.MTP_SMB_RE % reg_addr, self.nic_get_cmd_buf())
         if not match:
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
         else:
-            print(match)
             read_data = int(match[0], 16)
             if (read_data & 0x02) == 0:
                 return True

@@ -60,6 +60,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["CPLD_PROG"]
+    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+        testseqlist = ["CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -72,6 +74,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        # extra powercycle to refresh CPLD
+        elif test == "NIC_PWRCYC":
+            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
             continue
@@ -91,6 +97,8 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["SEC_CPLD_PROG"]
+    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+        testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -102,6 +110,10 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
             ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
         elif test == "SEC_CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        # extra powercycle to refresh CPLD
+        elif test == "NIC_PWRCYC":
+            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
             continue
