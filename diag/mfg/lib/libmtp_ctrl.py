@@ -2289,6 +2289,20 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_program_nic_cpld_feature_row(self, slot, cpld_img):
+        nic_type = self.mtp_get_nic_type(slot)
+        if not nic_type == NIC_Type.ORTANO2:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
+            return False
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "No feature row update for Proto NIC")
+            return True
+
+        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "fea"):
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD feature row failed")
+            return False
+
+        return True
 
     def mtp_refresh_nic_cpld(self, slot, dontwait=False):
         if not self._nic_ctrl_list[slot].nic_refresh_cpld(dontwait):

@@ -15,6 +15,7 @@ class NIC_IMAGES:
     fail_cpld_img = dict()
     fail_cpld_ver = dict()
     fail_cpld_dat = dict()
+    fea_cpld_img = dict()
     diagfw_img = dict()
     diagfw_dat = dict()
     goldfw_img = dict()
@@ -164,6 +165,7 @@ class NIC_IMAGES:
     fail_cpld_img["ORTANO2"] = "naples200_ortano2_failsafe_rev3_4_03302021.bin"
     fail_cpld_ver["ORTANO2"] = "0x83"
     fail_cpld_dat["ORTANO2"] = "0x04"
+    fea_cpld_img["ORTANO2"] = "ortano_impl1_fea.bin"
     diagfw_img["ORTANO2"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
     diagfw_dat["ORTANO2"] = "03-06-2021"
     goldfw_img["ORTANO2"] = "elba_goldfw_1.15.6-C-9-2-g6869aee_2021.04.15.tar"
