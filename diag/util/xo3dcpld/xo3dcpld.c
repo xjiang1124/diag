@@ -88,12 +88,15 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 //lsc commands definition
 unsigned char lsc_idcode_cmd[]			= {0xE0, 0x0, 0x0, 0x0};
 unsigned char lsc_enable_cmd[]			= {0x74, 0x8, 0x0, 0x0};
+unsigned char lsc_acc_mode_cmd[]		= {0xC6, 0x8, 0x0, 0x0};
 unsigned char lsc_erase_cmd[]			= {0x0E, 0x4, 0x0, 0x0};
 unsigned char lsc_erase0_cmd[]			= {0x0E, 0x0, 0x1, 0x0};
 unsigned char lsc_erase1_cmd[]			= {0x0E, 0x0, 0x2, 0x0};
+unsigned char lsc_erase_fea_cmd[]		= {0x0E, 0x4, 0x0, 0x0};
 unsigned char lsc_init_cmd[]			= {0x46, 0x0, 0x0, 0x0};
 unsigned char lsc_init0_cmd[]			= {0x46, 0x0, 0x1, 0x0};
 unsigned char lsc_init1_cmd[]			= {0x46, 0x0, 0x2, 0x0};
+unsigned char lsc_init_fea_cmd[]		= {0x46, 0x0, 0x4, 0x0};
 unsigned char lsc_disable_cmd[]			= {0x26, 0x0, 0x0};
 unsigned char lsc_prog_done_cmd[]		= {0x5E, 0x0, 0x0, 0x0};
 unsigned char lsc_cfg_add_cmd[]			= {0x46, 0x0, 0x0, 0x0};
@@ -106,7 +109,6 @@ unsigned char lsc_read_cmd[]			= {0x73, 0x0, 0x0, 0x0,
 //											0x0, 0x0, 0x0, 0x0
 //											};
 
-unsigned char lsc_acc_mode_cmd[]		= {0xC6, 0x8, 0x0};
 unsigned char lsc_refresh_cmd[]			= {0x79, 0x0, 0x0};
 unsigned char lsc_no_op_cmd[]			= {0xFF, 0xFF, 0xFF, 0xFF};
 unsigned char lsc_prog_incr_cmd[]		= {0x70, 0x0, 0x0, 0x0};
@@ -341,6 +343,14 @@ static int flash_enable(uint32_t fd)
     return status;
 }
 
+static int flash_enable_access(uint32_t fd)
+{
+    uint32_t status = 0;
+    status = cpld_write_flash(fd, lsc_acc_mode_cmd, sizeof(lsc_acc_mode_cmd));
+    usleep(1000);
+    return status;
+}
+
 static int flash_disable(uint32_t fd)
 {
     uint32_t status = 0;
@@ -354,10 +364,16 @@ static int flash_disable(uint32_t fd)
 static int flash_init(uint32_t fd, int region)
 {
     uint32_t status = 0;
+
     if ( region == 0 )
         status = cpld_write_flash(fd, lsc_init0_cmd, sizeof(lsc_init_cmd));
-    else
+    else if ( region == 1 )
         status = cpld_write_flash(fd, lsc_init1_cmd, sizeof(lsc_init_cmd));
+    else if ( region == 4 )
+        status = cpld_write_flash(fd, lsc_init_fea_cmd, sizeof(lsc_init_cmd));
+    else
+	printf("Invalid region to init\n");
+
     usleep(1000);
     return status;
 }
@@ -367,8 +383,12 @@ static int flash_erase(uint32_t fd, int region)
     uint32_t status = 0;
     if ( region == 0 )
         status = cpld_write_flash(fd, lsc_erase0_cmd, sizeof(lsc_erase_cmd));
-    else
+    else if ( region == 1 )
         status = cpld_write_flash(fd, lsc_erase1_cmd, sizeof(lsc_erase_cmd));
+    else if ( region == 4 )
+        status = cpld_write_flash(fd, lsc_erase_fea_cmd, sizeof(lsc_erase_cmd));
+    else
+        printf("Invalid region to erase\n");
     sleep(10);
     return status;
 }
@@ -420,28 +440,76 @@ static int flash_read(uint32_t fd, uint8_t *buf, uint32_t size)
     return status;
 }
 
+static int flash_read_fea(uint32_t fd, uint8_t *buf, uint32_t size)
+{
+    struct spi_ioc_transfer msg[2];
+    uint8_t txbuf[4];
+    uint8_t rxbuf[20];
+    int status = 0;
+    uint32_t count = 0;
+
+    txbuf[0] = 0xE7;
+    txbuf[1] = 0x00;
+    txbuf[2] = 0x00;
+    txbuf[3] = 0x00;
+
+    memset(msg, 0, sizeof(msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 4;
+    /* msg[0].speed_hz = 12000000; */
+    msg[0].speed_hz = 5000000;
+    msg[1].rx_buf = (intptr_t)rxbuf;
+    msg[1].len = 20;
+
+    e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
+    memcpy(buf, rxbuf+4, 16);
+
+    txbuf[0] = 0xFB;
+    memset(msg, 0, sizeof(msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 4;
+    /* msg[0].speed_hz = 12000000; */
+    msg[0].speed_hz = 5000000;
+    msg[1].rx_buf = (intptr_t)rxbuf;
+    msg[1].len = 4;
+    e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
+    memcpy(buf+12, rxbuf, 4);
+
+    return status;
+}
+
 static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
 {
     uint32_t status = 0;
+    uint8_t wr_buf[20] = {0x70, 0x0, 0x0, 0x1};
     int row = 0;
 
     if ( region == 0 )
         status = cpld_write_flash(fd, lsc_init0_cmd, sizeof(lsc_init_cmd));
-    else
+    else if ( region == 1 )
         status = cpld_write_flash(fd, lsc_init1_cmd, sizeof(lsc_init_cmd));
+    else if ( region == 4 ) {
+        status = cpld_write_flash(fd, lsc_init_fea_cmd, sizeof(lsc_init_cmd));
+        wr_buf[0] = 0xE4;
+        wr_buf[0] = 0x00;
+        wr_buf[0] = 0x00;
+        wr_buf[0] = 0x00;
+    } else
+        printf("invalid region to program\n");
 
     if ( status ) {
         printf("Failure.  %s returned %d.\n", __FUNCTION__, status);
         return status;
     }
     usleep(1000);
-    uint8_t wr_buf[20] = {0x70, 0x0, 0x0, 0x1};
     do {
         if ( size / FLASH_TRANS_SIZE == 0 ) {
-            memset(wr_buf, 0, sizeof(wr_buf));
-	    wr_buf[0] = 0x70;
-	    wr_buf[3] = 0x01;
-            memcpy(wr_buf + 4, buf, size % FLASH_TRANS_SIZE);
+	    if ( region == 0 || region == 1 ) {
+                memset(wr_buf, 0, sizeof(wr_buf));
+	        wr_buf[0] = 0x70;
+	        wr_buf[3] = 0x01;
+	     }
+             memcpy(wr_buf + 4, buf, size % FLASH_TRANS_SIZE);
         } else {
             memcpy(wr_buf + 4, buf, FLASH_TRANS_SIZE);
         }
@@ -456,6 +524,50 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
         buf = buf + FLASH_TRANS_SIZE;
         size -= FLASH_TRANS_SIZE;
     } while ( size > 0 );
+
+    return status;
+}
+
+static int flash_program_fea(uint32_t fd, uint8_t* buf, uint32_t size, int region)
+{
+    uint32_t status = 0;
+    uint8_t wr_buf[20] = {0xE4, 0x0, 0x0, 0x0};
+    int row = 0;
+    int i;
+
+    status = cpld_write_flash(fd, lsc_init_fea_cmd, sizeof(lsc_init_cmd));
+    if ( status ) {
+        printf("Failure.  %s returned %d.\n", __FUNCTION__, status);
+        return status;
+    }
+    usleep(1000);
+    printf("size = %d\n", size);
+    wr_buf[4] = 0;
+    wr_buf[5] = 0;
+    wr_buf[6] = 0;
+    wr_buf[7] = 0;
+    memcpy(wr_buf + 8, buf, 16);
+    for ( i = 0; i < 16; i++ ) {
+        printf(" %x ", wr_buf[8+i]);
+    }
+    printf("\n");
+    status = cpld_write_flash(fd, wr_buf, 20);
+    if ( status ) {
+        printf("Failure.  %s returned %d.\n", __FUNCTION__, status);
+        return status;
+    }
+    usleep(1000);
+    wr_buf[0]=0xF8;
+    memcpy(wr_buf + 4, buf+12, 4);
+    for ( i = 0; i < 8; i++ )
+        printf(" %x ", wr_buf[i]);
+    printf("\n");
+    status = cpld_write_flash(fd, wr_buf, 8);
+    if ( status ) {
+        printf("Failure.  %s returned %d.\n", __FUNCTION__, status);
+        return status;
+    }
+    usleep(1000);
 
     return status;
 }
@@ -807,7 +919,8 @@ main(int argc, char *argv[])
 
         cfgRegion = get_region_index_from_name(argv[3]);
 	cpldSize = cpld_region_list[cfgRegion].size;
-	if ( cfgRegion > 1 || cfgRegion < 0 ) {
+	if ( cfgRegion == 4 ) {
+        } else if ( cfgRegion > 1 || cfgRegion < 0 ) {
             printf("Region function has not been implemented yet\n");
 	    return -1;
 	}
@@ -842,7 +955,13 @@ main(int argc, char *argv[])
     	flash_enable(fd);
     	flash_init(fd, cfgRegion);
     	flash_erase(fd, cfgRegion);
-    	flash_program(fd, data, numBytes, cfgRegion);
+	if ( cfgRegion == 4 ) {
+	    for ( i = 0; i < 16; i++ ) 
+	        printf(" %x ", data[i]);
+	    printf("\n");
+    	    flash_program_fea(fd, data, numBytes, cfgRegion);
+	} else
+    	    flash_program(fd, data, numBytes, cfgRegion);
         flash_program_done(fd);
 	sleep(1);
         flash_disable(fd);
@@ -871,7 +990,8 @@ main(int argc, char *argv[])
         }
 
         cfgRegion = get_region_index_from_name(argv[3]);
-	if ( cfgRegion > 1 ) {
+	if ( cfgRegion == 4 ) {
+        } else if ( cfgRegion > 1 ) {
             printf("Invalid Region\n");
 	    return -1;
 	}
@@ -882,9 +1002,14 @@ main(int argc, char *argv[])
     	flash_init(fd, cfgRegion);
     	memset(buf, 0, 200656);
 	cpld_data = buf;
-    	flash_read(fd, cpld_data, 200656);
+	if ( cfgRegion == 4 ) {
+    	    flash_read_fea(fd, cpld_data, 16);
+    	    fwrite(buf, 16, 1, fptr);
+	} else {
+    	    flash_read(fd, cpld_data, 200656);
+    	    fwrite(buf, 200656, 1, fptr);
+	}
     	flash_disable(fd);
-    	fwrite(buf, 200656, 1, fptr);
 	free(buf);
         close(fd);
         fclose(fptr);
