@@ -2290,8 +2290,8 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_refresh_nic_cpld(self, slot):
-        if not self._nic_ctrl_list[slot].nic_refresh_cpld():
+    def mtp_refresh_nic_cpld(self, slot, dontwait=False):
+        if not self._nic_ctrl_list[slot].nic_refresh_cpld(dontwait):
             self.cli_log_slot_err_lock(slot, "Refresh NIC CPLD failed")
             return False
 

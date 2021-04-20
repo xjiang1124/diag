@@ -142,7 +142,7 @@ class nic_ctrl():
         return info_buf
 
 
-    def nic_exec_rst_cmd(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+    def nic_exec_rst_cmd(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY, dontwait=False):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
@@ -160,17 +160,16 @@ class nic_ctrl():
                 break
 
         self._nic_handle.sendline(nic_rst_cmd)
-        # Here ssh should disconnected automatically
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, self._nic_con_prompt], timeout)
+        # Here ssh should disconnected automatically, unless dontwait=True..in which case kill console ourselves and powercycle.
+        nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
+        idx = libmfg_utils.mfg_expect(self._nic_handle, nic_exp_prompts, timeout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_err_msg(self._nic_handle.before)
             return False
-        if idx == 1:
+        if idx == 1 and dontwait:
             print("CPLD refresh needs powercycle")
             self._nic_handle.sendline("exit")
-            print(self._nic_handle.before)
-            self.nic_set_err_msg(self._nic_handle.before)
             return True
         else:
             return True
@@ -909,13 +908,13 @@ class nic_ctrl():
         return True
 
 
-    def nic_refresh_cpld(self):
+    def nic_refresh_cpld(self, dontwait=False):
         # Capri-based:
         nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         # Elba-based:
         if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
             nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY, dontwait=dontwait):
             return False
 
         return True
