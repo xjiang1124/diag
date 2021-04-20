@@ -94,8 +94,8 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES100HPE"] = "07-22"
     diagfw_img["NAPLES100HPE"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
     diagfw_dat["NAPLES100HPE"] = "03-03-2021"
-    goldfw_img["NAPLES100HPE"] = "naples_goldfw_1.3.1-E-42_1119.tar"
-    goldfw_dat["NAPLES100HPE"] = "11-18-2020"
+    goldfw_img["NAPLES100HPE"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
+    goldfw_dat["NAPLES100HPE"] = "01-31-2021"
 
     cpld_img["NAPLES100IBM"] = "naples100_ibm_rev3_09082020.bin"
     cpld_ver["NAPLES100IBM"] = "0x3"
