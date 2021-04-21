@@ -2340,6 +2340,47 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_verify_nic_cpld_fea(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if not nic_type == NIC_Type.ORTANO2:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
+            return False
+
+        cmd = "hexdump -C /home/diag/"+NIC_IMAGES.fea_cpld_img[nic_type]
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        fea_hex_mtp = self.mtp_get_cmd_buf()
+        print(fea_hex_mtp)
+
+        if not self._nic_ctrl_list[slot].nic_dump_cpld("fea"):
+            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_err_msg(err_msg)
+            return False
+        
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd("cat cplddump"):
+            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_err_msg(err_msg)
+            return False
+
+        fea_hex_nic = self._nic_ctrl_list[slot].nic_get_cmd_buf()
+        print(fea_hex_nic)
+
+        return True
+
+    def mtp_check_nic_cpld_partition(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if not nic_type == NIC_Type.ORTANO2:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no cpld partition for {:s}".format(nic_type))
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_check_cpld_partition():
+            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_err_msg(err_msg)
+            return False
+
+        return True
+
     def mtp_program_nic_efuse(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type != NIC_Type.ORTANO2:

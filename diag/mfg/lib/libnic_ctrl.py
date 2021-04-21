@@ -161,7 +161,10 @@ class nic_ctrl():
 
         self._nic_handle.sendline(nic_rst_cmd)
         # Here ssh should disconnected automatically, unless dontwait=True..in which case kill console ourselves and powercycle.
-        nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
+        if not dontwait:
+            nic_exp_prompts = [self._nic_prompt]
+        else:
+            nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
         idx = libmfg_utils.mfg_expect(self._nic_handle, nic_exp_prompts, timeout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
@@ -918,6 +921,27 @@ class nic_ctrl():
             return False
 
         return True
+
+    def nic_check_cpld_partition(self):
+        reg_addr = 1
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+        print(self.nic_get_cmd_buf())
+        match = re.findall(MFG_DIAG_CMDS.MTP_SMB_RE % reg_addr, self.nic_get_cmd_buf())
+        if not match:
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+        else:
+            print(match)
+            read_data = int(match[0], 16)
+            if (read_data & 0x02) == 0:
+                return True
+            else:
+                self.nic_set_err_msg("Incorrect CPLD boot partition")
+                return False
+
     def nic_setting_partition(self):
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_SETTING_PARTITION_FMT
@@ -960,6 +984,15 @@ class nic_ctrl():
 
         return True
 
+    def nic_dump_cpld(self, partition):
+        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, "cplddump", partition)
+        nic_cmd_list = list()
+        nic_cmd_list.append(cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+
+        return True
 
     def nic_program_sec_key_dump(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)

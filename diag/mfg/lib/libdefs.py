@@ -305,6 +305,7 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_WRITE_ELBA_FMT = "{:s}xo3cpld -w 0x{:x} 0x{:x}"
     NIC_CPLD_ERASE_ELBA_FMT = "{:s}xo3dcpld -erase {:s}"
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
+    NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
     NIC_SETTING_PARTITION_FMT = "mmc enh_area set -y 0 30998528 /dev/mmcblk0"
     NIC_DIAG_ASIC_VERSION_FMT = "head /data/nic_arm/{:s}/asic_version.txt"
     # onboard diag utils version
@@ -392,6 +393,7 @@ class MFG_DIAG_CMDS:
     MTP_SMB_CMD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_RD_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_WR_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
+    MTP_SMB_RE = r"addr 0x%x; data=(0x[0-9a-fA-F]+)"
     MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
 
     NIC_POWER_CHECK_FMT = "inventory -ps -slot={:d}"

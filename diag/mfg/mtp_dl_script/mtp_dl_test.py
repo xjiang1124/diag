@@ -188,6 +188,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        # check boot partition
+        elif test == "BOOT_CHECK":
+            ret = mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot)
         # extra powercycle to refresh CPLD
         elif test == "NIC_PWRCYC":
             ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
@@ -553,6 +556,8 @@ def main():
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if card_type == NIC_Type.ORTANO:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
+        if card_type == NIC_Type.ORTANO2:
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         for skip_test in args.skip_test:
             if skip_test in testlists:
                 testlists.remove(skip_test)
@@ -588,6 +593,9 @@ def main():
             # verify CPLD
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+            # verify Feature Row
+            elif test == "FEA_VERIFY":
+                ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld_fea(slot)
             # verify QSPI
             elif test == "QSPI_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)

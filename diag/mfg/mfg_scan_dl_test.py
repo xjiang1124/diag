@@ -107,6 +107,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
+        # program feature row
+        elif test == "FEA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, "/home/diag/"+NIC_IMAGES.fea_cpld_img["ORTANO2"]) # just for temporary lab use
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
@@ -642,6 +645,9 @@ def main():
             # verify cpld
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+            # verify Feature Row
+            elif test == "FEA_VERIFY":
+                ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld_fea(slot)
             # verify qspi
             elif test == "QSPI_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
