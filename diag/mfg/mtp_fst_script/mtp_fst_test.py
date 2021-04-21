@@ -592,8 +592,8 @@ def main():
     if "ORTANO" not in card_type:
         for _slot, _sn, _nic_type in fail_match:
             slot = int(_slot)-1
-            mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type)
-            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, _sn)
+            mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type.strip())
+            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, _sn.strip())
             if slot in pass_nic_list:
                 pass_nic_list.remove(slot)
             if slot not in fail_nic_list:
@@ -601,12 +601,13 @@ def main():
 
         for _slot, _sn, _nic_type in pass_match:
             slot = int(_slot)-1
-            mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type)
-            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, _sn)
+            mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type.strip())
+            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, _sn.strip())
             if slot in fail_nic_list:
                 continue
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
+
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)

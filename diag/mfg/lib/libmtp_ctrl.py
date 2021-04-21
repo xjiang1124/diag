@@ -3286,7 +3286,8 @@ class mtp_ctrl():
         """
         self.cli_log_slot_inf(slot, "Set TYPE to {:s}".format(nic_type))
         self._nic_type_list[slot] = nic_type
-        self._nic_ctrl_list[slot].nic_set_type(nic_type)
+        if self._nic_ctrl_list[slot]:
+            self._nic_ctrl_list[slot].nic_set_type(nic_type)
 
     def mtp_nic_type_valid(self, slot):
         return self._nic_type_list[slot] in self._valid_type_list
