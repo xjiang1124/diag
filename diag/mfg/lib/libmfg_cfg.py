@@ -34,7 +34,7 @@ class NIC_IMAGES:
 
     cpld_img["NAPLES25SWM"] = "naples25_swm_revC_01212021.bin"
     cpld_ver["NAPLES25SWM"] = "0xC"
-    cpld_dat["NAPLES25SWM"] = "01-21"
+    cpld_dat["NAPLES25SWM"] = "01-06"
     sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin"
     sec_cpld_ver["NAPLES25SWM"] = "0x8C"
     sec_cpld_dat["NAPLES25SWM"] = "01-06"
