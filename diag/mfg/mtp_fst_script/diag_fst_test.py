@@ -51,8 +51,6 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES25SWM"
     elif "68-0013-01" in pn:
         product_name = "NAPLES25SWM"
-    elif "68-0014-01" in pn:
-        product_name = "NAPLES25SWM"
     elif "P37689-001" in pn:
         product_name = "NAPLES25OCP"
     elif "P41857-001" in pn:
@@ -68,7 +66,7 @@ def get_product_name_from_pn(pn):
     elif "68-0015-02" in pn:
         product_name = "ORTANO2"
     elif "DSC1-2S25-4H8P-DS" in pn:
-        product_name = "SSH_DETECT"
+        product_name = "NAPLES25SWMDELL"
     else:
         product_name = "UNKNOWN"
         print("Unknow PN:", pn)
@@ -245,8 +243,8 @@ def fst_general(fst):
             if product_name == "SSH_DETECT":
                 print("SSH_DETECT")
                 try:
-                    x = subprocess.check_output("/home/diag/penctl.linux.0915 -a /home/diag/penctl.token system enable-sshd", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
-                    y = subprocess.check_output("/home/diag/penctl.linux.0915 -a /home/diag/penctl.token update ssh-pub-key -f ~/.ssh/id_rsa.pub", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                    x = subprocess.check_output("/home/diag/penctl.linux.02012021 -a /home/diag/penctl.token system enable-sshd", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
+                    y = subprocess.check_output("/home/diag/penctl.linux.02012021 -a /home/diag/penctl.token update ssh-pub-key -f ~/.ssh/id_rsa.pub", env=naples_env, shell=True, stderr=subprocess.DEVNULL)
                     cmd = "cat /tmp/fru.json"
                     ssh_cmd = get_ssh_cmd(nic_ip, cmd)
                     print(ssh_cmd)
