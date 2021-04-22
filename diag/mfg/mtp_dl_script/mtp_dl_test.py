@@ -22,6 +22,7 @@ from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import PART_NUMBERS_MATCH
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -107,6 +108,10 @@ def hpe_rework_verify(mtp_mgmt_ctrl, slot):
         if not arm_fru:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
             return False
+        cloud_arm_match = re.findall(PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT, arm_fru)
+        if cloud_arm_match:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip rework verification for cloud card")
+            return True
         arm_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", arm_fru)
         if arm_match:
             if arm_match[0] == "0B":
@@ -121,6 +126,10 @@ def hpe_rework_verify(mtp_mgmt_ctrl, slot):
 
         mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(slot+1))
         smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
+        cloud_smb_match = re.findall(PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT, smb_fru)
+        if cloud_smb_match:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip rework verification for cloud card")
+            return True
         smb_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", smb_fru)
         if smb_match:
             if smb_match[0] == "0B":
