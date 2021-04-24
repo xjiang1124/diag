@@ -77,6 +77,7 @@ class nic_test:
             if ret == 0:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/sw/sw_init.sh", 30)
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
                 if cpldID[0] == "0x43" or cpldID[0] == "0x44":
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x0")

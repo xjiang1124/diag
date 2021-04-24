@@ -82,6 +82,7 @@ then
     echo "Preparing NIC utilities"
 
     mkdir -p $NIC_UTIL_DIR
+    mkdir -p $NIC_UTIL_DIR/sw/
 
     cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/cpld      $NIC_UTIL_DIR
     cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/xo3dcpld  $NIC_UTIL_DIR
@@ -97,13 +98,13 @@ then
     cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh              $NIC_UTIL_DIR
     cp $TEMP_DIR/scripts/version.txt                    $NIC_UTIL_DIR
 
+    cp $TOP_DIR/diag/scripts/sw/*                       $NIC_UTIL_DIR/sw/
+
     cd $NIC_UTIL_DIR
     tar czf $IMG_DIR/nic_util.tar -C $BUILD_DIR/temp/$arch/ nic_util/
 
     echo "NIC Utilities Done"
 fi
-
-
 
 # Prepare ASIC files
 echo "--------------------"
