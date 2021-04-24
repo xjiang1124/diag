@@ -705,7 +705,7 @@ class nic_ctrl():
 
         if self.nic_2nd_fru_exist(pn):
             if self._vendor == NIC_Vendor.HPE:
-                #Program Non HPE
+                #Program HPE
                 if nic_type == NIC_Type.NAPLES25OCP:
                     cmd = MFG_DIAG_CMDS.MTP_HP_OCP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
@@ -731,6 +731,12 @@ class nic_ctrl():
                         return False
             else:
                 #Program Non HPE
+
+                if nic_type == NIC_Type.ORTANO2:
+                    cmd = MFG_DIAG_CMDS.MTP_ORTANO_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
+                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
+                        return False
+
                 cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                 if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                     #print("****MTP FRU PROG 4th****")
@@ -767,7 +773,10 @@ class nic_ctrl():
           
         else:
             #In NIC Program Non HPE
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
+            if nic_type == NIC_Type.ORTANO2:
+                nic_cmd = MFG_DIAG_CMDS.NIC_ORTANO_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
+            else:
+                nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
             nic_cmd_list.append(nic_cmd)
   
             

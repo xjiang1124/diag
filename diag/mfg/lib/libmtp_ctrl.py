@@ -2192,6 +2192,10 @@ class mtp_ctrl():
             if software_pn != "90-0009-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
+        elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
+            if software_pn != "90-polaris":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return False             
@@ -2208,10 +2212,10 @@ class mtp_ctrl():
         90-0004-0001   //IBM  naples_fw_apulu_1.17.0-42_1117.tar
         90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
         90-0006-0001   //CLOUD-A  naples_fw_apulu_1.10.3-C-26_CloudA_0806.tar
-        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.17.0-12_1109.tar
+        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.16.2-C-10_2021.04.08.tar
         90-0007-0001   //naples_fw_iris_1.14.4-E-12_20210408.tar. Updated 04/12/2021
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
-        90-0009-0001   //Ortano2 dsc_fw_iris_elba_1.15.6-C-6_2021.04.06.tar
+        90-0009-0001   //Ortano2 dsc_fw_athena_elba_1.15.6-C-9_2021.04.13.tar
         '''
         return True
 

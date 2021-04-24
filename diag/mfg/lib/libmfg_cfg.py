@@ -168,8 +168,8 @@ class NIC_IMAGES:
     fea_cpld_img["ORTANO2"] = "ortano_impl1_fea.bin"
     diagfw_img["ORTANO2"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
     diagfw_dat["ORTANO2"] = "03-06-2021"
-    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.6-C-9-2-g6869aee_2021.04.15.tar"
-    goldfw_dat["ORTANO2"] = "04-15-2021"
+    goldfw_img["ORTANO2"] = "dsc_goldfw_elba_1.24-C_2021.04.22.tar"
+    goldfw_dat["ORTANO2"] = "04-22-2021"
 
 # MFG release version control
 class NIC_CPLD_Version:
@@ -324,14 +324,15 @@ class PART_NUMBERS_MATCH:
     VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"             #68-0009-01 01    VOMERO
     VOMERO_FMT_ALL = r"{:s}".format(VOMERO_PN_FMT)
 
-    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [A-Z0-9]{2}"            #68-0011-01 01    VOMERO2
+    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [A-Z0-9]{2}"         #68-0011-01 01    VOMERO2
     VOMERO2_FMT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
 
     ORTANO_PN_FMT = r"68-0015-01 [A-Z0-9]{2}"                 #68-0015-01 01    ORTANO
     ORTANO_FMT_ALL = r"{:s}".format(ORTANO_PN_FMT)
 
-    ORTANO2_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"         #68-0015-02 01    ORTANO2
-    ORTANO2_FMT_ALL = r"{:s}".format(ORTANO2_PN_FMT)
+    ORTANO2_ORC_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"    #68-0015-02 01    ORTANO2 ORACLE
+    ORTANO2_PEN_PN_FMT = r"68-0021-0[2-9]{1} [A-Z0-9]{2}"     #68-0021-02 01    ORTANO2 GENERIC (PENSANDO)
+    ORTANO2_FMT_ALL = r"{:s}|{:s}".format(ORTANO2_ORC_PN_FMT,ORTANO2_PEN_PN_FMT)
 
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
