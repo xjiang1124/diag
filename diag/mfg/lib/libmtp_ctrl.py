@@ -2173,7 +2173,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0007-0001":
+            if software_pn != "90-0010-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
@@ -2216,6 +2216,7 @@ class mtp_ctrl():
         90-0007-0001   //naples_fw_iris_1.14.4-E-12_20210408.tar. Updated 04/12/2021
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
         90-0009-0001   //Ortano2 dsc_fw_athena_elba_1.15.6-C-9_2021.04.13.tar
+        90-0010-0001   //1.14.5 (OCP). Updated 04/26/2021
         '''
         return True
 
