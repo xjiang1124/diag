@@ -3721,8 +3721,21 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25SWM833:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:  
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+            """
+             Separate freq by PN:
+             - For 68-0015 (Oracle) use 1033
+             - For 68-0021 (Pensando) use 1100
+            """
+            slot_pn = self.mtp_get_nic_pn(slot)
+            if not slot_pn:
+                self.cli_log_slot_err_lock(slot, "Unknown PN for Ortano")
+                return False
+            oracle_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_ORC_PN_FMT, slot_pn)
+            if oracle_pn:
+                vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+            else:
+                vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
