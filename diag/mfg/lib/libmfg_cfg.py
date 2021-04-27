@@ -87,16 +87,22 @@ class NIC_IMAGES:
     goldfw_img["NAPLES100"] = "naples_goldfw_09182019.tar"
     goldfw_dat["NAPLES100"] = "09-17-2019"
 
+    # Enterprise release
     cpld_img["NAPLES100HPE"] = "naples100_hpe_rev2_01052021.bin"
     cpld_ver["NAPLES100HPE"] = "0x2"
     cpld_dat["NAPLES100HPE"] = "01-05"
     sec_cpld_img["NAPLES100HPE"] = "naples100_hpe_rev82_01052021.bin"
     sec_cpld_ver["NAPLES100HPE"] = "0x82"
     sec_cpld_dat["NAPLES100HPE"] = "01-05"
-    diagfw_img["NAPLES100HPE"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["NAPLES100HPE"] = "03-03-2021"
-    goldfw_img["NAPLES100HPE"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    goldfw_dat["NAPLES100HPE"] = "01-31-2021"
+    diagfw_img["NAPLES100HPE"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["NAPLES100HPE"] = "11-18-2020"
+    goldfw_img["NAPLES100HPE"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    goldfw_dat["NAPLES100HPE"] = "11-18-2020"
+    # Cloud release
+    # diagfw_img["NAPLES100HPE"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    # diagfw_dat["NAPLES100HPE"] = "03-03-2021"
+    # goldfw_img["NAPLES100HPE"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
+    # goldfw_dat["NAPLES100HPE"] = "01-31-2021"
 
     cpld_img["NAPLES100IBM"] = "naples100_ibm_rev3_09082020.bin"
     cpld_ver["NAPLES100IBM"] = "0x3"
