@@ -3,7 +3,8 @@
 if [ "$1" == "remove-config" ]; then
     dir_list="/sysconfig/config0/ /sysconfig/config1/ /update/ /data/"
 elif [ "$1" == "factory-default" ]; then
-    dir_list="/sysconfig/config0/ /sysconfig/config1/ /update/ /data/ /obfl/"
+    #dir_list="/sysconfig/config0/ /sysconfig/config1/ /update/ /data/ /obfl/"
+    dir_list="/update/ /data/ /obfl/"
 else
     echo "Invalid arg"
     echo "usage: clear_nic_config.sh"
