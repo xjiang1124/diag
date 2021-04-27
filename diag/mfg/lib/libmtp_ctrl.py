@@ -2351,27 +2351,34 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
             return False
 
+        fea_regex = r"00000000  (.*)  \|.*\|" #first 16 bytes
+
         cmd = "hexdump -C /home/diag/"+NIC_IMAGES.fea_cpld_img[nic_type]
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
-        fea_hex_mtp = self.mtp_get_cmd_buf()
-        print(fea_hex_mtp)
+        fea_mtp_hex = self.mtp_get_cmd_buf()
+        fea_mtp_match = re.search(fea_regex, fea_mtp_hex)
 
         if not self._nic_ctrl_list[slot].nic_dump_cpld("fea"):
             err_msg = self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_err_msg(err_msg)
             return False
         
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd("cat cplddump"):
+        fea_nic_hex = self._nic_ctrl_list[slot].nic_get_info("hexdump -C /home/diag/cplddump")
+        if not fea_nic_hex:
             err_msg = self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_err_msg(err_msg)
             return False
+        fea_nic_match = re.search(fea_regex,fea_nic_hex)
 
-        fea_hex_nic = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        print(fea_hex_nic)
-
-        return True
+        if fea_mtp_match and fea_nic_match:
+            if fea_mtp_match.group(1) == fea_nic_match.group(1):
+                return True
+            self.cli_log_slot_err_lock(slot, "Feature row programmed incorrectly. Dump doesn't match original file.")
+            return False
+        self.cli_log_slot_err_lock(slot, "Unable to dump feature row.")
+        return False
 
     def mtp_check_nic_cpld_partition(self, slot):
         nic_type = self.mtp_get_nic_type(slot)

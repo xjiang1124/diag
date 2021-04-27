@@ -157,6 +157,7 @@ class NIC_IMAGES:
     fail_cpld_img["ORTANO"] = "naples200_Ortano_failsafe_rev3_2_03112021.bin"
     fail_cpld_ver["ORTANO"] = "0x83"
     fail_cpld_dat["ORTANO"] = "0x02"
+    fea_cpld_img["ORTANO"] = ""
     diagfw_img["ORTANO"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
     diagfw_dat["ORTANO"] = "03-06-2021"
     goldfw_img["ORTANO"] = "elba_goldfw_1.15.6-C-9-2-g6869aee_2021.04.15.tar"

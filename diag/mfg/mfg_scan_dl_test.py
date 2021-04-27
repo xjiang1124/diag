@@ -394,6 +394,11 @@ def main():
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                     continue
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
+                    continue
 
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
@@ -627,8 +632,8 @@ def main():
             exp_alom_pn = alom_pn
             exp_assettag = 'C0'
 
-        # power cycle all nic (Debug Power Failure Issue)   #NZ: but why inside for loop -> cycling 10 times?
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        # # power cycle all nic (Debug Power Failure Issue)   #NZ: but why inside for loop -> cycling 10 times?
+        # mtp_mgmt_ctrl.mtp_power_cycle_nic()
     
         # nic power status check
         testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
@@ -639,6 +644,8 @@ def main():
                 testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
         if card_type == NIC_Type.ORTANO:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
+        if card_type == NIC_Type.ORTANO2:
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         for skipped_test in args.skip_test:
             if skipped_test in testlists:
                 testlists.remove(skipped_test)
@@ -689,6 +696,8 @@ def main():
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
+
+        mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
                     
 
 

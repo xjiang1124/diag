@@ -992,7 +992,7 @@ class nic_ctrl():
         return True
 
     def nic_dump_cpld(self, partition):
-        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, "cplddump", partition)
+        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, "/home/diag/cplddump", partition)
         nic_cmd_list = list()
         nic_cmd_list.append(cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
