@@ -216,6 +216,54 @@ class nic_con:
             print "=== Failed to enter uboot ==="
         return ret
 
+    def enter_uboot_by_sysreset(self, session, slot=0, rate=115200, timeout=30):
+        expstr = ["Capri# ", "DSC# "]
+        ret = -1
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        session.timeout = timeout
+        cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
+        common.session_cmd(session, cmd) 
+        time.sleep(1)
+        for retry in range(3):
+            cmd = "turn_on_slot.sh off {}".format(slot)
+            common.session_cmd(session, cmd) 
+            cmd = "turn_on_slot.sh on {}".format(slot)
+            common.session_cmd(session, cmd) 
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
+            common.session_cmd(session, cmd)
+            print "turn on slot, wait for 30 seconds\n"
+            sys.stdout.flush()
+            time.sleep(30)
+
+            uartsession = common.session_start()
+            uartsession.timeout = timeout
+            self.uart_session_start(uartsession, rate)
+            cmd = "sysreset.sh\r"
+            uartsession.sendline(cmd)
+            time.sleep(1)
+            print "Trying break into uboot {}".format(retry)
+            for i in range(60):
+                uartsession.timeout = 0.5
+                try:
+                    print "C+C", i
+                    uartsession.send(chr(3))
+                    uartsession.expect(expstr)
+                    ret = 0
+                    break
+                except pexpect.TIMEOUT:
+                    print "timeout:", i
+                    ret = -1
+            self.uart_session_stop(uartsession)
+            if ret == 0:
+                break
+
+        if ret == -1:
+            print "=== Failed to enter uboot ==="
+        return ret
+
     def enter_uboot_esec(self, session, slot=0, rate=115200, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
@@ -636,6 +684,29 @@ class nic_con:
             return ret
 
         self.uart_session_cmd(session, "setenv pcie_poll_disable", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
+    def setup_uboot_env(self, slot):
+        expstr = ["Capri# ", "DSC# "]
+        ret = 0
+        session = common.session_start()
+        ret = self.enter_uboot_by_sysreset(session, slot)
+        if ret != 0:
+            print "Failed to enter uboot"
+            return ret
+        ret = self.conn_uboot(session)
+        if ret != 0:
+            print "Failed to connect uboot"
+            return ret
+
+        self.uart_session_cmd(session, "setenv mem_dp_tot_size 26G", 30, expstr)
+        self.uart_session_cmd(session, "setenv mem_bypass_size 0", 30, expstr)
+        self.uart_session_cmd(session, "setenv mem_dp_tot_size 26G", 30, expstr)
+        self.uart_session_cmd(session, "setenv bootargs isolcpus=2,3,6,7,10,11,14,15 nohz_full=2,3,5,7,10,11,14,15 rcu_nocbs=2,3,6,7,10,11,14,15 rcu_nocb_poll irqaffinity=0-1 console=ttyS0,115200n8", 30, expstr)
         self.uart_session_cmd(session, "saveenv", 30, expstr)
         self.uart_session_cmd(session, "saveenv", 30, expstr)
         self.uart_session_stop(session)

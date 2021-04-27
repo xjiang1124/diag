@@ -615,6 +615,20 @@ class nic_test:
             if ret != 0:
                 print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
 
+    def setup_uboot_env(self, nic_list=[]):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        slot_list = ",".join(nic_list)
+        print "slot_list:", slot_list
+
+        for slot in nic_list:
+            ret = self.nic_con.setup_uboot_env(int(slot))
+
+            if ret != 0:
+                print "=== Failed to setup uboot env at slot {} ===".format(slot)
+
     def nic_test1(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0):
         print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
@@ -1061,6 +1075,10 @@ if __name__ == "__main__":
                        "--dis_uboot_pcie", 
                        help="Disable uboot PCIe for mutiple cards", 
                        action='store_true')
+    group.add_argument("-setup_uboot_env", 
+                       "--setup_uboot_env", 
+                       help="Setup uboot evn variable for mutiple cards", 
+                       action='store_true')
     group.add_argument("-test_t", "--test_timeout", help="Test timeout", action='store_true')
     group.add_argument("-skew", "--skew", help="Run nic skew test on multile nics", action='store_true')
     group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
@@ -1143,6 +1161,12 @@ if __name__ == "__main__":
         else:
             ena_dis = False
         test.ena_dis_uboot_pcie(slot_list, ena_dis)
+        sys.exit()
+
+    if args.setup_uboot_env == True:
+        slot_list = args.slot_list.split(',')
+
+        test.setup_uboot_env(slot_list)
         sys.exit()
 
     if args.test_timeout == True:
