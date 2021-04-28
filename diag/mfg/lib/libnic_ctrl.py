@@ -877,6 +877,8 @@ class nic_ctrl():
             self.nic_set_err_msg(self._nic_handle.before)
             return False
 
+        self._nic_handle.sendline("sync")
+
         return True
 
     def nic_sw_profile(self, profile):
@@ -1192,6 +1194,7 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE
         nic_cmd_list.append(nic_cmd)
+        nic_cmd_list.append("sync")
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
