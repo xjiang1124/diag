@@ -1350,20 +1350,20 @@ def main():
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-        if not stop_on_err and pass_nic_list:
-            # Re-init EMMC for Elba cards after L1's destructive emmc test
-            nic_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-            mtp_mgmt_ctrl.mtp_power_off_nic()
-            mtp_mgmt_ctrl.mtp_power_on_nic()
-            mtp_mgmt_ctrl.mtp_nic_emmc_reformat(nic_rslt_list=nic_rslt_list, nic_list=pass_nic_list)
-
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                if not nic_rslt_list[slot]:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
+#       if not stop_on_err and pass_nic_list:
+#           # Re-init EMMC for Elba cards after L1's destructive emmc test
+#           nic_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+#           mtp_mgmt_ctrl.mtp_power_off_nic()
+#           mtp_mgmt_ctrl.mtp_power_on_nic()
+#           mtp_mgmt_ctrl.mtp_nic_emmc_reformat(nic_rslt_list=nic_rslt_list, nic_list=pass_nic_list)
+#
+#           for slot in range(MTP_Const.MTP_SLOT_NUM):
+#               if not nic_rslt_list[slot]:
+#                   mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
+#                   if slot not in fail_nic_list:
+#                       fail_nic_list.append(slot)
+#                   if slot in pass_nic_list:
+#                       pass_nic_list.remove(slot)
 
     # Enable PCIe poll
     #ADD - Bypass shutting down slot right now for debug
