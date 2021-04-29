@@ -38,7 +38,7 @@ MTP-002:
     PASSWORD: "lab123"
     ALIAS: "mtp002"
     SLOTS: 10
-    SKIP_SLOTS: 1-7
+    #SKIP_SLOTS: 1-7
     CAPABILITY: 0x3
 
 
@@ -99,7 +99,7 @@ MTP-005:
     APC2_PORT: "8"
     APC2_USERID: "apc"
     APC2_PASSWORD: "N0isystem$"
-    IP: "192.168.70.58"
+    IP: "192.168.68.197"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp005"
