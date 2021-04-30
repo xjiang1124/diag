@@ -515,6 +515,82 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
+    def nic_set_elba_uboot_env(self, slot):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+            return False
+        nic_test_uboot_env = MFG_DIAG_CMDS.MTP_PARA_UBOOT_ENV_FMT.format(str(slot+1))
+        if not self.mtp_exec_cmd(nic_test_uboot_env):
+            self.nic_set_err_msg("nic_test.py -setup_uboot_env failed")
+            return False
+        return True
+
+    def nic_sw_mode_switch(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        mode_switch_cmd_list = [MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
+                                MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
+                                "sync"]
+        for nic_cmd in mode_switch_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            if idx < 0:
+                self.nic_set_err_msg(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        self._nic_handle.sendline("sysreset.sh")
+        time.sleep(MTP_Const.NIC_SYSRESET_DELAY)
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+        self.nic_console_detach()
+        return True
+
+    def nic_sw_mode_switch_verify(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
+        cmd_buf = self._nic_handle.before
+        dev_profile_match = re.findall(MFG_DIAG_SIG.NIC_SW_DEVICE_CHK_SIG1, cmd_buf)
+        if dev_profile_match:
+            pass
+        else:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
+        mode_match = re.findall(MFG_DIAG_SIG.NIC_SW_DEVICE_CHK_SIG2, cmd_buf)
+        if mode_match:
+            pass
+        else:
+            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
+        self.nic_console_detach()
+        return True
+
 
     def nic_boot_info_init(self):
         # get boot image info
@@ -1802,7 +1878,7 @@ class nic_ctrl():
             
 
             if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
-                err_msg = " ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU \n"
+                err_msg = " ERR: FRU MISMATCH BETWEEN ASIC FRU AND SMB FRU \n"
                 err_msg += " SN  " + self._sn + " " + sn + "\n"
                 err_msg += " MAC " + self._mac + " " + mac + "\n"
                 err_msg += " PN  " + self._pn + " " + pn + "\n"

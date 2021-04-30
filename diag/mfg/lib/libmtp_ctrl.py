@@ -1751,6 +1751,19 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC default boot from {:s}({:s})".format(boot_image, kernel_timestamp))
         return True
 
+    def mtp_nic_sw_mode_switch(self, slot):
+        if not self._nic_ctrl_list[slot].nic_sw_mode_switch():
+            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_err_msg(err_msg)
+            return False
+        return True
+
+    def mtp_nic_sw_mode_switch_verify(self, slot):
+        if not self._nic_ctrl_list[slot].nic_sw_mode_switch_verify():
+            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_err_msg(err_msg)
+            return False
+        return True
 
     def mtp_nic_sw_profile(self, slot, profile):
         return self._nic_ctrl_list[slot].nic_sw_profile(profile)
@@ -2104,7 +2117,7 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0009-0001")):
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0009-0001") or (software_pn == "90-0011-0001")):
             return True
         return False
             
@@ -2193,7 +2206,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
-            if software_pn != "90-polaris":
+            if software_pn != "90-0011-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -3415,6 +3428,11 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_set_elba_uboot_env(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_elba_uboot_env(slot):
+            self.cli_log_slot_err(slot, "Setup uboot env variables failed")
+            return False
+        return True
 
     def mtp_check_nic_status(self, slot):
         return self._nic_ctrl_list[slot].nic_check_status()

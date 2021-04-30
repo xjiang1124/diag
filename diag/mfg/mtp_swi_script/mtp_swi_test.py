@@ -98,7 +98,9 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["SEC_CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
+        # testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
+        # No signed CPLD for Ortano
+        return
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -130,6 +132,10 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
 def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
     testseqlist = ["SEC_CPLD_VERIFY", "COPY_GOLD"]
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.ORTANO2:
+        testseqlist = ["COPY_GOLD"]
+        # No signed CPLD for Ortano
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -309,7 +315,8 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Non Secure CPLD image: " + os.path.basename(cpld_img_file))
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
+        if card_type != NIC_Type.ORTANO2:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Main image: " + os.path.basename(emmc_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Gold image: " + os.path.basename(gold_img_file))
         if nic_profile:
@@ -697,7 +704,7 @@ def main():
             if test == "GOLD_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_gold_boot(slot)
             else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
@@ -713,18 +720,6 @@ def main():
     if "GOLD_BOOT" not in args.skip_test:
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
     
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-    for slot in range(len(nic_prsnt_list)):
-        if slot in fail_nic_list:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass FAILED slot for setting MAINFW")
-            continue
-        if not nic_prsnt_list[slot]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot for setting MAINFW")
-            continue
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot):
-            mtp_mgmt_ctrl.mtp_diag_fail_report(slot, "Failed to set slot to MAINFW")
-            continue
-    
     # monitor all the thread
     while True:
         if len(nic_thread_list) == 0:
@@ -739,24 +734,75 @@ def main():
         fail_nic_list.append(slot)
         pass_nic_list.remove(slot)
 
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
         if not nic_prsnt_list[slot]:
             continue
         if slot in fail_nic_list:
             continue
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        test_list = ["SET_MAINFW", "SW_CLEANUP"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
 
-        ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
-            break
+        for test in test_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = libmfg_utils.timestamp_snapshot()
+            if test == "SET_MAINFW":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot)
+            elif test == "SW_CLEANUP":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
+                continue
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                break
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    # Set uboot env variables
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        if card_type != NIC_Type.ORTANO and card_type != NIC_Type.ORTANO2:
+            continue
+
+        test_list = ["UBOOT_ENV"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for test in test_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = libmfg_utils.timestamp_snapshot()
+            if test == "UBOOT_ENV":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_set_elba_uboot_env(slot)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
+                continue
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                fail_nic_list.append(slot)
+                pass_nic_list.remove(slot)
+                break
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     # power cycle NIC
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
-    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Started", level=0)
     libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-    mtp_mgmt_ctrl.cli_log_inf("NIC SW Boot Delay Stopped", level=0)
 
     # INIt the sw mgmt port
     if not NAPLES100IBM:
@@ -783,25 +829,24 @@ def main():
             return
 
     # Verify the NIC Software boot
-    
-    if nic_profile:
-        sw_test_list = ["SW_BOOT", "SW_PROFILE", "SW_SHUTDOWN"]
-    else:
-        sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
-
     for slot in range(len(nic_prsnt_list)):
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        # if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
-        #     if "PERF_MODE" not in sw_test_list:
-        #         sw_test_list.insert(-1, "PERF_MODE") # second last step
-
         if not nic_prsnt_list[slot]:
             continue
         if slot in fail_nic_list:
             continue
-
-        isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
+
+        sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
+        if isCloud or card_type == NIC_Type.NAPLES100IBM:
+            sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
+        if card_type == NIC_Type.ORTANO2:
+            sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SET_GOLDFW", "SW_SHUTDOWN"]
+        if nic_profile:
+            if "SW_PROFILE" not in sw_test_list:
+                sw_test_list.insert(-1, "SW_PROFILE")
+
         for skipped_test in args.skip_test:
             if skipped_test in sw_test_list:
                 sw_test_list.remove(skipped_test)
@@ -810,11 +855,11 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "SW_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
-                if (card_type == NIC_Type.NAPLES100IBM) or (isCloud == True):
-                    if ret:
-                        ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
             elif test == "SW_PROFILE" and nic_profile:
                 ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
+            elif test == "SW_MODE_SWITCH":
+                ret = mtp_mgmt_ctrl.mtp_nic_sw_mode_switch(slot)
+                ret &= mtp_mgmt_ctrl.mtp_nic_sw_mode_switch_verify(slot)
             elif test == "PERF_MODE":
                 if isCloud:
                     # powercycle out of mainfw into goldfw, if Cloud.
@@ -826,10 +871,12 @@ def main():
                         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                         return
                 ret = mtp_mgmt_ctrl.mtp_nic_emmc_set_perf_mode(slot)
+            elif test == "SET_GOLDFW":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
             elif test == "SW_SHUTDOWN":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
             else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SW Test: {:s}, Ignore".format(test))
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                 continue
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)

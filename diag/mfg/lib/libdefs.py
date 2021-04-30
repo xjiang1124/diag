@@ -130,6 +130,7 @@ class MTP_Const:
     NIC_EFUSE_PROG_DELAY = 1800
     NIC_POWER_ON_DELAY = 180
     NIC_POWER_OFF_DELAY = 10
+    NIC_SYSRESET_DELAY = 180
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -417,6 +418,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_PRBS_ETH_TEST_FMT = "nic_test.py -prbs -slot_list='{:s}' -wtime=120 -mode=eth -vmarg {:d}"
     MTP_PARA_SNAKE_HBM_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
     MTP_PARA_SNAKE_PCIE_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -mode=pcie -vmarg {:d}"
+    MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
@@ -458,6 +460,8 @@ class MFG_DIAG_CMDS:
     FST_DIAG_CMD_FMT = "/home/diag/mtp_fst_script/diag_fst_test.py"
     FST_DIAG_CMD_FMT_CLD = "/home/diag/mtp_fst_script/diag_fst_test.py -card_type {} -stage {} -fst {:d}"
     NIC_SW_PROFILE_CMD_FMT = "/{:s}"
+    NIC_SW_MODE_SWITCH_FMT = "device_conf_gen.sh switch"
+    NIC_SW_DEVICE_CHK_FMT = "pdsctl show device"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
@@ -496,6 +500,8 @@ class MFG_DIAG_SIG:
     MFG_ASIC_FAIL_MSG_SIG = "#FAIL#"
     MFG_ASIC_CTC_ERR_MSG_SIG = "ERROR_CTC_WRITE_READ_COMPARE_FAILURE"
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
+    NIC_SW_DEVICE_CHK_SIG1 = "Device Profile *: bitw-smart-switch"
+    NIC_SW_DEVICE_CHK_SIG2 = "Operational Mode *: bitw-smart-switch"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

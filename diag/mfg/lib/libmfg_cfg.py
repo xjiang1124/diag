@@ -175,7 +175,7 @@ class NIC_IMAGES:
     fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
     diagfw_img["ORTANO2"] = "elba_diagw_1.5.0-EXP_2021.03.06.tar"
     diagfw_dat["ORTANO2"] = "03-06-2021"
-    goldfw_img["ORTANO2"] = "dsc_goldfw_elba_1.24-C_2021.04.22.tar"
+    goldfw_img["ORTANO2"] = "elba_goldfw_1.2-18163-g663852e_2021.04.22.tar"
     goldfw_dat["ORTANO2"] = "04-22-2021"
 
 # MFG release version control
