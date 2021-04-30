@@ -17,7 +17,7 @@ if { $SNAKE_MODE == "hod" } {
     exit 0
 }
 
-set LOG_FN "elba_snake.log"
+set LOG_FN "snake_elba.log"
 plog_start $LOG_FN
 
 plog_msg "SNAKE_MDOE: $SNAKE_MODE; DURATION: $DURATION"
