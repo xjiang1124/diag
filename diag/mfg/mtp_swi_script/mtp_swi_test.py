@@ -842,7 +842,7 @@ def main():
         if isCloud or card_type == NIC_Type.NAPLES100IBM:
             sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
         if card_type == NIC_Type.ORTANO2:
-            sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SET_GOLDFW", "SW_SHUTDOWN"]
+            sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SET_GOLDFW", "SW_BOOT", "SW_SHUTDOWN"]
         if nic_profile:
             if "SW_PROFILE" not in sw_test_list:
                 sw_test_list.insert(-1, "SW_PROFILE")
