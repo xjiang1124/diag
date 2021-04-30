@@ -124,7 +124,11 @@ def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
 def get_product_name_from_pn(pn):
     if "DSC2-2Q200-32R32F64P-R" in pn:
         product_name = "ORTANO2"
+    elif "DSC2-2Q200-32R32F64P" in pn:
+        product_name = "ORTANO2"
     elif "68-0015-02" in pn:
+        product_name = "ORTANO2"
+    elif "68-0021-02" in pn:
         product_name = "ORTANO2"
     else:
         product_name = "UNKNOWN"
