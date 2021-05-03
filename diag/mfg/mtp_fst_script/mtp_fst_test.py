@@ -105,7 +105,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus, card_type):
 
 def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
     bus_str = bus.split(":", 1)[0]
-    bus_int = int(bus_str, 16)+4
+    bus_int = int(bus_str, 16)+2
     eth = "enp"+str(bus_int)+"s0"
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
 
