@@ -329,10 +329,11 @@ def main():
     tmp_fru_cfg["MTP_ID"] = mtp_id
     tmp_fru_cfg["MTP_TS"] = libmfg_utils.get_timestamp()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot in fail_nic_list:
-            continue
         key = libmfg_utils.nic_key(slot)
         tmp_fru_cfg[key] = dict()
+        if slot in fail_nic_list:
+            tmp_fru_cfg[key]["NIC_VALID"] = False
+            continue
         if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             tmp_fru_cfg[key]["NIC_VALID"] = True
