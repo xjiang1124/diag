@@ -482,7 +482,7 @@ class nic_test:
             test_cmd = "/data/nic_util/asicutil -snake -mode hbm_lb 2>&1 >  /data/nic_util/asicutil_hbm.log &"
         elif test_type == "snake" and mode == "pcie":
             test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > /data/nic_util/asicutil_pcie.log &"
-        elif (test_type == "snake" and mode == "nod") or (test_type == "snake" and mode == "hod"):
+        elif (test_type == "snake" and ("nod" in mode)) or (test_type == "snake" and ("hod" in mode) ):
             test_cmd = "/data/nic_util/asicutil -snake -mode {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode)
         else:
             print "Invalid test_type {} and mode {}".format(test_type, mode)
