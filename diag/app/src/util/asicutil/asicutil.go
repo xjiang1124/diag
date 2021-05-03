@@ -29,7 +29,7 @@ func main() {
     modePtr := flag.String("mode", "ETH",    "PRBS mode: PCIe/ETH; Snake mode: PCIE_LB/HBM_LB")
     polyPtr := flag.String("poly", "PRBS31", "PRBS polynomial")
 
-    duraPtr := flag.Int("dura", 60, "PRBS duration")
+    duraPtr := flag.Int("dura", 120, "PRBS duration")
     intLpbkPtr := flag.Bool("int_lpbk", false, "Internal loopback")
 
     verbosePtr    := flag.Bool("verbose", false, "Turn on verbose")
