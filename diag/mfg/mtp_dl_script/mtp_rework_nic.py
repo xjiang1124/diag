@@ -71,8 +71,10 @@ def hpe_rework_verify(mtp_mgmt_ctrl, slot):
     if nic_fru_info:
         nic_vendor = nic_fru_info[4]
     else:
-        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Unable to retrieve FRU")
-        return False
+        # not initialized yet
+        if mtp_mgmt_ctrl._nic_ctrl_list[slot]._vendor == None:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Unable to retrieve FRU")
+            return False
     if nic_type == NIC_Type.NAPLES25 and nic_vendor == NIC_Vendor.HPE:
         arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
         if not arm_fru:
