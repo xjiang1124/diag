@@ -3787,6 +3787,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
+        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=OS_CMD_DELAY)
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
