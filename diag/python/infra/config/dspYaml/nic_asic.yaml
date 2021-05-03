@@ -104,10 +104,10 @@ DSP:
                 VALUE:
                     ALL: 400
                 INFO: Test timeout setting
-            mode:
+            duration:
                 VALUE:
-                    ALL: hod 
-                INFO: L1 test mode
+                    ALL: 60
+                INFO: test time
             sn:
                 VALUE:
                     ALL: SN00000000 
