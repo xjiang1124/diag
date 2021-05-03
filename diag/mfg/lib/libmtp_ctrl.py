@@ -3766,6 +3766,7 @@ class mtp_ctrl():
             return False
 
         if vdd_avs_cmd:
+            self.mtp_mgmt_set_nic_avs_pre(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Failed to execute command {:s} - timeout".format(vdd_avs_cmd))
                 self.mtp_mgmt_set_nic_avs_post(slot)
@@ -3774,6 +3775,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "SET VDD AVS FAILED")
                 return False
         if arm_avs_cmd:
+            self.mtp_mgmt_set_nic_avs_pre(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Failed to execute command {:s} - timeout".format(arm_avs_cmd))
                 self.mtp_mgmt_set_nic_avs_post(slot)
@@ -3785,9 +3787,10 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_set_nic_avs_pre(self, slot):
+        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=OS_CMD_DELAY)
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
-        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=OS_CMD_DELAY)
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
