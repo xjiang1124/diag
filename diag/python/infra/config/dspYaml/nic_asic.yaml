@@ -94,4 +94,23 @@ DSP:
                     ALL: PRBS31
                 INFO: PRBS polynomial
 
+    TEST#L1:
+        INFO: ARM L1 test
+        PLATFORM:
+            NIC: ALL
+        PRIORITY: NORMAL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 400
+                INFO: Test timeout setting
+            duration:
+                VALUE:
+                    ALL: 60
+                INFO: test time
+            sn:
+                VALUE:
+                    ALL: SN00000000 
+                INFO: board serial number
+
 ...

@@ -308,3 +308,27 @@ func updateYaml (resultStr string) (err int) {
 
 }
 
+func L1() (err int) {
+    var cmd string
+    err = errType.SUCCESS
+
+    errGo := os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", "Failed to change dir!")
+        err = errType.FAIL
+        return
+    }
+
+    dcli.Println("i", "Running L1 Test ...")
+    cmd = "../elba/elb_arm_l1.tcl"
+    passSign := "ARM L1 TESTS PASSED"
+    failSign := "ARM L1 TESTS FAILED"
+    err = runCmd.Run(passSign, failSign, cmd)
+
+    if err != errType.SUCCESS {
+        dcli.Println("e",  "L1 TEST FAILED!")
+    } else {
+        dcli.Println("i", "L1 TEST PASSED")
+    }
+    return 
+}
