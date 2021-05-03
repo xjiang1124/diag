@@ -1013,8 +1013,11 @@ class nic_ctrl():
         reg_addr = 1
         cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg(self.nic_get_cmd_buf())
-            return False
+            # try again one more time
+            time.sleep(1)
+            if not self.mtp_exec_cmd(cmd):
+                self.nic_set_err_msg(self.nic_get_cmd_buf())
+                return False
         match = re.findall(MFG_DIAG_CMDS.MTP_SMB_RE % reg_addr, self.nic_get_cmd_buf())
         if not match:
             self.nic_set_err_msg(self.nic_get_cmd_buf())
