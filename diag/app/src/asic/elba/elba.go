@@ -308,7 +308,7 @@ func updateYaml (resultStr string) (err int) {
 
 }
 
-func L1() (err int) {
+func L1(mode string, sn string) (err int) {
     var cmd string
     err = errType.SUCCESS
 
@@ -320,10 +320,10 @@ func L1() (err int) {
     }
 
     dcli.Println("i", "Running L1 Test ...")
-    cmd = "../elba/elb_arm_l1.tcl"
+    cmd = "./diag.exe"
     passSign := "ARM L1 TESTS PASSED"
     failSign := "ARM L1 TESTS FAILED"
-    err = runCmd.Run(passSign, failSign, cmd)
+    err = runCmd.Run(passSign, failSign, cmd, "../elba/elb_arm_l1.tcl", sn, mode)
 
     if err != errType.SUCCESS {
         dcli.Println("e",  "L1 TEST FAILED!")

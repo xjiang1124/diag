@@ -72,6 +72,8 @@ func Nic_AsicEth_PrbsHdl(argList []string) {
 
 func Nic_Asic_L1Hdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    modePtr := fs.String("mode", "hod", "L1 mode")
+    snPtr := fs.String("sn", "SN00000000", "board serial number")
     var cardType string
     var err int
 
@@ -83,7 +85,7 @@ func Nic_Asic_L1Hdl(argList []string) {
     }
 
     if ( cardType == "ORTANO"  || cardType == "ORTANO2" ) {
-        err = elba.L1()
+        err = elba.L1(*modePtr, *snPtr)
     }
 
     // Inform diag engine that test handler is done
