@@ -335,6 +335,13 @@ class nic_ctrl():
         else:
             return True
 
+    def nic_send_ctrl_c(self):
+        self._nic_handle.sendcontrol('c')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            return False
+        else:
+            return True
 
     def nic_mgmt_config(self):
         if not self.nic_console_attach():

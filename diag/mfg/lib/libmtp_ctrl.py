@@ -663,6 +663,12 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_send_ctrl_c(self, slot):
+        if not self._nic_ctrl_list[slot].nic_send_ctrl_c():
+            self.mtp_dump_err_msg(err_msg)
+            self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            return False
+        return True
 
     def mtp_mgmt_set_date(self, timestamp_str):
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
@@ -3768,7 +3774,7 @@ class mtp_ctrl():
         if vdd_avs_cmd:
             self.mtp_mgmt_set_nic_avs_pre(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-                self.cli_log_slot_err(slot, "Failed to execute command {:s} - timeout".format(vdd_avs_cmd))
+                self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(vdd_avs_cmd))
                 self.mtp_mgmt_set_nic_avs_post(slot)
                 return False
             if not self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot)):
@@ -3777,7 +3783,7 @@ class mtp_ctrl():
         if arm_avs_cmd:
             self.mtp_mgmt_set_nic_avs_pre(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
-                self.cli_log_slot_err(slot, "Failed to execute command {:s} - timeout".format(arm_avs_cmd))
+                self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(arm_avs_cmd))
                 self.mtp_mgmt_set_nic_avs_post(slot)
                 return False
             if not self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot)):
@@ -3788,9 +3794,10 @@ class mtp_ctrl():
         return True
 
     def mtp_mgmt_set_nic_avs_pre(self, slot):
-        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=OS_CMD_DELAY)
+        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
+        self.mtp_nic_send_ctrl_c(slot) # kill any hung tclsh in this same session
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
