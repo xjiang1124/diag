@@ -17,6 +17,12 @@ pen-hwlab-apc-03:
     USR: apc
     PASSWD: apc
 
+pen-hwlab-am:
+    IP: 192.168.70.141
+    MODEL: SCHNEIDER
+    USR: apc
+    PASSWD: apc
+
 pen-chamber-apc-01:
     IP: 192.168.75.40
     MODEL: SCHNEIDER
