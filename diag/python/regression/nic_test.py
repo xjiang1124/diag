@@ -732,10 +732,8 @@ class nic_test:
         mtp_session = common.session_start()
         common.session_cmd(mtp_session, "devmgr -dev=fan -status")
 
-        #print("xxxxx")
-        #print(buf)
-        #print("xxxxx")
-        p = re.compile(r'.*elb_get_temp :: temp:([\d]+\.[\d]+).*', re.DOTALL)
+        #p = re.compile(r'.*elb_get_temp :: temp:([\d]+\.[\d]+).*', re.DOTALL)
+        p = re.compile(r'.*TEMP:[\d]+\.[\d]+/[\d]+\.[\d]+/([\d]+\.[\d]+).*', re.DOTALL)
 
         m = p.match(buf)
         if m:
@@ -767,7 +765,7 @@ class nic_test:
 
         slot_list = ",".join(nic_list)
         print("slot_list:", slot_list)
-        self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 1)
+#        self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 1)
 
         print("fan_ctrl:", fan_ctrl, "tgt_die_temp:", tgt_die_temp)
         if fan_ctrl == False:
@@ -781,24 +779,26 @@ class nic_test:
         #for slot in nic_list:
         #    cmd = "turn_on_hub.sh {}; i2cset -y 0 0x4a 0x21 0x15".format(slot)
         #    common.session_cmd(session, cmd)
-        print("Wait 60 sec for cards booting up")
-        time.sleep(60)
+#        print("Wait 60 sec for cards booting up")
+#        time.sleep(60)
 
         card_info_dict = dict()
-        card_info_dict['1'] = "OT33"
-        card_info_dict['2'] = "OT32"
-        card_info_dict['3'] = "OT31"
-        card_info_dict['4'] = "OT34"
-        card_info_dict['5'] = "OT35"
-        card_info_dict['6'] = "OT36"
-        card_info_dict['7'] = "OT38"
-        card_info_dict['8'] = "OT37"
-        card_info_dict['9'] = "OT39"
-        core_freq = 833
-        arm_freq = 2000
-        core_volt = 665
-        arm_volt = 689
-        volt_mode = "nod"
+        card_info_dict['1'] = "SLOT01"
+        card_info_dict['2'] = "SLOT02"
+        card_info_dict['3'] = "SLOT03"
+        card_info_dict['4'] = "SLOT04"
+        card_info_dict['5'] = "SLOT05"
+        card_info_dict['6'] = "SLOT06"
+        card_info_dict['7'] = "SLOT07"
+        card_info_dict['8'] = "SLOT08"
+        card_info_dict['9'] = "SLOT09"
+
+        # Manul change here
+        core_freq = 1033
+        arm_freq = 3000
+        core_volt = "xxx"
+        arm_volt = "xxx"
+        volt_mode = "hod"
         chamber_temp = "0_temp_ctrl_{}".format(tgt_die_temp)
 
         test_result = OrderedDict()
@@ -812,8 +812,8 @@ class nic_test:
                 ret = self.nic_con.uart_session_start(session)
                 if ret != 0:
                     print("Faied to enter uart session")
-                self.nic_con.uart_session_cmd(session, "mkdir -p /data/elba ; mount /dev/mmcblk0p10 /data; mkdir -p /data/elba; cd /data/elba")
-                self.nic_con.uart_session_cmd(session, "export CARD_TYPE=ORTANO")
+#                self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+#                self.nic_con.uart_session_cmd(session, "export CARD_TYPE=ORTANO2")
                 self.nic_con.uart_session_cmd(session, "/data/devmgr -status")
 
                 self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x0 -mode b -wr -data=0xFF")
@@ -825,52 +825,53 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x4f -mode w -rd")
                 self.nic_con.uart_session_cmd(session, "/data/smbutil -dev=ELB0_CORE -addr=0x51 -mode w -rd")
 
-                self.set_mtp_fan_speed(100)
-
-                self.nic_con.uart_session_cmd(session, "cd /data/elba/nic/fake_root_target/nic")
-                self.nic_con.uart_session_cmd(session, "export ASIC_LIB_BUNDLE=`pwd`")
-                self.nic_con.uart_session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-                self.nic_con.uart_session_cmd(session, "source $ASIC_LIB_BUNDLE/asic_lib/source_env_path")
+                self.set_mtp_fan_speed(60)
+#
+#                self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic")
+#                self.nic_con.uart_session_cmd(session, "export ASIC_LIB_BUNDLE=`pwd`")
+#                self.nic_con.uart_session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+#                self.nic_con.uart_session_cmd(session, "source $ASIC_LIB_BUNDLE/asic_lib/source_env_path")
                 self.nic_con.uart_session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
 
                 # TCL commands
                 self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
-                self.nic_con.uart_session_cmd(session, "source .tclrc.diag.elb.arm", 60, "%")
-                self.nic_con.uart_session_cmd(session, "set ::env(CARD_ENV) ARM", 10, "%")
-                self.nic_con.uart_session_cmd(session, "set ::env(CARD_TYPE) ORTANO", 10, "%")
-                self.nic_con.uart_session_cmd(session, "set ::env(MTP_REV) REV_4", 10, "%")
-                self.nic_con.uart_session_cmd(session, "elb_appl_set_srds_int_timeout  5000", 10, "%")
-                self.nic_con.uart_session_cmd(session, "sleep 1", 10, "%")
-                self.nic_con.uart_session_cmd(session, "set die_temp [elb_get_temp]", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set core_freq [get_freq]", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set arm_freq [elb_top_sbus_get_cpu_freq  0 0]", 30, "%")
-                self.nic_con.uart_session_cmd(session, 'plog_msg "die_temp $die_temp; core_freq $core_freq; arm_freq $arm_freq"', 30, "%")
+                self.nic_con.uart_session_cmd(session, "source .tclrc.diag.elb.arm", 60, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set ::env(CARD_ENV) ARM", 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set ::env(CARD_TYPE) ORTANO", 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set ::env(MTP_REV) REV_4", 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "elb_appl_set_srds_int_timeout  5000", 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "sleep 1", 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set die_temp [elb_get_temp]", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set core_freq [get_freq]", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set arm_freq [elb_top_sbus_get_cpu_freq  0 0]", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, 'plog_msg "die_temp $die_temp; core_freq $core_freq; arm_freq $arm_freq"', 30, "tclsh]")
 
-                self.nic_con.uart_session_cmd(session, "set core_freq {}.0".format(core_freq), 10, "%")
-                self.nic_con.uart_session_cmd(session, "set arm_freq {}".format(arm_freq), 10, "%")
-                self.nic_con.uart_session_cmd(session, "set core_volt {}".format(core_volt), 10, "%")
-                self.nic_con.uart_session_cmd(session, "set arm_volt {}".format(arm_volt), 10, "%")
-                self.nic_con.uart_session_cmd(session, "set volt_mode {}".format(volt_mode), 10, "%")
-                self.nic_con.uart_session_cmd(session, "set core_freq1 [elb_core_freq_for_mode $volt_mode]", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set stg_freq  [elb_stg_freq_for_mode $volt_mode]", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set eth_freq  900", 10, "%")
-                self.nic_con.uart_session_cmd(session, "elb_set_freq $core_freq1", 30, "%")
-                self.nic_con.uart_session_cmd(session, "elb_soc_stg_pll_init 0 0 $stg_freq", 30, "%")
-                self.nic_con.uart_session_cmd(session, "elb_mm_eth_pll_init  0 0 $eth_freq", 30, "%")
-                self.nic_con.uart_session_cmd(session, "elb_top_sbus_cpu_${arm_freq} 0 0", 30, "%")
-                self.nic_con.uart_session_cmd(session, "get_freq", 30, "%")
-                self.nic_con.uart_session_cmd(session, "elb_top_sbus_get_cpu_freq  0 0", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set card_no {}".format(card_info_dict[slot]), 30, "%")
-                self.nic_con.uart_session_cmd(session, "set chamber_temp {}".format(chamber_temp), 30, "%")
-                self.nic_con.uart_session_cmd(session, "set card_config core_freq_${core_freq}_arm_freq_${arm_freq}_core_volt_${core_volt}_arm_volt_${arm_volt}_chamber_${chamber_temp}", 30, "%")
-                self.nic_con.uart_session_cmd(session, "puts $card_config", 30, "%")
-                self.nic_con.uart_session_cmd(session, "set duration 600", 30, "%")
-                self.nic_con.uart_session_cmd(session, "plog_start hbm_pktgen_pcie_lb_100g_${card_no}_${card_config}.log", 30, "%")
+                self.nic_con.uart_session_cmd(session, "set core_freq {}.0".format(core_freq), 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set arm_freq {}".format(arm_freq), 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set core_volt {}".format(core_volt), 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set arm_volt {}".format(arm_volt), 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set volt_mode {}".format(volt_mode), 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set core_freq1 [elb_core_freq_for_mode $volt_mode]", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set stg_freq  [elb_stg_freq_for_mode $volt_mode]", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set eth_freq  900", 10, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "elb_set_freq $core_freq1", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "elb_soc_stg_pll_init 0 0 $stg_freq", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "elb_mm_eth_pll_init  0 0 $eth_freq", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "elb_top_sbus_cpu_${arm_freq} 0 0", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "get_freq", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "elb_top_sbus_get_cpu_freq  0 0", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set card_no {}".format(card_info_dict[slot]), 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set chamber_temp {}".format(chamber_temp), 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set card_config core_freq_${core_freq}_arm_freq_${arm_freq}_core_volt_${core_volt}_arm_volt_${arm_volt}_chamber_${chamber_temp}", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "puts $card_config", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "set duration 120", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "plog_start hbm_pktgen_pcie_lb_100g_${card_no}_${card_config}.log", 30, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "plog_file_to_flag_set 3", 30, "tclsh]")
                 #self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq), 30, "parseKnobFile")
                 if fan_ctrl == False:
-                    self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq), 2400, "SNAKE DONE")
+                    self.nic_con.uart_session_cmd(session, "elb_snake_test_mtp 6 4096 1 1 {}.0 1 $duration".format(core_freq), 2400, "SNAKE DONE")
                 else:
-                    cmd = "elb_snake_test_mtp 6 4096 0 1 {}.0 1 $duration".format(core_freq)
+                    cmd = "elb_snake_test_mtp 6 4096 1 1 {}.0 1 $duration".format(core_freq)
                     expstr = ["SNAKE DONE", "Done Pulling"]
                     timeout = 1200
                     session.sendline(cmd)
@@ -895,8 +896,8 @@ class nic_test:
                                 fan_speed = self.die_temp_ctrl(tgt_die_temp, fan_speed, session.before)
                             session.send("temp ")
 
-                self.nic_con.uart_session_cmd(session, "puts 'xxx'", 300, "%")
-                self.nic_con.uart_session_cmd(session, "plog_stop", 30, "%")
+                self.nic_con.uart_session_cmd(session, "puts 'xxx'", 300, "tclsh]")
+                self.nic_con.uart_session_cmd(session, "plog_stop", 30, "tclsh]")
                 self.nic_con.uart_session_cmd(session, "exit", 120)
                 self.nic_con.uart_session_cmd(session, "sync", 30)
                 self.nic_con.uart_session_cmd(session, "sync", 30)
