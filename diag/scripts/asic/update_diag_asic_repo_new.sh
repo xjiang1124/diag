@@ -13,6 +13,7 @@ ASIC_TMP="/home/$USER/workspace/temp/"
 
 #DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic.2020.02.10/"
 DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic/"
+DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic.2021.03.30/"
 
 if [[ $ASIC_TYPE == "capri" ]]
 then
