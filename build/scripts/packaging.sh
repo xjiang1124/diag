@@ -120,7 +120,7 @@ do
     DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$asic/$arch
     #SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
     ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
-    ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.03.30/$asic/$arch
+    #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.03.30/$asic/$arch
     
     if [[ $arch == "amd64" ]]
     then
