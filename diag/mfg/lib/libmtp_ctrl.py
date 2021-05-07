@@ -664,6 +664,9 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_send_ctrl_c(self, slot):
+        if self._nic_ctrl_list[slot] == None:
+            # script not running anything.
+            return True
         if not self._nic_ctrl_list[slot].nic_send_ctrl_c():
             self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
