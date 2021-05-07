@@ -232,12 +232,22 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     sub_test_list = test_list[:]
 
     if aapl:
-        sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
+        # sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
+        if nic_type == NIC_Type.ORTANO2:
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS_ELBA"), ("NIC_ASIC","ETH_PRBS_ELBA"), ("NIC_ASIC","L1")]
+        else:
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
     else:
         if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
         if ("NIC_ASIC","ETH_PRBS") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","ETH_PRBS"))
+        # if ("NIC_ASIC","PCIE_PRBS_ELBA") in sub_test_list:
+        #     sub_test_list.remove(("NIC_ASIC","PCIE_PRBS_ELBA"))
+        # if ("NIC_ASIC","ETH_PRBS_ELBA") in sub_test_list:
+        #     sub_test_list.remove(("NIC_ASIC","ETH_PRBS_ELBA"))
+        if ("NIC_ASIC","L1") in sub_test_list:
+            sub_test_list.remove(("NIC_ASIC","L1"))
 
     fail_list = list()
 
@@ -399,6 +409,8 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
             logfile_list.append("snake_pcie.log")
         if "PRBS_ETH" in mtp_para_test_list:
             logfile_list.append("prbs_eth.log")
+        if "SNAKE_ELBA" in mtp_para_test_list:
+            logfile_list.append("snake_elba.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")

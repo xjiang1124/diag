@@ -1658,6 +1658,8 @@ class mtp_ctrl():
             filename = "{:s}_snake_hbm.log".format(sn)
         elif test == "SNAKE_PCIE":
             filename = "{:s}_snake_pcie.log".format(sn)
+        elif test == "SNAKE_ELBA":
+            filename = "{:s}_snake_elba.log".format(sn)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return err_msg_list
@@ -3361,6 +3363,26 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set PN to {:s}".format(pn))
         self._nic_ctrl_list[slot].nic_set_pn(pn)
 
+    def mtp_is_nic_ortano_oracle(self, slot):
+        """
+         Differentiate ortano by PN
+         - 68-0015: Oracle version -> return True
+         - 68-0021: Pensando version -> return False
+         - any other -> return False with err msg
+        """
+        if self._nic_type_list[slot] != NIC_Type.ORTANO2:
+            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for Ortano")
+            return False
+        slot_pn = self.mtp_get_nic_pn(slot)
+        if not slot_pn:
+            self.cli_log_slot_err_lock(slot, "Unknown PN for Ortano")
+            return False
+        oracle_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_ORC_PN_FMT, slot_pn)
+        if oracle_pn:
+            return True
+        else:
+            return False
+
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
 
@@ -3553,6 +3575,12 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_PCIE":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
+        elif test == "SNAKE_ELBA":
+            # NZ FIXME: support both types of ortano in same MTP 
+            if self.mtp_is_nic_ortano_oracle(nic_list[0]):
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
+            else:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
@@ -3758,12 +3786,7 @@ class mtp_ctrl():
              - For 68-0015 (Oracle) use 1033
              - For 68-0021 (Pensando) use 1100
             """
-            slot_pn = self.mtp_get_nic_pn(slot)
-            if not slot_pn:
-                self.cli_log_slot_err_lock(slot, "Unknown PN for Ortano")
-                return False
-            oracle_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_ORC_PN_FMT, slot_pn)
-            if oracle_pn:
+            if self.mtp_is_nic_ortano_oracle(slot):
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
             else:
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)

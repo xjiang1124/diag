@@ -1421,9 +1421,9 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
         nic_cmd_list.append(nic_cmd)
-
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            return False
+        for cmd in nic_cmd_list:
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+                return False
         return True
 
 
