@@ -91,11 +91,19 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: Yes
+                SLOT: No
+                VMARG: Yes
+                MODE: Yes
 
 
 MTP_PARA:
-    SNAKE_HBM: False
-    SNAKE_PCIE: False
+    SNAKE_ELBA: True
 
 MTP_SEQ:
     ASIC:

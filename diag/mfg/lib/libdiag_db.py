@@ -143,11 +143,11 @@ class diag_db():
             card_name = "MTP1"
 
         param = '"'
-        if opts["SN"]:
+        if "SN" in opts and opts["SN"]:
             param += 'sn={:s}'.format(sn)
-        if opts["SLOT"]:
+        if "SLOT" in opts and opts["SLOT"]:
             param += ' slot={:d}'.format(slot+1)
-        if opts["VMARG"]:
+        if "VMARG" in opts and opts["VMARG"]:
             if vmarg > 0:
                 param += ' vmarg=high'
             elif vmarg < 0:
@@ -159,24 +159,26 @@ class diag_db():
         return libmfg_utils.diag_seq_run_cmd(card_name, dsp, test, param)
 
 
-    def get_diag_para_test_run_cmd(self, dsp, test, slot, opts, sn):
+    def get_diag_para_test_run_cmd(self, dsp, test, slot, opts, sn, mode=""):
         if opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:
             card_name = "MTP1"
 
         param = '"'
-        if opts["SN"]:
+        if "SN" in opts and opts["SN"]:
             param += 'sn={:s} '.format(sn)
-        if opts["SLOT"]:
+        if "SLOT" in opts and opts["SLOT"]:
             param += 'slot={:d}'.format(slot+1)
+        if "MODE" in opts and opts["MODE"]:
+            param += 'mode={:s}'.format(mode)
         param += '"'
 
         return libmfg_utils.diag_para_run_cmd(card_name, dsp, test, param)
 
 
     def get_diag_seq_test_errcode_cmd(self, dsp, slot, opts):
-        if opts["NIC_NAME"]:
+        if "NIC_NAME" in opts and opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:
             card_name = "MTP1"
@@ -185,7 +187,7 @@ class diag_db():
 
 
     def get_diag_para_test_errcode_cmd(self, dsp, slot, opts):
-        if opts["NIC_NAME"]:
+        if "NIC_NAME" in opts and opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:
             card_name = "MTP1"

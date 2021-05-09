@@ -108,6 +108,20 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
 
     return
 
+def get_mode_param(mtp_mgmt_ctrl, slot, test):
+    """
+    For NIC_ASIC L1 test parameter.
+    """
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.ORTANO2 and test == "L1":
+        if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            mode = "hod"
+        else:
+            mode = "hod_1100"
+    else:
+        mode = ""
+
+    return mode
 
 def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vmarg, swmtestmode):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
@@ -232,9 +246,8 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     sub_test_list = test_list[:]
 
     if aapl:
-        # sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
         if nic_type == NIC_Type.ORTANO2:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS_ELBA"), ("NIC_ASIC","ETH_PRBS_ELBA"), ("NIC_ASIC","L1")]
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS"), ("NIC_ASIC","L1")]
         else:
             sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
     else:
@@ -242,10 +255,6 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
             sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
         if ("NIC_ASIC","ETH_PRBS") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","ETH_PRBS"))
-        # if ("NIC_ASIC","PCIE_PRBS_ELBA") in sub_test_list:
-        #     sub_test_list.remove(("NIC_ASIC","PCIE_PRBS_ELBA"))
-        # if ("NIC_ASIC","ETH_PRBS_ELBA") in sub_test_list:
-        #     sub_test_list.remove(("NIC_ASIC","ETH_PRBS_ELBA"))
         if ("NIC_ASIC","L1") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","L1"))
 
@@ -454,7 +463,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             number_of_l1_tests = 9
             # But for Elba, there are 13 sub tests
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2:
-                number_of_l1_tests = 13
+                number_of_l1_tests = 14
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
@@ -524,7 +533,8 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         alom_sn = None
         if card_type == NIC_Type.NAPLES25SWM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
-        diag_cmd = diag_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn)
+        mode = get_mode_param(mtp_mgmt_ctrl, slot, test)
+        diag_cmd = diag_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn, mode)
         rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
 
         if dsp == "MVL" and test == "STUB":
@@ -536,6 +546,32 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         stop_ts = libmfg_utils.timestamp_snapshot()
         duration = str(stop_ts - start_ts)
 
+        # Collect NIC onboard logfiles
+        asic_dir_logfile_list = []
+        if dsp == "NIC_ASIC" and test == "PCIE_PRBS":
+            asic_dir_logfile_list.append("elba_PRBS_PCIE.log")
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS":
+            asic_dir_logfile_list.append("elba_PRBS_MX.log")
+        if dsp == "NIC_ASIC" and test == "L1":
+            asic_dir_logfile_list.append("elba_arm_l1_test.log")
+
+        if asic_dir_logfile_list:
+            if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC onboard asic logfile for ({:s}, {:s}) test failed".format(dsp, test))
+
+        if dsp == "NIC_ASIC" and test == "L1":
+            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_nic_retrieve_arm_l1_err(sn)
+            if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                number_of_arm_l1_tests = 2
+            else:
+                number_of_arm_l1_tests = 0
+            if pass_count != number_of_arm_l1_tests:
+                err_msg_list.append("ARM L1 Sub Test only passed: {:d}".format(pass_count))
+                if ret == "SUCCESS":
+                    ret = "FAIL"
+            if log_err_msg_list:
+                err_msg_list += log_err_msg_list
+
         if ret == "SUCCESS":
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
             if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
@@ -546,9 +582,15 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp_disp, test, ret, duration))
                 mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
-            for err_msg in err_msg_list:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
             nic_test_rslt_list[slot] = False
+
+            # only display first 3 and last 3 error messages
+            if len(err_msg_list) < 6:
+                err_msg_disp_list = err_msg_list
+            else:
+                err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+            for err_msg in err_msg_disp_list:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
 
         if dsp == "MVL" and test == "STUB":
             mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()

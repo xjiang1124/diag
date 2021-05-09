@@ -1647,6 +1647,24 @@ class mtp_ctrl():
 
         return pass_count, err_msg_list
 
+    # return list of error message
+    def mtp_nic_retrieve_arm_l1_err(self, sn):
+        err_msg_list = list()
+        pass_count = 0
+        path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
+        logfile_exp = r"{:s}_elba_arm_l1_test\.log".format(sn)
+        for filename in os.listdir(path):
+            if re.match(logfile_exp, filename):
+                with open(os.path.join(path, filename), 'r') as f:
+                    for line in f:
+                        if MFG_DIAG_SIG.MFG_ASIC_FAIL_MSG_SIG in line:
+                            err_msg = line.replace('\n', '')
+                            err_msg_list.append(err_msg)
+                        if MFG_DIAG_SIG.MFG_ASIC_PASS_MSG_SIG in line:
+                            pass_count += 1
+
+        return pass_count, err_msg_list
+
 
     # return list of error message
     def mtp_mgmt_retrieve_mtp_para_err(self, sn, test):
@@ -2653,7 +2671,6 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_save_nic_logfile(self, slot, logfile_list):
-        self.cli_log_slot_inf_lock(slot, "Save NIC Logfile")
         if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
@@ -2663,7 +2680,6 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
-        self.cli_log_slot_inf_lock(slot, "Save NIC Diag Logfile")
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
             self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
             self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
