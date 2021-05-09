@@ -170,7 +170,8 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
 def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
     fail_list = list()
-    nic_test_list = nic_list[:]
+    nic_top_test_list = list()
+    nic_bottom_test_list = list()
     fail_slot_test_list = list()
 
     if vmarg > 0:
@@ -180,58 +181,73 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     else:
         dsp = "CAPRI"
 
-    for test in para_test_list:
-        for slot in nic_test_list[:]:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+    # separate lists for ORC ortano and PEN ortano 
+    if nic_type == NIC_Type.ORTANO2:
+        orc_list, pen_list = [], []
+        for slot in nic_list:
+            if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+                orc_list.append(slot)
+            else:
+                pen_list.append(slot)
+        nic_top_test_list = orc_list[:]
+        nic_bot_test_list = pen_list[:]
 
-        start_ts = libmfg_utils.timestamp_snapshot()
-        test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+    if len(nic_top_test_list) == 0:
+        nic_top_test_list = nic_list[:]
 
-        # failed nic display
-        for slot in test_fail_list:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
-            mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
-            if stop_on_err:
-                nic_test_list.remove(slot)
-            if slot not in fail_list:
-                fail_list.append(slot)
-            fail_slot_test_list.append((slot, test))
-
-        # passed nic display
-        for slot in nic_test_list:
-            if slot not in test_fail_list:
+    for nic_test_list in nic_top_test_list, nic_bot_test_list:
+        for test in para_test_list:
+            for slot in nic_test_list[:]:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
 
-    # stop on error, don't collect logfile
-    if fail_list and stop_on_err:
-        pass
-    else:
-        naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, para_test_list)
-        # extract error message if test fail
-        for slot, test in fail_slot_test_list:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if not sn:
-                continue
-            err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
-            for err_msg in err_msg_list:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg))
+            start_ts = libmfg_utils.timestamp_snapshot()
+            test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+
+            # failed nic display
+            for slot in test_fail_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp, test, err_msg))
-    if GLB_CFG_MFG_TEST_MODE:
-        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    else:
-        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
+                mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                if stop_on_err:
+                    nic_test_list.remove(slot)
+                if slot not in fail_list:
+                    fail_list.append(slot)
+                fail_slot_test_list.append((slot, test))
+
+            # passed nic display
+            for slot in nic_test_list:
+                if slot not in test_fail_list:
+                    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        # stop on error, don't collect logfile
+        if fail_list and stop_on_err:
+            pass
+        else:
+            naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, para_test_list)
+            # extract error message if test fail
+            for slot, test in fail_slot_test_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                if not sn:
+                    continue
+                err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
+                for err_msg in err_msg_list:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg))
+                    card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp, test, err_msg))
+        if GLB_CFG_MFG_TEST_MODE:
+            mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Complete\n".format(nic_type), level=0)
 
     return fail_list
