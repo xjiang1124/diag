@@ -77,6 +77,13 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
     mtp_mgmt_ctrl.cli_log_inf("MFG DL Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
+    # save the avs log files
+    asic_sub_dir = "/asic_logs/"
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_dl_script_dir + asic_sub_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_dl_script_dir + asic_sub_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_DL)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect DL Test result failed", level=0)

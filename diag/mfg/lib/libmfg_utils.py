@@ -1066,8 +1066,14 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
         return None
 
-    # for P2C/4C test, extra logfiles are needed
-    if stage == FF_Stage.FF_P2C:
+    # for DL/P2C/4C test, extra logfiles are needed
+    if stage == FF_Stage.FF_DL:
+        asic_log_dir = log_dir + "asic_logs/"
+        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+    elif stage == FF_Stage.FF_P2C:
         diag_log_dir = log_dir + "diag_logs/"
         asic_log_dir = log_dir + "asic_logs/"
         nic_log_dir = log_dir + "nic_logs/"
@@ -1117,7 +1123,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-    # for DL/SWI/FST, no extra logfiles
+    # for SWI/FST, no extra logfiles
     else:
         pass
 
