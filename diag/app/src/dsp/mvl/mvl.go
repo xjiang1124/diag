@@ -38,7 +38,7 @@ func Mvl_AccHdl(argList []string) {
     spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
     cli.Printf("d", "MVL_ID_REG = 0x%x", data)
     if (data >> 4) != MVL_ID {
-        dcli.Println("e", "Marvell Chip ID Failed.  Read 0x%x  Expect 0x%x  Mask=0xFFF0", data, (MVL_ID<<4) )
+        dcli.Printf("e", "Marvell Chip ID Failed.  Read 0x%x  Expect 0x%x  Mask=0xFFF0", data, (MVL_ID<<4) )
         rc = -1
     }
 

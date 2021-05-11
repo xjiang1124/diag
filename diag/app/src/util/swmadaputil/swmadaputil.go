@@ -320,6 +320,20 @@ func MvSwReadRmonStat(portNum uint8, StatRegAddr uint8) (value uint32, err int) 
     return
 }
 
+func MvSwDumpRmon(portNum uint8) (err int) {
+    var data32 uint32 = 0
+
+    for _, entry := range(RmonIngressStruct) {
+        data32, err = MvSwReadRmonStat(portNum, entry.reg)
+        fmt.Printf("%-25s - %.08x\n", entry.statname, data32)
+    }
+    for _, entry := range(RmonEgressStruct) {
+        data32, err = MvSwReadRmonStat(portNum, entry.reg)
+        fmt.Printf("%-25s - %.08x\n", entry.statname, data32)
+    }
+    return
+}
+
 
 
 func main() {
@@ -334,12 +348,15 @@ func main() {
     smiPtr      := flag.Bool(  "smi", false, "Marvell Switch SMI Phy/Serdes access (otherwise switch port access)")
     addrPtr     := flag.Uint64("addr", 0,    "Register addr")
     dataPtr     := flag.Uint64("data", 0,    "Register data")
+    cntPtr      := flag.Bool("cnt",  false, "dump stats")
+    portPtr     := flag.Uint64("port",  0,    "port for dump stats")
     uutPtr      := flag.String("uut",  "UUT_NONE", "Target UUT")
     flag.Parse()
 
     addr := uint8(*addrPtr)
     data := uint16(*dataPtr)
     phyAddr := uint8(*phyPtr)
+    port := uint8(*portPtr)
     uut := strings.ToUpper(*uutPtr)
 
 
@@ -351,7 +368,10 @@ func main() {
     fmt.Printf(" smiPtr=%t\n", *smiPtr)
     fmt.Printf(" phyPtr=%v\n", phyAddr)
 
-
+    if *cntPtr == true {
+        MvSwDumpRmon(port)
+        return
+    }
     if *readPtr == true {
         if *smiPtr == true {
             dataL, err := MdioSMIRead(phyAddr, addr)

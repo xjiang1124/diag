@@ -284,6 +284,8 @@ func sysDetect() (err int) {
                 presentStr = "BIODONA_D5"
             case nicCpldCommon.ID_NAPLES_MTP:
                 presentStr = "NAPLES_MTP"
+            case nicCpldCommon.ID_LACONA_DELL:
+                presentStr = "LACONADELL"
             default:
                 presentStr = "Unknown"
             }

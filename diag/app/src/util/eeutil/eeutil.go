@@ -27,7 +27,7 @@ const NAPLES25SWM_HPE_C   string  = "P41851-001"      //SWM HPE Cloud
 const NAPLES25OCP_HPE_E   string  = "P37689-001"
 const NAPLES25OCP_HPE_C   string  = "P41857-001"
 const NAPLES25OCP_PEN     string  = "68-0010-01 01"
-const NAPLES25OCP_DELL    string  = "P18671-001"
+const NAPLES25OCP_DELL    string  = "68-0023"  
 
 const NAPLES100_HPE_E     string  = "P37692-001"      //Enterprise
 const NAPLES100_HPE_C     string  = "P41854-001"      //Cloud
@@ -70,6 +70,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
            cardType == "VOMERO2" || 
            cardType == "ORTANO" || 
            cardType == "ORTANO2" || 
+           cardType == "LACONADELL" ||
            cardType == "NAPLES100HPE" {
 
             eeprom.I2cAddr16 = true
@@ -124,7 +125,6 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     cli.Println("e", "For Programming Naples25OCP HPE, you must enter a part number")
                     return -1;
                 }
-                const NAPLES25OCP_DELL    string  = "P18671-001"
                 if pn == NAPLES25OCP_HPE_E {          //ENTERPRISE
                     eeprom.EepromTbl = eeprom.HpeTblOCP
                     eeprom.EepromExtTbl = eeprom.HpeTblOCPext
@@ -135,12 +135,12 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
                     eeprom.HpeOcp = 1
                     fmt.Printf(" HPE OCP CLOUD\n");
-                } else if pn == NAPLES25OCP_DELL {
+                } else if pn[0:6] == NAPLES25OCP_DELL[0:6] {
                     eeprom.CustType = "DELLOCP"
                     eeprom.EepromTbl = eeprom.DellTblOcp
                     eeprom.DellOcp = 1
                 } else {
-                    cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming Naples25 OCP HPE")
+                    cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming Naples25 OCP")
                     return -1;
                 }
             } 
@@ -203,6 +203,10 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         if (cardType == "NAPLES25SWM833") {
             eeprom.CustType = "PENSWM"
             eeprom.EepromTbl = eeprom.PenTblSWM833Mhz
+        }
+        if (cardType == "LACONADELL") {
+            eeprom.CustType = "LACONADELL"
+            eeprom.EepromTbl = eeprom.Lacona25DELLTbl
         }
         if (cardType == "NAPLES25SWMDELL") {
             eeprom.CustType = "DELLSWM"
@@ -294,7 +298,7 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
                 eeprom.HpeOcp = 1
                 return(0)
             }
-            cli.Println("e", "Unable to determine naples100 HPE fru type.  Please program it with a valid part number")
+            cli.Println("e", "Unable to determine Naples25 OCP fru type.  Please program it with a valid part number")
             return -1;
         } else if (cardType == "ORTANO2") {
             rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2[0:7])
