@@ -132,7 +132,7 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 833} {arm_freq 20
     }
 
     set in_err [plog_get_err_count]
-    elb_card_rst $j2c_port $j2c_slot
+    elb_card_rst $j2c_port $j2c_slot nod 3200 1600 0 0 "127.0.0.1" 1 1 normal 0 0
 
     elb_set_avs $core_freq $arm_freq 
 
