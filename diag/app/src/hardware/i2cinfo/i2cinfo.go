@@ -62,7 +62,6 @@ var Naples100MtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},
 }
 
-
 var OrtanoTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
@@ -93,6 +92,38 @@ var Ortano2MtpTbl = []I2cInfo {
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x61,    0x0,    "HUB_NONE",  0,    0},  
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var LaconaTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
+    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "TPS544B25", 0x0,   0x24,    0x0,    "HUB_NONE",  0,    0},
+
+    I2cInfo {"SFP_1",          "QSFP",      0x1,   0x50,    0x0,    "HUB_CPLD",  0,    0},
+    I2cInfo {"SFP_1_DOM",      "QSFP",      0x1,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+
+    I2cInfo {"SFP_2",          "QSFP",      0x2,   0x50,    0x0,    "HUB_CPLD",  0,    0},
+    I2cInfo {"SFP_2_DOM",      "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+}
+
+var LaconaMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x60,    0x0,    "HUB_NONE",  0,    0},  
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x46,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var LaconaDellMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x60,    0x0,    "HUB_NONE",  0,    0},  
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
 // Naples100 I2C table on MTP SMBus

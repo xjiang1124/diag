@@ -1,0 +1,8 @@
+#description: fruits are delicious
+fruits:
+    AAPLE: red
+      #    - red
+      #    - sweet
+    LEMON: yellow
+      #    - yellow
+      #    - sour

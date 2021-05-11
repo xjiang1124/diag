@@ -8,8 +8,9 @@ import (
     "asic/elba"
     "common/diagEngine"
     "common/dcli"
-    //"common/errType"
+    "common/errType"
     "config"
+    "cardinfo"
 )
 
 //========================================================
@@ -32,7 +33,13 @@ func Nic_AsicPcie_PrbsHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    if ( cardType == "ORTANO"  || cardType == "ORTANO2" ) {
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    if ( asicType == "ELBA" ) {
         err = elba.Prbs("PCIE", *polyPtr, *durationPtr)
     } else {
         err = capri.Prbs("PCIE", *polyPtr, *durationPtr)
@@ -58,7 +65,13 @@ func Nic_AsicEth_PrbsHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    if ( cardType == "ORTANO"  || cardType == "ORTANO2" ) {
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    if ( asicType == "ELBA" ) {
         err = elba.Prbs("ETH", *polyPtr, *durationPtr)
     } else {
         err = capri.Prbs("ETH", *polyPtr, *durationPtr)
@@ -84,8 +97,17 @@ func Nic_Asic_L1Hdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    if ( cardType == "ORTANO"  || cardType == "ORTANO2" ) {
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    if ( asicType == "ELBA" ) {
         err = elba.L1(*modePtr, *snPtr)
+    } else {
+        dcli.Println("i", "Unsupported ASIC type", asicType)
+        err = errType.FAIL
     }
 
     // Inform diag engine that test handler is done
