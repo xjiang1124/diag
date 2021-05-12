@@ -295,7 +295,7 @@ class PART_NUMBERS_MATCH:
     N100_NET_PN_FMT = r"111-04635"                            #111-04635        NAPLES 100 NETAPP
     N100_PN_FMT_ALL = r"{:s}|{:s}".format(N100_PEN_PN_FMT,N100_NET_PN_FMT)
 
-    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [A-Z0-9]{2}"           #68-0013-01 03    NAPLES100 IBM
+    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [A-Z0-9]{2}"        #68-0013-01 03    NAPLES100 IBM
     N100_IBM_FMT_ALL = r"{:s}".format(N100_IBM_PN_FMT)
 
     N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                #P37692-001       NAPLES100 HPE 
@@ -313,16 +313,16 @@ class PART_NUMBERS_MATCH:
     N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}" #68-0017-01 01    NAPLES25 SWM PENSANDO TAA 
     N25_SWM_HPE_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_SWM_HPE_PN_FMT, N25_SWM_HPE_CLD_PN_FMT, N25_SWM_PEN_PN_FMT, N25_SWM_PEN_TAA_PN_FMT)
 
-    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"        #68-0014-01 00       NAPLES25 SWM DELL
+    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"     #68-0014-01 00       NAPLES25 SWM DELL
     N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)
 
-    N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"        #68-0019-01 01       NAPLES25 SWM 833 PENSANDO
+    N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"     #68-0019-01 01       NAPLES25 SWM 833 PENSANDO
     N25_SWM_833_FMT_ALL = r"{:s}".format(N25_SWM_833_PN_FMT)
 
-    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"        #68-0010-xx       NAPLES25 OCP PENSANDO
+    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"     #68-0010-xx       NAPLES25 OCP PENSANDO
     N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
     N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
-    N25_OCP_DEL_PN_FMT = r"P18671-00[0-9]{1}"                 #P18671-001       NAPLES25 OCP DELL
+    N25_OCP_DEL_PN_FMT = r"68-0023-0[0-9]{1} [A-Z0-9]{2}"     #68-0023-01       NAPLES25 OCP DELL
     N25_OCP_PN_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_OCP_PEN_PN_FMT,N25_OCP_HPE_PN_FMT, N25_OCP_HPE_CLD_PN_FMT, N25_OCP_DEL_PN_FMT)    
 
     FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"              #68-0007-01 01    FORIO
@@ -337,7 +337,7 @@ class PART_NUMBERS_MATCH:
     ORTANO_PN_FMT = r"68-0015-01 [A-Z0-9]{2}"                 #68-0015-01 01    ORTANO
     ORTANO_FMT_ALL = r"{:s}".format(ORTANO_PN_FMT)
 
-    ORTANO2_ORC_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"    #68-0015-02 01    ORTANO2 ORACLE
+    ORTANO2_ORC_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"     #68-0015-02 01    ORTANO2 ORACLE
     ORTANO2_PEN_PN_FMT = r"68-0021-0[2-9]{1} [A-Z0-9]{2}"     #68-0021-02 01    ORTANO2 GENERIC (PENSANDO)
     ORTANO2_FMT_ALL = r"{:s}|{:s}".format(ORTANO2_ORC_PN_FMT,ORTANO2_PEN_PN_FMT)
 
@@ -410,7 +410,7 @@ HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
 HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
-OCP_DELL_DISP_PN_FMT = r"Assembly Number +([A-Z0-9]{6}-[0-9]{3})"
+OCP_DELL_DISP_PN_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
 
 NIC_MGMT_USERNAME = "root"

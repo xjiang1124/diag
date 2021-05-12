@@ -2236,7 +2236,7 @@ class mtp_ctrl():
             if software_pn != "90-0006-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:6] == "P18671":      #NAPLES25 OCP DELL
+        elif naples_pn[0:7] == "68-0023":     #NAPLES25 OCP DELL
             if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
