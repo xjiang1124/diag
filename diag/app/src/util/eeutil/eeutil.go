@@ -19,10 +19,11 @@ import (
 )
 
 
-const NAPLES25SWM_PEN     string  = "68-0016-01 01"   //SWM Pesnando Sku
-const NAPLES25SWM_PEN_TAA string  = "68-0017-01 01"   //SWM Pesnando TAA Sku
-const NAPLES25SWM_HPE_E   string  = "P26968-001"      //SWM HPE Enterprise
-const NAPLES25SWM_HPE_C   string  = "P41851-001"      //SWM HPE Cloud
+const NAPLES25SWM_PEN       string  = "68-0016-01 01"   //SWM Pesnando Sku
+const NAPLES25SWM_PEN_TAA   string  = "68-0017-01 01"   //SWM Pesnando TAA Sku
+const NAPLES25SWM_HPE_E     string  = "P26968-001"      //SWM HPE Enterprise
+const NAPLES25SWM_HPE_E_TAA string  = "P46653-001"      //SWM HPE Enterprise TAA
+const NAPLES25SWM_HPE_C     string  = "P41851-001"      //SWM HPE Cloud
 
 const NAPLES25OCP_HPE_E   string  = "P37689-001"
 const NAPLES25OCP_HPE_C   string  = "P41857-001"
@@ -96,6 +97,11 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     eeprom.EepromExtTbl = eeprom.HpeTblSWMext
                     eeprom.HpeSwm = 1  
                     fmt.Printf(" HPE 25 SWM\n");
+                } else if pn == NAPLES25SWM_HPE_E_TAA {  //ENTERPRISE TAA
+                    eeprom.EepromTbl = eeprom.HpeTblSWMTAA
+                    eeprom.EepromExtTbl = eeprom.HpeTblSWMTAAext
+                    eeprom.HpeSwm = 1  
+                    fmt.Printf(" HPE 25 SWM TAA\n");
                 } else if pn == NAPLES25SWM_HPE_C {   //CLOUD
                     eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
                     eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
@@ -238,6 +244,13 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.HpeTblSWM
                 eeprom.EepromExtTbl = eeprom.HpeTblSWMext
+                eeprom.HpeSwm = 1
+                return(0)
+            }
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E_TAA)
+            if rc == errType.SUCCESS {
+                eeprom.EepromTbl = eeprom.HpeTblSWMTAA
+                eeprom.EepromExtTbl = eeprom.HpeTblSWMTAAext
                 eeprom.HpeSwm = 1
                 return(0)
             }
