@@ -8,8 +8,8 @@ import (
 )
 
 func TestReadVout(t *testing.T) {
-    fmt.Println(cdInfo)
-    cardType := "ORTANO"
+    fmt.Println(Cardinfo)
+    cardType := "ORTANO2"
     err, asicType := GetAsicType(cardType)
     if err != errType.SUCCESS {
         fmt.Println("Failed!")
