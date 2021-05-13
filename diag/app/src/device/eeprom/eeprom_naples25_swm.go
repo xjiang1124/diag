@@ -142,7 +142,7 @@ var HpeTblSWMTAAext = []entry {
         0x62, 0x20, 0x54, 0x41, 0x41, 0x20, 0x43, 0x61, 0x72, 0x64}},
     entry{"PCA Product Number Type/Length",          INT8,        176,        1,    []byte{0xCA}},
     entry{"HPE Product Number",                    STRING,        177,       10,    []byte{
-        0x50, 0x34, 0x36, 0x36, 0x35, 0x32, 0x2d, 0x42, 0x32, 0x31}},
+        0x50, 0x34, 0x36, 0x36, 0x35, 0x31, 0x2d, 0x42, 0x32, 0x31}},
     entry{"Product Version Type/Length",            INT8,        187,        1,    []byte{0xC2}},
     entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x42}},
     entry{"PCA Serial Number Type/Length",          INT8,        190,        1,    []byte{0xCA}},
