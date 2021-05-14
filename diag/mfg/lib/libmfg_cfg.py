@@ -38,7 +38,7 @@ class NIC_IMAGES:
     goldfw_img["NAPLES25"] = "naples_goldfw_apulu_1.10.3-C-26_ClouldA_0806.tar"
     goldfw_dat["NAPLES25"] = "06-18-2020"
 
-    # HPE Enterprise (P26968-001)
+    # NAPLES25SWM HPE Enterprise (P26968-001)
     cpld_img["NAPLES25SWM"] = "naples25_swm_revf_03102021.bin"
     cpld_ver["NAPLES25SWM"] = "0xF"
     cpld_dat["NAPLES25SWM"] = "03-10"
@@ -50,41 +50,53 @@ class NIC_IMAGES:
     goldfw_img["NAPLES25SWM"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
     goldfw_dat["NAPLES25SWM"] = "01-31-2021"
 
-    # HPE Cloud (P41851-001)
-    # cpld_img["NAPLES25SWM"] = "naples25_swm_revA_06082020.bin"
-    # cpld_ver["NAPLES25SWM"] = "0xA"
-    # cpld_dat["NAPLES25SWM"] = "06-08"
-    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8A_06082020.bin"
-    # sec_cpld_ver["NAPLES25SWM"] = "0x8A"
-    # sec_cpld_dat["NAPLES25SWM"] = "06-08"
-    # diagfw_img["NAPLES25SWM"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    # diagfw_dat["NAPLES25SWM"] = "03-03-2021"
-    # goldfw_img["NAPLES25SWM"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    # goldfw_dat["NAPLES25SWM"] = "01-31-2021"
+    # NAPLES25SWM HPE Cloud (P41851-001)
+    cpld_img["P41851"] = "naples25_swm_revA_06082020.bin"
+    cpld_ver["P41851"] = "0xA"
+    cpld_dat["P41851"] = "06-08"
+    sec_cpld_img["P41851"] = "naples25_swm_rev8A_06082020.bin"
+    sec_cpld_ver["P41851"] = "0x8A"
+    sec_cpld_dat["P41851"] = "06-08"
+    diagfw_img["P41851"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["P41851"] = "03-03-2021"
+    goldfw_img["P41851"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
+    goldfw_dat["P41851"] = "01-31-2021"
 
-    # Pensando (68-0016)
-    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin"
-    # cpld_ver["NAPLES25SWM"] = "0xC"
-    # cpld_dat["NAPLES25SWM"] = "01-06"
-    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin"
-    # sec_cpld_ver["NAPLES25SWM"] = "0x8C"
-    # sec_cpld_dat["NAPLES25SWM"] = "01-06"
-    # diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    # diagfw_dat["NAPLES25SWM"] = "11-18-2020"
-    # goldfw_img["NAPLES25SWM"] = "naples_goldfw_1.3.1-E-42_1119.tar"
-    # goldfw_dat["NAPLES25SWM"] = "11-18-2020"
+    # NAPLES25SWM HPE TAA (P46653-001)
+    cpld_img["P46653"] = "naples25_swm_revf_03102021.bin"
+    cpld_ver["P46653"] = "0xF"
+    cpld_dat["P46653"] = "03-10"
+    sec_cpld_img["P46653"] = "naples25_swm_rev8f_03102021.bin"
+    sec_cpld_ver["P46653"] = "0x8F"
+    sec_cpld_dat["P46653"] = "03-10"
+    diagfw_img["P46653"] = "naples_diagfw_1.3.1-E-48_2021.06.08.tar"
+    diagfw_dat["P46653"] = "06-08-2021"
+    goldfw_img["P46653"] = "naples_goldfw_1.3.1-E-48_2021.06.08.tar"
+    goldfw_dat["P46653"] = "06-08-2021"
 
-    # Pensando TAA (68-0017)
-    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin"
-    # cpld_ver["NAPLES25SWM"] = "0xC"
-    # cpld_dat["NAPLES25SWM"] = "01-06"
-    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin"
-    # sec_cpld_ver["NAPLES25SWM"] = "0x8C"
-    # sec_cpld_dat["NAPLES25SWM"] = "01-06"
-    # diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    # diagfw_dat["NAPLES25SWM"] = "11-18-2020"
-    # goldfw_img["NAPLES25SWM"] = "naples_goldfw_1.3.1-E-42_1119.tar"
-    # goldfw_dat["NAPLES25SWM"] = "11-18-2020"
+    # NAPLES25SWM Pensando (68-0016)
+    cpld_img["68-0016"] = "naples25_swm_revc_01062021.bin"
+    cpld_ver["68-0016"] = "0xC"
+    cpld_dat["68-0016"] = "01-06"
+    sec_cpld_img["68-0016"] = "naples25_swm_rev8c_01062021.bin"
+    sec_cpld_ver["68-0016"] = "0x8C"
+    sec_cpld_dat["68-0016"] = "01-06"
+    diagfw_img["68-0016"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["68-0016"] = "11-18-2020"
+    goldfw_img["68-0016"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    goldfw_dat["68-0016"] = "11-18-2020"
+
+    # NAPLES25SWM Pensando TAA (68-0017)
+    cpld_img["68-0017"] = "naples25_swm_revc_01062021.bin"
+    cpld_ver["68-0017"] = "0xC"
+    cpld_dat["68-0017"] = "01-06"
+    sec_cpld_img["68-0017"] = "naples25_swm_rev8c_01062021.bin"
+    sec_cpld_ver["68-0017"] = "0x8C"
+    sec_cpld_dat["68-0017"] = "01-06"
+    diagfw_img["68-0017"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["68-0017"] = "11-18-2020"
+    goldfw_img["68-0017"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    goldfw_dat["68-0017"] = "11-18-2020"
 
     cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev3_01062021.bin"
     cpld_ver["NAPLES25SWMDELL"] = "0x3"
@@ -355,9 +367,10 @@ class PART_NUMBERS_MATCH:
 
     N25_SWM_HPE_PN_FMT     = r"P26968-00[0-9]{1}"             #P26968-001       NAPLES25 SWM HPE 
     N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"             #P41851-001       NAPLES25 SWM HPE CLOUD
+    N25_SWM_HPE_TAA_PN_FMT = r"P46653-00[0-9]{1}"             #P46653-001       NAPLES25 SWM HPE TAA
     N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}" #68-0016-01 01    NAPLES25 SWM PENSANDO 
     N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}" #68-0017-01 01    NAPLES25 SWM PENSANDO TAA 
-    N25_SWM_HPE_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_SWM_HPE_PN_FMT, N25_SWM_HPE_CLD_PN_FMT, N25_SWM_PEN_PN_FMT, N25_SWM_PEN_TAA_PN_FMT)
+    N25_SWM_HPE_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_SWM_HPE_PN_FMT, N25_SWM_HPE_CLD_PN_FMT, N25_SWM_HPE_TAA_PN_FMT, N25_SWM_PEN_PN_FMT, N25_SWM_PEN_TAA_PN_FMT)
 
     N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"     #68-0014-01 00       NAPLES25 SWM DELL
     N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)

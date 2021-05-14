@@ -1577,7 +1577,7 @@ class mtp_ctrl():
                     continue
 
         if (mtp_capability & 0x2):
-            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
+            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
                 if stage in (
                     FF_Stage.FF_DL,
                     FF_Stage.FF_P2C,
@@ -2129,6 +2129,8 @@ class mtp_ctrl():
             expected_timestamp = NIC_IMAGES.goldfw_dat[nic_type]
             if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw timestamp for {:s}".format(nic_type))
             return False
@@ -2658,7 +2660,11 @@ class mtp_ctrl():
             if software_pn != "90-0006-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):     #NAPLES25 SWM PENSANDO
+        elif naples_pn[0:6] == "P46653":    # NAPLES25 SWM HPE TAA
+            if software_pn != "90-0013-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):    #NAPLES25 SWM PENSANDO & TAA
             if software_pn != "90-0002-0005":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
@@ -2778,11 +2784,15 @@ class mtp_ctrl():
         cur_timestamp = nic_cpld_info[1]
         try:
             expected_version = NIC_IMAGES.cpld_ver[nic_type]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
         try:
             expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3016,22 +3026,30 @@ class mtp_ctrl():
 
         try:
             expected_version = NIC_IMAGES.cpld_ver[nic_type]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
         try:
             expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
         if sec_cpld:
             try:
                 expected_version = NIC_IMAGES.sec_cpld_ver[nic_type]
+                if nic_type == NIC_Type.NAPLES25SWM:
+                    expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
                 return False
             try:
                 expected_timestamp = NIC_IMAGES.sec_cpld_dat[nic_type]
+                if nic_type == NIC_Type.NAPLES25SWM:
+                    expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
                 return False
@@ -3112,6 +3130,8 @@ class mtp_ctrl():
             expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
             if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
                 expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                expected_timestamp = NIC_IMAGES.diagfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw timestamp for {:s}".format(nic_type))
             return False
@@ -4372,6 +4392,37 @@ class mtp_ctrl():
         else:
             return False
 
+    def mtp_lookup_nic_swm_type(self, slot, slot_pn=None):
+        """
+         Differentiate SWM cards by PN
+
+            PN : lookup
+            -----------
+            P26968-001 : NAPLES25SWM
+            P41851-001 : P41851
+            P46653-001 : P46653
+            68-0016-XX XX : 68-0016
+            68-0017-XX XX : 68-0016
+            else : nic_type
+        """
+        if slot_pn is None:
+            slot_pn = self.mtp_get_nic_pn(slot)
+        if not slot_pn:
+            self.cli_log_slot_err_lock(slot, "Unknown PN for SWM: ".format(slot_pn))
+            return slot_pn
+
+        if self._nic_type_list[slot] != NIC_Type.NAPLES25SWM:
+            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for SWM")
+            return slot_pn
+
+        swm_skus = ("P26968", "P41851", "P46653", "68-0016", "68-0017")
+        for sku in swm_skus:
+            if sku in slot_pn:
+                if sku == "P26968":
+                    return "NAPLES25SWM"
+                else:
+                    return sku
+
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
 
@@ -4436,8 +4487,8 @@ class mtp_ctrl():
 
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
-        is100Dell = True if software_pn == "90-0013-0001" else False
-        if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, is100Dell=is100Dell):
+        isRelC = True if software_pn == "90-0013-0001" else False
+        if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, isRelC=isRelC):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             self.mtp_dump_nic_err_msg(slot)
             return False

@@ -568,7 +568,7 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
-    def nic_sw_shutdown(self, cloud=False, is100Dell=False):
+    def nic_sw_shutdown(self, cloud=False, isRelC=False):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -595,8 +595,8 @@ class nic_ctrl():
                 self.nic_console_detach()
                 return False
 
-        # poweroff ... Cloud build do not support this command & different command for 100Dell
-        if is100Dell == True:
+        # poweroff ... Cloud build do not support this command & different command for Rel C
+        if isRelC == True:
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_PEN_FMT)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:

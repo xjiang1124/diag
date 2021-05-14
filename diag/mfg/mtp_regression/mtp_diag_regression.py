@@ -1043,9 +1043,13 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+    cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
     if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
-    cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
+    if nic_type == NIC_Type.NAPLES25SWM:
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+    
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         testlist = ["QSPI_PROG", "FPGA_PROG"]
@@ -1063,7 +1067,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
         # program QSPI
         elif test == "QSPI_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file, force_update=False)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)

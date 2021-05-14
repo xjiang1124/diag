@@ -389,27 +389,6 @@ def main():
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
     libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
 
-    # Pomonte P1 build: refactor the SN and PN from the ones scanned
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        if scan_rslt[key]["VALID"]:
-            pn = scan_rslt[key]["PN"]
-            if pn.startswith("68-0022") or pn.startswith("68-0025"):
-                # fru_date = scan_rslt[key]["TS"]
-                # year_digit = fru_date[-1:]
-                # month_digit = '{:x}'.format(int(fru_date[0:2]))
-                # if int(fru_date[2:4]) < 10:
-                #     day_digit = fru_date[2:4]
-                # else:
-                #     day_digit = chr(55+int(fru_date[2:4]))
-                year_digit = "1"
-                month_digit = "9"
-                day_digit = "G"
-                scan_rslt[key]["SN"] = "USFLUPK" + year_digit + month_digit + day_digit + scan_rslt[key]["SN"][-4:]
-                scan_rslt[key]["PN"] = "0PCFPCX00"
-                if pn.startswith("68-0025"):
-                    scan_rslt[key]["PN"] = "0X322FX01"
-
     scan_cfg_file = log_dir + log_sub_dir + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
     scan_cfg_filep = open(scan_cfg_file, "w+")
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
@@ -441,7 +420,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
 
     if (mtp_capability & 0x2):
-        for nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
+        for nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
             except KeyError:
@@ -626,6 +605,9 @@ def main():
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
         if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
+        if nic_type == NIC_Type.NAPLES25SWM:
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
         failsafe_cpld_img_file = ""
         if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
@@ -722,12 +704,16 @@ def main():
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
             continue
+        pn = nic_fru_cfg[mtp_id][key]["PN"]
 
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
         if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
-        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
+        if nic_type == NIC_Type.NAPLES25SWM:
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
         failsafe_cpld_img_file = ""
         if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]

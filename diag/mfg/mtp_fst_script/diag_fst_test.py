@@ -35,6 +35,8 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES100IBM"
     elif "P26968" in pn:
         product_name = "NAPLES25SWM"
+    elif "P46653" in pn:
+        product_name = "NAPLES25SWM"
     elif "68-0005-04" in pn or "P18669" in pn:
         product_name = "NAPLES25"
     elif "68-0011-02" in pn:

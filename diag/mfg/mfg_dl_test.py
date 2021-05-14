@@ -192,7 +192,7 @@ def main():
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
         if (mtp_capability & 0x2):
-            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
+            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
