@@ -5,10 +5,19 @@ set_vmarg()
     echo $CARD_TYPE
     if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
     then
-        for dev in ELB0_CORE ELB0_ARM VDD_DDR VDDQ_DDR
+        #for dev in ELB0_CORE ELB0_ARM VDD_DDR VDDQ_DDR
+        for dev in ELB0_CORE VDD_DDR VDDQ_DDR
         do
             /data/nic_util/devmgr -dev=$dev -margin -pct=$1
         done
+	if [[ "$1" -lt 3 && "$1" -gt -1 ]] 
+	then
+            /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
+	fi
+	if [[ "$1" == -3 ]]
+        then
+            /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=-2
+        fi
     else
         for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
         do
