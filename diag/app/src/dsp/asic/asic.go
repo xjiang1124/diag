@@ -112,7 +112,7 @@ func AsicL1_TestHdl(argList []string) {
     offload := *offloadPtr
     esecEn := *esecEnPtr
 
-    dcli.Println("i", "sn", *snPtr, "slot", *slotPtr, "intLpbk", *intLpbkPtr, "vmarg", *vmargPtr, "zmq_en", *zmqEnPtr, "offload", *offloadPtr, "esec_en", *esecEnPtr)
+    dcli.Println("i", "sn", *snPtr, "slot", *slotPtr, "mode", *modePtr, "intLpbk", *intLpbkPtr, "vmarg", *vmargPtr, "zmq_en", *zmqEnPtr, "offload", *offloadPtr, "esec_en", *esecEnPtr)
 
     // Diable time stamp since there are too much asic output
     dcli.TimeStampEnable(misc.DISABLE)
