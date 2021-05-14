@@ -1657,10 +1657,10 @@ class mtp_ctrl():
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
                     for line in f:
-                        if MFG_DIAG_SIG.MFG_ASIC_FAIL_MSG_SIG in line:
+                        if MFG_DIAG_SIG.MFG_ASIC_FAIL_MSG2_SIG in line:
                             err_msg = line.replace('\n', '')
                             err_msg_list.append(err_msg)
-                        if MFG_DIAG_SIG.MFG_ASIC_PASS_MSG_SIG in line:
+                        if MFG_DIAG_SIG.MFG_ASIC_PASS_MSG2_SIG in line:
                             pass_count += 1
 
         return pass_count, err_msg_list

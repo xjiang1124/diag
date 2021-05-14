@@ -115,6 +115,7 @@ MTP_SEQ:
                 SN: Yes
                 SLOT: Yes
                 VMARG: Yes
+                MODE: Yes
 
 
 MTP_POST:

@@ -174,11 +174,11 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     nic_bottom_test_list = list()
 
     if vmarg > 0:
-        dsp = "HV_CAPRI"
+        dsp = "HV_ASIC"
     elif vmarg < 0:
-        dsp = "LV_CAPRI"
+        dsp = "LV_ASIC"
     else:
-        dsp = "CAPRI"
+        dsp = "ASIC"
 
     # separate lists for ORC ortano and PEN ortano 
     if nic_type == NIC_Type.ORTANO2:
@@ -466,7 +466,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         opts = test_cfg["OPTS"]
-        diag_cmd = diag_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg)
+        mode = get_mode_param(mtp_mgmt_ctrl, slot, test)
+        diag_cmd = diag_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg, mode)
         rslt_cmd = diag_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
