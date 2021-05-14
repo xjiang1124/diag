@@ -3595,7 +3595,6 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_ELBA":
-            # NZ FIXME: support both types of ortano in same MTP 
             if self.mtp_is_nic_ortano_oracle(nic_list[0]):
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
             else:
