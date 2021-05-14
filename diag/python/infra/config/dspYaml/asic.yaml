@@ -122,11 +122,15 @@ DSP:
             sn:
                 VALUE:
                     ALL: "SN000001"
-                INFO: NIC slot number
+                INFO: NIC serial number
             slot:
                 VALUE:
                     ALL: 1
                 INFO: NIC slot number
+            mode:
+                VALUE:
+                    ALL: "hod"
+                INFO: ASIC mode hod nod
             int_lpbk:
                 VALUE:
                     ALL: 0

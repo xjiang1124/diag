@@ -91,6 +91,7 @@ func AsicL1_TestHdl(argList []string) {
     fs         := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     snPtr      := fs.String("sn",       "SN000001", "Serial number")
     slotPtr    := fs.Uint64("slot",     1,          "Slot number")
+    modePtr    := fs.String("mode",     "hod",      "Elba L1 mode: hod/nod")
     intLpbkPtr := fs.Uint64("int_lpbk", 0,          "Enable internal loopback")
     vmargPtr   := fs.String("vmarg",    "normal",   "Vmargin normal/high/low")
     zmqEnPtr   := fs.Uint64("zmq_en",   0,          "ZMQ enable flag")
@@ -104,6 +105,7 @@ func AsicL1_TestHdl(argList []string) {
 
     sn := *snPtr
     slot := *slotPtr
+    mode := *modePtr
     intLpbk := *intLpbkPtr
     vmarg := *vmargPtr
     zmqEn := *zmqEnPtr
@@ -117,7 +119,7 @@ func AsicL1_TestHdl(argList []string) {
     defer dcli.TimeStampEnable(misc.ENABLE)
 
     dcli.Println("i", "RunVerbose")
-    err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+    err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
 
     diagEngine.FuncMsgChan <- err
     return
