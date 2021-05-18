@@ -1,4 +1,3 @@
-/* CS0 = FPGA  / CS1 = SPI-to-I2C interface  / CS2 = SPI FLASH */
 package main
 
 //#cgo CFLAGS: -I. -I../../../../lib/util
@@ -10,188 +9,105 @@ package main
 import "C"
 
 import (
-    "errors"
+    //"bufio"
+    //"errors"
     "fmt"
-    //"flag"
     "os"
     "strconv"
-    //"common/cli"
-    "golang.org/x/exp/io/spi"
-    //"sync"
     "time"
+    "syscall"
+    "unsafe"
 
-    //"syscall"
-    //"unsafe"
+    "common/cli"
+    "device/fpga/taorfpga"
 )
 
 
-const QSFP_1_I2C_BUS        uint8  = 0
-const QSFP_1_SLAVE_ADDRESS  uint8  = 0x50
-
-const QSFP_2_I2C_BUS        uint8  = 1
-const QSFP_2_SLAVE_ADDRESS  uint8  = 0x50
-
-const QSFP_DOM_1_I2C_BUS        uint8  = 0
-const QSFP_DOM_1_SLAVE_ADDRESS  uint8  = 0x51
-
-const QSFP_DOM_2_I2C_BUS        uint8  = 1
-const QSFP_DOM_2_SLAVE_ADDRESS  uint8  = 0x51
-
-const I2C_BUS                   uint8  = 2
-const FRU_SLAVE_ADDRESS         uint8  = 0x50
-const FRU_SIZE                  uint16 = 256
-
-//const I2C_BASE          uint16 = 0x400
-//const I2C_STRIDE        uint16 = 0x400
-const S2I_BUS_STRIDE    uint16 = 0x100
+const MEM_ACCESS_32  uint32 = 1
+const MEM_ACCESS_64  uint32 = 2
 
 /*
- * Registers offset
- */
-const IC_CON            uint8 = 0x0
-const IC_TAR            uint8 = 0x4
-const IC_SAR            uint8 = 0x8
-const IC_HS_MADDR       uint8 = 0xC
-const IC_DATA_CMD       uint8 = 0x10
-const IC_SS_SCL_HCNT    uint8 = 0x14
-const IC_SS_SCL_LCNT    uint8 = 0x18
-const IC_FS_SCL_HCNT    uint8 = 0x1c
-const IC_FS_SCL_LCNT    uint8 = 0x20
-const IC_INTR_STAT      uint8 = 0x2c
-const IC_INTR_MASK      uint8 = 0x30
-const IC_RAW_INTR_STAT	uint8 = 0x34
-const IC_RX_TL          uint8 = 0x38
-const IC_TX_TL          uint8 = 0x3c
-const IC_CLR_INTR       uint8 = 0x40
-const IC_CLR_RX_UNDER   uint8 = 0x44
-const IC_CLR_RX_OVER    uint8 = 0x48
-const IC_CLR_TX_OVER    uint8 = 0x4c
-const IC_CLR_RD_REQ     uint8 = 0x50
-const IC_CLR_TX_ABRT    uint8 = 0x54
-const IC_CLR_RX_DONE    uint8 = 0x58
-const IC_CLR_ACTIVITY   uint8 = 0x5c
-const IC_CLR_STOP_DET   uint8 = 0x60
-const IC_CLR_START_DET  uint8 = 0x64
-const IC_CLR_GEN_CALL   uint8 = 0x68
-const IC_ENABLE         uint8 = 0x6c
-const IC_STATUS         uint8 = 0x70
-const IC_TXFLR          uint8 = 0x74
-const IC_RXFLR          uint8 = 0x78
-const IC_SDA_HOLD       uint8 = 0x7c
-const IC_TX_ABRT_SOURCE	uint8 = 0x80
-const IC_ENABLE_STATUS  uint8 = 0x9c
-const IC_SDA_SETUP      uint8 = 0x94
-const IC_FS_SPKLEN      uint8 = 0xa0
-const IC_COMP_PARAM_1   uint8 = 0xf4
-const IC_COMP_VERSION   uint8 = 0xf8
-const IC_SDA_HOLD_MIN_VERS  uint32 = 0x3131312A
-const IC_COMP_TYPE          uint8  = 0xfc
-const IC_COMP_TYPE_VALUE    uint32 = 0x44570140
-
-const IC_INTR_RX_UNDER  uint16 = 0x001
-const IC_INTR_RX_OVER   uint16 = 0x002
-const IC_INTR_RX_FULL   uint16 = 0x004
-const IC_INTR_TX_OVER   uint16 = 0x008
-const IC_INTR_TX_EMPTY  uint16 = 0x010
-const IC_INTR_RD_REQ    uint16 = 0x020
-const IC_INTR_TX_ABRT   uint16 = 0x040
-const IC_INTR_RX_DONE   uint16 = 0x080
-const IC_INTR_ACTIVITY  uint16 = 0x100
-const IC_INTR_STOP_DET  uint16 = 0x200
-const IC_INTR_START_DET uint16 = 0x400
-const IC_INTR_GEN_CALL  uint16 = 0x800
-
-const IC_INTR_DEFAULT_MASK  uint16 =    ( IC_INTR_RX_FULL | 
-                                          IC_INTR_TX_EMPTY | 
-                                          IC_INTR_TX_ABRT  | 
-                                          IC_INTR_STOP_DET )
-
-type ABP_I2C_REGISTERS struct {
-    Name     string
-    Address  uint8
-}
+const TAORMINE_PCI_VENDOR_ID  uint32 = 0x1dd8
+const TAORMINE_MAX_PCI_DEV    uint32 = 0x0004
+const TAORMINE_PCI_DEV_ID0    uint32 = 0x0003
+const TAORMINE_PCI_DEV_ID1    uint32 = 0x0004
+const TAORMINE_PCI_DEV_ID2    uint32 = 0x0005
+const TAORMINE_PCI_DEV_ID3    uint32 = 0x0006
 
 
-var APB_REG_s = []ABP_I2C_REGISTERS {
-    ABP_I2C_REGISTERS{"IC_CON",             IC_CON},
-    ABP_I2C_REGISTERS{"IC_TAR",             IC_TAR},
-    ABP_I2C_REGISTERS{"IC_SAR",             IC_SAR},
-    ABP_I2C_REGISTERS{"IC_HS_MADDR",        IC_HS_MADDR},
-    ABP_I2C_REGISTERS{"IC_DATA_CMD",        IC_DATA_CMD},
-    ABP_I2C_REGISTERS{"IC_SS_SCL_HCNT",     IC_SS_SCL_HCNT},
-    ABP_I2C_REGISTERS{"IC_SS_SCL_LCNT",     IC_SS_SCL_LCNT},
-    ABP_I2C_REGISTERS{"IC_FS_SCL_HCNT",     IC_FS_SCL_HCNT},
-    ABP_I2C_REGISTERS{"IC_FS_SCL_LCNT",     IC_FS_SCL_LCNT},
-    ABP_I2C_REGISTERS{"IC_INTR_STAT",       IC_INTR_STAT},
-    ABP_I2C_REGISTERS{"IC_INTR_MASK",       IC_INTR_MASK},
-    ABP_I2C_REGISTERS{"IC_RAW_INTR_STAT",   IC_RAW_INTR_STAT},
-    ABP_I2C_REGISTERS{"IC_RX_TL",           IC_RX_TL},
-    ABP_I2C_REGISTERS{"IC_TX_TL",           IC_TX_TL},
-    ABP_I2C_REGISTERS{"IC_CLR_INTR",        IC_CLR_INTR},
-    ABP_I2C_REGISTERS{"IC_CLR_RX_UNDER",    IC_CLR_RX_UNDER},
-    ABP_I2C_REGISTERS{"IC_CLR_RX_OVER",     IC_CLR_RX_OVER},
-    ABP_I2C_REGISTERS{"IC_CLR_TX_OVER",     IC_CLR_TX_OVER},
-    ABP_I2C_REGISTERS{"IC_CLR_RD_REQ",      IC_CLR_RD_REQ},
-    ABP_I2C_REGISTERS{"IC_CLR_TX_ABRT",     IC_CLR_TX_ABRT},
-    ABP_I2C_REGISTERS{"IC_CLR_RX_DONE",     IC_CLR_RX_DONE},
-    ABP_I2C_REGISTERS{"IC_CLR_ACTIVITY",    IC_CLR_ACTIVITY},
-    ABP_I2C_REGISTERS{"IC_CLR_STOP_DET",    IC_CLR_STOP_DET},
-    ABP_I2C_REGISTERS{"IC_CLR_START_DET",   IC_CLR_START_DET},
-    ABP_I2C_REGISTERS{"IC_CLR_GEN_CALL",    IC_CLR_GEN_CALL},
-    ABP_I2C_REGISTERS{"IC_ENABLE",          IC_ENABLE},
-    ABP_I2C_REGISTERS{"IC_STATUS",          IC_STATUS},
-    ABP_I2C_REGISTERS{"IC_TXFLR",           IC_TXFLR},
-    ABP_I2C_REGISTERS{"IC_RXFLR",           IC_RXFLR},
-    ABP_I2C_REGISTERS{"IC_SDA_HOLD",        IC_SDA_HOLD},
-    ABP_I2C_REGISTERS{"IC_TX_ABRT_SOURCE",  IC_TX_ABRT_SOURCE},
-    ABP_I2C_REGISTERS{"IC_ENABLE_STATUS",   IC_ENABLE_STATUS},
-    ABP_I2C_REGISTERS{"IC_SDA_SETUP",       IC_SDA_SETUP},
-    ABP_I2C_REGISTERS{"IC_FS_SPKLEN",       IC_FS_SPKLEN},
-    ABP_I2C_REGISTERS{"IC_COMP_PARAM_1",    IC_COMP_PARAM_1},
-    ABP_I2C_REGISTERS{"IC_COMP_VERSION",    IC_COMP_VERSION},
-}
+var Glob_fd0 *os.File = nil
+var Glob_fd1 *os.File = nil
+var Glob_fd2 *os.File = nil
+var Glob_fd3 *os.File = nil
+var Glob_mmap0 []byte
+var Glob_mmap1 []byte
+var Glob_mmap2 []byte
+var Glob_mmap3 []byte 
+*/
 
-
-
-
-
+ 
 const errhelp = "\nfpgautil:\n" +
-        "### READ / WRITE FPGA CS0 ###\n" +
-        "fpgautil r <addr>\n"   +
-        "fpgautil w <addr> <data>\n" +
-        "fpgautil apbr <addr>\n"   +
-        "fpgautil apbw <addr> <data>\n" +
-        "fpgautil ee r  <addr> \n" +
-        "fpgautil ee w  <addr> <data>\n" +
-        "fpgautil apbdump < bus>\n" +
-        "mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
-        "mappedi2c bus i2c_addr r len                              -- read\n" +
-        "mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
-        "### 32-bit and 64-bit memory read/write ###\n" +
+        "<dev region> will be 0,1,2, or 3\n" +
+        "fpgautil regdump <dev region>\n" +
+        "fpgautil r32 <dev region> <addr>\n" +
+        "fpgautil w32 <dev region> <addr> <data>\n" +
         "fpgautil mem r32 <addr>\n" +
         "fpgautil mem w32 <addr> <data>\n" +
-        "fpgautil mem r64 <addr>\n" +
-        "fpgautil mem w64 <addr> <data>\n" 
+        "fpgautil i2c bus mux i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
+        "fpgautil i2c bus mux i2c_addr r len                              -- read\n" +
+        "fpgautil i2c bus mux i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
+        "fpgautil i2c bus mux scan\n" +
+        "fpgautil i2c debug enable/disable\n" +
+        " \n" +
+        "fpgautil flash devid\n" +
+        "fpgautil flash update/verify <filename>\n" +
+        "fpgautil flash r8/r32/r64 <addr> <length>\n" +
+        "fpgautil flash w32/w64 <addr> <data>\n" +
+        "fpgautil flash sectorerase <addr>\n" +
+        "fpgautil flash generateimage <filename>\n" +
+        "fpgautil flash bitswapimage <infile> <outfile>\n" +
+        " \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> uc \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> devid \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> featurebits \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> featurerow \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> statusreg \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> refresh \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> generateimage <filename>\n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> verifyimage <filename>\n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> program <filename>\n" +
+        " \n" +
+        "fpgautil elba <elba#> flash devid\n" +
+        "fpgautil elba <elba#> flash flagstatus/status\n" +
+        "fpgautil elba <elba#> flash 4byte enable/disable \n" +
+        "fpgautil elba <elba#> flash update/verify <filename>\n" +
+        "fpgautil elba <elba#> flash read <addr> <length>\n" +
+        "fpgautil elba <elba#> flash w32/w64 <addr> <data>\n" +
+        "fpgautil elba <elba#> flash sectorerase <addr>/all\n" +
+        "fpgautil elba <elba#> flash generateimage/verifyimage/writeimage uboot0/golduboot/goldfw/allflash <filename>\n" +
+         " \n" +
+        "fpgautil elba <elba#> cpld uc \n" +
+        "fpgautil elba <elba#> cpld devid \n" +
+        "fpgautil elba <elba#> cpld featurebits \n" +
+        "fpgautil elba <elba#> cpld featurerow \n" +
+        "fpgautil elba <elba#> cpld statusreg \n" +
+        "fpgautil elba <elba#> cpld refresh \n" +
+        "fpgautil elba <elba#> cpld erase <cfg0/cfg1> <filename>\n" +
+        "fpgautil elba <elba#> cpld generateimage/verifyimage/erase/program <cfg0/cfg1> <filename>\n" 
+        
+        
+
 
                                
 
 func main() {
-    var rc C.int = 0
-    var data64 C.uint64_t = 0
-    var acc_type C.uint32_t = 1
-    var data8 byte = 0
-    var data16 uint16 = 0
-
-    //var data32 uint32 = 0x12345678
-    //var data8_p *uint8
-    //data8_p = (* uint8)(unsafe.Pointer(&data32))
-    //if *data8_p == 0x12 {
-    //    fmt.Printf(" BIG ENGDIAN\n")
-    //} else {
-    //    fmt.Printf(" LITTLE ENDIAN\n")
-    //}
-
-    
+    //var rc C.int = 0
+    //var data64_C C.uint64_t = 0
+    var data32, pcidevid uint32 = 0, 0
+    var data64, addr, bar uint64 = 0, 0, 0
+    var err error
+    //var acc_type C.uint32_t = C.uint32_t(MEM_ACCESS_32)
+    var i int = 0
 
     argc := len(os.Args[0:])
     //fmt.Printf("Arg length is %d\n", argc)
@@ -202,666 +118,626 @@ func main() {
 
     if argc < 3 {
         fmt.Printf(" %s \n", errhelp)
-        os.Exit(-1);
+        return
     }
 
+    if os.Args[2] == "bitswapimage" && argc == 5 {
+        t1 := time.Now()
+        taorfpga.FlashBitSwapImage(os.Args[3], os.Args[4]) 
+        t2 := time.Now()
+        fmt.Println(" Creating bit swap file ", os.Args[4], " took", t2.Sub(t1), " time")
+        return
+    }
 
-    if os.Args[1][0] == 'r' || os.Args[1][0] == 'r' {
-        var err1 error
-        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+    //moved to init in different file
+    /*
+    taorfpga.Glob_mmap0, taorfpga.Glob_fd0, err = taorfpga.MMAP_Device(taorfpga.DEV0_BAR, taorfpga.MAP_SIZE)
+    taorfpga.Glob_mmap1, taorfpga.Glob_fd1, err = taorfpga.MMAP_Device(taorfpga.DEV1_BAR, taorfpga.MAP_SIZE)
+    taorfpga.Glob_mmap2, taorfpga.Glob_fd2, err = taorfpga.MMAP_Device(taorfpga.DEV2_BAR, taorfpga.MAP_SIZE)
+    taorfpga.Glob_mmap3, taorfpga.Glob_fd3, err = taorfpga.MMAP_Device(taorfpga.DEV3_BAR, taorfpga.MAP_SIZE)
+    defer func() {
+        taorfpga.MunMAP_Device(taorfpga.Glob_fd0, taorfpga.Glob_mmap0)
+        taorfpga.MunMAP_Device(taorfpga.Glob_fd1, taorfpga.Glob_mmap1)
+        taorfpga.MunMAP_Device(taorfpga.Glob_fd2, taorfpga.Glob_mmap2)
+        taorfpga.MunMAP_Device(taorfpga.Glob_fd3, taorfpga.Glob_mmap3)
+    } ()
+    */
+    
+    
+    if os.Args[1] == "bar" {
+        pcidevid = 0x80860f31
+        err := taorfpga.PCI_get_bar(pcidevid, &bar)
         if err != nil {
-            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            cli.Printf("e", "Failed to find FPGA DevID 0x%x memory bar", pcidevid)
         }
-        err1 = elba_fpga_rd(byte(arg2), &data8)
-        if err1 == nil {
-            fmt.Printf("FPGA RD [0x%.02x] = 0x%.02x\n", arg2, data8)
-        } else {
-            fmt.Printf("FPGA RD FAILED\n")
-        }
-        
-
-    } else if os.Args[1][0] == 'w' || os.Args[1][0] == 'W' {
-        if argc < 3 {
-            fmt.Printf(" ERROR fpgautil w:  Not enough args\n");  os.Exit(-1)
-        }
-        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
+        cli.Printf("i", "memory bar = 0x%x", bar)
+        return
+    } else if os.Args[1] == "regdump" {
+        fpga_region, err := strconv.ParseUint(os.Args[2], 0, 32)
         if err != nil {
-            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
         }
-        data, err := strconv.ParseUint(os.Args[3], 0, 32)
-        if err != nil {
-            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-        }
-        //Write Function
-        err1 := elba_fpga_wr(byte(arg2), byte(data))
-        if err1 == nil {
-            fmt.Printf("FPGA WR [0x%.02x] = 0x%.02x\n", arg2, byte(data))
-        } else {
-            fmt.Printf("FPGA WR FAILED\n")
-        }
-    } else if os.Args[1] == "apbr" {
-        var data uint32 = 0
-        var err1 error
-        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
-        if err != nil {
-            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-        }
-        err1 = spi_read_fpga_apb(uint16(arg2) + (S2I_BUS_STRIDE * uint16(I2C_BUS)), &data)
-        if err1 == nil {
-            fmt.Printf("APB RD [0x%.04x] = 0x%.08x\n", arg2, data)
-        } else {
-            fmt.Printf("APB RD FAILED\n")
-        }
-        
-
-    } else if os.Args[1] == "apbw" {
-        if argc < 3 {
-            fmt.Printf(" ERROR apbw:  Not enough args\n");  os.Exit(-1)
-        }
-        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
-        if err != nil {
-            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-        }
-        data, err := strconv.ParseUint(os.Args[3], 0, 32)
-        if err != nil {
-            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-        }
-        //Write Function
-        err1 := spi_write_fpga_apb(uint16(arg2) + (S2I_BUS_STRIDE * uint16(I2C_BUS)), uint32(arg2)) 
-        if err1 == nil {
-            fmt.Printf("APB WR [0x%.04x] = 0x%.08x\n", arg2, data)
-        } else {
-            fmt.Printf("APB WR FAILED\n")
-        }
-    } else if os.Args[1] == "apbdump" {
-        if argc < 3 {
-            fmt.Printf(" ERROR apbdump <bus>:  Not enough args\n");  os.Exit(-1)
-        }
-        arg2, err := strconv.ParseUint(os.Args[2], 0, 32);
-        if err != nil {
-            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-        }
-        if(uint8(arg2)>I2C_BUS){
-            fmt.Printf(" ERROR: Bus entered is to large.  Max BUS Number is %d\n", I2C_BUS); os.Exit(-1)
-        }
-        fpga_dump_abp(uint8(arg2))
-    } else if os.Args[1] == "ee" {
-        if argc < 4 {
-            fmt.Printf(" %s \n", errhelp)
-            os.Exit(-1);
-        }
-        addr, err := strconv.ParseUint(os.Args[3], 0, 32);
-        if err != nil {
-            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
-        }
-        if os.Args[2][0] == 'r' || os.Args[2][0] == 'r' {
-            var err1 error
-            err1 = s2i_transaction_eeprom (uint16(I2C_BUS), FRU_SLAVE_ADDRESS, uint16(addr), &data16, false)
-            if err1 == nil {
-                fmt.Printf("StoI EE RD [0x%.02x] = 0x%.04x\n", addr, data16)
-            } else {
-                fmt.Printf("StoI EE RD FAILED\n")
+        taorfpga.FpgaDumpRegionRegisters(uint32(fpga_region))
+        return
+    } else if os.Args[1] == "r32" || os.Args[1] == "w32" {
+        if (os.Args[1] == "r32") && argc < 4  {
+            if argc < 4 {
+                fmt.Printf(" ERROR r32:  Not enough args\n"); return
             }
-        } else if os.Args[2][0] == 'w' || os.Args[2][0] == 'W' {
-            if argc < 5 {
-                fmt.Printf(" ERROR fpgautil w:  Not enough args\n");  os.Exit(-1)
+        }
+        if (os.Args[2] == "w32") && argc < 5  {
+            if argc < 4 {
+                fmt.Printf(" ERROR w32:  Not enough args\n"); return
             }
-            data, err := strconv.ParseUint(os.Args[4], 0, 32)
+        }
+        fpga_region, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        addr, err = strconv.ParseUint(os.Args[3], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+
+        if (os.Args[1] == "r32") {
+            data32, err = taorfpga.TaorReadU32(uint32(fpga_region) , uint64(bar + addr))
             if err != nil {
-                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+                cli.Printf("e", "TaorReadU32 Failed")
             }
-            //Write Function
-            data16 = uint16(data & 0xFFFF)
-            err1 := s2i_transaction_eeprom (uint16(I2C_BUS), FRU_SLAVE_ADDRESS, uint16(addr), &data16, true)
-            if err1 == nil {
-                fmt.Printf("StoI EE WR [0x%.02x] = 0x%.04x\n", addr, data16)
-            } else {
-                fmt.Printf("StoI EE WR FAILED\n")
-            }
+
+            fmt.Printf("RD [0x%.04x] = 0x%.08x\n", bar + addr, data32)
         } else {
-            fmt.Printf("\n Incorrect Arg used.  See the help Below!!\n")
-            fmt.Printf(" %s \n", errhelp)
-            os.Exit(-1);
+            data64, err = strconv.ParseUint(os.Args[4], 0, 32)
+            err = taorfpga.TaorWriteU32(uint32(fpga_region), uint64(bar + addr), uint32(data64))
+            fmt.Printf("WR [0x%.04x] = 0x%.08x\n", bar + addr, uint32(data64))
         }
-    } else if os.Args[1] == "mappedi2c" {
-        //"mappedi2c bus i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
-        //"mappedi2c bus i2c_addr r len                              -- read\n" +
-        //"mappedi2c bus i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
-        //arg2 = bus
+
     } else if os.Args[1] == "mem" {
-        //"fpgautil mem r32 <addr>\n" +
-        //"fpgautil mem w32 <addr> <data>\n" +
         //Check the arg count
         if (os.Args[2] == "r32" || os.Args[2] == "r64") && argc < 4  {
             if argc < 4 {
-                fmt.Printf(" ERROR fpgautil mem r32/r64:  Not enough args\n"); os.Exit(-1)
+                fmt.Printf(" ERROR fpgautil mem r32/r64:  Not enough args\n"); return
             }
         }
         if (os.Args[2] == "w32" || os.Args[2] == "w64") && argc < 5  {
             if argc < 4 {
-                fmt.Printf(" ERROR fpgautil mem w32/w64:  Not enough args\n"); os.Exit(-1)
+                fmt.Printf(" ERROR fpgautil mem w32/w64:  Not enough args\n"); return
             }
         }
+        if os.Args[2] == "test" {
+            //0x9d004
+            
+            var data32 uint32 = 0;
+            addr, err := strconv.ParseUint(os.Args[3], 0, 64)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            t1 := time.Now()
+            data32, _ = taorfpga.ReadU32(uint64(addr))
+            t2 := time.Now()
+            diff := t2.Sub(t1)
+            fmt.Println(" Read with mmap takes ", diff, " time")
+            fmt.Printf(" Data32=%x\n", data32)
 
+            
+            {
+                var fd *os.File = nil
+                var mmap []byte
+                mmap, fd, err = taorfpga.MMAP_Device(int64(addr), int(syscall.Getpagesize()))
+                //fmt.Printf(" Addr[0] = 0x%x\n", mmap[0])
+                //fmt.Printf(" Addr[0] = 0x%x\n", *(*uint32)(unsafe.Pointer(&mmap[0])) )
+                //fmt.Printf(" Addr[0] = 0x%x\n", *(*uint32)(unsafe.Pointer(&mmap[4])) )
+                //fmt.Printf(" Addr[0] = 0x%x\n", *(*uint32)(unsafe.Pointer(&mmap[8])) )
+                t1 = time.Now()
+                data32 = *(*uint32)(unsafe.Pointer(&mmap[0]))
+                t2 = time.Now()
+                diff = t2.Sub(t1)
+                fmt.Println(" Read with pointer only takes ", diff, " time")
+                fmt.Printf(" Data32=%x\n", data32)
+                err = taorfpga.MunMAP_Device(fd, mmap)
+            }
+
+            t1 = time.Now()
+            data32, _ = taorfpga.TaorReadU32(3, 0) 
+            t2 = time.Now()
+            diff = t2.Sub(t1)
+            fmt.Println(" Read with pointer only takes ", diff, " time")
+            fmt.Printf(" Data32=%x\n", data32)
+        }
         if os.Args[2] == "r32" {
-            addr, err := strconv.ParseUint(os.Args[3], 0, 32)
+            addr, err = strconv.ParseUint(os.Args[3], 0, 64)
             if err != nil {
-                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
-            rc = C.cpu_mem_read(C.uint64_t(addr), &data64, acc_type)
-            if rc != 0 {
-                os.Exit(-1);
+            data32, err = taorfpga.ReadU32(uint64(addr))
+            if err != nil {
+                return
             }
-            fmt.Printf("RD [0x%.08x] = 0x%.08x\n", addr, (data64 & 0xFFFFFFFF))
+            fmt.Printf("RD [0x%.04x] = 0x%.08x\n", addr, data32)
         } else if os.Args[2] == "w32" {
-            addr, err := strconv.ParseUint(os.Args[3], 0, 32)
+            addr, err = strconv.ParseUint(os.Args[3], 0, 64)
             if err != nil {
-                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
             data, err := strconv.ParseUint(os.Args[4], 0, 32)
             if err != nil {
-                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
-            rc = C.cpu_mem_write(C.uint64_t(addr), C.uint64_t(data), acc_type)
-            if rc != 0 {
-                os.Exit(-1);
+            err = taorfpga.WriteU32(uint64(addr), uint32(data))
+            if err != nil {
+                return
             }
-            fmt.Printf("WR [0x%.08x] = 0x%.08x\n", addr, data)
+            fmt.Printf("WR [0x%.08x] = 0x%.08x\n", addr, uint32(data))
+        }
+    } else if os.Args[1] == "flash" {
+
+        if os.Args[2] == "devid" {
+            value, _ := taorfpga.FlashReadDevIDReg() 
+            fmt.Printf(" FLASH DEV ID=%.08x\n", value)
+        } else if os.Args[2] == "we" {
+            taorfpga.FlashWriteEnable()
+            taorfpga.FlashCheckWriteEnable()
+        } else if os.Args[2] == "update" {
+            t1 := time.Now()
+            taorfpga.FlashWriteImage(uint32(0x00), os.Args[3])
+
+            taorfpga.FlashVerifyImage(uint32(0x00), os.Args[3])
+
+            t2 := time.Now()
+            fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
+            return
+        } else if os.Args[2] == "verify" {
+            addr, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            taorfpga.FlashVerifyImage(uint32(addr), os.Args[3])
+            return
+        } else if os.Args[2] == "generateimage" {
+            t1 := time.Now()
+            taorfpga.FlashGenerateImageFromFlash(os.Args[3]) 
+            t2 := time.Now()
+            fmt.Println(" Generating the image ", t2.Sub(t1), " time")
+            fmt.Printf(" File %s generated\n", os.Args[3])
+        } else if os.Args[2] == "r8" || os.Args[2] == "r32" || os.Args[2] == "r64" {
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            addr, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rdLength, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            fmt.Printf("\n")
+            for i=0;i<int(rdLength); {
+                if (i%16) == 0 {
+                    fmt.Printf("\n%.08x: ", uint32(addr) + uint32(i))
+                }
+                if os.Args[2] == "r8" {
+                    data32, _ = taorfpga.FlashReadByte( (uint32(addr) + uint32(i)) ) 
+                    fmt.Printf("%.02x ", data32 & 0xff)
+                    i++
+                } else if os.Args[2] == "r32" {
+                    data32, _ = taorfpga.FlashReadFourBytes( (uint32(addr) + uint32(i)) ) 
+                    fmt.Printf("%.02x %.02x %.02x %02x ", byte(data32 & 0xff), byte((data32 & 0xff00)>>8), byte((data32 & 0xff0000)>>16), byte((data32 & 0xff000000)>>24))
+                    i = i + 4
+                } else if os.Args[2] == "r64" {
+                    data64, _ = taorfpga.FlashReadEightBytes( (uint32(addr) + uint32(i)) ) 
+                    fmt.Printf("%.02x %.02x %.02x %02x ", byte(data64 & 0xff), byte((data64 & 0xff00)>>8), byte((data64 & 0xff0000)>>16), byte((data64 & 0xff000000)>>24))
+                    fmt.Printf("%.02x %.02x %.02x %02x ", byte((data64 & 0xff00000000)>>32), byte((data64 & 0xff0000000000)>>40), byte((data64 & 0xff000000000000)>>48), byte((data64 & 0xff00000000000000)>>56) )
+                    i = i + 8
+                } else {
+                    fmt.Printf(" Args[2] is not Valid\n"); return
+                }
+            }
+            fmt.Printf("\n")
+        } else if os.Args[2] == "sectorerase" {
+            addr, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            taorfpga.FlashEraseSector(uint32(addr)) 
+            fmt.Printf(" Erased Sector associated with Addr 0x%x\n", uint32(addr))
+        } else if os.Args[2] == "w32" {
+            addr, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            data64, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            taorfpga.FlashWriteFourBytes(uint32(data64), uint32(addr))
+            fmt.Printf(" [WR] Addr 0x%x = %.08x\n", uint32(addr), uint32(data64))
+        } else if os.Args[2] == "w64" {
+            addr, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            data64, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            taorfpga.FlashWriteEightBytes(data64, uint32(addr))
+            fmt.Printf(" [WR] Addr 0x%x = %.08x\n", uint32(addr), uint32(data64))
+        } else {
+            fmt.Printf(" ERROR: Invalid Flash Command\n");
+        }
+    } else if os.Args[1] == "i2c" {
+        wrData := []byte{}
+        rdData := []byte{}
+        var rdSize uint32 = 0
+
+        if argc == 4 {
+            if os.Args[3][0] == 'd' {
+                taorfpga.TaorWriteU32(1, taorfpga.D1_SCRTCH_3_REG, 0x00)
+            } else if os.Args[3][0] == 'e' {
+                taorfpga.TaorWriteU32(1, taorfpga.D1_SCRTCH_3_REG, 0xDEBDEB99)
+            } else {
+                fmt.Printf(" %s \n", errhelp)
+            }
+            return
+        }
+        if argc == 5 {   //scan
+            matrix := make([]byte, 128)
+            bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            taorfpga.ExecutingScanChain = 1
+            for i:=3; i<0x78; i++ {
+
+                //if ((i >= 0x30 && i <= 0x37) || (i >= 0x50 && i <= 0x5F)) {
+                    //fmt.Printf("RD(%x) \n", i)
+                    rdData, err = taorfpga.I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 1 )
+                //} else {
+                    //fmt.Printf("WR(%x) \n", i)
+                //    rdData, err = I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 0x00 )
+                //}
+                if err == nil {
+                    matrix[i] = byte(i)
+                } else {
+                    matrix[i] = 0x99
+                }
+                //time.Sleep(time.Duration(10) * time.Millisecond)  //Sleep 2ms
+            }
+            taorfpga.ExecutingScanChain = 0
+            fmt.Printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f")
+            for i:=0; i<0x80; i++ {
+                if (i%0x10)==0 { fmt.Printf("\n%.02x:", i) }
+                if matrix[i] == 0 { fmt.Printf("   ") 
+                } else if matrix[i] == 0x99 { fmt.Printf(" --") 
+                } else { fmt.Printf(" %.02x", matrix[i]) }
+            }
+            fmt.Printf("\n")
+            return
+        }
+        if argc < 6 {
+            fmt.Printf(" ERROR: Not Enough ARGS!!\n")
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        i2cAddr, err := strconv.ParseUint(os.Args[4], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        if os.Args[5] == "w" || os.Args[5] == "W" {
+            for i=6; i<argc; i++ {
+                if os.Args[i] == "r" || os.Args[i] == "R" {
+                    rdLength, err := strconv.ParseUint(os.Args[i+1], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[%d] ParseUint is showing ERR = %v.   Exiting Program\n", i+1,  err); return
+                    }
+                    rdSize = uint32(rdLength)
+                    rdData, err = taorfpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, rdSize )
+                    if err == nil {
+                        if err == nil {
+                            fmt.Printf("\nWR: ")
+                            for i=0;i<len(wrData);i++ {
+                                fmt.Printf("0x%02x ", wrData[i])
+                            }
+                        }
+                        fmt.Printf("\nRD: ")
+                        for j:=0; j<len(rdData); j++ {
+                            fmt.Printf("0x%.02x ", rdData[j])
+                        }
+                        fmt.Printf("\n")
+                    }
+                    return
+                } else {
+                    dataArg, err := strconv.ParseUint(os.Args[i], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[%d] ParseUint is showing ERR = %v.   Exiting Program\n", i, err); return
+                    }
+                    wrData = append(wrData, byte(dataArg))
+                }
+            }
+
+            rdData, err = taorfpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, rdSize )
+            if err == nil {
+                fmt.Printf("\nWR: ")
+                for i=0;i<len(wrData);i++ {
+                    fmt.Printf("0x%02x ", wrData[i])
+                }
+                fmt.Printf("\n")
+            }
+        } else {       //read only
+            rdLength, err := strconv.ParseUint(os.Args[6], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rdData, err = taorfpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), 0x00, wrData, uint32(rdLength) )
+            if err == nil {
+                fmt.Printf("\nRD: ")
+                for j:=0; j<len(rdData); j++ {
+                    fmt.Printf("0x%.02x ", rdData[j])
+                }
+                fmt.Printf("\n")
+            }
+        }
+    } else if os.Args[1] == "cpld" {
+
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        cpldNumber, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil { 
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return 
+        }
+        if os.Args[3] == "uc" {   //run op usercode
+            ucode, _ := taorfpga.Spi_cpld_read_usercode(uint32(cpldNumber)) 
+            fmt.Printf(" CPLD-%d  UCODE=0x%.08x\n", cpldNumber, ucode)
+        } else if os.Args[3] == "devid" {   
+            ucode, _ := taorfpga.Spi_cpld_read_device_id(uint32(cpldNumber)) 
+            fmt.Printf(" CPLD-%d  Device ID =0x%.08x\n", cpldNumber, ucode)
+        } else if os.Args[3] == "refresh" {   
+            taorfpga.Spi_cpld_refresh(uint32(cpldNumber)) 
+            fmt.Printf(" CPLD-%d  Refresh performed\n", cpldNumber)
+        } else if os.Args[3] == "featurebits" {   
+            featurebits, _ := taorfpga.Spi_cpld_read_feature_bits(uint32(cpldNumber)) 
+            fmt.Printf(" CPLD-%d  Feature BITS =0x%.04x\n", cpldNumber, featurebits)
+        } else if os.Args[3] == "featurerow" { 
+            data := []byte{}  
+            data, _ = taorfpga.Spi_cpld_read_feature_row(uint32(cpldNumber)) 
+            fmt.Printf("\n")
+            for i:= (len(data) -1); i >= 0; i-- {
+                fmt.Printf(" %.02x", data[i])
+            }
+            fmt.Printf("\n")
+            //fmt.Printf(" CPLD-%d  Feature BITS =0x%.04x\n", cpldNumber, featurebits)
+        } else if os.Args[3] == "statusreg" {   
+            statusreg, _ := taorfpga.Spi_cpld_read_status_reg(uint32(cpldNumber)) 
+            fmt.Printf(" CPLD-%d  statusreg =0x%.04x\n", cpldNumber, statusreg)
+        } else if os.Args[3] == "generateimage" {   //read flash and make an image from it
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            taorfpga.Spi_cpld_machxO2_generate_image_from_flash(uint32(cpldNumber), os.Args[4])
+        } else if os.Args[3] == "verifyimage" {   //read flash and make an image from it
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            taorfpga.Spi_cpld_machxO2_verify_flash_contents(uint32(cpldNumber), os.Args[4])
+        } else if os.Args[3] == "program" {   //read flash and make an image from it
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            taorfpga.Spi_cpld_machxO2_program_flash(uint32(cpldNumber), os.Args[4])
+
+        }
+    } else if os.Args[1] == "elba" {
+
+        var elbaNumber uint32
+        if argc < 5 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        elba, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil { 
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return 
+        }
+        elbaNumber = uint32(elba)
+        if elbaNumber > 2 {
+            fmt.Printf(" ERROR: Elba number needs to be 0 or 1\n", err); return 
+        }
+
+        
+        if os.Args[3] == "flash" {
+            if os.Args[4] == "devid" {
+                devid, _ := taorfpga.Spi_elba_flash_read_id(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  DevID=0x%.08x\n", devid)
+            } else if os.Args[4] == "4byte" {
+                if argc < 6 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                if os.Args[5] == "enable" {
+                    taorfpga.Spi_elba_flash_enable_4byte_addr_mode(taorfpga.ELBA0_SPI_BUS + elbaNumber)   
+                } else if os.Args[5] == "disable" {
+                    taorfpga.Spi_elba_flash_disable_4byte_addr_mode(taorfpga.ELBA0_SPI_BUS + elbaNumber)
+                } else {
+                    fmt.Printf("ERROR: Argv[5] needs to be disable or enable\n")
+                }
+            } else if os.Args[4] == "rdextaddr" {
+                ext, _ := taorfpga.Spi_elba_flash_read_extended_addr_reg(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" Extended Addr Register=0x%.02x\n", ext)
+            } else if os.Args[4] == "wrextaddr" {
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                taorfpga.Spi_elba_flash_set_extended_addr_register(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr))
+                fmt.Printf(" Wr Extended Addr0x%.08x\n", addr)
+            } else if os.Args[4] == "flagstatus" {
+                flag, _ := taorfpga.Spi_elba_flash_read_flag_status(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
+            } else if os.Args[4] == "status" {
+                flag, _ := taorfpga.Spi_elba_flash_read_status(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
+            } else if os.Args[4] == "writeimage" || os.Args[4] == "verifyimage" || os.Args[4] == "generateimage"  {
+                if argc < 7 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                t1 := time.Now()
+                if os.Args[4] == "writeimage" {
+                    taorfpga.Spi_elba_flash_WriteImage(taorfpga.ELBA0_SPI_BUS + elbaNumber, os.Args[5], os.Args[6]) 
+                } else if os.Args[4] == "verifyimage" {
+                    taorfpga.Spi_elba_flash_VerifyImage(taorfpga.ELBA0_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
+                } else if os.Args[4] == "generateimage" {
+                    taorfpga.Spi_elba_flash_GenerateImageFromFlash(taorfpga.ELBA0_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
+                }
+                t2 := time.Now()
+                fmt.Println(" Function took ", t2.Sub(t1), " time")
+            } else if os.Args[4] == "read" || os.Args[4] == "Read" {
+                if argc < 7 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                rdLength, err := strconv.ParseUint(os.Args[6], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                fmt.Printf("\n")
+                rd_data, _ := taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength)) 
+                for x:=0;x<int(rdLength);x++ {
+                    if (x%16) == 0 {
+                        fmt.Printf("\n%.08x: ", uint32(addr) + uint32(x))
+                    }
+                    fmt.Printf("%.02x ", rd_data[x] & 0xff)
+                }
+                fmt.Printf("\n")
+            } else if os.Args[4] == "sectorerase" {
+                if argc < 5 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                if os.Args[5] == "all" {
+                    fmt.Printf(" Erasing the entire flash\n")
+                    taorfpga.Spi_elba_flash_erase_all_sectors(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                } else {
+                    addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                    }
+                    fmt.Printf(" Erasing Sector associated with addr-%x\n", uint32(addr))
+                    taorfpga.Spi_elba_flash_erase_sector(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr)) 
+                }
+            } else if os.Args[4] == "w32" {
+                var data32 uint32
+                if argc < 6 {
+                    fmt.Printf(" Need more args for this command\n");  return
+                }
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                data64, err := strconv.ParseUint(os.Args[6], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                data32 = uint32(data64)
+                data := (*[4]byte)(unsafe.Pointer(&data32))[:]
+                taorfpga.Spi_elba_flash_Write_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, data, uint32(addr))
+                fmt.Printf(" [WR] Addr 0x%x = %.08x\n", uint32(addr), uint32(data64))
+            } else if os.Args[4] == "w64" {
+                if argc < 6 {
+                    fmt.Printf(" Need more args for this command\n");  return
+                }
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                data64, err := strconv.ParseUint(os.Args[6], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                data := (*[8]byte)(unsafe.Pointer(&data64))[:]
+                taorfpga.Spi_elba_flash_Write_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, data, uint32(addr))
+                fmt.Printf(" [WR] Addr 0x%x = %.08x\n", uint32(addr), uint32(data64))
+            } else {
+                fmt.Printf("\n Incorrect Arg used.  See the help Below!!\n")
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+        } else if os.Args[3] == "cpld" {
+            if os.Args[4] == "uc" {   //run op usercode
+                ucode, _ := taorfpga.Spi_cpldXO3_read_usercode(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
+                fmt.Printf(" ELBA-%d CPLD  UCODE=0x%.08x\n", elbaNumber, ucode)
+            } else if os.Args[4] == "devid" {   
+                ucode, _ := taorfpga.Spi_cpldXO3_read_device_id(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
+                fmt.Printf(" ELBA-%d CPLD  Device ID =0x%.08x\n", elbaNumber, ucode)
+            } else if os.Args[4] == "refresh" {   
+                taorfpga.Spi_cpldXO3_refresh(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
+                fmt.Printf(" ELBA-%d CPLD  Refresh performed\n", elbaNumber)
+            } else if os.Args[4] == "featurebits" {   
+                featurebits, _ := taorfpga.Spi_cpldXO3_read_feature_bits(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
+                fmt.Printf(" ELBA-%d CPLDd  Feature BITS =0x%.04x\n", elbaNumber, featurebits)
+            } else if os.Args[4] == "featurerow" { 
+                data := []byte{}  
+                data, _ = taorfpga.Spi_cpldXO3_read_feature_row(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
+                fmt.Printf("\n")
+                for i:= (len(data) -1); i >= 0; i-- {
+                    fmt.Printf(" %.02x", data[i])
+                }
+                fmt.Printf("\n")
+                //fmt.Printf(" CPLD-%d  Feature BITS =0x%.04x\n", cpldNumber, featurebits)
+            } else if os.Args[4] == "statusreg" {   
+                statusreg, _ := taorfpga.Spi_cpldXO3_read_status_reg(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
+                fmt.Printf(" ELBA-%d CPLD  statusreg =0x%.04x\n", elbaNumber, statusreg)
+            } else if os.Args[4] == "erase" {   
+                if argc < 5 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                taorfpga.Spi_cpldXO3_erase_flash(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5])
+            } else if os.Args[4] == "generateimage" || os.Args[4] == "verifyimage" || os.Args[4] == "program" {   
+                if argc < 6 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                if os.Args[4] == "generateimage" {  //read flash and make an image from it
+                    taorfpga.Spi_cpldX03_generate_image_from_flash(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
+                } else if os.Args[4] == "verifyimage" {   
+                    taorfpga.Spi_cpldXO3_verify_flash_contents(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
+                } else if os.Args[4] == "program" {   
+                    taorfpga.Spi_cpldXO3_program_flash(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
+                }
+            }
+        } else {
+            fmt.Printf(" Args[3] '%s' is incorrect.  See help for the correct arg\n", os.Args[3]); return 
         }
     } else {
         fmt.Printf("\n Incorrect Arg used.  See the help Below!!\n")
         fmt.Printf(" %s \n", errhelp)
-        os.Exit(-1);
+        return
     }
 
     return
 }
 
-
-//export c_elba_fpga_wr
-func c_elba_fpga_wr(addr byte, data byte) int {
-    ReadData := make([]byte, 1)
-
-    dev, err := spi.Open(&spi.Devfs{
-        Dev:      "/dev/spidev0.0",
-        Mode:     spi.Mode0,
-        MaxSpeed: 12000000,
-    })
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return -1
-    }
-    defer dev.Close()
-
-    //err = dev.Tx([]byte{0x02, addr, data, 0x00}, ReadData)
-    err = dev.SPI_WR([]byte{0x02, addr, data, 0x00}, ReadData)
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return -1
-    }
-
-    return 0
-}
-
-func elba_fpga_wr(addr byte, data byte) error {
-    ReadData := make([]byte, 1)
-
-    dev, err := spi.Open(&spi.Devfs{
-        Dev:      "/dev/spidev0.0",
-        Mode:     spi.Mode0,
-        MaxSpeed: 12000000,
-    })
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return(err)
-    }
-    defer dev.Close()
-
-    //err = dev.Tx([]byte{0x02, addr, data, 0x00}, ReadData)
-    err = dev.SPI_WR([]byte{0x02, addr, data, 0x00}, ReadData)
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-    }
-
-    return(err)
-}
-
-
-
-//export c_elba_fpga_rd
-func c_elba_fpga_rd(addr byte, data *byte) int {
-    ReadData := make([]byte, 1)
-
-    dev, err := spi.Open(&spi.Devfs{
-        Dev:      "/dev/spidev0.0",
-        Mode:     spi.Mode0,
-        MaxSpeed: 12000000,
-    })
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return -1
-    }
-    defer dev.Close()
-
-    err = dev.SPI_WR_RD([]byte{0x0b, addr, *data,}, ReadData)
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return -1
-    }
-    *data = ReadData[0]
-    return 0
-}
-
-func elba_fpga_rd(addr byte, data *byte) error {
-    ReadData := make([]byte, 1)
-
-    dev, err := spi.Open(&spi.Devfs{
-        Dev:      "/dev/spidev0.0",
-        Mode:     spi.Mode0,
-        MaxSpeed: 12000000,
-    })
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return err
-    }
-    defer dev.Close()
-
-    err = dev.SPI_WR_RD([]byte{0x0b, addr, *data,}, ReadData)
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-    }
-    *data = ReadData[0]
-    return err
-}
-
-
-
-
-
-
-
-//
-//  cmd:8, addr:16, data:32  .. followed by 1 byte dummy read?
-//
-func spi_write_fpga_apb(addr uint16, data uint32) error {
-    ReadData := make([]byte, 1)
-
-    dev, err := spi.Open(&spi.Devfs{
-        Dev:      "/dev/spidev0.1",
-        Mode:     spi.Mode0,
-        MaxSpeed: 12000000,
-    })
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return(err)
-    }
-    defer dev.Close()
-
-    err = dev.SPI_WR_RD([]byte{0x02, byte(addr), byte(addr>>8), byte(data), byte(data>>8), byte(data>>16), byte(data>>24)}, ReadData)
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-    }
-    return(err)
-}
-
-
-
-//
-//  WR cmd:8, addr:16, dummy:8    RD data:32
-//
-func spi_read_fpga_apb(addr uint16, data *uint32) error {
-    ReadData := make([]byte, 4)
-
-    dev, err := spi.Open(&spi.Devfs{
-        Dev:      "/dev/spidev0.1",
-        Mode:     spi.Mode0,
-        MaxSpeed: 12000000,
-    })
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        return(err)
-    }
-    defer dev.Close()
-
-    err = dev.SPI_WR_RD([]byte{0x0b, byte(addr), byte(addr>>8), 0x00}, ReadData)
-    if err != nil {
-        fmt.Printf(" Err !=nil:   ERR = '%s'\n", err)  // err is a pointer type to a string
-        *data = 0xDEADBEEF
-        return(err)
-    }
-
-    *data =   uint32(ReadData[0])
-    *data |= (uint32(ReadData[1])<<8)
-    *data |= (uint32(ReadData[2])<<16)
-    *data |= (uint32(ReadData[3])<<24)
-
-    return(err)
-}
-
-
-
-func fpga_dump_abp(bus uint8) error {
-
-    var data32 uint32
-    var err error = nil
-
-    for _, entry := range(APB_REG_s) {
-        err = spi_read_fpga_apb( uint16(entry.Address) + (S2I_BUS_STRIDE * uint16(bus)), &data32)
-        if err != nil {
-            return err
-        }
-        fmt.Printf("DUMPING APB REGISTERS ON BUS-%d\n", bus)
-        fmt.Printf("%-20s [%.04x] = %.08x\n", entry.Name, entry.Address, data32)
-    }
-
-    return err
-}
-
-
-/* 
-Hmm, probably a better way to do this in GoLang 
-*/ 
-func s2i_poll_apb_reg(bus uint8, reg uint8, bit uint32) error {
-    var rc int = -2
-    var err error = nil
-    var data32 uint32 = 0;
-    go func() {   
-        for ((data32 & bit) != bit) {
-            err = spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(reg),  &data32)
-            if err != nil {
-                rc = -1
-                return
-            }
-        }
-        rc = 0
-        return
-    } ()
-    <-time.After(500 * time.Millisecond)
-    if rc == 0 {
-        return nil
-    } else if rc == -1 {
-        fmt.Printf(" ERROR s2i_poll_apb_reg on BUS-%d failed reading apb!!\n", bus)
-        return err
-    } else {
-        errStr := fmt.Sprintf("POLL TIMED OUT ON BUS-%d:  REG 0x%x = 0x%x\n", bus, reg, data32)
-        fmt.Printf(errStr)
-        return(errors.New(errStr))
-        
-    }
-}
-
-
-func s2i_transaction_eeprom (bus uint16, i2caddr uint8, ee_addr uint16, data *uint16, WR bool) error {
-    //uint16_t read_value = 0;
-    var err error = nil
-    var data32 uint32 = 0;
-    //var timeout uint32 = 0;
-
-    fmt.Printf(" DEV=%d   I2CADDR=0x%x   REG=0x%x   WR=%v\n", bus, i2caddr, ee_addr, WR)
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_ENABLE), 0)
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_SS_SCL_HCNT), 0x212)
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_SS_SCL_LCNT), 0x1D6)
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_FS_SPKLEN), 0x1)
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_CON), 0x63)  //master, standard speed, restart en, slave disabled
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_TAR), uint32(i2caddr))
-
-    spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_TAR), &data32)
-    fmt.Printf(" TAR REG=0x%x\n", data32)
-
-    //Write IC_INTR_MASK to enable all interrupts
-    //Write IC_RX_RL to set Rx FIFO threshold level
-    //Write IC_TX_TL to set Tx FIFO threshold level
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_ENABLE), 1)
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_CLR_INTR), 1)
-
-    /* Check transmit FIFO is empty */
-    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
-    if err != nil { return err }
-
-   
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32((ee_addr>>8)&0xFF))
-    /* Check transmit FIFO is empty */
-    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
-    if err != nil { return err }
-
-    spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32(ee_addr & 0xFF))
-    /* Check transmit FIFO is empty */
-    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
-    if err != nil { return err }
-
-    if WR == true {  //WRITE
-
-        spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32(*data & 0xFF))
-
-        /* Check transmit FIFO is empty */
-        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
-        if err != nil { return err }
-
-        spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), uint32((*data>>8) & 0xFF) | 0x200)
-
-    } else {  //READ
-
-        spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), 0x500)
-        /* Check transmit FIFO is empty */
-        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x2)
-        if err != nil { return err }
-
-        spi_write_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), 0x300)
-
-        /* Check Rx FIFO is not empty */
-        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x8)
-        if err != nil { return err }
-
-        spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), &data32)
-        *data = uint16(data32 & 0xFF)
-
-        /* Check Rx FIFO is not empty */
-        err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x8)
-        if err != nil { return err }
-
-        spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_DATA_CMD), &data32)
-        *data |= uint16((data32 & 0xFF)<<8)
-    }
-
-
-    /* Check Rx FIFO is not empty */
-    err = s2i_poll_apb_reg(uint8(bus), IC_STATUS, 0x1)
-    if err != nil { return err }
-    
-    spi_read_fpga_apb( (S2I_BUS_STRIDE * uint16(bus)) + uint16(IC_RAW_INTR_STAT),  &data32)
-    if (data32 & 0x40) == 0x40 {
-       fmt.Printf("s2i_transaction_eeprom:ERROR: No target response!\n");
-       return(errors.New(" ERROR"))
-   }
-
-   return err   
-   
-/*      
-   if (WR == 1) {
-      elb_i2c_writereg( device, IC_DATA_CMD, data&0xFF);
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-      }
-      elb_i2c_writereg( device, IC_DATA_CMD, ((data>>8)&0xFF)|0x200);
-   } else {
-      elb_i2c_writereg( device, IC_DATA_CMD, 0x500);
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-      }
-      elb_i2c_writereg( device, IC_DATA_CMD, 0x300);
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x8) == 0x8)) {
-      }
-      read_value = elb_i2c_readreg( device, IC_DATA_CMD) & 0xFF;
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x8) == 0x8)) {
-      }
-      read_value = read_value | (((elb_i2c_readreg( device, IC_DATA_CMD)) & 0xFF)<<8);
-   }
-
-   while (elb_i2c_readreg( device, IC_STATUS) & 0x1) {
-   }
-   if ((elb_i2c_readreg( device, IC_RAW_INTR_STAT) & 0x40) == 0x40) {
-       printf("s2i_transaction_eeprom:ERROR: No target response!\n");
-   }
-
-   if (WR == 1) {
-       return 0;
-   } else {
-       printf("s2i_transaction_eeprom: s2i_transaction_eeprom, dev=%d, target=0x%x, read byte_num=0x%x, data=0x%x\n",device, target, byte_num, read_value);
-       return read_value;
-   }
-   */   
-}
-
-
-/* 
  
-//
-//  cmd:8, addr:16, data:32
-//
-int
-spi2apb_write(uint32_t addr, uint32_t data)
-{
-    int fd;
-    struct spi_ioc_transfer msg[2];
-    uint8_t txbuf[7];
-    uint8_t rxbuf[1];
-
-    //assert(spi2apb_fd >= 0);
-
-    txbuf[0] = 0x02;  // write
-    txbuf[1] = addr >> 0;
-    txbuf[2] = addr >> 8;
-    txbuf[3] = data >> 0;
-    txbuf[4] = data >> 8;
-    txbuf[5] = data >> 16;
-    txbuf[6] = data >> 24;
-
-    memset(msg, 0, sizeof (msg));
-    msg[0].tx_buf = (intptr_t)txbuf;
-    msg[0].len = 7;
-    msg[1].rx_buf = (intptr_t)rxbuf;
-    msg[1].len = 1;
-
-    fd = open(spidev1_path, O_RDWR, 0);
-    if (fd < 0) {
-        perror(spidev1_path);
-        return -1;
-    }
-    if (ioctl(fd, SPI_IOC_MESSAGE(2), msg) < 0) {
-        perror("SPI_IOC_MESSAGE");
-        exit(1);
-    }
-    close(fd);
-    return 0;
-}
-
-//
-//  cmd:8, addr:16, dummy:8, data:32
-//
-uint32_t
-spi2apb_read(uint32_t addr)
-{
-    struct spi_ioc_transfer msg[2];
-    uint8_t txbuf[4];
-    uint8_t rxbuf[4];
-    int fd;
-
-    //assert(spi2apb_fd >= 0);
-
-    txbuf[0] = 0x0b;  // read
-    txbuf[1] = addr >> 0;
-    txbuf[2] = addr >> 8;
-    txbuf[3] = 0;
-
-    memset(msg, 0, sizeof (msg));
-    msg[0].tx_buf = (intptr_t)txbuf;
-    msg[0].len = 4;
-    msg[1].rx_buf = (intptr_t)rxbuf;
-    msg[1].len = 4;
-
-    fd = open(spidev1_path, O_RDWR, 0);
-    if (fd < 0) {
-        perror(spidev1_path);
-        return -1;
-    }
-    if (ioctl(fd, SPI_IOC_MESSAGE(2), msg) < 0) {
-        perror("SPI_IOC_MESSAGE");
-        exit(1);
-    }
-    close(fd);
-    return ((uint32_t)rxbuf[3] << 24) | ((uint32_t)rxbuf[2] << 16) |
-           ((uint32_t)rxbuf[1] << 8) | ((uint32_t)rxbuf[0] << 0);
-} 
-
- 
-void elb_i2c_writereg(unsigned int dev, unsigned int reg, unsigned int val) {
-
-  (void) spi2apb_write((reg+(dev*S2I_BUS_STRIDE)), val);
-}
-
-uint32_t elb_i2c_readreg (unsigned int dev, unsigned int reg) {
-  return spi2apb_read((reg+(dev*S2I_BUS_STRIDE)));
-} 
- 
-uint16_t s2i_transaction_eeprom (unsigned int device, uint8_t target, uint16_t byte_num, bool WR, uint16_t data) {
-   uint16_t read_value = 0;
-   elb_i2c_writereg( device, IC_ENABLE, 0);
-   elb_i2c_writereg( device, IC_SS_SCL_HCNT, 0x212);
-   elb_i2c_writereg( device, IC_SS_SCL_LCNT, 0x1D6);
-   elb_i2c_writereg( device, IC_FS_SPKLEN, 0x1);
-   elb_i2c_writereg( device, IC_CON, 0x63);  //master, standard speed, restart en, slave disabled
-   elb_i2c_writereg( device, IC_TAR, target);
- 
-   //Write IC_INTR_MASK to enable all interrupts
-   //Write IC_RX_RL to set Rx FIFO threshold level
-   //Write IC_TX_TL to set Tx FIFO threshold level
- 
-   elb_i2c_writereg( device, IC_ENABLE, 1);
-   elb_i2c_writereg( device, IC_CLR_INTR, 1);
-
-   while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-   }
-
-   elb_i2c_writereg( device, IC_DATA_CMD, (byte_num>>8)&0xFF);
-   while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-   }
-
-   elb_i2c_writereg( device, IC_DATA_CMD, byte_num & 0xFF);
-   while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-   }
-
-   if (WR == 1) {
-      elb_i2c_writereg( device, IC_DATA_CMD, data&0xFF);
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-      }
-      elb_i2c_writereg( device, IC_DATA_CMD, ((data>>8)&0xFF)|0x200);
-   } else {
-      elb_i2c_writereg( device, IC_DATA_CMD, 0x500);
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x2) == 0x2)) {
-      }
-      elb_i2c_writereg( device, IC_DATA_CMD, 0x300);
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x8) == 0x8)) {
-      }
-      read_value = elb_i2c_readreg( device, IC_DATA_CMD) & 0xFF;
-      while(!((elb_i2c_readreg( device, IC_STATUS) & 0x8) == 0x8)) {
-      }
-      read_value = read_value | (((elb_i2c_readreg( device, IC_DATA_CMD)) & 0xFF)<<8);
-   }
-
-   while (elb_i2c_readreg( device, IC_STATUS) & 0x1) {
-   }
-   if ((elb_i2c_readreg( device, IC_RAW_INTR_STAT) & 0x40) == 0x40) {
-       printf("s2i_transaction_eeprom:ERROR: No target response!\n");
-   }
-
-   if (WR == 1) {
-       return 0;
-   } else {
-       printf("s2i_transaction_eeprom: s2i_transaction_eeprom, dev=%d, target=0x%x, read byte_num=0x%x, data=0x%x\n",device, target, byte_num, read_value);
-       return read_value;
-   }
-}
-*/
-
-
-
-
-
