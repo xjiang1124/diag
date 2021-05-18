@@ -2944,3 +2944,44 @@ class nic_ctrl():
 
         return True
 
+    def nic_set_board_config(self, preset_config):
+        """
+         Quick Start guide
+         https://docs.google.com/document/d/1Vu9DzkR6PZmdeqFdQvBkJrxv6yMDcQq3GU5_4YEAxeY/preview
+
+        # board_config -l
+        Config     Core       Stage       CPU
+           1    833333333  1137000000  3000000000
+           2    833333333  1262000000  3000000000
+           3    833333333  1500000000  3000000000
+           4   1033000000  1137000000  3000000000
+           5   1033000000  1262000000  3000000000
+           6   1033000000  1500000000  3000000000
+           7   1100000000  1262000000  3000000000
+           8   1100000000  1500000000  3000000000
+           9    833333333  1137000000  2000000000
+          10    833333333  1262000000  2000000000
+          11    833333333  1500000000  2000000000
+          12   1033000000  1137000000  2000000000
+          13   1033000000  1262000000  2000000000
+          14   1033000000  1500000000  2000000000
+          15   1100000000  1262000000  2000000000
+          16   1100000000  1500000000  2000000000
+
+        """
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.SET_BOARD_CONFIG_FMT.format(preset_config))
+        if ("brdcfg0 write OK"  in cmd_buf
+        and "brdcfg0 verify OK" in cmd_buf
+        and "brdcfg1 write OK"  in cmd_buf
+        and "brdcfg1 verify OK" in cmd_buf):
+            pass
+        else:
+            self.nic_set_err_msg(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+
+        return True
+

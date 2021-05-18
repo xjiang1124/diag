@@ -3740,6 +3740,21 @@ class mtp_ctrl():
         self.cli_log_inf("Reset the MTP JTAG Interface complete", level = 0)
         return True
 
+    def mtp_nic_board_config(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.ORTANO2:
+            if self.mtp_is_nic_ortano_oracle(slot):
+                preset_config = "5"
+            else:
+                preset_config = "7"
+            if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
+                self.cli_log_slot_err_lock(slot, "Set board config failed")
+                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
+                self.mtp_dump_err_msg(err_msg)
+                return False
+        else:
+            self.cli_log_slot_err_lock(slot, "Need to QA this card")
+        return True
 
     def mtp_mgmt_dump_avs_info(self, slot, buf):
         self.cli_log_slot_inf(slot, "AVS Set Result Dump:")

@@ -362,6 +362,9 @@ class MFG_DIAG_CMDS:
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
 
+    GET_BOARD_CONFIG_FMT = "board_config -r"
+    SET_BOARD_CONFIG_FMT = "board_config -w {:s}"
+
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
     NAPLES100_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"

@@ -680,8 +680,10 @@ def main():
         time.sleep(5)
 
     for slot in prog_fail_nic_list:
-        fail_nic_list.append(slot)
-        pass_nic_list.remove(slot)
+        if slot in pass_nic_list:
+            pass_nic_list.remove(slot)
+        if slot not in fail_nic_list:
+            fail_nic_list.append(slot)
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -731,8 +733,10 @@ def main():
         time.sleep(5)
 
     for slot in prog_fail_nic_list:
-        fail_nic_list.append(slot)
-        pass_nic_list.remove(slot)
+        if slot in pass_nic_list:
+            pass_nic_list.remove(slot)
+        if slot not in fail_nic_list:
+            fail_nic_list.append(slot)
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
@@ -841,7 +845,7 @@ def main():
         sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
         if isCloud or card_type == NIC_Type.NAPLES100IBM:
             sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
-        if card_type == NIC_Type.ORTANO2:
+        if card_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
             sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
         if nic_profile:
             if "SW_PROFILE" not in sw_test_list:

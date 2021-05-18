@@ -750,6 +750,8 @@ def main():
             # verify qspi
             elif test == "QSPI_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
+            elif test == "BOARD_CONFIG":
+                ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
             # set avs
             elif test == "AVS_SET":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)

@@ -567,7 +567,7 @@ def main():
         if card_type == NIC_Type.ORTANO:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         if card_type == NIC_Type.ORTANO2:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
         for skip_test in args.skip_test:
             if skip_test in testlists:
                 testlists.remove(skip_test)
@@ -609,6 +609,8 @@ def main():
             # verify QSPI
             elif test == "QSPI_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
+            elif test == "BOARD_CONFIG":
+                ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
             # set avs
             elif test == "AVS_SET":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
