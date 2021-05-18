@@ -2158,6 +2158,9 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     if CardType == "VOMERO2"  || CustType == "ORTANO" {
         offset_add = 256
     }
+    if HpeAlom == true {
+        return
+    }
 
     for offset = 0; offset < uint16(CMN_HDR_LENGTH); offset++ {
         data8, err = eeRead(devName, offset + offset_add)
@@ -2263,7 +2266,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             }
             mr_length = uint16(data8) + uint16(MR_HDR_LENGTH)
             if mr_length > BIAsize {
-                cli.Println("e", " ERROR: Product Information Area Length >",BIAsize,"for device", devName, "Multi-Record Length = ", mr_length)
+                cli.Println("e", " ERROR: Multi-record Length >",BIAsize,"for device", devName, "Multi-Record Length = ", mr_length)
                 return errType.FAIL
             }
             for i, offset = 0, mr_offset + offset_add; i < mr_length; offset, i = offset+1, i+1 {
