@@ -896,6 +896,81 @@ class nic_ctrl():
         cmd = MFG_DIAG_CMDS.MTP_HP_ALOM_FRU_DISP_FMT.format(slot+1)
         return self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
 
+    def nic_dump_fru(self, expect_sn="", expect_mac="", expect_pn=""):
+        """
+         Use-case 1:
+         - dump fru and print to log (no expect_* arguments supplied)
+         Use-case 2:
+         - dump fru and match any/all of 
+            - expect_sn
+            - expect_mac [format as 00AECDXXXXXX]
+            - expect_pn
+
+        Hexdump steps:
+            eeutil -dump -numBytes=512
+            hexdump -C eeprom
+            xxd -p -l6 -sOFFSET eeprom      --> get MAC
+            strings eeprom                  --> get SN, PN
+        """
+        nic_cmd_list = list()
+        nic_cmd_list.append("rm eeprom")
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FRU_DUMP_FMT)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+
+        mac_address_offset = "119"  # hardcoded for naples25swm
+        cmd_buf = self.nic_get_info("xxd -p -l6 -s{:s} eeprom".format(mac_address_offset))
+
+        mac_dump_match = re.search("([A-Fa-f0-9]{12})", cmd_buf)
+        if not mac_dump_match:
+            self.nic_set_err_msg("Failed to extract mac address from NIC FRU dump")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        mac_address_dump = mac_dump_match.group(0).upper()
+        mac = libmfg_utils.mac_address_validate(mac_address_dump)
+        if not mac:
+            self.nic_set_err_msg("Invalid NIC MAC Address: {:s} detected\n".format(mac_address_dump))
+            return False
+        if expect_mac != "":
+            if expect_mac.upper() != mac.upper():
+                self.nic_set_err_msg("NIC MAC Address did not match: expect {:s}, read {:s}\n".format(expect_mac, mac))
+                return False
+
+        return True
+
+    def mtp_nic_dump_fru(self, expect_sn="", expect_mac="", expect_pn=""):
+        cmd = "rm eeprom"
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+            self.nic_set_err_msg("{:s} failed".format(cmd))
+            return False
+        cmd = MFG_DIAG_CMDS.MTP_NIC_FRU_DUMP_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
+            self.nic_set_err_msg("{:s} failed".format(cmd))
+            return False
+        mac_address_offset = "119"  # hardcoded for naples25swm
+        cmd = "xxd -p -l6 -s{:s} eeprom".format(mac_address_offset)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+            self.nic_set_err_msg("{:s} failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+
+        mac_dump_match = re.search("([A-Fa-f0-9]{12})", cmd_buf)
+        if not mac_dump_match:
+            self.nic_set_err_msg("Failed to extract mac address from NIC FRU dump")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        mac_address_dump = mac_dump_match.group(0).upper()
+        mac = libmfg_utils.mac_address_validate(mac_address_dump)
+        if not mac:
+            self.nic_set_err_msg("Invalid NIC MAC Address: {:s} detected\n".format(mac_address_dump))
+            return False
+        if expect_mac != "":
+            if expect_mac.upper() != mac.upper():
+                self.nic_set_err_msg("NIC MAC Address did not match: expect {:s}, read {:s}\n".format(expect_mac, mac))
+                return False
+
+        return True
 
     def nic_copy_image(self, img_name, directory="/"):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)

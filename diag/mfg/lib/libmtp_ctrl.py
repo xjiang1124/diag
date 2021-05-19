@@ -1957,6 +1957,19 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_dump_nic_fru(self, slot, expect_sn="", expect_mac="", expect_pn=""):
+        if not self._nic_ctrl_list[slot].nic_dump_fru(expect_mac=expect_mac):
+            self.cli_log_slot_err_lock(slot, "Dump ASIC FRU failed")
+            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            return False
+
+        if not self._nic_ctrl_list[slot].mtp_nic_dump_fru(expect_mac=expect_mac):
+            self.cli_log_slot_err_lock(slot, "Dump SMB FRU failed")
+            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            return False
+
+        return True
+
     def mtp_get_nic_fru(self, slot):
         return self._nic_ctrl_list[slot].nic_get_fru()
 

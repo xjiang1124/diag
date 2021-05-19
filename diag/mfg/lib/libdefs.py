@@ -280,6 +280,7 @@ class MFG_DIAG_CMDS:
     MTP_HP_OCP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeOcp"
     MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"
     MTP_HP_ALOM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeAlom"
+    MTP_NIC_FRU_DUMP_FMT = "eeutil -uut=UUT_{:d} -dump -numBytes=512"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
     NIC_HP_SWM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeSwm"
     NIC_HP_OCP_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeOcp"
@@ -296,6 +297,7 @@ class MFG_DIAG_CMDS:
     NIC_HPESWM_ALOM_FRU_DISP_FMT = "eeutil -disp -uut=UUT_{:d} -hpeAlom"
     NIC_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn"
     NIC_HPESWM_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn -hpeSwm"
+    NIC_FRU_DUMP_FMT = "eeutil -dump -numBytes=512"
 
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 

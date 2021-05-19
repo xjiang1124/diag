@@ -183,6 +183,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
                 #ret = False
+        # read old FRU via hexdump
+        elif test == "FRU_DUMP":
+            ret = mtp_mgmt_ctrl.mtp_dump_nic_fru(slot, expect_mac=mac)
         elif test == "REWORK_VERIFY":
             ret = hpe_rework_verify(mtp_mgmt_ctrl, slot)
         # program CPLD
