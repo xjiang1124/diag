@@ -1,2 +1,0 @@
-#include "../../include/cType.h"
-
