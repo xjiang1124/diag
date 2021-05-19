@@ -268,6 +268,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--fru_mapping_file", "-f", help="Mapping file of allowed MACs, SNs, PNs", action="store_true")
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     args = parser.parse_args()
@@ -279,6 +280,14 @@ def main():
     swmtestmode = Swm_Test_Mode.SW_DETECT
     if args.swm:
         swmtestmode = args.swm
+
+    if args.fru_mapping_file:
+        ALLOWED_FRU_ONLY_FLAG = True
+        fru_mapping = libmfg_utils.load_cfg_from_yaml("config/new_fru_cfg.yaml")
+        # remove store_true to allow getting filename in args.
+    else:
+        ALLOWED_FRU_ONLY_FLAG = False
+        fru_mapping = dict()
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
@@ -326,6 +335,69 @@ def main():
         if scan_rslt:
             break;
         mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
+
+    # validate scanned barcodes if flag is set
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not ALLOWED_FRU_ONLY_FLAG:
+            break
+        key = libmfg_utils.nic_key(slot)
+        nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
+        if scan_rslt[key]["NIC_VALID"]:
+            sn = scan_rslt[key]["NIC_SN"]
+            pn = scan_rslt[key]["NIC_PN"]
+            mac = scan_rslt[key]["NIC_MAC"]
+            mac_ui = libmfg_utils.mac_address_format(mac)
+            
+            ## ALOM:
+            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
+                alom_sn = scan_rslt[key]["SN_ALOM"]
+                alom_pn = scan_rslt[key]["PN_ALOM"]
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    # no MAC identifier
+                    continue
+                else:
+                    try:
+                        fru_mapping[mac]
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s}".format(mac_ui))
+                        scan_rslt[key]["NIC_VALID"] = False
+                        continue
+                    try:
+                        if fru_mapping[mac]["SN"] != sn:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned SN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["SN"], sn))
+                            scan_rslt[key]["NIC_VALID"] = False
+                        if fru_mapping[mac]["PN"] != pn: 
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["PN"], pn))
+                            scan_rslt[key]["NIC_VALID"] = False
+                        if fru_mapping[mac]["SN_ALOM"] != alom_sn: 
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["SN_ALOM"], alom_sn))
+                            scan_rslt[key]["NIC_VALID"] = False
+                        if fru_mapping[mac]["PN_ALOM"] != alom_pn: 
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["PN_ALOM"], alom_pn))
+                            scan_rslt[key]["NIC_VALID"] = False
+                    except KeyError as e:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s} for MAC {:s}".format(e, mac_ui))
+                        scan_rslt[key]["NIC_VALID"] = False
+                        continue
+            ## not ALOM:
+            else:
+                try:
+                    fru_mapping[mac]
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s}".format(mac_ui))
+                    scan_rslt[key]["NIC_VALID"] = False
+                    continue
+                try:
+                    if fru_mapping[mac]["SN"] != sn:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned SN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["SN"], sn))
+                        scan_rslt[key]["NIC_VALID"] = False
+                    if fru_mapping[mac]["PN"] != pn: 
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["PN"], pn))
+                        scan_rslt[key]["NIC_VALID"] = False
+                except KeyError as e:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s} for MAC {:s}".format(e, mac_ui))
+                    scan_rslt[key]["NIC_VALID"] = False
+                    continue
 
     # print scan summary
     for slot in range(MTP_Const.MTP_SLOT_NUM):
