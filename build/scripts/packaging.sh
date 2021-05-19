@@ -84,6 +84,7 @@ do
     if [[ $arch == "amd64" ]]
     then
         cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
+        cp $TOP_DIR/diag/python/regression/scripts/start_diag_tor.sh $TEMP_DIR/..
         cp -r $TOP_DIR/tools/pki/ $TEMP_DIR/tools/
         cp -r $TOP_DIR/tools/barco/ $TEMP_DIR/tools/
     else
