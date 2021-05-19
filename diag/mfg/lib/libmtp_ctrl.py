@@ -668,6 +668,7 @@ class mtp_ctrl():
             # script not running anything.
             return True
         if not self._nic_ctrl_list[slot].nic_send_ctrl_c():
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             return False
