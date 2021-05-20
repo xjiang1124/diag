@@ -919,7 +919,7 @@ class nic_ctrl():
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
-        mac_address_offset = "119"  # hardcoded for naples25swm
+        mac_address_offset = "115"  # hardcoded for naples25swm
         cmd_buf = self.nic_get_info("xxd -p -l6 -s{:s} eeprom".format(mac_address_offset))
 
         mac_dump_match = re.search("([A-Fa-f0-9]{12})", cmd_buf)
@@ -948,7 +948,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
             self.nic_set_err_msg("{:s} failed".format(cmd))
             return False
-        mac_address_offset = "119"  # hardcoded for naples25swm
+        mac_address_offset = "115"  # hardcoded for naples25swm
         cmd = "xxd -p -l6 -s{:s} eeprom".format(mac_address_offset)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg("{:s} failed".format(cmd))
