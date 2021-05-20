@@ -307,15 +307,15 @@ func ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
 }
 
 func ReadDeviceID(devName string) (devID byte, err int) {
+    var readData uint16
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
 
-    readData := make([]byte, 1)
-    _, err = pmbus.ReadBlock(devName, pmbus.IC_DEVICE_ID, readData)
-    devID = readData[0]
+    readData, err = pmbus.ReadWord(devName, pmbus.IC_DEVICE_ID)
+    devID = (uint8)(readData & 0xff00 >> 8)
     return devID, err
 }
 
