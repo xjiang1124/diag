@@ -1,5 +1,5 @@
 package main
-
+/*
 //#cgo CFLAGS: -I. -I../../../../lib/util
 //// #cgo CFLAGS: -I../../../../../include
 //#cgo LDFLAGS: -lutil -lcpld
@@ -7,7 +7,7 @@ package main
 // #include <stdlib.h>
 // #include "../../../../lib/capricpld/cpld.h" 
 import "C"
-
+*/
 import (
     //"bufio"
     //"errors"
