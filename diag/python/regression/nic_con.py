@@ -461,15 +461,17 @@ class nic_con:
     def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False, asic_type="elba"):
         fmt_dummy_fru_json = """
 {{
-    "manufacturing-date": "1555977600",
-    "manufacturer": "PENSANDO SYSTEMS INC.",
-    "product-name": "ELBA HAPS",
-    "serial-number": "FLM20350006",
-    "part-number": "elba-haps",
+    "manufacturing-date": "1616630400",
+    "manufacturer": "Pensando",
+    "product-name": "DSC2-200 2x200GbE Dual QSFP56",
+    "serial-number": "FLM20000001",
+    "part-number": "DSC2-2Q200-32R32F64P-R",
+    "frufileid": "02\/19\/21",
+    "board-id": "6",
     "engineering-change-level": "0",
-    "board-id": "2",
     "num-mac-address": "24",
-    "mac-address": "00:11:22:33:{:02}:00"
+    "mac-address": "00:ae:{:02}:f6:00:28",
+    "board-assembly-area": "68-0015-02 01"
 }}
 
         """
