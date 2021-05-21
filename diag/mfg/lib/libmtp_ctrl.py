@@ -670,7 +670,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_send_ctrl_c():
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
-            self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            self.cli_log_slot_err(slot, "Couldn't send C+C")
             return False
         return True
 

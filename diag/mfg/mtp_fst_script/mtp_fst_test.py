@@ -165,12 +165,12 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     cmd = "/nic/tools/fwupdate -l"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -l")
-        mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
         return False
     fw_json = re.findall(r"{.+}", mtp_mgmt_ctrl.mtp_get_cmd_buf(),re.DOTALL)
     if not fw_json:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -l")
-        mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
         return False
     fwlist = json.loads(fw_json[0])
     try:
@@ -234,14 +234,14 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
         cmd = "cat /tmp/fru.json"
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to fetch SN")
-            mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
             fail_list.append(slot)
             pass_list.remove(slot)
             continue
         fru_json = re.findall(r"{.+}", mtp_mgmt_ctrl.mtp_get_cmd_buf(),re.DOTALL)
         if not fru_json:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Get FRU failed")
-            mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
             fail_list.append(slot)
             pass_list.remove(slot)
             continue
@@ -288,7 +288,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
             cmd = "touch /sysconfig/config0/.perf_mode"
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to set performance mode")
-                mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
                 # fail_list.append(slot)
                 # pass_list.remove(slot)
                 # continue
@@ -298,7 +298,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
         cmd = "/nic/tools/fwupdate -s mainfwa"
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to mainfw")
-            mtp_mgmt_ctrl.cli_log_slot_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
             fail_list.append(slot)
             pass_list.remove(slot)
             continue

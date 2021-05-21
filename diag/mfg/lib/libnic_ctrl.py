@@ -567,14 +567,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_set_err_msg(cmd_buf)
             self.nic_console_detach()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
-            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_set_err_msg(cmd_buf)
             self.nic_console_detach()
             return False
 
@@ -583,7 +583,7 @@ class nic_ctrl():
         if dev_profile_match:
             pass
         else:
-            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_set_err_msg(cmd_buf)
             self.nic_console_detach()
             return False
 
@@ -591,7 +591,7 @@ class nic_ctrl():
         if mode_match:
             pass
         else:
-            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_set_err_msg(cmd_buf)
             self.nic_console_detach()
             return False
 
@@ -752,12 +752,13 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             error_flag = True
 
-        if not True in [sig in self.nic_get_cmd_buf() for sig in sig_list]:
+        cmd_buf = self.nic_get_cmd_buf()
+        if not True in [sig in cmd_buf for sig in sig_list]:
             error_flag = True
 
         if error_flag:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            self.nic_set_err_msg(cmd_buf)
 
             # Some additional error printing
             if not self.mtp_exec_cmd("inventory -sts -slot {:d}".format(self._slot)):
@@ -825,10 +826,11 @@ class nic_ctrl():
                     #print("****MTP FRU PROG 4th****")
                     return False
             #VERIFY FRU PROGRAMMING
-            match = re.findall(r"FRU Checkum and Type/Length Checks Passed", self.nic_get_cmd_buf())
+            cmd_buf = self.nic_get_cmd_buf()
+            match = re.findall(r"FRU Checkum and Type/Length Checks Passed", cmd_buf)
             if not match:
                 self.nic_set_err_msg(" SMB FRU PROGRAMMING FAILED\n")
-                self.nic_set_err_msg(" BUF =  {:s}".format(self.nic_get_cmd_buf()))
+                self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
@@ -943,15 +945,18 @@ class nic_ctrl():
         cmd = "rm eeprom"
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg("{:s} failed".format(cmd))
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
         cmd = MFG_DIAG_CMDS.MTP_NIC_FRU_DUMP_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
             self.nic_set_err_msg("{:s} failed".format(cmd))
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
         mac_address_offset = "115"  # hardcoded for naples25swm
         cmd = "xxd -p -l6 -s{:s} eeprom".format(mac_address_offset)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg("{:s} failed".format(cmd))
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
         cmd_buf = self.nic_get_cmd_buf()
 
@@ -2938,7 +2943,7 @@ class nic_ctrl():
     def nic_fix_vrm(self):
         cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT)
         if "Ortano2 VRM fix done" not in cmd_buf:
-            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            self.nic_set_err_msg(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
