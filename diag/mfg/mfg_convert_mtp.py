@@ -25,7 +25,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import MTP_IMAGES
 from libdefs import MTP_Const
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
@@ -134,7 +134,7 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
             raise Exception
 
-        # do the programming
+        # do the cpld programming
         sig_list = ["error", "fault", "exception"]
         cmd = "cpldutil -cpld-flash-prog -type IO -input /home/diag/{:s}".format(mtp_images_list[0])
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
@@ -165,11 +165,17 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
 
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
             raise Exception
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
+        # Program new diag images
+        mtp_diag_image = mtp_images_list[2]
+        nic_diag_image = mtp_images_list[3]
+        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files, force_update=True):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+            raise Exception
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
         # diag environment pre init after programming
         if not mtp_diag_pre_init(mtp_mgmt_ctrl):
@@ -204,8 +210,9 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
             mtp_mgmt_ctrl.cli_log_err("Fail to set correct MTP_TYPE")
             raise Exception
 
-    except Exception:
+    except Exception as e:
         mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), False))
+        mtp_mgmt_ctrl.cli_log_err(str(e))
         return False
 
     mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), True))
@@ -219,6 +226,8 @@ def main():
     args = parser.parse_args()
     if args.convert_to:
         asic_support = args.convert_to
+    else:
+        sys.exit("Missing -to flag. argparser should not let us be here.")
     verbosity = False
     if args.verbosity:
         verbosity = True
@@ -244,28 +253,19 @@ def main():
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-    ### FixMe NZ: track this in libmfg_cfg
     # Collect IO and JTAG CPLD image names
-    mtp_io_cpld_img = dict()
-    mtp_io_cpld_ver = dict()
-    mtp_jtag_cpld_img = dict()
-    mtp_jtag_cpld_ver = dict()
-
-    mtp_io_cpld_img["ELBA"] = "mtp_elba_io_rev1_07222020.bin"
-    mtp_io_cpld_ver["ELBA"] = "0x1"
-    mtp_jtag_cpld_img["ELBA"] = "mtp_elba_jtag_rev1_07302020.bin"
-    mtp_jtag_cpld_ver["ELBA"] = "0x1"
-
-    mtp_io_cpld_img["CAPRI"] = "NIC_MTP_IO_rev7_10232019.bin"
-    mtp_io_cpld_ver["CAPRI"] = "0x7"
-    mtp_jtag_cpld_img["CAPRI"] = "NIC_MTP_JTAG_rev3.bin"
-    mtp_jtag_cpld_ver["CAPRI"] = "0x3"
-    
     try:
-        mtp_images_list = [mtp_io_cpld_img[asic_support], mtp_jtag_cpld_img[asic_support]]
-        mtp_expected_ver = [mtp_io_cpld_ver[asic_support], mtp_jtag_cpld_ver[asic_support]]
+        mtp_images_list  = [MTP_IMAGES.mtp_io_cpld_img[asic_support], MTP_IMAGES.mtp_jtag_cpld_img[asic_support]]
+        mtp_expected_ver = [MTP_IMAGES.mtp_io_cpld_ver[asic_support], MTP_IMAGES.mtp_jtag_cpld_ver[asic_support]]
     except KeyError:
-        mtp_mgmt_ctrl.cli_log_err("Missing image for {:s}".format(asic_support), level=0)
+        mtp_mgmt_ctrl.cli_log_err("Missing CPLD image for {:s}".format(asic_support), level=0)
+        return
+    # Collect amd and arm diag images
+    try:
+        mtp_images_list.append(MTP_IMAGES.AMD64_IMG[asic_support])
+        mtp_images_list.append(MTP_IMAGES.ARM64_IMG[asic_support])
+    except KeyError:
+        mtp_mgmt_ctrl.cli_log_err("Missing diag image for {:s}".format(asic_support), level=0)
         return
 
     # Connect to MTP
@@ -286,13 +286,19 @@ def main():
         cmd = MFG_DIAG_CMDS.MTP_REV_FMT
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Failed to send command for getting MTP revision", level = 0)
-            return False
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
         match = re.findall(r"MTP_REV=REV_([0-9]{2})", mtp_mgmt_ctrl.mtp_get_cmd_buf())
         if match:
             mtp_rev = match[0]
             if mtp_rev == "NONE":
                 mtp_mgmt_ctrl.cli_log_err("This upgrade is not allowed for MTP Rev_{:s}".format(mtp_rev), level=0)
-                return False
+                mtpid_list.remove(mtp_id)
+                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+                mtpid_fail_list.append(mtp_id)
+                continue
 
             if int(mtp_rev) < 3 and asic_support != "CAPRI":
                 ######################################################################
@@ -301,25 +307,19 @@ def main():
                 mtp_mgmt_ctrl.cli_log_err("This upgrade is not allowed for MTP Rev_{:s}".format(mtp_rev), level=0)
         else:
             mtp_mgmt_ctrl.cli_log_err("Failed to get MTP revision", level = 0)
-            return False
-
-        # Copy over CPLD images if needed
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_images_list, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
-            mtpid_list.remove(mtp_id)
-            return
-
-        # Update diag images if needed
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
             continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
+        # Copy over images if needed
+        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_images_list, onboard_image_files):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
 
         # # Start logfile
         # test_log_filep_list[mtp_id] = list()

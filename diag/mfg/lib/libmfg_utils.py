@@ -667,8 +667,8 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
     return True
 
 
-def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
-    if mtp_image in image_on_mtp and nic_image in image_on_mtp:
+def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, force_update=False):
+    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
         mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
         return True
 
