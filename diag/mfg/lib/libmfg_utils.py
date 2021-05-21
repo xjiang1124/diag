@@ -1253,6 +1253,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             if 'txt' in cspfile:
                 listcspfiletoupload.append(cspfile)
         for cspfilepath in listcspfiletoupload:
+            if not csp_log_dir:
+                mtp_mgmt_ctrl.cli_log_err("Unable to copy CSP log file", level=0)
+                break
             if GLB_CFG_MFG_TEST_MODE:
                 cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(csp_log_dir)
                 os.system(cmd)
