@@ -2185,7 +2185,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37692":    #NAPLES100 HPE 
-            if software_pn != "90-0002-0007":
+            if software_pn != "90-0002-0008":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False    
         elif naples_pn[0:6] == "P41854":    #NAPLES100 HPE CLOUD
@@ -2205,7 +2205,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
-            if software_pn != "90-0002-0003":
+            if software_pn != "90-0002-0008":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
@@ -2229,7 +2229,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0010-0001":
+            if software_pn != "90-0002-0008":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
@@ -2264,6 +2264,7 @@ class mtp_ctrl():
         90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
         90-0002-0005   //standup swm naples_fw_iris_1.17.0-54_1120.tar
         90-0002-0007   //RelB++ (SWM833, OCP). Updated 03/02/2021
+        90-0002-0008   //1.14.5 (All HPE Ent: SWM, 100, OCP). Updated 05/28/2021
         90-0003-0001   //Oracle Capri cards.. dont care
         90-0004-0001   //IBM  naples_fw_apulu_1.17.0-42_1117.tar
         90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
