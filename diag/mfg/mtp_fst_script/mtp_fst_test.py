@@ -297,7 +297,7 @@ def check_pcie_stage(mtp_mgmt_ctrl, card_type):
 
     return pass_list, fail_list
 
-def check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list, fail_nic_list):
+def check_rot(mtp_mgmt_ctrl, card_type, nic_list):
     pass_list, fail_list = [], []
     serial_ports = []
     if card_type == "ORTANO":
@@ -318,7 +318,7 @@ def check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list, fail_nic_list):
 
     # Matching game
     # match slot to SN, finding missing ones.
-    for slot in pass_nic_list + fail_nic_list:
+    for slot in nic_list:
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if sn in pass_match_rot:
             pass_list.append(slot)
@@ -385,14 +385,14 @@ def main():
     # local log files
     log_filep_list = list()
     test_log_file = "test_fst.log"
-    if ("CLOUD" in card_type or card_type == "ORTANO") and stage != "FETCH_SN":
+    if "CLOUD" in card_type and stage != "FETCH_SN":
         test_log_filep = open(test_log_file, "a+", buffering=0)
     else:
         test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
     diag_log_file = "diag_fst.log"
-    if ("CLOUD" in card_type or card_type == "ORTANO") and stage != "FETCH_SN":
+    if "CLOUD" in card_type and stage != "FETCH_SN":
         diag_log_filep = open(diag_log_file, "a+", buffering=0)
     else:
         diag_log_filep = open(diag_log_file, "w+", buffering=0)
@@ -418,31 +418,8 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP Final Stage Test Start", level=0)
     start_ts = libmfg_utils.timestamp_snapshot()
 
-
-
     pass_nic_list = list()
     fail_nic_list = list()
-
-    # rebuild pass/fail with previous stage.
-    test_records = []
-    if stage != "FETCH_SN" and card_type == "ORTANO":
-        with open(".tmp.json", "r") as fh:
-            test_records = json.loads(fh.read())
-
-        for record in test_records:
-            slot = record[0]
-            sn = record[1]
-            nic_type = record[2]
-            result = record[3]
-
-            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-            mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-            if result == "PASS":
-                pass_nic_list.append(slot)
-            if result == "FAIL":
-                fail_nic_list.append(slot)
-
-
 
     if card_type == "GENERAL" or card_type == "GENERAL_OLD" or card_type == "ORACLE":
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
@@ -491,12 +468,7 @@ def main():
     elif card_type == "ORTANO":
         dsp = FF_Stage.FF_FST
 
-        if stage == "FETCH_SN":
-            testlist = ["FETCH_SN"]
-        elif stage == "CHECK_PCIE":
-            testlist = ["PCIE_LINK", "ROT"]
-        else:
-            testlist = []
+        testlist = ["FETCH_SN", "PCIE_LINK", "ROT"]
 
         for test in testlist:
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
@@ -507,7 +479,7 @@ def main():
             elif test == "PCIE_LINK":
                 test_pass_list, test_fail_list = check_pcie_stage(mtp_mgmt_ctrl, card_type)
             elif test == "ROT":
-                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list, fail_nic_list)
+                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list + fail_nic_list)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
                 continue
@@ -538,30 +510,6 @@ def main():
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown card type", level=0)
         mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
-        logfile_close(log_filep_list)
-        return
-
-    if stage == "FETCH_SN" and card_type == "ORTANO":
-        ## save variables needed through the powercycle.
-        save_record = list()
-        for slot in pass_nic_list:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            save_record.append((slot, sn, nic_type, "PASS"))
-        for slot in fail_nic_list:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            save_record.append((slot, sn, nic_type, "FAIL"))
-        with open(".tmp.json", "w") as fh:
-            json.dump(save_record, fh, allow_nan=True)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("sync")
-
-        cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
-        cmd = "cp /home/diag/mtp_fst_script/test_fst.log /home/diag/mtp_fst_script/test_fst.log.0"
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
-
-        # end the test here
         logfile_close(log_filep_list)
         return
 

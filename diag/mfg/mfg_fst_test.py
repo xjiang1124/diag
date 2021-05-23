@@ -61,7 +61,7 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     # For cloud card, collect logs at CHECK_PCIE stage
-    if "CLOUD" in card_type or card_type == "ORTANO":
+    if "CLOUD" in card_type:
         if stage == "FETCH_SN":
             return
     
@@ -179,7 +179,7 @@ def main():
         time.sleep(5)
 
     # for Cloud, we need to reboot and do stage II test
-    if "CLOUD" in card_type or card_type == "ORTANO":
+    if "CLOUD" in card_type:
         print("Power Cycle FST Server")
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_power_cycle():
