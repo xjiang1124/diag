@@ -2160,7 +2160,7 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0009-0001") or (software_pn == "90-0011-0001")):
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0009-0002") or (software_pn == "90-0011-0001")):
             return True
         return False
             
@@ -2245,7 +2245,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-0009-0001":
+            if software_pn != "90-0009-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
@@ -2271,7 +2271,7 @@ class mtp_ctrl():
         90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.16.2-C-10_2021.04.08.tar
         90-0007-0001   //naples_fw_iris_1.14.4-E-12_20210408.tar. Updated 04/12/2021
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
-        90-0009-0001   //Ortano2 dsc_fw_athena_elba_1.15.6-C-9_2021.04.13.tar
+        90-0009-0002   //Ortano2-oracle dsc_fw_athena_elba_1.15.8-C-9_2021.05.22.tar
         90-0010-0001   //1.14.5 (OCP). Updated 04/26/2021
         '''
         return True
