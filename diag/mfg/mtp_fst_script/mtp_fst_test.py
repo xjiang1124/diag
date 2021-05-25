@@ -104,8 +104,16 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus, card_type):
     return True
 
 def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
-    bus_str = bus.split(":", 1)[0]
-    bus_int = int(bus_str, 16)+2
+
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cat /sys/bus/pci/devices/0000:{:s}/subordinate_bus_number".format(bus))
+    result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    bus_int_match = re.search(r'\r\n.*$', result)
+    if bus_int_match:
+        bus_int=int(bus_int_match.group(0).strip())
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_err("Failed to find pci device number for assoicated mgmt port...trying forced")
+        bus_str = bus.split(":", 1)[0]
+        bus_int = int(bus_str, 16)+4
     eth = "enp"+str(bus_int)+"s0"
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
 
@@ -138,6 +146,22 @@ def get_product_name_from_pn(pn):
 
 def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Retrieve FW info")
+
+    cmd = "/nic/tools/fwupdate -r"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -r")
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        return False
+    cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if "mainfwa" in cmd_buf:    # make this all single line print...
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into mainfwa")
+    elif "mainfwb" in cmd_buf:
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into mainfwb")
+    elif "goldfw" in cmd_buf:
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into goldfw")
+    elif "diagfw" in cmd_buf:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw")
+
     cmd = "/nic/tools/fwupdate -l"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -l")
