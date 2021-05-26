@@ -2160,7 +2160,7 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0009-0002") or (software_pn == "90-0011-0001")):
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002")):
             return True
         return False
             
