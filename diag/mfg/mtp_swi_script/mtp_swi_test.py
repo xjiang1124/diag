@@ -781,6 +781,8 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if card_type != NIC_Type.ORTANO and card_type != NIC_Type.ORTANO2:
             continue
+        if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            continue
 
         test_list = ["UBOOT_ENV"]
         for skipped_test in args.skip_test:
