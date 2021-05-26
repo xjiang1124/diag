@@ -309,6 +309,7 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size)
     uint32_t status = 0;
     uint32_t val;
     uint32_t data;
+    uint32_t len;
     uint32_t addr = 0;
     uint8_t temp[4];
     uint32_t page_prog_cmd = FLASH_PAGE_PROG;
@@ -316,50 +317,56 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size)
     while(size > 256)
     {
         val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-        data = *((uint32_t *)(buf));
-        val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
-        buf += 256;
-        size -= 256;
+
+        len = 256;
+
+        while(len)
+        {
+            data = *((uint32_t *)(buf));
+            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
+            buf += 4;
+            size -= 4;
+            len -= 4;
+        }
     }
+
+    if(size)
+        val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd);
 
     while(size)
     {
-	if(size == 1) 
+	    if(size == 1) 
         {
-	    temp[0] = *buf;
-	    temp[1] = 0xFF;
-	    temp[2] = 0xFF;
-	    temp[3] = 0xFF;
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-            data = *((uint32_t *)(buf));
+	        temp[0] = *buf;
+	        temp[1] = 0xFF;
+	        temp[2] = 0xFF;
+	        temp[3] = 0xFF;
+            data = *((uint32_t *)(temp));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             size -= 1;
         }
         else if(size == 2)
         {
-	    temp[0] = *buf++;
-	    temp[1] = *buf;
-	    temp[2] = 0xFF;
-	    temp[3] = 0xFF;
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-            data = *((uint32_t *)(buf));
+	        temp[0] = *buf++;
+	        temp[1] = *buf;
+	        temp[2] = 0xFF;
+	        temp[3] = 0xFF;
+            data = *((uint32_t *)(temp));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             size -= 2;
         }
         else if(size == 3)
         {
-	    temp[0] = *buf++;
-	    temp[1] = *buf++;
-	    temp[2] = *buf;
-	    temp[3] = 0xFF;
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-            data = *((uint32_t *)(buf));
+	        temp[0] = *buf++;
+	        temp[1] = *buf++;
+	        temp[2] = *buf;
+	        temp[3] = 0xFF;
+            data = *((uint32_t *)(temp));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             size -= 3;
         }
         else
         {
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
             data = *((uint32_t *)(buf));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             buf += 4;
@@ -384,8 +391,8 @@ static int flash_read(uint32_t fd, uint8_t* buf, uint32_t size)
     {
         val = ps48_read(fd, SPI_DATA_RECEIVE_REG, rxbuf);
         memcpy(buf, rxbuf, 4);
-	buf = buf + 4;
-	size = size - 4;
+	    buf = buf + 4;
+	    size = size - 4;
     }
 
     val = ps48_read(fd, SPI_DATA_RECEIVE_REG, rxbuf);
@@ -421,11 +428,16 @@ void flash_init(uint32_t fd)
 
 static void usage(void)
 {
+    printf("ps48fpga (-spiInit) \n");
+    printf("ps48fpga (-flashInit) \n");
+    printf("ps48fpga (-pageConfig) \n");
+    printf("ps48fpga (-rSwitch) \n");
+    printf("ps48fpga (-wSwitch) \n");
     printf("ps48fpga (-r addr | -w addr data) \n");
     printf("ps48fpga (-prog input_file) \n"); 
     printf("ps48fpga (-file output_file)  \n");
-    printf("ps48fpga (-file output_file)  \n");
     printf("ps48fpga (-erase) \n");
+
     exit(1);
 }
 	
@@ -438,8 +450,9 @@ int main(int argc, char *argv[])
     if ( strcmp(argv[1], "-spiInit") == 0 ) 
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
-        spi_init(fd);
+    
         ps48_sync(fd);
+        spi_init(fd);
     } 
     else if ( strcmp(argv[1], "-flashInit") == 0 ) 
     {

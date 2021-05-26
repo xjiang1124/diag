@@ -37,6 +37,15 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define FLASH_PAGE_PROG		0x02000000
 #define FLASH_SOFT_RESET	0x66000000
 
+#define FLASH_AND_SWITCH_PAGE_CONFIG 	0
+#define NCSI_AND_BMC_PAGE_CONFIG	1
+#define PC_AND_SERDES_PAGE_CONFIG	2
+
+#define SWITCH_CORE_VERSION_REG		0x00
+#define SWITCH_MAC_LOW_REG		0x04
+#define SWITCH_MAC_HIGH_REG		0x08
+
+
 static int _e_ioctl(int fd, const char *name, unsigned long req, void *arg)
 {
     int r = ioctl(fd, req, arg);
@@ -56,6 +65,28 @@ static int e_open(const char *path, int flags, int mode)
         exit(1);
     }
     return fd;
+}
+
+static int ps48_sync(uint32_t fd)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[6];	
+ 
+    txbuf[0] = 0x2a;
+    txbuf[1] = 0x55;
+    txbuf[2] = 0x95;
+    txbuf[3] = 0xaa;
+    txbuf[4] = 0x56;
+    txbuf[5] = 0x94;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 6;
+    msg[0].speed_hz = 5000000;
+
+    e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    close(fd);
+    return 0;
 }
 
 static int ps48_process_resp(uint32_t fd, char *buf)
@@ -110,18 +141,39 @@ static int ps48_process_resp(uint32_t fd, char *buf)
     }
 }
 
-static int ps48_page_config(uint32_t fd)
+
+static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
 {
     struct spi_ioc_transfer msg[1];
     uint8_t txbuf[6];
-    int val;
 
-    txbuf[0] = 0xc4;
-    txbuf[1] = 0x40;
-    txbuf[2] = 0x00;
-    txbuf[3] = 0x04;
-    txbuf[4] = 0x00;
-    txbuf[5] = 0x01;
+    if(pageConfig == FLASH_AND_SWITCH_PAGE_CONFIG)
+    {
+        txbuf[0] = 0xc4;
+        txbuf[1] = 0x02;
+        txbuf[2] = 0x00;
+        txbuf[3] = 0x00;
+        txbuf[4] = 0x10;
+        txbuf[5] = 0x01;
+    }
+    else if(pageConfig == NCSI_AND_BMC_PAGE_CONFIG)
+    {
+        txbuf[0] = 0xf8;
+        txbuf[1] = 0x00;
+        txbuf[2] = 0x00;
+        txbuf[3] = 0x00;
+        txbuf[4] = 0x10;
+        txbuf[5] = 0x05;
+    }
+    else 
+    {
+        txbuf[0] = 0xf8;
+        txbuf[1] = 0x01;
+        txbuf[2] = 0x00;
+        txbuf[3] = 0x80;
+        txbuf[4] = 0x10;
+        txbuf[5] = 0x0c;
+    }
 
     memset(msg, 0, sizeof (msg));
     msg[0].tx_buf = (intptr_t)txbuf;
@@ -129,9 +181,8 @@ static int ps48_page_config(uint32_t fd)
     msg[0].speed_hz = 5000000;
 
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-    val = ps48_process_resp(fd, NULL);
     close(fd);
-    return val;
+    return 0;
 }
 
 static int ps48_write(uint32_t fd, uint8_t addr, uint32_t data)
@@ -188,6 +239,60 @@ static int ps48_read(uint32_t fd, uint32_t addr, char *buf)
     return val;
 }
 
+static int ps48_write_switch(uint32_t fd, uint8_t addr, uint32_t data)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[6];	
+    uint8_t *temp;
+    int val;
+
+    temp = (uint8_t *)(&data);
+
+    txbuf[0] = 0x50;
+    txbuf[1] = addr;
+    txbuf[2] = *temp++;
+    txbuf[3] = *temp++;
+    txbuf[4] = *temp++;
+    txbuf[5] = *temp;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 6;
+    msg[0].speed_hz = 5000000;
+
+    e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    val = ps48_process_resp(fd, NULL);
+    close(fd);
+    return val;
+}
+
+static int ps48_read_switch(uint32_t fd, uint32_t addr, char *buf)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[6];
+    uint8_t *temp;
+    int val;
+
+    temp = (uint8_t *)(&addr);
+
+    txbuf[0] = 0x90;
+    txbuf[1] = 0x00;
+    txbuf[2] = *temp++;
+    txbuf[3] = *temp++;
+    txbuf[4] = *temp++;
+    txbuf[5] = *temp;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 6;
+    msg[0].speed_hz = 5000000;
+
+    e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    val = ps48_process_resp(fd, buf);
+    close(fd);
+    return val;
+}
+
 static int flash_erase(uint32_t fd)
 {
     uint32_t status = 0;
@@ -204,6 +309,7 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size)
     uint32_t status = 0;
     uint32_t val;
     uint32_t data;
+    uint32_t len;
     uint32_t addr = 0;
     uint8_t temp[4];
     uint32_t page_prog_cmd = FLASH_PAGE_PROG;
@@ -211,50 +317,56 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size)
     while(size > 256)
     {
         val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-        data = *((uint32_t *)(buf));
-        val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
-        buf += 256;
-        size -= 256;
+
+        len = 256;
+
+        while(len)
+        {
+            data = *((uint32_t *)(buf));
+            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
+            buf += 4;
+            size -= 4;
+            len -= 4;
+        }
     }
+
+    if(size)
+        val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd);
 
     while(size)
     {
-	if(size == 1) 
+	    if(size == 1) 
         {
-	    temp[0] = *buf;
-	    temp[1] = 0xFF;
-	    temp[2] = 0xFF;
-	    temp[3] = 0xFF;
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-            data = *((uint32_t *)(buf));
+	        temp[0] = *buf;
+	        temp[1] = 0xFF;
+	        temp[2] = 0xFF;
+	        temp[3] = 0xFF;
+            data = *((uint32_t *)(temp));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             size -= 1;
         }
         else if(size == 2)
         {
-	    temp[0] = *buf++;
-	    temp[1] = *buf;
-	    temp[2] = 0xFF;
-	    temp[3] = 0xFF;
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-            data = *((uint32_t *)(buf));
+	        temp[0] = *buf++;
+	        temp[1] = *buf;
+	        temp[2] = 0xFF;
+	        temp[3] = 0xFF;
+            data = *((uint32_t *)(temp));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             size -= 2;
         }
         else if(size == 3)
         {
-	    temp[0] = *buf++;
-	    temp[1] = *buf++;
-	    temp[2] = *buf;
-	    temp[3] = 0xFF;
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
-            data = *((uint32_t *)(buf));
+	        temp[0] = *buf++;
+	        temp[1] = *buf++;
+	        temp[2] = *buf;
+	        temp[3] = 0xFF;
+            data = *((uint32_t *)(temp));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             size -= 3;
         }
         else
         {
-            val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, page_prog_cmd++);
             data = *((uint32_t *)(buf));
             val = ps48_write(fd, SPI_DATA_TRANSMIT_REG, data);
             buf += 4;
@@ -279,8 +391,8 @@ static int flash_read(uint32_t fd, uint8_t* buf, uint32_t size)
     {
         val = ps48_read(fd, SPI_DATA_RECEIVE_REG, rxbuf);
         memcpy(buf, rxbuf, 4);
-	buf = buf + 4;
-	size = size - 4;
+	    buf = buf + 4;
+	    size = size - 4;
     }
 
     val = ps48_read(fd, SPI_DATA_RECEIVE_REG, rxbuf);
@@ -316,23 +428,30 @@ void flash_init(uint32_t fd)
 
 static void usage(void)
 {
+    printf("ps48fpga (-spiInit) \n");
+    printf("ps48fpga (-flashInit) \n");
+    printf("ps48fpga (-pageConfig) \n");
+    printf("ps48fpga (-rSwitch) \n");
+    printf("ps48fpga (-wSwitch) \n");
     printf("ps48fpga (-r addr | -w addr data) \n");
     printf("ps48fpga (-prog input_file) \n"); 
     printf("ps48fpga (-file output_file)  \n");
-    printf("ps48fpga (-file output_file)  \n");
     printf("ps48fpga (-erase) \n");
+
     exit(1);
 }
-
+	
 int main(int argc, char *argv[])
 {
-    uint8_t addr, data;
+    uint8_t addr, data, val;
  
     if ( argc < 2 ) usage();
 
     if ( strcmp(argv[1], "-spiInit") == 0 ) 
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+    
+        ps48_sync(fd);
         spi_init(fd);
     } 
     else if ( strcmp(argv[1], "-flashInit") == 0 ) 
@@ -340,12 +459,19 @@ int main(int argc, char *argv[])
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);   
         flash_init(fd);
     } 
+    else if ( strcmp(argv[1], "-pageConfig") == 0 ) 
+    {
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);   
+
+        val = ps48_page_config(fd, FLASH_AND_SWITCH_PAGE_CONFIG);
+        val = ps48_page_config(fd, NCSI_AND_BMC_PAGE_CONFIG);
+    } 
     else if ( strcmp(argv[1], "-r") == 0 ) 
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
         addr = strtoul(argv[2], NULL, 0);
-        data = ps48_read(fd, addr, &data);
+        val = ps48_read(fd, addr, &data);
         printf("0x%x\n", data);
     } 
     else if ( strcmp(argv[1], "-w" ) == 0 ) 
@@ -356,7 +482,25 @@ int main(int argc, char *argv[])
 
         addr = strtoul(argv[2], NULL, 0);
         data = strtoul(argv[3], NULL, 0);
-        ps48_write(fd, addr, data);
+        val = ps48_write(fd, addr, data);
+    } 
+    else if ( strcmp(argv[1], "-rSwitch") == 0 ) 
+    {
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+
+        addr = strtoul(argv[2], NULL, 0);
+        val = ps48_read_switch(fd, addr, &data);
+        printf("0x%x\n", data);
+    } 
+    else if ( strcmp(argv[1], "-wSwitch") == 0 ) 
+    {
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+
+        if ( argc < 4 ) usage();
+
+        addr = strtoul(argv[2], NULL, 0);
+        data = strtoul(argv[3], NULL, 0);
+        val = ps48_write_switch(fd, addr, data);
     } 
     else if ( strcmp(argv[1], "-prog" ) == 0 ) 
     {
