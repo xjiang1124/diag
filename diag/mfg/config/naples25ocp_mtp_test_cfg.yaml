@@ -107,6 +107,7 @@ MTP_SEQ:
                 SN: Yes
                 SLOT: Yes
                 VMARG: Yes
+                MODE: No
 
 MTP_POST:
     NIC_MEM:  False
