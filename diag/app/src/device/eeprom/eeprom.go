@@ -866,19 +866,19 @@ var Lacona25DELLTbl = []entry {
     entry{"Header Checksum",                        			INT8,       316,       1,    []byte{0x00}},
     entry{"Manufacture ID",                         			INT8,       317,       3,    []byte{0xA2, 0x02, 0x00}},
     entry{"Dell Version Number",                    			INT8,       320,       1,    []byte{0x01}},
-    entry{"Device Form Factor",                         		INT8,       321,       2,    []byte{0x17, 0x00}},
+    entry{"Device Form Factor",                         		INT8,       321,       2,    []byte{0x00, 0x00}},
     entry{"Standby Thermal Tier",                         		INT8,       323,       1,    []byte{0x00}},
     entry{"Operational Thermal Tier for Hot Aisle/Normal Airflow",      INT8,       324,       1,    []byte{0x01}},
     entry{"Operational Thermal Tier for Cold Aisle/Normal Airflow",     INT8,       325,       1,    []byte{0x01}},
     entry{"Extended Operating Temperature Therma Tier",                 INT8,       326,       1,    []byte{0x01}},
     entry{"Active Card Fault Operating Cooling Tier",                   INT8,       327,       1,    []byte{0x01}},
     entry{"Configuration",                         			INT8,       328,       1,    []byte{0xC0}},
-    entry{"Self Protection Capabilities",                         	INT8,       329,       1,    []byte{0x03}},
+    entry{"Self Protection Capabilities",                         	INT8,       329,       1,    []byte{0x02}},
     entry{"Minimum Local Inlet Temperature",                         	INT8,       330,       2,    []byte{0xFF, 0xFF}},
     entry{"Maximum Local Inlet Temperature",                         	INT8,       332,       2,    []byte{0xFF, 0xFF}},
     entry{"Minimum Fan Speed",                         			INT8,       334,       1,    []byte{0xFF}},
-    entry{"Minimum LFM",                         			INT8,       335,       1,    []byte{0x68}},
-    entry{"Minimum LFM active card fault",                         	INT8,       336,       1,    []byte{0x68}},
+    entry{"Minimum LFM",                         			INT8,       335,       1,    []byte{0x6C}},
+    entry{"Minimum LFM active card fault",                         	INT8,       336,       1,    []byte{0x6C}},
     entry{"Custom LFM - 25C",                         			INT8,       337,       1,    []byte{0x68}},
     entry{"Custom LFM - 35C",                         			INT8,       338,       1,    []byte{0x68}},
     entry{"Custom LFM - 45C",                         			INT8,       339,       1,    []byte{0x68}},
@@ -892,24 +892,35 @@ var Lacona25DELLTbl = []entry {
     entry{"Header Checksum",                         			INT8,       346,       1,    []byte{0x00}},
     entry{"Manufacture ID",                         			INT8,       347,       3,    []byte{0xA2, 0x02, 0x00}},
     entry{"Dell Version Number",                         		INT8,       350,       1,    []byte{0x01}},
-    entry{"Max Systained Power in S0",                         		INT8,       351,       2,    []byte{0x14, 0x00}},
-    entry{"Max Peak Power in S0",                         		INT8,       353,       2,    []byte{0x17, 0x00}},
-    entry{"Max Throttled Power in S0",                         		INT8,       355,       2,    []byte{0x0F, 0x00}},
-    entry{"Max Sustained Power in S5",                         		INT8,       357,       2,    []byte{0x0A, 0x00}},
-    entry{"Max Peak Power in S5",                         		INT8,       359,       2,    []byte{0x0F, 0x00}},
+    entry{"Max Systained Power in S0",                         		INT8,       351,       2,    []byte{0x28, 0x00}},
+    entry{"Max Peak Power in S0",                         		INT8,       353,       2,    []byte{0x2E, 0x00}},
+    entry{"Max Throttled Power in S0",                         		INT8,       355,       2,    []byte{0x1E, 0x00}},
+    entry{"Max Sustained Power in S5",                         		INT8,       357,       2,    []byte{0x14, 0x00}},
+    entry{"Max Peak Power in S5",                         		INT8,       359,       2,    []byte{0x1E, 0x00}},
     entry{"Power Brake",                         			INT8,       361,       1,    []byte{0x00}},
 
     entry{"Multi-Record Area",                         			INT8,       362,       1,    []byte{0xE3}},
-    entry{"Record Format",                                      	INT8,       363,       1,    []byte{0x82}},
+    entry{"Record Format",                                      	INT8,       363,       1,    []byte{0x02}},
     entry{"Record Length",                         			INT8,       364,       1,    []byte{0x0A}},
     entry{"Record Checksum",                         			INT8,       365,       1,    []byte{0x00}},
     entry{"Header Checksum",                         			INT8,       366,       1,    []byte{0x00}},
     entry{"Manufacture ID",                         			INT8,       367,       3,    []byte{0xA2, 0x02, 0x00}},
     entry{"Dell Version Number",                         		INT8,       370,       1,    []byte{0x01}},
-    entry{"FRU Card Type Identifier",                         		INT8,       371,       1,    []byte{0x16}},
+    entry{"FRU Card Type Identifier",                         		INT8,       371,       1,    []byte{0x18}},
     entry{"Storage Size",                         			INT8,       372,       2,    []byte{0xA0, 0x0F}},
     entry{"FRU Content Size",                         			INT8,       374,       2,    []byte{0x78, 0x01}},
     entry{"reserved",                         				INT8,       376,       1,    []byte{0x00}},
+
+    entry{"Multi-Record Area",                                          INT8,       377,       1,    []byte{0xE6}},
+    entry{"Record Format",                                      	INT8,       378,       1,    []byte{0x82}},
+    entry{"Record Length",                         			INT8,       379,       1,    []byte{0x09}},
+    entry{"Record Checksum",                         			INT8,       380,       1,    []byte{0x00}},
+    entry{"Header Checksum",                         			INT8,       381,       1,    []byte{0x00}},
+    entry{"Manufacture ID",                         			INT8,       382-384,   3,    []byte{0xA2, 0x02, 0x00}},
+    entry{"Dell Version Number",                         		INT8,       385,       1,    []byte{0x01}},
+    entry{"FRU Card Type Identifier",                         		INT8,       386,       1,    []byte{0x00}},
+    entry{"Storage Size",                         			INT8,       387-388,   2,    []byte{0x10, 0x00}},
+    entry{"FRU Content Size",                         			INT8,       389-390,   2,    []byte{0x1E, 0x00}},
 }
 
 
@@ -1399,6 +1410,9 @@ func updateIntChk() () {
             if (entry.Offset > 366) && (entry.Offset < 377) {
                 mraChk[2] += calcSum(entry)
             }
+            if (entry.Offset > 381) && (entry.Offset < 391) {
+                mraChk[3] += calcSum(entry)
+            }
         }
 
 
@@ -1412,6 +1426,9 @@ func updateIntChk() () {
             }
             if (entry.Offset > 361) && (entry.Offset < 366) {
                 mraHdrChk[2] += calcSum(entry)
+            }
+            if (entry.Offset > 376) && (entry.Offset < 382) {
+                mraHdrChk[3] += calcSum(entry)
             }
         }
     }
