@@ -2160,7 +2160,7 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002")):
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0011-0001")):
             return True
         return False
             
@@ -3746,7 +3746,7 @@ class mtp_ctrl():
             if self.mtp_is_nic_ortano_oracle(slot):
                 preset_config = "5"
             else:
-                preset_config = "7"
+                preset_config = "8"
             if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
                 self.cli_log_slot_err_lock(slot, "Set board config failed")
                 err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
