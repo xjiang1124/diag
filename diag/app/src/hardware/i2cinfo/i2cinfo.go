@@ -275,6 +275,29 @@ var MtpHubI2cTbl = []I2cInfo {
     I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE",  0,  0},
 }
 
+var TaorTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20", 1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    0},
+    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20", 1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    0},
+    I2cInfo {"P0V8RT_B",       "TPS549A20", 1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    0},
+    I2cInfo {"TSENSOR-1",      "LM75", 3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    0},
+    I2cInfo {"TSENSOR-2",      "LM75", 3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    0},
+    I2cInfo {"TSENSOR-3",      "LM75", 3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    0},
+    I2cInfo {"P0V8RT_A",       "TPS544C20", 1,   0x04,    0x0,    "FPGA_HUB_0_0",  0,    0},
+    I2cInfo {"P3V3",           "TPS544C20", 1,   0x08,    0x0,    "FPGA_HUB_0_1",  1,    0},
+    I2cInfo {"P3V3S",          "TPS544C20", 1,   0x09,    0x0,    "FPGA_HUB_0_0",  0,    0},
+    I2cInfo {"TDNT_PDVDD",     "TPS53681",  1,   0x60,    0x0,    "FPGA_HUB_0_3",  3,    0},
+    I2cInfo {"TDNT_P0V8_AVDD", "TPS53681",  1,   0x60,    0x1,    "FPGA_HUB_0_3",  3,    0},
+    I2cInfo {"CPU_P1V2_VDDQ",     "SN1701022", 1,   0x77,    0x0, "FPGA_HUB_0_1",  1,    0},
+    I2cInfo {"CPU_P1V05_COMBINED","SN1701022", 1,   0x77,    0x1, "FPGA_HUB_0_1",  1,    0},
+    I2cInfo {"CPU_PVCCIN",        "SN1701022", 1,   0x6B,    0x0, "FPGA_HUB_0_2",  2,    0},
+    I2cInfo {"CPU_P1V05_VCCSCSUS","SN1701022", 1,   0x6B,    0x1, "FPGA_HUB_0_2",  2,    0},
+    I2cInfo {"PSU_1",           "DPS-800",   2,   0x58,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"PSU_2",           "DPS-800",   2,   0x58,    0x0,    "FPGA_HUB_1_1",  1,    0},
+    I2cInfo {"TSENSOR-CPU",      "XeonD",    1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-TD3",      "TD3",      1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
+}
+
 
 func init() {
     CardType = os.Getenv("CARD_TYPE")
@@ -323,6 +346,8 @@ func init() {
         I2cTbl = MtpI2cTbl
     } else if CardType == "MTPS" {
         I2cTbl = MtpsI2cTbl
+    } else if CardType == "TAOR" {
+        I2cTbl = TaorTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
@@ -473,6 +498,17 @@ func GetI2cInfo(devName string) (i2cinfo I2cInfo, err int) {
     err = errType.INVALID_PARAM
     return
 
+}
+
+func IsDeviceInI2Ctable(devName string) (err int) {
+    for _, i2cinfo := range(CurI2cTbl) {
+        if devName == i2cinfo.Name {
+            err = errType.SUCCESS
+            return
+        }
+    }
+    err = errType.FAIL
+    return
 }
 
 func DispI2cInfo(devName string) (err int) {

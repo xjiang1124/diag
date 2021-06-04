@@ -368,7 +368,7 @@ func Spi_elba_flash_VerifyImage(spiNumber uint32, partition string, filename str
             return
         }
     }
-    fmt.Printf("Verification passed\n")
+    fmt.Printf("\nVerification passed\n")
     return
 }
 

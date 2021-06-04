@@ -17,17 +17,27 @@ const DEV2_BAR int64 = 0x183fff200000
 const DEV3_BAR int64 = 0x183fff100000
 const MAP_SIZE int = 1048576
 
-const D0_FPGA_REV_ID_REG           uint64 = 0x0
+const I2C_MAILBOX_STRIDE = 0x20
+
+
+const (
+    DEVREGION0 = 0
+    DEVREGION1 = 1
+    DEVREGION2 = 2
+    DEVREGION3 = 3
+)
+
+
 const D0_FPGA_DATECODE_REG         uint64 = 0x4
 const D0_BOARD_REV_ID_REG          uint64 = 0x8
-const D0_FUNC_CAP_0_REG            uint64 = 0xc
-const D0_FUNC_CAP_1_REG            uint64 = 0x10
-const D0_FUNC_CAP_2_REG            uint64 = 0x14
-const D0_FUNC_CAP_3_REG            uint64 = 0x18
-const D0_FUNC_CAP_4_REG            uint64 = 0x1c
-const D0_FUNC_CAP_5_REG            uint64 = 0x20
-const D0_FUNC_CAP_6_REG            uint64 = 0x24
-const D0_FUNC_CAP_7_REG            uint64 = 0x28
+const D0_FUNC_CAP_0_REG            uint64 = 0x40
+const D0_FUNC_CAP_1_REG            uint64 = 0x44
+const D0_FUNC_CAP_2_REG            uint64 = 0x48
+const D0_FUNC_CAP_3_REG            uint64 = 0x4c
+const D0_FUNC_CAP_4_REG            uint64 = 0x50
+const D0_FUNC_CAP_5_REG            uint64 = 0x54
+const D0_FUNC_CAP_6_REG            uint64 = 0x58
+const D0_FUNC_CAP_7_REG            uint64 = 0x5c
 const D0_SCRTCH_0_REG              uint64 = 0x80
 const D0_SCRTCH_1_REG              uint64 = 0x84
 const D0_SCRTCH_2_REG              uint64 = 0x88
@@ -40,26 +50,26 @@ const D0_DEBUG_0_REG               uint64 = 0xd0
 const D0_DEBUG_1_REG               uint64 = 0xd4
 const D0_DEBUG_2_REG               uint64 = 0xd8
 const D0_DEBUG_3_REG               uint64 = 0xdc
-const D0_RESET_CAUSE_0_REG         uint64 = 0x100
-const D0_RESET_CAUSE_1_REG         uint64 = 0x104
-const D0_RESET_CAUSE_2_REG         uint64 = 0x108
-const D0_RESET_CAUSE_3_REG         uint64 = 0x10c
-const D0_DEV_MSI_0_PEND_REG        uint64 = 0x300
-const D0_DEV_MSI_0_INT_EN_REG      uint64 = 0x304
-const D0_DEV_MSI_1_PEND_REG        uint64 = 0x308
-const D0_DEV_MSI_1_INT_EN_REG      uint64 = 0x30c
-const D0_DEV_MSI_2_PEND_REG        uint64 = 0x310
-const D0_DEV_MSI_2_INT_EN_REG      uint64 = 0x314
-const D0_DEV_MSI_3_PEND_REG        uint64 = 0x318
-const D0_DEV_MSI_3_INT_EN_REG      uint64 = 0x31c
-const D0_DEV_MSI_4_PEND_REG        uint64 = 0x320
-const D0_DEV_MSI_4_INT_EN_REG      uint64 = 0x324
-const D0_DEV_MSI_5_PEND_REG        uint64 = 0x328
-const D0_DEV_MSI_5_INT_EN_REG      uint64 = 0x32c
-const D0_DEV_MSI_6_PEND_REG        uint64 = 0x330
-const D0_DEV_MSI_6_INT_EN_REG      uint64 = 0x334
-const D0_DEV_MSI_7_PEND_REG        uint64 = 0x338
-const D0_DEV_MSI_7_INT_EN_REG      uint64 = 0x33c
+const D0_DEV_MSI_0_PEND_REG        uint64 = 0x100
+const D0_DEV_MSI_0_INT_EN_REG      uint64 = 0x108
+const D0_DEV_MSI_1_PEND_REG        uint64 = 0x110
+const D0_DEV_MSI_1_INT_EN_REG      uint64 = 0x118
+const D0_DEV_MSI_2_PEND_REG        uint64 = 0x120
+const D0_DEV_MSI_2_INT_EN_REG      uint64 = 0x128
+const D0_DEV_MSI_3_PEND_REG        uint64 = 0x130
+const D0_DEV_MSI_3_INT_EN_REG      uint64 = 0x138
+const D0_DEV_MSI_4_PEND_REG        uint64 = 0x140
+const D0_DEV_MSI_4_INT_EN_REG      uint64 = 0x148
+const D0_DEV_MSI_5_PEND_REG        uint64 = 0x150
+const D0_DEV_MSI_5_INT_EN_REG      uint64 = 0x158
+const D0_DEV_MSI_6_PEND_REG        uint64 = 0x160
+const D0_DEV_MSI_6_INT_EN_REG      uint64 = 0x168
+const D0_DEV_MSI_7_PEND_REG        uint64 = 0x170
+const D0_DEV_MSI_7_INT_EN_REG      uint64 = 0x178
+const D0_RESET_CAUSE_0_REG         uint64 = 0x190
+const D0_RESET_CAUSE_1_REG         uint64 = 0x194
+const D0_RESET_CAUSE_2_REG         uint64 = 0x198
+const D0_RESET_CAUSE_3_REG         uint64 = 0x19c
 const D0_MBOX_STAT_REG             uint64 = 0x400
 const D0_MBOX_STAT_PLRTY_REG       uint64 = 0x404
 const D0_MBOX_STAT_EDG_LVL_REG     uint64 = 0x408
@@ -120,21 +130,39 @@ const D0_FP_QSFP_CTRL_55_52_REG    uint64 = 0x5004
 const D0_FP_QSFP_STAT_51_48_REG    uint64 = 0x6000
 const D0_FP_QSFP_STAT_55_52_REG    uint64 = 0x6004
 
+
+
 const D1_FPGA_REV_ID_REG           uint64 = 0x0
 const D1_FPGA_DATECODE_REG         uint64 = 0x4
 const D1_BOARD_REV_ID_REG          uint64 = 0x8
-const D1_FUNC_CAP_0_REG            uint64 = 0xc
-const D1_FUNC_CAP_1_REG            uint64 = 0x10
-const D1_FUNC_CAP_2_REG            uint64 = 0x14
-const D1_FUNC_CAP_3_REG            uint64 = 0x18
-const D1_FUNC_CAP_4_REG            uint64 = 0x1c
-const D1_FUNC_CAP_5_REG            uint64 = 0x20
-const D1_FUNC_CAP_6_REG            uint64 = 0x24
-const D1_FUNC_CAP_7_REG            uint64 = 0x28
+const D1_FUNC_CAP_0_REG            uint64 = 0x40
+const D1_FUNC_CAP_1_REG            uint64 = 0x44
+const D1_FUNC_CAP_2_REG            uint64 = 0x48
+const D1_FUNC_CAP_3_REG            uint64 = 0x4c
+const D1_FUNC_CAP_4_REG            uint64 = 0x50
+const D1_FUNC_CAP_5_REG            uint64 = 0x54
+const D1_FUNC_CAP_6_REG            uint64 = 0x58
+const D1_FUNC_CAP_7_REG            uint64 = 0x5c
 const D1_SCRTCH_0_REG              uint64 = 0x80
 const D1_SCRTCH_1_REG              uint64 = 0x84
 const D1_SCRTCH_2_REG              uint64 = 0x88
 const D1_SCRTCH_3_REG              uint64 = 0x8c
+const D1_DEV_MSI_0_PEND_REG        uint64 = 0x100
+const D1_DEV_MSI_0_INT_EN_REG      uint64 = 0x108
+const D1_DEV_MSI_1_PEND_REG        uint64 = 0x110
+const D1_DEV_MSI_1_INT_EN_REG      uint64 = 0x118
+const D1_DEV_MSI_2_PEND_REG        uint64 = 0x120
+const D1_DEV_MSI_2_INT_EN_REG      uint64 = 0x128
+const D1_DEV_MSI_3_PEND_REG        uint64 = 0x130
+const D1_DEV_MSI_3_INT_EN_REG      uint64 = 0x138
+const D1_DEV_MSI_4_PEND_REG        uint64 = 0x140
+const D1_DEV_MSI_4_INT_EN_REG      uint64 = 0x148
+const D1_DEV_MSI_5_PEND_REG        uint64 = 0x150
+const D1_DEV_MSI_5_INT_EN_REG      uint64 = 0x158
+const D1_DEV_MSI_6_PEND_REG        uint64 = 0x160
+const D1_DEV_MSI_6_INT_EN_REG      uint64 = 0x168
+const D1_DEV_MSI_7_PEND_REG        uint64 = 0x170
+const D1_DEV_MSI_7_INT_EN_REG      uint64 = 0x178
 const D1_CFG_FLASH_CTRL_REG        uint64 = 0x200
 const D1_CFG_FLASH_BAUD_RATE_REG   uint64 = 0x204
 const D1_CFG_FLASH_CS_DELAY_REG    uint64 = 0x208
@@ -149,24 +177,14 @@ const D1_CFG_FLASH_WDATA0_REG      uint64 = 0x228
 const D1_CFG_FLASH_WDATA1_REG      uint64 = 0x22c
 const D1_CFG_FLASH_RDATA0_REG      uint64 = 0x230
 const D1_CFG_FLASH_RDATA1_REG      uint64 = 0x234
-const D1_DEV_MSI_0_PEND_REG        uint64 = 0x300
-const D1_DEV_MSI_0_INT_EN_REG      uint64 = 0x304
-const D1_DEV_MSI_1_PEND_REG        uint64 = 0x308
-const D1_DEV_MSI_1_INT_EN_REG      uint64 = 0x30c
-const D1_DEV_MSI_2_PEND_REG        uint64 = 0x310
-const D1_DEV_MSI_2_INT_EN_REG      uint64 = 0x314
-const D1_DEV_MSI_3_PEND_REG        uint64 = 0x318
-const D1_DEV_MSI_3_INT_EN_REG      uint64 = 0x31c
-const D1_DEV_MSI_4_PEND_REG        uint64 = 0x320
-const D1_DEV_MSI_4_INT_EN_REG      uint64 = 0x324
-const D1_DEV_MSI_5_PEND_REG        uint64 = 0x328
-const D1_DEV_MSI_5_INT_EN_REG      uint64 = 0x32c
-const D1_DEV_MSI_6_PEND_REG        uint64 = 0x330
-const D1_DEV_MSI_6_INT_EN_REG      uint64 = 0x334
-const D1_DEV_MSI_7_PEND_REG        uint64 = 0x338
-const D1_DEV_MSI_7_INT_EN_REG      uint64 = 0x33c
 const D1_PSU_CTRL_REG              uint64 = 0x400
 const D1_PSU_STAT_REG              uint64 = 0x404
+    const D1_PSU_STAT_REG_PRESENT0    uint32 = (1<<0)
+    const D1_PSU_STAT_PWROK0          uint32 = (1<<2)
+    const D1_PSU_STAT_INT0            uint32 = (1<<3)
+    const D1_PSU_STAT_REG_PRESENT1    uint32 = (1<<8)
+    const D1_PSU_STAT_PWROK1          uint32 = (1<<10)
+    const D1_PSU_STAT_INT1            uint32 = (1<<11)
 const D1_FAN_CTRL_REG              uint64 = 0x408
 const D1_FAN_STAT_REG              uint64 = 0x40c
 const D1_ELBA0_PWR_CTRL_REG        uint64 = 0x410
@@ -474,11 +492,12 @@ const D3_I2C_CH16_SEM_REG               uint64 = 0x121c
 
 
 
-//awk '{print "D3_" $0}' reg3.txt
-//awk '{ printf "const %-28s uint64 = 0x%x\n", $1, $2 }' ./reg3_.txt
-//awk '{ printf "    TAOR_FPGA_REGISTERS{\"D3_%-22s\",             D3_%s},\n", $1, $1 }' ./reg3_.txt
+//awk '{print "D1_" $0}' reg1.txt > reg1_.txt
+//awk '{ printf "const %-28s uint64 = 0x%x\n", $1, $2 }' ./reg1_.txt
+//awk '{ printf "    TAOR_FPGA_REGISTERS{\"D1_%-22s\",             D1_%s},\n", $1, $1 }' ./reg1.txt
+
+
 var TAOR_DEV0_REGISTERS = []TAOR_FPGA_REGISTERS {
-    TAOR_FPGA_REGISTERS{"D0_FPGA_REV_ID_REG       ",             D0_FPGA_REV_ID_REG},
     TAOR_FPGA_REGISTERS{"D0_FPGA_DATECODE_REG     ",             D0_FPGA_DATECODE_REG},
     TAOR_FPGA_REGISTERS{"D0_BOARD_REV_ID_REG      ",             D0_BOARD_REV_ID_REG},
     TAOR_FPGA_REGISTERS{"D0_FUNC_CAP_0_REG        ",             D0_FUNC_CAP_0_REG},
@@ -501,10 +520,6 @@ var TAOR_DEV0_REGISTERS = []TAOR_FPGA_REGISTERS {
     TAOR_FPGA_REGISTERS{"D0_DEBUG_1_REG           ",             D0_DEBUG_1_REG},
     TAOR_FPGA_REGISTERS{"D0_DEBUG_2_REG           ",             D0_DEBUG_2_REG},
     TAOR_FPGA_REGISTERS{"D0_DEBUG_3_REG           ",             D0_DEBUG_3_REG},
-    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_0_REG     ",             D0_RESET_CAUSE_0_REG},
-    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_1_REG     ",             D0_RESET_CAUSE_1_REG},
-    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_2_REG     ",             D0_RESET_CAUSE_2_REG},
-    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_3_REG     ",             D0_RESET_CAUSE_3_REG},
     TAOR_FPGA_REGISTERS{"D0_DEV_MSI_0_PEND_REG    ",             D0_DEV_MSI_0_PEND_REG},
     TAOR_FPGA_REGISTERS{"D0_DEV_MSI_0_INT_EN_REG  ",             D0_DEV_MSI_0_INT_EN_REG},
     TAOR_FPGA_REGISTERS{"D0_DEV_MSI_1_PEND_REG    ",             D0_DEV_MSI_1_PEND_REG},
@@ -521,6 +536,10 @@ var TAOR_DEV0_REGISTERS = []TAOR_FPGA_REGISTERS {
     TAOR_FPGA_REGISTERS{"D0_DEV_MSI_6_INT_EN_REG  ",             D0_DEV_MSI_6_INT_EN_REG},
     TAOR_FPGA_REGISTERS{"D0_DEV_MSI_7_PEND_REG    ",             D0_DEV_MSI_7_PEND_REG},
     TAOR_FPGA_REGISTERS{"D0_DEV_MSI_7_INT_EN_REG  ",             D0_DEV_MSI_7_INT_EN_REG},
+    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_0_REG     ",             D0_RESET_CAUSE_0_REG},
+    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_1_REG     ",             D0_RESET_CAUSE_1_REG},
+    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_2_REG     ",             D0_RESET_CAUSE_2_REG},
+    TAOR_FPGA_REGISTERS{"D0_RESET_CAUSE_3_REG     ",             D0_RESET_CAUSE_3_REG},
     TAOR_FPGA_REGISTERS{"D0_MBOX_STAT_REG         ",             D0_MBOX_STAT_REG},
     TAOR_FPGA_REGISTERS{"D0_MBOX_STAT_PLRTY_REG   ",             D0_MBOX_STAT_PLRTY_REG},
     TAOR_FPGA_REGISTERS{"D0_MBOX_STAT_EDG_LVL_REG ",             D0_MBOX_STAT_EDG_LVL_REG},
@@ -580,7 +599,8 @@ var TAOR_DEV0_REGISTERS = []TAOR_FPGA_REGISTERS {
     TAOR_FPGA_REGISTERS{"D0_FP_QSFP_CTRL_55_52_REG",             D0_FP_QSFP_CTRL_55_52_REG},
     TAOR_FPGA_REGISTERS{"D0_FP_QSFP_STAT_51_48_REG",             D0_FP_QSFP_STAT_51_48_REG},
     TAOR_FPGA_REGISTERS{"D0_FP_QSFP_STAT_55_52_REG",             D0_FP_QSFP_STAT_55_52_REG},
-} 
+}
+
 
 
 
@@ -600,20 +620,6 @@ var TAOR_DEV1_REGISTERS = []TAOR_FPGA_REGISTERS {
     TAOR_FPGA_REGISTERS{"D1_SCRTCH_1_REG          ",             D1_SCRTCH_1_REG},
     TAOR_FPGA_REGISTERS{"D1_SCRTCH_2_REG          ",             D1_SCRTCH_2_REG},
     TAOR_FPGA_REGISTERS{"D1_SCRTCH_3_REG          ",             D1_SCRTCH_3_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CTRL_REG        ",             D1_CFG_FLASH_CTRL_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_BAUD_RATE_REG   ",            D1_CFG_FLASH_BAUD_RATE_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CS_DELAY_REG    ",             D1_CFG_FLASH_CS_DELAY_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_READ_CAPTURE_REG",          D1_CFG_FLASH_READ_CAPTURE_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_PROTOCOL_REG    ",             D1_CFG_FLASH_PROTOCOL_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_READ_INST_REG   ",            D1_CFG_FLASH_READ_INST_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_WRITE_INST_REG  ",           D1_CFG_FLASH_WRITE_INST_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CMD_SET_REG     ",             D1_CFG_FLASH_CMD_SET_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CMD_CTRL_REG    ",             D1_CFG_FLASH_CMD_CTRL_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CMD_ADDR_REG    ",             D1_CFG_FLASH_CMD_ADDR_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_WDATA0_REG      ",             D1_CFG_FLASH_WDATA0_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_WDATA1_REG      ",             D1_CFG_FLASH_WDATA1_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_RDATA0_REG      ",             D1_CFG_FLASH_RDATA0_REG},
-    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_RDATA1_REG      ",             D1_CFG_FLASH_RDATA1_REG},
     TAOR_FPGA_REGISTERS{"D1_DEV_MSI_0_PEND_REG    ",             D1_DEV_MSI_0_PEND_REG},
     TAOR_FPGA_REGISTERS{"D1_DEV_MSI_0_INT_EN_REG  ",             D1_DEV_MSI_0_INT_EN_REG},
     TAOR_FPGA_REGISTERS{"D1_DEV_MSI_1_PEND_REG    ",             D1_DEV_MSI_1_PEND_REG},
@@ -630,6 +636,20 @@ var TAOR_DEV1_REGISTERS = []TAOR_FPGA_REGISTERS {
     TAOR_FPGA_REGISTERS{"D1_DEV_MSI_6_INT_EN_REG  ",             D1_DEV_MSI_6_INT_EN_REG},
     TAOR_FPGA_REGISTERS{"D1_DEV_MSI_7_PEND_REG    ",             D1_DEV_MSI_7_PEND_REG},
     TAOR_FPGA_REGISTERS{"D1_DEV_MSI_7_INT_EN_REG  ",             D1_DEV_MSI_7_INT_EN_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CTRL_REG        ",             D1_CFG_FLASH_CTRL_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_BAUD_RATE_REG   ",            D1_CFG_FLASH_BAUD_RATE_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CS_DELAY_REG    ",             D1_CFG_FLASH_CS_DELAY_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_READ_CAPTURE_REG",          D1_CFG_FLASH_READ_CAPTURE_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_PROTOCOL_REG    ",             D1_CFG_FLASH_PROTOCOL_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_READ_INST_REG   ",            D1_CFG_FLASH_READ_INST_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_WRITE_INST_REG  ",           D1_CFG_FLASH_WRITE_INST_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CMD_SET_REG     ",             D1_CFG_FLASH_CMD_SET_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CMD_CTRL_REG    ",             D1_CFG_FLASH_CMD_CTRL_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_CMD_ADDR_REG    ",             D1_CFG_FLASH_CMD_ADDR_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_WDATA0_REG      ",             D1_CFG_FLASH_WDATA0_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_WDATA1_REG      ",             D1_CFG_FLASH_WDATA1_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_RDATA0_REG      ",             D1_CFG_FLASH_RDATA0_REG},
+    TAOR_FPGA_REGISTERS{"D1_CFG_FLASH_RDATA1_REG      ",             D1_CFG_FLASH_RDATA1_REG},
     TAOR_FPGA_REGISTERS{"D1_PSU_CTRL_REG          ",             D1_PSU_CTRL_REG},
     TAOR_FPGA_REGISTERS{"D1_PSU_STAT_REG          ",             D1_PSU_STAT_REG},
     TAOR_FPGA_REGISTERS{"D1_FAN_CTRL_REG          ",             D1_FAN_CTRL_REG},

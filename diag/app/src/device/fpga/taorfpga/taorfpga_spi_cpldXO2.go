@@ -6,6 +6,8 @@ import (
     "fmt"
     "os"
     "bufio"
+    "strings"
+    "strconv"
     "time"
 )
 
@@ -521,6 +523,16 @@ func Spi_cpld_machxO2_verify_flash_contents(spiNumber uint32, filename string) (
         return
     }
 
+    if strings.Contains(filename, "jed")==true {
+        fmt.Printf(" Jed file detected..Converting to a BIN file\n")
+        err = Spi_cpld_machxO2_convert_jed_file(filename)
+        if err != nil {
+            fmt.Printf(" Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+            return
+        }
+        filename = strings.Replace(filename, "jed", "bin", 1)
+    }
+
     f, err := os.Open(filename)
     if err != nil {
         fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
@@ -773,6 +785,16 @@ func Spi_cpld_machxO2_program_flash(spiNumber uint32, filename string) (err erro
         return
     }
 
+    if strings.Contains(filename, "jed")==true {
+        fmt.Printf(" Jed file detected..Converting to a BIN file\n")
+        err = Spi_cpld_machxO2_convert_jed_file(filename)
+        if err != nil {
+            fmt.Printf(" Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+            return
+        }
+        filename = strings.Replace(filename, "jed", "bin", 1)
+    }
+
     f, err := os.Open(filename)
     if err != nil {
         fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
@@ -873,4 +895,96 @@ func Spi_cpld_machxO2_program_flash(spiNumber uint32, filename string) (err erro
 
 
 
+func Spi_cpld_machxO2_convert_jed_file(filename string) (err error) {
+    WRdata := []byte{}
+    var max_row int = 3198
+    var lines_converted int = 0
+    var start_convert int = 0
+    var u64 uint64 = 0
+
+    if strings.Contains(filename, "jed")==true {
+        fmt.Printf(" Jed file detected\n")
+    } else {
+        err = fmt.Errorf("ERROR: Input file is not a jed file type!!\n")
+        fmt.Printf("%s", err)
+        return
+    }
+
+    inF, err := os.Open(filename)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
+    filename = strings.Replace(filename, "jed", "bin", 1)
+    fmt.Printf(" BIN FILENAME = %s\n", filename)
+    outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
+    defer func() { 
+        inF.Close()
+        outF.Close()
+    } ()
+
+    
+    scanner := bufio.NewScanner(inF)
+    for scanner.Scan() {
+        if(lines_converted == max_row) {
+            break
+        }
+        lines := scanner.Text()
+        bytes := []uint8(lines)
+        if strings.Contains(lines, "L000000")==true {
+            start_convert=1
+            continue
+        }
+        
+        if start_convert > 0 && (len(bytes) > 127) {
+            //fmt.Printf(" %d : %d\n", lines_converted, len(bytes) ) 
+            u64, _ = strconv.ParseUint(string(bytes[0:8]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[8:16]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[16:24]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[24:32]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[32:40]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[40:48]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[48:56]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[56:64]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[64:72]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[72:80]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[80:88]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[88:96]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[96:104]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[104:112]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[112:120]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            u64, _ = strconv.ParseUint(string(bytes[120:128]), 2, 8)
+            WRdata = append(WRdata, uint8(u64))
+            lines_converted = lines_converted + 1
+        } 
+    } 
+    
+    if err = scanner.Err(); err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    outF.WriteString(string(WRdata[:]))
+
+    return
+}
 

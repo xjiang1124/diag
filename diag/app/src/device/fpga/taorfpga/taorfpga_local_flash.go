@@ -245,9 +245,11 @@ func FlashVerifyImage(addr uint32, filename string) (err error) {
     data := []byte{}
 
     if (addr % flag_region_info.sector_size) != 0 {
-        fmt.Printf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
+        err = fmt.Errorf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
+        fmt.Printf("%s", err)
         return
     }
+
     f, err := os.Open(filename)
     if err != nil {
         fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
@@ -282,7 +284,8 @@ func FlashVerifyImage(addr uint32, filename string) (err error) {
         }
         rd_data64, err = FlashReadEightBytes((uint32(i) + addr)) 
         if err != nil {
-            fmt.Printf(" ERROR: Flash Read Failed\n")
+            err = fmt.Errorf(" ERROR: Flash Read Failed\n")
+            fmt.Printf("%s", err)
             return
         }
         wr_data64 = wr_data64 + uint64(data[i])
@@ -297,12 +300,12 @@ func FlashVerifyImage(addr uint32, filename string) (err error) {
         if rd_data64 != wr_data64 {
             err = fmt.Errorf(" Error: Flash Miscompare at address 0x%x:  WR 0x%.08x%.08x   RD 0x%.08x%.08x\n", (uint32(i) + addr), uint32(wr_data64>>32), uint32(wr_data64 & 0xFFFFFFFF), uint32(rd_data64>>32), uint32(rd_data64 & 0xFFFFFFFF))
             fmt.Printf("%s", err)
+            fmt.Printf("Verification failed\n")
             return
         }
         wr_data64 = 0
     }
-    fmt.Printf("\n")
-
+    fmt.Printf("\nVerification passed\n")
     return
 }
 
@@ -335,7 +338,6 @@ func FlashPollBusy(timeout_ms int) (sr_reg uint32, err int) {
     return 
 }
 
-//Check if the flash is busy before executing erase or write
 func FlashCheckWriteEnable() (err error) {
     var sr_reg uint32
     for i:=0; i< 500; i++ {

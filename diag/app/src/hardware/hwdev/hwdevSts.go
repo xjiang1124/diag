@@ -88,9 +88,23 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
 
     }
 
-    err = hwinfo.EnableHubChannelExclusive(devName)
-    if err != errType.SUCCESS {
-        return
+
+    if i2cinfo.CardType == "TAOR" {
+        //On Taormina (and maybe later platforms), there are parts we
+        //need to display status on that are not in the I2C table, so skip trying 
+        //to set the mux if the hwinfo component is not in the i2cinfo component
+        err = i2cinfo.IsDeviceInI2Ctable(devName)
+        if err == errType.SUCCESS {
+            err = hwinfo.EnableHubChannelExclusive(devName)
+            if err != errType.SUCCESS {
+                return
+            }
+        }
+    } else {
+        err = hwinfo.EnableHubChannelExclusive(devName)
+        if err != errType.SUCCESS {
+            return
+        }
     }
     dispFunc, ok := hwinfo.DispStaList[devName]
     if ok == false {

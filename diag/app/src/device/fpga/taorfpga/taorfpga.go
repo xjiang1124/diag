@@ -1,3 +1,18 @@
+/* Notes
+ 
+SPI BUS HOOKUP 
+SPI0 = CPU CPLD 
+SPI1 = ELBA0 CPLD
+SPI2 = ELBA1 CPLD
+SPI3 = GPIO CPLD0
+SPI4 = GPIO CPLD1
+SPI5 = GPIO CPLD2
+SPI6 = ELBA0 SERIAL FLASH
+SPI7 = ELBA1 SERIAL FLASH 
+ 
+ 
+*/ 
+ 
 package taorfpga
 
 import (
@@ -5,17 +20,39 @@ import (
     "errors"
     "fmt"
     "os"
+    "os/exec"
     "strconv"
-    //"time"
+    "time"
+    "strings"
     "syscall"
     "unsafe"
 
     "common/cli"
 )
 
+const (
+    PSU0 = 0
+    PSU1 = 1
+)
+
+const (
+    ELBA0 = 0
+    ELBA1 = 1
+    TD3   = 2
+    ALL   = 3
+)
+
+const (
+    POWER_STATE_CYCLE = 1
+    POWER_STATE_OFF   = 2
+    POWER_STATE_ON    = 3
+)
+
 
 const MEM_ACCESS_32  uint32 = 1
 const MEM_ACCESS_64  uint32 = 2
+
+
 
 
 const TAORMINE_PCI_VENDOR_ID  uint32 = 0x1dd8
@@ -38,36 +75,53 @@ var Glob_mmap3 []byte
 
 func init () {
     
-    Glob_mmap0, Glob_fd0, _ = MMAP_Device(DEV0_BAR, MAP_SIZE)
-    Glob_mmap1, Glob_fd1, _ = MMAP_Device(DEV1_BAR, MAP_SIZE)
-    Glob_mmap2, Glob_fd2, _ = MMAP_Device(DEV2_BAR, MAP_SIZE)
-    Glob_mmap3, Glob_fd3, _ = MMAP_Device(DEV3_BAR, MAP_SIZE)
-    //How do we gracefully unmap?   OS should do it, but would be nice to do it in code 
-    /*
-    defer func() {
-        MunMAP_Device(Glob_fd0, Glob_mmap0)
-        MunMAP_Device(Glob_fd1, Glob_mmap1)
-        MunMAP_Device(Glob_fd2, Glob_mmap2)
-        MunMAP_Device(Glob_fd3, Glob_mmap3)
-        fmt.Printf(" ADD DEBUG: Munmap\n")
-    } () 
-    */ 
+    out, errGo := exec.Command("uname", "-a").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+    }
+    //fmt.Printf(" Uname = %s\n", string(out))
+    
+    cardType := os.Getenv("CARD_TYPE")
+    if cardType != "TAOR" {
+        if strings.Contains(string(out), "Taormina")==true {
+            //fmt.Printf("Taormina system detected\n")
+            os.Setenv("CARD_TYPE","TAOR")
+            cardType = os.Getenv("CARD_TYPE")
+            //fmt.Printf("CardType=%s\n", cardType)
+        }
+    }
+    
+    if cardType == "TAOR" {
+        Glob_mmap0, Glob_fd0, _ = MMAP_Device(DEV0_BAR, MAP_SIZE)
+        Glob_mmap1, Glob_fd1, _ = MMAP_Device(DEV1_BAR, MAP_SIZE)
+        Glob_mmap2, Glob_fd2, _ = MMAP_Device(DEV2_BAR, MAP_SIZE)
+        Glob_mmap3, Glob_fd3, _ = MMAP_Device(DEV3_BAR, MAP_SIZE)
+        //How do we gracefully unmap?   OS should do it, but would be nice to do it in code 
+        /*
+        defer func() {
+            MunMAP_Device(Glob_fd0, Glob_mmap0)
+            MunMAP_Device(Glob_fd1, Glob_mmap1)
+            MunMAP_Device(Glob_fd2, Glob_mmap2)
+            MunMAP_Device(Glob_fd3, Glob_mmap3)
+            fmt.Printf(" ADD DEBUG: Munmap\n")
+        } () 
+        */ 
+    }
      
 } 
  
 
 
-func FpgaDumpRegionRegisters(devRegion uint32) error {
+func FpgaDumpRegionRegisters(devRegion uint32) (err error) {
 
     var data32 uint32 = 0
-    var err error = nil
     var taor_reg_ptr []TAOR_FPGA_REGISTERS
     
 
     if uint32(devRegion) >= TAORMINE_MAX_PCI_DEV {
         fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINE_MAX_PCI_DEV -1), devRegion); 
         err = errors.New(" ERROR") 
-        return err
+        return
     }
 
     if devRegion == 0 {
@@ -86,13 +140,13 @@ func FpgaDumpRegionRegisters(devRegion uint32) error {
 
         data32, err = TaorReadU32(devRegion, uint64(entry.Address))
         if err != nil {
-            return err
+            return
         }
         fmt.Printf("%-20s [%.04x] = %.08x\n", entry.Name, entry.Address, data32)
     }
     fmt.Printf("\n");
 
-    return err
+    return
 }
 
 
@@ -341,6 +395,177 @@ func MunMAP_Device(fd *os.File, mmap []byte) (err error) {
         return 
     }
     return 
+}
+
+
+func SetI2Cmux(channel uint32, mux uint32) (err error) {
+
+    TaorWriteU32(DEVREGION3, D3_I2C_CH0_MUX_SEL_REG + uint64( channel * I2C_MAILBOX_STRIDE ) , mux) 
+    return
+}
+
+
+
+func Asic_PowerCycle(device uint32, state uint32) (err error) {
+    var args string
+    var data32 uint32
+    var ctrl_reg, stat_reg uint64 = D1_ELBA0_PWR_CTRL_REG, D1_ELBA0_PWR_STAT_REG
+    var dev, dev_start, dev_end int
+
+    if device > ALL {
+            err = fmt.Errorf(" Error: Asic_PowerCycle.  Device number passed (%d) is not valid", device)
+            fmt.Printf("%s", err)
+            return
+    }
+    if state != POWER_STATE_CYCLE && state != POWER_STATE_OFF && state != POWER_STATE_ON {
+            err = fmt.Errorf(" Error: Asic_PowerCycle.  Power Stated passed (%d) is not valid", state)
+            fmt.Printf("%s", err)
+            return
+    }
+
+    if device == ALL {
+        dev_start = 0; dev_end = ALL;
+    } else {
+        dev_start = int(device); dev_end = int(device) + 1
+    }
+
+    //remove device from linux & power off
+    if state == POWER_STATE_OFF || state == POWER_STATE_CYCLE {
+        for dev=dev_start;dev<dev_end;dev++ {
+            switch(dev){
+                case ELBA0: ctrl_reg = D1_ELBA0_PWR_CTRL_REG; stat_reg = D1_ELBA0_PWR_STAT_REG
+                            fmt.Printf(" Removing Elba0 from Linux PCI Enumeration and Powering Off\n")
+                case ELBA1: ctrl_reg = D1_ELBA1_PWR_CTRL_REG; stat_reg = D1_ELBA1_PWR_STAT_REG
+                            fmt.Printf(" Removing Elba1 from Linux PCI Enumeration and Powering Off\n")
+                case TD3:   ctrl_reg = D1_TD3_PWR_CTRL_REG; stat_reg = D1_TD3_PWR_STAT_REG
+                            fmt.Printf(" Removing TD3 from Linux PCI Enumeration and Powering Off\n")
+            }
+            switch(dev){
+                case ELBA0: args = "echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove"
+                case ELBA1: args = "echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove"
+                case TD3:   args = "echo 1 > /sys/bus/pci/devices/0000:01:00.0/remove" 
+            }
+            exec.Command("bash", "-c", args).Output()
+            time.Sleep(time.Duration(1) * time.Second) 
+
+            if dev == ELBA0 || dev == ELBA1 {
+                TaorWriteU32(DEVREGION1, ctrl_reg, 0x53) 
+            }
+            if dev == TD3 {
+                TaorWriteU32(DEVREGION1, D1_TD_CTRL_REG, 0x1ff) 
+                TaorWriteU32(DEVREGION1, D1_TD3_PWR_CTRL_REG, 0x53) 
+            }
+        }
+        time.Sleep(time.Duration(500) * time.Millisecond)
+    }
+
+    //power up if needed
+    if state == POWER_STATE_ON || state == POWER_STATE_CYCLE {
+        for dev=dev_start;dev<dev_end;dev++ {
+            switch(dev){
+                case ELBA0: ctrl_reg = D1_ELBA0_PWR_CTRL_REG; stat_reg = D1_ELBA0_PWR_STAT_REG
+                case ELBA1: ctrl_reg = D1_ELBA1_PWR_CTRL_REG; stat_reg = D1_ELBA1_PWR_STAT_REG
+                case TD3:   ctrl_reg = D1_TD3_PWR_CTRL_REG; stat_reg = D1_TD3_PWR_STAT_REG
+            }
+            if dev == ELBA0 || dev == ELBA1 {
+                fmt.Printf(" Powering up Elba and Waiting 15 seconds for Elba to boot and enumerate\n")
+                TaorWriteU32(DEVREGION1, ctrl_reg, 0xD1) 
+            }
+            if dev == TD3 {
+                fmt.Printf(" Powering up TD3 and Waiting 5 seconds for TD3 to come up and enumerate\n")
+                TaorWriteU32(DEVREGION1, D1_TD3_PWR_CTRL_REG, 0xd1) 
+                time.Sleep(time.Duration(100) * time.Millisecond)
+                TaorWriteU32(DEVREGION1, D1_TD_CTRL_REG, 0x1fd) 
+                time.Sleep(time.Duration(100) * time.Millisecond)
+                TaorWriteU32(DEVREGION1, D1_TD_CTRL_REG, 0x0) 
+                
+                data32, err = TaorReadU32(DEVREGION1, stat_reg)
+                if (data32 & 0x2) != 0x2 {
+                    err = fmt.Errorf(" Error: Asic_PowerCycle.  FPGA status indicates Device did not power up ok")
+                    fmt.Printf("%s", err)
+                    return
+                }
+            }
+        }
+
+        // Sleep .. duration depends on what is getting reset
+        switch(device){
+            case ALL: time.Sleep(time.Duration(15) * time.Second); break
+            case ELBA0: time.Sleep(time.Duration(15) * time.Second); break
+            case ELBA1: time.Sleep(time.Duration(15) * time.Second); break
+            case TD3:   time.Sleep(time.Duration(5) * time.Second); break
+        }
+
+        for dev=dev_start;dev<dev_end;dev++ {
+            switch(dev){
+                case ELBA0: stat_reg = D1_ELBA0_PWR_STAT_REG
+                case ELBA1: stat_reg = D1_ELBA1_PWR_STAT_REG
+                case TD3:   stat_reg = D1_TD3_PWR_STAT_REG
+            }
+
+            data32, err = TaorReadU32(DEVREGION1, stat_reg)
+            if (data32 & 0x2) != 0x2 {
+                err = fmt.Errorf(" Error: Asic_PowerCycle.  FPGA status indicates Device did not power up ok")
+                fmt.Printf("%s", err)
+                return
+            }
+        }
+        //Have Linux rescan the PCI bus to enumerate the devices
+        args = "echo 1 > /sys/bus/pci/rescan"
+        _, errGo := exec.Command("bash", "-c", args).Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+            return errGo
+        }
+    }
+
+    return
+}
+
+func PSU_present(PSUnumber uint32) (present bool, err error) {
+    var data32 uint32
+    present = false
+
+    if PSUnumber > PSU1 {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        fmt.Printf("%s", err)
+        return
+    }
+    data32, err = TaorReadU32(DEVREGION1, D1_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  D1_PSU_STAT_REG_PRESENT0) == D1_PSU_STAT_REG_PRESENT0) {
+        present = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  D1_PSU_STAT_REG_PRESENT1) == D1_PSU_STAT_REG_PRESENT1) {
+        present = true
+    }
+    return
+}
+
+func PSU_pwrok(PSUnumber uint32) (pwrok bool, err error) {
+    var data32 uint32
+    pwrok = false
+
+    if PSUnumber > PSU1 {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        fmt.Printf("%s", err)
+        return
+    }
+    data32, err = TaorReadU32(DEVREGION1, D1_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  D1_PSU_STAT_PWROK0) == D1_PSU_STAT_PWROK0) {
+        pwrok = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  D1_PSU_STAT_PWROK1) == D1_PSU_STAT_PWROK1) {
+        pwrok = true
+    }
+    return
 }
 
 

@@ -36,6 +36,20 @@ func Close() (err int) {
 
 }
 
+
+func Convert_vr13_5mvVID(data uint16) (integer uint64, dec uint64, err int) {
+    var vr13 float64
+    vr13 = .25 + (float64(data-1) * .005)
+
+    intpart, div := math.Modf(vr13)
+
+    integer = uint64(intpart)
+    dec = uint64(div*1000)
+
+    return
+}
+
+
 /*
 	Linear11 format
     16-bit value,

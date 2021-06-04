@@ -5,11 +5,18 @@ import (
 
     "device/boardinfo"
     "device/fanctrl/adt7462"
+    "device/bcm/td3"
+    "device/cpu/XeonD"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
+    "device/powermodule/tps544c20"
+    "device/powermodule/tps53681"
+    "device/powermodule/sn1701022"
     "device/psu/pet1600"
+    "device/psu/dps800"
     "device/tempsensor/tmp42123"
+    "device/tempsensor/lm75a"
 
     "gopkg.in/yaml.v2"
 )
@@ -139,6 +146,31 @@ var mtpsDispStaList map[string]DispStaFunc
 var nicPwrDispStaList map[string]DispStaFunc
 
 //===============================
+// Taormina 
+// Status display list
+var taorDispStaList map[string]DispStaFunc
+
+// I2C hub map -- dummy
+var taorI2cHubMap map[string] I2cHubInfo
+
+//ADD FIXME - NEED TO FILL IN
+// SFP table
+var taorSfpTbl = []SfpInfo_t {
+    //          devName   txDisReg txDisBit txFaultReg txFaultBit prstReg prstBit rxLossReg rxLossBit
+    SfpInfo_t {"SFP_1",  0x2,      0,       0x2,      2,         0x2,     4,      0x2,      6,     },
+    SfpInfo_t {"SFP_2",  0x2,      1,       0x2,      3,         0x2,     5,      0x2,      7,     },
+}
+//ADD FIXME - NEED TO FILL IN
+// QSFP table
+var taorQsfpTbl = []QsfpInfo_t {
+    //          devName   modRstReg modRstBit lpReg lpBit prstReg prstBit intrReg intrBit prstIntReg prstIntBit rmIntReg rmIntBit
+    QsfpInfo_t {"QSFP_1", 0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
+    QsfpInfo_t {"QSFP_2", 0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
+}
+
+//===============================
+//
+//===============================
 // Internal lookup table
 var dispMap map[string]map[string]DispStaFunc
 var pmbusTestMap map[string][]string
@@ -259,6 +291,36 @@ func init() {
     mtpsDispStaList["659_AVDD"] = tps53659.DispStatus
 
     //===============================
+    // Taormina
+    taorDispStaList = make(map[string]DispStaFunc)
+    taorDispStaList["P0V8AVDD_GB_A"]   = tps549a20.DispStatus
+    taorDispStaList["P0V8AVDD_GB_B"]   = tps549a20.DispStatus
+    taorDispStaList["P0V8RT_B"]        = tps549a20.DispStatus
+    taorDispStaList["TSENSOR-1"]       = lm75a.DispStatus
+    taorDispStaList["TSENSOR-2"]       = lm75a.DispStatus
+    taorDispStaList["TSENSOR-3"]       = lm75a.DispStatus
+    taorDispStaList["P0V8RT_A"]        = tps544c20.DispStatus
+    taorDispStaList["P3V3"]            = tps544c20.DispStatus
+    taorDispStaList["P3V3S"]           = tps544c20.DispStatus
+    taorDispStaList["TDNT_PDVDD"]      = tps53681.DispStatus
+    taorDispStaList["TDNT_P0V8_AVDD"]  = tps53681.DispStatus
+    taorDispStaList["CPU_P1V2_VDDQ"]       = sn1701022.DispStatus
+    taorDispStaList["CPU_P1V05_COMBINED"]  = sn1701022.DispStatus
+    taorDispStaList["CPU_PVCCIN"]           = sn1701022.DispStatus
+    taorDispStaList["CPU_P1V05_VCCSCSUS"]  = sn1701022.DispStatus
+    taorDispStaList["PSU_1"]            = dps800.DispStatus
+    taorDispStaList["PSU_2"]            = dps800.DispStatus
+    taorDispStaList["TSENSOR-CPU"]      = XeonD.DispStatus
+    taorDispStaList["TSENSOR-TD3"]      = td3.DispStatus
+
+    
+
+
+
+    // ADD FIXME: NEEDS FILLING IN
+    taorI2cHubMap = make(map[string]I2cHubInfo)
+
+    //===============================
     mtpI2cHubMap = make(map[string]I2cHubInfo)
     mtpI2cHubMap["UUT_1"]  = I2cHubInfo{"HUB_1", 0}
     mtpI2cHubMap["UUT_2"]  = I2cHubInfo{"HUB_1", 1}
@@ -277,6 +339,7 @@ func init() {
     naples100I2cHubList := []string{"HUB_NONE"}
     naples25I2cHubList := []string{"HUB_NONE"}
     forioI2cHubList := []string{"HUB_NONE"}
+    taorI2cHubList := []string{"HUB_NONE"}
 
     mtpPsuList := []string{"PSU_1", "PSU_2"}
     nicPsuList := []string{"PSU_NONE"}
@@ -317,6 +380,9 @@ func init() {
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
+    //===============================
+    // Taormina
+    dispMap["TAOR"]  = taorDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
@@ -342,6 +408,9 @@ func init() {
     //===============================
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
+    //===============================
+    // Taormina
+    eepromMap["TAOR"]          = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -366,6 +435,9 @@ func init() {
     i2cHubMap["BIODONA_D5"]     = naples100I2cHubMap
     i2cHubMap["ORTANO"]         = naples100I2cHubMap
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
+    //===============================
+    // Taormina
+    i2cHubMap["TAOR"]     = taorI2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"]           = mtpI2cHubList
@@ -390,6 +462,10 @@ func init() {
     i2cHubListMap["ORTANO"]        = forioI2cHubList
     i2cHubListMap["ORTANO2"]       = forioI2cHubList
 
+    //===============================
+    // Taormina
+    i2cHubListMap["TAOR"] = taorI2cHubList
+
     // PSU list
     psuListMap = make(map[string][]string)
     psuListMap["MTP"]          = mtpPsuList
@@ -412,6 +488,10 @@ func init() {
     psuListMap["BIODONA_D5"]   = nicPsuList
     psuListMap["ORTANO"]   = nicPsuList
     psuListMap["ORTANO2"]   = nicPsuList
+
+    //===============================
+    // Taormina
+    i2cHubListMap["TAOR"] = taorI2cHubList
 
     //===============================
     // Platform specified list
@@ -442,6 +522,10 @@ func init() {
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)
         CpldInfo = &t
+
+    case "TAOR":
+        SfpTbl = taorSfpTbl
+        QsfpTbl = taorQsfpTbl
 
     default:
         QsfpTbl = nil

@@ -8,6 +8,7 @@ import (
     "common/dmutex"
     "common/errType"
     "device/i2chub/tca9546a"
+    "device/fpga/taorfpga"
     "hardware/i2cinfo"
 )
 
@@ -77,6 +78,21 @@ func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
 }
 
 func EnableHubChannel(devName string) (err int) {
+
+    if cardType == "TAOR" {
+        var i2cInfo i2cinfo.I2cInfo
+        i2cInfo, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed: ", err)
+            return
+        }
+        //On taormina, /dev/ic2-# starts at 1 instead of 0. 
+        //So first bus is 1.  On the fpga it's zero based so 
+        //we subtract 1 below from the bus number to make it zero based
+        taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
+        return
+    }
+
     // for MTP only for now
     if cardType != "MTP" {
         return
@@ -97,6 +113,21 @@ func EnableHubChannel(devName string) (err int) {
  * All other Channels will be disabled
  */
 func EnableHubChannelExclusive(devName string) (err int) {
+
+    if cardType == "TAOR" {
+        var i2cInfo i2cinfo.I2cInfo
+        i2cInfo, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed: ", err)
+            return
+        }
+        //On taormina, /dev/ic2-# starts at 1 instead of 0 (1-17). 
+        //So first bus is 1.  On the fpga the bus is zero based (0-16) 
+        //we subtract 1 below from the bus number to make it zero based to match the fpga
+        taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
+        return
+    }
+
     i2cInfo, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed: ", err)

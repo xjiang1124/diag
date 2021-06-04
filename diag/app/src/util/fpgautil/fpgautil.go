@@ -77,6 +77,8 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> verifyimage <filename>\n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> program <filename>\n" +
         " \n" +
+        "fpgautil power <cycle/on/off> <all/td3/e0/e1>\n" +
+        " \n" +
         "fpgautil elba <elba#> flash devid\n" +
         "fpgautil elba <elba#> flash flagstatus/status\n" +
         "fpgautil elba <elba#> flash 4byte enable/disable \n" +
@@ -269,6 +271,29 @@ func main() {
             }
             fmt.Printf("WR [0x%.08x] = 0x%.08x\n", addr, uint32(data))
         }
+    } else if os.Args[1] == "power" {
+        //"fpgautil power <cycle/on/off> <all/td3/e0/e1>\n" +
+        var state uint32
+        var device uint32
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        switch os.Args[2] {
+            case "on": state = taorfpga.POWER_STATE_ON
+            case "off": state = taorfpga.POWER_STATE_OFF
+            case "cycle": state = taorfpga.POWER_STATE_CYCLE
+            default: fmt.Printf(" Error: arg[2] needs to be cycle, on, or off\n");  return
+        }
+        switch os.Args[3] {
+            case "e0": device = taorfpga.ELBA0
+            case "e1": device = taorfpga.ELBA1
+            case "td3": device = taorfpga.TD3
+            case "all": device = taorfpga.ALL
+            default: fmt.Printf(" Error: arg[3] needs to be all, td3, e0, or e1\n");  return
+        }
+        taorfpga.Asic_PowerCycle(device, state) 
+        return
     } else if os.Args[1] == "flash" {
 
         if os.Args[2] == "devid" {
@@ -287,10 +312,11 @@ func main() {
             fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
             return
         } else if os.Args[2] == "verify" {
-            addr, err := strconv.ParseUint(os.Args[4], 0, 32)
-            if err != nil {
-                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
-            }
+            var addr uint32 = 0
+            //addr, err := strconv.ParseUint(os.Args[4], 0, 32)
+            //if err != nil {
+            //    fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            //}
             taorfpga.FlashVerifyImage(uint32(addr), os.Args[3])
             return
         } else if os.Args[2] == "generateimage" {
@@ -492,15 +518,29 @@ func main() {
             }
         }
     } else if os.Args[1] == "cpld" {
-
+        var cpldNumber uint32
         if argc < 4 {
             fmt.Printf(" %s \n", errhelp)
             return
         }
-        cpldNumber, err := strconv.ParseUint(os.Args[2], 0, 32)
-        if err != nil { 
-            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return 
+        //"fpgautil cpld <cpu/gpio0/gpio1/gpio2> program <filename>\n" +
+        if os.Args[2] == "cpu" {
+            cpldNumber = 0
+        } else if os.Args[2] == "gpio0" {
+            cpldNumber = 3
+        } else if os.Args[2] == "gpio1" {
+            cpldNumber = 4
+        } else if os.Args[2] == "gpio2" {
+            cpldNumber = 5
+        } else {
+            fmt.Printf(" ERROR: CPLD TYPE ENTERED IS NOT VALID\n")
+            return
         }
+
+        //cpldNumber, err := strconv.ParseUint(os.Args[2], 0, 32)
+        //if err != nil { 
+        //    fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return 
+        //}
         if os.Args[3] == "uc" {   //run op usercode
             ucode, _ := taorfpga.Spi_cpld_read_usercode(uint32(cpldNumber)) 
             fmt.Printf(" CPLD-%d  UCODE=0x%.08x\n", cpldNumber, ucode)
@@ -560,8 +600,6 @@ func main() {
         if elbaNumber > 2 {
             fmt.Printf(" ERROR: Elba number needs to be 0 or 1\n", err); return 
         }
-
-        
         if os.Args[3] == "flash" {
             if os.Args[4] == "devid" {
                 devid, _ := taorfpga.Spi_elba_flash_read_id(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
@@ -716,7 +754,7 @@ func main() {
                 }
                 taorfpga.Spi_cpldXO3_erase_flash(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5])
             } else if os.Args[4] == "generateimage" || os.Args[4] == "verifyimage" || os.Args[4] == "program" {   
-                if argc < 6 {
+                if argc < 7 {
                     fmt.Printf(" %s \n", errhelp)
                     return
                 }
