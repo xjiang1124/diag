@@ -154,13 +154,13 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
         return False
     cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
     if "mainfwa" in cmd_buf:    # make this all single line print...
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into mainfwa")
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into mainfwa", level=0)
     elif "mainfwb" in cmd_buf:
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into mainfwb")
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into mainfwb", level=0)
     elif "goldfw" in cmd_buf:
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into goldfw")
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into goldfw", level=0)
     elif "diagfw" in cmd_buf:
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw")
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw", level=0)
 
     cmd = "/nic/tools/fwupdate -l"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
