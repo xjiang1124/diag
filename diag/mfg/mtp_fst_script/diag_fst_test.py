@@ -173,6 +173,7 @@ def fst_general_old(fst):
             if fru["status"]["fru"]["product-name"] == "NAPLES 25 ":
                 if "8GT/s" in new_str and "x8" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
+                    print("PCIE link: x8 at 8GT/s")
                 else:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "failed")
                     print("Speed and Width are failed")
@@ -180,8 +181,10 @@ def fst_general_old(fst):
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
+                    print("PCIE link: x8 at 16GT/s")
                 elif "16GT/s" in new_str and "x16" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "pass")
+                    print("PCIE link: x8 at 16GT/s")
                 else:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name.replace(" ", ""), "failed")
                     print("Speed and Width are failed")
@@ -279,6 +282,7 @@ def fst_general(fst):
             if product_name == "NAPLES25" or product_name == "NAPLES25SWM" or product_name == "NAPLES25SWMDELL" or product_name == "NAPLES25SWM833" or product_name == "NAPLES25OCP":
                 if "8GT/s" in new_str and "x8" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
+                    print("PCIE link: x8 at 8GT/s")
                 else:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "failed")
                     print("Speed and Width are failed")
@@ -286,6 +290,7 @@ def fst_general(fst):
             else:
                 if "8GT/s" in new_str and "x16" in new_str:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "pass")
+                    print("PCIE link: x8 at 16GT/s")
                 else:
                     print("slot:", str(a), b, "sn:", sn, "type:", product_name, "failed")
                     print("Speed and Width are failed")
@@ -343,6 +348,7 @@ def fst_general_oracle(fst):
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
         elif "8GT/s" in result1 and "x16" in result1:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
+            print("PCIE link: x8 at 16GT/s")
         else:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "failed")
             print("Speed and Width are failed")
