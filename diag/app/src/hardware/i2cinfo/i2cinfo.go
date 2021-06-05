@@ -313,6 +313,7 @@ func init() {
     BiodonaMtpTbl     = append(BiodonaMtpTbl, MtpHubI2cTbl...)
     OrtanoMtpTbl = append(OrtanoMtpTbl, MtpHubI2cTbl...)
     Ortano2MtpTbl = append(Ortano2MtpTbl, MtpHubI2cTbl...)
+    LaconaMtpTbl = append(LaconaMtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
@@ -340,6 +341,8 @@ func init() {
         I2cTbl = OrtanoTbl
     } else if CardType == "ORTANO2" {
         I2cTbl = OrtanoTbl
+    } else if CardType == "LACONADELL" || CardType == "LACONA" {
+        I2cTbl = LaconaTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -461,6 +464,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = OrtanoMtpTbl
     } else if uutType == "ORTANO2" {
         CurI2cTbl = Ortano2MtpTbl
+    } else if uutType == "LACONADELL" || uutType == "LACONA" {
+        CurI2cTbl = LaconaMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
