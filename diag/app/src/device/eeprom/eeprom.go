@@ -869,7 +869,7 @@ var Lacona25DELLTbl = []entry {
     entry{"MAC Address Base",                       INT8,       123,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
         0x00, 0x00}},
     entry{"Assembly Number Type/Length",            INT8,       129,       1,    []byte{0xCD}},
-    entry{"Assembly Number",                        INT8,       130,       13,   []byte{0x50, 0x31, 0x39,0x39,
+    entry{"Assembly Number",                        STRING,     130,       13,   []byte{0x50, 0x31, 0x39,0x39,
         0x39, 0x39, 0x2d, 0x30, 0x30, 0x31, 0x20, 0x20, 0x20}},
     entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,       144,       7,    []byte{0x00, 0x00, 0x00, 0x00,
