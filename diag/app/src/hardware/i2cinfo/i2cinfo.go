@@ -116,7 +116,7 @@ var LaconaMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x60,    0x0,    "HUB_NONE",  0,    0},  
-    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x46,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
 var LaconaDellMtpTbl = []I2cInfo {

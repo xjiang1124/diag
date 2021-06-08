@@ -8,6 +8,7 @@ import (
     "regexp"
     "strconv"
 
+    "cardinfo"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -118,6 +119,8 @@ func present() (err int) {
                 presentStr = "ORTANO"
             case nicCpldCommon.ID_ORTANO2:
                 presentStr = "ORTANO2"
+            case nicCpldCommon.ID_LACONA_DELL:
+                presentStr = "LACONADELL"
             case nicCpldCommon.ID_NAPLES100HPE:
                 presentStr = "NAPLES100HPE"
             case nicCpldCommon.ID_NAPLES25SWM_DELL:
@@ -174,7 +177,7 @@ func getPowerGood(uutName string) (powerGood bool) {
     return
 }
 
-func powerStatusCheck(slot int)  {
+func powerStatusCheck(slot int) (err int) {
     uutName := "UUT_"+strconv.Itoa(slot)
     var powerGood bool
 
@@ -182,7 +185,9 @@ func powerStatusCheck(slot int)  {
     fmt.Printf(" CardType=%s\n", cardType)
 
     cli.DisableVerbose()
-    if cardType == "ORTANO" || cardType == "ORTANO2" {
+
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if asicType == "ELBA" {
         powerGood = getPowerGoodOrtano(uutName)
     } else {
         powerGood = getPowerGood(uutName)

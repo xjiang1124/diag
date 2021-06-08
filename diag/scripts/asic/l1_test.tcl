@@ -52,8 +52,16 @@ cd $ASIC_SRC/ip/cosim/tclsh
 if {$MTP_TYPE == "MTP_ELBA"} {
     puts "Elba MTP"
     set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
-    #set l1_cmd "elb_l1_screen_diag $sn 10 $slot nod 0 0" 
     source .tclrc.diag.elb.new
+} elseif {$MTP_TYPE == "MTP_TOR"} {
+    puts "TOR MTP"
+    if { $slot == 1 } {
+        set l1_cmd "elb_l1_screen_diag $sn 0x3021 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+    } else {
+        set l1_cmd "elb_l1_screen_diag $sn 0x3031 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+    }
+    source .tclrc.diag.elb.new
+
 } else {
     puts "Capri MTP"
     set l1_cmd "cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn"
@@ -68,7 +76,6 @@ set ::CAP_GPIO3_PWR_OFF_DUR 5000
 if {$use_zmq == 0} {
     puts "Regular L1"
     diag_open_j2c_if 10 $slot
-    #set err_cnt [cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn]
     set err_cn [eval $l1_cmd]
     set err_cnt 0
 

@@ -4,7 +4,10 @@
 echo "-------------------"
 echo "Preparing diag environment"
 mkdir -p /home/diag/
+DIAG_HOME=/home/diag
 DIAG_DIR=/home/diag/diag
+ln -sf /fs/nos/home_diag/diag $DIAG_DIR
+
 mkdir -p $DIAG_DIR/log/
 
 # Prepare all paths
@@ -13,7 +16,6 @@ source /home/root/.profile
 
 rmmod ftdi_sio
 
-ln -sf /fs/nos/home_diag $DIAG_HOME
 ln -sf $DIAG_HOME/diag/asic_all/elba $DIAG_HOME/diag/asic
 
 cp $DIAG_HOME/diag/scripts/taormina/tclsh8.6 $ASIC_SRC/ip/cosim/tclsh
@@ -25,7 +27,7 @@ mkdir -p /usr/lib/x86_64-linux-gnu/
 cp $DIAG_HOME/diag/scripts/taormina/tcl8.6/libtclreadline.so /usr/lib/x86_64-linux-gnu/
 
 #==================================
-source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
+source $DIAG_DIR/python/infra/config/scripts/pre_dsp_tor
 
 hack_asic_elba.sh
 
@@ -53,7 +55,12 @@ echo "Redis keys loaded"
 
 env | grep MTP_REV | awk -F "=" '{print $2}' > /home/diag/mtp_rev
 
-#echo "redisFlag $redisFlag"
+# Duplicate 5 asic DSPs
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic1
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic2
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic3
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic4
+cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
 
 echo "Preparing diag environment -- Done"
 

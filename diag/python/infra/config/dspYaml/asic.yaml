@@ -114,6 +114,7 @@ DSP:
         INFO: chip internal test
         PLATFORM:
             NIC: MTP
+            TOR: ALL
         PARAM:
             timeout:
                 VALUE:

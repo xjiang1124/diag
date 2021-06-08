@@ -211,6 +211,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
             eeprom.EepromTbl = eeprom.PenTblSWM833Mhz
         }
         if (cardType == "LACONADELL") {
+            fmt.Printf("LaconaDell\n")
             eeprom.CustType = "LACONADELL"
             eeprom.EepromTbl = eeprom.Lacona25DELLTbl
         }

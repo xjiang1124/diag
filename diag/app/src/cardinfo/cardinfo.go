@@ -7,7 +7,7 @@ var Cardinfo = map[string]map[string]string{
         "ASIC": "ELBA"},
     "LACONA": map[string]string{
         "ASIC": "ELBA"},
-    "LACONA_DELL": map[string]string{
+    "LACONADELL": map[string]string{
         "ASIC": "ELBA"},
 }
 
