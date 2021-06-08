@@ -3702,7 +3702,7 @@ class mtp_ctrl():
         #     ret = match[0]
         # else:
         #     ret = "TIMEOUT"
-        ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
+        ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
         if test == "L1" and ret == "TIMEOUT":
             self.mtp_run_diag_test_para_lock()
             self.mtp_mgmt_jtag_rst()
