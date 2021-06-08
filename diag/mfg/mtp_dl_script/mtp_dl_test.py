@@ -518,6 +518,11 @@ def main():
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
 
+    # Failure analysis (sequential access)
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
+
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
     # init nic diag env.

@@ -3931,6 +3931,18 @@ class mtp_ctrl():
     def mtp_nic_naples25swm_mgmt_port_test(self, slot):
         rc = self._nic_ctrl_list[slot].nic_naples25swm_mgmt_port_test(slot)
 
+    def mtp_mgmt_check_cpld_debug_bits(self, slot):
+        """
+            Dump registers 0xa, 0x12, 0x24
+        """
+        for reg_addr in [0xa, 0x12, 0x24]:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                # try again one more time
+                time.sleep(1)
+                if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                    self.cli_log_slot_err(self._nic_ctrl_list[slot].nic_get_cmd_buf())
+                    continue
 
     def mtp_run_diag_test_para_lock(self):
         self._test_lock.acquire()
