@@ -671,7 +671,7 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
             high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
     # RDT runs @high temperature, no voltage corner
     elif corner == Env_Cond.MFG_RDT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
@@ -683,7 +683,7 @@ def main():
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
     # EDVT, low temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_LT:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
