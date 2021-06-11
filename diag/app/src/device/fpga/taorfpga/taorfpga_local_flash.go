@@ -74,11 +74,37 @@ func init () {
     flag_region_info.offset = 0
 }
 
+func AddrDecipher(region string) (addr uint32, maxSize uint32, err error) {
 
-func FlashGenerateImageFromFlash(filename string) (err error) {
+    if region == "gold" {
+        addr = 0x00
+        maxSize = 0x800000
+    } else if region == "main" {
+        addr = 0x800000
+        maxSize = 0x800000
+    } else if region == "allflash" {
+        addr = 0x00
+        maxSize = 0x1000000
+    } else {
+        err = fmt.Errorf(" ERROR.  Flash Partition is invalid.  You entered %s.  It needs to be gold, main, or allflash\n", region)
+        fmt.Printf("%s", err)
+        return
+
+    }
+    return
+}
+
+
+func FlashGenerateImageFromFlash(region string, filename string) (err error) {
+    var addr, maxSize uint32
     var rd_data64 uint64 = 0
     var i int = 0
     flashData := []byte{}
+
+    addr, maxSize, err =  AddrDecipher(region) 
+    if err != nil {
+        return
+    }
 
     f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
     if err != nil {
@@ -88,7 +114,7 @@ func FlashGenerateImageFromFlash(filename string) (err error) {
     defer f.Close()
 
 
-    for i=0; i<int(flag_region_info.region_size); i = i+8 {
+    for i=int(addr); i<int(addr + maxSize); i = i+8 {
         if (i%0x20000) == 0 {
             fmt.Printf("%.08x\n", uint32(i))
         }
@@ -155,13 +181,19 @@ func FlashBitSwapImage(infile string, outfile string) (err error) {
     return
 }
 
-func FlashWriteImage(addr uint32, filename string) (err error) {
+func FlashWriteImage(region string, filename string) (err error) {
     var i int = 0
+    var addr, maxSize uint32
     var data64 uint64
     var blank_data uint64 = 0xFFFFFFFFFFFFFFFF
     var skipped_writes int = 0
     var data8  uint8
     data := []byte{}
+
+    addr, maxSize, err =  AddrDecipher(region) 
+    if err != nil {
+        return
+    }
 
     if (addr % flag_region_info.sector_size) != 0 {
         fmt.Printf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
@@ -199,7 +231,13 @@ func FlashWriteImage(addr uint32, filename string) (err error) {
         fmt.Println(err)
         return
     }
+    if len(data) > int(maxSize) {
+        err = fmt.Errorf(" ERROR.  File Size is greater than flash programmable region size.  Bytes Scanned from file=%d.  Flash region size=%d\n", len(data), maxSize)
+        fmt.Printf("%s", err)
+        return
+    }
 
+    fmt.Printf(" INFO: Flash Start Addr=0x%.06x\n", addr)
     fmt.Printf(" Erasing/Programming each Sector")
     for i=0;i<len(data); i+=8 {
 
@@ -237,12 +275,18 @@ func FlashWriteImage(addr uint32, filename string) (err error) {
 }
 
 
-func FlashVerifyImage(addr uint32, filename string) (err error) {
+func FlashVerifyImage(region string, filename string) (err error) {
     var i int = 0
+    var addr, maxSize uint32
     var rd_data64 uint64
     var wr_data64 uint64 
     var data8  uint8
     data := []byte{}
+
+    addr, maxSize, err =  AddrDecipher(region) 
+    if err != nil {
+        return
+    }
 
     if (addr % flag_region_info.sector_size) != 0 {
         err = fmt.Errorf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
@@ -274,6 +318,11 @@ func FlashVerifyImage(addr uint32, filename string) (err error) {
     }
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
+        return
+    }
+    if len(data) > int(maxSize) {
+        err = fmt.Errorf(" ERROR.  File Size is greater than flash programmable region size.  Bytes Scanned from file=%d.  Flash region size=%d\n", len(data), maxSize)
+        fmt.Printf("%s", err)
         return
     }
 

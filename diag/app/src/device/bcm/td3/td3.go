@@ -120,6 +120,43 @@ func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) 
         
     }
 
+    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\"").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        return
+    }
+    cli.Println("i", string(output))
+    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        return
+    }
+    cli.Println("i", string(output))
+    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        return
+    }
+    cli.Println("i", string(output))
+    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        return
+    }
+    cli.Println("i", string(output))
+
+
+    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        return
+    }
+    cli.Println("i", string(output))
 
     return
 }

@@ -1,9 +1,3 @@
-//ARM64 BUILD.  DO NOT MESS WITH THE LINE BELOW
-
-
-// +build !amd64
-
-
 package main
 
 import (
@@ -13,11 +7,11 @@ import (
     "common/diagEngine"
     "common/errType"
     "device/sfp"
+    "device/fpga/taorfpga"
     "hardware/i2cinfo"
-    "common/spi"
     "common/misc"
     "hardware/hwinfo"
-)
+) 
 
 /*
     Read Device ID and compare with expected one
@@ -28,10 +22,12 @@ func testSfp(devName string) (err int) {
     if err != errType.SUCCESS {
         dcli.Println("f", devName, " Read status failed!")
         return
+    } else {
+        dcli.Println("i", devName, " SFP Dev ID=", devID)
     }
 
     if devID != sfp.ID_SFPP {
-        dcli.Println("F", devName, " Invalid Device ID: expected", sfp.ID_SFPP, "read", devID)
+        dcli.Println("f", devName, " Invalid Device ID: expected", sfp.ID_SFPP, "read", devID)
         return errType.FAIL
     }
     return
@@ -71,10 +67,12 @@ func SfpI2CHdl(argList []string) {
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- ret
+    
     return
 }
 
 func SfpLaserHdl(argList []string) {
+    
     var err int
     var data uint32
 
@@ -89,9 +87,10 @@ func SfpLaserHdl(argList []string) {
     for _, sfpInfo := range hwinfo.SfpTbl {
         regAddr := sfpInfo.PrstReg
         bitPos := sfpInfo.PrstBit
-        spi.CpldRead(regAddr, &data)
+        data, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(regAddr))  //return value uses golang err (not diag err)
         prstSts := data & (1<<byte(bitPos))
-        if prstSts != 0 {
+        //dcli.Printf("i", "regAddr=0x%x  bitPos=%d  data=0x%x   BIT=%d\n", regAddr, bitPos, data, prstSts)
+        if prstSts == 0 {
             dcli.Println("i", sfpInfo.DevName, "Present")
         } else {
             dcli.Println("i", sfpInfo.DevName, "Not Present!")
@@ -106,55 +105,48 @@ func SfpLaserHdl(argList []string) {
     for _, sfpInfo := range hwinfo.SfpTbl {
         txDisReg := sfpInfo.TxDisReg
         txDisBit := sfpInfo.TxDisBit
-        errgo := spi.CpldWrite(txDisReg, data | 1 << txDisBit)
-        if errgo != errType.SUCCESS {
-            dcli.Println("f", sfpInfo.DevName, "Failed to write Tx disable bit")
-            err = errgo
-            break
-        }
-        misc.SleepInSec(1)
+        taorfpga.TaorWriteU32(taorfpga.DEVREGION0, uint64(txDisReg), (data | (1 << txDisBit)) )
+        misc.SleepInUSec(2000)  //20ms
         
-        spi.CpldRead(sfpInfo.TxFaultReg, &data)
+        data, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(sfpInfo.TxFaultReg)) 
         if data & (1 << sfpInfo.TxFaultBit) == 0 {
             dcli.Println("f", sfpInfo.DevName, "Failed to trigger Tx Fault")
             err = errType.SFP_TX_FAULT
             break
         }
         
-        spi.CpldRead(sfpInfo.RxLossReg, &data)
+        data, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(sfpInfo.RxLossReg)) 
         if data & (1 << sfpInfo.RxLossBit) == 0 {
             dcli.Println("f", sfpInfo.DevName, "Failed to trigger Rx Loss")
             err = errType.SFP_RX_LOSS
             break
         }
+        dcli.Println("i", sfpInfo.DevName, "Tx Fault / Rx Loss passed phase 1")
         
-        errgo = spi.CpldWrite(txDisReg, data & (^(1 << byte(txDisBit))))
-        if errgo != errType.SUCCESS {
-            dcli.Println("f", sfpInfo.DevName, "Failed to clear Tx disable bit")
-            err = errgo
-            break
-        }
-        misc.SleepInSec(1)
+        taorfpga.TaorWriteU32(taorfpga.DEVREGION0, uint64(txDisReg), data & (^(1 << byte(txDisBit))) )
+        misc.SleepInUSec(2000)  //20ms
         
-        spi.CpldRead(sfpInfo.TxFaultReg, &data)
+        data, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(sfpInfo.TxFaultReg)) 
         if data & (1 << byte(sfpInfo.TxFaultBit)) > 0 {
             dcli.Println("f", sfpInfo.DevName, "Failed to clear Tx Fault")
             err = errType.SFP_TX_FAULT
             break
         }
         
-        spi.CpldRead(sfpInfo.RxLossReg, &data)
+        data, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(sfpInfo.RxLossReg)) 
         if data & (1 << byte(sfpInfo.RxLossBit)) > 0 {
             dcli.Println("f", sfpInfo.DevName, "Failed to clear Rx Loss")
             err = errType.SFP_RX_LOSS
             break
         }
+        dcli.Println("i", sfpInfo.DevName, "Tx Fault / Rx Loss passed phase 2")
     }
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
 Return:
     diagEngine.FuncMsgChan <- err
+    
     return
 }
 

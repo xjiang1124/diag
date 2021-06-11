@@ -79,7 +79,7 @@ func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
 
 func EnableHubChannel(devName string) (err int) {
 
-    if cardType == "TAOR" {
+    if cardType == "TAORMINA" {
         var i2cInfo i2cinfo.I2cInfo
         i2cInfo, err = i2cinfo.GetI2cInfo(devName)
         if err != errType.SUCCESS {
@@ -114,7 +114,7 @@ func EnableHubChannel(devName string) (err int) {
  */
 func EnableHubChannelExclusive(devName string) (err int) {
 
-    if cardType == "TAOR" {
+    if cardType == "TAORMINA" {
         var i2cInfo i2cinfo.I2cInfo
         i2cInfo, err = i2cinfo.GetI2cInfo(devName)
         if err != errType.SUCCESS {

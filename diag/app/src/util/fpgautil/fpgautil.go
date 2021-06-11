@@ -60,11 +60,10 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil i2c debug enable/disable\n" +
         " \n" +
         "fpgautil flash devid\n" +
-        "fpgautil flash update/verify <filename>\n" +
+        "fpgautil flash program/verify/generateimage <gold/main/allflash> <filename>\n" +
         "fpgautil flash r8/r32/r64 <addr> <length>\n" +
         "fpgautil flash w32/w64 <addr> <data>\n" +
         "fpgautil flash sectorerase <addr>\n" +
-        "fpgautil flash generateimage <filename>\n" +
         "fpgautil flash bitswapimage <infile> <outfile>\n" +
         " \n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> uc \n" +
@@ -302,29 +301,33 @@ func main() {
         } else if os.Args[2] == "we" {
             taorfpga.FlashWriteEnable()
             taorfpga.FlashCheckWriteEnable()
-        } else if os.Args[2] == "update" {
-            t1 := time.Now()
-            taorfpga.FlashWriteImage(uint32(0x00), os.Args[3])
+        } else if os.Args[2] == "verify" || os.Args[2] == "generateimage" || os.Args[2] == "program"  {
+            //"fpgautil flash program/verify/generateimage <gold/main/allflash> <filename>\n" +
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            if os.Args[2] == "program" {
+                t1 := time.Now()
+                taorfpga.FlashWriteImage(os.Args[3], os.Args[4])
 
-            taorfpga.FlashVerifyImage(uint32(0x00), os.Args[3])
+                taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
 
-            t2 := time.Now()
-            fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
-            return
-        } else if os.Args[2] == "verify" {
-            var addr uint32 = 0
-            //addr, err := strconv.ParseUint(os.Args[4], 0, 32)
-            //if err != nil {
-            //    fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
-            //}
-            taorfpga.FlashVerifyImage(uint32(addr), os.Args[3])
-            return
-        } else if os.Args[2] == "generateimage" {
-            t1 := time.Now()
-            taorfpga.FlashGenerateImageFromFlash(os.Args[3]) 
-            t2 := time.Now()
-            fmt.Println(" Generating the image ", t2.Sub(t1), " time")
-            fmt.Printf(" File %s generated\n", os.Args[3])
+                t2 := time.Now()
+                fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
+                return
+            }
+            if os.Args[2] == "verify" {
+                taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
+                return
+            }
+            if os.Args[2] == "generateimage" {
+                t1 := time.Now()
+                taorfpga.FlashGenerateImageFromFlash(os.Args[3], os.Args[4]) 
+                t2 := time.Now()
+                fmt.Println(" Generating the image ", t2.Sub(t1), " time")
+                fmt.Printf(" File %s generated\n", os.Args[3])
+            }
         } else if os.Args[2] == "r8" || os.Args[2] == "r32" || os.Args[2] == "r64" {
             if argc < 5 {
                 fmt.Printf(" %s \n", errhelp)

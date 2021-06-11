@@ -89,7 +89,7 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
     }
 
 
-    if i2cinfo.CardType == "TAOR" {
+    if i2cinfo.CardType == "TAORMINA" {
         //On Taormina (and maybe later platforms), there are parts we
         //need to display status on that are not in the I2C table, so skip trying 
         //to set the mux if the hwinfo component is not in the i2cinfo component

@@ -167,7 +167,7 @@ func DispStatus(devName string) (err int) {
     fmtNameStr := "%-20s"
 
     cardType := os.Getenv("CARD_TYPE")
-    if cardType == "TAOR" {
+    if cardType == "TAORMINA" {
         var PSUnumber uint32
         if devName == "PSU_1" {
             PSUnumber = taorfpga.PSU0

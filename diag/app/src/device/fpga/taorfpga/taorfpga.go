@@ -74,24 +74,30 @@ var Glob_mmap3 []byte
 
 
 func init () {
+    var cardType string
     
-    out, errGo := exec.Command("uname", "-a").Output()
-    if errGo != nil {
-        cli.Println("e", errGo)
-    }
-    //fmt.Printf(" Uname = %s\n", string(out))
-    
-    cardType := os.Getenv("CARD_TYPE")
-    if cardType != "TAOR" {
-        if strings.Contains(string(out), "Taormina")==true {
-            //fmt.Printf("Taormina system detected\n")
-            os.Setenv("CARD_TYPE","TAOR")
-            cardType = os.Getenv("CARD_TYPE")
-            //fmt.Printf("CardType=%s\n", cardType)
+    //quick hack to see if we are a Taormina since diag env is not setup yet
+    exists, _ := dir_exists("/etc/openswitch/platform/HPE/Taormina")
+    if exists == true {
+        os.Setenv("CARD_TYPE","TAORMINA")
+        cardType = "TAORMINA"
+    } else {
+        cardType = os.Getenv("CARD_TYPE")
+        if cardType == "TAORMINA" {
+            os.Setenv("CARD_TYPE","TAORMINA")
+            cardType = "TAORMINA"
+        } else if cardType != "TAORMINA" { 
+            out, errGo := exec.Command("uname", "-a").Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+            }
+            if strings.Contains(string(out), "Taormina")==true {
+                os.Setenv("CARD_TYPE","TAORMINA")
+                cardType = "TAORMINA"
+            }
         }
     }
-    
-    if cardType == "TAOR" {
+    if cardType == "TAORMINA" {
         Glob_mmap0, Glob_fd0, _ = MMAP_Device(DEV0_BAR, MAP_SIZE)
         Glob_mmap1, Glob_fd1, _ = MMAP_Device(DEV1_BAR, MAP_SIZE)
         Glob_mmap2, Glob_fd2, _ = MMAP_Device(DEV2_BAR, MAP_SIZE)
@@ -110,6 +116,14 @@ func init () {
      
 } 
  
+
+// exists returns whether the given file or directory exists
+func dir_exists(path string) (bool, error) {
+    _, err := os.Stat(path)
+    if err == nil { return true, nil }
+    if os.IsNotExist(err) { return false, nil }
+    return false, err
+}
 
 
 func FpgaDumpRegionRegisters(devRegion uint32) (err error) {

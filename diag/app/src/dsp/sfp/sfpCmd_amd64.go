@@ -1,8 +1,3 @@
-//ARM64 BUILD.  DO NOT MESS WITH THE LINE BELOW
-
-// +build !amd64
-
-
 package main
 
 import (
@@ -12,10 +7,10 @@ import (
     "common/diagEngine"
     "common/errType"
 
-    "device/cpld/cpld"
+    "device/fpga/taorfpga"
 
     "hardware/hwinfo"
-)
+) 
 
 func SfpPresentHdl(argList []string) {
     var err int
@@ -31,10 +26,10 @@ func SfpPresentHdl(argList []string) {
     for _, sfpInfo := range hwinfo.SfpTbl {
         regAddr := sfpInfo.PrstReg
         bitPos := sfpInfo.PrstBit
-        data, errgo := cpld.ReadReg(byte(regAddr))
-        if errgo != errType.SUCCESS {
+        data, errgo := taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(regAddr))  //return value uses golang err (not diag err)
+        if errgo != nil {
             dcli.Println("f", sfpInfo.DevName, "Failed to obtain present info")
-            err = errgo
+            err = errType.FAIL
         }
 
         prstSts := data & (1<<byte(bitPos))

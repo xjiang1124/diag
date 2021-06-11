@@ -7,6 +7,7 @@ import (
     "device/fanctrl/adt7462"
     "device/bcm/td3"
     "device/cpu/XeonD"
+    "device/fpga/taorfpga"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
@@ -153,12 +154,83 @@ var taorDispStaList map[string]DispStaFunc
 // I2C hub map -- dummy
 var taorI2cHubMap map[string] I2cHubInfo
 
-//ADD FIXME - NEED TO FILL IN
 // SFP table
+var SFP_STAT_REG0 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_3_0_REG) 
+var SFP_STAT_REG1 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_7_4_REG) 
+var SFP_STAT_REG2 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_11_8_REG) 
+var SFP_STAT_REG3 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_15_12_REG) 
+var SFP_STAT_REG4 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_19_16_REG) 
+var SFP_STAT_REG5 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_23_20_REG) 
+var SFP_STAT_REG6 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_27_24_REG) 
+var SFP_STAT_REG7 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_31_28_REG) 
+var SFP_STAT_REG8 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_35_32_REG) 
+var SFP_STAT_REG9 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_39_36_REG) 
+var SFP_STAT_REG10 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_43_40_REG) 
+var SFP_STAT_REG11 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_47_44_REG) 
+
+var SFP_CTRL_REG0 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_3_0_REG) 
+var SFP_CTRL_REG1 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_7_4_REG) 
+var SFP_CTRL_REG2 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_11_8_REG) 
+var SFP_CTRL_REG3 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_15_12_REG) 
+var SFP_CTRL_REG4 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_19_16_REG) 
+var SFP_CTRL_REG5 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_23_20_REG) 
+var SFP_CTRL_REG6 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_27_24_REG) 
+var SFP_CTRL_REG7 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_31_28_REG) 
+var SFP_CTRL_REG8 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_35_32_REG) 
+var SFP_CTRL_REG9 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_39_36_REG) 
+var SFP_CTRL_REG10 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_43_40_REG) 
+var SFP_CTRL_REG11 uint32 = uint32(taorfpga.D0_FP_SFP_CTRL_47_44_REG) 
+
 var taorSfpTbl = []SfpInfo_t {
-    //          devName   txDisReg txDisBit txFaultReg txFaultBit prstReg prstBit rxLossReg rxLossBit
-    SfpInfo_t {"SFP_1",  0x2,      0,       0x2,      2,         0x2,     4,      0x2,      6,     },
-    SfpInfo_t {"SFP_2",  0x2,      1,       0x2,      3,         0x2,     5,      0x2,      7,     },
+    //          devName  txDisReg        txDisBit     txFaultReg      txFaultBit     prstReg         prstBit    rxLossReg           rxLossBit
+    SfpInfo_t {"SFP_1",  SFP_CTRL_REG0,      0,       SFP_STAT_REG0,      1,         SFP_STAT_REG0,     0,      SFP_STAT_REG0,      2,     },
+    SfpInfo_t {"SFP_2",  SFP_CTRL_REG0,      8,       SFP_STAT_REG0,      9,         SFP_STAT_REG0,     8,      SFP_STAT_REG0,      10,    },
+    SfpInfo_t {"SFP_3",  SFP_CTRL_REG0,      16,      SFP_STAT_REG0,      17,        SFP_STAT_REG0,     16,     SFP_STAT_REG0,      18,    },
+    SfpInfo_t {"SFP_4",  SFP_CTRL_REG0,      24,      SFP_STAT_REG0,      25,        SFP_STAT_REG0,     24,     SFP_STAT_REG0,      26,    },
+    SfpInfo_t {"SFP_5",  SFP_CTRL_REG1,      0,       SFP_STAT_REG1,      1,         SFP_STAT_REG1,     0,      SFP_STAT_REG1,      2,     },
+    SfpInfo_t {"SFP_6",  SFP_CTRL_REG1,      8,       SFP_STAT_REG1,      9,         SFP_STAT_REG1,     8,      SFP_STAT_REG1,      10,    },
+    SfpInfo_t {"SFP_7",  SFP_CTRL_REG1,      16,      SFP_STAT_REG1,      17,        SFP_STAT_REG1,     16,     SFP_STAT_REG1,      18,    },
+    SfpInfo_t {"SFP_8",  SFP_CTRL_REG1,      24,      SFP_STAT_REG1,      25,        SFP_STAT_REG1,     24,     SFP_STAT_REG1,      26,    },
+    SfpInfo_t {"SFP_9",  SFP_CTRL_REG2,      0,       SFP_STAT_REG2,      1,         SFP_STAT_REG2,     0,      SFP_STAT_REG2,      2,     },
+    SfpInfo_t {"SFP_10", SFP_CTRL_REG2,      8,       SFP_STAT_REG2,      9,         SFP_STAT_REG2,     8,      SFP_STAT_REG2,      10,    },
+    SfpInfo_t {"SFP_11", SFP_CTRL_REG2,      16,      SFP_STAT_REG2,      17,        SFP_STAT_REG2,     16,     SFP_STAT_REG2,      18,    },
+    SfpInfo_t {"SFP_12", SFP_CTRL_REG2,      24,      SFP_STAT_REG2,      25,        SFP_STAT_REG2,     24,     SFP_STAT_REG2,      26,    },
+    SfpInfo_t {"SFP_13", SFP_CTRL_REG3,      0,       SFP_STAT_REG3,      1,         SFP_STAT_REG3,     0,      SFP_STAT_REG3,      2,     },
+    SfpInfo_t {"SFP_14", SFP_CTRL_REG3,      8,       SFP_STAT_REG3,      9,         SFP_STAT_REG3,     8,      SFP_STAT_REG3,      10,    },
+    SfpInfo_t {"SFP_15", SFP_CTRL_REG3,      16,      SFP_STAT_REG3,      17,        SFP_STAT_REG3,     16,     SFP_STAT_REG3,      18,    },
+    SfpInfo_t {"SFP_16", SFP_CTRL_REG3,      24,      SFP_STAT_REG3,      25,        SFP_STAT_REG3,     24,     SFP_STAT_REG3,      26,    },
+    SfpInfo_t {"SFP_17", SFP_CTRL_REG4,      0,       SFP_STAT_REG4,      1,         SFP_STAT_REG4,     0,      SFP_STAT_REG4,      2,     },
+    SfpInfo_t {"SFP_18", SFP_CTRL_REG4,      8,       SFP_STAT_REG4,      9,         SFP_STAT_REG4,     8,      SFP_STAT_REG4,      10,    },
+    SfpInfo_t {"SFP_19", SFP_CTRL_REG4,      16,      SFP_STAT_REG4,      17,        SFP_STAT_REG4,     16,     SFP_STAT_REG4,      18,    },
+    SfpInfo_t {"SFP_20", SFP_CTRL_REG4,      24,      SFP_STAT_REG4,      25,        SFP_STAT_REG4,     24,     SFP_STAT_REG4,      26,    },
+    SfpInfo_t {"SFP_21", SFP_CTRL_REG5,      0,       SFP_STAT_REG5,      1,         SFP_STAT_REG5,     0,      SFP_STAT_REG5,      2,     },
+    SfpInfo_t {"SFP_22", SFP_CTRL_REG5,      8,       SFP_STAT_REG5,      9,         SFP_STAT_REG5,     8,      SFP_STAT_REG5,      10,    },
+    SfpInfo_t {"SFP_23", SFP_CTRL_REG5,      16,      SFP_STAT_REG5,      17,        SFP_STAT_REG5,     16,     SFP_STAT_REG5,      18,    },
+    SfpInfo_t {"SFP_24", SFP_CTRL_REG5,      24,      SFP_STAT_REG5,      25,        SFP_STAT_REG5,     24,     SFP_STAT_REG5,      26,    },
+    SfpInfo_t {"SFP_25", SFP_CTRL_REG6,      0,       SFP_STAT_REG6,      1,         SFP_STAT_REG6,     0,      SFP_STAT_REG6,      2,     },
+    SfpInfo_t {"SFP_26", SFP_CTRL_REG6,      8,       SFP_STAT_REG6,      9,         SFP_STAT_REG6,     8,      SFP_STAT_REG6,      10,    },
+    SfpInfo_t {"SFP_27", SFP_CTRL_REG6,      16,      SFP_STAT_REG6,      17,        SFP_STAT_REG6,     16,     SFP_STAT_REG6,      18,    },
+    SfpInfo_t {"SFP_28", SFP_CTRL_REG6,      24,      SFP_STAT_REG6,      25,        SFP_STAT_REG6,     24,     SFP_STAT_REG6,      26,    },
+    SfpInfo_t {"SFP_29", SFP_CTRL_REG7,      0,       SFP_STAT_REG7,      1,         SFP_STAT_REG7,     0,      SFP_STAT_REG7,      2,     },
+    SfpInfo_t {"SFP_30", SFP_CTRL_REG7,      8,       SFP_STAT_REG7,      9,         SFP_STAT_REG7,     8,      SFP_STAT_REG7,      10,    },
+    SfpInfo_t {"SFP_31", SFP_CTRL_REG7,      16,      SFP_STAT_REG7,      17,        SFP_STAT_REG7,     16,     SFP_STAT_REG7,      18,    },
+    SfpInfo_t {"SFP_32", SFP_CTRL_REG7,      24,      SFP_STAT_REG7,      25,        SFP_STAT_REG7,     24,     SFP_STAT_REG7,      26,    },
+    SfpInfo_t {"SFP_33", SFP_CTRL_REG8,      0,       SFP_STAT_REG8,      1,         SFP_STAT_REG8,     0,      SFP_STAT_REG8,      2,     },
+    SfpInfo_t {"SFP_34", SFP_CTRL_REG8,      8,       SFP_STAT_REG8,      9,         SFP_STAT_REG8,     8,      SFP_STAT_REG8,      10,    },
+    SfpInfo_t {"SFP_35", SFP_CTRL_REG8,      16,      SFP_STAT_REG8,      17,        SFP_STAT_REG8,     16,     SFP_STAT_REG8,      18,    },
+    SfpInfo_t {"SFP_36", SFP_CTRL_REG8,      24,      SFP_STAT_REG8,      25,        SFP_STAT_REG8,     24,     SFP_STAT_REG8,      26,    },
+    SfpInfo_t {"SFP_37", SFP_CTRL_REG9,      0,       SFP_STAT_REG9,      1,         SFP_STAT_REG9,     0,      SFP_STAT_REG9,      2,     },
+    SfpInfo_t {"SFP_38", SFP_CTRL_REG9,      8,       SFP_STAT_REG9,      9,         SFP_STAT_REG9,     8,      SFP_STAT_REG9,      10,    },
+    SfpInfo_t {"SFP_39", SFP_CTRL_REG9,      16,      SFP_STAT_REG9,      17,        SFP_STAT_REG9,     16,     SFP_STAT_REG9,      18,    },
+    SfpInfo_t {"SFP_40", SFP_CTRL_REG9,      24,      SFP_STAT_REG9,      25,        SFP_STAT_REG9,     24,     SFP_STAT_REG9,      26,    },
+    SfpInfo_t {"SFP_41", SFP_CTRL_REG10,     0,       SFP_STAT_REG10,     1,         SFP_STAT_REG10,    0,      SFP_STAT_REG10,     2,     },
+    SfpInfo_t {"SFP_42", SFP_CTRL_REG10,     8,       SFP_STAT_REG10,     9,         SFP_STAT_REG10,    8,      SFP_STAT_REG10,     10,    },
+    SfpInfo_t {"SFP_43", SFP_CTRL_REG10,     16,      SFP_STAT_REG10,     17,        SFP_STAT_REG10,    16,     SFP_STAT_REG10,     18,    },
+    SfpInfo_t {"SFP_44", SFP_CTRL_REG10,     24,      SFP_STAT_REG10,     25,        SFP_STAT_REG10,    24,     SFP_STAT_REG10,     26,    },
+    SfpInfo_t {"SFP_45", SFP_CTRL_REG11,     0,       SFP_STAT_REG11,     1,         SFP_STAT_REG11,    0,      SFP_STAT_REG11,     2,     },
+    SfpInfo_t {"SFP_46", SFP_CTRL_REG11,     8,       SFP_STAT_REG11,     9,         SFP_STAT_REG11,    8,      SFP_STAT_REG11,     10,    },
+    SfpInfo_t {"SFP_47", SFP_CTRL_REG11,     16,      SFP_STAT_REG11,     17,        SFP_STAT_REG11,    16,     SFP_STAT_REG11,     18,    },
+    SfpInfo_t {"SFP_48", SFP_CTRL_REG11,     24,      SFP_STAT_REG11,     25,        SFP_STAT_REG11,    24,     SFP_STAT_REG11,     26,    },
 }
 //ADD FIXME - NEED TO FILL IN
 // QSFP table
@@ -382,7 +454,7 @@ func init() {
     dispMap["NIC_POWER"]   = nicPwrDispStaList
     //===============================
     // Taormina
-    dispMap["TAOR"]  = taorDispStaList
+    dispMap["TAORMINA"]  = taorDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
@@ -410,7 +482,7 @@ func init() {
     eepromMap["MTPS"]          = mtpEepList
     //===============================
     // Taormina
-    eepromMap["TAOR"]          = naplesEepList
+    eepromMap["TAORMINA"]          = naplesEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -437,7 +509,7 @@ func init() {
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
     //===============================
     // Taormina
-    i2cHubMap["TAOR"]     = taorI2cHubMap
+    i2cHubMap["TAORMINA"]     = taorI2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"]           = mtpI2cHubList
@@ -464,7 +536,7 @@ func init() {
 
     //===============================
     // Taormina
-    i2cHubListMap["TAOR"] = taorI2cHubList
+    i2cHubListMap["TAORMINA"] = taorI2cHubList
 
     // PSU list
     psuListMap = make(map[string][]string)
@@ -491,7 +563,7 @@ func init() {
 
     //===============================
     // Taormina
-    i2cHubListMap["TAOR"] = taorI2cHubList
+    i2cHubListMap["TAORMINA"] = taorI2cHubList
 
     //===============================
     // Platform specified list
@@ -523,7 +595,7 @@ func init() {
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)
         CpldInfo = &t
 
-    case "TAOR":
+    case "TAORMINA":
         SfpTbl = taorSfpTbl
         QsfpTbl = taorQsfpTbl
 
