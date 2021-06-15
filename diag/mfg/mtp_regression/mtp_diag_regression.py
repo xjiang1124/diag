@@ -14,6 +14,7 @@ sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import MTP_Const
 from libdefs import NIC_Type
+from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -653,6 +654,7 @@ def main():
         high_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
     # Low temperature, two voltage corner
+    # this is changed to single voltage corner after mtp setup step
     elif corner == Env_Cond.MFG_LT:
         if GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
@@ -663,6 +665,7 @@ def main():
         high_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
     # High temperature, two voltage corner
+    # this is changed to single voltage corner after mtp setup step
     elif corner == Env_Cond.MFG_HT:
         if GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
@@ -858,6 +861,15 @@ def main():
 
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
+
+    # Readjust the voltage corners
+    # capri = HTLV, LTHV
+    # elba  = HTLV, HTHV, LTHV, LTLV
+    if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+        if corner == Env_Cond.MFG_LT:
+            vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT]
+        elif corner == Env_Cond.MFG_HT:
+            vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT]
 
     # Wait the Chamber temperature, if HT or LT is set
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)

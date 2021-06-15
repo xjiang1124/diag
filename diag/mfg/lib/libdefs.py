@@ -16,6 +16,9 @@ class NIC_Type:
     ORTANO2 = "ORTANO2"
     UNKNOWN = "Unknown"
 
+class MTP_ASIC_SUPPORT:
+    CAPRI = "CAPRI"
+    ELBA  = "ELBA"
 
 class NIC_Vendor:
     PENSANDO = "Pensando"

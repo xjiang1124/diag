@@ -29,6 +29,7 @@ from libmfg_cfg import VOMERO2_DISP_ASSEMBLY_FMT
 from libmfg_cfg import ORTANO_DISP_ASSEMBLY_FMT
 from libmfg_cfg import OCP_DELL_DISP_PN_FMT
 from libdefs import NIC_Type
+from libdefs import MTP_ASIC_SUPPORT
 from libdefs import NIC_Vendor
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -744,7 +745,7 @@ class nic_ctrl():
         cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
 
         sig_list = ["valid bit 0x1", "error 0x00"]
-        if asic_support == "ELBA":
+        if asic_support == MTP_ASIC_SUPPORT.ELBA:
             sig_list = ["status bit 0x1"]
 
         error_flag = False

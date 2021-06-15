@@ -29,6 +29,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PART_NUMBERS_MATCH
 
 from libdefs import NIC_Type
+from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -1433,7 +1434,7 @@ class mtp_ctrl():
          90% -> 100%    : elba HT
          max = 100%
         """
-        if self._asic_support == "ELBA":
+        if self._asic_support == MTP_ASIC_SUPPORT.ELBA:
             fan_spd = min(100, fan_spd + 20)
         rc = True
 
@@ -1529,7 +1530,7 @@ class mtp_ctrl():
             return False
         io_version = MFG_MTP_CPLD_IO_VERSION
         jtag_version = MFG_MTP_CPLD_JTAG_VERSION
-        if self._asic_support.startswith("ELBA"):
+        if self._asic_support == MTP_ASIC_SUPPORT.ELBA:
             io_version = MFG_MTP_CPLD_IO_ELBA_VERSION
             jtag_version = MFG_MTP_CPLD_JTAG_ELBA_VERSION
 
@@ -3028,7 +3029,7 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        asic_type = "elba" if self._asic_support == "ELBA" else "capri"
+        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if aapl:
             for slot in nic_list:

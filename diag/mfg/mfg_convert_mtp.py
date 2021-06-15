@@ -27,6 +27,7 @@ from libdiag_db import diag_db
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MTP_IMAGES
 from libdefs import MTP_Const
+from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MTP_DIAG_Error
@@ -300,7 +301,7 @@ def main():
                 mtpid_fail_list.append(mtp_id)
                 continue
 
-            if int(mtp_rev) < 3 and asic_support != "CAPRI":
+            if int(mtp_rev) < 3 and asic_support != MTP_ASIC_SUPPORT.CAPRI:
                 ######################################################################
                 # MTP Rev_01 and Rev_02 only support changing to Capri-compatible CPLD
                 ######################################################################
