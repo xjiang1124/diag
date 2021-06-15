@@ -160,11 +160,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "BOOT_CHECK", "NIC_PWRCYC"]
-    if nic_type == NIC_Type.NAPLES25 or nic_type == NIC_Type.NAPLES25SWM:
-        ### REWORK VERIFICATION FOR CAP CHANGE ###
-        ### PERFORM AFTER FRU_VERIFY ###
-        testseqlist.insert(1, "REWORK_VERIFY")
+        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF", "BOOT_CHECK", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -180,8 +176,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
-        elif test == "REWORK_VERIFY":
-            ret = hpe_rework_verify(mtp_mgmt_ctrl, slot)
         # program CPLD
         elif test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
@@ -569,6 +563,10 @@ def main():
 
         testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if card_type == NIC_Type.NAPLES25:
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+        if card_type == NIC_Type.NAPLES25SWM:
+            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
         if card_type == NIC_Type.ORTANO:
             testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         if card_type == NIC_Type.ORTANO2:
@@ -605,6 +603,8 @@ def main():
                     if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         if ret:
                             ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
+            elif test == "REWORK_VERIFY":
+                ret = hpe_rework_verify(mtp_mgmt_ctrl, slot)
             # verify CPLD
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
