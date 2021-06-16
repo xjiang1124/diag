@@ -30,15 +30,21 @@ func Mvl_Init() {
 
 func Mvl_AccHdl(argList []string) {
     var data uint32
+    var data1 uint32
     var rc int = 0
     var ExtendedRegTest bool = true
     cardInfo := diagEngine.GetCardInfo()
     cardType := cardInfo.CardType
 
     spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
-    cli.Printf("d", "MVL_ID_REG = 0x%x", data)
+    spi.MvlRegRead(MVL_ID_REG, &data1, 0x10)
+    cli.Printf("d", "1st MVL_ID_REG = 0x%x", data)
+    cli.Printf("d", "2nd MVL_ID_REG = 0x%x", data1)
     if (data >> 4) != MVL_ID {
-        dcli.Printf("e", "Marvell Chip ID Failed.  Read 0x%x  Expect 0x%x  Mask=0xFFF0", data, (MVL_ID<<4) )
+        cli.Printf("d", "Marvell Chip ID first read Failed.  Read 0x%x  Expect 0x%x  Mask=0xFFF0", data, (MVL_ID<<4) )
+    }
+    if (data1 >> 4) != MVL_ID {
+        dcli.Printf("e", "Marvell Chip ID Failed.  Read 0x%x  Expect 0x%x  Mask=0xFFF0", data1, (MVL_ID<<4) )
         rc = -1
     }
 
