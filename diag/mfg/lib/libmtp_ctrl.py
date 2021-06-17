@@ -2710,6 +2710,16 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_killall_tclsh_picocom(self):
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+        return True
 
     def mtp_mgmt_start_nic_diag(self, slot, aapl):
         if aapl:
@@ -3117,6 +3127,8 @@ class mtp_ctrl():
                 return False
 
         self.mtp_nic_info_disp(fru_valid)
+
+        self.mtp_mgmt_killall_tclsh_picocom()
 
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
         return True
