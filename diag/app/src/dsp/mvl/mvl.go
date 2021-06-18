@@ -36,6 +36,8 @@ func Mvl_AccHdl(argList []string) {
     cardInfo := diagEngine.GetCardInfo()
     cardType := cardInfo.CardType
 
+    // FIXME: after mgmt port init, the very first read will get junk value. 
+    // adding a second read for a work around. Need to remove this after root cause
     spi.MvlRegRead(MVL_ID_REG, &data, 0x10)
     spi.MvlRegRead(MVL_ID_REG, &data1, 0x10)
     cli.Printf("d", "1st MVL_ID_REG = 0x%x", data)
