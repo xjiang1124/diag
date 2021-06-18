@@ -1292,7 +1292,8 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
   
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
-       
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
         return True
@@ -1312,6 +1313,8 @@ class nic_ctrl():
         gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
         return True
@@ -1325,6 +1328,8 @@ class nic_ctrl():
         gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
         return True
@@ -1408,6 +1413,8 @@ class nic_ctrl():
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
         return True
@@ -1426,6 +1433,8 @@ class nic_ctrl():
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
         return True
@@ -1441,6 +1450,8 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
         return True

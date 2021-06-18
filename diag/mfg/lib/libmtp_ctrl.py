@@ -2532,6 +2532,7 @@ class mtp_ctrl():
     def mtp_program_nic_qspi(self, slot, qspi_img):
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
+            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
             return False
         return True
         
@@ -2545,6 +2546,7 @@ class mtp_ctrl():
     def mtp_program_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
+            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
             return False
 
         if not self.mtp_mgmt_set_nic_gold_boot(slot):
@@ -2609,6 +2611,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
             return False
 
         return True
@@ -2616,6 +2619,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc_ibm(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc_ibm(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
             return False
 
         if not self.mtp_mgmt_set_nic_sw_boot(slot):
@@ -2626,6 +2630,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc_naples100(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc_naples100(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
             return False
         return True
 
@@ -3954,7 +3959,7 @@ class mtp_ctrl():
                 # try again one more time
                 time.sleep(1)
                 if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
-                    self.cli_log_slot_err(self._nic_ctrl_list[slot].nic_get_cmd_buf())
+                    self.cli_log_slot_err(slot, self._nic_ctrl_list[slot].nic_get_cmd_buf())
                     continue
 
     def mtp_run_diag_test_para_lock(self):

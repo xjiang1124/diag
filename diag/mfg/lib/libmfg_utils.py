@@ -794,6 +794,9 @@ def fail_all_slots(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
 def post_fail_steps(mtp_mgmt_ctrl, slot):
+    # first, exit out of nic ssh if pexpect handle is there
+    mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds(list(), timeout=1)
+
     mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
     mtp_mgmt_ctrl.mtp_mgmt_check_cpld_debug_bits(slot)
     mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
