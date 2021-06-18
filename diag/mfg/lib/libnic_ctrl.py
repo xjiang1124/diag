@@ -1910,7 +1910,7 @@ class nic_ctrl():
             # secondary SN
             match = None
             if self._vendor == NIC_Vendor.HPE:
-                if self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES100HPE:
+                if self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(ALOM_SN_FMT, fru_buf)
                 else:    
                     match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())
