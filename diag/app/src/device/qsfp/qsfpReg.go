@@ -17,7 +17,25 @@ const (
 const (
     ID_QSFP_P byte = 0xD
     ID_QSFP28 byte = 0x11
+
+    QSFP_VENDOR_NAME_START byte = 148
+    QSFP_VENDOR_NAME_END   byte = 163
+
+    QSFP_PART_NUM_START    byte = 168
+    QSFP_PART_NUM_END      byte = 183
+
+    QSFP_CC_BASE_START     byte = 128
+    QSFP_CC_BASE           byte = 191
+
+    QSFP_SREIAL_NUM_START  byte = 196
+    QSFP_SREIAL_NUM_END    byte = 211
+
+    QSFP_DATE_CODE_START   byte = 212
+    QSFP_DATE_CODE_END     byte = 219
+
+    QSFP_CC_EXT_BASE       byte = 223
 )
+
 
 var lowerPage = []qsfpPage_t {
     qsfpPage_t {"ID",       0,   1,},

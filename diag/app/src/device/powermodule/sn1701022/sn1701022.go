@@ -294,7 +294,7 @@ func DispStatus(devName string) (err int) {
 }
 */
 
-    func DispStatus(devName string) (err int) {
+func DispStatus(devName string) (err int) {
     vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"

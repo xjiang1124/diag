@@ -11,6 +11,7 @@ import "C"
 import (
     //"bufio"
     //"errors"
+    "device/fpga/taorfpga"
     "fmt"
     "os"
     "strconv"
@@ -19,7 +20,10 @@ import (
     "unsafe"
 
     "common/cli"
-    "device/fpga/taorfpga"
+    "common/errType"
+    "device/sfp"
+    "device/qsfp"
+    
 )
 
 
@@ -60,7 +64,7 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil i2c debug enable/disable\n" +
         " \n" +
         "fpgautil flash devid\n" +
-        "fpgautil flash program/verify/generateimage <gold/main/allflash> <filename>\n" +
+        "fpgautil flash program/verify/generateimage <primary/secondary/allflash> <filename>\n" +
         "fpgautil flash r8/r32/r64 <addr> <length>\n" +
         "fpgautil flash w32/w64 <addr> <data>\n" +
         "fpgautil flash sectorerase <addr>\n" +
@@ -153,6 +157,55 @@ func main() {
         }
         cli.Printf("i", "memory bar = 0x%x", bar)
         return
+    } else if os.Args[1] == "sfp" {  //fpgautil sfp dump bus mux
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        if os.Args[2] == "dump" {
+            id, _ := sfp.ReadId(os.Args[3])
+            fmt.Printf("\n ID=%x\n", id)
+            {
+                //var erri int
+                //rdData1 := make([]byte, 128)
+                rdData1, erri := sfp.ReadEepromAll(os.Args[3]) 
+                if erri != errType.SUCCESS {
+                    fmt.Printf(" ERROR: Read SFP Threw an error\n")
+                }
+                for i:=0; i<len(rdData1); i++ {
+                    if i % 16 == 0 { fmt.Printf("\n %.02x:", i) }
+                    fmt.Printf(" %.02x", rdData1[i])
+                }
+                fmt.Printf("\n")
+                sfp.VerifyCheckSums(os.Args[3])
+                sfp.PrintSFPvendorData(os.Args[3])
+            }
+        }
+    } else if os.Args[1] == "qsfp" {  //fpgautil sfp dump bus mux
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        if os.Args[2] == "dump" {
+            id, _ := sfp.ReadId(os.Args[3])
+            fmt.Printf("\n ID=%x\n", id)
+            {
+                //var erri int
+                //rdData1 := make([]byte, 128)
+                rdData1, erri := qsfp.ReadEepromAll(os.Args[3]) 
+                if erri != errType.SUCCESS {
+                    fmt.Printf(" ERROR: Read SFP Threw an error\n")
+                }
+                for i:=0; i<len(rdData1); i++ {
+                    if i % 16 == 0 { fmt.Printf("\n %.02x:", i) }
+                    fmt.Printf(" %.02x", rdData1[i])
+                }
+                fmt.Printf("\n")
+                qsfp.VerifyCheckSums(os.Args[3])
+                qsfp.PrintQSFPvendorData(os.Args[3])
+            }
+        }
+
     } else if os.Args[1] == "regdump" {
         fpga_region, err := strconv.ParseUint(os.Args[2], 0, 32)
         if err != nil {
@@ -301,6 +354,13 @@ func main() {
         } else if os.Args[2] == "we" {
             taorfpga.FlashWriteEnable()
             taorfpga.FlashCheckWriteEnable()
+        } else if os.Args[2] == "readsr" {
+            rd32, _  := taorfpga.FlashReadStatusReg()
+            fmt.Printf(" SR=%.02x\n", rd32 & 0xFF)
+        } else if os.Args[2] == "writesr" {
+            wr32, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            taorfpga.FlashWriteStatusReg(uint32(wr32))
+            fmt.Printf("WROTE %.02x to SR\n", wr32 & 0xFF)
         } else if os.Args[2] == "verify" || os.Args[2] == "generateimage" || os.Args[2] == "program"  {
             //"fpgautil flash program/verify/generateimage <gold/main/allflash> <filename>\n" +
             if argc < 5 {
@@ -369,6 +429,14 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
+            //Disable software WP in the status register
+            if addr < 0x800000 {
+                err = taorfpga.FlashWriteStatusReg(0x00)   //Clear the software lock 
+                if err != nil {
+                    return
+                }
+                time.Sleep(time.Duration(50) * time.Millisecond)  
+            } 
             taorfpga.FlashEraseSector(uint32(addr)) 
             fmt.Printf(" Erased Sector associated with Addr 0x%x\n", uint32(addr))
         } else if os.Args[2] == "w32" {

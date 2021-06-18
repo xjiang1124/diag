@@ -95,6 +95,10 @@ func init () {
                 os.Setenv("CARD_TYPE","TAORMINA")
                 cardType = "TAORMINA"
             }
+            if strings.Contains(string(out), "ServiceOS")==true {
+                os.Setenv("CARD_TYPE","TAORMINA")
+                cardType = "TAORMINA"
+            }
         }
     }
     if cardType == "TAORMINA" {

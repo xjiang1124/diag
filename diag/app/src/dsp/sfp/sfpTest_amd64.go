@@ -1,3 +1,11 @@
+//AMD64 BUILD.  DO NOT MESS WITH THE LINE BELOW
+
+
+// +build amd64
+
+//CODE AND COMMENTS BELOW THIS
+
+
 package main
 
 import (
@@ -16,7 +24,7 @@ import (
 /*
     Read Device ID and compare with expected one
  */
-func testSfp(devName string) (err int) {
+func testSfp(devName string) (sn string, err int) {
     devID, err := sfp.ReadId(devName)
 
     if err != errType.SUCCESS {
@@ -28,13 +36,27 @@ func testSfp(devName string) (err int) {
 
     if devID != sfp.ID_SFPP {
         dcli.Println("f", devName, " Invalid Device ID: expected", sfp.ID_SFPP, "read", devID)
-        return errType.FAIL
+        err = errType.FAIL
+        return 
     }
+    err = sfp.VerifyCheckSums(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    _, _, sn, _, err = sfp.PrintSFPvendorData(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    
     return
 }
 
 func SfpI2CHdl(argList []string) {
+    var data uint32
     var ret int
+    sfpSNmap := make(map[string]byte)
+
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
 
     errFs := fs.Parse(argList)
@@ -42,30 +64,59 @@ func SfpI2CHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
+    // Check for SFP Present
+    for _, sfpInfo := range hwinfo.SfpTbl {
+        regAddr := sfpInfo.PrstReg
+        bitPos := sfpInfo.PrstBit
+        data, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, uint64(regAddr))  //return value uses golang err (not diag err)
+        prstSts := data & (1<<byte(bitPos))
+        //dcli.Printf("i", "regAddr=0x%x  bitPos=%d  data=0x%x   BIT=%d\n", regAddr, bitPos, data, prstSts)
+        if prstSts != 0 {
+            dcli.Println("e", sfpInfo.DevName, "SFP Not Present!")
+            ret = errType.SFP_NOT_PRESENT
+        }
+    }
+    
+    if ret != 0 {
+        goto ReturnI2Chdl
+    }
 
-    for _, devName := range(sfpTestList) {
+    //for _, devName := range(sfpTestList) {
+    for _, sfpInfo := range hwinfo.SfpTbl {
+        var sn string
+        devName := sfpInfo.DevName
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
         if err != errType.SUCCESS {
              ret =  err
              break
         }
-        dcli.Println("i", "Starting testing", devName)
+        dcli.Println("i", "Starting test on", devName)
 
         switch i2cInfo.Comp {
         case "SFP":
-            err = testSfp(devName)
+            sn, err = testSfp(devName)
             if err != errType.SUCCESS {
                 ret = err
+                break
             }
+            _, exists := sfpSNmap[sn]
+            if exists == true {
+                dcli.Printf("f", "ERROR: DEV %s: SFP SN %s was read from another SFP.  Duplicate SN", devName, sn )
+                ret = errType.FAIL
+                break
+            }
+            sfpSNmap[sn] = 1
 
         default:
             dcli.Println("f", "Unsupported device:", devName, "Comp:", i2cInfo.Comp )
             ret = errType.INVALID_PARAM
+            break
         }
     }
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
+ReturnI2Chdl:
     diagEngine.FuncMsgChan <- ret
     
     return
@@ -93,7 +144,7 @@ func SfpLaserHdl(argList []string) {
         if prstSts == 0 {
             dcli.Println("i", sfpInfo.DevName, "Present")
         } else {
-            dcli.Println("i", sfpInfo.DevName, "Not Present!")
+            dcli.Println("e", sfpInfo.DevName, "SFP Not Present!")
             err = errType.SFP_NOT_PRESENT
         }
     }

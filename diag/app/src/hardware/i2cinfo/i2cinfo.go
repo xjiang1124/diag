@@ -344,6 +344,12 @@ var TaorTbl = []I2cInfo {
     I2cInfo {"SFP_46",         "SFP",       0xF,   0x50,    0x0,    "HUB_NONE",  1,    0},
     I2cInfo {"SFP_47",         "SFP",       0xF,   0x50,    0x0,    "HUB_NONE",  2,    0},
     I2cInfo {"SFP_48",         "SFP",       0xF,   0x50,    0x0,    "HUB_NONE",  3,    0},
+    I2cInfo {"QSFP_1",         "QSFP",       0x10,   0x50,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"QSFP_2",         "QSFP",       0x10,   0x50,    0x0,    "HUB_NONE",  1,    0},
+    I2cInfo {"QSFP_3",         "QSFP",       0x10,   0x50,    0x0,    "HUB_NONE",  2,    0},
+    I2cInfo {"QSFP_4",         "QSFP",       0x10,   0x50,    0x0,    "HUB_NONE",  3,    0},
+    I2cInfo {"QSFP_5",         "QSFP",       0x11,   0x50,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"QSFP_6",         "QSFP",       0x11,   0x50,    0x0,    "HUB_NONE",  1,    0},
 }
 
 

@@ -12,7 +12,7 @@ import (
     "common/errType"
 )
 
-const bcm_shell_get_temperature = 
+const bcm_shell_execute_cmd = 
 "#!/usr/bin/env python\n\n"+
 "from pyroute2 import netns\n"+
 "from telnetlib import Telnet\n"+
@@ -39,7 +39,7 @@ const bcm_shell_get_temperature =
 "\n"+
 "# Add commands in the list.\n"+
 "# Format : 'command  \n\n"+
-"commandList = ['show temp\\n']\n"+
+"commandList = []\n"+
 "\n"+
 "# For taking command line arguments\n"+
 "# Format : sudo python collect_bcm_l1_port_info.py command\n"+
@@ -73,16 +73,15 @@ const bcm_shell_get_temperature =
 
 
 
-
 func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) {
-
+    var cmdString string
     path, errE := os.Getwd()
     if errE != nil {
         fmt.Println(errE)
         err = errType.FAIL
         return
     }
-    path = path + "/show_temp.py"
+    path = path + "/bcm_shell_execute_cmd.py"
 
     f, errEE := os.Open(path)
     if errEE != nil {
@@ -93,13 +92,14 @@ func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) 
             err = errType.FAIL
             return
         }
-        f.WriteString(string(bcm_shell_get_temperature[:]))
+        f.WriteString(string(bcm_shell_execute_cmd[:]))
         f.Close()
 	os.Chmod(path, 0777)
     } else {
         f.Close()
     }
-    output, errGo := exec.Command("bash", "-c", path).Output()
+    cmdString = path + " \"show temp\""
+    output, errGo := exec.Command("bash", "-c", cmdString).Output()
     if errGo != nil {
         cli.Println("e", errGo)
         err = errType.FAIL
@@ -119,45 +119,6 @@ func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) 
         }
         
     }
-
-    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\"").Output()
-    if errGo != nil {
-        cli.Println("e", errGo)
-        err = errType.FAIL
-        return
-    }
-    cli.Println("i", string(output))
-    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
-    if errGo != nil {
-        cli.Println("e", errGo)
-        err = errType.FAIL
-        return
-    }
-    cli.Println("i", string(output))
-    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
-    if errGo != nil {
-        cli.Println("e", errGo)
-        err = errType.FAIL
-        return
-    }
-    cli.Println("i", string(output))
-    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
-    if errGo != nil {
-        cli.Println("e", errGo)
-        err = errType.FAIL
-        return
-    }
-    cli.Println("i", string(output))
-
-
-    output, errGo = exec.Command("bash", "-c", "/fs/nos/eeupdate/gb_phy_access.py \"phy raw c45 0x40 0x1e 0xb2e9\" ").Output()
-    if errGo != nil {
-        cli.Println("e", errGo)
-        err = errType.FAIL
-        return
-    }
-    cli.Println("i", string(output))
-
     return
 }
 

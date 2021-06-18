@@ -1,3 +1,11 @@
+//AMD64 BUILD.  DO NOT MESS WITH THE LINE BELOW
+
+
+// +build amd64
+
+//CODE AND COMMENTS BELOW THIS
+
+
 package main
 
 import (

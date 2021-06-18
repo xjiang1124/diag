@@ -17,6 +17,7 @@ const (
 )
 
 var naples100QsfpList = []string {"QSFP_1", "QSFP_2"}
+var taorminaQsfpList = []string {"QSFP_1", "QSFP_2", "QSFP_3", "QSFP_4", "QSFP_5", "QSFP_6"}
 var qsfpTestList []string
 
 //var qsfpTestMap map[string][]string
@@ -35,6 +36,7 @@ func init() {
     qsfpTestMap["ORTANO"] = naples100QsfpList
     qsfpTestMap["ORTANO2"] = naples100QsfpList
     qsfpTestMap["NAPLES100_IBM"] = naples100QsfpList
+    qsfpTestMap["TAORMINA"] = taorminaQsfpList
 
     qsfpTestList = qsfpTestMap[cardType]
 }

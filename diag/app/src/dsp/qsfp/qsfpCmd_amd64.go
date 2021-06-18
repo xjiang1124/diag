@@ -1,13 +1,14 @@
-//ARM64 BUILD.  DO NOT MESS WITH THE LINE BELOW
+//AMD64 BUILD.  DO NOT MESS WITH THE LINE BELOW
 
 
-// +build !amd64
+// +build amd64
 
 //CODE AND COMMENTS BELOW THIS
 
 package main
 
 import (
+    /*
     "flag"
 
     "common/dcli"
@@ -18,10 +19,12 @@ import (
     "device/qsfp"
 
     "hardware/i2cinfo"
-    "hardware/hwinfo"
+    "hardware/hwinfo" 
+    */ 
 )
 
 func qsfpLaserEnDis(mask int, enDis int) (err int) {
+    /*
     bitMask := 1
     for _, devName := range(qsfpTestList) {
         if bitMask & mask == 0 {
@@ -45,11 +48,13 @@ func qsfpLaserEnDis(mask int, enDis int) (err int) {
             dcli.Println("f", "Unsupported device:", devName, "Comp:", i2cInfo.Comp)
             err = errType.INVALID_PARAM
         }
-    }
+    } 
+    */ 
     return
 }
 
 func QsfpLaser_EnHdl(argList []string) {
+    /*
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0x3, "Devices instance index")
 
@@ -62,10 +67,12 @@ func QsfpLaser_EnHdl(argList []string) {
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- err
+    */
     return
 }
 
 func QsfpLaser_DisHdl(argList []string) {
+    /*
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     maskPtr := fs.Int("mask", 0x3, "Devices instance index")
 
@@ -78,10 +85,12 @@ func QsfpLaser_DisHdl(argList []string) {
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- err
+    */
     return
 }
 
 func QsfpPresentHdl(argList []string) {
+    /*
     var err int
     var regData uint32
     var data byte
@@ -111,5 +120,6 @@ func QsfpPresentHdl(argList []string) {
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- err
+    */
     return
 }

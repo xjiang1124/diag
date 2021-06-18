@@ -14,6 +14,10 @@ import (
     "time"
 )
 
+const GOLDFW = "primary"
+const MAINFW = "secondary"
+const ALLFLASH = "allflash"
+
 
 /*
  * Description of a single Erase region
@@ -76,13 +80,13 @@ func init () {
 
 func AddrDecipher(region string) (addr uint32, maxSize uint32, err error) {
 
-    if region == "gold" {
+    if region == GOLDFW {
         addr = 0x00
         maxSize = 0x800000
-    } else if region == "main" {
+    } else if region == MAINFW {
         addr = 0x800000
         maxSize = 0x800000
-    } else if region == "allflash" {
+    } else if region == ALLFLASH {
         addr = 0x00
         maxSize = 0x1000000
     } else {
@@ -212,9 +216,9 @@ func FlashWriteImage(region string, filename string) (err error) {
     scanner.Split(bufio.ScanBytes)
 
     if strings.Contains(filename, "rpd")==true || strings.Contains(filename, "RPD")==true {
-        fmt.Printf("RPD FILE:  BIT SWAP ENABLED\n")
+        fmt.Printf(" RPD FILE:  BIT SWAP ENABLED\n")
     } else {
-        fmt.Printf("BIN FILE:  BIT SWAP DISABLED\n")
+        fmt.Printf(" BIN FILE:  BIT SWAP DISABLED\n")
     }
 
     // Use For-loop.
@@ -236,6 +240,21 @@ func FlashWriteImage(region string, filename string) (err error) {
         fmt.Printf("%s", err)
         return
     }
+    if len(data) % 8 != 0 {
+        err = fmt.Errorf(" ERROR.  File Size must be a multiple of 8 (i.e. 8388608, 4194304, etc)\n")
+        fmt.Printf("%s", err)
+        return
+    }
+
+    //Disable software WP in the status register
+    if region == GOLDFW {
+        err = FlashWriteStatusReg(0x00)   //Clear the software lock 
+        if err != nil {
+            return
+        }
+        time.Sleep(time.Duration(50) * time.Millisecond)  
+    } 
+    
 
     fmt.Printf(" INFO: Flash Start Addr=0x%.06x\n", addr)
     fmt.Printf(" Erasing/Programming each Sector")
@@ -268,9 +287,20 @@ func FlashWriteImage(region string, filename string) (err error) {
         data64 = 0
         
     }
+
+
+
     fmt.Printf("\n")
     fmt.Printf(" Skipped writes = %d... bytes=0x%x\n", skipped_writes, (skipped_writes * 8))
-    //fmt.Printf("\n")
+
+    //if region == GOLDFW {
+    //    fmt.Printf(" Enabling software controlled flash write protect\n")
+    //    err = FlashWriteStatusReg(0x60)   //Lock bottom half, sectors[127:0].   bytes[7fffff:0]
+    //    if err != nil {
+    //        return
+    //    }
+    //} 
+     
     return
 }
 
@@ -453,6 +483,31 @@ func FlashReadStatusReg() (data32 uint32, err error) {
     time.Sleep(time.Duration(100) * time.Microsecond)  
 
     data32, err = TaorReadU32(1, D1_CFG_FLASH_RDATA0_REG)
+
+    return
+}
+
+func FlashWriteStatusReg(data32 uint32) (err error) {
+
+    FlashWriteEnable()
+    //err = FlashCheckWriteEnable() 
+    //if err != nil {
+    //    return
+    //}
+
+    err = TaorWriteU32(1, D1_CFG_FLASH_WDATA0_REG, (data32 & 0xFF)) 
+    err = TaorWriteU32(1, D1_CFG_FLASH_CMD_SET_REG, 0x00001001)  //Op Code 0x01, 0 ADDR BYTES[10:8]. WRITE 1 BYTE[12:15]
+    err = TaorWriteU32(1, D1_CFG_FLASH_CMD_CTRL_REG, 0x1)
+
+    if err = FlashPollCmdComplete(); err != nil {
+        return
+    }
+
+    sr_reg, rc := FlashPollBusyMicroSec(WRITE_SR_DEALY)
+    if rc != 0 {
+       err = fmt.Errorf("ERROR: FlashWriteStatusReg.  Timeout Waiting Write to complete.  Delay = %d.   Status Reg=%.02x\n", WRITE_SR_DEALY, sr_reg)
+       fmt.Printf("%s", err)
+    }
 
     return
 }

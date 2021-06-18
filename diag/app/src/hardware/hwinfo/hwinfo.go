@@ -234,10 +234,41 @@ var taorSfpTbl = []SfpInfo_t {
 }
 //ADD FIXME - NEED TO FILL IN
 // QSFP table
+
+
+/*
+type QsfpInfo_t struct {
+    DevName    string
+    ModRstReg  int
+    ModRstBit  int
+    LpReg      int
+    LpBit      int
+    PrstReg    int
+    PrstBit    int
+    IntrReg    int
+    IntrBit    int
+    PrstIntReg int
+    PrstIntBit int
+    RmIntReg   int
+    RmIntBit   int
+}
+*/
+
+var QSFP_STAT_REG0 int = int(taorfpga.D0_FP_QSFP_STAT_51_48_REG) 
+var QSFP_STAT_REG1 int = int(taorfpga.D0_FP_QSFP_STAT_55_52_REG)
+
+var QSFP_CTRL_REG0 int = int(taorfpga.D0_FP_QSFP_CTRL_51_48_REG) 
+var QSFP_CTRL_REG1 int = int(taorfpga.D0_FP_QSFP_CTRL_55_52_REG)
+
+
 var taorQsfpTbl = []QsfpInfo_t {
-    //          devName   modRstReg modRstBit lpReg lpBit prstReg prstBit intrReg intrBit prstIntReg prstIntBit rmIntReg rmIntBit
-    QsfpInfo_t {"QSFP_1", 0x2,      0,        0x2,  2,    0x2,    4,      0x2,    6,      0x3,       0,         0x3,     2},
-    QsfpInfo_t {"QSFP_2", 0x2,      1,        0x2,  3,    0x2,    5,      0x2,    7,      0x3,       1,         0x3,     3},
+    //          devName      modRstReg   modRstBit         lpReg      lpBit    prstReg         prstBit       intrReg      intrBit prstIntReg prstIntBit rmIntReg rmIntBit
+    QsfpInfo_t {"QSFP_1", QSFP_CTRL_REG0,      0,        QSFP_CTRL_REG0,  1,    QSFP_STAT_REG0,    0,      QSFP_STAT_REG0,    1,      0x3,       0,         0x3,     2},
+    QsfpInfo_t {"QSFP_2", QSFP_CTRL_REG0,      8,        QSFP_CTRL_REG0,  9,    QSFP_STAT_REG0,    8,      QSFP_STAT_REG0,    9,      0x3,       1,         0x3,     3},
+    QsfpInfo_t {"QSFP_3", QSFP_CTRL_REG0,      16,       QSFP_CTRL_REG0,  17,   QSFP_STAT_REG0,   16,      QSFP_STAT_REG0,    17,     0x3,       0,         0x3,     2},
+    QsfpInfo_t {"QSFP_4", QSFP_CTRL_REG0,      24,       QSFP_CTRL_REG0,  25,   QSFP_STAT_REG0,   24,      QSFP_STAT_REG0,    25,     0x3,       1,         0x3,     3},
+    QsfpInfo_t {"QSFP_5", QSFP_CTRL_REG1,      0,        QSFP_CTRL_REG1,  1,    QSFP_STAT_REG0,    0,      QSFP_STAT_REG0,    1,      0x3,       0,         0x3,     2},
+    QsfpInfo_t {"QSFP_6", QSFP_CTRL_REG1,      8,        QSFP_CTRL_REG1,  9,    QSFP_STAT_REG0,    8,      QSFP_STAT_REG0,    9,      0x3,       1,         0x3,     3},
 }
 
 //===============================
