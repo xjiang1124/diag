@@ -5,7 +5,6 @@ proc test_proc {input} {
     return $input
 }
 
-
 set sn       [lindex $argv 0]
 set slot     [lindex $argv 1]
 set mode     [lindex $argv 2]
@@ -33,19 +32,6 @@ set G_USE_ZMQ $use_zmq
 set G_ZMQ_CONN $zmq_conn
 set G_SLOT $slot
 
-set uut "UUT_$slot"
-set card_type $::env($uut)
-if { $card_type == "NAPLES25"    ||
-     $card_type == "NAPLES25SWM" ||
-     $card_type == "NAPLES25SWMDELL" ||
-     $card_type == "NAPLES25OCP" ||
-     $card_type == "NAPLES25WFG"} {
-    set core_freq 417.0
-} else {
-    set core_freq 833.0
-}
-
-puts "card type: $card_type; UUT: $uut"
 puts "sn: $sn; slot: $slot"
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -60,10 +46,25 @@ if {$MTP_TYPE == "MTP_ELBA"} {
     } else {
         set l1_cmd "elb_l1_screen_diag $sn 0x3031 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
     }
-    source .tclrc.diag.elb.new
+    source .tclrc.diag.elb.taor.nointv
 
 } else {
     puts "Capri MTP"
+
+    set uut "UUT_$slot"
+    set card_type $::env($uut)
+    puts "card type: $card_type; UUT: $uut"
+
+    if { $card_type == "NAPLES25"    ||
+         $card_type == "NAPLES25SWM" ||
+         $card_type == "NAPLES25SWMDELL" ||
+         $card_type == "NAPLES25OCP" ||
+         $card_type == "NAPLES25WFG"} {
+        set core_freq 417.0
+    } else {
+        set core_freq 833.0
+    }
+
     set l1_cmd "cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn"
     source .tclrc.diag.new
 }

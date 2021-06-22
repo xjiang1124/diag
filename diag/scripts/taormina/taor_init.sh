@@ -2,9 +2,11 @@
 
 export DIAG_HOME=/home/diag/
 export DIAG_DIR=$DIAG_HOME/diag
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIAG_HOME/diag/asic/depend_libs/tool/lib64:$DIAG_HOME/diag/asic/depend_libs/mtp_hack:$DIAG_HOME/diag/asic/asic_lib:$DIAG_HOME/diag/asic/depend_libs/usr/local/lib:$DIAG_HOME/diag
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIAG_HOME/diag/asic/depend_libs/tool/lib64:$DIAG_HOME/diag/asic/depend_libs/mtp_hack:$DIAG_HOME/diag/asic/asic_lib:$DIAG_HOME/diag/asic/depend_libs/usr/local/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIAG_HOME/diag/asic/lib/tcl8.6
-export PATH=$PATH:$DIAG_HOME/diag/asic/lib/
+export PYTHONPATH=$DIAG_HOME/python_files
+export PATH=$PATH:$DIAG_HOME/diag/asic/lib:$DIAG_HOME/diag:$DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh
+export PATH=$PATH:$DIAG_DIR/asic/lib/tcl8.6
 
 export ASIC_LIB_BUNDLE=$DIAG_HOME/diag/asic
 export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src
