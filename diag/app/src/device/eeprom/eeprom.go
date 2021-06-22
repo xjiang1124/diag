@@ -993,6 +993,7 @@ var HpeNaples uint
 var HpeSwm uint
 var HpeAlom bool
 var HpeOcp uint
+var HpeLacona uint
 var DellOcp uint
 var Erase bool
 var I2cAddr16 bool
@@ -1016,6 +1017,25 @@ func init () {
 
     MatchSearchBIA = make([]byte, 512)
     MatchSearchEEread = 0
+}
+
+func HasAssemblyEntry() (hasAssembly bool) {
+    hasAssembly = false
+
+    if CustType == "IBM" || 
+       CustType == "ORACLE" || 
+       CustType == "ORTANO" || 
+       CustType == "PENORTANO" || 
+       CustType == "DELLSWM" || 
+       CustType == "DELLOCP" || 
+       CustType == "PENSWM" || 
+       CustType == "LACONADELL" || 
+       CustType == "LACONA" {
+
+        hasAssembly = true
+
+    }
+    return
 }
 
 func writeField(devName string, offset int, numBytes int, data []byte) (err int) {
@@ -1174,7 +1194,7 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
     //Extended Table gets handled here
     //Default Extended Table is SWM card.  
     //Sub in fields for other products below and handle checksum for all extended table
-    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1 {
         for _, entry := range(EepromExtTbl) {
             if entry.Name == "Product info Area Checksum" || entry.Name == "HPE Multi-Record Area Checksum" {
                 updateIntChk()
@@ -1227,14 +1247,30 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
         }
     } else {
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "PENORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" && CustType != "LACONADELL" {
+            if CustType != "IBM" && 
+               CustType != "ORACLE" && 
+               CustType != "ORTANO" && 
+               CustType != "PENORTANO" && 
+               CustType != "DELLSWM" && 
+               CustType != "DELLOCP" && 
+               CustType != "PENSWM" && 
+               CustType != "LACONADELL" && 
+               CustType != "LACONA" {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
             }
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" || CustType == "LACONADELL"{
+            if CustType == "IBM" || 
+               CustType == "ORACLE" || 
+               CustType == "ORTANO" || 
+               CustType == "PENORTANO" || 
+               CustType == "DELLSWM" || 
+               CustType == "DELLOCP" || 
+               CustType == "PENSWM" || 
+               CustType == "LACONADELL" || 
+               CustType == "LACONA" {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1255,7 +1291,7 @@ func UpdateMac(devName string, bus uint32, devAddr byte, mac []byte) (err int) {
             } 
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "MAC Address Base" {
                     copy(entry.Value, mac)
@@ -1309,7 +1345,7 @@ func updateIntChk() () {
             }
         }
     }
-    if ((HpeSwm == 1) || (HpeOcp == 1) || (CustType == "PENSWM")) {
+    if ((HpeSwm == 1) || (HpeOcp == 1) || (CustType == "PENSWM") || (HpeLacona == 1)) {
         brdInfoChk = 0
         productInfoChk = 0;
         cmnHeadChk = 0
@@ -1639,16 +1675,15 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             }
         }
     } else {
+        hasAssembly := HasAssemblyEntry()
         for _, entry := range(EepromTbl) {
-            if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "PENORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" && CustType != "LACONADELL" {
+            if hasAssembly == false {
                 if entry.Name == "Part Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
                     continue
                 }
-            }
-
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" || CustType == "LACONADELL" {
+            } else {
                 if entry.Name == "Assembly Number" {
                     pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                     copy(entry.Value, pn)
@@ -1681,7 +1716,7 @@ func UpdateSn(devName string, bus uint32, devAddr byte, sn []byte) (err int) {
             } 
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "HPE Serial Number" {
                     copy(entry.Value, sn)
@@ -1757,13 +1792,14 @@ func UpdatePn(devName string, bus uint32, devAddr byte, pn []byte) (err int) {
             }
         }
 
-        if ( CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" || CustType == "LACONADELL") {
+        hasAssembly := HasAssemblyEntry()
+        if hasAssembly == true {
             copy(an_ptr, pn)
         } else {
             copy(pn_ptr, pn)
         }
 
-        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+        if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1 {
             for _, entry := range(EepromExtTbl) {
                 if entry.Name == "MAC Address Base" {
                     mac, _ := readField(devName, entry.Offset, entry.NumBytes)
@@ -1808,17 +1844,16 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
     }
 
     data := make([]byte, 3)
+    hasAssembly := HasAssemblyEntry()
     for _, entry := range(EepromTbl) {
 
-        if CustType != "IBM" && CustType != "ORACLE" && CustType != "ORTANO" && CustType != "PENORTANO" && CustType != "DELLSWM" && CustType != "DELLOCP" && CustType != "PENSWM" && CustType != "LACONADELL" {
+        if hasAssembly == false {
             if entry.Name == "Part Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
                 continue
             }
-        }
-
-        if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" || CustType == "LACONADELL" {
+        }else {
             if entry.Name == "Assembly Number" {
                 pn, _ := readField(devName, entry.Offset, entry.NumBytes)
                 copy(entry.Value, pn)
@@ -1848,7 +1883,7 @@ func UpdateDate(devName string, bus uint32, devAddr byte, str string) (err int) 
         } 
     }
 
-    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 {
+    if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1 {
     for _, entry := range(EepromExtTbl) {
             if entry.Name == "Manufacture Date/Time" {
                 copy(entry.Value, data)
@@ -1931,7 +1966,8 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 continue
             }
         } else if(field == "PN") {
-            if CustType == "IBM" || CustType == "ORACLE" || CustType == "ORTANO" || CustType == "PENORTANO" || CustType == "DELLSWM" || CustType == "DELLOCP" || CustType == "PENSWM" || CustType == "LACONADELL" {
+            hasAssembly := HasAssemblyEntry()
+            if hasAssembly == true {
                 if entry.Name != "Assembly Number" {
                     continue
                 }
@@ -1983,7 +2019,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
         cli.Println("i", outStr)
     }
 
-    if (HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1) {
+    if (HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1) {
         fmt.Println()
         for _, entry := range(EepromExtTbl) {
             if ((HpeNaples != 1) && (field != "ALL")) {

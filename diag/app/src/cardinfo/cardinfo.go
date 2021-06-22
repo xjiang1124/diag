@@ -9,6 +9,8 @@ var Cardinfo = map[string]map[string]string{
         "ASIC": "ELBA"},
     "LACONADELL": map[string]string{
         "ASIC": "ELBA"},
+    "PIONEER": map[string]string{
+        "ASIC": "ELBA"},
 }
 
 func GetAsicType(cardType string) (err int, asicType string) {

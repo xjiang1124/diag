@@ -7,4 +7,6 @@ cardinfo:
         ASIC: ELBA
     LACONA:
         ASIC: ELBA
+    PIONEER:
+        ASIC: ELBA
 
