@@ -518,7 +518,7 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = OrtanoMtpTbl
     } else if uutType == "ORTANO2" {
         CurI2cTbl = Ortano2MtpTbl
-    } else if uutType == "LACONADELL" || uutType == "LACONA" {
+    } else if uutType == "LACONADELL" {
         CurI2cTbl = LaconaDellMtpTbl
     } else if uutType == "LACONA" {
         CurI2cTbl = LaconaMtpTbl

@@ -121,6 +121,8 @@ func present() (err int) {
                 presentStr = "ORTANO2"
             case nicCpldCommon.ID_LACONA_DELL:
                 presentStr = "LACONADELL"
+            case nicCpldCommon.ID_LACONA:
+                presentStr = "LACONA"
             case nicCpldCommon.ID_NAPLES100HPE:
                 presentStr = "NAPLES100HPE"
             case nicCpldCommon.ID_NAPLES25SWM_DELL:
@@ -291,6 +293,8 @@ func sysDetect() (err int) {
                 presentStr = "NAPLES_MTP"
             case nicCpldCommon.ID_LACONA_DELL:
                 presentStr = "LACONADELL"
+            case nicCpldCommon.ID_LACONA:
+                presentStr = "LACONA"
             default:
                 presentStr = "Unknown"
             }
