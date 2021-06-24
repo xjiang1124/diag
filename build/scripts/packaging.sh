@@ -117,6 +117,8 @@ do
         cp $TOP_DIR/diag/python/regression/update_mac.py    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/clear_nic_config.sh        $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh              $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_acc.sh                 $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_stub.sh                $NIC_UTIL_DIR
         cp $TEMP_DIR/scripts/version.txt                    $NIC_UTIL_DIR
     
         cp $TOP_DIR/diag/scripts/sw/*                       $NIC_UTIL_DIR/sw/
