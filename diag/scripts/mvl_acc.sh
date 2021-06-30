@@ -37,12 +37,12 @@ do
     fi
 done
 
-for cnt in {1..7}
+for cnt in {0..6}
 do
     ./xo3dcpld -mdiowr 0x0F $((cnt+0x10))  $p0
 done
 
-for cnt in {1..7}
+for cnt in {0..6}
 do
     p3=$(./xo3dcpld -mdiord 0x0F $((cnt+0x10)))
     if [[ $p0 != $((p3)) ]]; then
@@ -52,7 +52,7 @@ do
     fi
 done
 
-for cnt in {1..7}
+for cnt in {0..6}
 do
     ./xo3dcpld -mdiowr 0x0F $((cnt+0x10)) 0x9100
 done
