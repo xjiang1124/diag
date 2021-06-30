@@ -1,11 +1,11 @@
 #!/bin/bash
 
 ./xo3dcpld -mdiowr 0x16 0x3 0x06
-sleep(1)
+sleep 1
 ./xo3dcpld -mdiowr 0x12 0x3 0x18
-sleep(1)
+sleep 1
 ./xo3dcpld -mdiowr 0x10 0x3 0x18
-sleep(1)
+sleep 1
 
 p0=$(./xo3dcpld -mdiord 0x11 0x3)
 echo $p0 
