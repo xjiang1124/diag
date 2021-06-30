@@ -474,6 +474,9 @@ class MFG_DIAG_CMDS:
     NIC_SW_MODE_SWITCH_FMT = "device_conf_gen.sh switch"
     NIC_SW_DEVICE_CHK_FMT = "pdsctl show device"
 
+    NIC_MVL_ACC_FMT = "{:s}mvl_acc.sh"
+    NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh"
+
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
     MTP_DSP_START_OK_SIG = "Test Done: MTP1:DIAGMGR:DSP_START"

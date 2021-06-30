@@ -3002,3 +3002,71 @@ class nic_ctrl():
 
         return True
 
+    def nic_mvl_acc_test(self):
+        if self._nic_type != NIC_Type.ORTANO2:
+            return False
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_ACC_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_err_msg(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_console_detach()
+            return False
+        match = re.findall(r"MVL ACC TEST PASSED", cmd_buf)
+        if len(match) > 1:
+            self.nic_console_detach()
+            return True
+        else:
+            self.nic_console_detach()
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+    def nic_mvl_stub_test(self):
+        if self._nic_type != NIC_Type.ORTANO2:
+            return False
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_err_msg(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_console_detach()
+            return False
+        match = re.findall(r"MVL STUB TEST PASSED", cmd_buf)
+        if len(match) > 1:
+            self.nic_console_detach()
+            return True
+        else:
+            self.nic_console_detach()
+            self.nic_set_err_msg(cmd_buf)
+            return False
+

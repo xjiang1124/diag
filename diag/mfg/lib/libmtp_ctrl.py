@@ -4201,3 +4201,24 @@ class mtp_ctrl():
 
         for line in config_lines:
             file_p.write(line + "\n")
+
+    def mtp_nic_mvl_acc_test(self, slot):
+        retval = ""
+        err_msg_list = list()
+        if self._nic_ctrl_list[slot].nic_mvl_acc_test():
+            retval = "SUCCESS"
+        else:
+            retval = "FAILURE"
+        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        return retval, err_msg_list
+
+    def mtp_nic_mvl_stub_test(self, slot):
+        retval = ""
+        err_msg_list = list()
+        if self._nic_ctrl_list[slot].nic_mvl_stub_test():
+            retval = "SUCCESS"
+        else:
+            retval = "FAILURE"
+        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        return retval, err_msg_list
+
