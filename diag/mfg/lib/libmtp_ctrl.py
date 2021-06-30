@@ -3141,12 +3141,12 @@ class mtp_ctrl():
 
     def mtp_single_nic_emmc_reformat(self, slot, nic_rslt_list, emmc_format=True):
         if not self.mtp_nic_emmc_init(slot, emmc_format):
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
+            self.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
             nic_rslt_list[slot] = False
             return
 
         if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to copy diag")
+            self.cli_log_slot_err(slot, "Failed to copy diag")
             nic_rslt_list[slot] = False
             return
 
