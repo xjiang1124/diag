@@ -106,7 +106,7 @@ proc set_avs { {board_id SN000001} {j2c_slot 1} {arm_vdd vdd} {core_freq 833} {a
     return $err_cnt
 }
 
-proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 833} {arm_freq 2000} {use_zmq 0} {zmq_conn ""} } {
+proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2000} {use_zmq 0} {zmq_conn ""} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
     global G_SLOT 0
@@ -132,7 +132,17 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 833} {arm_freq 20
     }
 
     set in_err [plog_get_err_count]
-    elb_card_rst $j2c_port $j2c_slot nod 3200 1600 0 0 "127.0.0.1" 1 1 normal 0 0
+    set mode hod
+    if { $core_freq == 1100 } {
+        set mode hod_1100
+    } elseif { $core_freq == 833 } {
+        set mode nod
+    } elseif { $core_freq == 550 } {
+        set mode nod_550
+    } elseif { $core_freq == 525 } {
+        set mode nod 525
+    }
+    elb_card_rst $j2c_port $j2c_slot $mode 3200 1600 0 0 "127.0.0.1" 1 1 normal 0 0
 
     elb_set_avs $core_freq $arm_freq 
 
