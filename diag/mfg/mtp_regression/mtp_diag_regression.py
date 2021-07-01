@@ -359,9 +359,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             if dsp == "MVL" and test == "STUB":
                 mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
 
-            # check HAL is not running
-            mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd("ps -elf | grep hal")
-
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if dsp == "MVL" and test == "ACC":

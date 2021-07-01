@@ -438,6 +438,7 @@ class MFG_DIAG_CMDS:
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
     NIC_DIAG_FINI_FMT = "rm -r /data/debug*"
+    NIC_DIAG_CHECK_HAL_FMT = "ps -elf | grep hal"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
     NIC_DIAG_STOP_PICOCOM_FMT = "killall picocom"
@@ -518,6 +519,8 @@ class MFG_DIAG_SIG:
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
     NIC_SW_DEVICE_CHK_SIG1 = "Device Profile *: bitw-smart-switch"
     NIC_SW_DEVICE_CHK_SIG2 = "Operational Mode *: bitw-smart-switch"
+    NIC_MVL_ACC_SIG = "MVL ACC TEST PASSED"
+    NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

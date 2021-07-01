@@ -3011,6 +3011,8 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
@@ -3027,8 +3029,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_console_detach()
             return False
-        match = re.findall(r"MVL ACC TEST PASSED", cmd_buf)
-        if len(match) > 1:
+        if MFG_DIAG_SIG.NIC_MVL_ACC_SIG in cmd_buf:
             self.nic_console_detach()
             return True
         else:
@@ -3045,6 +3046,8 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
@@ -3061,8 +3064,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_console_detach()
             return False
-        match = re.findall(r"MVL STUB TEST PASSED", cmd_buf)
-        if len(match) > 1:
+        if MFG_DIAG_SIG.NIC_MVL_STUB_SIG in cmd_buf:
             self.nic_console_detach()
             return True
         else:
