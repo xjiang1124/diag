@@ -942,11 +942,13 @@ def main():
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
 
     # Readjust the voltage corners
-    # capri = HTHV, HTLV, LTHV, LTLV (old way)
+    # capri = HTLV, LTHV
     # elba  = HTLV, HTHV, LTHV, LTLV
     if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
-        if corner == Env_Cond.MFG_LT or corner == Env_Cond.MFG_HT:
-            vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        if corner == Env_Cond.MFG_LT:
+            vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT]
+        elif corner == Env_Cond.MFG_HT:
+            vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT]
 
     # Wait the Chamber temperature, if HT or LT is set
     mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)

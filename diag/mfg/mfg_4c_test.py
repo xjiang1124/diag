@@ -55,20 +55,20 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("MFG 4C Test Start @{:s}".format(stage), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    if stage == FF_Stage.FF_4C_H:
+    if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_2C_H:
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
     else:
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG 4C Test Complete @{:s}".format(stage), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect 4C Test result failed", level=0)
+        mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
         return
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
@@ -78,9 +78,10 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MFG 4C Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="MFG 4C/2C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
+    parser.add_argument("--two-corner", "--2C", "-2C", "-2corner", help="limit to 2-Corner test", action='store_true', default=False)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
@@ -119,11 +120,17 @@ def main():
     if args.high_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
         libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE RISE TO {:d}".format(MTP_Const.MFG_EDVT_HIGH_TEMP), "STOP")
-        stage = FF_Stage.FF_4C_H
+        if args.two_corner:
+            stage = FF_Stage.FF_2C_H
+        else:
+            stage = FF_Stage.FF_4C_H
     elif args.low_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
         libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE DROP TO {:d}".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
-        stage = FF_Stage.FF_4C_L
+        if args.two_corner:
+            stage = FF_Stage.FF_2C_L
+        else:
+            stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit("Unknown 4C Corner... Abort")
 

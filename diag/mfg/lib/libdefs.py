@@ -34,6 +34,8 @@ class FLX_Factory:
 class FF_Stage:
     FF_DL = "DL"
     FF_P2C = "P2C"
+    FF_2C_H = "2C-H"
+    FF_2C_L = "2C-L"
     FF_4C_H = "4C-H"
     FF_4C_L = "4C-L"
     FF_SWI = "SWI"
@@ -45,6 +47,8 @@ class FPN_FF_Stage:
     FF_CFG = "CFG"
     FF_DL = "PSO-DOWNLOAD_AUTO"
     FF_P2C = "PSO-P2C_AUTO"
+    FF_2C_H = "PSO-2C-H_AUTO"
+    FF_2C_L = "PSO-2C-L_AUTO"
     FF_4C_H = "PSO-4C-H_AUTO"
     FF_4C_L = "PSO-4C-L_AUTO"
     FF_SWI = "PSO-SWI_AUTO"

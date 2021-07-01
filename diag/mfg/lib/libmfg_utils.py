@@ -891,6 +891,10 @@ def flx_stage_to_penang(stage):
         return FPN_FF_Stage.FF_4C_H
     elif stage == FF_Stage.FF_4C_L:
         return FPN_FF_Stage.FF_4C_L
+    elif stage == FF_Stage.FF_2C_H:
+        return FPN_FF_Stage.FF_2C_H
+    elif stage == FF_Stage.FF_2C_L:
+        return FPN_FF_Stage.FF_2C_L
     elif stage == FF_Stage.FF_SWI:
         return FPN_FF_Stage.FF_SWI
     elif stage == FF_Stage.FF_FST:
@@ -1024,7 +1028,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
         # log subdir
         sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(stage, mtp_id, log_timestamp)
         # log pkg filename
@@ -1104,7 +1108,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
         hv_diag_log_dir = log_dir + "hv_diag_logs/"
         hv_asic_log_dir = log_dir + "hv_asic_logs/"
         hv_nic_log_dir = log_dir + "hv_nic_logs/"
@@ -1193,7 +1197,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_P2C_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_P2C_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+        elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
             if GLB_CFG_MFG_TEST_MODE:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
             else:
@@ -1222,7 +1226,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 # try to change permission of the stage if this is first time created
                 # this will fail if someone else created them...ask them to chmod 777
                 os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
-                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
                     # since 4C directory is organized as /mfg_log/type/4C/4C-H/...
                     os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
             else:
@@ -1230,7 +1234,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 mfg_log_dir = mfg_log_dir.replace(nic_type, "MERGE/"+nic_type)
                 os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
                 os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
-                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
+                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
                     os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
 
         # copy the onboard logs only once
