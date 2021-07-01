@@ -4,6 +4,7 @@ import argparse
 import datetime
 import math
 import pexpect
+import os
 import re
 import sys
 import time
@@ -64,6 +65,9 @@ class nic_test:
                 print("Failed to find CPLD ID! Read back", session.before)
                 common.session_stop(session)
                 return -1
+            cpldIDs = cpldID[0].upper()
+
+            mtpType = os.environ['MTP_TYPE']
 
             cmd = "smbutil -uut=uut_{} -dev=cpld_adap -rd -addr=0x80".format(slot)
             common.session_cmd_no_rc(session, cmd)
@@ -78,9 +82,21 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
-                if cpldID[0] == "0x43" or cpldID[0] == "0x44":
+                #if cpldID[0] == "0x43" or \
+                #   cpldID[0] == "0x44" or \
+                #   cpldID[0] == "0x45" or \
+                #   cpldID[0] == "0x46" or \
+                #   cpldID[0] == "0x47" or \
+                #   cpldID[0] == "0x49" or \
+                #   cpldID[0] == "0x4A":
+                if mtpType == "MTP_ELBA":
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x0")
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+
+                    ## FIXME: Temp hack before new QSPI kick in
+                    #if first_pwr_on == True:
+                    #    print("Temp FIX: catalog hack!")
+                    #    self.nic_con.uart_session_cmd(session, "/data/nic_util/sw/sw_init.sh", 30)
                 else:
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -w 1 0xe")
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/cpld -r 1")
@@ -89,7 +105,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
 
                 try:
-                    if cpldID[0] == "0x17" or cpldID[0] == "0x19":
+                    if cpldIDs == "0x17" or cpldIDs == "0x19":
                         self.nic_con.turn_off_sgmii(int(slot))
     
                         # enable ports
@@ -1086,6 +1102,7 @@ if __name__ == "__main__":
     group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
     group.add_argument("-emmc", "--emmc", help="Run nic emmc test on multile nics", action='store_true')
     group.add_argument("-enter_tclsh", "--enter_tclsh", help="Enter ARM tclsh", action='store_true')
+    group.add_argument("-fix_bx", "--fix_bx", help="UART cpl file", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -1195,5 +1212,9 @@ if __name__ == "__main__":
 
     if args.enter_tclsh == True:
         test.enter_tclsh(args.slot)
+        sys.exit()
+
+    if args.fix_bx == True:
+        test.nic_con.fix_elba_bx_1(115200, args.slot)
         sys.exit()
 

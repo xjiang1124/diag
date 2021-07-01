@@ -119,6 +119,22 @@ class nic_con:
         session.timeout = temp
         return ret
 
+    def uart_session_cmd_w_ot(self, session, cmd, timeout=30, ending="\#"):
+        temp = session.timeout
+        session.timeout = timeout
+        ret = 0
+        try:
+            session.sendline(cmd)
+            session.expect(ending)
+        except:
+            print "=== TIMEOUT:", cmd, "==="
+            session.send(chr(3))
+            time.sleep(0.05)
+            session.expect(ending)
+            ret = -1
+        session.timeout = temp
+        return[ret, session.before]
+
     def power_cycle_uart(self, baud_rate=115200, slot=0):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -138,7 +154,7 @@ class nic_con:
             common.session_cmd(session, cmd)
 
             # Wait for nic to boot
-            time.sleep(30)
+            time.sleep(90)
 
             print "=== Start Uart Session {} ===".format(i)
             ret = self.uart_session_start(session, baud_rate)
@@ -484,7 +500,11 @@ class nic_con:
         # Get AISC type
         uut = "UUT_"+str(slot)
         card_type = os.environ[uut]
-        if card_type == "ORTANO" or card_type == "ORTANO2" or card_type == "BIODONA":
+        if card_type == "ORTANO"  or \
+           card_type == "ORTANO2" or \
+           card_type == "BIODONA" or \
+           card_type == "LACONA"  or \
+           card_type == "LACONADELL":
             asic_type = "ELBA"
         else:
             asic_type = "CAPRI"
@@ -571,6 +591,58 @@ class nic_con:
         common.session_cmd(session, cmd)
         common.session_stop(session)
 
+    def ping_check(self, rate=115200, slot=0):
+        ret = 0
+        session = common.session_start()
+        self.uart_session_start(session, rate)
+
+        try:
+            ret, output = self.uart_session_cmd_w_ot(session, "ping 10.1.1.100 -c 10 -s 64", 60)
+            if ret == 0:
+                if " 0% packet loss" not in output:
+	            print("Ping check failed!")
+                    ret = -2
+        except:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Failed to ping host ==="
+            ret = -1
+
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
+    def fix_elba_bx(self, rate=115200, slot=0):
+        ret = 0
+        self.switch_console(slot)
+
+        session = common.session_start()
+        session.timeout = 30
+        try:
+            self.uart_session_start(session, rate)
+            self.uart_session_cmd(session, "fwupdate --init-emmc")
+            ret, output = self.uart_session_cmd_w_ot(session, "fwupdate -l")
+            # Only do it with one version of diagfw
+            if "1.15.8-C-3" in output:
+                self.uart_session_cmd(session, "halctl debug port aacs-server-start --server-port 9000")
+                self.uart_session_cmd(session, "export SERDES_DUT_IP=localhost:9000")
+                self.uart_session_cmd(session, "export SERDES_SBUS_RINGS=4")
+                self.uart_session_cmd(session, "aapl serdes -mem-rd lsb 0x835 -a 3:5")
+                self.uart_session_cmd(session, "aapl serdes -int 0xe 0x100 -a 3:5")
+                self.uart_session_cmd(session, "aapl serdes -int 0xe 0x100 -a 3:5")
+                self.uart_session_cmd(session, "aapl serdes -int 0xe 0x100 -a 3:5")
+                self.uart_session_cmd(session, "aapl serdes -int 0xe 0x100 -a 3:5")
+                self.uart_session_cmd(session, "aapl serdes -int 0xe 0x100 -a 3:5")
+                self.uart_session_cmd(session, "halctl debug port aacs-server-stop")
+                self.uart_session_stop(session)
+
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Faled to fix elb bx ==="
+            ret = -1
+
+        common.session_stop(session)
+        return ret
+
     def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False):
         numRetry = 6
         ret = 0
@@ -601,7 +673,17 @@ class nic_con:
             return -1
         else:
             print "=== Management port is ready ==="
-            return ret
+
+        ret = self.ping_check()
+	print("ret:", ret)
+
+        # if ping test fails, apply WA for Elba
+        mtpType = os.environ['MTP_TYPE']
+        if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
+            self.fix_elba_bx(115200, slot)
+            ret = self.ping_check()
+
+        return ret
 
     def switch_fw(self, rate, slot=0):
         ret = 0
@@ -715,7 +797,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def switch_console(self, slot=0):
+    def switch_console(self, slot=1):
         if int(slot) > 10:
             print "Invalide slot {}!".format(slot)
             return -1
