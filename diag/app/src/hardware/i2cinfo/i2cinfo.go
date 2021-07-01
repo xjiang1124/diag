@@ -368,6 +368,7 @@ func init() {
     OrtanoMtpTbl = append(OrtanoMtpTbl, MtpHubI2cTbl...)
     Ortano2MtpTbl = append(Ortano2MtpTbl, MtpHubI2cTbl...)
     LaconaMtpTbl = append(LaconaMtpTbl, MtpHubI2cTbl...)
+    LaconaDellMtpTbl = append(LaconaDellMtpTbl, MtpHubI2cTbl...)
 
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
