@@ -29,7 +29,7 @@ mkdir -p $DIAG_HOME/diag/asic/lib/
 cp -r $DIAG_HOME/diag/scripts/taormina/tcl8.6 $DIAG_HOME/diag/asic/lib/
 
 mkdir -p /usr/lib/x86_64-linux-gnu/
-cp $DIAG_HOME/diag/scripts/taormina/tcl8.6/libtclreadline.so /usr/lib/x86_64-linux-gnu/
+#cp $DIAG_HOME/diag/scripts/taormina/tcl8.6/libtclreadline.so /usr/lib/x86_64-linux-gnu/
 
 mkdir -p $DIAG_DIR/asic/asic_src/tcl8.6.8/library/
 cp $DIAG_DIR/asic/lib/tcl8.6/clock.tcl $DIAG_DIR/asic/asic_src/tcl8.6.8/library/
@@ -77,6 +77,10 @@ cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic4
 cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
 
 echo "Preparing diag environment -- Done"
+
+echo "Setting up fan controllers"
+/fs/nos/home_diag/diag/util/devmgr -dev=fan_1 -faninit
+/fs/nos/home_diag/diag/util/devmgr -dev=fan_2 -faninit
 
 echo "-------------------"
 echo "Set up diag $arch -- Done"

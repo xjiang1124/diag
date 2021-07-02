@@ -12,6 +12,7 @@ import (
     //"bufio"
     //"errors"
     "device/fpga/taorfpga"
+    "device/bcm/td3"
     "fmt"
     "os"
     "strconv"
@@ -80,7 +81,7 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> verifyimage <filename>\n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> program <filename>\n" +
         " \n" +
-        "fpgautil power <cycle/on/off> <all/td3/e0/e1>\n" +
+        "fpgautil power <cycle/on/off> <all/td3/e0/e1> [nopciscan]\n" +
         " \n" +
         "fpgautil elba <elba#> flash devid\n" +
         "fpgautil elba <elba#> flash flagstatus/status\n" +
@@ -157,12 +158,37 @@ func main() {
         }
         cli.Printf("i", "memory bar = 0x%x", bar)
         return
-    } else if os.Args[1] == "sfp" {  //fpgautil sfp dump bus mux
-        if argc < 4 {
+    } else if os.Args[1] == "td3" {  
+        if argc < 3 {
             fmt.Printf(" %s \n", errhelp)
             return
         }
-        if os.Args[2] == "dump" {
+        if os.Args[2] == "prbs" {
+            if argc < 3 { fmt.Printf(" Not enough args... prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>"); return; }
+            time, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            td3.Prbs(int(time), os.Args[4])
+        }
+        if os.Args[2] == "checkgb" {
+            td3.CheckForRevA_Gearbox()
+        }
+    } else if os.Args[1] == "sfp" {  
+        if argc < 3 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }        
+        if os.Args[2] == "present" {
+            for i:=0;i<taorfpga.MAXSFP;i++ {
+                present, errs := taorfpga.SFP_present(uint32(i))
+                if errs != nil { fmt.Printf(" Error getting sfp present status"); return; }
+                if present == true {
+                    fmt.Printf(" SFP-%.02d: Present\n", i)
+                } else {
+                    fmt.Printf(" SFP-%.02d: Not Present\n", i)
+                }
+            }
+
+        } else if os.Args[2] == "dump" {
+            if argc < 3 { fmt.Printf(" %s \n", errhelp); return; }
             id, _ := sfp.ReadId(os.Args[3])
             fmt.Printf("\n ID=%x\n", id)
             {
@@ -181,12 +207,21 @@ func main() {
                 sfp.PrintSFPvendorData(os.Args[3])
             }
         }
-    } else if os.Args[1] == "qsfp" {  //fpgautil sfp dump bus mux
-        if argc < 4 {
-            fmt.Printf(" %s \n", errhelp)
-            return
-        }
-        if os.Args[2] == "dump" {
+    } else if os.Args[1] == "qsfp" {  
+        if argc < 3 { fmt.Printf(" %s \n", errhelp); return; }
+        if os.Args[2] == "present" {
+            for i:=0;i<taorfpga.MAXQSFP;i++ {
+                present, errs := taorfpga.QSFP_present(uint32(i))
+                if errs != nil { fmt.Printf(" Error getting qsfp present status"); return; }
+                if present == true {
+                    fmt.Printf(" QSFP-%.02d: Present\n", i)
+                } else {
+                    fmt.Printf(" QSFP-%.02d: Not Present\n", i)
+                }
+            }
+
+        } else if os.Args[2] == "dump" {
+            if argc < 4 { fmt.Printf(" %s \n", errhelp); return; }
             id, _ := sfp.ReadId(os.Args[3])
             fmt.Printf("\n ID=%x\n", id)
             {
@@ -324,6 +359,7 @@ func main() {
             fmt.Printf("WR [0x%.08x] = 0x%.08x\n", addr, uint32(data))
         }
     } else if os.Args[1] == "power" {
+        var nopciscan uint32 = 0
         //"fpgautil power <cycle/on/off> <all/td3/e0/e1>\n" +
         var state uint32
         var device uint32
@@ -344,7 +380,10 @@ func main() {
             case "all": device = taorfpga.ALL
             default: fmt.Printf(" Error: arg[3] needs to be all, td3, e0, or e1\n");  return
         }
-        taorfpga.Asic_PowerCycle(device, state) 
+        if argc == 5 {
+            nopciscan = 1
+        }
+        taorfpga.Asic_PowerCycle(device, state, nopciscan) 
         return
     } else if os.Args[1] == "flash" {
 

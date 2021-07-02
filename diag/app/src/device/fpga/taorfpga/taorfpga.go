@@ -33,6 +33,8 @@ import (
 const (
     PSU0 = 0
     PSU1 = 1
+    MAXSFP = 48
+    MAXQSFP = 6
 )
 
 const (
@@ -424,7 +426,7 @@ func SetI2Cmux(channel uint32, mux uint32) (err error) {
 
 
 
-func Asic_PowerCycle(device uint32, state uint32) (err error) {
+func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) {
     var args string
     var data32 uint32
     var ctrl_reg, stat_reg uint64 = D1_ELBA0_PWR_CTRL_REG, D1_ELBA0_PWR_STAT_REG
@@ -486,11 +488,19 @@ func Asic_PowerCycle(device uint32, state uint32) (err error) {
                 case TD3:   ctrl_reg = D1_TD3_PWR_CTRL_REG; stat_reg = D1_TD3_PWR_STAT_REG
             }
             if dev == ELBA0 || dev == ELBA1 {
-                fmt.Printf(" Powering up Elba and Waiting 15 seconds for Elba to boot and enumerate\n")
+                if nopciscan == 1 {
+                    fmt.Printf(" Powering up Elba\n")
+                } else {
+                    fmt.Printf(" Powering up Elba and Waiting 15 seconds for Elba to boot and enumerate\n")
+                }
                 TaorWriteU32(DEVREGION1, ctrl_reg, 0xD1) 
             }
             if dev == TD3 {
-                fmt.Printf(" Powering up TD3 and Waiting 5 seconds for TD3 to come up and enumerate\n")
+                if nopciscan == 1 {
+                    fmt.Printf(" Powering up TD3\n")
+                } else {
+                    fmt.Printf(" Powering up TD3 and Waiting 5 seconds for TD3 to come up and enumerate\n")
+                }
                 TaorWriteU32(DEVREGION1, D1_TD3_PWR_CTRL_REG, 0xd1) 
                 time.Sleep(time.Duration(100) * time.Millisecond)
                 TaorWriteU32(DEVREGION1, D1_TD_CTRL_REG, 0x1fd) 
@@ -507,12 +517,17 @@ func Asic_PowerCycle(device uint32, state uint32) (err error) {
         }
 
         // Sleep .. duration depends on what is getting reset
-        switch(device){
-            case ALL: time.Sleep(time.Duration(15) * time.Second); break
-            case ELBA0: time.Sleep(time.Duration(15) * time.Second); break
-            case ELBA1: time.Sleep(time.Duration(15) * time.Second); break
-            case TD3:   time.Sleep(time.Duration(5) * time.Second); break
+        if nopciscan == 0 {
+            switch(device){
+                case ALL: time.Sleep(time.Duration(15) * time.Second); break
+                case ELBA0: time.Sleep(time.Duration(15) * time.Second); break
+                case ELBA1: time.Sleep(time.Duration(15) * time.Second); break
+                case TD3:   time.Sleep(time.Duration(5) * time.Second); break
+            }
+        } else {
+            time.Sleep(time.Duration(1) * time.Second)
         }
+
 
         for dev=dev_start;dev<dev_end;dev++ {
             switch(dev){
@@ -529,11 +544,13 @@ func Asic_PowerCycle(device uint32, state uint32) (err error) {
             }
         }
         //Have Linux rescan the PCI bus to enumerate the devices
-        args = "echo 1 > /sys/bus/pci/rescan"
-        _, errGo := exec.Command("bash", "-c", args).Output()
-        if errGo != nil {
-            cli.Println("e", errGo)
-            return errGo
+        if nopciscan == 0 {
+            args = "echo 1 > /sys/bus/pci/rescan"
+            _, errGo := exec.Command("bash", "-c", args).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                return errGo
+            }
         }
     }
 
@@ -586,6 +603,63 @@ func PSU_pwrok(PSUnumber uint32) (pwrok bool, err error) {
     return
 }
 
+
+
+func SFP_present(SFPnumber uint32) (present bool, err error) {
+    var data32 uint32
+    var addr uint64 = D0_FP_SFP_STAT_3_0_REG;
+    var bitcompare uint32 = 0
+    present = false
+
+    if SFPnumber > (MAXSFP - 1) {
+        err = fmt.Errorf(" Error: SFP_present.  SFP NUMBER PASSED (%d) IS NOT VALID!", SFPnumber)
+        fmt.Printf("%s", err)
+        return
+    }
+
+    addr = addr + ((uint64(SFPnumber)/4) * 4)
+    bitcompare = (1 << ((SFPnumber%4)*8))
+    data32, err = TaorReadU32(DEVREGION0, addr)
+    if err != nil {
+        return
+    }
+
+    //1 = NOT PRESENT
+    if (data32 & bitcompare) == bitcompare {
+        present = false
+    } else {
+        present = true
+    }
+    return
+}
+
+func QSFP_present(QSFPnumber uint32) (present bool, err error) {
+    var data32 uint32
+    var addr uint64 = D0_FP_QSFP_STAT_51_48_REG;
+    var bitcompare uint32 = 0
+    present = false
+
+    if QSFPnumber > (MAXSFP - 1) {
+        err = fmt.Errorf(" Error: SFP_present.  SFP NUMBER PASSED (%d) IS NOT VALID!", QSFPnumber)
+        fmt.Printf("%s", err)
+        return
+    }
+
+    addr = addr + ((uint64(QSFPnumber)/4) * 4)
+    bitcompare = (1 << ((QSFPnumber%4)*8))
+    data32, err = TaorReadU32(DEVREGION0, addr)
+    if err != nil {
+        return
+    }
+
+    //1 = NOT PRESENT
+    if (data32 & bitcompare) == bitcompare {
+        present = false
+    } else {
+        present = true
+    }
+    return
+}
 
 
 

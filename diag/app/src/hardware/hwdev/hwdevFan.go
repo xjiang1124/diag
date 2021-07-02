@@ -2,7 +2,6 @@ package hwdev
 
 import (
     "strconv"
-
     "common/cli"
     "common/dmutex"
     "common/errType"
@@ -14,8 +13,8 @@ import (
 
 )
 
-func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
-    var i uint64
+
+func FanReadReg(devName string, addr uint32) (data byte, err int) {
     var i2cif i2cinfo.I2cInfo
 
     i2cif, err = i2cinfo.GetI2cInfo(devName)
@@ -31,8 +30,75 @@ func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
     defer dmutex.Unlock(lockName)
 
     hwinfo.EnableHubChannelExclusive(devName)
+    data, err = adt7462.ReadReg(devName, addr) 
+    return
+}
+
+
+func FanWriteReg(devName string, addr uint32, data byte) (err int) {
+    var i2cif i2cinfo.I2cInfo
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+    err = adt7462.WriteReg(devName, addr, data)
+    return
+}
+
+func FanDumpReg(devName string) (err int) {
+    var i2cif i2cinfo.I2cInfo
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
+    err = adt7462.DumpReg(devName) 
+    return
+}
+
+
+func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
+    var i uint32
+    var i2cif i2cinfo.I2cInfo
+    var num_fans int = hwinfo.MAX_NUM_FAN
+    if i2cinfo.CardType == "TAORMINA" {
+        num_fans = 8
+    }
+
+    i2cif, err = i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
+    err = dmutex.Lock(lockName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer dmutex.Unlock(lockName)
+
+    hwinfo.EnableHubChannelExclusive(devName)
     if i2cif.Comp == "ADT7462" {
-        for i = 0; i < hwinfo.MAX_NUM_FAN; i++ {
+        for i = 0; i < uint32(num_fans); i++ {
             if (mask & (1 << i)) != 0 {
                 adt7462.SetFanSpeed(devName, uint64(i), uint64(pct))
             }

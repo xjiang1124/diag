@@ -294,6 +294,8 @@ var TaorTbl = []I2cInfo {
     I2cInfo {"CPU_P1V05_VCCSCSUS","SN1701022", 1,   0x6B,    0x1, "FPGA_HUB_0_2",  2,    0},
     I2cInfo {"PSU_1",           "DPS-800",   2,   0x58,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"PSU_2",           "DPS-800",   2,   0x58,    0x0,    "FPGA_HUB_1_1",  1,    0},
+    I2cInfo {"FAN_1",           "ADT7462",   2,   0x58,    0x0,    "FPGA_HUB_1_2",  2,    0},
+    I2cInfo {"FAN_2",           "ADT7462",   2,   0x5C,    0x0,    "FPGA_HUB_1_2",  2,    0},
     I2cInfo {"TSENSOR-CPU",      "XeonD",    1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"TSENSOR-TD3",      "TD3",      1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"SFP_1",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  0,    0},
