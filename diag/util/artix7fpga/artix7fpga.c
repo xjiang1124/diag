@@ -23,39 +23,39 @@
 static const char spidev_path0[] = "/dev/spidev0.0";
 static const char spidev_path1[] = "/dev/spidev0.3";
 
-#define SPI_SOFT_RESET_REG	0x40
-#define SPI_SLAVE_SEL_REG	0x70
-#define SPI_CONTROL_REG		0x60
-#define SPI_STATUS_REG		0x64
-#define SPI_DATA_TRANSMIT_REG	0x68
-#define SPI_DATA_RECEIVE_REG	0x6C
-#define SPI_GLOBAL_INT_REG	0x1C
-#define SPI_INT_STATUS_REG	0x20
-#define SPI_INT_ENABLE_REG	0x28
+#define SPI_SOFT_RESET_REG	          0x40
+#define SPI_SLAVE_SEL_REG	          0x70
+#define SPI_CONTROL_REG		          0x60
+#define SPI_STATUS_REG		          0x64
+#define SPI_DATA_TRANSMIT_REG	      0x68
+#define SPI_DATA_RECEIVE_REG	      0x6C
+#define SPI_GLOBAL_INT_REG	          0x1C
+#define SPI_INT_STATUS_REG	          0x20
+#define SPI_INT_ENABLE_REG	          0x28
 
-#define FLASH_WRITE_ENABLE	0x06
-#define FLASH_READ_ID		0x9F
-#define FLASH_READ_STATUS_REG	0x05
-#define FLASH_READ_CFG_REG	0x15
-#define FLASH_ENTER_4_BYTE_MODE	0xB7
-#define FLASH_WRITE_STATUS_REG	0x01
-#define FLASH_READ_DATA_BYTES	0x03
-#define FLASH_SECTOR_ERASE	0x20
-#define FLASH_BLOCK_ERASE	0x52
-#define FLASH_CHIP_ERASE	0x60
-#define FLASH_PAGE_PROG		0x02
-#define FLASH_SOFT_RESET	0x0A
+#define FLASH_WRITE_ENABLE	          0x06
+#define FLASH_WRITE_DISABLE	          0x04
+#define FLASH_READ_ID		          0x9F
+#define FLASH_READ_STATUS_REG	      0x05
+#define FLASH_READ_CFG_REG	          0x15
+#define FLASH_ENTER_4_BYTE_MODE	      0xB7
+#define FLASH_WRITE_STATUS_REG	      0x01
+#define FLASH_READ_DATA_BYTES	      0x03
+#define FLASH_SECTOR_ERASE	          0x20
+#define FLASH_BLOCK_ERASE	          0x52
+#define FLASH_CHIP_ERASE	          0x60
+#define FLASH_PAGE_PROG		          0x02
+#define FLASH_SOFT_RESET	          0x0A
 
-#define FLASH_AND_SWITCH_PAGE_CONFIG 	0
-#define NCSI_AND_BMC_PAGE_CONFIG	1
-#define PC_AND_SERDES_PAGE_CONFIG	2
+#define FLASH_AND_SWITCH_PAGE_CONFIG  0
+#define NCSI_AND_BMC_PAGE_CONFIG	  1
+#define PC_AND_SERDES_PAGE_CONFIG	  2
 
-#define SWITCH_CORE_VERSION_REG		0x00
-#define SWITCH_MAC_LOW_REG		0x04
-#define SWITCH_MAC_HIGH_REG		0x08
+#define SWITCH_CORE_VERSION_REG		  0x00
+#define SWITCH_MAC_LOW_REG		      0x04
+#define SWITCH_MAC_HIGH_REG		      0x08
 
 int count1, count2;
-
 
 static int _e_ioctl(int fd, const char *name, unsigned long req, void *arg)
 {
@@ -78,8 +78,10 @@ static int e_open(const char *path, int flags, int mode)
     return fd;
 }
 
+// This function sends a sync command to PS-48 interface.
+
 static int ps48_sync(uint32_t fd)
-{
+{ 
     struct spi_ioc_transfer msg[1];
     uint8_t txbuf[6];	
  
@@ -95,20 +97,14 @@ static int ps48_sync(uint32_t fd)
     msg[0].len = 6;
     msg[0].speed_hz = 5000000;
 
-        printf("In SYNC Command TX\n");
-        printf("0x%x\n", txbuf[0]);
-        printf("0x%x\n", txbuf[1]);
-        printf("0x%x\n", txbuf[2]);
-        printf("0x%x\n", txbuf[3]);
-        printf("0x%x\n", txbuf[4]);
-        printf("0x%x\n", txbuf[5]);
-
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-    //close(fd);
+ 
     return 0;
 }
 
-static int ps48_process_resp(uint32_t fd)
+// This function processes the response frame received from PS-48 interface.
+
+static char ps48_process_resp(uint32_t fd)
 {
     struct spi_ioc_transfer msg[2];
     uint8_t txbuf[6];
@@ -136,45 +132,36 @@ static int ps48_process_resp(uint32_t fd)
         if(rxbuf[0] & 0xC0) break;
     }
 
-    //close(fd);
+    // Write Response
 
     if(((rxbuf[0] >> 6) & 0x3) == 0x1)
     {
-        //printf("In Write Response\n");
-        //printf("0x%x\n", rxbuf[0]);
-        //printf("0x%x\n", rxbuf[1]);
-        //printf("0x%x\n", rxbuf[2]);
-        //printf("0x%x\n", rxbuf[3]);
-        //printf("0x%x\n", rxbuf[4]);
-        //printf("0x%x\n", rxbuf[5]);
-
         if(rxbuf[5] && !(rxbuf[1] & 0x1F)) 
             return 1;
         else 
             return 0;
     }
+
+    // Read Response
+
     else if(((rxbuf[0] >> 6) & 0x3) == 0x2)
     {
         printf("In Read Response\n");
-        printf("0x%x\n", rxbuf[0]);
-        printf("0x%x\n", rxbuf[1]);
-        printf("0x%x\n", rxbuf[2]);
-        printf("0x%x\n", rxbuf[3]);
-        printf("0x%x\n", rxbuf[4]);
-        printf("0x%x\n", rxbuf[5]); // One data byte comes in rxbuf[5] for every read.
 
-        //*buf = rxbuf[5];
+        // One data byte comes in rxbuf[5] for every read.
+        printf("0x%x\n", rxbuf[5]); 
 
-           if(rxbuf[5] == 0x88) count1++;
-            else if(rxbuf[5] == 0xff) count2++;
-
+        if(rxbuf[5] == 0x88) count1++;
+        else if(rxbuf[5] == 0xff) count2++;
 
         if(!(rxbuf[1] & 0x1F))
         { 
-            //buf = rxbuf;     
-            return 0;
+            return rxbuf[5];
         } 
     }
+
+    // Error Response
+
     else 
     {
         printf("In Error Response\n");
@@ -186,10 +173,12 @@ static int ps48_process_resp(uint32_t fd)
         printf("0x%x\n", rxbuf[5]);
 
         printf("\n Interrupt Errors = %d", (rxbuf[1] & 0x1F));
+
         return 1;
     }
 }
 
+// This function configure 4 pages in PS-48 interface.
 
 static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
 {
@@ -229,22 +218,12 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
     msg[0].len = 6;
     msg[0].speed_hz = 5000000;
 
-        printf("In CONFIG Command TX\n");
-        printf("0x%x\n", txbuf[0]);
-        printf("0x%x\n", txbuf[1]);
-        printf("0x%x\n", txbuf[2]);
-        printf("0x%x\n", txbuf[3]);
-        printf("0x%x\n", txbuf[4]);
-        printf("0x%x\n", txbuf[5]);
-
-
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-
-    //val = ps48_process_resp(fd);
 
     return 0;
 }
 
+// This function writes a PS-48 register.
 
 static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
 {
@@ -260,29 +239,20 @@ static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
     txbuf[5] = *temp++;
     txbuf[4] = *temp++;
     txbuf[3] = *temp++;
-    txbuf[2] = *temp;  // 2 3 4 5
-
- 
-
+    txbuf[2] = *temp;  
 
     memset(msg, 0, sizeof (msg));
     msg[0].tx_buf = (intptr_t)txbuf;
     msg[0].len = 6;
     msg[0].speed_hz = 5000000;
 
-        //printf("In WRITE Command TX\n");
-        //printf("0x%x\n", txbuf[0]);
-        //printf("0x%x\n", txbuf[1]);
-        //printf("0x%x\n", txbuf[2]);
-        //printf("0x%x\n", txbuf[3]);
-        //printf("0x%x\n", txbuf[4]);
-        //printf("0x%x\n", txbuf[5]);
-
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
     val = ps48_process_resp(fd);
 
     return val;
 }
+
+// This function reads a PS-48 register.
 
 static int ps48_read(uint32_t fd, uint32_t addr, char *buf)
 {
@@ -300,27 +270,18 @@ static int ps48_read(uint32_t fd, uint32_t addr, char *buf)
     txbuf[3] = *temp++;
     txbuf[2] = *temp;
 
-
-
     memset(msg, 0, sizeof (msg));
     msg[0].tx_buf = (intptr_t)txbuf;
     msg[0].len = 6;
     msg[0].speed_hz = 5000000;
-
-        printf("In READ Command TX\n");
-        printf("0x%x\n", txbuf[0]);
-        printf("0x%x\n", txbuf[1]);
-        printf("0x%x\n", txbuf[2]);
-        printf("0x%x\n", txbuf[3]);
-        printf("0x%x\n", txbuf[4]);
-        printf("0x%x\n", txbuf[5]);
-
 
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
     val = ps48_process_resp(fd);
 
     return val;
 }
+
+// This function writes to a MES register.
 
 static int ps48_write_switch(uint32_t fd, uint8_t addr, uint32_t data)
 {
@@ -349,6 +310,8 @@ static int ps48_write_switch(uint32_t fd, uint8_t addr, uint32_t data)
     return val;
 }
 
+// This function reads from a MES register.
+
 static int ps48_read_switch(uint32_t fd, uint32_t addr, char *buf)
 {
     struct spi_ioc_transfer msg[1];
@@ -376,6 +339,7 @@ static int ps48_read_switch(uint32_t fd, uint32_t addr, char *buf)
     return val;
 }
 
+// This function reads the entire flash into a file named amitav.bin.
 
 static int flash_read(uint32_t fd)
 {
@@ -401,22 +365,22 @@ static int flash_read(uint32_t fd)
     {
         temp = (uint8_t *)(&addr);
         
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
-        ps48_write(fd, 0x68, 0x3);
-        ps48_write(fd, 0x68, *(temp+3));
-        ps48_write(fd, 0x68, *(temp+2));
-        ps48_write(fd, 0x68, *(temp+1));
-        ps48_write(fd, 0x68, *temp);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_DATA_BYTES);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+3));
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+2));
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+1));
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *temp);
 
         for(index=0;index<128;index++)
-            ps48_write(fd, 0x68, 0x0);
+            ps48_write(fd, SPI_DATA_TRANSMIT_REG, 0x0);
 
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         for(index=0;index<135;index++)  
-            ps48_read(fd, 0x0200006c, buf++);
+            ps48_read(fd, SPI_DATA_RECEIVE_REG, buf++);
  
 
         addr += 128;
@@ -432,6 +396,8 @@ printf("\n %d  %d  ", count1, count2);
 
     return status;
 }
+
+// This function programs the flash assuming an erased flash.
 
 static int flash_program(uint32_t fd, unsigned char *data)
 {
@@ -449,27 +415,27 @@ static int flash_program(uint32_t fd, unsigned char *data)
     {
         temp = (uint8_t *)(&addr);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
-        ps48_write(fd, 0x68, 0x6);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_WRITE_ENABLE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
-        ps48_write(fd, 0x68, 0x2);
-        ps48_write(fd, 0x68, *(temp+3));
-        ps48_write(fd, 0x68, *(temp+2));
-        ps48_write(fd, 0x68, *(temp+1));
-        ps48_write(fd, 0x68, *temp);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_PAGE_PROG);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+3));
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+2));
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+1));
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, *temp);
 
 
          for(index=0;index<128;index++)
-            ps48_write(fd, 0x68, *data++);
+            ps48_write(fd, SPI_DATA_TRANSMIT_REG, *data++);
 
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         addr += 128;
         size -= 128;
@@ -494,8 +460,6 @@ static int flash_program(uint32_t fd, unsigned char *data)
 // 6. Issue -fw command
 
 
-
-
 static void usage(void)
 {
     printf("artix7fpga (-init) \n");                          // Initialize PS-48
@@ -505,8 +469,9 @@ static void usage(void)
     printf("artix7fpga (-fcr) \n");                           // Write to Flash Config Register
     printf("artix7fpga (-fwe) \n");                           // Send Flash Write Enable Command
     printf("artix7fpga (-fwd) \n");                           // Send Flash Write Disable Command
-    printf("artix7fpga (-ff) \n");                            // Send 4 Byte Addressing Command
-    printf("artix7fpga (-fw) \n");                            // Send Flash Write Command
+    printf("artix7fpga (-ff) \n");                            // Send 4 Byte Addressing Enable Command
+    printf("artix7fpga (-fw) \n");                            // Send Flash Program Command
+    printf("artix7fpga (-fprog input_file) \n");              // Flash Whole Chip Program
     printf("artix7fpga (-fr)  \n");                           // Send Flash Read Command
     printf("artix7fpga (-fe) \n");                            // Send Flash Erase Command
     printf("artix7fpga (-id) \n");                            // Flash Read ID Command
@@ -557,16 +522,16 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
 
-        ps48_write(fd, 0x68, 0x5);
-        ps48_write(fd, 0x68, 0x0);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
-        ps48_read(fd, 0x0200006c, buf);
-        ps48_read(fd, 0x0200006c, buf);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_STATUS_REG);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, 0x0);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
+        ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
+        ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
 
         close(fd);
     }  
@@ -574,13 +539,13 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
 
-        ps48_write(fd, 0x68, 0x6);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_WRITE_ENABLE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         close(fd);
     }  
@@ -588,13 +553,13 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
 
-        ps48_write(fd, 0x68, 0x4);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_WRITE_DISABLE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         close(fd);
     }  
@@ -602,13 +567,13 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
 
-        ps48_write(fd, 0x68, 0xb7);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_ENTER_4_BYTE_MODE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         close(fd);
     }  
@@ -616,16 +581,16 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
 
-        ps48_write(fd, 0x68, 0x15);
-        ps48_write(fd, 0x68, 0x0);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
-        ps48_read(fd, 0x0200006c, buf);
-        ps48_read(fd, 0x0200006c, buf);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_CFG_REG);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, 0x0);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
+        ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
+        ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
 
         close(fd);
     }  
@@ -650,9 +615,9 @@ int main(int argc, char *argv[])
     else if ( strcmp(argv[1], "-fw" ) == 0 ) 
     {
         int cfgSize = 32 * 1024 *1024;
-	int read_byte = 0;
-	int numBytes = 0;
-	int i;
+	    int read_byte = 0;
+	    int numBytes = 0;
+	    int i;
         unsigned char *buf;
         unsigned char *data;
 
@@ -661,34 +626,124 @@ int main(int argc, char *argv[])
         buf = (unsigned char *)malloc(cfgSize);
         memset(buf, 0, sizeof(buf));
 
-	FILE* fptr = fopen("lac.bin", "rb");
+	    FILE* fptr = fopen("lac.bin", "rb");
         if ( fptr == NULL ) 
         {
             printf("Cannot open file %s\n", "lac.bin");
             free(buf);
 	    return -1;
-	}
+	    }
 
-	data = buf;
-	for ( i = 0; i < cfgSize; i++ ) 
+	    data = buf;
+	    for ( i = 0; i < cfgSize; i++ ) 
         {
-	    read_byte = fread(data, 1, 1, fptr);
-	    if ( read_byte != 1 )
-	        break;
-	    numBytes++;
-	    data++;
-	}
+	        read_byte = fread(data, 1, 1, fptr);
+	        if ( read_byte != 1 )
+	            break;
+	        numBytes++;
+	        data++;
+	    }
         fclose(fptr);
         if ( numBytes != cfgSize ) 
         {
             printf("wrong file size\n");
             printf("cpldSize %d\n", cfgSize);
             printf("File Size %d\n", numBytes);
-	    return -1;
-	}
+	        return -1;
+	    }
 
-	data = buf;
-	flash_program(fd, data);
+	    data = buf;
+	    flash_program(fd, data);
+        close(fd);
+        free(buf); 
+    } 
+    else if ( strcmp(argv[1], "-fprog" ) == 0 ) 
+    {
+        int cfgSize = 32 * 1024 *1024;
+	    int read_byte = 0;
+	    int numBytes = 0;
+	    int i;
+        unsigned char *buf;
+        unsigned char *data;
+
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+
+        buf = (unsigned char *)malloc(cfgSize);
+        memset(buf, 0, sizeof(buf));
+
+	    FILE* fptr = fopen(argv[2], "rb");
+        if ( fptr == NULL ) 
+        {
+            printf("Cannot open file %s\n", argv[2]);
+            free(buf);
+	        return -1;
+	    }
+
+	    data = buf;
+
+        // Flash Write Enable 
+
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_WRITE_ENABLE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
+
+        // Flash Erase 
+
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_CHIP_ERASE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
+
+        // Wait for chip to get erased.
+
+        while(1)
+        {
+            sleep(3);
+
+            ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+            ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+
+            ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_STATUS_REG);
+            ps48_write(fd, SPI_DATA_TRANSMIT_REG, 0x0);
+            ps48_write(fd, SPI_CONTROL_REG, 0x86);
+            ps48_write(fd, SPI_CONTROL_REG, 0x186);
+            ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
+            if(ps48_read(fd, SPI_DATA_RECEIVE_REG, buf) ==  0x42) break;
+        }
+
+        // Flash Write Enable 
+
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_WRITE_ENABLE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
+
+	    for ( i = 0; i < cfgSize; i++ ) 
+        {
+	        read_byte = fread(data, 1, 1, fptr);
+	        if ( read_byte != 1 )
+	            break;
+	        numBytes++;
+	        data++;
+	    }
+        fclose(fptr);
+        if ( numBytes != cfgSize ) 
+        {
+            printf("wrong file size\n");
+            printf("cpldSize %d\n", cfgSize);
+            printf("File Size %d\n", numBytes);
+	        return -1;
+	    }
+
+	    data = buf;
+	    flash_program(fd, data);
         close(fd);
         free(buf); 
     } 
@@ -696,12 +751,12 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
-        ps48_write(fd, 0x02000068, 0x60);
-        ps48_write(fd, 0x02000060, 0x86);
-        ps48_write(fd, 0x02000060, 0x186);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_CHIP_ERASE);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         close(fd);
     } 
@@ -737,13 +792,13 @@ int main(int argc, char *argv[])
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
 
-        ps48_write(fd, 0x40, 0xa);
-        ps48_write(fd, 0x70, 0x0);
+        ps48_write(fd, SPI_SOFT_RESET_REG, 0xa);
+        ps48_write(fd, SPI_SLAVE_SEL_REG, 0x0);
 
 
-        ps48_write(fd, 0x68, 0x9f);
-        ps48_write(fd, 0x60, 0x86);
-        ps48_write(fd, 0x60, 0x186);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_ID);
+        ps48_write(fd, SPI_CONTROL_REG, 0x86);
+        ps48_write(fd, SPI_CONTROL_REG, 0x186);
 
         close(fd);
     } 
