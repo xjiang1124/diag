@@ -2876,8 +2876,8 @@ class nic_ctrl():
         #TEST SCAN CHAIN
         #REG 0x43 BIT0 & BIT5 & BIT6 SHOULD BE IGNORED.  BIT1,2,3,4,6 ARE ALWAYS HIGH.  BIT7 ALWAYS LOW
         #REG 0x44 ALL BITS CAN BE SET HIGH OR LOW
-        scan_chain_reg0_mask = 0xFE
-        scan_chain_reg0_exp  = 0x5E
+        scan_chain_reg0_mask = 0x9E
+        scan_chain_reg0_exp  = 0x1E
         data = [[0x44, 0xFF, 0x45, 0xFF], \
                 [0x44, 0x00, 0x45, 0x00], \
                 [0x44, 0xAA, 0x45, 0xAA], \
