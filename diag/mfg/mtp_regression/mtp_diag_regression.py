@@ -1358,8 +1358,6 @@ def main():
 
         # NIC Parallel test for MVL only
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-            if "NIC_PARA" in args.skip_test:
-                break
             if nic_type == NIC_Type.ORTANO2:
                 nic_para_test_list = ortano_para_test_list[:]
                 test_db = ortano_test_db
