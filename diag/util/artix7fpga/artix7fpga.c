@@ -430,16 +430,26 @@ static int flash_program(uint32_t fd, unsigned char *data)
         ps48_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+1));
         ps48_write(fd, SPI_DATA_TRANSMIT_REG, *temp);
 
+        if(size <= 251)
+        {
+            for(index=0;index<size;index++)
+                ps48_write(fd, SPI_DATA_TRANSMIT_REG, *data++);
 
-         for(index=0;index<128;index++)
-            ps48_write(fd, SPI_DATA_TRANSMIT_REG, *data++);
+            addr += size;
+            size = 0;
+        }
+        else
+        {
+            for(index=0;index<251;index++)
+                ps48_write(fd, SPI_DATA_TRANSMIT_REG, *data++);
+
+            addr += 251;
+            size -= 251;
+        }
 
         ps48_write(fd, SPI_CONTROL_REG, 0x86);
         ps48_write(fd, SPI_CONTROL_REG, 0x186);
-
-        addr += 128;
-        size -= 128;
-    }
+     }
 
     return status;
 }
@@ -528,8 +538,10 @@ int main(int argc, char *argv[])
 
         ps48_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_STATUS_REG);
         ps48_write(fd, SPI_DATA_TRANSMIT_REG, 0x0);
+        ps48_write(fd, SPI_DATA_TRANSMIT_REG, 0x0);
         ps48_write(fd, SPI_CONTROL_REG, 0x86);
         ps48_write(fd, SPI_CONTROL_REG, 0x186);
+        ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
         ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
         ps48_read(fd, SPI_DATA_RECEIVE_REG, buf);
 
