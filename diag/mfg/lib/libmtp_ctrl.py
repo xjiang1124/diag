@@ -1711,6 +1711,17 @@ class mtp_ctrl():
             err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             self.mtp_dump_err_msg(err_msg)
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
+
+            cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Execute command {:s} failed".format(cmd))
+                return False
+
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
 
         return True
