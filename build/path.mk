@@ -24,6 +24,7 @@ AMD64_SRC_DIR=			\
 	dsp/i2cspi 			\
 	util/cpldutil		\
 	util/mctputil		\
+	util/fanutil        \
 	util/fpgautil       \
 	util/inventory		\
 	util/mtptest		\
