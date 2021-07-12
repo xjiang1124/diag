@@ -91,7 +91,7 @@ func main() {
         var mask uint64
         if argc < 5  { fmt.Printf(" ERROR Not enough args\n"); return }
         pct, _ := strconv.ParseUint(os.Args[3], 0, 32)
-        if os.Args[3] == "all" {
+        if os.Args[4] == "all" {
             mask = 0xFF
         } else {
             shift, _ := strconv.ParseUint(os.Args[4], 0, 32)
