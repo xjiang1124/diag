@@ -61,6 +61,7 @@ DSP:
         INFO: Test I2C/SMBus access of each device
         PLATFORM:
             NIC: ALL
+            TOR: ALL
         PRIORITY: NORMAL 
         PARAM:
 ...

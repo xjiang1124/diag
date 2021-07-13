@@ -51,8 +51,9 @@ func init() {
     i2cTestMap["ORTANO2"]         = biodonaTestList
     i2cTestMap["LACONADELL"]     = biodonaTestList
     i2cTestMap["LACONA"]          = biodonaTestList
-    i2cTestMap["POMANTEDELL"]     = biodonaTestList
-    i2cTestMap["POMANTE"]          = biodonaTestList
+    i2cTestMap["POMONTEDELL"]     = biodonaTestList
+    i2cTestMap["POMONTE"]          = biodonaTestList
+    //Platform TAORMINA uses it's I2C INFO Table directly in i2cTest.go to get devices.  Do not set a table here for it
 
     i2cTestList = i2cTestMap[cardType]
 }

@@ -75,7 +75,7 @@ func VerifyCheckSums(devName string) (err int) {
     var computed_cc uint8  = 0
     var computed_cc_ext uint8  = 0
 
-    dcli.Printf("i", "Testing %s Check Code and Extended Check Code", devName)
+    dcli.Printf("i", "Testing %s Check Code and Extended Check Code\n", devName)
 
     rdData, erri := ReadEepromAll(devName) 
     err = erri
@@ -101,32 +101,61 @@ func VerifyCheckSums(devName string) (err int) {
         err = errType.FAIL
         return
     }
-    dcli.Printf("i", "Testing %s Check Code and Extended Check Code Passed", devName)
+    dcli.Printf("i", "Testing %s Check Code and Extended Check Code Passed\n", devName)
 
     return
 }
 
-func PrintSFPvendorData(devName string) (vendor string, pn string, sn string, date string, err int) {
+func GetBitSpeed(devName string) (baudrate float64, err int) {
+    reg12 := []uint8{}
+    reg66 := []uint8{}
 
-    rdData, erri := ReadEepromAll(devName) 
-    err = erri
+    reg12, err = ReadBytes(devName, uint64(SFP_BITRATE_NOM), 1)
+    if err != errType.SUCCESS {
+        return
+    }
+    reg66, err = ReadBytes(devName, uint64(SFP_BITRATE_MAX), 1)
     if err != errType.SUCCESS {
         return
     }
 
-    sfp_vendor_name := rdData[int(SFP_VENDOR_NAME_START):int(SFP_VENDOR_NAME_END + 1)]
-    vendor = string(sfp_vendor_name)
+    if reg12[0] == uint8(0xFF) {
+        baudrate = float64(reg12[0]) * 100 
+    } else {
+        baudrate = float64(reg66[0]) * 250
+    }
+    baudrate = baudrate / 1000
+    return
+}
 
-    sfp_part_num := rdData[int(SFP_PART_NUM_START):int(SFP_PART_NUM_END + 1)]
-    pn = string(sfp_part_num)
 
-    sfp_serial_num := rdData[int(SFP_SREIAL_NUM_START):int(SFP_SREIAL_NUM_END + 1)]
-    sn = string(sfp_serial_num)
+func PrintSFPvendorData(devName string) (vendor string, pn string, sn string, date string, err int) {
+    var bitspeed float64
+    vendor, err = ReadVendorName(devName)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    sfp_date_code := rdData[int(SFP_DATE_CODE_START):int(SFP_DATE_CODE_END + 1)]
-    date = string(sfp_date_code)
+    pn, err = ReadPN(devName)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    dcli.Printf("i", "%s  %s  %s  %s \n", vendor, string(pn), string(sn), string(date))
+    sn, err = ReadSerialNumber(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    date, err = ReadDate(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    bitspeed, err = GetBitSpeed(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    dcli.Printf("i", "%s VENDOR: %s PN: %s SN: %s DATE: %s SPD: %.01fGb/s\n", devName, vendor, pn, sn, date, bitspeed)
     return
 }
 
@@ -155,4 +184,29 @@ func ReadId(devName string) (id byte, err int) {
     id = data[0]
     return
 }
+
+func ReadPN(devName string) (pn string, err int) {
+    data, err := ReadField(devName, "PN")
+    pn = string(data)
+    return
+}
+
+func ReadVendorName(devName string) (vendorname string, err int) {
+    data, err := ReadField(devName, "VENDORNAME")
+    vendorname = string(data)
+    return
+}
+
+func ReadSerialNumber(devName string) (sn string, err int) {
+    data, err := ReadField(devName, "SERIALNUMBER")
+    sn = string(data)
+    return
+}
+
+func ReadDate(devName string) (date string, err int) {
+    data, err := ReadField(devName, "DATE")
+    date = string(data)
+    return
+}
+
 

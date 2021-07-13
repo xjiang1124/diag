@@ -104,7 +104,7 @@ func ReadWord(devName string, regAddr uint64) (data uint16, err int) {
     }
     data, errgo := smbInfo.smb.Read_word_data(byte(regAddr))
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C ERROR Dev=", smbInfo.devName," @ Offset=", regAddr, "  Errno=", errgo)
         err = errType.SMB_READ_FAIL
         return
     }

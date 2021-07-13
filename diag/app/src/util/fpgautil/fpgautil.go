@@ -13,11 +13,13 @@ import (
     //"errors"
     "device/fpga/taorfpga"
     "device/bcm/td3"
+    "device/psu/dps800"
     "fmt"
     "os"
     "strconv"
     "time"
     "syscall"
+    "strings"
     "unsafe"
 
     "common/cli"
@@ -30,25 +32,6 @@ import (
 
 const MEM_ACCESS_32  uint32 = 1
 const MEM_ACCESS_64  uint32 = 2
-
-/*
-const TAORMINE_PCI_VENDOR_ID  uint32 = 0x1dd8
-const TAORMINE_MAX_PCI_DEV    uint32 = 0x0004
-const TAORMINE_PCI_DEV_ID0    uint32 = 0x0003
-const TAORMINE_PCI_DEV_ID1    uint32 = 0x0004
-const TAORMINE_PCI_DEV_ID2    uint32 = 0x0005
-const TAORMINE_PCI_DEV_ID3    uint32 = 0x0006
-
-
-var Glob_fd0 *os.File = nil
-var Glob_fd1 *os.File = nil
-var Glob_fd2 *os.File = nil
-var Glob_fd3 *os.File = nil
-var Glob_mmap0 []byte
-var Glob_mmap1 []byte
-var Glob_mmap2 []byte
-var Glob_mmap3 []byte 
-*/
 
  
 const errhelp = "\nfpgautil:\n" +
@@ -64,6 +47,8 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil i2c bus mux scan\n" +
         "fpgautil i2c debug enable/disable\n" +
         " \n" +
+        "fpgautil inventory\n" +
+        "\n" +
         "fpgautil flash devid\n" +
         "fpgautil flash program/verify/generateimage <primary/secondary/allflash> <filename>\n" +
         "fpgautil flash r8/r32/r64 <addr> <length>\n" +
@@ -122,9 +107,93 @@ func main() {
     //    fmt.Printf("Arg %d is %s\n", i+1, a) 
     //}
 
+    if argc ==2 {
+        if os.Args[1] == "inventory" {
+            //fmt.Printf("===================================================================================================\n")
+            fmt.Printf("\n")
+            dps800.DisplayManufacturingInfo("PSU_1")
+            dps800.DisplayManufacturingInfo("PSU_2")
+            for i:=0; i<int(taorfpga.MAXFAN);i++ {
+                present, _ := taorfpga.FAN_Module_present(uint32(i))
+                if present == true {
+                    fmt.Printf("FAN-%d: PRESENT\n", i+1)
+                } else {
+                    fmt.Printf("FAN-%d: NOT PRESENT\n", i+1)
+                }
+            }
+            fan_air_direction, _ := taorfpga.FAN_AirFlow_Direction()
+            if fan_air_direction == taorfpga.AIRFLOW_FRONT_TO_BACK {
+                fmt.Printf("FAN AIRFLOW:  FRONT TO BACK\n")
+            } else {
+                fmt.Printf("FAN AIRFLOW:  BACK TO FRONT\n")
+            }
+            fmt.Printf("\n")
+            ucode, _ := taorfpga.Spi_cpld_read_usercode(uint32(0)) 
+            fmt.Printf("CPLD-C  REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(3)) 
+            fmt.Printf("CPLD-G0 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(4)) 
+            fmt.Printf("CPLD-G1 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(5)) 
+            fmt.Printf("CPLD-G2 REVISION: 0x%.08x\n", ucode)
+            data32, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, taorfpga.D0_FPGA_REV_ID_REG)
+            fmt.Printf("FPGA    REVISION: 0x%.08x\n", data32)
+            fmt.Printf("\n")
+            taorfpga.SSD_Display_Info()
+            taorfpga.DDR_Display_Info()
+            fmt.Printf("\n")
+            taorfpga.BIOS_Display_Version()
+            taorfpga.HALON_OS_Display_Version()
+            fmt.Printf("\n")
+            taorfpga.Elba_Check_Pci_Link(taorfpga.ELBA0)
+            taorfpga.Elba_Check_Pci_Link(taorfpga.ELBA1)
+            taorfpga.Elba_Show_Firmware(taorfpga.ELBA0)
+            taorfpga.Elba_Show_Firmware(taorfpga.ELBA1)
+            
+            fmt.Printf("\n")
+            //fmt.Printf("===================================================================================================\n")
+            for i:=0; i<taorfpga.MAXSFP; i++ {
+                var devName string 
+                devName = fmt.Sprintf("SFP_%d", i+1)
+                present, _ := taorfpga.SFP_present(uint32(i)) 
+                pn, _ := sfp.ReadPN(devName)
+                pn = strings.TrimSpace(pn)
+                sn, _ := sfp.ReadSerialNumber(devName)
+                vendor, _ := sfp.ReadVendorName(devName)
+                vendor = strings.TrimSpace(vendor)
+                baudrate, _ := sfp.GetBitSpeed(devName)
+                if present == true {
+                    fmt.Printf("SFP-%.2d   %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
+                } else {
+                    fmt.Printf("SFP-%.2d   NOT PRESENT\n", i+1)
+                }
+            }
+            fmt.Printf("\n")
+            for i:=0; i<taorfpga.MAXQSFP; i++ {
+                var devName string 
+                devName = fmt.Sprintf("QSFP_%d", i+1)
+                present, _ := taorfpga.QSFP_present(uint32(i)) 
+                pn, _ := qsfp.ReadPN(devName)
+                pn = strings.TrimSpace(pn)
+                sn, _ := qsfp.ReadSerialNumber(devName)
+                vendor, _ := qsfp.ReadVendorName(devName)
+                vendor = strings.TrimSpace(vendor)
+                baudrate, _ := qsfp.GetBitSpeed(devName)
+                if present == true {
+                    fmt.Printf("QSFP-%.2d  %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
+                } else {
+                    fmt.Printf("QSFP-%.2d  NOT PRESENT\n", i+1)
+                }
+            }
+
+            return
+        } else {
+           fmt.Printf(" %s \n", errhelp); return;
+        }
+    }
+
     if argc < 3 {
-        fmt.Printf(" %s \n", errhelp)
-        return
+        fmt.Printf(" %s \n", errhelp); return;
     }
 
     if os.Args[2] == "bitswapimage" && argc == 5 {

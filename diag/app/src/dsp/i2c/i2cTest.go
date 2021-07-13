@@ -15,6 +15,7 @@ import (
     "device/powermodule/tps544b25"
     "device/rtc/pcf85263a"
     "device/tempsensor/tmp42123"
+    "device/fpga/taorfpga"
 
     "hardware/i2cinfo"
 )
@@ -118,6 +119,15 @@ func I2cI2cHdl(argList []string) {
     var ret int
     ret = errType.SUCCESS
 
+    cardInfo := diagEngine.GetCardInfo()
+    cardType := cardInfo.CardType
+    if cardType == "TAORMINA" {
+        for _, i2cEntry := range(i2cinfo.CurI2cTbl) {
+            if (i2cEntry.Flag & i2cinfo.I2C_TEST_ENABLE) == i2cinfo.I2C_TEST_ENABLE {
+                i2cTestList = append(i2cTestList, i2cEntry.Name)
+            }
+        }
+    }
     if len(i2cTestList) == 0 {
         dcli.Println("f", "Variable i2cTestList is empty.  No tests to run")
         ret = errType.INVALID_TEST    
@@ -125,12 +135,21 @@ func I2cI2cHdl(argList []string) {
 
     for _, devName := range(i2cTestList) {
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+
+        if cardType == "TAORMINA" {
+            taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
+        }
         //if err != errType.SUCCESS {
         //     diagEngine.FuncMsgChan <- err
         //     return
         //}
-        dcli.Println("i", "Starting testing", devName, "as component", i2cInfo.Comp)
+        dcli.Println("i", "Starting I2C test on", devName, " / Component", i2cInfo.Comp)
         switch i2cInfo.Comp {
+        case "LM75":
+            dcli.Println("i", "NEED TO ADD TEST")
+            if err != errType.SUCCESS {
+                ret = err
+            }
         case "TPS53659":
             err = testTps53659(devName)
             if err != errType.SUCCESS {

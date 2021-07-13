@@ -25,14 +25,29 @@ import (
     "time"
     "strings"
     "syscall"
+    "regexp"
     "unsafe"
 
     "common/cli"
+    "common/errType"
+
+    //"gopkg.in/yaml.v2"
+    "encoding/json"
 )
 
 const (
     PSU0 = 0
     PSU1 = 1
+    MAXPSU = 2
+    FAN0 = 0
+    FAN1 = 1
+    FAN2 = 2
+    FAN3 = 3
+    FAN4 = 4
+    FAN5 = 5
+    MAXFAN = 6
+    AIRFLOW_FRONT_TO_BACK = 0
+    AIRFLOW_BACK_TO_FRONT = 1
     MAXSFP = 48
     MAXQSFP = 6
 )
@@ -42,6 +57,13 @@ const (
     ELBA1 = 1
     TD3   = 2
     ALL   = 3
+    NUMBER_ELBAS = 2
+
+    ELBA0_PCIBUS = "0b:00.0"
+    ELBA1_PCIBUS = "05:00.0"
+    ELBA0_ETH_PCIBUS = "0d:00.0"
+    ELBA1_ETH_PCIBUS = "07:00.0"
+    
 )
 
 const (
@@ -54,15 +76,28 @@ const (
 const MEM_ACCESS_32  uint32 = 1
 const MEM_ACCESS_64  uint32 = 2
 
+/* ELBA PCI DEVICES
+05:00.0 0604: 1dd8:0002
+06:00.0 0604: 1dd8:1001
+07:00.0 0200: 1dd8:1004
+ 
+0b:00.0 0604: 1dd8:0002
+0c:00.0 0604: 1dd8:1001
+0d:00.0 0200: 1dd8:1004 
+*/ 
 
-
-
-const TAORMINE_PCI_VENDOR_ID  uint32 = 0x1dd8
-const TAORMINE_MAX_PCI_DEV    uint32 = 0x0004
-const TAORMINE_PCI_DEV_ID0    uint32 = 0x0003
-const TAORMINE_PCI_DEV_ID1    uint32 = 0x0004
-const TAORMINE_PCI_DEV_ID2    uint32 = 0x0005
-const TAORMINE_PCI_DEV_ID3    uint32 = 0x0006
+/* FPGA PCI DEVICES
+12:00.0 0000: 1dd8:0003
+12:00.1 0000: 1dd8:0004
+12:00.2 0000: 1dd8:0005
+12:00.3 0000: 1dd8:0006
+*/ 
+const TAORMINA_PCI_VENDOR_ID  uint32 = 0x1dd8
+const TAORMINA_MAX_PCI_DEV    uint32 = 0x0004
+const TAORMINA_PCI_DEV_ID0    uint32 = 0x0003
+const TAORMINA_PCI_DEV_ID1    uint32 = 0x0004
+const TAORMINA_PCI_DEV_ID2    uint32 = 0x0005
+const TAORMINA_PCI_DEV_ID3    uint32 = 0x0006
 
 
 var Glob_fd0 *os.File = nil
@@ -138,8 +173,8 @@ func FpgaDumpRegionRegisters(devRegion uint32) (err error) {
     var taor_reg_ptr []TAOR_FPGA_REGISTERS
     
 
-    if uint32(devRegion) >= TAORMINE_MAX_PCI_DEV {
-        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINE_MAX_PCI_DEV -1), devRegion); 
+    if uint32(devRegion) >= TAORMINA_MAX_PCI_DEV {
+        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINA_MAX_PCI_DEV -1), devRegion); 
         err = errors.New(" ERROR") 
         return
     }
@@ -175,8 +210,8 @@ func TaorReadU32(devID uint32, addr uint64) (value uint32, err error) {
     var bar uint64
     //var pcidevid uint32
 
-    if uint32(devID) >= TAORMINE_MAX_PCI_DEV {
-        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINE_MAX_PCI_DEV -1), devID); 
+    if uint32(devID) >= TAORMINA_MAX_PCI_DEV {
+        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINA_MAX_PCI_DEV -1), devID); 
         err = errors.New(" ERROR") 
         return
     }
@@ -193,7 +228,7 @@ func TaorReadU32(devID uint32, addr uint64) (value uint32, err error) {
     return
 
     /*
-    pcidevid = (TAORMINE_PCI_VENDOR_ID<<16 |  (TAORMINE_PCI_DEV_ID0 + uint32(devID)))
+    pcidevid = (TAORMINA_PCI_VENDOR_ID<<16 |  (TAORMINA_PCI_DEV_ID0 + uint32(devID)))
     err = PCI_get_bar(pcidevid, &bar)
     if err != nil {
         cli.Printf("e", "Failed to find FPGA DevID 0x%x memory bar", pcidevid)
@@ -245,8 +280,8 @@ func TaorWriteU32(devID uint32, addr uint64, data uint32) (err error) {
     var bar uint64
     //var pcidevid uint32
 
-    if uint32(devID) >= TAORMINE_MAX_PCI_DEV {
-        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINE_MAX_PCI_DEV -1), devID); 
+    if uint32(devID) >= TAORMINA_MAX_PCI_DEV {
+        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINA_MAX_PCI_DEV -1), devID); 
         err = errors.New(" ERROR") 
         return
     }
@@ -260,7 +295,7 @@ func TaorWriteU32(devID uint32, addr uint64, data uint32) (err error) {
     return
 
     /*
-    pcidevid = (TAORMINE_PCI_VENDOR_ID<<16 |  (TAORMINE_PCI_DEV_ID0 + uint32(devID)))
+    pcidevid = (TAORMINA_PCI_VENDOR_ID<<16 |  (TAORMINA_PCI_DEV_ID0 + uint32(devID)))
     err = PCI_get_bar(pcidevid, &bar)
     if err != nil {
         cli.Printf("e", "Failed to find FPGA DevID 0x%x memory bar", pcidevid)
@@ -557,6 +592,43 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
     return
 }
 
+
+func FAN_AirFlow_Direction() (fan_air_direction int, err error) {
+    var data32 uint32
+
+    data32, err = TaorReadU32(DEVREGION1, D1_FAN_STAT_REG)
+    if err != nil {
+        return
+    }
+    //fan present is 0 for present, 1 for not present
+    if (data32 &  D1_FAN_STAT_PORT_SIDE_INTAKE_MASK) == D1_FAN_STAT_PORT_SIDE_INTAKE_MASK {
+        fan_air_direction = AIRFLOW_FRONT_TO_BACK
+    } else {
+        fan_air_direction = AIRFLOW_BACK_TO_FRONT
+    }
+    return
+}
+
+func FAN_Module_present(FANnumber uint32) (present bool, err error) {
+    var data32 uint32
+    present = false
+
+    if FANnumber > FAN5 {
+        err = fmt.Errorf(" Error: FAN_Module_present.  FAN NUMBER PASSED (%d) IS NOT VALID!", FANnumber)
+        fmt.Printf("%s", err)
+        return
+    }
+    data32, err = TaorReadU32(DEVREGION1, D1_FAN_STAT_REG)
+    if err != nil {
+        return
+    }
+    //fan present is 0 for present, 1 for not present
+    if (data32 &  (D1_FAN_STAT_REG_NOT_PRESENT0_BIT << (D1_FAN_STAT_REG_NOT_PRESENT0_SHIFT + FANnumber))) == 0x00 {
+        present = true
+    }
+    return
+}
+
 func PSU_present(PSUnumber uint32) (present bool, err error) {
     var data32 uint32
     present = false
@@ -662,5 +734,444 @@ func QSFP_present(QSFPnumber uint32) (present bool, err error) {
 }
 
 
+/*
+root@Taormina:/fs/nos/home_diag/diag/util# smartctl -a /dev/sda
+smartctl 7.0 2018-12-30 r4883 [x86_64-linux-4.19.68-yocto-standard] (local build)
+Copyright (C) 2002-18, Bruce Allen, Christian Franke, www.smartmontools.org
 
+=== START OF INFORMATION SECTION ===
+Device Model:     W6EN064G1TA-S91AA3-2D2.A5
+Serial Number:    62419-00007
+Firmware Version: TDF08YOW
+User Capacity:    64,023,257,088 bytes [64.0 GB]
+Sector Size:      512 bytes logical/physical
+Rotation Rate:    Solid State Device
+Form Factor:      2.5 inches
+Device is:        Not in smartctl database [for details use: -P showall]
+ATA Version is:   ACS-3 (minor revision not indicated)
+SATA Version is:  SATA 3.2, 6.0 Gb/s (current: 6.0 Gb/s)
+Local Time is:    Fri Jul  2 21:31:00 2021 UTC
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+
+=== START OF READ SMART DATA SECTION ===
+SMART overall-health self-assessment test result: PASSED 
+//SMART overall-health self-assessment test result: FAILED! 
+....
+SMART Error Log Version: 1
+No Errors Logged
+
+SMART Self-test log structure revision number 1
+No self-tests have been logged.  [To run self-tests, use: smartctl -t]
+
+SMART Selective self-test log data structure revision number 1
+ SPAN               MIN_LBA               MAX_LBA  CURRENT_TEST_STATUS
+    1  18446560841797907379   4557456277428481196  Not_testing
+    2  14974422399512980395  12948822500726794986  Not_testing
+    3  12442422526030232250  12370218121369661102  Not_testing
+    4  16927471298384620523  13455169492706769594  Not_testing
+    5  12587094041287306926  16999845689243937579  Not_testing
+38550   4846766193727920216   4846766193727985751  Read_scanning was never started
+Selective self-test flags (0xa1a1):
+  After scanning selected spans, do NOT read-scan remainder of disk.
+If Selective self-test is pending on power-up, resume after 25957 minute delay.
+
+root@Taormina:/fs/nos/home_diag/diag/util# 
  
+ 
+
+*/
+func SSD_Display_Info() (err int) {
+    var devModel string
+    var sn string
+    var size string
+    var smartHealth string
+
+    out, errGo := exec.Command("smartctl", "-a", "/dev/sda").Output()
+    if errGo != nil {
+        cli.Println("[ERROR]", errGo)
+        err = errType.FAIL
+        return
+    }
+
+    s := strings.Split(string(out), "\n")
+    for _, temp := range s {
+        if strings.Contains(temp, "Device Model:")==true {
+            devModel = temp[18:]
+        }
+        if strings.Contains(temp, "Serial Number:")==true {
+            sn = temp[18:]
+        }
+        if strings.Contains(temp, "User Capacity:")==true {
+
+            re := regexp.MustCompile(`\[([^\[\]]*)\]`)
+            submatchall := re.FindAllString(temp, -1)
+            for _, element := range submatchall {
+                    element = strings.Trim(element, "[")
+                    element = strings.Trim(element, "]")
+                    size = element
+            }
+        }
+        if strings.Contains(temp, "SMART overall-health self-assessment test result:")==true {
+            if strings.Contains(temp, "SMART overall-health self-assessment test result: PASSED")==true {
+                smartHealth = "Smart Health PASSED"
+                fmt.Printf("SSD MODEL: %s   S/N: %s   Capacity: %s    %s\n", devModel, sn, size, smartHealth)
+            } else {
+                smartHealth = "Smart Health FAILED"
+                fmt.Printf("[ERROR] SSD MODEL: %s   S/N: %s   Capacity: %s    %s\n", devModel, sn, size, smartHealth)
+                err = errType.FAIL
+            }
+        }
+    }
+    return
+
+}
+
+
+
+func DDR_Display_Info() (err int) {
+    var size [4]string
+    var pn [4]string
+    var sn [4]string
+    var i int = 0
+
+    out, errGo := exec.Command("dmidecode", "--type", "17").Output()
+    if errGo != nil {
+        cli.Println("[ERROR]", errGo)
+        err = errType.FAIL
+        return
+    }
+
+    s := strings.Split(string(out), "\n")
+    for _, temp := range s {
+        if strings.Contains(temp, "Size:")==true {
+            temp = strings.TrimSpace(temp)
+            size[i] = string(temp[6:12])
+        }
+        if strings.Contains(temp, "Serial Number:")==true {
+            temp = strings.TrimSpace(temp)
+            sn[i] = string(temp[14:])
+        }
+        if strings.Contains(temp, "Part Number:")==true {
+            temp = strings.TrimSpace(temp)
+            pn[i] = string(temp[12:])
+            i = i + 1
+        }
+        
+    }
+
+    for i=0; i<4; i++ {
+        if (i%2)==0 {
+            if size[i] == "No Mod" {
+                fmt.Printf("[ERROR] MEMORY CHANNEL-%d:  NO MODULE DETECTED\n", i)
+                err = errType.FAIL
+                continue
+            } else {
+                fmt.Printf("MEMORY CHANNEL-%d:  PN: %s    SN: %s    SIZE: %sMB\n", i, pn[i], sn[i], size[i])
+            }
+        }
+    }
+    return
+}
+
+
+func BIOS_Display_Version() (err int) {
+    out, errGo := exec.Command("dmidecode", "-s", "bios-version").Output()
+    if errGo != nil {
+        cli.Println("[ERROR]", errGo)
+        err = errType.FAIL
+        return
+    }
+    fmt.Printf("BIOS VERSION: %s", string(out))
+
+    return
+}
+
+
+func HALON_OS_Display_Version() (err int) {
+    var show string = "show version"
+    out, errGo := exec.Command("vtysh", "-c", show).Output()
+    if errGo != nil {
+        fmt.Println("[ERROR]", errGo)
+        err = errType.FAIL
+        return
+    }
+
+    s := strings.Split(string(out), "\n")
+    for _, temp := range s {
+        if strings.Contains(temp, "Build Date")==true {
+            fmt.Printf("HALON OS: %s\n", temp)
+        }
+        if strings.Contains(temp, "Build ID")==true {
+            fmt.Printf("HALON OS: %s\n", temp)
+        }
+    }
+    return
+}
+
+
+func Elba_Check_Pci_Link(elba int) (err int) {
+    var elb_pci string
+    var speed, width bool = false, false
+    if elba == ELBA0 {
+        elb_pci = ELBA0_PCIBUS
+    } else if elba == ELBA1 {
+        elb_pci = ELBA1_PCIBUS
+    } else {
+        fmt.Printf("[ERROR] Elba number passed (%d) is to big\n", elba)
+        err = errType.FAIL
+        return
+    }
+
+    out, errGo := exec.Command("lspci", "-n", "-s", elb_pci).Output()
+    if errGo != nil {
+        fmt.Println("[ERROR] 1 ", errGo)
+        err = errType.FAIL
+        return
+    }
+    if strings.Contains(string(out), elb_pci)==false {
+        fmt.Printf("[ERROR] Elba-%d is not enumerated on the PCI bus\n", elba)
+        err = errType.FAIL
+        return
+    }
+
+    out, errGo = exec.Command("lspci", "-s", elb_pci, "-vvv").Output()
+    if errGo != nil {
+        fmt.Println("[ERROR] 2", errGo)
+        err = errType.FAIL
+        return
+    }
+    s := strings.Split(string(out), "\n")
+    for _, temp := range s {
+        if strings.Contains(temp, "LnkSta:")==true {
+            //Example of bad case --> LnkSta: Speed 8GT/s (ok), Width x1 (downgraded)
+            temp = strings.TrimSpace(temp)
+            if strings.Contains(temp, "8GT/s")==true {
+                speed = true
+            }
+            if strings.Contains(temp, "x4")==true {
+                width = true
+            }
+            if speed == true && width == true {
+                fmt.Printf("ELBA-%d %s\n", elba, temp)
+            } else {
+                fmt.Printf("[ERROR] ELBA-%d LINK SPEED IS NOT 8GT/s x4 -->  %s\n", elba, temp)
+                err = errType.FAIL
+            }
+        }
+    }
+    return
+
+}
+
+
+func Elba_Show_Firmware(elba int) (err int) {
+    var elb_pci string
+    var ethfound bool = false
+    var ethdev string
+
+    if elba == ELBA0 {
+        elb_pci = ELBA0_ETH_PCIBUS
+    } else if elba == ELBA1 {
+        elb_pci = ELBA1_ETH_PCIBUS
+    } else {
+        fmt.Printf("[ERROR] Elba number passed (%d) is to big\n", elba)
+        err = errType.FAIL
+        return
+    }
+
+    //Check if we have an ethernet connection to Elba
+    for i:=0; i<NUMBER_ELBAS; i++ {
+        
+        if i==0 {
+            ethdev = "eth1"
+        } else {
+            ethdev = "eth2"
+        }
+        out, _ := exec.Command("ethtool", "-i", ethdev).Output()
+        s := strings.Split(string(out), "\n")
+        for _, temp := range s {
+            if strings.Contains(temp, elb_pci)==true {
+                //fmt.Printf(" ETH DEV FOUND..  %s\n", ethdev)
+                ethfound = true
+                break
+            }
+        }
+    }
+    if ethfound == false {
+        fmt.Printf("[ERROR] ELBA-%d Firmware List.  No ethernet device detected to query firmware info\n", elba)
+        err = errType.FAIL
+        return
+    }
+
+
+    out, errGo := exec.Command("sshpass","-p","pen123","timeout","500","ssh","-o","LogLevel=ERROR","-o","UserKnownHostsFile=/dev/null","-o","StrictHostKeyChecking=no","root@169.254.13.1","/nic/tools/fwupdate","-l").Output()
+    if errGo != nil {
+        fmt.Println("[ERROR] 2", errGo)
+        err = errType.FAIL
+        return
+    }
+    {
+        res := make(map[string]interface{})
+        outs := string(out)
+        errg := json.Unmarshal([]byte(outs), &res)
+        if errg != nil {
+            fmt.Printf("[ERROR] Failed to parse fw output.  Error=%s\n", errg)
+            err = errType.FAIL
+            return
+        }
+        partitions := []string{"boot0", "mainfwa", "mainfwb", "goldfw", "diagfw"}
+        for _, partition := range partitions {
+            if _, ok := res[partition]; ok {
+                //fmt.Println(res[partition])
+
+                byteKey := []byte(fmt.Sprintf("%v", res[partition].(interface{})))
+                //fmt.Println(string(byteKey))
+                //fmt.Printf("\n\n")
+                
+                
+                s := strings.Split(string(byteKey), " ")
+                //fmt.Println(s)
+                for _, temp := range s {
+                    if strings.Contains(temp, "software_version:") {
+                        s1 := strings.Split(temp, ":")
+                        fmt.Printf("ELBA-%d  %s: %s\n", elba, partition, s1[len(s1) -1])
+                        break;
+                    }
+                }
+            } else {
+                fmt.Printf("ELBA-%d  %s: no version info\n", elba)
+            }
+        }
+        //fmt.Println(res["mainfwa"])
+    }
+    //fmt.Printf("%s\n", out)
+    return
+
+}
+
+/* 
+ 
+map[boot0:map[ 
+        image:map[build_date:Tue Jun  8 06:33:06 PDT 2021 build_user: base_version:2018.08-git-g17ca6ff software_pipeline:polaris kernel_compat_version:2 software_version:1.28.0-81 nicmgr_compat_version:2 pcie_compat_version:1 dev_conf_compat_version:4 image_version:7]] 
+    mainfwa:map[
+        kernel_fit:map[pcie_compat_version:1 build_user: base_version:2018.08-git-g7999c66 software_version:1.29.0-9 nicmgr_compat_version:2 kernel_compat_version:2 build_date:Wed Jun 16 12:37:31 PDT 2021 software_pipeline:polaris dev_conf_compat_version:4]
+        uboot:map[dev_conf_compat_version:4 build_user: pcie_compat_version:1 software_version:1.29.0-9 software_pipeline:polaris nicmgr_compat_version:2 kernel_compat_version:2 build_date:Wed Jun 16 12:37:31 PDT 2021 base_version:2018.08-git-g7999c66]
+        system_image:map[build_date:Wed Jun 16 12:37:31 PDT 2021 nicmgr_compat_version:2 dev_conf_compat_version:4 software_pipeline:polaris kernel_compat_version:2 pcie_compat_version:1 build_user: base_version:2018.08-git-g7999c66 software_version:1.29.0-9]]
+    mainfwb:map[system_image:map[build_date:Tue Jul  6 12:33:37 PDT 2021 base_version:2018.08-git-gf18563e kernel_compat_version:2 nicmgr_compat_version:2 pcie_compat_version:1 dev_conf_compat_version:4 build_user: software_version:1.29.0-82 software_pipeline:polaris] kernel_fit:map[build_user: software_version:1.29.0-82 software_pipeline:polaris kernel_compat_version:2 pcie_compat_version:1 build_date:Tue Jul  6 12:33:37 PDT 2021 base_version:2018.08-git-gf18563e nicmgr_compat_version:2 dev_conf_compat_version:4] uboot:map[nicmgr_compat_version:2 dev_conf_compat_version:4 base_version:2018.08-git-gf18563e software_version:1.29.0-82 software_pipeline:polaris pcie_compat_version:1 build_date:Tue Jul  6 12:33:37 PDT 2021 build_user: kernel_compat_version:2]]
+    goldfw:map[kernel_fit:map[software_version:1.15.5-C-2-1-ge129fd1 software_pipeline:iris nicmgr_compat_version: kernel_compat_version: pcie_compat_version: build_date:Wed Feb 24 12:51:38 PST 2021 build_user:dac2 base_version:2018.08-git-gfb4971d dev_conf_compat_version:] uboot:map[dev_conf_compat_version:4 software_version:1.25.0-60 software_pipeline:polaris nicmgr_compat_version:2 kernel_compat_version:2 pcie_compat_version:1 build_date:Thu May  6 06:19:56 PDT 2021 build_user: base_version:2018.08-git-g5b14c67]]
+    diagfw:map[]]
+ 
+
+{
+  "boot0": {
+    "image": {
+      "build_date": "Tue Jun  8 06:33:06 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-g17ca6ff",
+      "software_version": "1.28.0-81",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4",
+      "image_version": 7
+    }
+  },
+  "mainfwa": {
+    "system_image": {
+      "build_date": "Wed Jun 16 12:37:31 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-g7999c66",
+      "software_version": "1.29.0-9",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    },
+    "kernel_fit": {
+      "build_date": "Wed Jun 16 12:37:31 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-g7999c66",
+      "software_version": "1.29.0-9",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    },
+    "uboot": {
+      "build_date": "Wed Jun 16 12:37:31 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-g7999c66",
+      "software_version": "1.29.0-9",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    }
+  },
+  "mainfwb": {
+    "system_image": {
+      "build_date": "Tue Jul  6 12:33:37 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-gf18563e",
+      "software_version": "1.29.0-82",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    },
+    "kernel_fit": {
+      "build_date": "Tue Jul  6 12:33:37 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-gf18563e",
+      "software_version": "1.29.0-82",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    },
+    "uboot": {
+      "build_date": "Tue Jul  6 12:33:37 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-gf18563e",
+      "software_version": "1.29.0-82",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    }
+  },
+  "goldfw": {
+    "kernel_fit": {
+      "build_date": "Wed Feb 24 12:51:38 PST 2021",
+      "build_user": "dac2",
+      "base_version": "2018.08-git-gfb4971d",
+      "software_version": "1.15.5-C-2-1-ge129fd1",
+      "software_pipeline": "iris",
+      "nicmgr_compat_version": "",
+      "kernel_compat_version": "",
+      "pcie_compat_version": "",
+      "dev_conf_compat_version": ""
+    },
+    "uboot": {
+      "build_date": "Thu May  6 06:19:56 PDT 2021",
+      "build_user": "",
+      "base_version": "2018.08-git-g5b14c67",
+      "software_version": "1.25.0-60",
+      "software_pipeline": "polaris",
+      "nicmgr_compat_version": "2",
+      "kernel_compat_version": "2",
+      "pcie_compat_version": "1",
+      "dev_conf_compat_version": "4"
+    }
+  },
+  "diagfw": {}
+}
+*/

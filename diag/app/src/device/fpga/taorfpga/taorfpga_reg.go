@@ -11,6 +11,7 @@ type TAOR_FPGA_REGISTERS struct {
     Address  uint64
 }
 
+//Base Address is static, so just skip getting it from linux to save time and use static base address for each FPGA region
 const DEV0_BAR int64 = 0x183fff400000
 const DEV1_BAR int64 = 0x183fff300000
 const DEV2_BAR int64 = 0x183fff200000
@@ -27,7 +28,7 @@ const (
     DEVREGION3 = 3
 )
 
-
+const D0_FPGA_REV_ID_REG           uint64 = 0x0
 const D0_FPGA_DATECODE_REG         uint64 = 0x4
 const D0_BOARD_REV_ID_REG          uint64 = 0x8
 const D0_FUNC_CAP_0_REG            uint64 = 0x40
@@ -187,6 +188,11 @@ const D1_PSU_STAT_REG              uint64 = 0x404
     const D1_PSU_STAT_INT1            uint32 = (1<<11)
 const D1_FAN_CTRL_REG              uint64 = 0x408
 const D1_FAN_STAT_REG              uint64 = 0x40c
+    //FAN PRESENCE IS INVERTED.  0 = PRESENT,  1 = NOT PRESENT
+    const D1_FAN_STAT_REG_NOT_PRESENT0_BIT   uint32 = 0x01
+    const D1_FAN_STAT_REG_NOT_PRESENT0_SHIFT uint32 = 0x00
+    const D1_FAN_STAT_REG_NOT_PRESENT0       uint32 = (D1_FAN_STAT_REG_NOT_PRESENT0_BIT<<D1_FAN_STAT_REG_NOT_PRESENT0_SHIFT)
+    const D1_FAN_STAT_PORT_SIDE_INTAKE_MASK  uint32 = 0x3F00
 const D1_ELBA0_PWR_CTRL_REG        uint64 = 0x410
 const D1_ELBA0_PWR_STAT_REG        uint64 = 0x414
 const D1_ELBA1_PWR_CTRL_REG        uint64 = 0x418
@@ -498,6 +504,7 @@ const D3_I2C_CH16_SEM_REG               uint64 = 0x121c
 
 
 var TAOR_DEV0_REGISTERS = []TAOR_FPGA_REGISTERS {
+    TAOR_FPGA_REGISTERS{"D0_FPGA_REV_ID_REG       ",             D0_FPGA_REV_ID_REG},
     TAOR_FPGA_REGISTERS{"D0_FPGA_DATECODE_REG     ",             D0_FPGA_DATECODE_REG},
     TAOR_FPGA_REGISTERS{"D0_BOARD_REV_ID_REG      ",             D0_BOARD_REV_ID_REG},
     TAOR_FPGA_REGISTERS{"D0_FUNC_CAP_0_REG        ",             D0_FUNC_CAP_0_REG},

@@ -6,6 +6,7 @@ import (
     //"cardinfo"
     "common/cli"
     "common/errType"
+    "hardware/i2cinfo"
     "protocol/pmbus"
     "protocol/smbus"
     "device/fpga/taorfpga"
@@ -155,6 +156,87 @@ func ReadTemp(devName string, sensorNumber uint32) (integer uint64, dec uint64, 
     TEMP, err = pmbus.ReadWord(devName, uint64(reg))
 
     integer, dec, err =  pmbus.Linear11(TEMP)
+
+    return
+}
+
+func DisplayManufacturingInfo(devName string) (err int) {
+    var psuNumber uint32 = 0
+    wrData := []byte{}
+    mfgId := []byte{}
+    mfgRev := []byte{}
+    mfgModel := []byte{}
+    mfgSerial := []byte{}
+
+    if devName == "PSU_1" {
+        psuNumber = 0
+    } else {
+        psuNumber = 1
+    }
+
+    present, errGo := taorfpga.PSU_present(psuNumber)
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+
+    if present != true {
+        cli.Printf("e", "%s: is not present", devName)
+        err = errType.FAIL
+        return
+    }
+
+
+    iInfo, err := i2cinfo.GetI2cInfo(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to obtain I2C info of", devName)
+        return
+    }
+    wrData = append(wrData, MFR_ID)
+    mfgId, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_ID_BLK_SIZE + 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if len(mfgId) != MFG_ID_BLK_SIZE + 1 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MfgID is wrong.   Len=%d.  Expect=%d", devName, len(mfgId), MFG_ID_BLK_SIZE + 1)
+    }
+
+    wrData[0] = MFR_MODEL
+    mfgModel, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_MODEL_BLK_SIZE + 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if len(mfgModel) != MFG_MODEL_BLK_SIZE + 1 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgModel), MFG_MODEL_BLK_SIZE + 1)
+    }
+
+    wrData[0] = MFR_REVISION
+    mfgRev, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_REVISION_BLK_SIZE + 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if len(mfgRev) != MFG_REVISION_BLK_SIZE + 1 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgRev), MFG_REVISION_BLK_SIZE + 1)
+    }
+
+    wrData[0] = MFR_SERIAL
+    mfgSerial, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFR_SERIAL_BLK_SIZE + 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if len(mfgSerial) != MFR_SERIAL_BLK_SIZE + 1 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), MFR_SERIAL_BLK_SIZE + 1)
+    }
+
+    fmt.Printf("%s: %s %s   Rev: %s    S/N: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]))
 
     return
 }

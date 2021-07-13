@@ -33,7 +33,7 @@ func qsfpLaserEnDis(mask int, enDis int) (err int) {
              err = errgo
              break
         }
-        dcli.Println("i", "Starting testing", devName)
+        dcli.Println("i", "Starting test on", devName)
 
         switch i2cInfo.Comp {
         case "QSFP":

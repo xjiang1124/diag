@@ -95,7 +95,7 @@ func VerifyCheckSums(devName string) (err int) {
     var computed_cc uint8  = 0
     var computed_cc_ext uint8  = 0
 
-    dcli.Printf("i", "Testing %s Check Code and Extended Check Code", devName)
+    dcli.Printf("i", "Testing %s Check Code and Extended Check Code\n", devName)
 
     rdData, erri := ReadEepromAll(devName) 
     err = erri
@@ -121,34 +121,49 @@ func VerifyCheckSums(devName string) (err int) {
         err = errType.FAIL
         return
     }
-    dcli.Printf("i", "Testing %s Check Code and Extended Check Code Passed", devName)
+    dcli.Printf("i", "Testing %s Check Code and Extended Check Code Passed\n", devName)
 
     return
 }
 
 func PrintQSFPvendorData(devName string) (vendor string, pn string, sn string, date string, err int) {
 
-    rdData, erri := ReadEepromAll(devName) 
-    err = erri
+    vendor, err = ReadVendorName(devName)
     if err != errType.SUCCESS {
         return
     }
 
-    qsfp_vendor_name := rdData[int(QSFP_VENDOR_NAME_START):int(QSFP_VENDOR_NAME_END + 1)]
-    vendor = string(qsfp_vendor_name)
+    pn, err = ReadPN(devName)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    qsfp_part_num := rdData[int(QSFP_PART_NUM_START):int(QSFP_PART_NUM_END + 1)]
-    pn = string(qsfp_part_num)
+    sn, err = ReadSerialNumber(devName)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    qsfp_serial_num := rdData[int(QSFP_SREIAL_NUM_START):int(QSFP_SREIAL_NUM_END + 1)]
-    sn = string(qsfp_serial_num)
+    date, err = ReadDate(devName)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    qsfp_date_code := rdData[int(QSFP_DATE_CODE_START):int(QSFP_DATE_CODE_END + 1)]
-    date = string(qsfp_date_code)
-
-    dcli.Printf("i", "%s  %s  %s  %s \n", vendor, pn, sn, date)
+    cli.Printf("i", "%s  %s  %s  %s \n", vendor, pn, sn, date)
     return
 }
+
+func GetBitSpeed(devName string) (baudrate float64, err int) {
+    data8 := []uint8{}
+
+    data8, err = ReadBytes(devName, uint64(QSFP_BR_ADDR), 1)
+    if err != errType.SUCCESS {
+        return
+    }
+    baudrate = float64(data8[0]) * 100 
+    baudrate = baudrate / 1000
+    return
+}
+
 
 func GetFieldInfo(qsfpTbl []qsfpPage_t, field string) (fieldInfo qsfpPage_t, err int) {
     for _, fieldInfo = range(qsfpTbl) {
@@ -194,6 +209,33 @@ func ReadId(devName string) (id byte, err int) {
     id = data[0]
     return
 }
+
+func ReadVendorName(devName string) (vendorname string, err int) {
+    data, err := ReadFieldUpper(devName, "VEND_NAME", 0)
+    vendorname = string(data)
+    return
+}
+
+func ReadPN(devName string) (partnumber string, err int) {
+    data, err := ReadFieldUpper(devName, "VEND_PN", 0)
+    partnumber = string(data)
+    return
+}
+
+func ReadSerialNumber(devName string) (serialnumber string, err int) {
+    data, err := ReadFieldUpper(devName, "VEND_SN", 0)
+    serialnumber = string(data)
+    return
+}
+
+func ReadDate(devName string) (date string, err int) {
+    data, err := ReadFieldUpper(devName, "DATE_CODE", 0)
+    date = string(data)
+    return
+}
+
+
+
 
 func LaserEnDis(devName string, enDis int) (err int) {
     var data byte

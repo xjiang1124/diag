@@ -39,11 +39,17 @@ const (
     READ_PIN                  = 0x97
     PMBUS_REVISION            = 0x98
     MFR_ID                    = 0x99
+      MFG_ID_BLK_SIZE         = 0x05  
     MFR_MODEL                 = 0x9A
+      MFG_MODEL_BLK_SIZE      = 0x0D
     MFR_REVISION              = 0x9B
+      MFG_REVISION_BLK_SIZE   = 0x03
     MFR_LOCATION              = 0x9C
+      MFR_LOCATION_BLK_SIZE   = 0x05
     MFR_DATE                  = 0x9D
+      MFG_DATE_BLK_SIZE       = 0x06
     MFR_SERIAL                = 0x9E
+      MFR_SERIAL_BLK_SIZE     = 0x0E
     APP_PROFILE_SUPPORT       = 0x9F
     MFR_VIN_MIN               = 0xA0
     MFR_VIN_MAX               = 0xA1

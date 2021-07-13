@@ -25,9 +25,10 @@ type I2cInfo struct {
 //I2cInfo Flag Defines
 
 const (
-    FLAG_EMPTY = 0
-    FLAG_8BIT_EEPROM = 1
-    FLAG_16BIT_EEPROM = 2
+    FLAG_EMPTY = (0<<1)
+    FLAG_8BIT_EEPROM = (1<<1)
+    FLAG_16BIT_EEPROM = (2<<1)
+    I2C_TEST_ENABLE = (3<<1)
 )
 
 var I2cTbl    []I2cInfo
@@ -110,6 +111,24 @@ var LaconaTbl = []I2cInfo {
 
     I2cInfo {"SFP_2",          "QSFP",      0x2,   0x50,    0x0,    "HUB_CPLD",  0,    0},
     I2cInfo {"SFP_2_DOM",      "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+}
+
+var PomonteTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
+    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "TPS544B25", 0x0,   0x24,    0x0,    "HUB_NONE",  0,    0},
+
+    I2cInfo {"QSFP_1",         "QSFP",      0x1,   0x50,    0x0,    "HUB_CPLD",  0,    0},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+
+    I2cInfo {"QSFP_2",         "QSFP",      0x2,   0x50,    0x0,    "HUB_CPLD",  0,    0},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
 }
 
 var LaconaMtpTbl = []I2cInfo {
@@ -277,12 +296,12 @@ var MtpHubI2cTbl = []I2cInfo {
 
 var TaorTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
-    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20", 1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    0},
-    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20", 1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    0},
-    I2cInfo {"P0V8RT_B",       "TPS549A20", 1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    0},
-    I2cInfo {"TSENSOR-1",      "LM75",      3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    0},
-    I2cInfo {"TSENSOR-2",      "LM75",      3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    0},
-    I2cInfo {"TSENSOR-3",      "LM75",      3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    0},
+    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20", 1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20", 1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8RT_B",       "TPS549A20", 1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-1",      "LM75",      3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-2",      "LM75",      3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-3",      "LM75",      3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
     I2cInfo {"P0V8RT_A",       "TPS544C20", 1,   0x04,    0x0,    "FPGA_HUB_0_0",  0,    0},
     I2cInfo {"P3V3",           "TPS544C20", 1,   0x08,    0x0,    "FPGA_HUB_0_1",  1,    0},
     I2cInfo {"P3V3S",          "TPS544C20", 1,   0x09,    0x0,    "FPGA_HUB_0_0",  0,    0},
@@ -400,6 +419,8 @@ func init() {
         I2cTbl = OrtanoTbl
     } else if CardType == "LACONADELL" || CardType == "LACONA" {
         I2cTbl = LaconaTbl
+    } else if CardType == "POMONTEDELL" {
+        I2cTbl = PomonteTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -525,6 +546,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = LaconaDellMtpTbl
     } else if uutType == "LACONA" {
         CurI2cTbl = LaconaMtpTbl
+    } else if uutType == "POMONTEDELL" {
+        CurI2cTbl = LaconaDellMtpTbl  //has same table as Lacona Dell
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

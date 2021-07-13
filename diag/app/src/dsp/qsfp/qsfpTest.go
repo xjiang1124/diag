@@ -66,7 +66,7 @@ func QsfpI2CHdl(argList []string) {
              ret =  err
              break
         }
-        dcli.Println("i", "Starting testing", devName)
+        dcli.Println("i", "Starting test on", devName)
 
         // Check present bits
         regAddr := qsfpInfo.PrstReg

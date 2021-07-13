@@ -55,7 +55,7 @@ func SfpI2CHdl(argList []string) {
              ret =  err
              break
         }
-        dcli.Println("i", "Starting testing", devName)
+        dcli.Println("i", "Starting test on", devName)
 
         switch i2cInfo.Comp {
         case "SFP":

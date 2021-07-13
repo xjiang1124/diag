@@ -24,8 +24,8 @@ const (
     ID_ORTANO2         = 0x44
     ID_LACONA_DELL     = 0x45
     ID_LACONA          = 0x46
-    ID_POMANTE_DELL    = 0x47
-    ID_POMANTE         = 0x48
+    ID_POMONTE_DELL    = 0x47
+    ID_POMONTE         = 0x48
 )
 
 const (
