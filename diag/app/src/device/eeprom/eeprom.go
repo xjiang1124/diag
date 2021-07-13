@@ -876,8 +876,7 @@ func HasAssemblyEntry() (hasAssembly bool) {
        CustType == "DELLOCP" || 
        CustType == "PENSWM" || 
        CustType == "LACONADELL" || 
-       CustType == "POMONTEDELL" 
-    {
+       CustType == "POMONTEDELL" {
 
         hasAssembly = true
 
