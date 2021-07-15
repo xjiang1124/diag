@@ -230,8 +230,7 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
     // 9k*60/tach
     temp = (uint64(tachMsb) << 8) | uint64(tachLsb)
     if temp != 0 {
-        //Divide by 2 becasue fan counts two pulses per revolution even though controller spec doesn't mention this
-        rpm = 90000*60/2/temp
+        rpm = 90000*60/temp 
         if rpm < 100 {
             rpm = 0
         }
@@ -271,7 +270,6 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
     }
 
     pwmReg = PWM1_DUTY_CYCLE + pwmIdx
-    //pwmVal = pct * 100 / 39
     pwmVal = (pct * 255) / 100
     if pct > 0 && byte(pwmVal) == 0 {
         pwmVal = 0xFF

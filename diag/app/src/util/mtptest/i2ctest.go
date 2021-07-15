@@ -60,8 +60,8 @@ func fanSpeedTest() (err int) {
     var fanSpeedList = []FanSpeedConfig {
         FanSpeedConfig{
             pct: 50,
-            rpmMin: 2000,
-            rpmMax: 4000,
+            rpmMin: 4000,
+            rpmMax: 8000,
         },
     }
     for _, fanSpeed := range(fanSpeedList) {
