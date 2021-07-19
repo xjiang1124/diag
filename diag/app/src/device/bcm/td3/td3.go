@@ -91,6 +91,9 @@ const (
     TAOR_EXTERNAL_100G_PORTS = 6
     TAOR_INTERNAL_PORTS = 8
 )
+//GB + RETIEMR PHY ADDRESS FOR MDIO ACCESS
+var mdio_phy_addr_rev0 = []uint32{0x00, 0x20, 0x40, 0x60, 0x100, 0x120, 0x140}
+var mdio_phy_addr_rev1 = []uint32{0x00, 0x02, 0x04, 0x06, 0x100, 0x102, 0x104}
 
 var TaorPortMap = []PortMap {
     PortMap{0, 23, "xe8"},   //Front Panel Port 0
@@ -561,12 +564,20 @@ phy diag ce0,ce5,ce6-ce8,ce11 prbs clear
 
 
 func CheckForRevA_Gearbox() (err int) {
-    var output string
-    var RevA bool = false
+    var output, command string
+    var strapping uint32
+    err = errType.SUCCESS
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
 
     for i:=0; i<4; i++ {
 
-        command := fmt.Sprintf("\"phy raw c45 0x%x 0x1e 0xb2ca\"", (i * 0x20))
+        if strapping == 0 {
+            command = fmt.Sprintf("\"phy raw c45 0x%x 0x1e 0xb2ca\"", mdio_phy_addr_rev0[i])
+        } else {
+            command = fmt.Sprintf("\"phy raw c45 0x%x 0x1e 0xb2ca\"", mdio_phy_addr_rev1[i])
+        }
+        
         //BCM.0> phy raw c45 0x00 0x1e 0xb2ca
         //    0xb2ca: 0x00b0
 
@@ -581,17 +592,19 @@ func CheckForRevA_Gearbox() (err int) {
                 out := strings.TrimSpace(scanner.Text())
                 data64, _ := strconv.ParseUint(out[8:], 0, 64)
                 fmt.Printf(" Gearbox-%d Revision = 0x%.04x\n", i, data64)
-                if data64 == 0x00A0 {
-                    RevA = true
+                if data64 != 0x00B0 {
+                    err = errType.FAIL
                 }
             }
         }
     }
-    if RevA == true {
-        fmt.Printf(" ERROR: Taormina has at least one Rev A\n")
-    } else {
+
+    if err == errType.SUCCESS {
         fmt.Printf(" PASS: Taormina has Rev B gearboxes\n")
+    } else {
+        fmt.Printf(" ERROR: Taormina has at least one gearbox that is not rev B\n")
     }
+
     return
 }
 

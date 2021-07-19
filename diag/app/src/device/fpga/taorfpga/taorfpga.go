@@ -460,6 +460,11 @@ func SetI2Cmux(channel uint32, mux uint32) (err error) {
 }
 
 
+func GetResistorStrapping() (value uint32, err error) {
+
+    value, err = TaorReadU32(DEVREGION0, D0_BOARD_REV_ID_REG)
+    return
+}
 
 func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) {
     var args string
