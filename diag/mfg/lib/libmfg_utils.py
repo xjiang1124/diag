@@ -994,9 +994,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DL_LOG_FILES
         # test summary logfile
-        test_log_file = "{:s}test_dl.log".format(log_dir+sub_dir)
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
-        local_test_log_file = "log/{:s}_test_dl.log".format(mtp_id)
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_CFG:
         # log subdir
         sub_dir = MTP_DIAG_Logfile.MFG_CFG_LOG_DIR.format(mtp_id, log_timestamp)
@@ -1005,9 +1005,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_CFG_LOG_FILES
         # test summary logfile
-        test_log_file = "{:s}test_cfg.log".format(log_dir+sub_dir)
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
-        local_test_log_file = "log/{:s}_test_cfg.log".format(mtp_id)
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_P2C:
         # log subdir
         sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
@@ -1038,9 +1038,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_SWI_LOG_FILES
         # test summary logfile
-        test_log_file = "{:s}test_swi.log".format(log_dir+sub_dir)
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
-        local_test_log_file = "log/{:s}_test_swi.log".format(mtp_id)
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
         # copy csp files from MTP to Server
         test_onboard_csp_log_files = MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES
     elif stage == FF_Stage.FF_FST:

@@ -295,7 +295,7 @@ def main():
     log_timestamp = libmfg_utils.get_timestamp()
     log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
-    test_log_file = log_dir + log_sub_dir + "test_dl.log"
+    test_log_file = log_dir + log_sub_dir + "mtp_test.log"
     log_file_list.append(test_log_file)
     test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
@@ -303,7 +303,7 @@ def main():
     if verbosity:
         diag_log_filep = sys.stdout
     else:
-        diag_log_file = log_dir + log_sub_dir + "diag_dl.log"
+        diag_log_file = log_dir + log_sub_dir + "mtp_diag.log"
         log_file_list.append(diag_log_file)
         diag_log_filep = open(diag_log_file, "w+", buffering=0)
         log_filep_list.append(diag_log_filep)
@@ -311,7 +311,7 @@ def main():
     diag_nic_log_filep_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = log_dir + log_sub_dir + "diag_{:s}_dl.log".format(key)
+        diag_nic_log_file = log_dir + log_sub_dir + "mtp_{:s}_diag.log".format(key)
         log_file_list.append(diag_nic_log_file)
         diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
         log_filep_list.append(diag_nic_log_filep)
