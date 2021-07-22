@@ -238,6 +238,21 @@ class mtp_ctrl():
                 self.cli_log_err(err_msg)
         self.cli_log_err("==== Error Message End: ====")
 
+    def mtp_dump_nic_err_msg(self, slot):
+        err_msg = self.mtp_get_nic_err_msg(slot)
+        self.cli_log_slot_err(slot, "==== Error Message Start: ====")
+        if err_msg:
+            if (len(err_msg) > 512):
+                top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
+                self.cli_log_slot_err(slot, top_err_msg)
+                self.cli_log_slot_err(slot, "<============================>")
+                bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
+                self.cli_log_slot_err(slot, bottom_err_msg)
+            else:
+                err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
+                self.cli_log_slot_err(slot, err_msg)
+        self.cli_log_slot_err(slot, "==== Error Message End: ====")
+
 
     def set_mtp_status(self, status):
         if status < MTP_Status.MTP_STA_MAX:
@@ -669,8 +684,7 @@ class mtp_ctrl():
             # script not running anything.
             return True
         if not self._nic_ctrl_list[slot].nic_send_ctrl_c():
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Couldn't send C+C")
             return False
         return True
@@ -919,15 +933,19 @@ class mtp_ctrl():
     def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
         rc = True
         self._mgmt_handle.sendline(cmd)
+        cmd_before = ""
         for sig in sig_list:
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, [sig], timeout)
             if idx < 0:
                 rc = False
+                cmd_before = self._mgmt_handle.before
                 break
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout)
-
         # signature match fails
-        if not rc or idx < 0:
+        if not rc:
+            self.mtp_dump_err_msg(cmd_before)
+            return False
+        elif idx < 0:
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
         else:
@@ -1708,8 +1726,7 @@ class mtp_ctrl():
     def mtp_nic_boot_info_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init():
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
 
             cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
@@ -1795,15 +1812,13 @@ class mtp_ctrl():
 
     def mtp_nic_sw_mode_switch(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_mode_switch():
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
     def mtp_nic_sw_mode_switch_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_mode_switch_verify():
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
@@ -1874,8 +1889,7 @@ class mtp_ctrl():
 # 2. Routines that need smb bus, can not be run in parallel
     def mtp_mgmt_check_nic_pwr_status(self, slot):
         if not self._nic_ctrl_list[slot].nic_power_check():
-            err_msg = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -1935,8 +1949,7 @@ class mtp_ctrl():
     def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
         rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout)
         if not rc:
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
         return rc
 
 
@@ -1972,12 +1985,12 @@ class mtp_ctrl():
     def mtp_dump_nic_fru(self, slot, expect_sn="", expect_mac="", expect_pn=""):
         if not self._nic_ctrl_list[slot].nic_dump_fru(expect_mac=expect_mac):
             self.cli_log_slot_err_lock(slot, "Dump ASIC FRU failed")
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         if not self._nic_ctrl_list[slot].mtp_nic_dump_fru(expect_mac=expect_mac):
             self.cli_log_slot_err_lock(slot, "Dump SMB FRU failed")
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2430,14 +2443,12 @@ class mtp_ctrl():
         fea_mtp_match = re.search(fea_regex, fea_mtp_hex)
 
         if not self._nic_ctrl_list[slot].nic_dump_cpld("fea"):
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
         
         fea_nic_hex = self._nic_ctrl_list[slot].nic_get_info("hexdump -C /home/diag/cplddump")
         if not fea_nic_hex:
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
         fea_nic_match = re.search(fea_regex,fea_nic_hex)
 
@@ -2456,8 +2467,7 @@ class mtp_ctrl():
             return False
 
         if not self._nic_ctrl_list[slot].nic_check_cpld_partition():
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2543,7 +2553,7 @@ class mtp_ctrl():
     def mtp_program_nic_qspi(self, slot, qspi_img):
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
         
@@ -2557,7 +2567,7 @@ class mtp_ctrl():
     def mtp_program_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         if not self.mtp_mgmt_set_nic_gold_boot(slot):
@@ -2622,7 +2632,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2630,7 +2640,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc_ibm(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc_ibm(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         if not self.mtp_mgmt_set_nic_sw_boot(slot):
@@ -2641,7 +2651,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc_naples100(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc_naples100(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
@@ -2696,7 +2706,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2705,7 +2715,7 @@ class mtp_ctrl():
     def mtp_mgmt_save_nic_logfile(self, slot, logfile_list):
         if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2714,7 +2724,7 @@ class mtp_ctrl():
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
             self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2722,7 +2732,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "NIC Diag Sys Clean")
         if not self._nic_ctrl_list[slot].nic_diag_clean():
             self.cli_log_slot_err_lock(slot, "NIC Diag Sys Clean failed")
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2787,8 +2797,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_init_emmc(emmc_format):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         if emmc_format:
@@ -2806,8 +2815,7 @@ class mtp_ctrl():
             msg = "Set NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_set_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-                self.mtp_dump_err_msg(err_msg)
+                self.mtp_dump_nic_err_msg(slot)
                 return False
             self.cli_log_slot_inf_lock(slot, msg)
         return True
@@ -2818,8 +2826,7 @@ class mtp_ctrl():
             msg = "NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_check_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-                self.mtp_dump_err_msg(err_msg)
+                self.mtp_dump_nic_err_msg(slot)
                 return False
             self.cli_log_slot_inf_lock(slot, msg)
         return True
@@ -2832,7 +2839,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -3163,7 +3170,7 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].mtp_exec_cmd("sync"):
             err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return
 
     def mtp_nic_emmc_reformat(self, nic_rslt_list, nic_list, emmc_format=True):
@@ -3504,8 +3511,7 @@ class mtp_ctrl():
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
         if not self._nic_ctrl_list[slot].nic_sw_shutdown(isCloud):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -3513,8 +3519,7 @@ class mtp_ctrl():
     def mtp_mgmt_nic_sw_cleanup_shutdown(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_cleanup_shutdown():
             self.cli_log_slot_err(slot, "Graceful clean up shut down NIC failed")
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -3779,8 +3784,7 @@ class mtp_ctrl():
                 preset_config = "8"
             if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
                 self.cli_log_slot_err_lock(slot, "Set board config failed")
-                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-                self.mtp_dump_err_msg(err_msg)
+                self.mtp_dump_nic_err_msg(slot)
                 return False
         else:
             self.cli_log_slot_err_lock(slot, "Need to QA this card")
@@ -3906,8 +3910,7 @@ class mtp_ctrl():
         if nic_type == NIC_Type.ORTANO2:
             if not self._nic_ctrl_list[slot].nic_fix_vrm():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
-                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-                self.mtp_dump_err_msg(err_msg)
+                self.mtp_dump_nic_err_msg(slot)
                 return False
         return True
 

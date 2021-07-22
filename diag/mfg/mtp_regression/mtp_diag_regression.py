@@ -335,7 +335,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     return fail_list
 
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode):
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel MVL DSP Test Start".format(nic_type), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL DSP Test Start".format(nic_type), level=0)
     
     if nic_type == NIC_Type.ORTANO2:
         sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
