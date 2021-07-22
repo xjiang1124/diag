@@ -3905,6 +3905,18 @@ class mtp_ctrl():
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
+        # clear reg 0x50 after reading
+        reg_addr = 0x50
+        write_data = 0
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            return False
+        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            return False
+
+        return True
+
     def mtp_nic_fix_vrm(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2:
