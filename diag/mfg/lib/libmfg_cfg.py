@@ -166,12 +166,12 @@ class NIC_IMAGES:
     cpld_img["ORTANO2"] = "naples200_ortano2_rev3_8_06292021.bin"
     cpld_ver["ORTANO2"] = "0x3"
     cpld_dat["ORTANO2"] = "0x08"
-    sec_cpld_img["ORTANO2"] = "naples200_ortano2_rev3_8_06292021.bin"
-    sec_cpld_ver["ORTANO2"] = "0x83"
-    sec_cpld_dat["ORTANO2"] = "0x08"
-    fail_cpld_img["ORTANO2"] = "naples200_ortano2_failsave_rev3_8_06292021.bin"
+    sec_cpld_img["ORTANO2"] = "naples200_ortano2_rev3_7_05142021.bin"
+    sec_cpld_ver["ORTANO2"] = "0x3"
+    sec_cpld_dat["ORTANO2"] = "0x07"
+    fail_cpld_img["ORTANO2"] = "naples200_ortano2_failsafe_rev3_7_05142021.bin"
     fail_cpld_ver["ORTANO2"] = "0x83"
-    fail_cpld_dat["ORTANO2"] = "0x08"
+    fail_cpld_dat["ORTANO2"] = "0x07"
     fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
     diagfw_img["ORTANO2"] = "elba_diagfw_lacona_0.2-1-g9feba69_2021.06.22.tar"
     diagfw_dat["ORTANO2"] = "06-22-2021"
@@ -261,8 +261,8 @@ class NIC_CPLD_Version:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_04272021.tar"
-    MTP_ARM64_IMAGE = "image_arm64_04272021.tar"
+    MTP_AMD64_IMAGE = "image_amd64_elba_2021.07.22.tar"
+    MTP_ARM64_IMAGE = "image_arm64_elba_2021.07.22.tar"
     
     MTP_PENCTL_IMAGE = "penctl.linux.0915"
     MTP_PENCTL_TOKEN = "penctl.token"

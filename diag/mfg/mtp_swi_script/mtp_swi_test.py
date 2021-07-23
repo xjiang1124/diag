@@ -98,9 +98,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     if nic_type == NIC_Type.NAPLES25OCP:
         testseqlist = ["SEC_CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-        # testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
-        # No signed CPLD for Ortano
-        return
+        testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -133,9 +131,6 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
     dsp = FF_Stage.FF_SWI
     testseqlist = ["SEC_CPLD_VERIFY", "COPY_GOLD"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["COPY_GOLD"]
-        # No signed CPLD for Ortano
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -315,8 +310,7 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Non Secure CPLD image: " + os.path.basename(cpld_img_file))
-        if card_type != NIC_Type.ORTANO2:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Main image: " + os.path.basename(emmc_img_file))
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Gold image: " + os.path.basename(gold_img_file))
         if nic_profile:
@@ -458,9 +452,6 @@ def main():
             continue
         if slot in fail_nic_list:
             continue
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Skipping SEC_KEY_PROG for ORTANO")
-                continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         test_list = ["SEC_KEY_PROG"]
         for skipped_test in args.skip_test:
@@ -541,10 +532,6 @@ def main():
             continue
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        #skipped secure key programming for Ortano
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Skipping SEC_PROG_VERIFY for ORTANO")
-            continue
         test_list = ["SEC_PROG_VERIFY"]
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
