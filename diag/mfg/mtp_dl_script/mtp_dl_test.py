@@ -229,6 +229,7 @@ def set_pslc(mtp_mgmt_ctrl,mtp_id, fail_nic_list):
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, 'Set NIC pSLC mode FAILED')
             fail_nic_list.append(slot)
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
         else:
             mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, 'Set NIC pSLC mode complete')
@@ -460,6 +461,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -511,6 +513,7 @@ def main():
         if not nic_test_rslt_list[slot]:
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
 
     # Failure analysis (sequential access)
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -630,6 +633,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))

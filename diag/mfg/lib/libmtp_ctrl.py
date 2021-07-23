@@ -825,6 +825,14 @@ class mtp_ctrl():
                     self._swmtestmode[slot] = Swm_Test_Mode.SWM
         return True
 
+    def mtp_set_nic_status_fail(self, slot):
+        if self._nic_ctrl_list:
+            self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+
+    def mtp_clear_nic_status(self, slot):
+        if self._nic_ctrl_list:
+            self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_OK)
+
     def mtp_stale_image_cleanup(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -2046,7 +2054,7 @@ class mtp_ctrl():
         fru_buf = self._nic_ctrl_list[slot].mtp_read_alom_fru(slot)
 
         if not fru_buf:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.mtp_set_nic_status_fail(slot)
             return False
 
         # retrieve card serial number
@@ -3034,7 +3042,7 @@ class mtp_ctrl():
 
     def mtp_nic_mgmt_seq_init(self, fpo):
         for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
+            if self._nic_prsnt_list[slot] and self.mtp_check_nic_status(slot):
                 self.mtp_nic_mini_init(slot, fpo)
 
 
@@ -3042,8 +3050,15 @@ class mtp_ctrl():
         nic_list = list()
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
+                if not self.mtp_check_nic_status(slot):
+                    self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
+                    continue
                 self.mtp_nic_boot_info_init(slot)
                 nic_list.append(slot)
+
+        if not nic_list:
+            self.cli_log_err("No NICs passed")
+            return False
 
         # parallel init mgmt/aapl
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
