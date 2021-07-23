@@ -18,6 +18,7 @@ const (
     ID_NAPLES100HPE    = 0x1F
     ID_NAPLES25SWM_DELL= 0x20
     ID_NAPLES25SWM_833 = 0x21
+    ID_NAPLES100DELL   = 0x22
     ID_BIODONA_D4      = 0x40
     ID_BIODONA_D5      = 0x41
     ID_ORTANO          = 0x43

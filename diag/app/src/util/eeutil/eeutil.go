@@ -234,6 +234,11 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
             eeprom.CustType = "DELLSWM"
             eeprom.EepromTbl = eeprom.DellTblSWM
         }
+        if (cardType == "NAPLES100DELL") {
+            eeprom.CustType = "DELLNAPLES100"
+            eeprom.EepromTbl = eeprom.Naples100DELLTbl
+        }
+        
     }
 
     return(0)

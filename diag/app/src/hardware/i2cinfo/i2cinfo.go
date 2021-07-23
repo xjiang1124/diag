@@ -159,6 +159,13 @@ var Naples100IBMMtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},
 }
 
+// Naples100 IBM I2C table on MTP SMBus
+var Naples100DELLMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    0},
+}
+
 //=========================================
 // forio I2C table on ARM
 // devAddr is 7-bit address
@@ -383,6 +390,7 @@ func init() {
     Naples100MtpTbl = append(Naples100MtpTbl, MtpHubI2cTbl...)
     Naples100HPEMtpTbl = append(Naples100HPEMtpTbl, MtpHubI2cTbl...)
     Naples100IBMMtpTbl = append(Naples100IBMMtpTbl, MtpHubI2cTbl...)
+    Naples100DELLMtpTbl = append(Naples100DELLMtpTbl, MtpHubI2cTbl...)
     Naples25MtpTbl  = append(Naples25MtpTbl, MtpHubI2cTbl...)
     ForioMtpTbl     = append(ForioMtpTbl, MtpHubI2cTbl...)
     BiodonaMtpTbl     = append(BiodonaMtpTbl, MtpHubI2cTbl...)
@@ -393,7 +401,8 @@ func init() {
 
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
-       CardType == "NAPLES100IBM" {
+       CardType == "NAPLES100IBM" ||
+       CardType == "NAPLES100DELL" {
         I2cTbl = Naples100Tbl
     } else if CardType == "NAPLES25" || CardType == "NAPLES25WFG" {
         I2cTbl = Naples25Tbl
@@ -518,6 +527,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = Naples100HPEMtpTbl
     } else if uutType == "NAPLES100IBM"{
         CurI2cTbl = Naples100IBMMtpTbl
+    } else if uutType == "NAPLES100DELL"{
+        CurI2cTbl = Naples100DELLMtpTbl
     } else if uutType == "NAPLES25" {
         CurI2cTbl = Naples25MtpTbl
     } else if uutType == "NAPLES25OCP" {
