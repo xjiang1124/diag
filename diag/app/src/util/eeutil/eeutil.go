@@ -75,8 +75,8 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
            cardType == "LACONADELL" ||
            cardType == "LACONA" ||
            cardType == "POMONTEDELL" ||
+           cardType == "NAPLES100DELL" ||
            cardType == "NAPLES100HPE" {
-
             eeprom.I2cAddr16 = true
 
         }
