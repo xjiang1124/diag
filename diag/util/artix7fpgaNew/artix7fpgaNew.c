@@ -40,7 +40,7 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define FLASH_READ_STATUS_REG           0x05
 #define FLASH_WRITE_ENABLE              0x06
 #define FLASH_SOFT_RESET                0x0A
-#define FLASH_READ_4B_ADDR              0x13
+#define FLASH_READ_ADDR4B               0x13
 #define FLASH_READ_CFG_REG              0x15
 #define FLASH_SECTOR_ERASE              0x20
 #define FLASH_BLOCK_ERASE_32K           0x52
@@ -69,13 +69,19 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 
 #define PS48_FRAME_SIZE                 6
 #define FLASH_PAGE_SIZE                 128
-#define FLASH_TRANSFER_WITH_B           1
+#define FLASH_TRANSFER_WIDTH_B          1
+#define PS48_PIPELINE_SIZE              32
 
 #define ENABLE                          1
 #define DISABLE                         0
 
 #define DEBUG                           DISABLE
+//#define DEBUG                           ENABLE
 
+// 5MHz
+#define ELBA_SPI_CLK                    5000000
+
+#define MIN(a,b)                        ((a>b)? b : a)
 
 static int _e_ioctl(int fd, const char *name, unsigned long req, void *arg)
 {
@@ -126,7 +132,7 @@ static int ps48_sync(uint32_t fd)
     memset(msg, 0, sizeof (msg));
     msg[0].tx_buf = (intptr_t)txbuf;
     msg[0].len = 6;
-    msg[0].speed_hz = 5000000;
+    msg[0].speed_hz = ELBA_SPI_CLK;
 
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
  
@@ -174,156 +180,14 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
     memset(msg, 0, sizeof (msg));
     msg[0].tx_buf = (intptr_t)txbuf;
     msg[0].len = 6;
-    msg[0].speed_hz = 5000000;
+    msg[0].speed_hz = ELBA_SPI_CLK;
 
     e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
 
     return 0;
 }
 
-static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
-{
-    struct spi_ioc_transfer msg[1];
-    uint8_t txbuf[6];    
-    uint8_t *temp;
-    int ret;
-
-    temp = (uint8_t *)(&data);
-
-    txbuf[0] = 0x40;
-    txbuf[1] = addr;
-    txbuf[5] = *temp++;
-    txbuf[4] = *temp++;
-    txbuf[3] = *temp++;
-    txbuf[2] = *temp;  
-
-#if (DEBUG == ENABLE)    
-    printf("ps48-write: txbuf\n");
-    disp_buf(txbuf, PS48_FRAME_SIZE);
-#endif
-
-    memset(msg, 0, sizeof (msg));
-    msg[0].tx_buf = (intptr_t)txbuf;
-    msg[0].len = 6;
-    msg[0].speed_hz = 5000000;
-
-    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-    if (ret < 1) {
-        return -1;
-    } else {
-        return 0;
-    }
-}
-
-static int ps48_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte)
-{
-    struct spi_ioc_transfer msg[1];
-    int ret;
-    int f_trans_w = FLASH_TRANSFER_WITH_B;
-    uint8_t *txbuf;
-
-    if (f_trans_w == FLASH_TRANSFER_WITH_B) {
-        txbuf = (uint8_t *) malloc(numByte * 6);
-    }
-
-    for (int i = 0; i < numByte; i++) {
-        txbuf[i*6+0] = 0x40;
-        txbuf[i*6+1] = addr;
-        txbuf[i*6+2] = 0x00;
-        txbuf[i*6+3] = 0x00;
-        txbuf[i*6+4] = 0x00;
-        txbuf[i*6+5] = buf[i];
-    } 
-
-    
-#if (DEBUG == ENABLE)    
-    printf("ps48-write_pipeline: txbuf\n");
-    disp_buf(txbuf, PS48_FRAME_SIZE);
-#endif
-
-    memset(msg, 0, sizeof (msg));
-    msg[0].tx_buf = (intptr_t)txbuf;
-    msg[0].len = numByte*6;
-    msg[0].speed_hz = 5000000;
-
-    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-    if (ret < 1) {
-        ret = -1;
-    } else {
-        ret = 0;
-    }
-
-    free(txbuf);
-    return ret;
-}
-
-static int ps48_read(uint32_t fd, uint32_t addr)
-{
-    struct spi_ioc_transfer msg[1];
-    uint8_t txbuf[6];
-    uint8_t *temp;
-    int ret;
-
-    temp = (uint8_t *)(&addr);
-
-    txbuf[0] = 0x80;
-    txbuf[1] = 0x00;
-    txbuf[5] = *temp++;
-    txbuf[4] = *temp++;
-    txbuf[3] = *temp++;
-    txbuf[2] = *temp;
-
-    memset(msg, 0, sizeof (msg));
-    msg[0].tx_buf = (intptr_t)txbuf;
-    msg[0].len = 6;
-    msg[0].speed_hz = 5000000;
-
-#if (DEBUG == ENABLE)    
-    printf("ps48-read: txbuf\n");
-    disp_buf(txbuf, PS48_FRAME_SIZE);
-#endif
-
-    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-    if (ret < 1) {
-        return -1;
-    } else {
-        return 0;
-    }
-
-}
-
-static int ps48_noop(uint32_t fd)
-{
-    struct spi_ioc_transfer msg[1];
-    uint8_t txbuf[6];
-    int ret;
-
-    txbuf[0] = 0x00;
-    txbuf[1] = 0x00;
-    txbuf[2] = 0x00;
-    txbuf[3] = 0x00;
-    txbuf[4] = 0x00;
-    txbuf[5] = 0x7F;
-
-    memset(msg, 0, sizeof (msg));
-    msg[0].tx_buf = (intptr_t)txbuf;
-    msg[0].len = 6;
-    msg[0].speed_hz = 5000000;
-
-#if (DEBUG == ENABLE)    
-    printf("ps48-noop: txbuf\n");
-    disp_buf(txbuf, PS48_FRAME_SIZE);
-#endif
-
-    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
-    if (ret < 1) {
-        return -1;
-    } else {
-        return 0;
-    }
-}
-
-static uint32_t ps48_resp(uint32_t fd)
+static int  ps48_resp(uint32_t fd)
 {
     struct spi_ioc_transfer msg[1];
     uint8_t rxbuf[6];
@@ -337,7 +201,7 @@ static uint32_t ps48_resp(uint32_t fd)
 
         msg[0].rx_buf = (intptr_t)rxbuf;
         msg[0].len = 6;
-        msg[0].speed_hz = 5000000;
+        msg[0].speed_hz = ELBA_SPI_CLK;
 
         ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
 
@@ -366,23 +230,272 @@ static uint32_t ps48_resp(uint32_t fd)
     return val;
 }
 
-static uint32_t ps48_resp_pipeline(uint32_t fd, uint32_t expNumOp) {
-    int pendingOp;
-    int retry = 0;
-    int retNumOp;
+static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[6];    
+    uint8_t *temp;
+    int ret;
 
-    pendingOp = expNumOp;
-    while (pendingOp > 0) {
-        retNumOp = ps48_resp(fd);
-        pendingOp -= retNumOp;
+    temp = (uint8_t *)(&data);
 
-        if (retry >= 1000) {
-            break;
+    txbuf[0] = 0x40;
+    txbuf[1] = addr;
+    txbuf[5] = *temp++;
+    txbuf[4] = *temp++;
+    txbuf[3] = *temp++;
+    txbuf[2] = *temp;  
+
+#if (DEBUG == ENABLE)    
+    printf("ps48-write: txbuf\n");
+    disp_buf(txbuf, PS48_FRAME_SIZE);
+#endif
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 6;
+    msg[0].speed_hz = ELBA_SPI_CLK;
+
+    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    if (ret < 1) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+/*
+ * Should only be used for Flash controller Data transmit register
+ */
+static int ps48_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte)
+{
+    struct spi_ioc_transfer msg[1];
+    int ret = 1;
+    int f_trans_w = FLASH_TRANSFER_WIDTH_B;
+    uint8_t *txbuf;
+    uint8_t *txbuf_1;
+    uint8_t *rxbuf;
+    uint8_t *rxbuf_1;
+    uint32_t ovHead = 2;
+    uint32_t revByte = 0;
+    int val = 0;
+
+    if (f_trans_w == FLASH_TRANSFER_WIDTH_B) {
+        txbuf = (uint8_t *) malloc((numByte+ovHead) * 6);
+        rxbuf = (uint8_t *) malloc((numByte+ovHead) * 6);
+    }
+
+    for (int i = 0; i < numByte; i++) {
+        txbuf[i*6+0] = 0x40;
+        txbuf[i*6+1] = addr;
+        txbuf[i*6+2] = 0x00;
+        txbuf[i*6+3] = 0x00;
+        txbuf[i*6+4] = 0x00;
+        txbuf[i*6+5] = buf[i];
+    } 
+    
+#if (DEBUG == ENABLE)    
+    printf("ps48-write_pipeline: txbuf\n");
+    disp_buf(txbuf, numByte * 6);
+#endif
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].rx_buf = (intptr_t)rxbuf;
+    msg[0].len = (numByte+ovHead)*6;
+    msg[0].speed_hz = ELBA_SPI_CLK;
+
+    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    if (ret < 1) {
+        ret = -1;
+    } else {
+        ret = 0;
+    }
+    
+#if (DEBUG == ENABLE)    
+    printf("ps48-write_pipeline: rxbuf\n");
+    disp_buf(rxbuf, (numByte+ovHead) * 6);
+#endif
+
+    // Check write response
+    for (int i = 0; i < numByte+ovHead; i++) {
+        if ((rxbuf[i*6] & 0xC0) != 0) {
+            revByte += rxbuf[i*6+5];
         }
     }
 
-    if (retry >= 1000) {
-        printf("ps48_resp_pipeline TIMEOUT!\n");
+    // If not all responses received, keep checking
+    if (revByte != numByte) {
+        while(1) {
+            val = ps48_resp(fd);
+            if (val != -1) {
+                revByte += val;
+            }
+            else {
+                break;
+            }
+        }
+    }
+
+    if (revByte != numByte) {
+        printf("ps48_write_pipeline failed: expect numbyte: %d; received numByte: %d\n", numByte, revByte);
+        ret = -1;
+    }
+
+    free(txbuf);
+    free(rxbuf);
+    return ret;
+}
+
+static int ps48_read(uint32_t fd, uint32_t addr)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[6];
+    uint8_t *temp;
+    int ret;
+
+    temp = (uint8_t *)(&addr);
+
+    txbuf[0] = 0x80;
+    txbuf[1] = 0x00;
+    txbuf[5] = *temp++;
+    txbuf[4] = *temp++;
+    txbuf[3] = *temp++;
+    txbuf[2] = *temp;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 6;
+    msg[0].speed_hz = ELBA_SPI_CLK;
+
+#if (DEBUG == ENABLE)    
+    printf("ps48-read: txbuf\n");
+    disp_buf(txbuf, PS48_FRAME_SIZE);
+#endif
+
+    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    if (ret < 1) {
+        return -1;
+    } else {
+        return 0;
+    }
+
+}
+
+/*
+ * Should only be used for Flash controller data receive register
+ */
+static int ps48_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte)
+{
+    struct spi_ioc_transfer msg[1];
+    int ret = 1;
+    int f_trans_w = FLASH_TRANSFER_WIDTH_B;
+    uint8_t *txbuf;
+    uint8_t *txbuf_1;
+    uint8_t *rxbuf;
+    uint8_t *rxbuf_1;
+    uint32_t ovHead = 0;
+    uint32_t revByte = 0;
+    int val = 0;
+    uint32_t bufIdx = 0;
+    uint8_t *tmpPtr;
+    uint32_t addr_f;
+    addr_f = addr + QSFP_CTRL_FPGA_BASE_ADDR;
+
+    tmpPtr = (uint8_t *)(&addr_f);
+
+    if (f_trans_w == FLASH_TRANSFER_WIDTH_B) {
+        txbuf = (uint8_t *) malloc((numByte+ovHead) * 6);
+        rxbuf = (uint8_t *) malloc((numByte+ovHead) * 6);
+    }
+
+    for (int i = 0; i < numByte; i++) {
+        txbuf[i*6+0] = 0x80;
+        txbuf[i*6+1] = 0;
+        txbuf[i*6+2] = tmpPtr[3];
+        txbuf[i*6+3] = tmpPtr[2];
+        txbuf[i*6+4] = tmpPtr[1];
+        txbuf[i*6+5] = tmpPtr[0];
+    } 
+    
+#if (DEBUG == ENABLE)    
+    printf("ps48_rx_pipeline: txbuf\n");
+    disp_buf(txbuf, (numByte+ovHead) * 6);
+#endif
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].rx_buf = (intptr_t)rxbuf;
+    msg[0].len = (numByte+ovHead)*6;
+    msg[0].speed_hz = ELBA_SPI_CLK;
+
+    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    if (ret < 1) {
+        ret = -1;
+    } else {
+        ret = 0;
+    }
+    
+#if (DEBUG == ENABLE)    
+    printf("ps48_rx_pipeline: rxbuf\n");
+    disp_buf(rxbuf, (numByte+ovHead) * 6);
+#endif
+
+    // Check write response
+    for (int i = 0; i < numByte+ovHead; i++) {
+        if ((rxbuf[i*6] & 0xC0) != 0) {
+            buf[bufIdx] = rxbuf[i*6+5];
+            bufIdx++;
+        }
+    }
+
+    // If not all responses received, keep checking
+    while(bufIdx < numByte) {
+        val = ps48_resp(fd);
+        if (val != -1) {
+            buf[bufIdx] = val & 0xFF;
+        }
+        else {
+            break;
+        }
+        bufIdx++;
+    }
+
+    if (bufIdx != numByte) {
+        printf("ps48_read_pipeline failed: expect numbyte: %d; received numByte: %d\n", numByte, bufIdx);
+        ret = -1;
+    }
+
+    free(txbuf);
+    free(rxbuf);
+    return ret;
+}
+
+static int ps48_noop(uint32_t fd)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[6];
+    int ret;
+
+    txbuf[0] = 0x00;
+    txbuf[1] = 0x00;
+    txbuf[2] = 0x00;
+    txbuf[3] = 0x00;
+    txbuf[4] = 0x00;
+    txbuf[5] = 0x7F;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 6;
+    msg[0].speed_hz = ELBA_SPI_CLK;
+
+#if (DEBUG == ENABLE)    
+    printf("ps48-noop: txbuf\n");
+    disp_buf(txbuf, PS48_FRAME_SIZE);
+#endif
+
+    ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    if (ret < 1) {
         return -1;
     } else {
         return 0;
@@ -415,23 +528,6 @@ static int ps48_qspi_ctrl_write(uint32_t fd, uint32_t addr, uint32_t data)
 }
 
 /*
-uint8_t ps48_flash_read_csr(uint32_t fd) {
-    uint8_t ret;
-    ps48_qspi_ctrl_write(fd, SPI_SOFT_RESET_REG, 0xa);
-    ps48_qspi_ctrl_write(fd, SPI_SLAVE_SEL_REG, 0x0);
-    
-    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_STATUS_REG);
-    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, 0);
-    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x86);
-    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
-    ps48_qspi_ctrl_read(fd, SPI_DATA_RECEIVE_REG);
-    ret = ps48_qspi_ctrl_read(fd, SPI_DATA_RECEIVE_REG);
-
-    return ret;
-}
-*/
-
-/*
  * flash_write uses 4B address. Make sure 4B mode is enabled
  */ 
 static int flash_write(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte) {
@@ -461,6 +557,45 @@ static int flash_write(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByt
     return ret;
 }
 
+/*
+ * flash_write uses 4B address. Make sure 4B mode is enabled
+ */ 
+static int flash_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte) {
+    uint8_t ret = 0;
+    uint8_t *temp;
+    temp = (uint8_t *)(&addr);
+    uint32_t remainByte = numByte;
+    uint32_t transByte;
+    uint8_t *transBuf = buf;
+
+    ps48_qspi_ctrl_write(fd, SPI_SOFT_RESET_REG, 0xa);
+    ps48_qspi_ctrl_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+    
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x1E6);
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
+
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_PAGE_PROG);
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+3));
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+2));
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+1));
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *temp);
+
+    while(1) { 
+        transByte = MIN(remainByte, PS48_PIPELINE_SIZE);
+        ps48_write_pipeline(fd, SPI_DATA_TRANSMIT_REG, transBuf, transByte);
+        if (remainByte <= PS48_PIPELINE_SIZE) {
+            break;
+        }
+        transBuf += transByte;
+        remainByte -= transByte;
+    }
+
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x86);
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
+
+    return ret;
+}
+
 static int flash_read(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte) {
     uint8_t ret = 0;
     uint8_t *temp;
@@ -472,7 +607,7 @@ static int flash_read(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte
     ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x1E6);
     ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
 
-    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_4B_ADDR);
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_ADDR4B);
     ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+3));
     ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+2));
     ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+1));
@@ -492,6 +627,71 @@ static int flash_read(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte
     return ret;
 }
 
+static int flash_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte) {
+    uint8_t ret = 0;
+    uint8_t *temp;
+    uint8_t *transBufBase;
+    uint8_t *transBuf;
+    uint32_t transByte;
+    uint32_t rdOvHead = 5;
+    uint32_t remainByte = numByte;
+
+    temp = (uint8_t *)(&addr);
+    transBufBase = (uint8_t *) malloc(numByte);
+    transBuf = transBufBase;
+
+    ps48_qspi_ctrl_write(fd, SPI_SOFT_RESET_REG, 0xa);
+    ps48_qspi_ctrl_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+    
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x1E6);
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
+
+    //printf("Writing flash read command\n");
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, FLASH_READ_ADDR4B);
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+3));
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+2));
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *(temp+1));
+    ps48_qspi_ctrl_write(fd, SPI_DATA_TRANSMIT_REG, *temp);
+
+    //printf("Flushing 0s' to pop read data\n");
+    while(1) { 
+        transByte = MIN(remainByte, PS48_PIPELINE_SIZE);
+        ps48_write_pipeline(fd, SPI_DATA_TRANSMIT_REG, transBuf, transByte);
+        if (remainByte <= PS48_PIPELINE_SIZE) {
+            break;
+        }
+        transBuf += transByte;
+        remainByte -= transByte;
+    }
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x86);
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
+    free(transBufBase);
+
+    transBufBase = (uint8_t *) malloc(numByte + rdOvHead);
+    transBuf = transBufBase;
+    remainByte = numByte + rdOvHead;
+    //printf("Reading flash data\n");
+    while(1) { 
+        transByte = MIN(remainByte, PS48_PIPELINE_SIZE);
+        ps48_read_pipeline(fd, SPI_DATA_RECEIVE_REG, transBuf, transByte);
+        if (remainByte <= PS48_PIPELINE_SIZE) {
+            break;
+        }
+        transBuf += transByte;
+        remainByte -= transByte;
+    
+        //ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x1E6);
+        //ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
+    }
+
+    memcpy(buf, transBufBase+rdOvHead, numByte); 
+
+    return ret;
+}
+
+/*
+ * This API is only to read one page. it will be slow to read actual image
+ */
 static int flash_read_page(uint32_t fd, uint32_t addr) {
     uint8_t ret = 0;
     uint8_t *buf = (uint8_t *)malloc(FLASH_PAGE_SIZE+5);
@@ -502,6 +702,14 @@ static int flash_read_page(uint32_t fd, uint32_t addr) {
     free(buf);
     return ret;
 
+}
+
+static int flash_read_page_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf) {
+    uint8_t ret = 0;
+
+    ret = flash_read_pipeline(fd, addr, buf, FLASH_PAGE_SIZE);
+
+    return ret;
 }
 
 /*
@@ -640,30 +848,30 @@ static int flash_write_page(uint32_t fd, uint32_t addr, uint8_t *buf) {
 
 }
 
-static int flash_write_page_test(uint32_t fd, uint32_t addr) {
-    uint8_t * buf;
-    uint8_t val_sr;
+static int flash_write_page_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf) {
+    int retry;
+    uint8_t val;
 
-    buf = (uint8_t *)malloc(FLASH_PAGE_SIZE);
+    flash_write_pipeline(fd, addr, buf, FLASH_PAGE_SIZE);
 
-    for (int i = 0; i < FLASH_PAGE_SIZE; i++) {
-        *(buf+i) = (uint8_t) i;
+    // 0.25-0.75 ms program time
+    while(retry < 20) {
+        val = flash_rdsr(fd);
+        if ( (val & 1) == 0 ) {
+            break;
+        }
+        usleep(100);
+        retry++;
     }
 
-    flash_ena_4B_addr(fd);
-    flash_wr_ena(fd);
+    if (retry == 20) {
+        printf("Write page timeout!\n");
+        return -1;
+    }
+    //printf("retry: %d\n", retry);
 
-    val_sr = flash_rdsr(fd);
-    printf("SR: 0x%x\n", val_sr);
-
-    flash_write_page(fd, addr, buf);
-    flash_wr_dis(fd);
-
-    printf("Write Bufer:\n");
-    disp_buf(buf, FLASH_PAGE_SIZE);
-
-    free(buf);
     return 0;
+
 }
 
 static int flash_prog(char* fn, char* imageType) {
@@ -729,6 +937,7 @@ static int flash_prog(char* fn, char* imageType) {
 
     fd = e_open(spidev_path1, O_RDWR, 0);
 
+    ps48_sync(fd);
     flash_ena_4B_addr(fd);
 
     // Block erase
@@ -755,7 +964,6 @@ static int flash_prog(char* fn, char* imageType) {
     }
 
     // Write date to flash
-
     printf("Programming image\n");
     cur_addr = flash_base_addr;
     end_addr = flash_base_addr + bufSize;
@@ -772,7 +980,7 @@ static int flash_prog(char* fn, char* imageType) {
         }
 
         flash_wr_ena(fd);
-        ret = flash_write_page(fd, cur_addr, (buf+buf_index));
+        ret = flash_write_page_pipeline(fd, cur_addr, (buf+buf_index));
         cur_addr += FLASH_PAGE_SIZE;
         buf_index += FLASH_PAGE_SIZE;
         if (cur_addr >= end_addr) {
@@ -785,15 +993,157 @@ static int flash_prog(char* fn, char* imageType) {
     close(fd);
 }
 
+static int flash_read_to_file(char* fn, char* imageType) {
+    FILE* fp;
+    int fileSize;
+
+    uint32_t fd;
+
+    uint32_t flash_base_addr;
+    uint32_t cur_addr;
+    uint32_t end_addr;
+
+    int bufSize;
+    uint8_t *buf;
+    int buf_index;
+
+    int ret;
+
+    printf("fn: %s, imageType: %s\n", fn, imageType);
+
+    if (strcmp(imageType, "main") == 0) {
+        printf("main image; base: 0x%x\n", FLASH_OFFSET_MAIN);
+        flash_base_addr = FLASH_OFFSET_MAIN;
+        bufSize = 0x1000000;
+    }
+    else if (strcmp(imageType, "gold") == 0) {
+        printf("gold image; base: 0x%x\n", FLASH_OFFSET_GOLD);
+        flash_base_addr = FLASH_OFFSET_GOLD;
+        bufSize = 0x1000000;
+    }
+    else if (strcmp(imageType, "test") == 0) {
+        printf("test image; base: 0x%x\n", FLASH_OFFSET_TEST);
+        flash_base_addr = FLASH_OFFSET_TEST;
+        bufSize = 0x200;
+    } 
+    else {
+        printf("Invalid image type: %s\n", imageType);
+        return -1;
+    }
+
+    buf = (uint8_t *) malloc(bufSize);
+
+    fd = e_open(spidev_path1, O_RDWR, 0);
+
+    ps48_sync(fd);
+    flash_ena_4B_addr(fd);
+
+    // Read data from flash
+    printf("Reading flash data from offset 0x%x of 0x%x number of bytes\n", flash_base_addr, bufSize);
+    cur_addr = flash_base_addr;
+    end_addr = flash_base_addr + bufSize;
+    buf_index = 0;
+
+    while(1) {
+        if (flash_base_addr != FLASH_OFFSET_TEST) {
+            if ( (cur_addr % 0x100000) == 0 ) {
+                printf("Reading 0x%x\n", cur_addr);
+            }
+        }
+        else {
+            printf("Reading 0x%x\n", cur_addr);
+        }
+
+        ret = flash_read_page_pipeline(fd, cur_addr, (buf+buf_index));
+        cur_addr += FLASH_PAGE_SIZE;
+        buf_index += FLASH_PAGE_SIZE;
+        if (cur_addr >= end_addr) {
+            break;
+        }
+    }
+
+    //printf("flash_read buf: \n");
+    //disp_buf(buf, bufSize);
+
+    // Write to file
+    FILE *write_ptr;
+    fp = fopen(fn,"wb");
+    fwrite(buf, bufSize, 1, fp);
+    fclose(fp);
+
+    free(buf);
+    close(fd);
+}
+
+static int flash_write_page_test(uint32_t fd, uint32_t addr) {
+    uint8_t * buf;
+    uint8_t val_sr;
+
+    buf = (uint8_t *)malloc(FLASH_PAGE_SIZE);
+
+    for (int i = 0; i < FLASH_PAGE_SIZE; i++) {
+        *(buf+i) = (uint8_t) i;
+    }
+
+    flash_ena_4B_addr(fd);
+    flash_wr_ena(fd);
+
+    val_sr = flash_rdsr(fd);
+    printf("SR: 0x%x\n", val_sr);
+
+    flash_write_page_pipeline(fd, addr, buf);
+    flash_wr_dis(fd);
+
+    printf("Write Bufer:\n");
+    disp_buf(buf, FLASH_PAGE_SIZE);
+
+    free(buf);
+    return 0;
+}
+
+static int ps48_write_pipeline_test(uint32_t fd, uint32_t numByte) {
+    uint8_t *buf;
+
+    buf = (uint8_t *)malloc(numByte);
+    for (int i = 0; i < numByte; i++) {
+        *(buf+i) = (uint8_t) i;
+    }
+    disp_buf(buf, numByte);
+
+    // Reset FIFO pointer    
+    ps48_qspi_ctrl_write(fd, SPI_SOFT_RESET_REG, 0xa);
+    ps48_qspi_ctrl_write(fd, SPI_SLAVE_SEL_REG, 0x0);
+
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x1E6);
+    ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
+
+    ps48_write_pipeline(fd, SPI_DATA_TRANSMIT_REG, buf, numByte);
+
+    free(buf);
+    return 0;
+
+}
+
+static int flash_read_pipeline_test(uint32_t fd, uint32_t addr, uint32_t numByte) {
+    uint8_t *buf;
+
+    buf = (uint8_t *)malloc(numByte);
+
+    flash_read_pipeline(fd, addr, buf, numByte);
+
+    disp_buf(buf, numByte);
+
+    free(buf);
+    return 0;
+}
+
+
 static void usage(void)
 {
-    printf("artix7fpga -init\n");                        // Initialize PS-48
-    printf("artix7fpga -r addr\n");                      // Read from PS-48 Register
-    printf("artix7fpga -w addr data\n");                 // Write to PS-48 Register
-    printf("artix7fpga -noop\n");                        // Read from PS-48 Register
-    printf("artix7fpga -resp \n");                       // Read from PS-48 Register
-    printf("artix7fpga -frdsr\n");
-    printf("artix7fpga -frpage\n");
+    printf("artix7fpga -r addr\n");                      // Read PS-48 Register
+    printf("artix7fpga -w addr data\n");                 // Write PS-48 Register
+    printf("artix7fpga -fprog file_name main/gold\n");
+    printf("artix7fpga -ffile file_name main/gold\n");
     exit(1);
 }
     
@@ -903,6 +1253,44 @@ int main(int argc, char *argv[])
         if ( argc < 4 ) usage();
         printf("Program image\n");
         flash_prog(argv[2], argv[3]);
+    } 
+    else if ( strcmp(argv[1], "-ffile" ) == 0 ) 
+    {
+        if ( argc < 4 ) usage();
+        printf("Reading flash data to file\n");
+        flash_read_to_file(argv[2], argv[3]);
+    } 
+    else if ( strcmp(argv[1], "-wp" ) == 0 ) 
+    {
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        if ( argc < 3 ) usage();
+
+        uint32_t numByte = strtoul(argv[2], NULL, 0);
+        printf("Write Pipeline test\n");
+        ps48_write_pipeline_test(fd, numByte);
+        close(fd);
+    } 
+    else if ( strcmp(argv[1], "-frp" ) == 0 ) 
+    {
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        if ( argc < 4 ) usage();
+
+        uint32_t addr = strtoul(argv[2], NULL, 0);
+        uint32_t numByte = strtoul(argv[3], NULL, 0);
+        printf("Read Pipeline test\n");
+        flash_read_pipeline_test(fd, addr, numByte);
+        close(fd);
+    } 
+    else if ( strcmp(argv[1], "-fdump" ) == 0 ) 
+    {
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        if ( argc < 4 ) usage();
+
+        uint32_t addr = strtoul(argv[2], NULL, 0);
+        uint32_t numByte = strtoul(argv[3], NULL, 0);
+        printf("Read Pipeline test\n");
+        flash_read_pipeline_test(fd, addr, numByte);
+        close(fd);
     } 
 
     else usage();

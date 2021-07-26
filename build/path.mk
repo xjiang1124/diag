@@ -51,10 +51,9 @@ ARM64_SRC_DIR=			\
 ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\
 	util/capricpld		\
-	util/artix7fpga           \
 	util/xo3dcpld		\
+	util/artix7fpgaNew	\
 	lib/capricpld		\
-	lib/artix7fpga            \
 	lib/xo3dcpld
 
 
