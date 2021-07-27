@@ -1278,8 +1278,8 @@ static void usage(void)
 {
     printf("artix7fpga -r addr\n");                      // Read PS-48 Register
     printf("artix7fpga -w addr data\n");                 // Write PS-48 Register
-    printf("artix7fpga -fprog file_name main/gold\n");
-    printf("artix7fpga -ffile file_name main/gold\n");
+    printf("artix7fpga -prog file_name main/gold\n");
+    printf("artix7fpga -file file_name main/gold\n");
     exit(1);
 }
     
