@@ -49,8 +49,8 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define FLASH_READ_ID                   0x9F
 #define FLASH_ENTER_4_BYTE_MODE         0xB7
 
-#define FLASH_OFFSET_MAIN               0x0000000
-#define FLASH_OFFSET_GOLD               0x1000000
+#define FLASH_OFFSET_GOLD               0x0000000
+#define FLASH_OFFSET_MAIN               0x1000000
 #define FLASH_OFFSET_TEST               0x1FF0000
 
 #define FLASH_IMG_TYPE_MAIN             0
@@ -82,6 +82,9 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define ELBA_SPI_CLK                    5000000
 
 #define MIN(a,b)                        ((a>b)? b : a)
+
+static int ps48_write_pipeline_test(uint32_t fd, uint32_t numByte);
+static int flash_write_page_test(uint32_t fd, uint32_t addr);
 
 static int _e_ioctl(int fd, const char *name, unsigned long req, void *arg)
 {
@@ -187,7 +190,15 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
     return 0;
 }
 
-static int  ps48_resp(uint32_t fd)
+static int ps48_init(uint32_t fd) {
+    ps48_sync(fd);
+    ps48_page_config(fd, FLASH_AND_SWITCH_PAGE_CONFIG);
+    ps48_page_config(fd, NCSI_AND_BMC_PAGE_CONFIG);
+
+    return 0;
+}
+
+static int ps48_resp(uint32_t fd)
 {
     struct spi_ioc_transfer msg[1];
     uint8_t rxbuf[6];
@@ -228,6 +239,33 @@ static int  ps48_resp(uint32_t fd)
     val = (rxbuf[2] << 24) | (rxbuf[3] << 16) | (rxbuf[4] << 8) | rxbuf[5];
     //printf("val: 0x%x\n", val);
     return val;
+}
+
+static int ps48_clean_resp(uint32_t fd)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t rxbuf[6];
+    int ret;
+    uint32_t val;
+    int max_try = 20;
+
+    for (int i = 0; i < max_try; i++) {
+        memset(rxbuf, 0, 6);
+        memset(msg, 0, sizeof (msg));
+
+        msg[0].rx_buf = (intptr_t)rxbuf;
+        msg[0].len = 6;
+        msg[0].speed_hz = ELBA_SPI_CLK;
+
+        ret = e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+
+        if (ret < 1) {
+            return -1;
+        }
+    }
+
+    printf("PS48 FIFO cleared\n");
+    return ret;
 }
 
 static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
@@ -874,6 +912,96 @@ static int flash_write_page_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf) {
 
 }
 
+static int flash_erase(char* fn, char* imageType) {
+    FILE* fp;
+    int fileSize;
+
+    uint32_t fd;
+
+    uint32_t flash_base_addr;
+    uint32_t blockSize = 0x10000;
+    uint32_t cur_addr;
+    uint32_t end_addr;
+
+    int bufSize;
+    uint8_t *buf;
+    int buf_index;
+
+    int ret;
+
+    printf("fn: %s, imageType: %s\n", fn, imageType);
+
+    if (strcmp(imageType, "main") == 0) {
+        printf("main image; base: 0x%x\n", FLASH_OFFSET_MAIN);
+        flash_base_addr = FLASH_OFFSET_MAIN;
+    }
+    else if (strcmp(imageType, "gold") == 0) {
+        printf("gold image; base: 0x%x\n", FLASH_OFFSET_GOLD);
+        flash_base_addr = FLASH_OFFSET_GOLD;
+    }
+    else if (strcmp(imageType, "test") == 0) {
+        printf("test image; base: 0x%x\n", FLASH_OFFSET_TEST);
+        flash_base_addr = FLASH_OFFSET_TEST;
+    } 
+    else {
+        printf("Invalid image type: %s\n", imageType);
+        return -1;
+    }
+
+    // Read image data to buffer
+    fp = fopen(fn, "rb");
+    if ( fp == NULL )
+    {
+        printf("Fail to open file %s\n", fn);
+        return -1;
+    }
+    fseek(fp, 0L, SEEK_END);
+    fileSize = ftell(fp);
+
+    bufSize = ((fileSize + (FLASH_PAGE_SIZE -1)) / FLASH_PAGE_SIZE) * FLASH_PAGE_SIZE;
+    fclose(fp);
+
+
+    fd = e_open(spidev_path1, O_RDWR, 0);
+
+    //ps48_init(fd);
+    flash_ena_4B_addr(fd);
+    flash_wr_ena(fd);
+    flash_wr_dis(fd);
+    close(fd);
+
+    fd = e_open(spidev_path1, O_RDWR, 0);
+    flash_wr_ena(fd);
+    flash_wr_dis(fd);
+    flash_ena_4B_addr(fd);
+
+    // Block erase
+    printf("Erasing blocks\n");
+    cur_addr = flash_base_addr;
+    end_addr = flash_base_addr + bufSize;
+    while(1) {
+        if (flash_base_addr != FLASH_OFFSET_TEST) {
+            if ( (cur_addr % 0x100000) == 0 ) {
+                printf("Erasing 0x%x\n", cur_addr);
+            }
+        }
+        else {
+            printf("Erasing 0x%x\n", cur_addr);
+        }
+
+        flash_wr_ena(fd);
+        ret = flash_block_erase_top(fd, cur_addr);
+        cur_addr += blockSize;
+        if (cur_addr >= end_addr) {
+            break;
+        }
+    }
+    flash_wr_dis(fd);
+
+    close(fd);
+}
+
+
 static int flash_prog(char* fn, char* imageType) {
     FILE* fp;
     int fileSize;
@@ -924,6 +1052,7 @@ static int flash_prog(char* fn, char* imageType) {
     bufSize = ((fileSize + (FLASH_PAGE_SIZE -1)) / FLASH_PAGE_SIZE) * FLASH_PAGE_SIZE;
     printf("fileSize = 0x%x, bufSize = 0x%x\n", fileSize, bufSize);
     buf = (uint8_t *) malloc(bufSize);
+    memset(buf, 0xFF, bufSize);
 
     if (fread(buf, sizeof(*buf), fileSize, fp) != fileSize) {
         printf("Failed to read file\n");
@@ -933,11 +1062,17 @@ static int flash_prog(char* fn, char* imageType) {
     }
     fclose(fp);
 
-    //disp_buf(buf, 512);
+    // Some wired WA. Otherwise first erase will not happen
+    fd = e_open(spidev_path1, O_RDWR, 0);
+    ps48_init(fd);
+    flash_ena_4B_addr(fd);
+    flash_wr_ena(fd);
+    flash_wr_dis(fd);
+    close(fd);
 
     fd = e_open(spidev_path1, O_RDWR, 0);
-
-    ps48_sync(fd);
+    flash_wr_ena(fd);
+    flash_wr_dis(fd);
     flash_ena_4B_addr(fd);
 
     // Block erase
@@ -956,7 +1091,6 @@ static int flash_prog(char* fn, char* imageType) {
 
         flash_wr_ena(fd);
         ret = flash_block_erase_top(fd, cur_addr);
-        flash_wr_dis(fd);
         cur_addr += blockSize;
         if (cur_addr >= end_addr) {
             break;
@@ -1015,11 +1149,13 @@ static int flash_read_to_file(char* fn, char* imageType) {
         printf("main image; base: 0x%x\n", FLASH_OFFSET_MAIN);
         flash_base_addr = FLASH_OFFSET_MAIN;
         bufSize = 0x1000000;
+        //bufSize = 0x3B0000;
     }
     else if (strcmp(imageType, "gold") == 0) {
         printf("gold image; base: 0x%x\n", FLASH_OFFSET_GOLD);
         flash_base_addr = FLASH_OFFSET_GOLD;
         bufSize = 0x1000000;
+        //bufSize = 0x3B0000;
     }
     else if (strcmp(imageType, "test") == 0) {
         printf("test image; base: 0x%x\n", FLASH_OFFSET_TEST);
@@ -1035,7 +1171,7 @@ static int flash_read_to_file(char* fn, char* imageType) {
 
     fd = e_open(spidev_path1, O_RDWR, 0);
 
-    ps48_sync(fd);
+    ps48_init(fd);
     flash_ena_4B_addr(fd);
 
     // Read data from flash
@@ -1158,11 +1294,7 @@ int main(int argc, char *argv[])
     if ( strcmp(argv[1], "-init") == 0 ) 
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
-    
-        ps48_sync(fd);
-        val = ps48_page_config(fd, FLASH_AND_SWITCH_PAGE_CONFIG);
-        val = ps48_page_config(fd, NCSI_AND_BMC_PAGE_CONFIG);
-
+        ps48_init(fd); 
         close(fd);
     } 
     else if ( strcmp(argv[1], "-r") == 0 ) 
@@ -1248,18 +1380,28 @@ int main(int argc, char *argv[])
 
         close(fd);
     } 
-    else if ( strcmp(argv[1], "-fprog" ) == 0 ) 
+    else if ( (strcmp(argv[1], "-fprog") == 0)  || 
+              (strcmp(argv[1], "-prog") == 0)
+            ) 
     {
         if ( argc < 4 ) usage();
         printf("Program image\n");
         flash_prog(argv[2], argv[3]);
     } 
-    else if ( strcmp(argv[1], "-ffile" ) == 0 ) 
+    else if ( (strcmp(argv[1], "-ffile" ) == 0) ||
+              (strcmp(argv[1], "-file" ) == 0) ) 
     {
         if ( argc < 4 ) usage();
         printf("Reading flash data to file\n");
         flash_read_to_file(argv[2], argv[3]);
     } 
+    else if ( strcmp(argv[1], "-erase" ) == 0 ) 
+    {
+        if ( argc < 4 ) usage();
+        printf("Erasing flash data\n");
+        flash_erase(argv[2], argv[3]);
+    } 
+
     else if ( strcmp(argv[1], "-wp" ) == 0 ) 
     {
         uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
