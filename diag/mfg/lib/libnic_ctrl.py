@@ -1097,26 +1097,71 @@ class nic_ctrl():
 
         return True
 
-    def nic_check_cpld_partition(self):
-        reg_addr = 1
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            # try again one more time
-            time.sleep(1)
-            if not self.mtp_exec_cmd(cmd):
-                self.nic_set_err_msg(self.nic_get_cmd_buf())
-                return False
-        match = re.findall(MFG_DIAG_CMDS.MTP_SMB_RE % reg_addr, self.nic_get_cmd_buf())
-        if not match:
-            self.nic_set_err_msg(self.nic_get_cmd_buf())
+    def nic_recover_console(self):
+        # write 0x25 to reg 0x21
+        read_data = [0]
+        rc = self.nic_read_cpld_via_smbus(reg_addr=0x21, read_data=read_data)
+        if not rc:
+            self.nic_set_err_msg(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+        print(read_data)
+        rc = self.nic_write_cpld_via_smbus(reg_addr=0x21, write_data=0x25)
+        if not rc: 
+            self.nic_set_err_msg(" ERROR: nic_write_cpld_via_smbus Failed") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        rc = self.nic_read_cpld_via_smbus(reg_addr=0x21, read_data=read_data)
+        if not rc:
+            self.nic_set_err_msg(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if read_data[0] != 0x25:
+            self.nic_set_err_msg(" ERROR: failed to set CPLD")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        # write 0xA0 to reg 0x22
+        rc = self.nic_read_cpld_via_smbus(reg_addr=0x22, read_data=read_data)
+        if not rc:
+            self.nic_set_err_msg(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        print(read_data)
+        rc = self.nic_write_cpld_via_smbus(reg_addr=0x22, write_data=0xa0)
+        if not rc: 
+            self.nic_set_err_msg(" ERROR: nic_write_cpld_via_smbus Failed") 
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        rc = self.nic_read_cpld_via_smbus(reg_addr=0x22, read_data=read_data)
+        if not rc:
+            self.nic_set_err_msg(" ERROR: nic_read_cpld Failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if read_data[0] != 0xA0:
+            self.nic_set_err_msg(" ERROR: failed to set CPLD")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
+    def nic_check_cpld_partition(self, console=False):
+        reg_addr = 1
+        read_data = [0]
+        if console:
+            rc = self.nic_console_read_cpld(reg_addr, read_data)
         else:
-            read_data = int(match[0], 16)
-            if (read_data & 0x02) == 0:
-                return True
-            else:
-                self.nic_set_err_msg("Incorrect CPLD boot partition")
-                return False
+            rc = self.nic_read_cpld(reg_addr, read_data)
+        if not rc:
+            self.nic_set_err_msg("Unable to read CPLD reg 0x1")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        if (read_data[0] & 0x04) == 0:
+            return True
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg("Incorrect CPLD boot partition")
+            return False            
 
     def nic_setting_partition(self):
         nic_cmd_list = list()
@@ -2271,6 +2316,45 @@ class nic_ctrl():
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
+        return True
+
+    def nic_console_read_cpld(self, reg_addr, read_data):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format("./", reg_addr))
+        else:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format("./", reg_addr))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cpld_buf = self._nic_handle.before
+        if not cpld_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
+  
+        if len(match) > 1:
+            read_data[0] = int(match[1], 16)
+        else:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cpld_buf)
+            return False
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
         return True
 
     def nic_swm_check_alom_present(self, errlist):

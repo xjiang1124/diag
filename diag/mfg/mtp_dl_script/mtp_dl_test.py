@@ -193,7 +193,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
         # check boot partition
         elif test == "BOOT_CHECK":
-            ret = mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot)
+            ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
+            ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
         # extra powercycle to refresh CPLD
         elif test == "NIC_PWRCYC":
             ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)

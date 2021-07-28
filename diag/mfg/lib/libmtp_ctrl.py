@@ -2468,13 +2468,27 @@ class mtp_ctrl():
         self.cli_log_slot_err_lock(slot, "Unable to dump feature row.")
         return False
 
-    def mtp_check_nic_cpld_partition(self, slot):
+    def mtp_check_nic_cpld_partition(self, slot, console=False):
         nic_type = self.mtp_get_nic_type(slot)
-        if not nic_type == NIC_Type.ORTANO2:
-            self.cli_log_slot_err_lock(slot, "Should not be here: there is no cpld partition for {:s}".format(nic_type))
+        if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
+            # No cpld partition bit
+            return True
+
+        self.cli_log_slot_inf(slot, "Check CPLD partition")
+        if not self._nic_ctrl_list[slot].nic_check_cpld_partition(console):
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
-        if not self._nic_ctrl_list[slot].nic_check_cpld_partition():
+        return True
+
+    def mtp_recover_nic_console(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
+            self.cli_log_slot_err(slot, "Not applicable for this NIC")
+            return False
+
+        self.cli_log_slot_inf(slot, "Recover NIC console")
+        if not self._nic_ctrl_list[slot].nic_recover_console():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
@@ -2993,6 +3007,9 @@ class mtp_ctrl():
             return
 
         if not self.mtp_nic_cpld_init(slot):
+            return
+
+        if not self.mtp_check_nic_cpld_partition(slot):
             return
 
         if fru_valid:
