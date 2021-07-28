@@ -99,6 +99,8 @@ class mtp_ctrl():
 
 
     def cli_log_inf(self, msg, level = 1):
+        if msg is None:
+            msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
         if self._filep:
@@ -108,6 +110,8 @@ class mtp_ctrl():
 
 
     def cli_log_report_inf(self, msg):
+        if msg is None:
+            msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         prefix = "==> "
         postfix = " <=="
@@ -118,6 +122,8 @@ class mtp_ctrl():
 
 
     def cli_log_err(self, msg, level = 1):
+        if msg is None:
+            msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
         if self._filep:
@@ -127,6 +133,8 @@ class mtp_ctrl():
 
 
     def cli_log_slot_inf(self, slot, msg, level = 0):
+        if msg is None:
+            msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
         if self._filep:
@@ -136,6 +144,8 @@ class mtp_ctrl():
 
 
     def cli_log_slot_err(self, slot, msg, level = 0):
+        if msg is None:
+            msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
         if self._filep:
@@ -239,7 +249,9 @@ class mtp_ctrl():
         self.cli_log_err("==== Error Message End: ====")
 
     def mtp_dump_nic_err_msg(self, slot):
-        err_msg = self.mtp_get_nic_err_msg(slot)
+        err_msg = self.mtp_get_nic_cmd_buf(slot)
+        if err_msg is None:
+            err_msg = ""
         self.cli_log_slot_err(slot, "==== Error Message Start: ====")
         if err_msg:
             if (len(err_msg) > 512):
@@ -1736,8 +1748,8 @@ class mtp_ctrl():
     def mtp_nic_boot_info_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init():
-            self.mtp_dump_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            self.mtp_dump_nic_err_msg(slot)
 
             cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1833,7 +1845,10 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_sw_profile(self, slot, profile):
-        return self._nic_ctrl_list[slot].nic_sw_profile(profile)
+        if not self._nic_ctrl_list[slot].nic_sw_profile(profile):
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
 
 
     def mtp_nic_mgmt_reinit(self, slot):
@@ -1892,6 +1907,7 @@ class mtp_ctrl():
 
     def mtp_check_nic_jtag(self, slot):
         if not self._nic_ctrl_list[slot].nic_check_jtag(self._asic_support):
+            self.mtp_dump_nic_err_msg(slot)
             return False
         else:
             return True
@@ -1909,7 +1925,8 @@ class mtp_ctrl():
         reg_data_list = self._nic_ctrl_list[slot].nic_get_pll_sta()
         if not reg_data_list:
             self.cli_log_slot_err(slot, "Failed to extract ASIC PLL status")
-            self.cli_log_err(self._nic_ctrl_list[slot].nic_get_cmd_buf())
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return
 
         reg26_data = reg_data_list[0]
@@ -1976,12 +1993,17 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
         if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn, nic_type):
             self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
+            self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
-        if not self._nic_ctrl_list[slot].nic_disp_2nd_fru():
-            self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
-            return False
+        if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
+            if not self._nic_ctrl_list[slot].nic_disp_2nd_fru():
+                self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
         if not self._nic_ctrl_list[slot].nic_disp_fru():
             self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
@@ -1989,6 +2011,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Program NIC ALOM FRU date={:s}, alom_sn={:s}, alom_pn={:s}".format(date, alom_sn, alom_pn))
         if not self._nic_ctrl_list[slot].nic_program_alom_fru(date, alom_sn, alom_pn):
             self.cli_log_slot_err_lock(slot, "Program NIC ALOM FRU failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
@@ -2364,6 +2387,7 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2382,6 +2406,7 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg1"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2397,6 +2422,7 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "fea"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD feature row failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2420,6 +2446,7 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC Secure CPLD failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2503,6 +2530,8 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_efuse():
             self.cli_log_slot_err(slot, "Program NIC Efuse failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
@@ -2584,6 +2613,7 @@ class mtp_ctrl():
     def mtp_copy_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_copy_gold(gold_img):
             self.cli_log_slot_inf_lock(slot, "Copy NIC goldfw failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
             
         return True
@@ -2602,6 +2632,7 @@ class mtp_ctrl():
     def mtp_program_nic_gold_naples100(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold_naples100(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         if not self.mtp_mgmt_set_nic_gold_boot(slot):
@@ -2780,6 +2811,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_start_diag(aapl):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
+            self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -2863,6 +2896,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
+            self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
             return False
 
@@ -2881,6 +2915,7 @@ class mtp_ctrl():
     def mtp_mgmt_set_nic_sw_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_sw_boot():
             self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
         self.cli_log_slot_inf_lock(slot, "Set NIC default sw boot")
         return True
@@ -2889,6 +2924,7 @@ class mtp_ctrl():
     def mtp_mgmt_set_nic_gold_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_gold_boot():
             self.cli_log_slot_err_lock(slot, "Set NIC default gold boot failed")
+            self.mtp_dump_nic_err_msg(slot)
             return False
         self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
         return True
@@ -3194,6 +3230,8 @@ class mtp_ctrl():
     def mtp_single_nic_emmc_reformat(self, slot, nic_rslt_list, emmc_format=True):
         if not self.mtp_nic_emmc_init(slot, emmc_format):
             self.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             nic_rslt_list[slot] = False
             return
 
@@ -3203,7 +3241,7 @@ class mtp_ctrl():
             return
 
         if not self._nic_ctrl_list[slot].mtp_exec_cmd("sync"):
-            err_msg = self.mtp_get_nic_err_msg(slot)
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
             return
 
@@ -3818,10 +3856,11 @@ class mtp_ctrl():
                 preset_config = "8"
             if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
                 self.cli_log_slot_err_lock(slot, "Set board config failed")
+                self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
                 self.mtp_dump_nic_err_msg(slot)
                 return False
         else:
-            self.cli_log_slot_err_lock(slot, "Need to QA this card")
+            self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
         return True
 
     def mtp_mgmt_dump_avs_info(self, slot, buf):
@@ -3852,6 +3891,7 @@ class mtp_ctrl():
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         nic_type = self.mtp_get_nic_type(slot)
@@ -3913,6 +3953,7 @@ class mtp_ctrl():
             self.mtp_mgmt_set_nic_avs_pre(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(vdd_avs_cmd))
+                self.mtp_dump_nic_err_msg(slot)
                 self.mtp_mgmt_set_nic_avs_post(slot)
                 return False
             if not self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot)):
@@ -3922,6 +3963,7 @@ class mtp_ctrl():
             self.mtp_mgmt_set_nic_avs_pre(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(arm_avs_cmd))
+                self.mtp_dump_nic_err_msg(slot)
                 self.mtp_mgmt_set_nic_avs_post(slot)
                 return False
             if not self.mtp_mgmt_dump_avs_info(slot, self.mtp_get_nic_cmd_buf(slot)):
@@ -3944,9 +3986,11 @@ class mtp_ctrl():
         write_data = 0
         cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            self.mtp_dump_nic_err_msg(slot)
             return False
         cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -4019,7 +4063,8 @@ class mtp_ctrl():
                 # try again one more time
                 time.sleep(1)
                 if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
-                    self.cli_log_slot_err(slot, self._nic_ctrl_list[slot].nic_get_cmd_buf())
+                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                    self.mtp_dump_nic_err_msg(slot)
                     continue
 
     def mtp_run_diag_test_para_lock(self):
@@ -4270,6 +4315,7 @@ class mtp_ctrl():
         else:
             retval = "FAILURE"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
         return retval, err_msg_list
 
     def mtp_nic_mvl_stub_test(self, slot):
@@ -4280,5 +4326,6 @@ class mtp_ctrl():
         else:
             retval = "FAILURE"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
         return retval, err_msg_list
 
