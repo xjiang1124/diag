@@ -1273,7 +1273,6 @@ static int flash_read_pipeline_test(uint32_t fd, uint32_t addr, uint32_t numByte
     return 0;
 }
 
-
 static void usage(void)
 {
     printf("artix7fpga -r addr\n");                      // Read PS-48 Register
@@ -1282,7 +1281,44 @@ static void usage(void)
     printf("artix7fpga -file file_name main/gold\n");
     exit(1);
 }
-    
+
+static void usage_full (void) {
+    char *usage_ptr = 
+        "============================================\n"
+        "QSPI flash\n"
+        "   -r addr\n"
+        "       Read flash controller register\n"
+        "   -w addr data\n"
+        "       Write flash contorller register\n"
+        "   -prog file_name main/gold\n"
+        "       Program FPGA image to main or gold partition\n"
+        "   -file file_name main/gold\n"
+        "       Read flash partition (main/gold) to file. Entire 16MB of each partition will be read out\n"
+        "------------------\n"
+        "Debug commands\n"
+        "   -init\n"
+        "       PS48 initialization: sync and page confguration\n"
+        "   -noop\n"
+        "       Send noop command\n"
+        "   -resp\n"
+        "       Retrive resp packet\n"
+        "   -frdsr\n"
+        "       Read flash status register\n"
+        "   -frpage addr\n"
+        "       Read one page data from flash at specified address\n"
+        "   -fberase addr\n"
+        "       Erase one block at specified address\n"
+        "   -fwpage addr\n"
+        "       Complie one page binary data and write to specified address of flash\n"
+        "   -wp numBytes\n"
+        "       PS48 write pipeline test with specified number of bytes\n"
+        "   -frp addr numBytes\n"
+        "       Flash read pipeline test: read certain number of bytes at specified flash address\n"
+        "";
+
+    printf("%s", usage_ptr);
+}
+
 int main(int argc, char *argv[])
 {
     uint8_t val, index;
@@ -1423,17 +1459,10 @@ int main(int argc, char *argv[])
         flash_read_pipeline_test(fd, addr, numByte);
         close(fd);
     } 
-    else if ( strcmp(argv[1], "-fdump" ) == 0 ) 
+    else if ( strcmp(argv[1], "-frp" ) == 0 ) 
     {
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
-        if ( argc < 4 ) usage();
-
-        uint32_t addr = strtoul(argv[2], NULL, 0);
-        uint32_t numByte = strtoul(argv[3], NULL, 0);
-        printf("Read Pipeline test\n");
-        flash_read_pipeline_test(fd, addr, numByte);
-        close(fd);
-    } 
+        usage_full();
+    }
 
     else usage();
 
