@@ -794,13 +794,17 @@ def fail_all_slots(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
 def post_fail_steps(mtp_mgmt_ctrl, slot):
-    # first, exit out of nic ssh if pexpect handle is there
-    mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds(list(), timeout=1)
+    
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Init new connection for failed NIC")
+    ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot])
+    if not ret:
+        mtp_mgmt_ctrl.cli_log_err("Init NIC Connection Failed", level = 0)
+        return False
 
     mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
     mtp_mgmt_ctrl.mtp_mgmt_check_cpld_debug_bits(slot)
     mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
-    mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
+    mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
 
 def email_report(email_to, title, body = None):
     if not email_to:

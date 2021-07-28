@@ -532,9 +532,11 @@ class mtp_ctrl():
             return handle
 
 
-    def mtp_nic_para_session_init(self):
+    def mtp_nic_para_session_init(self, slot_list=[]):
+        if slot_list == []:
+            slot_list = range(self._slots)
         userid = self._mgmt_cfg[1]
-        for slot in range(self._slots):
+        for slot in slot_list:
             handle = self.mtp_session_create()
             if handle:
                 if not self.mtp_prompt_cfg(handle, userid, "$", slot):
