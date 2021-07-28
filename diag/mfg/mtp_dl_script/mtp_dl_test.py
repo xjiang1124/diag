@@ -642,6 +642,11 @@ def main():
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
+    # Failure analysis (sequential access)
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
+
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Complete", level=0)
