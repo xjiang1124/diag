@@ -1050,7 +1050,8 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
-        self._nic_handle.sendline("sync")
+        # send a sync on NIC
+        self.nic_exec_cmds(list())
 
         return True
 
@@ -1404,13 +1405,21 @@ class nic_ctrl():
         mount_buf = self.nic_get_info(nic_cmd)
         if mount_buf:
             if mount_sig in mount_buf:
-                return True
+                pass
             else:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_cmd_buf(mount_buf)
+                return False
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
+
+        return True
             
     def nic_emmc_set_perf_mode(self):
         nic_cmd_list = list()
@@ -1431,6 +1440,7 @@ class nic_ctrl():
             else:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_cmd_buf(perf_buf)
+                return False
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
@@ -1445,6 +1455,7 @@ class nic_ctrl():
             else:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_cmd_buf(perf_buf)
+                return False
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
