@@ -2783,6 +2783,45 @@ class mtp_ctrl():
             return False
 
         return True
+
+    def mtp_post_dsp_fail_steps(self, slot, test, rslt, err_msg_list):
+        """
+        diag@NIC-06:$ /home/diag/diag/python/infra/dshell/diag -sresult -c NIC6 -d NIC_ASIC
+        _NOT_ a live card: NIC6
+
+        When script captures this signature "_NOT_ a live card", do following
+        1. ping slot with 10 packets        <= whether management port is down
+        2. connect console and do "env"     <= Check if card rebooted
+        3. inventory -sts -slot <>          <= Clue of reboot reason/power/clk
+        """
+        ret = True
+        dsp_timeout_sig = "_NOT_ a live card: NIC"
+        rslt_cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+
+        if rslt == "TIMEOUT":
+            if dsp_timeout_sig in rslt_cmd_buf:
+                self.cli_log_slot_err_lock(slot, "Performing post DSP fail steps")
+
+                # ping test (try twice)
+                ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+                for x in range(2):
+                    self.cli_log_slot_inf(slot, "Ping NIC MGMT port <{:d}> try".format(x+1))
+                    time.sleep(5)
+                    cmd = "ping -c 10 {:s}".format(ipaddr)
+                    if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                        ret = False
+
+                # check if card rebooted
+                if not self.mtp_check_nic_rebooted(slot):
+                    ret = False
+
+                # dump cpld status bits
+                if not self.mtp_mgmt_set_nic_avs_post(slot):
+                    ret = False
+            else:
+                print("no fail sig in buf")
+        return ret
+
     def mtp_mgmt_nic_diag_sys_clean(self, slot):
         self.cli_log_slot_inf_lock(slot, "NIC Diag Sys Clean")
         if not self._nic_ctrl_list[slot].nic_diag_clean():
@@ -4328,4 +4367,17 @@ class mtp_ctrl():
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
         return retval, err_msg_list
+
+    def mtp_check_nic_rebooted(self, slot):
+        self.cli_log_slot_inf(slot, "Init new NIC connection")
+        ret = self.mtp_nic_para_session_init(slot_list=[slot])
+        if not ret:
+            self.cli_log_err("Init NIC Connection Failed", level = 0)
+
+        self.cli_log_slot_inf(slot, "Check if NIC rebooted")
+        if not self._nic_ctrl_list[slot].nic_check_rebooted():
+            self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg()
+            return False
+        return True
 

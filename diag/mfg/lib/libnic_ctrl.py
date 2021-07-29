@@ -3199,3 +3199,34 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    def nic_check_rebooted(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("uptime")
+        nic_cmd_list.append("env")
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        # if "CARD_NAME=NIC{:d}".format(self._slot+1) in cmd_buf:
+        if "CARD_ENV=" in cmd_buf:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return True
+        else:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+

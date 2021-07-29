@@ -799,7 +799,6 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
     ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot])
     if not ret:
         mtp_mgmt_ctrl.cli_log_err("Init NIC Connection Failed", level = 0)
-        return False
 
     mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
     mtp_mgmt_ctrl.mtp_mgmt_check_cpld_debug_bits(slot)
