@@ -2784,7 +2784,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_post_dsp_fail_steps(self, slot, test, rslt, err_msg_list):
+    def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list):
         """
         diag@NIC-06:$ /home/diag/diag/python/infra/dshell/diag -sresult -c NIC6 -d NIC_ASIC
         _NOT_ a live card: NIC6
@@ -2796,30 +2796,30 @@ class mtp_ctrl():
         """
         ret = True
         dsp_timeout_sig = "_NOT_ a live card: NIC"
-        rslt_cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
-        if rslt == "TIMEOUT":
-            if dsp_timeout_sig in rslt_cmd_buf:
-                self.cli_log_slot_err_lock(slot, "Performing post DSP fail steps")
+        # if rslt == "TIMEOUT":
+        # if dsp_timeout_sig in rslt_cmd_buf:
+        self.cli_log_slot_err_lock(slot, "Performing post DSP fail steps")
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp fail debug"))
 
-                # ping test (try twice)
-                ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-                for x in range(2):
-                    self.cli_log_slot_inf(slot, "Ping NIC MGMT port <{:d}> try".format(x+1))
-                    time.sleep(5)
-                    cmd = "ping -c 10 {:s}".format(ipaddr)
-                    if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
-                        ret = False
+        # ping test (try twice)
+        ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+        for x in range(2):
+            self.cli_log_slot_inf(slot, "Ping NIC MGMT port <{:d}> try".format(x+1))
+            time.sleep(5)
+            cmd = "ping -c 10 {:s}".format(ipaddr)
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                ret = False
 
-                # check if card rebooted
-                if not self.mtp_check_nic_rebooted(slot):
-                    ret = False
+        # check if card rebooted
+        if not self.mtp_check_nic_rebooted(slot):
+            ret = False
 
-                # dump cpld status bits
-                if not self.mtp_mgmt_set_nic_avs_post(slot):
-                    ret = False
-            else:
-                print("no fail sig in buf")
+        # dump cpld status bits
+        if not self.mtp_mgmt_set_nic_avs_post(slot):
+            ret = False
+
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
         return ret
 
     def mtp_mgmt_nic_diag_sys_clean(self, slot):
@@ -3767,13 +3767,16 @@ class mtp_ctrl():
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
             return nic_list[:]
 
+        ret = "SUCCESS"
+
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
         for _slot, rslt in match:
             slot = int(_slot) - 1
             if rslt != "PASS" and slot not in nic_fail_list:
                 nic_fail_list.append(slot)
+                ret = "FAIL"
 
-        return nic_fail_list
+        return [ret, nic_fail_list]
 
 
     def mtp_mgmt_get_test_result(self, cmd, test):

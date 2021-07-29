@@ -465,8 +465,10 @@ def main():
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_test_rslt_list[slot]:
-                fail_nic_list.append(slot)
-                pass_nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
         mtp_mgmt_ctrl.mtp_power_off_nic() # power off all nic
 
@@ -651,8 +653,10 @@ def main():
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_test_rslt_list[slot]:
-                fail_nic_list.append(slot)
-                pass_nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
