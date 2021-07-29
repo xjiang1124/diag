@@ -65,6 +65,8 @@ const (
     MFR_DATE                  = 0x9D
     MFR_SERIAL                = 0x9E
     IC_DEVICE_ID              = 0xAD
+        IC_DEVICE_ID_VALUE        = 0x8100
+        IC_DEVICE_ID_MASK         = 0xFF00
     IC_DEVICE_REV             = 0xAE
     USER_DATA_00              = 0xB0
     USER_DATA_01              = 0xB1
@@ -107,5 +109,7 @@ const (
     //MARGIN_NONE_CMD = 0x00
     //MARGIN_HIGH_CMD = 0x24
     //MARGIN_LOW_CMD  = 0x14
+
+
 
 )

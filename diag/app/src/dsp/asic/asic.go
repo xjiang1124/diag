@@ -20,6 +20,8 @@ import (
     "common/runCmd"
     "config"
     //"bytes"
+    "hardware/i2cinfo"
+    "device/fpga/taorfpga"
 )
 
 //========================================================
@@ -119,7 +121,47 @@ func AsicL1_TestHdl(argList []string) {
     defer dcli.TimeStampEnable(misc.ENABLE)
 
     dcli.Println("i", "RunVerbose")
-    err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+
+    cardInfo := diagEngine.GetCardInfo()
+    cardType := cardInfo.CardType
+    if (cardType == "TAORMINA") {
+            var errGo error = nil
+            devname := []string{ "CPLD_ELBA0", "CPLD_ELBA1" }
+            for i:=0; i < len(devname); i++ {
+                wrData := []byte{}
+                rdData := []byte{}
+                iInfo, err := i2cinfo.GetI2cInfo(devname[i])
+                if err != errType.SUCCESS {
+                    dcli.Println("e", "Failed to obtain I2C info of", devname[i])
+                    diagEngine.FuncMsgChan <- errType.FAIL
+                    return
+                }
+                wrData = append(wrData, 0x22)
+                rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 1 )
+                if errGo != nil {
+                    dcli.Println("e", "I2C Access (1) Failed to", devname[i], " ERROR=",errGo)
+                    diagEngine.FuncMsgChan <- errType.FAIL
+                    return
+                }
+                wrData = append(wrData, (rdData[0] & 0xFD))
+                rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0 )
+                if errGo != nil {
+                    dcli.Println("e", "I2C Access (2) Failed to", devname[i])
+                    diagEngine.FuncMsgChan <- errType.FAIL
+                    return
+                }
+            }
+ 
+
+        //Override offload for now.  Taormina needs offload set
+        offload=1
+        //Run on SLOT=1 (elba0)
+        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+        //Run on SLOT+1 (elba1)
+        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot) + 1), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+    } else {
+        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+    }
 
     diagEngine.FuncMsgChan <- err
     return

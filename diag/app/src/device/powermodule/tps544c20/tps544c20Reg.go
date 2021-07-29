@@ -39,6 +39,7 @@ const (
     OPTIONS                   = 0xE5
     MASK_SMBALERT             = 0xE7
     DEVICE_CODE               = 0xFC
+        DEVICE_CODE_DATA          = 0x0153
 )
 
 const (
@@ -48,5 +49,7 @@ const (
     //MARGIN_NONE_CMD = 0x00
     //MARGIN_HIGH_CMD = 0x24
     //MARGIN_LOW_CMD  = 0x14
+
+
 
 )

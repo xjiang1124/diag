@@ -18,6 +18,7 @@ import (
     "device/psu/dps800"
     "device/tempsensor/tmp42123"
     "device/tempsensor/lm75a"
+    "device/tempsensor/tmp451"
 
     "gopkg.in/yaml.v2"
 )
@@ -399,7 +400,7 @@ func init() {
     taorDispStaList["P0V8AVDD_GB_A"]   = tps549a20.DispStatus
     taorDispStaList["P0V8AVDD_GB_B"]   = tps549a20.DispStatus
     taorDispStaList["P0V8RT_B"]        = tps549a20.DispStatus
-    taorDispStaList["TSENSOR-1"]       = lm75a.DispStatus
+    taorDispStaList["TSENSOR-1"]       = tmp451.DispStatus
     taorDispStaList["TSENSOR-2"]       = lm75a.DispStatus
     taorDispStaList["TSENSOR-3"]       = lm75a.DispStatus
     taorDispStaList["P0V8RT_A"]        = tps544c20.DispStatus

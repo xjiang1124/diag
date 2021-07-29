@@ -13,6 +13,62 @@ import (
 
 
 
+func I2cTest(devname string) (err int) { 
+    var data16, ot_warn_limit uint16
+    err = smbus.Open(devname)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    ot_warn_limit, err = pmbus.ReadWord(devname, OT_WARN_LIMIT)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    err = pmbus.WriteWord(devname, OT_WARN_LIMIT, (ot_warn_limit-1))
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    data16, err = pmbus.ReadWord(devname, OT_WARN_LIMIT)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    err = pmbus.WriteWord(devname, OT_WARN_LIMIT, ot_warn_limit)
+
+    if data16 != (ot_warn_limit -1) {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devname, OT_WARN_LIMIT, (ot_warn_limit -1), data16)
+        return
+    }
+    data16, err = pmbus.ReadWord(devname, OT_WARN_LIMIT)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }  
+    if data16 != (ot_warn_limit) {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devname, OT_WARN_LIMIT, (ot_warn_limit), data16)
+        return
+    }
+
+    data16, err = pmbus.ReadWord(devname, IC_DEVICE_ID)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    if (data16 & IC_DEVICE_ID_MASK) != IC_DEVICE_ID_VALUE {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x: Read 0x%.04x    Expect 0x%.04x   MASK=0x%.04x\n", devname, IC_DEVICE_ID, data16, IC_DEVICE_ID_VALUE, IC_DEVICE_ID_MASK)
+        return
+    } 
+    return
+}
+
+
+
 func ReadStatus(devName string) (status uint16, err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {

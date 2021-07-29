@@ -68,6 +68,8 @@ const (
     MFR_SERIAL                = 0x9E
     MFR_PIN_MAX               = 0xA3
     IC_DEVICE_ID              = 0xAD
+        IC_DEVICE_ID_VALUE        = 0x5800
+        IC_DEVICE_ID_MASK         = 0xFF00
     IC_DEVICE_REV             = 0xAE
     USER_DATA_00              = 0xB0
     USER_DATA_01              = 0xB1

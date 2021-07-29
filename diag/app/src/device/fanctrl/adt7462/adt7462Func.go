@@ -66,6 +66,46 @@ var pwmConfigTbl = []config {
 }
 
 
+func I2cTest(devName string) (err int) {
+    var backup, data8 uint8
+    patterns := []uint8{ 0xAA, 0x55 }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    backup, err = smbus.ReadByte(devName, PWM1_MIN)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    for i:=0; i<len(patterns); i++ {
+        err = smbus.WriteByte(devName, PWM1_MIN, patterns[i])
+        if err != errType.SUCCESS {
+            return
+        }
+
+        data8, err = smbus.ReadByte(devName, PWM1_MIN)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        if patterns[i] != data8 {
+            err = errType.FAIL
+            cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devName, PWM1_MIN, (patterns[i]), data8)
+            return
+        }
+    }
+
+    err = smbus.WriteByte(devName, PWM1_MIN, backup)
+    if err != errType.SUCCESS {
+        return
+    }
+    
+    return
+}
+
 
 func ReadReg(devName string, addr uint32) (data byte, err int) {
     err = smbus.Open(devName)
@@ -104,7 +144,7 @@ func DumpReg(devName string) (err int) {
     }
     defer smbus.Close()
 
-    for _, entry := range(FAN_FPGA_REGISTERS) {
+    for _, entry := range(FAN_REGISTERS) {
         data, err = smbus.ReadByte(devName, entry.Address)
         if err != errType.SUCCESS {
             return

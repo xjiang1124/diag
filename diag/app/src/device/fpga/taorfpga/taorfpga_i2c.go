@@ -5,7 +5,7 @@ import (
     "errors"
     "strings"
     "time"
-    //"common/cli"
+    "common/dcli"
 )
 
 
@@ -250,6 +250,7 @@ func I2c_access(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrData []
         //oci2c_disable()
         //i2cResetController()
         if err = i2cLoadDataSet(bus, mux, i2cAddr, wrSize, wrData, rdSize); err != nil {  //Setup I2C Struct.  Return if this fails.. Catastrophic Failure
+            dcli.Printf("e"," Error: I2C Load Data Set Failed\n")
             return
         }
 
@@ -268,7 +269,7 @@ func I2c_access(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrData []
             }
         } else {
             if ExecutingScanChain == 0 {
-                fmt.Printf(" Error: I2C Transaction Failed\n")
+                dcli.Println("e"," Error: I2C Transaction Failed bus/mux/addr", bus, mux, i2cAddr, "  wrsize/data=", wrSize, wrData," rdsize=", rdSize)
             }
         }
         return

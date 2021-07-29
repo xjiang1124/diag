@@ -14,6 +14,57 @@ import (
 
 
 
+func I2cTest(devname string) (err int) { 
+    var psuNumber uint32 = 0
+    wrData := []byte{}
+    mfgId := []byte{}
+    expected := []byte{0x05, 0x44, 0x45, 0x4c, 0x54, 0x41}
+
+    if devname == "PSU_1" {
+        psuNumber = 0
+    } else {
+        psuNumber = 1
+    }
+
+    present, errGo := taorfpga.PSU_present(psuNumber)
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+
+    if present != true {
+        cli.Printf("e", "%s: is not present", devname)
+        err = errType.FAIL
+        return
+    }
+
+
+    iInfo, err := i2cinfo.GetI2cInfo(devname)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to obtain I2C info of", devname)
+        return
+    }
+    wrData = append(wrData, MFR_ID)
+    mfgId, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_ID_BLK_SIZE + 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if len(mfgId) != MFG_ID_BLK_SIZE + 1 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MfgID is wrong.   Len=%d.  Expect=%d", devname, len(mfgId), MFG_ID_BLK_SIZE + 1)
+    }
+    for i:=0; i<(MFG_ID_BLK_SIZE + 1); i++ {
+        if expected[i] != mfgId[i] {
+            err = errType.FAIL
+            cli.Printf("e", "%s: MFG ID is wrong.  Expected[%d]=%.02x     Read[%d]=%.02x", devname, i, expected[i], mfgId[i])
+        }
+    }
+    return
+}
+
+
+
 func ReadStatus(devName string) (status uint16, err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {

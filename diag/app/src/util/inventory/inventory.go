@@ -340,7 +340,7 @@ func powerStatusDumpOrtano(uutName string)  {
     cli.DisableVerbose()
     stat0, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT0), uutName)
     stat1, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT1), uutName)
-    stat2, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT1), uutName)
+    stat2, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT2), uutName)
     cli.EnableVerbose()
 
     dispPowerStatus(OrtanoPowerFail0, stat0) 

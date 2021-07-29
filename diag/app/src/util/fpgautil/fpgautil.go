@@ -50,41 +50,27 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil inventory\n" +
         "\n" +
         "fpgautil flash devid\n" +
-        "fpgautil flash program/verify/generateimage <primary/secondary/allflash> <filename>\n" +
         "fpgautil flash r8/r32/r64 <addr> <length>\n" +
         "fpgautil flash w32/w64 <addr> <data>\n" +
         "fpgautil flash sectorerase <addr>\n" +
         "fpgautil flash bitswapimage <infile> <outfile>\n" +
+        "fpgautil flash program/verify/generateimage <primary/secondary/allflash> <filename>\n" +
         " \n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> uc \n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> devid \n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> featurebits \n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> featurerow \n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> statusreg \n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> uc/devid/featurebits/featurerow/statusreg \n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> refresh \n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> generateimage <filename>\n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> verifyimage <filename>\n" +
-        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> program <filename>\n" +
+        "fpgautil cpld <cpu/gpio0/gpio1/gpio2> generateimage/verifyimage/program <filename>\n" +
         " \n" +
         "fpgautil power <cycle/on/off> <all/td3/e0/e1> [nopciscan]\n" +
         " \n" +
-        "fpgautil elba <elba#> flash devid\n" +
-        "fpgautil elba <elba#> flash flagstatus/status\n" +
-        "fpgautil elba <elba#> flash 4byte enable/disable \n" +
-        "fpgautil elba <elba#> flash update/verify <filename>\n" +
+        "fpgautil elba <elba#> flash devid/flagstatus/status\n" +
         "fpgautil elba <elba#> flash read <addr> <length>\n" +
         "fpgautil elba <elba#> flash w32/w64 <addr> <data>\n" +
         "fpgautil elba <elba#> flash sectorerase <addr>/all\n" +
         "fpgautil elba <elba#> flash generateimage/verifyimage/writeimage uboot0/golduboot/goldfw/allflash <filename>\n" +
          " \n" +
-        "fpgautil elba <elba#> cpld uc \n" +
-        "fpgautil elba <elba#> cpld devid \n" +
-        "fpgautil elba <elba#> cpld featurebits \n" +
-        "fpgautil elba <elba#> cpld featurerow \n" +
-        "fpgautil elba <elba#> cpld statusreg \n" +
+        "fpgautil elba <elba#> cpld uc/devid/featurebits/featurerow/statusreg \n" +
         "fpgautil elba <elba#> cpld refresh \n" +
-        "fpgautil elba <elba#> cpld erase <cfg0/cfg1> <filename>\n" +
-        "fpgautil elba <elba#> cpld generateimage/verifyimage/erase/program <cfg0/cfg1> <filename>\n" 
+        "fpgautil elba <elba#> cpld generateimage/verifyimage/erase/program <cfg0/cfg1/fea> <filename>\n" 
         
         
 
@@ -156,13 +142,13 @@ func main() {
                 var devName string 
                 devName = fmt.Sprintf("SFP_%d", i+1)
                 present, _ := taorfpga.SFP_present(uint32(i)) 
-                pn, _ := sfp.ReadPN(devName)
-                pn = strings.TrimSpace(pn)
-                sn, _ := sfp.ReadSerialNumber(devName)
-                vendor, _ := sfp.ReadVendorName(devName)
-                vendor = strings.TrimSpace(vendor)
-                baudrate, _ := sfp.GetBitSpeed(devName)
                 if present == true {
+                    pn, _ := sfp.ReadPN(devName)
+                    pn = strings.TrimSpace(pn)
+                    sn, _ := sfp.ReadSerialNumber(devName)
+                    vendor, _ := sfp.ReadVendorName(devName)
+                    vendor = strings.TrimSpace(vendor)
+                    baudrate, _ := sfp.GetBitSpeed(devName)
                     fmt.Printf("SFP-%.2d   %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
                 } else {
                     fmt.Printf("SFP-%.2d   NOT PRESENT\n", i+1)
@@ -173,13 +159,13 @@ func main() {
                 var devName string 
                 devName = fmt.Sprintf("QSFP_%d", i+1)
                 present, _ := taorfpga.QSFP_present(uint32(i)) 
-                pn, _ := qsfp.ReadPN(devName)
-                pn = strings.TrimSpace(pn)
-                sn, _ := qsfp.ReadSerialNumber(devName)
-                vendor, _ := qsfp.ReadVendorName(devName)
-                vendor = strings.TrimSpace(vendor)
-                baudrate, _ := qsfp.GetBitSpeed(devName)
                 if present == true {
+                    pn, _ := qsfp.ReadPN(devName)
+                    pn = strings.TrimSpace(pn)
+                    sn, _ := qsfp.ReadSerialNumber(devName)
+                    vendor, _ := qsfp.ReadVendorName(devName)
+                    vendor = strings.TrimSpace(vendor)
+                    baudrate, _ := qsfp.GetBitSpeed(devName)
                     fmt.Printf("QSFP-%.2d  %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
                 } else {
                     fmt.Printf("QSFP-%.2d  NOT PRESENT\n", i+1)
@@ -902,6 +888,7 @@ func main() {
                 return
             }
         } else if os.Args[3] == "cpld" {
+            if argc < 4 { fmt.Printf(" Need more args for this command\n");  return }
             if os.Args[4] == "uc" {   //run op usercode
                 ucode, _ := taorfpga.Spi_cpldXO3_read_usercode(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
                 fmt.Printf(" ELBA-%d CPLD  UCODE=0x%.08x\n", elbaNumber, ucode)
@@ -918,7 +905,7 @@ func main() {
                 data := []byte{}  
                 data, _ = taorfpga.Spi_cpldXO3_read_feature_row(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber) 
                 fmt.Printf("\n")
-                for i:= (len(data) -1); i >= 0; i-- {
+                for i:=0; i < len(data); i++ {
                     fmt.Printf(" %.02x", data[i])
                 }
                 fmt.Printf("\n")

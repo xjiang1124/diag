@@ -12,6 +12,61 @@ import (
 )
 
 
+func I2cTest(devname string) (err int) { 
+    var data16, ot_warn_limit uint16
+    err = smbus.Open(devname)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    ot_warn_limit, err = pmbus.ReadWord(devname, OT_WARN_LIMIT)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    err = pmbus.WriteWord(devname, OT_WARN_LIMIT, (ot_warn_limit-1))
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    data16, err = pmbus.ReadWord(devname, OT_WARN_LIMIT)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    err = pmbus.WriteWord(devname, OT_WARN_LIMIT, ot_warn_limit)
+
+    if data16 != (ot_warn_limit -1) {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devname, OT_WARN_LIMIT, (ot_warn_limit -1), data16)
+        return
+    }
+    data16, err = pmbus.ReadWord(devname, OT_WARN_LIMIT)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }  
+    if data16 != (ot_warn_limit) {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devname, OT_WARN_LIMIT, (ot_warn_limit), data16)
+        return
+    }
+
+    data16, err = pmbus.ReadWord(devname, IC_DEVICE_ID)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    if (data16 & IC_DEVICE_ID_MASK) != IC_DEVICE_ID_VALUE {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x: Read 0x%.04x    Expect 0x%.04x   MASK=0x%.04x\n", devname, IC_DEVICE_ID, data16, IC_DEVICE_ID_VALUE, IC_DEVICE_ID_MASK)
+        return
+    } 
+    return
+}
+
+
 
 func ReadStatus(devName string) (status uint16, err int) {
     err = smbus.Open(devName)
@@ -246,53 +301,8 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
 
     return
 }
-
-
-func DispStatus(devName string) (err int) {
-
-    vrmTitle := []string {"POUT", "VOUT_TGT", "VOUT", "IOUT", "STATUS"}
-    var fmtDigFrac string = "%d.%03d"
-    fmtStr := "%-10s"
-    fmtNameStr := "%-20s"
-
-    var outStr string
-    var outStrTemp string
-    outStr = fmt.Sprintf(fmtNameStr, "NAME")
-    for _, title := range(vrmTitle) {
-        outStr = outStr + fmt.Sprintf(fmtStr, title)
-    }
-    //cli.Println("i", "0.00.00.00.00.00.0--")
-    cli.Println("i", "=================================")
-    cli.Println("i", outStr)
-
-    outStr = fmt.Sprintf(fmtNameStr, devName)
-
-    dig, frac, _ := ReadPout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadTargetVoltage(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadVout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadIout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    status, _ := ReadStatus(devName)
-    outStrTemp = fmt.Sprintf("0x%X", status)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)// + "\n"
-
-    cli.Println("i", outStr)
-
-    return
-
-}
 */
+
 
 func DispStatus(devName string) (err int) {
     vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}

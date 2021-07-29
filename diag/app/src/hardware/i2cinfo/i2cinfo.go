@@ -302,28 +302,35 @@ var MtpHubI2cTbl = []I2cInfo {
 }
 
 var TaorTbl = []I2cInfo {
-    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
-    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20", 1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20", 1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8RT_B",       "TPS549A20", 1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-1",      "LM75",      3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-2",      "LM75",      3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-3",      "LM75",      3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8RT_A",       "TPS544C20", 1,   0x04,    0x0,    "FPGA_HUB_0_0",  0,    0},
-    I2cInfo {"P3V3",           "TPS544C20", 1,   0x08,    0x0,    "FPGA_HUB_0_1",  1,    0},
-    I2cInfo {"P3V3S",          "TPS544C20", 1,   0x09,    0x0,    "FPGA_HUB_0_0",  0,    0},
-    I2cInfo {"TDNT_PDVDD",     "TPS53681",  1,   0x60,    0x0,    "FPGA_HUB_0_3",  3,    0},
-    I2cInfo {"TDNT_P0V8_AVDD", "TPS53681",  1,   0x60,    0x1,    "FPGA_HUB_0_3",  3,    0},
-    I2cInfo {"CPU_P1V2_VDDQ",     "SN1701022", 1,   0x77,    0x0, "FPGA_HUB_0_1",  1,    0},
-    I2cInfo {"CPU_P1V05_COMBINED","SN1701022", 1,   0x77,    0x1, "FPGA_HUB_0_1",  1,    0},
-    I2cInfo {"CPU_PVCCIN",        "SN1701022", 1,   0x6B,    0x0, "FPGA_HUB_0_2",  2,    0},
-    I2cInfo {"CPU_P1V05_VCCSCSUS","SN1701022", 1,   0x6B,    0x1, "FPGA_HUB_0_2",  2,    0},
-    I2cInfo {"PSU_1",           "DPS-800",   2,   0x58,    0x0,    "FPGA_HUB_1_0",  0,    0},
-    I2cInfo {"PSU_2",           "DPS-800",   2,   0x58,    0x0,    "FPGA_HUB_1_1",  1,    0},
-    I2cInfo {"FAN_1",           "ADT7462",   2,   0x58,    0x0,    "FPGA_HUB_1_2",  2,    0},
-    I2cInfo {"FAN_2",           "ADT7462",   2,   0x5C,    0x0,    "FPGA_HUB_1_2",  2,    0},
-    I2cInfo {"TSENSOR-CPU",      "XeonD",    1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
-    I2cInfo {"TSENSOR-TD3",      "TD3",      1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    //       name              comp          Bus   devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20",   1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20",   1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8RT_B",       "TPS549A20",   1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    //ON P0 BOARDS, 0x4C TEMP SENSOR IS LOCATED HERE AT 0x48
+    //I2cInfo {"TSENSOR-1",      "LM75",        3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-1",      "TMP451",      3,   0x4C,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-2",      "LM75",        3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-3",      "LM75",        3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8RT_A",       "TPS544C20",   1,   0x04,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P3V3",           "TPS544C20",   1,   0x08,    0x0,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"P3V3S",          "TPS544C20",   1,   0x09,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"TDNT_PDVDD",     "TPS53681",    1,   0x60,    0x0,    "FPGA_HUB_0_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"TDNT_P0V8_AVDD", "TPS53681",    1,   0x60,    0x1,    "FPGA_HUB_0_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_P1V2_VDDQ",     "SN1701022", 1,  0x77,    0x0,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_P1V05_COMBINED","SN1701022", 1,  0x77,    0x1,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_PVCCIN",        "SN1701022", 1,  0x6B,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_P1V05_VCCSCSUS","SN1701022", 1,  0x6B,    0x1,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_1",           "DPS-800",    2,   0x58,    0x0,    "FPGA_HUB_1_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_2",           "DPS-800",    2,   0x58,    0x0,    "FPGA_HUB_1_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"FAN_1",           "ADT7462",    2,   0x58,    0x0,    "FPGA_HUB_1_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"FAN_2",           "ADT7462",    2,   0x5C,    0x0,    "FPGA_HUB_1_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TD3",             "TRIDENT3",   2,   0x44,    0x0,    "FPGA_HUB_1_3",  3,    0},
+    I2cInfo {"FRU_EE",          "AT24C02C",   3,   0x50,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA0",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA1",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-CPU",      "XeonD",     1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-TD3",      "TD3",       1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"SFP_1",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SFP_2",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  1,    0},
     I2cInfo {"SFP_3",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  2,    0},
@@ -559,6 +566,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = LaconaMtpTbl
     } else if uutType == "POMONTEDELL" {
         CurI2cTbl = LaconaDellMtpTbl  //has same table as Lacona Dell
+    } else if uutType == "TAORMINA" {
+        CurI2cTbl = TaorTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

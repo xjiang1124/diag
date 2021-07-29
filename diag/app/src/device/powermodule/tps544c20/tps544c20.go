@@ -11,6 +11,46 @@ import (
 )
 
 
+func I2cTest(devname string) (err int) {
+    var data16 uint16
+    pattern := []uint16{0x55AA, 0xAA55}
+    err = smbus.Open(devname)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    for i:=0; i<len(pattern); i++ {
+        err = pmbus.WriteWord(devname, MFR_SPECIFIC_D0, pattern[i])
+        if err != errType.SUCCESS {
+            cli.Println("e", " pmbus access to", devname,"failed")
+            return
+        }
+        data16, err = pmbus.ReadWord(devname, MFR_SPECIFIC_D0)
+        if err != errType.SUCCESS {
+            cli.Println("e", " pmbus access to", devname,"failed")
+            return
+        }
+        if data16 != pattern[i] {
+            err = errType.FAIL
+            cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devname, MFR_SPECIFIC_D0, pattern[i], data16)
+            return
+        }
+    }
+
+    data16, err = pmbus.ReadWord(devname, DEVICE_CODE)
+    if err != errType.SUCCESS {
+        cli.Println("e", " pmbus access to", devname,"failed")
+        return
+    }
+    if data16 != DEVICE_CODE_DATA {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s Register 0x%x: Read 0x%.04x    Expect 0x%.04x\n", devname, DEVICE_CODE, data16, DEVICE_CODE_DATA)
+        return
+    }
+    return
+}
+
 
 func ReadStatus(devName string) (status uint16, err int) {
     err = smbus.Open(devName)

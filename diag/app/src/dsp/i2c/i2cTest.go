@@ -6,18 +6,30 @@ import (
 
     "common/cli"
     "common/dcli"
+    "common/misc"
     "common/diagEngine"
     "common/errType"
 
+    "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps53659a"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
+    "device/powermodule/tps544c20"
+    "device/powermodule/tps53681"
+    "device/powermodule/sn1701022"
     "device/rtc/pcf85263a"
     "device/tempsensor/tmp42123"
+    "device/tempsensor/tmp451"
+    "device/tempsensor/lm75a"
+    "device/psu/dps800"
     "device/fpga/taorfpga"
 
     "hardware/i2cinfo"
+
+    "math/rand"
+
+    "time"
 )
 
 /*
@@ -114,6 +126,100 @@ func testFru(devName string, bus uint32, devAddr byte) (err int) {
     return
 }
 
+func testTaorFruI2C(devName string) (err int) {
+    var errGo error = nil
+    var lastElement uint8
+    BackupData := []uint8{}
+    wrData := []uint8{}
+    rdData := []uint8{}
+    addr := []uint8{ 0x04, 0x00 }  //0x400 = 1K, nobody uses that section of the eeprom
+    randNum := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+    pattern := [][]uint8{
+    {0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55},
+    {0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA},
+    {0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00},
+    {0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF},
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+
+    lastElement = uint8(len(pattern)-1)
+    for i:=0; i < len(pattern[lastElement]); i++ {
+        pattern[lastElement][i] = uint8(randNum.Uint32() & 0xFF)
+    }
+
+    iInfo, rc := i2cinfo.GetI2cInfo(devName)
+    if rc != errType.SUCCESS {
+        dcli.Println("e", "Failed to obtain I2C info of", devName)
+        err = rc
+        return
+    }
+
+    //Read Test byte to restore afte test
+    wrData = append(wrData, addr...)
+    BackupData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(len(pattern[0])) )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+        err = errType.FAIL
+        return
+    }
+
+
+    for i:=0; i < len(pattern); i++ {
+        wrData = nil
+        rdData = nil
+
+        //WRITE ADDR + PATTERN
+        wrData = append(wrData, addr...)
+        wrData = append(wrData, pattern[i]...)
+        rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0 )
+        if errGo != nil {
+            dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+            err = errType.FAIL
+            return
+        }
+
+        misc.SleepInUSec(5000)    //atmel spec says max write time is 5ms
+
+        //READ BACK WRITE DATA
+        wrData = nil
+        wrData = append(wrData, addr...)
+        rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(len(pattern[i])))
+        if errGo != nil {
+            dcli.Println("e", "I2C Access (2) Failed to", devName)
+            err = errType.FAIL
+            return
+        }
+
+        if len(rdData) != len(pattern[i]) {
+            dcli.Printf("e", "I2C Read Lenght is incorrect.  Read Length=%d   Expect=%d   ", len(rdData), len(pattern[i]))
+            err = errType.FAIL
+            return
+        }
+
+        for j:=0; j<len(pattern[i]); j++ {
+            if rdData[j] != pattern[i][j] {
+                dcli.Printf("e", "I2C Read Data Compare Failed.  Addr=0x%.02x%.02xRead Length=%d   Expect=%d   ", addr[0], addr[1], rdData[j], pattern[i][j])
+                err = errType.FAIL
+                return
+            }
+
+        }
+    }
+
+    //RESTORE DATA
+    wrData = nil
+    wrData = append(wrData, addr...)
+    wrData = append(wrData, BackupData...)
+    rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0)
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+        err = errType.FAIL
+        return
+    }
+
+    return
+}
+
 
 func I2cI2cHdl(argList []string) {
     var ret int
@@ -135,18 +241,57 @@ func I2cI2cHdl(argList []string) {
 
     for _, devName := range(i2cTestList) {
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            dcli.Println("e", "I2cI2cHdl: GetI2cInfo failed for device --> ", devName)
+            diagEngine.FuncMsgChan <- err
+            return
+        }
+
 
         if cardType == "TAORMINA" {
             taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
         }
-        //if err != errType.SUCCESS {
-        //     diagEngine.FuncMsgChan <- err
-        //     return
-        //}
         dcli.Println("i", "Starting I2C test on", devName, " / Component", i2cInfo.Comp)
         switch i2cInfo.Comp {
+        case "MACHXO3":
+            if cardType == "TAORMINA" {
+                err = taorfpga.Elba_CPLD_I2C_Sanity_Test(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            }
+        case "TMP451": 
+            err = tmp451.I2cTest(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "ADT7462": 
+            err = adt7462.I2cTest(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "DPS-800": 
+            err = dps800.I2cTest(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "SN1701022": 
+            err = sn1701022.I2cTest(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "TPS53681": 
+            err = tps53681.I2cTest(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "TPS544C20": 
+            err = tps544c20.I2cTest(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
         case "LM75":
-            dcli.Println("i", "NEED TO ADD TEST")
+            err = lm75a.I2cTest(devName)
             if err != errType.SUCCESS {
                 ret = err
             }
@@ -181,7 +326,11 @@ func I2cI2cHdl(argList []string) {
                 ret = err
             }
         case "AT24C02C":
-            err = testFru(devName, i2cInfo.Bus, i2cInfo.DevAddr)
+            if cardType == "TAORMINA" {
+                err = testTaorFruI2C(devName)
+            } else { 
+                err = testFru(devName, i2cInfo.Bus, i2cInfo.DevAddr)
+            } 
             if err != errType.SUCCESS {
                 ret = err
             }

@@ -24,3 +24,5 @@ export PATH=$PATH:$DIAG_DIR/python/qa_suite
 export PATH=$PATH:$DIAG_DIR/scripts
 export PATH=$PATH:$DIAG_DIR/scripts/asic
 export PATH=$PATH:$DIAG_DIR/tools
+
+cp /usr/lib/libstdc++.so.6 /fs/nos/home_diag/diag/asic/depend_libs/tool/lib64/libstdc++.so.6

@@ -114,6 +114,89 @@ DSP:
         INFO: chip internal test
         PLATFORM:
             NIC: MTP
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 3600
+                INFO: Test timeout setting
+            sn:
+                VALUE:
+                    ALL: "SN000001"
+                INFO: NIC serial number
+            slot:
+                VALUE:
+                    ALL: 1
+                INFO: NIC slot number
+            mode:
+                VALUE:
+                    ALL: "hod"
+                INFO: ASIC mode hod nod
+            int_lpbk:
+                VALUE:
+                    ALL: 0
+                INFO: Enable internal loopback
+            vmarg:
+                VALUE:
+                    ALL: "normal"
+                INFO: Vmargin setting; normal/high/low
+            zmq_en:
+                VALUE:
+                    ALL: 0
+                INFO: Enable ZMQ mode
+            offload:
+                VALUE:
+                    ALL: 0
+                INFO: Offload flag for legacy L1
+            esec_en:
+                VALUE:
+                    ALL: 1
+                INFO: Enable esecure test in L1
+
+    TEST#L1_ELB0:
+        INFO: chip internal test
+        PLATFORM:
+            TOR: ALL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 3600
+                INFO: Test timeout setting
+            sn:
+                VALUE:
+                    ALL: "SN000001"
+                INFO: NIC serial number
+            slot:
+                VALUE:
+                    ALL: 1
+                INFO: NIC slot number
+            mode:
+                VALUE:
+                    ALL: "hod"
+                INFO: ASIC mode hod nod
+            int_lpbk:
+                VALUE:
+                    ALL: 0
+                INFO: Enable internal loopback
+            vmarg:
+                VALUE:
+                    ALL: "normal"
+                INFO: Vmargin setting; normal/high/low
+            zmq_en:
+                VALUE:
+                    ALL: 0
+                INFO: Enable ZMQ mode
+            offload:
+                VALUE:
+                    ALL: 0
+                INFO: Offload flag for legacy L1
+            esec_en:
+                VALUE:
+                    ALL: 1
+                INFO: Enable esecure test in L1
+
+    TEST#L1_ELB1:
+        INFO: chip internal test
+        PLATFORM:
             TOR: ALL
         PARAM:
             timeout:

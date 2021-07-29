@@ -29,10 +29,14 @@ import (
     "unsafe"
 
     "common/cli"
+    "common/dcli"
     "common/errType"
 
     //"gopkg.in/yaml.v2"
     "encoding/json"
+    "device/cpld/nicCpldCommon"
+
+    "hardware/i2cinfo"
 )
 
 const (
@@ -1055,128 +1059,78 @@ func Elba_Show_Firmware(elba int) (err int) {
 
 }
 
-/* 
- 
-map[boot0:map[ 
-        image:map[build_date:Tue Jun  8 06:33:06 PDT 2021 build_user: base_version:2018.08-git-g17ca6ff software_pipeline:polaris kernel_compat_version:2 software_version:1.28.0-81 nicmgr_compat_version:2 pcie_compat_version:1 dev_conf_compat_version:4 image_version:7]] 
-    mainfwa:map[
-        kernel_fit:map[pcie_compat_version:1 build_user: base_version:2018.08-git-g7999c66 software_version:1.29.0-9 nicmgr_compat_version:2 kernel_compat_version:2 build_date:Wed Jun 16 12:37:31 PDT 2021 software_pipeline:polaris dev_conf_compat_version:4]
-        uboot:map[dev_conf_compat_version:4 build_user: pcie_compat_version:1 software_version:1.29.0-9 software_pipeline:polaris nicmgr_compat_version:2 kernel_compat_version:2 build_date:Wed Jun 16 12:37:31 PDT 2021 base_version:2018.08-git-g7999c66]
-        system_image:map[build_date:Wed Jun 16 12:37:31 PDT 2021 nicmgr_compat_version:2 dev_conf_compat_version:4 software_pipeline:polaris kernel_compat_version:2 pcie_compat_version:1 build_user: base_version:2018.08-git-g7999c66 software_version:1.29.0-9]]
-    mainfwb:map[system_image:map[build_date:Tue Jul  6 12:33:37 PDT 2021 base_version:2018.08-git-gf18563e kernel_compat_version:2 nicmgr_compat_version:2 pcie_compat_version:1 dev_conf_compat_version:4 build_user: software_version:1.29.0-82 software_pipeline:polaris] kernel_fit:map[build_user: software_version:1.29.0-82 software_pipeline:polaris kernel_compat_version:2 pcie_compat_version:1 build_date:Tue Jul  6 12:33:37 PDT 2021 base_version:2018.08-git-gf18563e nicmgr_compat_version:2 dev_conf_compat_version:4] uboot:map[nicmgr_compat_version:2 dev_conf_compat_version:4 base_version:2018.08-git-gf18563e software_version:1.29.0-82 software_pipeline:polaris pcie_compat_version:1 build_date:Tue Jul  6 12:33:37 PDT 2021 build_user: kernel_compat_version:2]]
-    goldfw:map[kernel_fit:map[software_version:1.15.5-C-2-1-ge129fd1 software_pipeline:iris nicmgr_compat_version: kernel_compat_version: pcie_compat_version: build_date:Wed Feb 24 12:51:38 PST 2021 build_user:dac2 base_version:2018.08-git-gfb4971d dev_conf_compat_version:] uboot:map[dev_conf_compat_version:4 software_version:1.25.0-60 software_pipeline:polaris nicmgr_compat_version:2 kernel_compat_version:2 pcie_compat_version:1 build_date:Thu May  6 06:19:56 PDT 2021 build_user: base_version:2018.08-git-g5b14c67]]
-    diagfw:map[]]
- 
+//
+//nicCpldCommon.ID_TAORMINA_ELBA:
+//    ELBA0 = 0
+//ELBA1 = 1
+//    err = errType.FAIL
+func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
+    var errGo error
+    i2cWrData := [][]byte{ {0x0B,0x55} , {0x0C, 0xAA} }
+    wrData := []uint8{}
+    rdData := []uint8{}
 
-{
-  "boot0": {
-    "image": {
-      "build_date": "Tue Jun  8 06:33:06 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-g17ca6ff",
-      "software_version": "1.28.0-81",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4",
-      "image_version": 7
+    if devName != "CPLD_ELBA0" && devName != "CPLD_ELBA1" {
+        dcli.Printf("e", "DevName %s is not valid\n", devName)
+        err = errType.FAIL
+        return
     }
-  },
-  "mainfwa": {
-    "system_image": {
-      "build_date": "Wed Jun 16 12:37:31 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-g7999c66",
-      "software_version": "1.29.0-9",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
-    },
-    "kernel_fit": {
-      "build_date": "Wed Jun 16 12:37:31 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-g7999c66",
-      "software_version": "1.29.0-9",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
-    },
-    "uboot": {
-      "build_date": "Wed Jun 16 12:37:31 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-g7999c66",
-      "software_version": "1.29.0-9",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
+
+    iInfo, rc := i2cinfo.GetI2cInfo(devName)
+    if rc != errType.SUCCESS {
+        dcli.Println("e", "Failed to obtain I2C info of", devName)
+        err = rc
+        return
     }
-  },
-  "mainfwb": {
-    "system_image": {
-      "build_date": "Tue Jul  6 12:33:37 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-gf18563e",
-      "software_version": "1.29.0-82",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
-    },
-    "kernel_fit": {
-      "build_date": "Tue Jul  6 12:33:37 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-gf18563e",
-      "software_version": "1.29.0-82",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
-    },
-    "uboot": {
-      "build_date": "Tue Jul  6 12:33:37 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-gf18563e",
-      "software_version": "1.29.0-82",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
+
+    //read device ID
+    wrData = append(wrData, 0x80)
+    rdData, errGo = I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 1 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+        err = errType.FAIL
+        return
     }
-  },
-  "goldfw": {
-    "kernel_fit": {
-      "build_date": "Wed Feb 24 12:51:38 PST 2021",
-      "build_user": "dac2",
-      "base_version": "2018.08-git-gfb4971d",
-      "software_version": "1.15.5-C-2-1-ge129fd1",
-      "software_pipeline": "iris",
-      "nicmgr_compat_version": "",
-      "kernel_compat_version": "",
-      "pcie_compat_version": "",
-      "dev_conf_compat_version": ""
-    },
-    "uboot": {
-      "build_date": "Thu May  6 06:19:56 PDT 2021",
-      "build_user": "",
-      "base_version": "2018.08-git-g5b14c67",
-      "software_version": "1.25.0-60",
-      "software_pipeline": "polaris",
-      "nicmgr_compat_version": "2",
-      "kernel_compat_version": "2",
-      "pcie_compat_version": "1",
-      "dev_conf_compat_version": "4"
+
+    if rdData[0] != nicCpldCommon.ID_TAORMINA_ELBA {
+        dcli.Printf("e", "%s DEVICE ID IS WRONG:  EXPECT 0x.02x.   Read 0x%.02x", devName, nicCpldCommon.ID_TAORMINA_ELBA, rdData[0] )
+        err = errType.FAIL
+        return
     }
-  },
-  "diagfw": {}
+
+    _ , errGo = I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(i2cWrData[0])), i2cWrData[0], 0 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (2) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
+    }
+    _ , errGo = I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(i2cWrData[1])), i2cWrData[1], 0 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (3) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
+    }
+
+    rdData = nil
+    wrData[0] = i2cWrData[0][0]
+    rdData, errGo = I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), 1, wrData, 1 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (4) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
+    }
+    if rdData[0] != i2cWrData[0][1] {
+        dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x.02x.   Read 0x%.02x", devName, i2cWrData[0][0], i2cWrData[0][1],  rdData[0] )
+        err = errType.FAIL
+        return
+    }
+
+    rdData = nil
+    wrData[0] = i2cWrData[1][0]
+    rdData, errGo = I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), 1, wrData, 1 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (4) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
+    }
+    if rdData[0] != i2cWrData[1][1] {
+        dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x.02x.   Read 0x%.02x", devName, i2cWrData[1][0], i2cWrData[1][1],  rdData[0] )
+        err = errType.FAIL
+        return
+    }
+
+    return
 }
-*/
+

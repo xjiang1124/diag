@@ -90,7 +90,7 @@ func AddrDecipher(region string) (addr uint32, maxSize uint32, err error) {
         addr = 0x00
         maxSize = 0x1000000
     } else {
-        err = fmt.Errorf(" ERROR.  Flash Partition is invalid.  You entered %s.  It needs to be gold, main, or allflash\n", region)
+        err = fmt.Errorf(" ERROR.  Flash Partition is invalid.  You entered %s.  It needs to be primary, secondary, or allflash\n", region)
         fmt.Printf("%s", err)
         return
 
@@ -435,11 +435,40 @@ func FlashPollCmdComplete() (err error) {
     var data32 uint32
     for i:=0; i< 500; i++ {
         data32, _ = TaorReadU32(1, D1_CFG_FLASH_CMD_CTRL_REG)
-        if data32 == 0 {
+        if (data32 & 0x1) == 0 {
             //fmt.Printf(" %d", i)
             return
         }
         time.Sleep(time.Duration(1) * time.Millisecond)  //Sleep 1ms
+    }
+    err = fmt.Errorf("ERROR: Polling flash cmd complete failed.  CMD REG=%x\n", data32)
+    fmt.Printf("%s", err)
+    return 
+}
+
+
+func FlashPollCmdCompleteForReads() (err error) {
+    var data32 uint32
+
+    data32, _ = TaorReadU32(1, D1_CFG_FLASH_CMD_CTRL_REG)
+    if data32 & 0x80000000 == 0x80000000 {    //fpga 800b-07272021 added the ability to pull for read done instead of using arbitrary delays
+                                              //if bit31 in CMD_CTRL_REG is set, it supports polling BIT1
+        for i:=0; i< 1000; i++ {
+            data32, _ = TaorReadU32(1, D1_CFG_FLASH_CMD_CTRL_REG)
+            if data32 & 0x2 != 0x2 {
+                return
+            }
+        }
+    } else { 
+        for i:=0; i< 500; i++ {
+            data32, _ = TaorReadU32(1, D1_CFG_FLASH_CMD_CTRL_REG)
+            if (data32 & 0x1) == 0 {
+                //fmt.Printf(" %d", i)
+                time.Sleep(time.Duration(50) * time.Microsecond)  
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Millisecond)  //Sleep 1ms
+        }
     }
     err = fmt.Errorf("ERROR: Polling flash cmd complete failed.  CMD REG=%x\n", data32)
     fmt.Printf("%s", err)
@@ -635,10 +664,9 @@ func FlashReadByte(addr uint32) (data32 uint32, err error) {
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_ADDR_REG, addr)
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_CTRL_REG, 0x1) 
 
-    if err = FlashPollCmdComplete(); err != nil {
+    if err = FlashPollCmdCompleteForReads(); err != nil {
         return
     }
-    time.Sleep(time.Duration(25) * time.Microsecond)  
     data32, err = TaorReadU32(1, D1_CFG_FLASH_RDATA0_REG)
     data32 = data32 & 0xFF
     return
@@ -656,10 +684,9 @@ func FlashReadFourBytes(addr uint32) (data32 uint32, err error) {
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_ADDR_REG, addr)
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_CTRL_REG, 0x1) 
 
-    if err = FlashPollCmdComplete(); err != nil {
+    if err = FlashPollCmdCompleteForReads(); err != nil {
         return
     }
-    time.Sleep(time.Duration(50) * time.Microsecond)  
     data32, err = TaorReadU32(1, D1_CFG_FLASH_RDATA0_REG)
     return
 }
@@ -676,10 +703,9 @@ func FlashReadEightBytes(addr uint32) (data64 uint64, err error) {
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_ADDR_REG, addr)
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_CTRL_REG, 0x1) 
 
-    if err = FlashPollCmdComplete(); err != nil {
+    if err = FlashPollCmdCompleteForReads(); err != nil {
         return
     }
-    time.Sleep(time.Duration(50) * time.Microsecond)  
     data32, err = TaorReadU32(1, D1_CFG_FLASH_RDATA0_REG)
     data64 = data64 | uint64(data32)
     data32, err = TaorReadU32(1, D1_CFG_FLASH_RDATA1_REG)

@@ -13,6 +13,7 @@ set vmarg    [lindex $argv 4]
 set use_zmq  [lindex $argv 5]
 set offload  [lindex $argv 6]
 set esecEn   [lindex $argv 7]
+set port 10
 
 puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn"
 set err_cnt 0
@@ -42,11 +43,13 @@ if {$MTP_TYPE == "MTP_ELBA"} {
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
     if { $slot == 1 } {
-        set l1_cmd "elb_l1_screen_diag $sn 0x3021 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+	set port 0x3021
+        set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
     } else {
-        set l1_cmd "elb_l1_screen_diag $sn 0x3031 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+	set port 0x3031
+        set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
     }
-    source .tclrc.diag.elb.taor.nointv
+    source .tclrc.diag.elb.new
 
 } else {
     puts "Capri MTP"
@@ -76,11 +79,11 @@ set ::CAP_GPIO3_PWR_OFF_DUR 5000
 
 if {$use_zmq == 0} {
     puts "Regular L1"
-    diag_open_j2c_if 10 $slot
+    diag_open_j2c_if $port $slot
     set err_cn [eval $l1_cmd]
     set err_cnt 0
 
-    diag_close_j2c_if 10 $slot
+    diag_close_j2c_if $port $slot
 } else {
     puts "ZMQ L1"
     diag_open_zmq_if $zmq_conn $slot

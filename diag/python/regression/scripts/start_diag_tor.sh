@@ -82,6 +82,9 @@ echo "Setting up fan controllers"
 /fs/nos/home_diag/diag/util/devmgr -dev=fan_1 -faninit
 /fs/nos/home_diag/diag/util/devmgr -dev=fan_2 -faninit
 
+echo "Setting tmp451 to extended mode"
+/fs/nos/home_diag/diag/util/fpgautil i2c 2 1 0x4c w 0x09 0x4
+
 echo "-------------------"
 echo "Set up diag $arch -- Done"
 echo "===================================="
