@@ -1275,11 +1275,18 @@ static int flash_read_pipeline_test(uint32_t fd, uint32_t addr, uint32_t numByte
 
 static void usage(void)
 {
-    printf("artix7fpga -r addr\n");                      // Read PS-48 Register
-    printf("artix7fpga -w addr data\n");                 // Write PS-48 Register
-    printf("artix7fpga -prog file_name main/gold\n");
-    printf("artix7fpga -file file_name main/gold\n");
-    exit(1);
+    char *usage_ptr = 
+        "   -r addr\n"
+        "       Read flash controller register\n"
+        "   -w addr data\n"
+        "       Write flash controler register\n"
+        "   -prog file_name main/gold\n"
+        "       Program FPGA image to main or gold partition\n"
+        "   -file file_name main/gold\n"
+        "       Read flash partition (main/gold) to file. Entire 16MB of each partition will be read out\n"
+        "";
+    printf("%s", usage_ptr);
+    exit(0);
 }
 
 static void usage_full (void) {
