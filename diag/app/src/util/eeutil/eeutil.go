@@ -37,6 +37,9 @@ const NAPLES200_ORT_V2    string  = "68-0015-02 01"   //ORTANO Oracle
 const NAPLES200_PEN       string  = "68-0021-02 01"   //ORTANO Pensando
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //ORTANO Pensando
 
+const LACONA16GB_HPE     string  = "P47927-001"      
+const LACONA32GB_HPE     string  = "P47930-001"      
+
 func init() {
     //procNameTemp := strings.Split(os.Args[0], "/")
     //procName := procNameTemp[len(procNameTemp)-1]
@@ -221,6 +224,25 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
             eeprom.EepromTbl = eeprom.HpeTblLACONA
             eeprom.EepromExtTbl = eeprom.HpeTblLACONAext
             eeprom.HpeLacona = 1
+            if update == true {
+                if pn == "" {
+                    cli.Println("e", "For Programming Lacona, you must enter a part number")
+                    return -1;
+                }
+                if pn == LACONA16GB_HPE { 
+                    eeprom.EepromTbl = eeprom.HpeTblLACONA
+                    eeprom.EepromExtTbl = eeprom.HpeTblLACONAext
+                    fmt.Printf(" Lacona 16GB ENTERPRISE\n");
+                } else if pn == LACONA32GB_HPE {   
+                    eeprom.EepromTbl = eeprom.HpeTblLACONA32G
+                    eeprom.EepromExtTbl = eeprom.HpeTblLACONA32Gext
+                    eeprom.CustType = "HPE100CLOUD"
+                    fmt.Printf(" Lacona 32GB ENTERPRISE\n");
+                } else {
+                    cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming Naples100HPE")
+                    return -1;
+                }
+            } 
         }
         if (cardType == "LACONADELL") {
             eeprom.CustType = "LACONADELL"
@@ -309,6 +331,27 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             }
 
             cli.Println("e", "Unable to determine naples100 HPE fru type.  Please program it with a valid part number")
+            return -1;
+        } else if (cardType == "LACONA") {
+
+            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, LACONA16GB_HPE)
+            if rc == errType.SUCCESS {
+                eeprom.CustType = "LACONA"
+                eeprom.EepromTbl = eeprom.HpeTblLACONA
+                eeprom.EepromExtTbl = eeprom.HpeTblLACONAext
+                eeprom.HpeLacona = 1
+                return(0)
+            }
+            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, LACONA32GB_HPE)
+            if rc == errType.SUCCESS {
+                eeprom.CustType = "LACONA"
+                eeprom.EepromTbl = eeprom.HpeTblLACONA32G
+                eeprom.EepromExtTbl = eeprom.HpeTblLACONA32Gext
+                eeprom.HpeLacona = 1
+                return(0)
+            }
+
+            cli.Println("e", "Unable to determine Lacona fru type.  Please program it with a valid part number")
             return -1;
         } else if (cardType == "NAPLES25OCP") {
             rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_DELL)
