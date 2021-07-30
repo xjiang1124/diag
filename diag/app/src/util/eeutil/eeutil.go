@@ -36,12 +36,6 @@ const NAPLES100_HPE_C     string  = "P41854-001"      //Cloud
 const NAPLES200_ORT_V2    string  = "68-0015-02 01"   //ORTANO Oracle
 const NAPLES200_PEN       string  = "68-0021-02 01"   //ORTANO Pensando
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //ORTANO Pensando
-<<<<<<< Updated upstream
-
-const LACONA16GB_HPE     string  = "P47927-001"      
-const LACONA32GB_HPE     string  = "P47930-001"      
-=======
->>>>>>> Stashed changes
 
 const LACONA16GB_HPE     string  = "P47927-001"      
 const LACONA32GB_HPE     string  = "P47930-001"      
