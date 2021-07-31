@@ -111,6 +111,10 @@ func present() (err int) {
                 presentStr = "NAPLES25SWM"
             case nicCpldCommon.ID_NAPLES25WFG:
                 presentStr = "NAPLES25WFG"
+            case nicCpldCommon.ID_NAPLES25SWM_DELL:
+                presentStr = "NAPLES25SWMDELL"
+            case nicCpldCommon.ID_NAPLES25SWM_833:
+                presentStr = "NAPLES25SWM833"
             case nicCpldCommon.ID_FORIO:
                 presentStr = "FORIO"
             case nicCpldCommon.ID_VOMERO:
@@ -123,16 +127,14 @@ func present() (err int) {
                 presentStr = "ORTANO2"
             case nicCpldCommon.ID_LACONA_DELL:
                 presentStr = "LACONADELL"
-            case nicCpldCommon.ID_POMONTE_DELL:
-                presentStr = "POMONTEDELL"
+            case nicCpldCommon.ID_LACONA32_DELL:
+                presentStr = "LACONA32DELL"
             case nicCpldCommon.ID_LACONA:
                 presentStr = "LACONA"
+            case nicCpldCommon.ID_POMONTE_DELL:
+                presentStr = "POMONTEDELL"
             case nicCpldCommon.ID_NAPLES100HPE:
                 presentStr = "NAPLES100HPE"
-            case nicCpldCommon.ID_NAPLES25SWM_DELL:
-                presentStr = "NAPLES25SWMDELL"
-            case nicCpldCommon.ID_NAPLES25SWM_833:
-                presentStr = "NAPLES25SWM833"
             case nicCpldCommon.ID_BIODONA_D4:
                 presentStr = "BIODONA_D4"
             case nicCpldCommon.ID_BIODONA_D5:
