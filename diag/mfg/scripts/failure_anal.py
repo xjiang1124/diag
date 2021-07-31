@@ -1474,6 +1474,16 @@ def parse_die_id_dl(file_fullname, sn, verbose, cleanup):
     os.chdir(card_log_path)
 
     test_stage_log = "test_dl.log"
+    test_nic_log = "/diag_{}_dl.log"
+    # new script has changed file name to test_dl.log
+    try:
+        f = open(test_stage_log, 'r')
+        f.close()
+    except IOError:
+        print("Use secondary file name: mtp_test.log")
+        test_stage_log = "mtp_test.log"
+        test_nic_log = "/mtp_{}_diag.log"
+
     # find slot number
     fmt_pattern_fail = "^.*{}.*NIC_DIAG_REGRESSION_TEST_FAIL.*"
     fmt_pattern_pass = "^.*{}.*NIC_DIAG_REGRESSION_TEST_PASS.*"
@@ -1494,7 +1504,7 @@ def parse_die_id_dl(file_fullname, sn, verbose, cleanup):
     if nic_info["SN"] == "":
         print("Failed to fine DL log:", sn)
 
-    log_filename = card_log_path+"/diag_{}_dl.log".format(nic_info["SLOT"])
+    log_filename = card_log_path+test_nic_log.format(nic_info["SLOT"])
 
     if verbose == True:
         print("log_filename:", log_filename)
