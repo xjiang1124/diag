@@ -22,6 +22,11 @@ GO_TEST_DIR=						\
 
 AMD64_SRC_DIR=			\
 	dsp/i2cspi 			\
+	dsp/i2c 			\
+	dsp/sfp 			\
+	dsp/switch 			\
+	dsp/qsfp 			\
+	dsp/bcm 			\
 	util/cpldutil		\
 	util/mctputil		\
 	util/fanutil        \
@@ -29,6 +34,7 @@ AMD64_SRC_DIR=			\
 	util/inventory		\
 	util/mtptest		\
 	util/swmadaputil	\
+	util/switch			\
 	util/pcieswutil
 
 AMD64_C_SRC_DIR=		\

@@ -86,12 +86,14 @@ func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
 
     i2cif, err = i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
+        cli.Println("e", "FanSpeedSet get i2c info failed for dev  ", devName)
         return
     }
 
     lockName := "i2c-"+strconv.Itoa(int(i2cif.Bus))
     err = dmutex.Lock(lockName)
     if err != errType.SUCCESS {
+        cli.Println("e", "FanSpeedSet mutex lock failed for dev  ", devName)
         return
     }
     defer dmutex.Unlock(lockName)

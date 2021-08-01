@@ -12,6 +12,7 @@ import (
     //"bufio"
     //"errors"
     "device/fpga/taorfpga"
+    "platform/taormina"
     "device/bcm/td3"
     "device/psu/dps800"
     "fmt"
@@ -125,16 +126,16 @@ func main() {
             data32, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, taorfpga.D0_FPGA_REV_ID_REG)
             fmt.Printf("FPGA    REVISION: 0x%.08x\n", data32)
             fmt.Printf("\n")
-            taorfpga.SSD_Display_Info()
-            taorfpga.DDR_Display_Info()
+            taormina.SSD_Display_Info()
+            taormina.DDR_Display_Info()
             fmt.Printf("\n")
-            taorfpga.BIOS_Display_Version()
-            taorfpga.HALON_OS_Display_Version()
+            taormina.BIOS_Display_Version()
+            taormina.HALON_OS_Display_Version()
             fmt.Printf("\n")
-            taorfpga.Elba_Check_Pci_Link(taorfpga.ELBA0)
-            taorfpga.Elba_Check_Pci_Link(taorfpga.ELBA1)
-            taorfpga.Elba_Show_Firmware(taorfpga.ELBA0)
-            taorfpga.Elba_Show_Firmware(taorfpga.ELBA1)
+            taormina.Elba_Check_Pci_Link(taorfpga.ELBA0)
+            taormina.Elba_Check_Pci_Link(taorfpga.ELBA1)
+            taormina.Elba_Show_Firmware(taorfpga.ELBA0)
+            taormina.Elba_Show_Firmware(taorfpga.ELBA1)
             
             fmt.Printf("\n")
             //fmt.Printf("===================================================================================================\n")

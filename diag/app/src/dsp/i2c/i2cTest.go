@@ -24,6 +24,7 @@ import (
     "device/tempsensor/lm75a"
     "device/psu/dps800"
     "device/fpga/taorfpga"
+    "platform/taormina"
 
     "hardware/i2cinfo"
 
@@ -255,7 +256,7 @@ func I2cI2cHdl(argList []string) {
         switch i2cInfo.Comp {
         case "MACHXO3":
             if cardType == "TAORMINA" {
-                err = taorfpga.Elba_CPLD_I2C_Sanity_Test(devName)
+                err = taormina.Elba_CPLD_I2C_Sanity_Test(devName)
                 if err != errType.SUCCESS {
                     ret = err
                 }
