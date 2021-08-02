@@ -79,7 +79,7 @@ DSP:
         PARAM:
             tollerance:
                 VALUE:
-                    ALL: 10
+                    ALL: 15
                 INFO: rpm tollerance
 
 ...

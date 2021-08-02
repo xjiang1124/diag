@@ -62,17 +62,17 @@ const (
 
 
 var rpm_rear_MAP = map[int]int {
-    100 : 28800,
-    75 : 18500,
-    50 : 10400,
+    100 : 29000,
+    75 : 19500,
+    50 : 11100,
     40 : 7300,
     25 : 2100, 
 }
 
 var rpm_front_MAP = map[int]int {
     100 : 25450,
-    75 : 16500,
-    50 : 9250,
+    75 : 17200,
+    50 : 10000,
     40 : 6500,
     25 : 1800, 
 }
@@ -105,7 +105,8 @@ func Fan_RPM_test(tollerance int)(err int) {
 
     if running, _ := Process_Is_Running(process); running == true {
         Process_Kill(process)
-    }
+        misc.SleepInSec(1)
+    } 
 
     //check if fan is present
     for j:=0; j<MAXFANMODULES; j++ {
@@ -392,15 +393,15 @@ func HALON_OS_Display_Version() (err int) {
 func Process_Is_Running(process string) (running bool, err int) {
     out, errGo := exec.Command("ps", "-A").Output()
     if errGo != nil {
-        fmt.Println("[ERROR]", errGo)
+        cli.Println("e", "ERR=", errGo)
         err = errType.FAIL
         return
     }
-
     s := strings.Split(string(out), "\n")
     for _, temp := range s {
         if strings.Contains(temp, process)==true {
             running = true
+            return
         } else {
             running = false
         }
