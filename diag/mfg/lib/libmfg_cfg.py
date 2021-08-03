@@ -32,6 +32,7 @@ class NIC_IMAGES:
     goldfw_img["NAPLES25"] = "naples_goldfw_iris_RELB_1.12.0-E-52_0728.tar"
     goldfw_dat["NAPLES25"] = "06-18-2020"
 
+    # HPE Enterprise (P26968-001)
     cpld_img["NAPLES25SWM"] = "naples25_swm_revf_03102021.bin"
     cpld_ver["NAPLES25SWM"] = "0xF"
     cpld_dat["NAPLES25SWM"] = "03-10"
@@ -42,6 +43,42 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25SWM"] = "03-03-2021"
     goldfw_img["NAPLES25SWM"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
     goldfw_dat["NAPLES25SWM"] = "01-31-2021"
+
+    # HPE Cloud (P41851-001)
+    # cpld_img["NAPLES25SWM"] = "naples25_swm_revA_06082020.bin"
+    # cpld_ver["NAPLES25SWM"] = "0xA"
+    # cpld_dat["NAPLES25SWM"] = "06-08"
+    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8A_06082020.bin"
+    # sec_cpld_ver["NAPLES25SWM"] = "0x8A"
+    # sec_cpld_dat["NAPLES25SWM"] = "06-08"
+    # diagfw_img["NAPLES25SWM"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    # diagfw_dat["NAPLES25SWM"] = "03-03-2021"
+    # goldfw_img["NAPLES25SWM"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
+    # goldfw_dat["NAPLES25SWM"] = "01-31-2021"
+
+    # Pensando (68-0016)
+    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin.bin"
+    # cpld_ver["NAPLES25SWM"] = "0xC"
+    # cpld_dat["NAPLES25SWM"] = "01-06"
+    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin.bin"
+    # sec_cpld_ver["NAPLES25SWM"] = "0x8C"
+    # sec_cpld_dat["NAPLES25SWM"] = "01-06"
+    # diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    # diagfw_dat["NAPLES25SWM"] = "11-18-2020"
+    # goldfw_img["NAPLES25SWM"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    # goldfw_dat["NAPLES25SWM"] = "11-18-2020"
+
+    # Pensando TAA (68-0017)
+    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin.bin"
+    # cpld_ver["NAPLES25SWM"] = "0xC"
+    # cpld_dat["NAPLES25SWM"] = "01-06"
+    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin.bin"
+    # sec_cpld_ver["NAPLES25SWM"] = "0x8C"
+    # sec_cpld_dat["NAPLES25SWM"] = "01-06"
+    # diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    # diagfw_dat["NAPLES25SWM"] = "11-18-2020"
+    # goldfw_img["NAPLES25SWM"] = "naples_goldfw_1.3.1-E-42_1119.tar"
+    # goldfw_dat["NAPLES25SWM"] = "11-18-2020"
 
     cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev3_01062021.bin"
     cpld_ver["NAPLES25SWMDELL"] = "0x3"
