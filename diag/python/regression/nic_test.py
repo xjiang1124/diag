@@ -297,6 +297,7 @@ class nic_test:
                     self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
                     #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
                     #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
+                    self.nic_con.uart_session_cmd(session, "halctl show port status")
                 except:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
@@ -304,7 +305,6 @@ class nic_test:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
                     continue
                 
-                self.nic_con.uart_session_cmd(session, "halctl show port status")
                 sleep(0.5)
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
