@@ -3147,7 +3147,9 @@ class mtp_ctrl():
                 if not self.mtp_check_nic_status(slot):
                     self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
                     continue
-                self.mtp_nic_boot_info_init(slot)
+                if not self.mtp_nic_boot_info_init(slot):
+                    self.mtp_set_nic_status_fail(slot)
+                    continue
                 nic_list.append(slot)
 
         if not nic_list:
@@ -3254,6 +3256,12 @@ class mtp_ctrl():
                     nic_thread.join()
                     nic_thread_list.remove(nic_thread)
             time.sleep(5)
+
+        for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
+            if not self.mtp_check_nic_status(slot):
+                libmfg_utils.post_fail_steps(self, slot)
 
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
@@ -4382,5 +4390,6 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg()
             return False
+        self.cli_log_slot_inf(slot, "No sign of reboot")
         return True
 

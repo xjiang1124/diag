@@ -304,6 +304,9 @@ class nic_ctrl():
 
 
     def nic_console_attach(self):
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
@@ -3226,6 +3229,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
+            self.nic_set_err_msg("NIC was rebooted")
             self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
