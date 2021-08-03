@@ -567,6 +567,8 @@ def main():
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
             if nic_type in ELBA_NIC_TYPE_LIST:
                 fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
             else:
@@ -654,6 +656,8 @@ def main():
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             if nic_type == NIC_Type.NAPLES25SWM:
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
             failsafe_cpld_img_file = ""
             if nic_type in ELBA_NIC_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
@@ -790,6 +794,8 @@ def main():
             sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
             if nic_type == NIC_Type.NAPLES25SWM:
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["P41854"]
 
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         sec_cpld_img_file,

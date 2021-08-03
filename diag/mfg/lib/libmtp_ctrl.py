@@ -2803,6 +2803,8 @@ class mtp_ctrl():
             expected_version = NIC_IMAGES.cpld_ver[nic_type]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
+                expected_version = NIC_IMAGES.cpld_ver["P41854"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -2810,6 +2812,8 @@ class mtp_ctrl():
             expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
+                expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3058,6 +3062,8 @@ class mtp_ctrl():
             expected_version = NIC_IMAGES.cpld_ver[nic_type]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
+                expected_version = NIC_IMAGES.cpld_ver["P41854"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -3065,6 +3071,8 @@ class mtp_ctrl():
             expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
+                expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3073,6 +3081,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.sec_cpld_ver[nic_type]
                 if nic_type == NIC_Type.NAPLES25SWM:
                     expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
+                if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
+                    expected_version = NIC_IMAGES.sec_cpld_ver["P41854"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
                 return False
@@ -3080,6 +3090,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.sec_cpld_dat[nic_type]
                 if nic_type == NIC_Type.NAPLES25SWM:
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
+                if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
+                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["P41854"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
                 return False
@@ -4499,6 +4511,21 @@ class mtp_ctrl():
                     return "NAPLES25SWM"
                 else:
                     return sku
+
+    def mtp_is_nic_cloud(self, slot):
+        if self._nic_type_list[slot] != NIC_Type.NAPLES100HPE:
+            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for HPE")
+            return False
+        slot_pn = self.mtp_get_nic_pn(slot)
+        if not slot_pn:
+            self.cli_log_slot_err_lock(slot, "Unknown PN for HPE: ".format(slot_pn))
+            return False
+        nic_pn = re.match(PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT, slot_pn)
+        if nic_pn:
+            return True
+        else:
+            return False
+
 
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]
