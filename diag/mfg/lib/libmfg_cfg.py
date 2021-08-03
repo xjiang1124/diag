@@ -21,15 +21,19 @@ class NIC_IMAGES:
     goldfw_img = dict()
     goldfw_dat = dict()
 
+    # Pensando SKU
     cpld_img["NAPLES25"] = "naples25_rev9_06222020.bin"
     cpld_ver["NAPLES25"] = "0x9"
     cpld_dat["NAPLES25"] = "06-17"
     sec_cpld_img["NAPLES25"] = "naples25_rev89_06172020.bin"
     sec_cpld_ver["NAPLES25"] = "0x89"
     sec_cpld_dat["NAPLES25"] = "06-17"
-    diagfw_img["NAPLES25"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["NAPLES25"] = "03-03-2021"
-    goldfw_img["NAPLES25"] = "naples_goldfw_iris_RELB_1.12.0-E-52_0728.tar"
+    diagfw_img["NAPLES25"] = "naples_diagfw_05212020.tar"
+    diagfw_dat["NAPLES25"] = "05-21-2020"
+    goldfw_img["NAPLES25"] = "naples_goldfw_1.3.1-E-19_0717.tar"
+    goldfw_dat["NAPLES25"] = "04-18-2020"
+    # HPE SKU
+    goldfw_img["NAPLES25"] = "naples_goldfw_apulu_1.10.3-C-26_ClouldA_0806.tar"
     goldfw_dat["NAPLES25"] = "06-18-2020"
 
     # HPE Enterprise (P26968-001)
