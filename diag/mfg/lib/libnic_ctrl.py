@@ -774,7 +774,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
 
             # Some additional error printing
-            if not self.mtp_exec_cmd("inventory -sts -slot {:d}".format(self._slot)):
+            if not self.mtp_exec_cmd("inventory -sts -slot {:d}".format(self._slot+1)):
                 self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 

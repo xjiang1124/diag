@@ -4388,8 +4388,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Check if NIC rebooted")
         if not self._nic_ctrl_list[slot].nic_check_rebooted():
             self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
-            self.mtp_dump_nic_err_msg()
+            self.mtp_dump_nic_err_msg(slot)
             return False
         self.cli_log_slot_inf(slot, "No sign of reboot")
         return True
-
