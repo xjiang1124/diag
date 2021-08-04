@@ -129,6 +129,11 @@ var biodonaDispStaList map[string]DispStaFunc
 var ortanoDispStaList map[string]DispStaFunc
 
 //===============================
+// Lacona
+// Status display list
+var laconaDispStaList map[string]DispStaFunc
+
+//===============================
 // MTP
 // Status display list
 var mtpDispStaList map[string]DispStaFunc
@@ -368,6 +373,13 @@ func init() {
     ortanoDispStaList["VDD_DDR"]   = tps549a20.DispStatus
     ortanoDispStaList["TSENSOR"]   = tmp42123.DispStatus
 
+    //Lacona
+    laconaDispStaList = make(map[string]DispStaFunc)
+    laconaDispStaList["ELB0_CORE"] = tps53659.DispStatus
+    laconaDispStaList["ELB0_ARM"]  = tps53659.DispStatus
+    laconaDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
+    laconaDispStaList["TSENSOR"]   = tmp42123.DispStatus
+
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
@@ -418,10 +430,6 @@ func init() {
     taorDispStaList["TSENSOR-TD3"]      = td3.DispStatus
     taorDispStaList["FAN_1"]   = adt7462.DispStatus
     taorDispStaList["FAN_2"]   = adt7462.DispStatus
-
-    
-
-
 
     // ADD FIXME: NEEDS FILLING IN
     taorI2cHubMap = make(map[string]I2cHubInfo)
@@ -478,10 +486,16 @@ func init() {
     dispMap["VOMERO2"]     = forioDispStaList
     //===============================
     // Elba
-    dispMap["BIODONA_D4"]  = biodonaDispStaList
-    dispMap["BIODONA_D5"]  = biodonaDispStaList
-    dispMap["ORTANO"]     =  ortanoDispStaList
-    dispMap["ORTANO2"]     =  ortanoDispStaList
+    dispMap["BIODONA_D4"]   = biodonaDispStaList
+    dispMap["BIODONA_D5"]   = biodonaDispStaList
+    dispMap["ORTANO"]       = ortanoDispStaList
+    dispMap["ORTANO2"]      = ortanoDispStaList
+    dispMap["LACONADELL"]   = laconaDispStaList
+    dispMap["LACONAD"]      = laconaDispStaList
+    dispMap["LACONAD32ELL"] = laconaDispStaList
+    dispMap["LACONAD32"]    = laconaDispStaList
+    dispMap["POMONTEDELL"]  = laconaDispStaList
+    dispMap["POMONTE"]      = laconaDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
@@ -507,10 +521,17 @@ func init() {
     eepromMap["VOMERO2"]       = naplesEepList
     //===============================
     // Elba
-    eepromMap["BIODONA_D4"]    = naplesEepList
-    eepromMap["BIODONA_D5"]    = naplesEepList
-    eepromMap["ORTANO"]    = naplesEepList
-    eepromMap["ORTANO2"]    = naplesEepList
+    eepromMap["BIODONA_D4"]   = naplesEepList
+    eepromMap["BIODONA_D5"]   = naplesEepList
+    eepromMap["ORTANO"]       = naplesEepList
+    eepromMap["ORTANO2"]      = naplesEepList
+    eepromMap["LACONADELL"]   =  naplesEepList
+    eepromMap["LACONAD"]      =  naplesEepList
+    eepromMap["LACONAD32ELL"] =  naplesEepList
+    eepromMap["LACONAD32"]    =  naplesEepList
+    eepromMap["POMONTEDELL"]  =  naplesEepList
+    eepromMap["POMONTE"]      =  naplesEepList
+
     //===============================
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
@@ -529,8 +550,8 @@ func init() {
     i2cHubMap["NAPLES25"]       = naples100I2cHubMap
     i2cHubMap["NAPLES25OCP"]    = naples100I2cHubMap
     i2cHubMap["NAPLES25SWM"]    = naples100I2cHubMap
-    i2cHubMap["NAPLES25SWMDELL"]    = naples100I2cHubMap
-    i2cHubMap["NAPLES25SWM833"]    = naples100I2cHubMap
+    i2cHubMap["NAPLES25SWMDELL"]= naples100I2cHubMap
+    i2cHubMap["NAPLES25SWM833"] = naples100I2cHubMap
     i2cHubMap["NAPLES25WFG"]    = naples100I2cHubMap
     i2cHubMap["FORIO"]          = naples100I2cHubMap
     i2cHubMap["VOMERO"]         = naples100I2cHubMap
@@ -541,6 +562,13 @@ func init() {
     i2cHubMap["BIODONA_D5"]     = naples100I2cHubMap
     i2cHubMap["ORTANO"]         = naples100I2cHubMap
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
+    i2cHubMap["LACONADELL"]     = naples100I2cHubMap
+    i2cHubMap["LACONAD"]        = naples100I2cHubMap
+    i2cHubMap["LACONAD32ELL"]   = naples100I2cHubMap
+    i2cHubMap["LACONAD32"]      = naples100I2cHubMap
+    i2cHubMap["POMONTEDELL"]    = naples100I2cHubMap
+    i2cHubMap["POMONTE"]        = naples100I2cHubMap
+
     //===============================
     // Taormina
     i2cHubMap["TAORMINA"]     = taorI2cHubMap
@@ -567,6 +595,12 @@ func init() {
     i2cHubListMap["BIODONA_D5"]    = forioI2cHubList
     i2cHubListMap["ORTANO"]        = forioI2cHubList
     i2cHubListMap["ORTANO2"]       = forioI2cHubList
+    i2cHubListMap["LACONADELL"]    = forioI2cHubList
+    i2cHubListMap["LACONAD"]       = forioI2cHubList
+    i2cHubListMap["LACONAD32ELL"]  = forioI2cHubList
+    i2cHubListMap["LACONAD32"]     = forioI2cHubList
+    i2cHubListMap["POMONTEDELL"]   = forioI2cHubList
+    i2cHubListMap["POMONTE"]       = forioI2cHubList
 
     //===============================
     // Taormina
@@ -590,10 +624,16 @@ func init() {
     psuListMap["VOMERO2"]      = nicPsuList
     //===============================
     // Elba
-    psuListMap["BIODONA_D4"]   = nicPsuList
-    psuListMap["BIODONA_D5"]   = nicPsuList
-    psuListMap["ORTANO"]   = nicPsuList
-    psuListMap["ORTANO2"]   = nicPsuList
+    psuListMap["BIODONA_D4"]    = nicPsuList
+    psuListMap["BIODONA_D5"]    = nicPsuList
+    psuListMap["ORTANO"]        = nicPsuList
+    psuListMap["ORTANO2"]       = nicPsuList
+    psuListMap["LACONADELL"]    = nicPsuList
+    psuListMap["LACONAD"]       = nicPsuList
+    psuListMap["LACONAD32ELL"]  = nicPsuList
+    psuListMap["LACONAD32"]     = nicPsuList
+    psuListMap["POMONTEDELL"]   = nicPsuList
+    psuListMap["POMONTE"]       = nicPsuList
 
     //===============================
     // Taormina
@@ -618,12 +658,13 @@ func init() {
         var t boardinfo.NicCpld_T
         yaml.Unmarshal([]byte(boardinfo.NicCpld), &t)
         CpldInfo = &t
-    case "NAPLES25", "NAPLES25SWM", "NAPLES25SWMDELL", "NAPLES25SWM833", "NAPLES25OCP", "NAPLES25WFG":
+    case "NAPLES25", "NAPLES25SWM", "NAPLES25SWMDELL", "NAPLES25SWM833", "NAPLES25OCP", "NAPLES25WFG",
+         "LACONADELL", "LACONA", "LACONA32DELL", "LACONA32":
         SfpTbl = naples25SfpTbl
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
-    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2":
+    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "POMONTE", "POMONTEDELL":
         QsfpTbl = forioQsfpTbl
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)

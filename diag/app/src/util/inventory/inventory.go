@@ -131,6 +131,8 @@ func present() (err int) {
                 presentStr = "LACONA32DELL"
             case nicCpldCommon.ID_LACONA:
                 presentStr = "LACONA"
+            case nicCpldCommon.ID_LACONA32:
+                presentStr = "LACONA32"
             case nicCpldCommon.ID_POMONTE:
                 presentStr = "POMONTE"
             case nicCpldCommon.ID_POMONTE_DELL:
@@ -305,6 +307,10 @@ func sysDetect() (err int) {
                 presentStr = "LACONADELL"
             case nicCpldCommon.ID_LACONA:
                 presentStr = "LACONA"
+            case nicCpldCommon.ID_LACONA32_DELL:
+                presentStr = "LACONA32DELL"
+            case nicCpldCommon.ID_LACONA32:
+                presentStr = "LACONA32"
             case nicCpldCommon.ID_POMONTE_DELL:
                 presentStr = "POMONTEDELL"
             case nicCpldCommon.ID_POMONTE:
