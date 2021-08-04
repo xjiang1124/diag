@@ -39,6 +39,8 @@ if {$MTP_TYPE == "MTP_ELBA"} {
 }
 
 diag_open_j2c_if $port $slot
+rst_arm0_set 0
+ssi_cpld_write 0x20 0x0
 elb_print_voltage_temp
 
 puts "Getting ASIC status - Done"
