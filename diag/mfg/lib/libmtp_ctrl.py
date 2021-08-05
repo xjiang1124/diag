@@ -4412,8 +4412,8 @@ class mtp_ctrl():
         # [21-08-03 19:00:29] MSG :: ASIC           core_temp(C)   core_volt(V)   brd_temp(C)    r_die_temp(C)  VDD_VOUT(V)    ARM_VOUT(V)    PIN(W)
         # [21-08-03 19:00:29] MSG ::                71.80          0.73           45             83             0.730          0.860          60.0
         found_column_heading = False
-        board_temp = 0
-        die_temp = 0
+        board_temp = "0"
+        die_temp = "0"
         for line in cmd_buf.split("\r\n"):
             match = re.search(r"MSG ::.*core_temp.*brd_temp.*die_temp", line)
             if match:
