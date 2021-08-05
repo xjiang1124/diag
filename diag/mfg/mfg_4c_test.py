@@ -57,7 +57,7 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_2C_H:
+    if stage == FF_Stage.FF_4C_H:
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
     else:
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
@@ -78,10 +78,9 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MFG 4C/2C Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="MFG 4C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
-    parser.add_argument("--two-corner", "--2C", "-2C", "-2corner", help="limit to 2-Corner test", action='store_true', default=False)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
 
@@ -120,17 +119,11 @@ def main():
     if args.high_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
         libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE RISE TO {:d}".format(MTP_Const.MFG_EDVT_HIGH_TEMP), "STOP")
-        if args.two_corner:
-            stage = FF_Stage.FF_2C_H
-        else:
-            stage = FF_Stage.FF_4C_H
+        stage = FF_Stage.FF_4C_H
     elif args.low_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
         libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE DROP TO {:d}".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
-        if args.two_corner:
-            stage = FF_Stage.FF_2C_L
-        else:
-            stage = FF_Stage.FF_4C_L
+        stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit("Unknown 4C Corner... Abort")
 
