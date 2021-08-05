@@ -161,7 +161,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO:
         testseqlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF", "BOOT_CHECK", "NIC_PWRCYC"]
+        testseqlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
         if skip_test in testseqlist:
             testseqlist.remove(skip_test)
@@ -192,16 +192,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        # check boot partition
-        elif test == "BOOT_CHECK":
-            ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
-            ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
-        # extra powercycle to refresh CPLD
-        elif test == "NIC_PWRCYC":
-            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
-            #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
-            # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
         elif test == "FIX_VRM":
             ret = mtp_mgmt_ctrl.mtp_nic_fix_vrm(slot)
         else:
@@ -511,6 +501,55 @@ def main():
                     nic_thread_list.remove(nic_thread)
             time.sleep(5)
 
+
+        # Ortano Boot check moved out of parallel tests to sequential test
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
+            key = libmfg_utils.nic_key(slot)
+            valid = nic_fru_cfg[mtp_id][key]["VALID"]
+            if str.upper(valid) != "YES":
+                continue
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
+            dsp = FF_Stage.FF_DL
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.ORTANO2:
+                testseqlist = ["BOOT_CHECK", "NIC_PWRCYC"]
+            else:
+                continue
+            for skip_test in args.skip_test:
+                if skip_test in testseqlist:
+                    testseqlist.remove(skip_test)
+            for test in testseqlist:
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = libmfg_utils.timestamp_snapshot()
+                
+                # check CPLD partition
+                if test == "BOOT_CHECK":
+                    ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
+                    ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
+                # extra powercycle to refresh CPLD
+                elif test == "NIC_PWRCYC":
+                    ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                    ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+                    #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+                    # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+                    continue
+
+                stop_ts = libmfg_utils.timestamp_snapshot()
+                duration = str(stop_ts - start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    nic_test_rslt_list[slot] = False
+                    # mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_test_rslt_list[slot]:
                 if slot not in fail_nic_list:
