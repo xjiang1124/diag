@@ -4392,3 +4392,44 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf(slot, "No sign of reboot")
         return True
+
+    def mtp_nic_read_temp(self, slot):
+        """
+         Read board and die temp via j2c
+         WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
+            return True
+        if not self._nic_ctrl_list[slot].read_nic_temp():
+            self.cli_log_slot_err(slot, "Unable to read NIC temperature")
+            self.mtp_dump_nic_err_msg(slot)
+            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            return False
+
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+
+        # [21-08-03 19:00:29] MSG :: ASIC           core_temp(C)   core_volt(V)   brd_temp(C)    r_die_temp(C)  VDD_VOUT(V)    ARM_VOUT(V)    PIN(W)
+        # [21-08-03 19:00:29] MSG ::                71.80          0.73           45             83             0.730          0.860          60.0
+        found_column_heading = False
+        board_temp = 0
+        die_temp = 0
+        for line in cmd_buf.split("\r\n"):
+            match = re.search(r"MSG ::.*core_temp.*brd_temp.*die_temp", line)
+            if match:
+                found_column_heading = True
+                continue
+            if found_column_heading:
+                match = re.search(r"MSG :: +(-?\d+\.?\d+) + (-?\d+\.?\d+) + (-?\d+\.?\d+) + (-?\d+\.?\d+)", line)
+                if match:
+                    board_temp = match.group(3)
+                    die_temp = match.group(4)
+                else:
+                    self.cli_log_slot_err(slot, "Missing readings for NIC temperature")
+                    self.mtp_dump_nic_err_msg(slot)
+                break
+
+        self.cli_log_slot_inf(slot, "NIC board temperature = {:s}C".format(board_temp))
+        self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
+        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        return True

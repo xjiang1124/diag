@@ -804,7 +804,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
     mtp_mgmt_ctrl.mtp_mgmt_check_cpld_debug_bits(slot)
     mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
     mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
-
+    mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
     mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post fail debug"))
 
 def email_report(email_to, title, body = None):
