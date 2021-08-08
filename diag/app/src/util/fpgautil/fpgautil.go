@@ -224,8 +224,16 @@ func main() {
             time, _ := strconv.ParseUint(os.Args[3], 0, 32)
             td3.Prbs(int(time), os.Args[4])
         }
+        if os.Args[2] == "snake" {
+            mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            td3.Snake_All_Ports(uint32(mask), uint32(duration), os.Args[5])
+        }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
+        }
+        if os.Args[2] == "printvlan" {
+            td3.PrintBCMShellVLANcmd()
         }
     } else if os.Args[1] == "sfp" {  
         if argc < 3 {
@@ -770,6 +778,23 @@ func main() {
             if os.Args[4] == "devid" {
                 devid, _ := taorfpga.Spi_elba_flash_read_id(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  DevID=0x%.08x\n", devid)
+            } else if os.Args[4] == "volconfig" {
+                config, _ := taorfpga.Spi_elba_flash_read_volatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  vol config=0x%.04x\n", config)
+            } else if os.Args[4] == "writeenhvolconfig" {
+                data, _ := strconv.ParseUint(os.Args[5], 0, 32)
+                taorfpga.Spi_elba_flash_write_enh_volatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(data)) 
+                fmt.Printf(" FLASH  WR ENH VOL CONFIG=0x%.02x\n", data)
+            } else if os.Args[4] == "writevolconfig" {
+                data, _ := strconv.ParseUint(os.Args[5], 0, 32)
+                taorfpga.Spi_elba_flash_write_volatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(data)) 
+                fmt.Printf(" FLASH  WR VOL CONFIG=0x%.02x\n", data)
+            } else if os.Args[4] == "enhvolconfig" {
+                config, _ := taorfpga.Spi_elba_flash_read_enhvolatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  enhanced vol config=0x%.04x\n", config)
+            } else if os.Args[4] == "config" {
+                config, _ := taorfpga.Spi_elba_flash_read_nonvolatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  DevID=0x%.04x\n", config)
             } else if os.Args[4] == "4byte" {
                 if argc < 6 {
                     fmt.Printf(" %s \n", errhelp)
@@ -813,6 +838,29 @@ func main() {
                 }
                 t2 := time.Now()
                 fmt.Println(" Function took ", t2.Sub(t1), " time")
+            } else if os.Args[4] == "testread" {
+                if argc < 7 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                rdLength, err := strconv.ParseUint(os.Args[6], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                fmt.Printf("\n")
+                t1 := time.Now()
+                taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength)) 
+                t2 := time.Now()
+                fmt.Println(" Function took ", t2.Sub(t1), " time")
+                t3 := time.Now()
+                taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength)) 
+                t4 := time.Now()
+                fmt.Println(" Function took ", t4.Sub(t3), " time")
+                return
             } else if os.Args[4] == "read" || os.Args[4] == "Read" {
                 if argc < 7 {
                     fmt.Printf(" %s \n", errhelp)
@@ -876,7 +924,7 @@ func main() {
                 if err != nil {
                     fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
                 }
-                data64, err := strconv.ParseUint(os.Args[6], 0, 32)
+                data64, err := strconv.ParseUint(os.Args[6], 0, 64)
                 if err != nil {
                     fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
                 }

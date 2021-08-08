@@ -82,4 +82,23 @@ DSP:
                     ALL: 15
                 INFO: rpm tollerance
 
+    TEST#SNAKE:
+        INFO: Snake test for TD3 and ELBA
+        PLATFORM:
+            TOR: ALL
+        PRIORITY: NORMAL 
+        PARAM:
+            mask:
+                VALUE:
+                    ALL: 0xFF
+                INFO: TD3 Link Mask to Elba's.  Used to mask off Elba Links
+            duration:
+                VALUE:
+                    ALL: 300
+                INFO: Test Duration in seconds
+            loopback:
+                VALUE:
+                    ALL: ext
+                INFO: Loopback Level, phy or ext
+
 ...

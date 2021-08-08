@@ -20,6 +20,10 @@ var PAGE_PROGRAM_OP                     = []byte{0x02, 0x00, 0x00, 0x00}
 var PAGE_PROGRAM_RDLNG                  uint32 = 0
 
 var READ_OP                             = []byte{0x03, 0x00, 0x00, 0x00}
+var FAST_READ_OP                        = []byte{0x0B, 0x00, 0x00, 0x00}
+
+var DUAL_READ_OP                        = []byte{0x3B, 0x00, 0x00, 0x00}
+var DUAL_FAST_READ_OP                   = []byte{0xBB, 0x00, 0x00, 0x00}
 
 var READ_FOUR_BYTE_OP                   = []byte{0x13, 0x00, 0x00, 0x00, 0x00}
 
@@ -38,6 +42,20 @@ var READ_FLAG_STATUS_REG_RDLNG          uint32 = 1
 
 var READ_ID_OP                          = []byte{0x9E}
 var READ_ID_RDLNG                       uint32 = 4
+
+
+var READ_VOLATILE_CONFIG                = []byte{0x85}
+var READ_VOLATILE_CONFIG_RDLNG          uint32 = 1
+var WRITE_VOLATILE_CONFIG               = []byte{0x81, 0x00}
+var WRITE_VOLATILE_CONFIG_RDLNG         uint32 = 0
+
+var READ_ENH_VOLATILE_CONFIG            = []byte{0x65}
+var READ_ENH_VOLATILE_CONFIG_RDLNG      uint32 = 1
+var WRITE_ENH_VOLATILE_CONFIG           = []byte{0x61, 0x00}
+var WRITE_ENH_VOLATILE_CONFIG_RDLNG     uint32 = 0
+
+var READ_NON_VOLATILE_CONFIG            = []byte{0xB5}
+var READ_NON_VOLATILE_CONFIG_RDLNG      uint32 = 2
 
 var WRITE_ENABLE_4BYTE_ADDR_OP          = []byte{0xB7}
 var WRITE_ENABLE_4BYTE_ADDR_RDLNG       uint32 = 0
@@ -160,6 +178,68 @@ func Spi_elba_flash_read_id(spiNumber uint32) (id uint32, err error) {
     }
     return
 }
+
+
+func Spi_elba_flash_write_volatile_config(spiNumber uint32, data uint32) (err error) {
+    err = Spi_elba_flash_WriteEnable(spiNumber) 
+    if err != nil {
+        return
+    }
+
+    WRITE_VOLATILE_CONFIG[1] = uint8(data & 0xff)
+    fmt.Printf(" WR VOL CONFIG=0x%.02x%.02x\n", WRITE_VOLATILE_CONFIG[1], WRITE_VOLATILE_CONFIG[0])
+    _ , err = Fpga_spi_generic_transaction(spiNumber, WRITE_VOLATILE_CONFIG, WRITE_VOLATILE_CONFIG_RDLNG) 
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_WriteDisable(spiNumber) 
+
+    return
+}
+
+func Spi_elba_flash_read_volatile_config(spiNumber uint32) (config byte, err error) {
+    data := []byte{}
+    data, err = Fpga_spi_generic_transaction(spiNumber, READ_VOLATILE_CONFIG, READ_VOLATILE_CONFIG_RDLNG) 
+    config = data[0]
+    return
+}
+
+func Spi_elba_flash_write_enh_volatile_config(spiNumber uint32, data uint32) (err error) {
+    err = Spi_elba_flash_WriteEnable(spiNumber) 
+    if err != nil {
+        return
+    }
+
+    WRITE_ENH_VOLATILE_CONFIG[1] = uint8(data & 0xff)
+    fmt.Printf(" WR ENH VOL CONFIG=0x%.02x%.02x\n", WRITE_ENH_VOLATILE_CONFIG[1], WRITE_ENH_VOLATILE_CONFIG[0])
+    _ , err = Fpga_spi_generic_transaction(spiNumber, WRITE_ENH_VOLATILE_CONFIG, WRITE_ENH_VOLATILE_CONFIG_RDLNG) 
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_WriteDisable(spiNumber) 
+
+    return
+}
+
+func Spi_elba_flash_read_enhvolatile_config(spiNumber uint32) (config byte, err error) {
+    data := []byte{}
+    data, err = Fpga_spi_generic_transaction(spiNumber, READ_ENH_VOLATILE_CONFIG, READ_ENH_VOLATILE_CONFIG_RDLNG) 
+    config = data[0]
+    return
+}
+
+func Spi_elba_flash_read_nonvolatile_config(spiNumber uint32) (config uint16, err error) {
+    var i int
+    data := []byte{}
+    data, err = Fpga_spi_generic_transaction(spiNumber, READ_NON_VOLATILE_CONFIG, READ_NON_VOLATILE_CONFIG_RDLNG) 
+    for i=0; i<int(READ_NON_VOLATILE_CONFIG_RDLNG); i++ {
+        config = config | uint16(data[i]) << uint16(i*8)
+    }
+    return
+}
+
 
 
 func Spi_elba_flash_read_status(spiNumber uint32) (flag uint32, err error) {
@@ -287,9 +367,9 @@ func Spi_elba_flash_GenerateImageFromFlash(spiNumber uint32, partition string, f
 
     for i=start_addr; i<(start_addr + flash_size); i = i+read_size {
         rd_data := []byte{}
-        if (i%0x20000) == 0 {
-            fmt.Printf("%.08x\n", uint32(i))
-        }
+        //if (i%0x20000) == 0 {
+        //    fmt.Printf("%.08x\n", uint32(i))
+       // }
         rd_data, err = Spi_elba_flash_Read_N_Bytes(spiNumber, uint32(i), uint32(read_size))
         if err != nil {
             fmt.Printf(" ERROR: Flash Read Failed\n")
@@ -589,14 +669,40 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
 }
 
 
-
-func Spi_elba_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
+func Spi_elba_flash_FourByteAddr_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
+    /*
     err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
     if err != nil {
         return
     }
 
     err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+    */
+
+    err = Spi_elba_flash_enable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    READ_OP[1] = byte(addr >> 16)
+    READ_OP[2] = byte(addr >> 8)
+    READ_OP[3] = byte(addr)
+    data, err = Fpga_spi_generic_transaction(spiNumber, READ_FOUR_BYTE_OP, length) 
+    return
+}
+
+
+func Spi_elba_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
+
+    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
     if err != nil {
         return
     }
@@ -609,15 +715,42 @@ func Spi_elba_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (
 }
 
 
-func Spi_elba_flash_Read__N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
-    //err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
-    //if err != nil {
-    //    return
-    //}
-    READ_FOUR_BYTE_OP[1] = byte(addr >> 24)
-    READ_FOUR_BYTE_OP[2] = byte(addr >> 16)
-    READ_FOUR_BYTE_OP[3] = byte(addr >> 8)
-    READ_FOUR_BYTE_OP[4] = byte(addr)
-    data, err = Fpga_spi_generic_transaction(spiNumber, READ_FOUR_BYTE_OP, length) 
+func Spi_elba_flash_DualOp_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
+
+    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
+    if err != nil {
+        return
+    }
+
+    DUAL_READ_OP[1] = byte(addr >> 16)
+    DUAL_READ_OP[2] = byte(addr >> 8)
+    DUAL_READ_OP[3] = byte(addr)
+    data, err = Fpga_spi_generic_transaction(spiNumber, DUAL_READ_OP, length) 
     return
 }
+
+
+func Spi_elba_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
+
+    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
+    if err != nil {
+        return
+    }
+
+    DUAL_FAST_READ_OP[1] = byte(addr >> 16)
+    DUAL_FAST_READ_OP[2] = byte(addr >> 8)
+    DUAL_FAST_READ_OP[3] = byte(addr)
+    data, err = Fpga_spi_generic_transaction(spiNumber, DUAL_FAST_READ_OP, length) 
+    return
+}
+

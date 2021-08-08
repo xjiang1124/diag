@@ -2,6 +2,7 @@ package tps53681
 
 import (
     "fmt"
+    "math"
     //"os"
     //"cardinfo"
     "common/cli"
@@ -139,7 +140,6 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
 
 //Read target voltage from VOUT 
 func ReadVout(devName string) (integer uint64, dec uint64, err int) {
-    //var VMODE byte
     var VOUT uint16
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -158,6 +158,27 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     VOUT, err = pmbus.ReadWord(devName, READ_VOUT)
 
     integer, dec, err =  pmbus.Convert_vr13_5mvVID(VOUT)
+
+    return
+}
+
+
+func ReadVoutCmd(devName string) (voutcmd uint16, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, page)
+
+    voutcmd, err = pmbus.ReadWord(devName, VOUT_COMMAND)
 
     return
 }
@@ -282,75 +303,7 @@ func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
 }
 
 
-/*
-func ReadPout(devName string) (integer uint64, dec uint64, err int) {
-    voutInt, voutFrac, err := ReadVout(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    ioutInt, ioutFrac, err := ReadIout(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    voutFloat := float64(voutInt) + float64(voutFrac)/1000
-    ioutFloat := float64(ioutInt) + float64(ioutFrac)/1000
-    poutFloat := voutFloat * ioutFloat
-
-    integer = uint64(poutFloat)
-    dec = uint64((poutFloat - float64(uint64(poutFloat)))*1000)
-
-    return
-}
-
-
 func DispStatus(devName string) (err int) {
-
-    vrmTitle := []string {"POUT", "VOUT_TGT", "VOUT", "IOUT", "STATUS"}
-    var fmtDigFrac string = "%d.%03d"
-    fmtStr := "%-10s"
-    fmtNameStr := "%-20s"
-
-    var outStr string
-    var outStrTemp string
-    outStr = fmt.Sprintf(fmtNameStr, "NAME")
-    for _, title := range(vrmTitle) {
-        outStr = outStr + fmt.Sprintf(fmtStr, title)
-    }
-    //cli.Println("i", "0.00.00.00.00.00.0--")
-    cli.Println("i", "=================================")
-    cli.Println("i", outStr)
-
-    outStr = fmt.Sprintf(fmtNameStr, devName)
-
-    dig, frac, _ := ReadPout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadTargetVoltage(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadVout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadIout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    status, _ := ReadStatus(devName)
-    outStrTemp = fmt.Sprintf("0x%X", status)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)// + "\n"
-
-    cli.Println("i", outStr)
-
-    return
-
-}
-*/
-
-    func DispStatus(devName string) (err int) {
     vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
@@ -410,3 +363,51 @@ func DispStatus(devName string) (err int) {
 }
 
 
+
+func SetVMargin(devName string, pct int) (err int) {
+    var marginCmd byte
+    var marginVal uint16
+    var voutcmd uint16
+    var def_volt, marg_tics float64
+
+    if pct > 10 || pct < -10 {
+        return errType.INVALID_PARAM
+    }
+
+    voutcmd, err = ReadVoutCmd(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read voutcmd on device ", devName)
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    //integer, dec, err =  pmbus.Convert_vr13_5mvVID(VOUT)
+    //vr13 = .25 + (float64(data-1) * .005)
+
+    def_volt = .25 + (float64(voutcmd-1) * .005)
+    marg_tics = (def_volt * float64(pct)) / 100;
+    marg_tics = math.Round(marg_tics / .005)
+
+    marginVal = voutcmd + uint16(marg_tics)
+
+    if pct == 0 {
+        marginCmd = MARGIN_NONE_CMD
+    } else if pct > 0 {
+        marginCmd = MARGIN_HIGH_IGN_FLT
+        pmbus.WriteWord(devName, VOUT_MARGIN_HIGH, marginVal)
+    } else {
+        marginCmd = MARGIN_LOW_IGN_FLT
+        pmbus.WriteWord(devName, VOUT_MARGIN_LOW, marginVal)
+    }
+
+    pmbus.WriteByte(devName, OPERATION, marginCmd)
+
+
+    return
+}

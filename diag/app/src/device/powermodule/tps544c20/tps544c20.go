@@ -188,3 +188,37 @@ func DispStatus(devName string) (err int) {
 }
 
 
+func SetVMargin(devName string, pct int) (err int) {
+    var marginCmd byte
+    var marginVal uint16
+
+    if pct > 8 || pct < -8 {
+        return errType.INVALID_PARAM
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    //Doesn't quite follow what the spec says.
+    //Spec says margin will be in 2mv increments, but that doesn't happen on our parts
+    //Part resolution is 0.001953125 (2^(-9)) but margin tics don't seem to follow that
+    marginVal = 1 + (uint16(pct) * 3)
+
+    if pct == 0 {
+        marginCmd = MARGIN_NONE_CMD
+    } else if pct > 0 {
+        marginCmd = MARGIN_HIGH_IGN_FLT
+        pmbus.WriteWord(devName, STEP_VREF_MARGIN_HIGH, marginVal)
+    } else {
+        marginCmd = MARGIN_LOW_IGN_FLT
+        pmbus.WriteWord(devName, STEP_VREF_MARGIN_LOW, marginVal)
+    }
+
+    pmbus.WriteByte(devName, OPERATION, marginCmd)
+
+    return
+}

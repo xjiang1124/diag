@@ -35,6 +35,9 @@ mkdir -p $DIAG_DIR/asic/asic_src/tcl8.6.8/library/
 cp $DIAG_DIR/asic/lib/tcl8.6/clock.tcl $DIAG_DIR/asic/asic_src/tcl8.6.8/library/
 #cp $DIAG_DIR/asic/lib/tcl8.6/* $ASIC_SRC/ip/cosim/tclsh/
 
+
+mkdir $DIAG_HOME/dssman
+tar xf $DIAG_HOME/diag/scripts/taormina/dssman56vlans.tar.gz -C $DIAG_HOME
 tar xf $DIAG_HOME/diag/scripts/taormina/tcl8.6_install.tar -C /
 cp $DIAG_HOME/diag/scripts/taormina/readline/x86_64-linux-gnu/* /usr/lib/x86_64-linux-gnu/
 mkdir -p /usr/lib/tcltk/x86_64-linux-gnu

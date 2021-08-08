@@ -110,7 +110,7 @@ func init () {
     var cardType string
     
     //quick hack to see if we are a Taormina since diag env is not setup yet
-    exists, _ := dir_exists("/etc/openswitch/platform/HPE/Taormina")
+    exists, _ := Path_exists("/etc/openswitch/platform/HPE/10000")
     if exists == true {
         os.Setenv("CARD_TYPE","TAORMINA")
         cardType = "TAORMINA"
@@ -155,7 +155,7 @@ func init () {
  
 
 // exists returns whether the given file or directory exists
-func dir_exists(path string) (bool, error) {
+func Path_exists(path string) (bool, error) {
     _, err := os.Stat(path)
     if err == nil { return true, nil }
     if os.IsNotExist(err) { return false, nil }
