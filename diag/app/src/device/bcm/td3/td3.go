@@ -662,6 +662,8 @@ func Snake_All_Ports(elba_port_mask uint32, duration uint32, loopback_level stri
     var VlanStart int = 10
     var ElbaVLANcreatScript = "/fs/nos/home_diag/dssman/run.sh"
 
+    cli.Printf("i", "Starting Snake Test.  Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+
     if loopback_level == "phy" {
         loopbackPhy = 1
         cli.Printf("i", "Phy Loopback Selected\n")
@@ -996,6 +998,12 @@ func Snake_All_Ports(elba_port_mask uint32, duration uint32, loopback_level stri
     /* For compile error that var is not used */
     if TaorPortMap[0].ElbaNumber > 100000 {
             fmt.Printf("%s\n", output)
+    }
+
+    if err == errType.SUCCESS {
+        cli.Printf("i", "Snake Test PASSED")
+    } else {
+        cli.Printf("e", "Snake Test FAILED")
     }
 
     return

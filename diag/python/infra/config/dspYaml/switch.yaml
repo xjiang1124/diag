@@ -88,6 +88,10 @@ DSP:
             TOR: ALL
         PRIORITY: NORMAL 
         PARAM:
+            timeout:
+                VALUE: 
+                    ALL: 350
+                INFO: Test timeout setting
             mask:
                 VALUE:
                     ALL: 0xFF
