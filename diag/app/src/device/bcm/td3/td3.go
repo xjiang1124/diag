@@ -1001,9 +1001,9 @@ func Snake_All_Ports(elba_port_mask uint32, duration uint32, loopback_level stri
     }
 
     if err == errType.SUCCESS {
-        cli.Printf("i", "Snake Test PASSED")
+        cli.Printf("i", "Snake Test PASSED\n\n")
     } else {
-        cli.Printf("e", "Snake Test FAILED")
+        cli.Printf("e", "Snake Test FAILED\n\n")
     }
 
     return
