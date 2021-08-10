@@ -1755,14 +1755,14 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
 
             cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-            if not self.mtp_mgmt_exec_cmd(cmd):
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=10):
                 self.cli_log_err("Execute command {:s} failed".format(cmd))
                 return False
 
             return False
 
         cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=10):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
 
