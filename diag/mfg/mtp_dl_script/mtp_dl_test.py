@@ -543,7 +543,6 @@ def main():
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     nic_test_rslt_list[slot] = False
-                    # mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
@@ -556,12 +555,6 @@ def main():
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-
-        # Failure analysis (sequential access)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
 
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -682,11 +675,6 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
                     if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
-
-        # Failure analysis (sequential access)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
 
         # power off nic
         mtp_mgmt_ctrl.mtp_power_off_nic()

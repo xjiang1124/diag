@@ -299,7 +299,6 @@ def main():
         dsp = FF_Stage.FF_SWI
         pass_nic_list = list()
         fail_nic_list = list()
-        failure_display_done = list()
         NAPLES100IBM = 0
 
 
@@ -407,12 +406,6 @@ def main():
         for slot in prog_fail_nic_list:
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
-
-        # Failure analysis
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list and slot not in failure_display_done:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
-                failure_display_done.append(slot)
 
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -577,11 +570,6 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        # Failure analysis
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list and slot not in failure_display_done:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
-                failure_display_done.append(slot)
 
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -633,11 +621,6 @@ def main():
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
 
-        # Failure analysis
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list and slot not in failure_display_done:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
-                failure_display_done.append(slot)
 
         # program the NIC EMMC image
         nic_thread_list = list()
@@ -676,11 +659,6 @@ def main():
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
 
-        # Failure analysis
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list and slot not in failure_display_done:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
-                failure_display_done.append(slot)
 
         # program the NIC Gold image
         nic_thread_list = list()
@@ -724,11 +702,6 @@ def main():
             if slot not in fail_nic_list:
                 fail_nic_list.append(slot)
 
-        # Failure analysis
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list and slot not in failure_display_done:
-                libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
-                failure_display_done.append(slot)
 
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
