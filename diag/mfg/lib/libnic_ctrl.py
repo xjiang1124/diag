@@ -1033,7 +1033,7 @@ class nic_ctrl():
 
         return True
 
-    def nic_copy_compressed_image(self, src_directory, src_img, dst_directory):
+    def nic_copy_compressed_image(self, src_directory, src_img, dst_directory, timeout=MTP_Const.OS_CMD_DELAY):
         """
         Send file to NIC from MTP.
 
@@ -1537,7 +1537,8 @@ class nic_ctrl():
             if not self.nic_copy_compressed_image(
                 src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
                 src_img=util,
-                dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH):
+                dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH,
+                timeout=100):
                 return False
 
         if emmc_utils:
@@ -1546,7 +1547,8 @@ class nic_ctrl():
                 if not self.nic_copy_compressed_image(
                     src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
                     src_img=util,
-                    dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                    dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
+                    timeout=180):
                     return False
 
         return True
