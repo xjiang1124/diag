@@ -1547,6 +1547,7 @@ class nic_ctrl():
 
     def nic_save_logfile(self, logfile_list):
         if not self._sn:
+            self.nic_set_err_msg("No SN saved for this NIC")
             return False
 
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
@@ -1581,9 +1582,6 @@ class nic_ctrl():
 
 
     def nic_save_diag_logfile(self, aapl):
-        if not self._sn:
-            return False
-
         if aapl:
             dst_log_dir = MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR + "AAPL-NIC-{:02d}/".format(self._slot+1)
         else:

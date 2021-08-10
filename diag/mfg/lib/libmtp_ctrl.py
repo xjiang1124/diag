@@ -2765,6 +2765,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_dump_nic_err_msg(slot)
+            self.mtp_set_nic_status_fail(slot)
             return False
 
         return True
@@ -2773,6 +2774,7 @@ class mtp_ctrl():
     def mtp_mgmt_save_nic_logfile(self, slot, logfile_list):
         if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
             return False
 
@@ -2782,6 +2784,7 @@ class mtp_ctrl():
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
             self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
             return False
 
@@ -2855,6 +2858,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
+            self.mtp_set_nic_status_fail(slot)
             return False
 
         return True
@@ -2876,6 +2880,7 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg_param):
             self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg_param))
+            self.mtp_set_nic_status_fail(slot)
             return False
 
         return True
@@ -2897,6 +2902,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_init_emmc(emmc_format):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_dump_nic_err_msg(slot)
+            self.mtp_set_nic_status_fail(slot)
             return False
 
         if emmc_format:
@@ -2915,6 +2921,7 @@ class mtp_ctrl():
             if not self._nic_ctrl_list[slot].nic_emmc_set_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
                 self.mtp_dump_nic_err_msg(slot)
+                self.mtp_set_nic_status_fail(slot)
                 return False
             self.cli_log_slot_inf_lock(slot, msg)
         return True
@@ -2940,6 +2947,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
+            self.mtp_set_nic_status_fail(slot)
             return False
 
         return True
@@ -3268,6 +3276,7 @@ class mtp_ctrl():
 
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
+                self.mtp_set_nic_status_fail(slot)
                 return False
 
         self.mtp_nic_info_disp(fru_valid)

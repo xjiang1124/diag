@@ -377,6 +377,8 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -430,6 +432,8 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
                 continue
 
@@ -462,6 +466,8 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
             if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             test_list = ["SEC_KEY_PROG"]
@@ -506,6 +512,8 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -541,6 +549,8 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
             if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -591,6 +601,8 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -635,6 +647,8 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
@@ -675,6 +689,8 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
             if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -722,6 +738,8 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
             if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -774,6 +792,8 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
@@ -808,6 +828,9 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
+
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if card_type != NIC_Type.ORTANO and card_type != NIC_Type.ORTANO2:
@@ -849,6 +872,8 @@ def main():
                     continue
                 if slot in fail_nic_list:
                     continue
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    continue
 
                 if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
                     pass_nic_list.remove(slot)
@@ -872,6 +897,9 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
+
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
