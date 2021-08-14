@@ -33,5 +33,6 @@ elba1_id=$(/home/diag/jtag_cpurd_v2 display | grep -A4 "Dev 2" | grep LocId | aw
 export ELBA0_J2C_ID=$elba0_id
 export ELBA1_J2C_ID=$elba1_id
 
-
+# Temporary fix
+cp $DIAG_HOME/diag/tools/jtag_cpurd_v2 $DIAG_HOME/diag/util/
 
