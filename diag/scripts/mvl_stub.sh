@@ -22,6 +22,11 @@ if [[ $(( $p0 & 0xff )) -lt $(( $p1 & 0xff )) ]]; then
     exit 1
 fi
 
+if [[ $(( $p0 & 0xff )) -eq 0xff ]]; then
+    echo "MVL STUB TEST FAILED -- max errors reached"
+    exit 1
+fi
+
 ./xo3dcpld -smiwr 0x10 0x3 0x0
 ./xo3dcpld -smiwr 0x12 0x3 0x0
 ./xo3dcpld -smiwr 0x16 0x3 0x0
