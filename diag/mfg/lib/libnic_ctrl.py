@@ -1872,7 +1872,7 @@ class nic_ctrl():
         # retrieve card serial number
         if self._vendor == NIC_Vendor.HPE:
             #match = re.findall(HP_DISP_SN_FMT, fru_buf)
-            if self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES100HPE:
+            if self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES100HPE or or self._nic_type == NIC_Type.NAPLES25OCP:
                match = re.findall(ALOM_SN_FMT, fru_buf)
             else:
                match = re.findall(HP_DISP_SN_FMT, fru_buf)
