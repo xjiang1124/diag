@@ -104,9 +104,15 @@ func Fan_RPM_test(tollerance int)(err int) {
 
 
     if running, _ := Process_Is_Running(process); running == true {
+        cli.Printf("i", "fand is running.. killing it\n")
         Process_Kill(process)
         misc.SleepInSec(1)
     } 
+
+    if running, _ := Process_Is_Running(process); running == true {
+        cli.Printf("e", "HMM, fand is still running...\n")
+        err = errType.FAIL 
+    }
 
     //check if fan is present
     for j:=0; j<MAXFANMODULES; j++ {
@@ -410,7 +416,8 @@ func Process_Is_Running(process string) (running bool, err int) {
 }
 
 func Process_Kill(process string) (err int) {
-    _ , errGo := exec.Command("killall", "-9", process).Output()
+    cmdString := "sudo -S pkill -SIGINT " + process
+    _, errGo := exec.Command("sh", "-c", cmdString).Output()
     if errGo != nil {
         fmt.Println("[ERROR]", errGo)
         err = errType.FAIL
