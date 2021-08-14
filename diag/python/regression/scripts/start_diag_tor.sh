@@ -10,12 +10,12 @@ DIAG_DIR=/home/diag/diag
 ln -sf /fs/nos/home_diag $DIAG_HOME
 
 mkdir -p $DIAG_DIR/log/
+rmmod ftdi_sio
 
 # Prepare all paths
 cp $DIAG_DIR/python/regression/scripts/profile_tor /home/root/.profile
 source /home/root/.profile
 
-rmmod ftdi_sio
 
 #==================================
 # Tcl configuration
