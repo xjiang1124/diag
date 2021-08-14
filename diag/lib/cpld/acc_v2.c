@@ -24,10 +24,8 @@
 #define CHANNEL_A	0
 #define CHANNEL_B	1
 
-int verbosity = 1;
-
-FT_HANDLE ftHandle = NULL;
-FT_HANDLE ftHandle_a = NULL;
+FT_HANDLE ftHandle		= NULL;
+FT_HANDLE ftHandle_a	= NULL;
 
 const BYTE SPIDATALENGTH = 11;//3 digit command + 8 digit address
 const BYTE READ = '\x0B';//110xxxxx
@@ -1100,173 +1098,57 @@ ULONGLONG xtoi(char *hexstring)
 }
 
 int haps = 0;
-DWORD gPortNum = 0;
+int gPortNum = 0;
 
-void set_verbosity(int level)
+FT_STATUS jtag_init(int portNum)
 {
-    verbosity = level;
-    return;
-}
 
-FT_STATUS jtag_get_num_devices(DWORD *numDevs)
-{
-    FT_STATUS ftStatus = FT_OK;
-
-    ftStatus = FT_CreateDeviceInfoList(numDevs);
-    if ( ftStatus == FT_OK ) {
-        if ( verbosity )
-            printf("Number of devices is %d\n", *numDevs);
-    } else {
-        *numDevs = 0;
-        if ( verbosity )
-            printf("FT_CreateDeviceInfoList failed\n");
-    }
-    return ftStatus;
-}
-
-FT_STATUS jtag_get_device_info_list(FT_DEVICE_LIST_INFO_NODE *devInfo, DWORD numDevs)
-{
-    FT_STATUS ftStatus = FT_OK;
-
-    ftStatus = FT_GetDeviceInfoList(devInfo, &numDevs);
-    if ( ftStatus != FT_OK ) {
-        if ( verbosity )
-            printf("GetDeviceInfoList failed\n");
-    }
-    return ftStatus;
-}
-
-FT_STATUS jtag_get_device_handle_by_locID(DWORD locID, FT_HANDLE *ftHandle)
-{
-    FT_STATUS ftStatus = FT_OK;
-    FT_DEVICE_LIST_INFO_NODE *devInfo;
-    DWORD numDevs;
-    int i;
-
-    *ftHandle = 0;
-    ftStatus = jtag_get_num_devices(&numDevs);
-    if ( ftStatus != FT_OK ) {
-        if ( verbosity )
-            printf("jtag_get_device_handle_by_locID: failed\n");
-	return ftStatus;
-    }
-
-    if ( numDevs > 0 ) {
-        devInfo = (FT_DEVICE_LIST_INFO_NODE *)malloc(sizeof(FT_DEVICE_LIST_INFO_NODE)*numDevs);
-	ftStatus = jtag_get_device_info_list(devInfo, numDevs);
-        if ( ftStatus == FT_OK ) {
-            for ( i = 0; i < numDevs; i++ ) {
-		if ( locID == devInfo[i].LocId ) {
-		    *ftHandle = devInfo[i].ftHandle;
-		    break;
-		}
-            }
-        } else {
-	    if ( verbosity )
-                printf("get_device_handle:get_device_info_list failed\n");
-        }
-        free((void *)devInfo);
-    }
-    return;
-}
-
-FT_STATUS jtag_display_device(void)
-{
-    FT_STATUS ftStatus = FT_OK;
-    FT_DEVICE_LIST_INFO_NODE *devInfo;
-    DWORD numDevs;
-    int i;
-
-    ftStatus = FT_CreateDeviceInfoList(&numDevs);
-    if ( ftStatus == FT_OK ) {
-	if ( verbosity )
-            printf("display_device:Number of devices is %d\n", numDevs);
-    } else {
-	if ( verbosity )
-            printf("display_device:FT_CreateDeviceInfoList failed\n");
-	return ftStatus;
-    }
-
-    if ( numDevs > 0 ) {
-        devInfo = (FT_DEVICE_LIST_INFO_NODE *)malloc(sizeof(FT_DEVICE_LIST_INFO_NODE)*numDevs);
-	ftStatus = FT_GetDeviceInfoList(devInfo, &numDevs);
-        if ( ftStatus == FT_OK ) {
-            for ( i = 0; i < numDevs; i++ ) {
-                printf("Dev %d:\n", i);
-                printf("    Flags = 0x%x\n", devInfo[i].Flags);
-                printf("    Type = 0x%x\n", devInfo[i].Type);
-                printf("    IDe = 0x%x\n", devInfo[i].ID);
-                printf("    LocId = 0x%x\n", devInfo[i].LocId);
-                printf("    SerialNumber = %s\n", devInfo[i].SerialNumber);
-                printf("    Descriptione = %s\n", devInfo[i].Description);
-                printf("    ftHandle = 0x%x\n", devInfo[i].ftHandle);
-            }
-        } else {
-            if ( verbosity )
-                printf("GetDeviceInfoList failed\n");
-        }
-        free((void *)devInfo);
-    }
-    return;
-}
-
-FT_STATUS jtag_init(DWORD portNum)
-{
-    FT_STATUS ftStatus = FT_OK;
-    FT_HANDLE handle_t;
-    DWORD numDevs;
-    FT_DEVICE_LIST_INFO_NODE *devInfo;
-
-    DWORD driverVersion = 0;
+    FT_STATUS       ftStatus = FT_OK;
+    DWORD           driverVersion = 0;
     gPortNum = portNum;
 
-    printf("04/21/21 -- port number = %x\n", portNum);
-    if ( portNum < 255 ) {
-        if ( ftHandle == NULL ) {
-            if ( portNum >= 20 ) {
-    	        haps = 1;
-    	        ftStatus = FT_Open(((portNum - 20) * 2 + 1), &ftHandle);
-	    } else if( portNum >= 10 ) {
-                haps = 0;
-	        ftStatus = FT_Open((portNum - 10), &ftHandle);
-            } else {
-                haps = 0;
-    	        ftStatus = FT_Open((portNum * 2 + 1), &ftHandle);
-            }
+    if(ftHandle == NULL) {
+	if(portNum >= 20) {
+    	    haps = 1;
+    	    ftStatus = FT_Open(((portNum - 20) * 2 + 1), &ftHandle);
+    	} else if(portNum >= 10) {
+            haps = 0;
+	    ftStatus = FT_Open((portNum - 10), &ftHandle);
+        } else {
+            haps = 0;
+    	    ftStatus = FT_Open((portNum * 2 + 1), &ftHandle);
         }
-    } else {
-        if ( verbosity )
-            printf("Using portNum as LocId\n");
-        haps = 0;
-        jtag_get_device_handle_by_locID(portNum, &handle_t);
-        if ( handle_t != 0 )
-            ftHandle = handle_t;
-	else 
-    	    ftStatus = FT_OpenEx(portNum, FT_OPEN_BY_LOCATION,  &ftHandle);
     }
-
-    if ( ftStatus != FT_OK ) {
-        if ( verbosity ) {
-            printf("FT_Open(%x) failed, with error %d.\n", portNum, (int)ftStatus);
-            printf("On Linux, lsmod can check if ftdi_sio (and usbserial) are present.\n");
-            printf("If so, unload them using rmmod, as they conflict with ftd2xx.\n");
-	}
+    if (ftStatus != FT_OK)
+    {
+        printf("FT_Open(%d) failed, with error %d.\n", portNum, (int)ftStatus);
+        printf("On Linux, lsmod can check if ftdi_sio (and usbserial) are present.\n");
+        printf("If so, unload them using rmmod, as they conflict with ftd2xx.\n");
         return ftStatus;
     }
+
     assert(ftHandle != NULL);
 
     ftStatus = FT_GetDriverVersion(ftHandle, &driverVersion);
-    if ( ftStatus != FT_OK ) {
-        printf("Failure.  FT_GetDriverVersion returned %d.\n", (int)ftStatus);
+    if (ftStatus != FT_OK)
+    {
+        printf("Failure.  FT_GetDriverVersion returned %d.\n",
+               (int)ftStatus);
         return ftStatus;
     }
 
-    if ( verbosity ) {
-        printf("D2XX version : %x.%x.%x\n",
-                (unsigned int)((driverVersion & 0x00FF0000) >> 16),
-                (unsigned int)((driverVersion & 0x0000FF00) >> 8),
-                (unsigned int)(driverVersion & 0x000000FF));
-     }
+//    printf("D2XX version : %x.%x.%x\n",
+//           (unsigned int)((driverVersion & 0x00FF0000) >> 16),
+//           (unsigned int)((driverVersion & 0x0000FF00) >> 8),
+//           (unsigned int)(driverVersion & 0x000000FF)
+//           );
+
+//    ftStatus = FT_ResetDevice(ftHandle);
+//    if (ftStatus != FT_OK)
+//    {
+//        printf("Failure.  FT_ResetDevice returned %d.\n", (int)ftStatus);
+//        return ftStatus;
+//    }
 
     BYTE byOutputBuffer[1024];
     BYTE byInputBuffer[1024];
@@ -1275,8 +1157,8 @@ FT_STATUS jtag_init(DWORD portNum)
     //Purge USB receive buffer first by reading out all old data from FT2232H receive buffer
     ftStatus |= FT_GetQueueStatus(ftHandle, &dwNumBytesToRead);
     // Get the number of bytes in the FT2232H receive buffer
-    if ( (ftStatus == FT_OK) && (dwNumBytesToRead > 0) )
-        FT_Read(ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
+    if ((ftStatus == FT_OK) && (dwNumBytesToRead > 0))
+    	FT_Read(ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
     //Read out the data from FT2232H receive buffer
     ftStatus |= FT_SetUSBParameters(ftHandle, 65536, 65535);
     //Set USB request transfer sizes to 64K
@@ -1284,59 +1166,104 @@ FT_STATUS jtag_init(DWORD portNum)
 
 
 //    ftStatus = FT_SetBitMode(ftHandle, 0x00, FT_BITMODE_RESET);
-//    if ( ftStatus != FT_OK ) {
+//    if (ftStatus != FT_OK)
+//    {
 //        printf("Failure.  FT_SetBitMode returned %d\n", (int)ftStatus);
 //        return ftStatus;
 //    }
 
     ftStatus = FT_SetTimeouts(ftHandle, 0, 5000);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetTimeouts returned %d\n", (int)ftStatus);
         return ftStatus;
     }
 
     ftStatus = FT_SetLatencyTimer(ftHandle, 2);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetLatencyTimer returned %d\n", (int)ftStatus);
         return ftStatus;
     }
 
     ftStatus = FT_SetBitMode(ftHandle, 0x00, FT_BITMODE_RESET);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetBitMode returned %d\n", (int)ftStatus);
         return ftStatus;
     }
 
     ftStatus = FT_SetBitMode(ftHandle, 0x00, FT_BITMODE_MPSSE);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetBitMode returned %d\n", (int)ftStatus);
         return ftStatus;
     }
+#if 0
+    dwNumBytesToSend = 0;
+    byOutputBuffer[dwNumBytesToSend++] = 0xAA;//'\xAA';
+    //Add bogus command ‘xAA’ to the queue
+    ftStatus = FT_Write(ftHandle, byOutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+    // Send off the BAD commands
+    dwNumBytesToSend = 0; // Reset output buffer pointer
+    do
+    {
+		ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesToRead);
+		// Get the number of bytes in the device input buffer
+    } while ((dwNumBytesToRead == 0) && (ftStatus == FT_OK)); //or Timeout
 
+    BOOL bCommandEchod = FALSE;
+    ftStatus = FT_Read(ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
+    //Read out the data from input buffer
+    for (DWORD dwCount = 0; dwCount < dwNumBytesRead - 1; dwCount++)
+    //Check if Bad command and echo command received
+    {
+    	printf("0x%x 0x%x   ", byInputBuffer[dwCount], byInputBuffer[dwCount+1]);
+		if ((byInputBuffer[dwCount] == 0xFA) && (byInputBuffer[dwCount+1] == 0xAA))
+		{
+			bCommandEchod = TRUE;
+			break;
+		}
+    }
+//    if (bCommandEchod == FALSE) {
+//		printf("Error in synchronizing the MPSSE\n");
+//		FT_Close(ftHandle);
+//		return 1; // Exit with error
+//    } else {
+//    	printf("synchronizing the MPSSE\n");
+//    }
+    dwNumBytesToSend = 0;
+#endif
 //    ftStatus = sendJtagCommand(ftHandle, cfg_clock, sizeof cfg_clock);
-//    if ( ftStatus != FT_OK ) {
+//    if (ftStatus != FT_OK)
+//    {
 //        return ftStatus;
 //    }
 
-    ftStatus = sendJtagCommand(ftHandle, setup_jtag, sizeof setup_jtag);
-    if ( ftStatus != FT_OK ) {
-        return ftStatus;
-    }
+	ftStatus = sendJtagCommand(ftHandle, setup_jtag, sizeof setup_jtag);
+	if (ftStatus != FT_OK)
+	{
+		return ftStatus;
+	}
 
-    ftStatus = sendJtagCommand(ftHandle, setup_gpio, sizeof setup_gpio);
-    if ( ftStatus != FT_OK ) {
-        return ftStatus;
-    }
+	ftStatus = sendJtagCommand(ftHandle, setup_gpio, sizeof setup_gpio);
+	if (ftStatus != FT_OK)
+	{
+		return ftStatus;
+	}
 
     ftStatus = sendJtagCommand(ftHandle, setClock, sizeof setClock);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         return ftStatus;
     }
 
     ftStatus = sendJtagCommand(ftHandle, dis_lpbk, sizeof dis_lpbk);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         return ftStatus;
     }
+
     return ftStatus;
 }
 
@@ -1665,14 +1592,14 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
     }
 
 //	printf("data 0x%08x, valid bit 0x%x, error 0x%02x, RSP 0x%02x\n", v_data, (v_data&0x1), (v_data&0x6) >> 1, (v_data&0x18) >> 3);
-//	printf("data 0x%08x, status bit 0x%x\n", *data, v_data);
+	printf("data 0x%08x, status bit 0x%x\n", *data, v_data);
 //	//    printf("Max retry %d\n", retry);
-//	printf("Receive data:\n");
-//	for(f = 0; f < count; f++)
-//	{
-//		printf("0x%x ", buffer[f]);
-//	}
-//	printf("\n");
+	printf("Receive data:\n");
+	for(f = 0; f < count; f++)
+	{
+		printf("0x%x ", buffer[f]);
+	}
+	printf("\n");
 
 
 	if(pre_failure == 1)
