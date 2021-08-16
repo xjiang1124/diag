@@ -900,7 +900,7 @@ func Snake_All_Ports(elba_port_mask uint32, duration uint32, loopback_level stri
 
     {
         t1 := time.Now()
-        var ElbaPortminBandwidth uint64 = 12000000000
+        var ElbaPortminBandwidth uint64 = 11250000000//12000000000
         var Elba0bw, Elba1bw uint64
         var Lag521ExtPortminBandWidth uint64 = 0
         var Lag522ExtPortminBandWidth uint64 = 0
