@@ -151,6 +151,7 @@ func RunVerbose(passSign string, failSign string, verboseEn bool, verboseSign st
     errGo = cmd.Wait()
     if errGo != nil {
         dcli.Println("e", "Cmd failed!", errGo)
+        dcli.Println("e", "Failing Command =", name, arg)
         err = errType.FAIL
         return
     }

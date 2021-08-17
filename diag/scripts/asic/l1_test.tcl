@@ -44,6 +44,7 @@ if {$MTP_TYPE == "MTP_ELBA"} {
     source .tclrc.diag.elb.new
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
+    exec cat /home/diag/diag/scripts/taormina/vtysh_port_shutdown.sh | vtysh
     if { $slot == 1 } {
         if { $ELBA0_ID == "" } {
         } else {
