@@ -23,6 +23,7 @@ const bcm_shell_execute_cmd =
 "import datetime\n"+
 "import sys\n"+
 "import os\n"+
+"import socket\n"+
 "\n"+
 "timeout = 1\n"+
 "netns.setns('swns')\n"+
@@ -65,7 +66,8 @@ const bcm_shell_execute_cmd =
 "else:\n"+
 "    tn.close()\n"+
 "\n"+
-"tn.write('exit \\n')\n"+
+"#tn.write('exit \\n')\n"+
+"tn.get_socket().shutdown(socket.SHUT_WR)\n"+
 "tn.close\n"+
 "timestamp = 'Timestamp: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())\n"+
 "f.write('\\n')\n"+
@@ -970,6 +972,12 @@ func Snake_All_Ports(elba_port_mask uint32, duration uint32, loopback_level stri
                 }
             }
 
+            if rc == errType.FAIL {
+                fmt.Printf(" ERR BREAK\n")
+                err = errType.FAIL
+                break
+            }
+
             t2 := time.Now()
             diff := t2.Sub(t1)
             fmt.Println(" Elapsed Time=",diff," Duration=",duration)
@@ -977,11 +985,7 @@ func Snake_All_Ports(elba_port_mask uint32, duration uint32, loopback_level stri
                 fmt.Printf(" DUATION BREAK\n")
                 break
             }
-            if rc == errType.FAIL {
-                fmt.Printf(" ERR BREAK\n")
-                err = errType.FAIL
-                break
-            }
+
         }
     }
 
