@@ -251,6 +251,15 @@ func I2cI2cHdl(argList []string) {
 
         if cardType == "TAORMINA" {
             taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
+            if running, _ := taormina.Process_Is_Running("fand"); running == true {
+                cli.Printf("i", "fand is running.. killing it\n")
+                taormina.Process_Kill("fand")
+            }
+            if running, _ := taormina.Process_Is_Running("powerd"); running == true {
+                cli.Printf("i", "powerd is running.. killing it\n")
+                taormina.Process_Kill("powerd")
+            }
+            misc.SleepInSec(1)
         }
         dcli.Println("i", "Starting I2C test on", devName, " / Component", i2cInfo.Comp)
         switch i2cInfo.Comp {

@@ -102,6 +102,15 @@ func Fan_RPM_test(tollerance int)(err int) {
 
     dcli.Printf("i", "Switch Fan Test: tollerance=%d%% \n", tollerance)
 
+    execOutput, errGo := exec.Command("sh", "-c", "cat /fs/nos/home_diag/diag/scripts/taormina/vtysh_port_shutdown.sh | vtysh").Output()
+    if errGo != nil {
+        cli.Println(string(execOutput))
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        //return
+    }
+    misc.SleepInSec(1)
+
 
     if running, _ := Process_Is_Running(process); running == true {
         cli.Printf("i", "fand is running.. killing it\n")
@@ -600,7 +609,7 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
     }
 
     if rdData[0] != nicCpldCommon.ID_TAORMINA_ELBA {
-        dcli.Printf("e", "%s DEVICE ID IS WRONG:  EXPECT 0x.02x.   Read 0x%.02x", devName, nicCpldCommon.ID_TAORMINA_ELBA, rdData[0] )
+        dcli.Printf("e", "%s DEVICE ID IS WRONG:  EXPECT 0x%.02x.   Read 0x%.02x", devName, nicCpldCommon.ID_TAORMINA_ELBA, rdData[0] )
         err = errType.FAIL
         return
     }
@@ -621,7 +630,7 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
         dcli.Println("e", "I2C Access (4) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
     }
     if rdData[0] != i2cWrData[0][1] {
-        dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x.02x.   Read 0x%.02x", devName, i2cWrData[0][0], i2cWrData[0][1],  rdData[0] )
+        dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x%.02x.   Read 0x%.02x", devName, i2cWrData[0][0], i2cWrData[0][1],  rdData[0] )
         err = errType.FAIL
         return
     }
@@ -633,7 +642,7 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
         dcli.Println("e", "I2C Access (4) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
     }
     if rdData[0] != i2cWrData[1][1] {
-        dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x.02x.   Read 0x%.02x", devName, i2cWrData[1][0], i2cWrData[1][1],  rdData[0] )
+        dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x%.02x.   Read 0x%.02x", devName, i2cWrData[1][0], i2cWrData[1][1],  rdData[0] )
         err = errType.FAIL
         return
     }
