@@ -73,6 +73,9 @@ func QsfpI2CHdl(argList []string) {
         bitPos := qsfpInfo.PrstBit
         spi.CpldRead(uint32(regAddr), &regData)
         data = byte(regData)
+        dcli.Println("i", "CPLD QSFP Present Register Value = ", regData)
+        dcli.Println("i", "CPLD QSFP Present Register Byte Value = ", data)
+        dcli.Println("i", "CPLD QSFP bitPos = ", bitPos)
 
         prstSts := data & (1<<byte(bitPos))
         if prstSts != 0 {
