@@ -28,7 +28,7 @@ const NAPLES25SWM_HPE_C     string  = "P41851-001"      //SWM HPE Cloud
 const NAPLES25OCP_HPE_E   string  = "P37689-001"
 const NAPLES25OCP_HPE_C   string  = "P41857-001"
 const NAPLES25OCP_PEN     string  = "68-0010-01 01"
-const NAPLES25OCP_DELL    string  = "68-0010"  
+const NAPLES25OCP_DELL    string  = "68-0023"  
 
 const NAPLES100_HPE_E     string  = "P37692-001"      //Enterprise
 const NAPLES100_HPE_C     string  = "P41854-001"      //Cloud
