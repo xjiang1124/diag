@@ -11,9 +11,15 @@ sleep 1
 p1=$(./xo3dcpld -smird 0x11 0x3)
 echo $p0 $p1
 
-if [[ $(( p0 & 0xff00 )) == 0 ]]; then
+if [[ $(( p0 & 0xff00 )) -eq 0 ]]; then
     echo $p0 
     echo "MVL STUB TEST FAILED -- no packet received"
+    exit 1
+fi
+
+if [[ $(( p1 & 0xff00 )) -ne 0xff00 ]]; then
+    echo $p0 
+    echo "MVL STUB TEST FAILED -- packet count not expected"
     exit 1
 fi
 
