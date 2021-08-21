@@ -24,8 +24,11 @@ set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
 
 set MTP_TYPE $::env(MTP_TYPE)
-set ELBA0_ID $::env(ELBA0_J2C_ID)
-set ELBA1_ID $::env(ELBA1_J2C_ID)
+
+catch {
+    set ELBA0_ID $::env(ELBA0_J2C_ID)
+    set ELBA1_ID $::env(ELBA1_J2C_ID)
+}
 
 set zmq_conn tcp://127.0.0.1:55000/
 global G_USE_ZMQ
@@ -40,7 +43,7 @@ puts "sn: $sn; slot: $slot"
 cd $ASIC_SRC/ip/cosim/tclsh
 if {$MTP_TYPE == "MTP_ELBA"} {
     puts "Elba MTP"
-    set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+    set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 3000 3200 $int_lpbk $vmarg $offload $esecEn" 
     source .tclrc.diag.elb.new
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
@@ -49,13 +52,13 @@ if {$MTP_TYPE == "MTP_ELBA"} {
         if { $ELBA0_ID == "" } {
         } else {
             set port $ELBA0_ID
-            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 3000 3200 $int_lpbk $vmarg $offload $esecEn" 
         }
     } else {
         if { $ELBA1_ID == "" } {
         } else {
             set port $ELBA1_ID
-            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 1600 3200 $int_lpbk $vmarg $offload $esecEn" 
+            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 3000 3200 $int_lpbk $vmarg $offload $esecEn" 
         }
     }
     source .tclrc.diag.elb.new
