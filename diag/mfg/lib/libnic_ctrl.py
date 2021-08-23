@@ -1658,6 +1658,11 @@ class nic_ctrl():
             self.nic_kill_hal()
             nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
             nic_cmd_list.append(nic_cmd)
+            # prevent cpldapp lock getting stuck which depends on hal
+            nic_cmd = "rm /var/lock/cpldapp_lock"
+            nic_cmd_list.append(nic_cmd)
+            nic_cmd = "rm /dev/shm/cpld_lock"
+            nic_cmd_list.append(nic_cmd)
             nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_CONFIG_FMT
             nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_INIT_FMT.format(self._slot+1)
