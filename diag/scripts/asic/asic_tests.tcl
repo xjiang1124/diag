@@ -24,6 +24,21 @@ proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""}
     set cur_dir [pwd]
     set j2c_port 10
 
+    set MTP_TYPE $::env(MTP_TYPE)
+    if {$MTP_TYPE == "MTP_TOR"} {
+        set ELBA0_ID $::env(ELBA0_J2C_ID)
+        set ELBA1_ID $::env(ELBA1_J2C_ID)
+        if { $ELBA0_ID == "" || $ELBA1_ID == "" } {
+            puts "[ERROR] BASH ENVIRONMENT VARIABLE FOR ELBA J2C NOT SET"
+            return 1
+        }
+        if { $j2c_slot == 1 } {
+            set j2c_port $ELBA0_ID
+        } else {
+            set j2c_port $ELBA1_ID
+        }
+    }
+
     plog_stop
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
@@ -120,6 +135,22 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2
     set cur_dir [pwd]
     set j2c_port 10
 
+    set MTP_TYPE $::env(MTP_TYPE)
+    if {$MTP_TYPE == "MTP_TOR"} {
+        set ELBA0_ID $::env(ELBA0_J2C_ID)
+        set ELBA1_ID $::env(ELBA1_J2C_ID)
+        if { $ELBA0_ID == "" || $ELBA1_ID == "" } {
+            puts "[ERROR] BASH ENVIRONMENT VARIABLE FOR ELBA J2C NOT SET"
+            return 1
+        }
+        if { $j2c_slot == 1 } {
+            set j2c_port $ELBA0_ID
+        } else {
+            set j2c_port $ELBA1_ID
+        }
+    }
+
+
     plog_stop
     plog_start $log_file 1000000000
     plog_msg "Running [info level 0]"
@@ -173,6 +204,21 @@ proc asic_snake { {asic_type CAPRI} {board_id SN000001} {j2c_slot 1} {mode pcie_
     set log_file cap_snake_${mode}_${board_id}_${cur_time}.log
     set cur_dir [pwd]
     set j2c_port 10
+
+    set MTP_TYPE $::env(MTP_TYPE)
+    if {$MTP_TYPE == "MTP_TOR"} {
+        set ELBA0_ID $::env(ELBA0_J2C_ID)
+        set ELBA1_ID $::env(ELBA1_J2C_ID)
+        if { $ELBA0_ID == "" || $ELBA1_ID == "" } {
+            puts "[ERROR] BASH ENVIRONMENT VARIABLE FOR ELBA J2C NOT SET"
+            return 1
+        }
+        if { $j2c_slot == 1 } {
+            set j2c_port $ELBA0_ID
+        } else {
+            set j2c_port $ELBA1_ID
+        }
+    }
  
     if {$mode == "pcie_lb"} {
         set snake_num 6

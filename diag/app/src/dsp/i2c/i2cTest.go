@@ -259,7 +259,6 @@ func I2cI2cHdl(argList []string) {
                 cli.Printf("i", "powerd is running.. killing it\n")
                 taormina.Process_Kill("powerd")
             }
-            misc.SleepInSec(1)
         }
         dcli.Println("i", "Starting I2C test on", devName, " / Component", i2cInfo.Comp)
         switch i2cInfo.Comp {
