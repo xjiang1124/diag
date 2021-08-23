@@ -286,7 +286,8 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
-                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                if not stop_on_err:
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
                 if slot not in fail_list:
                     fail_list.append(slot)
 
@@ -304,7 +305,8 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
 
             if ret != "SUCCESS" and stop_on_err:
-                break
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                raise Exception
     
     if GLB_CFG_MFG_TEST_MODE:
         mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
@@ -360,13 +362,15 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
             for slot in test_fail_list:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [])
-                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                if not stop_on_err:
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [])
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                if not stop_on_err:
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
                 if stop_on_err:
                     nic_test_list.remove(slot)
                 if slot not in fail_list:
@@ -381,9 +385,10 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
         # stop on error, don't collect logfile
         if fail_list and stop_on_err:
-            pass
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+            raise Exception
         else:
-            naples_get_nic_logfile(mtp_mgmt_ctrl, nic_test_list, para_test_list)
+            naples_get_nic_logfile(mtp_mgmt_ctrl, nic_test_list, para_test_list, stop_on_err)
             # extract error message if test fail
             for slot, test in fail_slot_test_list:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -485,6 +490,9 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
 
     for slot in nic_list:
         if not nic_test_rslt_list[slot]:
+            if stop_on_err:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                raise Exception
             if slot not in fail_list:
                 fail_list.append(slot)
 
@@ -562,11 +570,13 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp_disp, test, duration))
         else:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
-            mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+            if not stop_on_err:
+                mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
+                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp_disp, test, ret, duration))
-                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                if not stop_on_err:
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             nic_test_rslt_list[slot] = False
 
             # only display first 3 and last 3 error messages
@@ -585,11 +595,11 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if ret != "SUCCESS" and stop_on_err:
             break
 
-def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list):
+def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_err):
     # power cycle all the NICs
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err):
         mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed", level=0)
         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         return False
@@ -665,12 +675,15 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                 mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
-            mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+            if not stop_on_err:
+                mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
+            if not stop_on_err:
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp_disp, test, ret, duration))
-                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+                if not stop_on_err:
+                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             nic_test_rslt_list[slot] = False
 
             # only display first 3 and last 3 error messages
@@ -1131,12 +1144,17 @@ def main():
             else:
                 # Don't format EMMC to keep diag image installed in previous (DL) stage
                 nic_util = True #False
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=nic_util):
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=nic_util, stop_on_err=stop_on_err):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
                 return
-
+            if stop_on_err:
+                for nic_list in nic_test_full_list:
+                    for slot in nic_list:
+                        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                            return
 
             #NAPLES25 SWM LOW POWER BOOT MODE TEST
             if (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_QA):   #Skip SWM Low Power Test for 4 corner
@@ -1154,7 +1172,7 @@ def main():
 
                 if swm_lp_test_performed > 0:
                     mtp_mgmt_ctrl.cli_log_inf("Setting Naples25 SWM Back to High Power Mode (requires a nic reboot)", level=0)
-                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=False):
+                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=False,stop_on_err=stop_on_err):
                         mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                         mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1335,12 +1353,18 @@ def main():
                     else:
                         aapl = True
                     if do_once == 0:
-                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl):
+                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl, stop_on_err=stop_on_err):
                             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
                             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
                             return
                         do_once = 1
+
+                        if stop_on_err:
+                            for slot in nic_list:
+                                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                                    return
 
                     diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
                                                                 nic_type,

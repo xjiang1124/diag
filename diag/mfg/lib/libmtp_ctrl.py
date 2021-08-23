@@ -3083,46 +3083,49 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl, stop_on_err):
+        ret = True
         nic_type = self.mtp_get_nic_type(slot)
-        if not self.mtp_check_nic_status(slot):
-            return
+        if ret and not self.mtp_check_nic_status(slot):
+            ret = False
 
-        if not self.mtp_nic_emmc_init(slot, emmc_format):
-            return
+        if ret and not self.mtp_nic_emmc_init(slot, emmc_format):
+            ret = False
 
-        if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
-            return
+        if ret and not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
+            ret = False
 
-        if not self.mtp_mgmt_start_nic_diag(slot, aapl):
-            return
+        if ret and not self.mtp_mgmt_start_nic_diag(slot, aapl):
+            ret = False
 
-        if not self.mtp_nic_cpld_init(slot):
-            return
+        if ret and not self.mtp_nic_cpld_init(slot):
+            ret = False
 
-        if not self.mtp_check_nic_cpld_partition(slot):
-            return
+        if ret and not self.mtp_check_nic_cpld_partition(slot):
+            ret = False
 
-        if fru_valid:
+        if ret and fru_valid:
             if emmc_format:
                 init_date = False
             else:
                 init_date = True
             if not self.mtp_nic_fru_init(slot, init_date, nic_type):
-                return
+                ret = False
             fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
             self.mtp_set_nic_sn(slot, fru_info_list[0])
         else:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
-        if not self.mtp_set_nic_vmarg(slot, vmargin):
-            return
+        if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
+            ret = False
 
-        if not self.mtp_nic_display_voltage(slot):
-            return
+        if ret and not self.mtp_nic_display_voltage(slot):
+            ret = False
+        
+        if not ret:
+            libmfg_utils.post_fail_steps(self, slot)
 
-        return
-
+        return ret
 
     # pre setup for the diag test
     def mtp_nic_diag_init_pre(self):
@@ -3148,22 +3151,32 @@ class mtp_ctrl():
         return fail_list
 
 
-    def mtp_nic_mgmt_seq_init(self, fpo):
+    def mtp_nic_mgmt_seq_init(self, fpo, stop_on_err=False):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot] and self.mtp_check_nic_status(slot):
-                self.mtp_nic_mini_init(slot, fpo)
+                if not self.mtp_nic_mini_init(slot, fpo):
+                    if stop_on_err:
+                        return False
+                    else:
+                        continue
+        return True
 
-
-    def mtp_nic_mgmt_para_init(self, aapl, swm_lp=False):
+    def mtp_nic_mgmt_para_init(self, aapl, swm_lp=False, stop_on_err=False):
         nic_list = list()
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
                 if not self.mtp_check_nic_status(slot):
                     self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
-                    continue
+                    if stop_on_err:
+                        return False
+                    else:
+                        continue
                 if not self.mtp_nic_boot_info_init(slot):
                     self.mtp_set_nic_status_fail(slot)
-                    continue
+                    if stop_on_err:
+                        return False
+                    else:
+                        continue
                 nic_list.append(slot)
 
         if not nic_list:
@@ -3223,7 +3236,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False, stop_on_err=False):
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -3237,9 +3250,12 @@ class mtp_ctrl():
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
         if fpo:
-            self.mtp_nic_mgmt_seq_init(fpo)
+            ret = self.mtp_nic_mgmt_seq_init(fpo, stop_on_err)
         else:
-            self.mtp_nic_mgmt_para_init(aapl, swm_lp)
+            ret = self.mtp_nic_mgmt_para_init(aapl, swm_lp, stop_on_err)
+
+        if not ret:
+            return False
 
         if not self.mtp_mgmt_nic_mac_validate():
             return False
@@ -3257,7 +3273,8 @@ class mtp_ctrl():
                                                   emmc_format,
                                                   fru_valid,
                                                   vmargin,
-                                                  aapl))
+                                                  aapl,
+                                                  stop_on_err))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -4448,3 +4465,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
         self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
         return True
+
+    def mtp_thread_stop_on_err(self):
+        # send SIGINT to parent thread
+        import signal
+        os.kill(os.getpid(), signal.SIGINT)
