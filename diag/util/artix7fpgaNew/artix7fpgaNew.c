@@ -76,7 +76,7 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define DISABLE                         0
 
 #define DEBUG                           DISABLE
-#define DEBUG                           ENABLE
+//#define DEBUG                           ENABLE
 
 // 5MHz
 #define ELBA_SPI_CLK                    5000000
