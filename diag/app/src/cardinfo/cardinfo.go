@@ -9,7 +9,13 @@ var Cardinfo = map[string]map[string]string{
         "ASIC": "ELBA"},
     "LACONADELL": map[string]string{
         "ASIC": "ELBA"},
-    "PIONEER": map[string]string{
+    "LACONA32": map[string]string{
+        "ASIC": "ELBA"},
+    "LACONA32DELL": map[string]string{
+        "ASIC": "ELBA"},
+    "POMONTE": map[string]string{
+        "ASIC": "ELBA"},
+    "POMONTEDELL": map[string]string{
         "ASIC": "ELBA"},
 }
 

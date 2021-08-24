@@ -4,7 +4,12 @@ echo $CARD_TYPE
 if [[ $CARD_TYPE == "FORIO" ]] 
 then
     ./diag.exe prbs.e.a.forio.tcl
-elif [[ $CARD_TYPE == "ORTANO"  ||  $CARD_TYPE == "ORTANO2" ]] 
+elif [[ $CARD_TYPE == "ORTANO"      || \
+        $CARD_TYPE == "ORTANO2"     || \
+        $CARD_TYPE == "LACONA32"    || \
+        $CARD_TYPE == "LACONA32DELL"|| \
+        $CARD_TYPE == "POMONTE"     || \
+        $CARD_TYPE == "POMONTEDELL" ]] 
 then
     killall hal
     cd /data/nic_arm/elba/asic_src/ip/cosim/tclsh

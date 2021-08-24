@@ -82,6 +82,26 @@ then
 elif [[ $cpld_id == "0x44" ]]
 then
     type="ORTANO2"
+elif [[ $cpld_id == "0x45" ]]
+then
+    type="LACONADELL"
+elif [[ $cpld_id == "0x46" ]]
+then
+    type="LACONA"
+elif [[ $cpld_id == "0x47" ]]
+then
+    type="POMONTEDELL"
+elif [[ $cpld_id == "0x48" ]]
+then
+    type="POMONTE"
+elif [[ $cpld_id == "0x49" ]]
+then
+    type="LACONA32DELL"
+elif [[ $cpld_id == "0x50" ]]
+then
+    type="LACONA32"
+else
+    type="UNKNOW"
 fi
 
 echo "$type Detected!"

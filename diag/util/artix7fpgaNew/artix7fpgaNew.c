@@ -76,7 +76,7 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define DISABLE                         0
 
 #define DEBUG                           DISABLE
-//#define DEBUG                           ENABLE
+#define DEBUG                           ENABLE
 
 // 5MHz
 #define ELBA_SPI_CLK                    5000000
@@ -1466,7 +1466,7 @@ int main(int argc, char *argv[])
         flash_read_pipeline_test(fd, addr, numByte);
         close(fd);
     } 
-    else if ( strcmp(argv[1], "-frp" ) == 0 ) 
+    else if ( strcmp(argv[1], "-help" ) == 0 ) 
     {
         usage_full();
     }

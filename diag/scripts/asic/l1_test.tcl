@@ -40,10 +40,19 @@ set G_SLOT $slot
 
 puts "sn: $sn; slot: $slot"
 
+set uut "UUT_$slot"
+set card_type $::env($uut)
+puts "card type: $card_type; UUT: $uut"
+
+set arm_freq 3000
+if {[string first "LACONA" $card_type] != -1} {
+    set arm_freq 2000
+}
+
 cd $ASIC_SRC/ip/cosim/tclsh
 if {$MTP_TYPE == "MTP_ELBA"} {
     puts "Elba MTP"
-    set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 3000 3200 $int_lpbk $vmarg $offload $esecEn" 
+    set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
     source .tclrc.diag.elb.new
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
@@ -52,23 +61,19 @@ if {$MTP_TYPE == "MTP_ELBA"} {
         if { $ELBA0_ID == "" } {
         } else {
             set port $ELBA0_ID
-            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 3000 3200 $int_lpbk $vmarg $offload $esecEn" 
+            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
         }
     } else {
         if { $ELBA1_ID == "" } {
         } else {
             set port $ELBA1_ID
-            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 3000 3200 $int_lpbk $vmarg $offload $esecEn" 
+            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
         }
     }
     source .tclrc.diag.elb.new
 
 } else {
     puts "Capri MTP"
-
-    set uut "UUT_$slot"
-    set card_type $::env($uut)
-    puts "card type: $card_type; UUT: $uut"
 
     if { $card_type == "NAPLES25"    ||
          $card_type == "NAPLES25SWM" ||

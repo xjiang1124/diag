@@ -112,6 +112,23 @@ var LaconaTbl = []I2cInfo {
     I2cInfo {"SFP_2_DOM",      "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
 }
 
+var PomonteTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
+    I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "TPS544B25", 0x0,   0x24,    0x0,    "HUB_NONE",  0,    0},
+
+    I2cInfo {"QSFP_1",         "QSFP",      0x1,   0x50,    0x0,    "HUB_CPLD",  0,    0},
+    I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+
+    I2cInfo {"QSFP_2",         "QSFP",      0x2,   0x50,    0x0,    "HUB_CPLD",  0,    0},
+    I2cInfo {"QSFP_2_DOM",     "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+}
+
 var TaorElbaTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
@@ -428,11 +445,13 @@ func init() {
     } else if CardType == "ORTANO2" {
         I2cTbl = OrtanoTbl
     } else if CardType == "LACONADELL"      ||
-              CardType == "LACONA32DELL"    ||
               CardType == "LACONA"          ||
-              CardType == "POMONTEDELL"     ||
-              CardType == "POMONTE"         {
+              CardType == "LACONA32DELL"    ||
+              CardType == "LACONA32"        {
         I2cTbl = LaconaTbl
+    } else if CardType == "POMONTEDELL"     ||
+              CardType == "POMONTE"         {
+        I2cTbl = PomonteTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
