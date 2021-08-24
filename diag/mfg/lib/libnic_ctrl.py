@@ -1002,8 +1002,12 @@ class nic_ctrl():
             return False
 
         self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        elif idx == 1:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
@@ -1178,8 +1182,11 @@ class nic_ctrl():
 
     def nic_setting_partition(self):
         nic_cmd_list = list()
+        nic_cmd_list.append("chmod +x /emmc_format.sh")
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
+            return False
+
         nic_cmd = MFG_DIAG_CMDS.NIC_SETTING_PARTITION_FMT
-        nic_cmd_list.append(nic_cmd)
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             return False

@@ -301,7 +301,10 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             return False
-        set_pslc(mtp_mgmt_ctrl,mtp_id, fail_nic_list)
+        if set_pslc(mtp_mgmt_ctrl,mtp_id, fail_nic_list):
+            for slot in fail_nic_list:
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
         rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
         if not rc:

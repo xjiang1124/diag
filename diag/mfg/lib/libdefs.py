@@ -323,7 +323,7 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_ERASE_ELBA_FMT = "{:s}xo3dcpld -erase {:s}"
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
-    NIC_SETTING_PARTITION_FMT = "mmc enh_area set -y 0 30998528 /dev/mmcblk0"
+    NIC_SETTING_PARTITION_FMT = "/emmc_format.sh"
     NIC_DIAG_ASIC_VERSION_FMT = "head /data/nic_arm/{:s}/asic_version.txt"
     # onboard diag utils version
     NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"

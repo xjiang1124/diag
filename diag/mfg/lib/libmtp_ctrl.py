@@ -2342,6 +2342,9 @@ class mtp_ctrl():
         return self._nic_ctrl_list[slot].alom_get_fru()
 
     def mtp_setting_partition(self, slot):
+        # copy script to detect the emmc part size
+        if not self._nic_ctrl_list[slot].nic_copy_image("{:s}diag/scripts/emmc_format.sh".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)):
+            return False
         # Run command twice: first time does it, 2nd time says 'already partitioned'
         if not self._nic_ctrl_list[slot].nic_setting_partition():
             self.cli_log_slot_err_lock(slot, "Could not complete partition command")
