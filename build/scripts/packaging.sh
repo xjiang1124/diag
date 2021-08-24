@@ -105,23 +105,24 @@ do
         mkdir -p $NIC_UTIL_DIR
         mkdir -p $NIC_UTIL_DIR/sw/
     
-        cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/cpld      $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/xo3dcpld  $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr    $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil    $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil   $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil   $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/util/emmcutil  $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/app/bin/linux_arm64/util/asicutil  $NIC_UTIL_DIR
-        cp $TOP_DIR/tools/bin/arm64/gb_25nrz_cfg            $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/python/regression/update_mac.py    $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/scripts/clear_nic_config.sh        $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh              $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/scripts/mvl_acc.sh                 $NIC_UTIL_DIR
-        cp $TOP_DIR/diag/scripts/mvl_stub.sh                $NIC_UTIL_DIR
-        cp $TEMP_DIR/scripts/version.txt                    $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/cpld          $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/xo3dcpld      $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/artix7fpga    $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr        $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil        $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil       $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil       $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/emmcutil      $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/asicutil      $NIC_UTIL_DIR
+        cp $TOP_DIR/tools/bin/arm64/gb_25nrz_cfg                $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/python/regression/update_mac.py        $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/clear_nic_config.sh            $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh                  $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_acc.sh                     $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_stub.sh                    $NIC_UTIL_DIR
+        cp $TEMP_DIR/scripts/version.txt                        $NIC_UTIL_DIR
     
-        cp $TOP_DIR/diag/scripts/sw/*                       $NIC_UTIL_DIR/sw/
+        cp $TOP_DIR/diag/scripts/sw/*                           $NIC_UTIL_DIR/sw/
     
         cd $NIC_UTIL_DIR
         tar czf $IMG_DIR/nic_util.tar -C $TEMP_DIR_TOP nic_util/
@@ -139,7 +140,7 @@ do
     DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$asic/$arch
     #SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
     ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
-    #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.03.30/$asic/$arch
+    #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.08.01/$asic/$arch
     
     if [[ $arch == "amd64" ]]
     then
