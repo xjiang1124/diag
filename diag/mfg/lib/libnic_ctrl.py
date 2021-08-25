@@ -3121,10 +3121,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to set board config")
             return False
-        if ("brdcfg0 write OK"  in cmd_buf
-        and "brdcfg0 verify OK" in cmd_buf
-        and "brdcfg1 write OK"  in cmd_buf
-        and "brdcfg1 verify OK" in cmd_buf):
+        if "Mode successfully set" in cmd_buf:
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
@@ -3134,6 +3131,13 @@ class nic_ctrl():
         cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get updated board config")
+            return False
+
+        if "cfg{:s}".format(str(preset_config)) in cmd_buf:
+            pass
+        else:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         return True
