@@ -95,12 +95,12 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
 
-    test_list = ["SEC_CPLD_PROG", "SEC_CPLD_REF"]
+    test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
-        test_list = ["SEC_CPLD_PROG"]
+        test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-        test_list = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -116,6 +116,9 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
         elif test == "NIC_PWRCYC":
             ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+        # nic diag init status
+        elif test == "NIC_INIT":
+            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
             continue
@@ -132,7 +135,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
 
 def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    test_list = ["SEC_CPLD_VERIFY", "COPY_GOLD"]
+    test_list = ["NIC_INIT", "SEC_CPLD_VERIFY", "COPY_GOLD"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     for skip_test in skip_testlist:
         if skip_test in test_list:
@@ -144,6 +147,8 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
             ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
         elif test == "COPY_GOLD":
             ret = mtp_mgmt_ctrl.mtp_copy_nic_gold(slot, gold_img_file)
+        elif test == "NIC_INIT":
+            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
@@ -425,13 +430,11 @@ def main():
                 continue
             if slot in fail_nic_list:
                 continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            test_list = ["EFUSE_PROG"]
+            test_list = ["NIC_INIT", "EFUSE_PROG"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
@@ -440,6 +443,8 @@ def main():
                 start_ts = libmfg_utils.timestamp_snapshot()
                 if test == "EFUSE_PROG":
                     ret = mtp_mgmt_ctrl.mtp_program_nic_efuse(slot)
+                elif test == "NIC_INIT":
+                    ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
@@ -504,8 +509,6 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
             if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -588,8 +591,6 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
             if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
