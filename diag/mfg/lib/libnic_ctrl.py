@@ -1122,7 +1122,6 @@ class nic_ctrl():
             self.nic_set_err_msg(" ERROR: nic_read_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        print(read_data)
         rc = self.nic_write_cpld_via_smbus(reg_addr=0x21, write_data=0x25)
         if not rc: 
             self.nic_set_err_msg(" ERROR: nic_write_cpld_via_smbus Failed") 
@@ -1144,7 +1143,6 @@ class nic_ctrl():
             self.nic_set_err_msg(" ERROR: nic_read_cpld Failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        print(read_data)
         rc = self.nic_write_cpld_via_smbus(reg_addr=0x22, write_data=0xa0)
         if not rc: 
             self.nic_set_err_msg(" ERROR: nic_write_cpld_via_smbus Failed") 

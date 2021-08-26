@@ -335,7 +335,7 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             key = libmfg_utils.nic_key(slot)
             tmp_fru_cfg[key] = dict()
-            if slot in fail_nic_list:
+            if slot in fail_nic_list or not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 tmp_fru_cfg[key]["NIC_VALID"] = False
                 continue
             if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
@@ -428,7 +428,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
-            pass_nic_list.append(slot)
+            if slot not in pass_nic_list:
+                pass_nic_list.append(slot)
             pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
             for skipped_test in args.skip_test:
                 if skipped_test in pre_check_testlist:
@@ -460,8 +461,10 @@ def main():
                 duration = str(stop_ts - start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
@@ -513,6 +516,8 @@ def main():
         # Ortano Boot check moved out of parallel tests to sequential test
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
@@ -673,8 +678,10 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:

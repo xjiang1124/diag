@@ -1298,7 +1298,6 @@ def main():
                             fail_nic_list.append(slot)
                         if slot in pass_nic_list:
                             pass_nic_list.remove(slot)
-
             # NIC Parallel test 2nd loop with HAL/APPL for Capri
             for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                 if nic_type == NIC_Type.NAPLES100:

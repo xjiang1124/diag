@@ -839,9 +839,9 @@ class mtp_ctrl():
                     self._swmtestmode[slot] = Swm_Test_Mode.SWM
         return True
 
-    def mtp_set_nic_status_fail(self, slot):
+    def mtp_set_nic_status_fail(self, slot, skip_fa=False):
         if self._nic_ctrl_list:
-            if self.mtp_check_nic_status(slot):
+            if self.mtp_check_nic_status(slot) or skip_fa:
                 # was previously OK, this is first failure
                 libmfg_utils.post_fail_steps(self, slot)
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -3086,8 +3086,6 @@ class mtp_ctrl():
     def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl, stop_on_err):
         ret = True
         nic_type = self.mtp_get_nic_type(slot)
-        if ret and not self.mtp_check_nic_status(slot):
-            ret = False
 
         if ret and not self.mtp_nic_emmc_init(slot, emmc_format):
             ret = False
@@ -3155,6 +3153,7 @@ class mtp_ctrl():
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot] and self.mtp_check_nic_status(slot):
                 if not self.mtp_nic_mini_init(slot, fpo):
+                    self.mtp_set_nic_status_fail(slot)
                     if stop_on_err:
                         return False
                     else:
@@ -3266,7 +3265,7 @@ class mtp_ctrl():
 
         nic_thread_list = list()
         for slot in range(self._slots):
-            if not self._nic_prsnt_list[slot]:
+            if not self._nic_prsnt_list[slot] or not self.mtp_check_nic_status(slot):
                 continue
             nic_thread = threading.Thread(target = self.mtp_single_nic_diag_init,
                                           args = (slot,
@@ -3288,15 +3287,8 @@ class mtp_ctrl():
                     nic_thread_list.remove(nic_thread)
             time.sleep(5)
 
-        for slot in range(self._slots):
-            if not self._nic_prsnt_list[slot]:
-                continue
-            if not self.mtp_check_nic_status(slot):
-                libmfg_utils.post_fail_steps(self, slot)
-
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
-                self.mtp_set_nic_status_fail(slot)
                 return False
 
         self.mtp_nic_info_disp(fru_valid)
