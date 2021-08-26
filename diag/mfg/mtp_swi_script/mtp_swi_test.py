@@ -56,16 +56,16 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     
 def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    testseqlist = ["CPLD_PROG", "CPLD_REF"]                                                                
+    test_list = ["CPLD_PROG", "CPLD_REF"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
-        testseqlist = ["CPLD_PROG"]
+        test_list = ["CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
-        if skip_test in testseqlist:
-            testseqlist.remove(skip_test)
-    for test in testseqlist:
+        if skip_test in test_list:
+            test_list.remove(skip_test)
+    for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program CPLD
@@ -95,16 +95,16 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, slot, sn, prog_fail_nic_
 def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
 
-    testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF"]                                                                
+    test_list = ["SEC_CPLD_PROG", "SEC_CPLD_REF"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
-        testseqlist = ["SEC_CPLD_PROG"]
+        test_list = ["SEC_CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
-        testseqlist = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
-        if skip_test in testseqlist:
-            testseqlist.remove(skip_test)
-    for test in testseqlist:
+        if skip_test in test_list:
+            test_list.remove(skip_test)
+    for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program secure cpld
@@ -132,12 +132,12 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
 
 def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    testseqlist = ["SEC_CPLD_VERIFY", "COPY_GOLD"]
+    test_list = ["SEC_CPLD_VERIFY", "COPY_GOLD"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     for skip_test in skip_testlist:
-        if skip_test in testseqlist:
-            testseqlist.remove(skip_test)
-    for test in testseqlist:
+        if skip_test in test_list:
+            test_list.remove(skip_test)
+    for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         if test == "SEC_CPLD_VERIFY":
@@ -160,11 +160,11 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    testseqlist = ["SW_INSTALL"]
+    test_list = ["SW_INSTALL"]
     for skip_test in skip_testlist:
-        if skip_test in testseqlist:
-            testseqlist.remove(skip_test)
-    for test in testseqlist:
+        if skip_test in test_list:
+            test_list.remove(skip_test)
+    for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         # program sw image onto EMMC
@@ -189,11 +189,11 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
 
 def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    testseqlist = ["GOLD_PROG"]
+    test_list = ["GOLD_PROG"]
     for skip_test in skip_testlist:
-        if skip_test in testseqlist:
-            testseqlist.remove(skip_test)
-    for test in testseqlist:
+        if skip_test in test_list:
+            test_list.remove(skip_test)
+    for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
         if test == "GOLD_PROG":
@@ -310,10 +310,10 @@ def main():
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             pass_nic_list.append(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
-            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[card_type]
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[card_type]
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Non Secure CPLD image: " + os.path.basename(cpld_img_file))
@@ -324,7 +324,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
 
-            if card_type == NIC_Type.NAPLES100IBM:
+            if nic_type == NIC_Type.NAPLES100IBM:
                 NAPLES100IBM = 1
 
             test_list = ["SW_PN_CHECK", "NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]
@@ -380,8 +380,8 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   cpld_img_file,
                                                                                   slot,
@@ -509,8 +509,8 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[card_type]
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         sec_cpld_img_file,
@@ -593,8 +593,8 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[card_type]
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_copy_gold_program, args = (mtp_mgmt_ctrl,
                                                                                     gold_img_file,
@@ -672,8 +672,8 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[card_type]
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_gold_program, args = (mtp_mgmt_ctrl,
                                                                                     gold_img_file,
@@ -768,7 +768,7 @@ def main():
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
@@ -804,9 +804,9 @@ def main():
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
 
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if card_type != NIC_Type.ORTANO and card_type != NIC_Type.ORTANO2:
+            if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
                 continue
             if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 continue
@@ -874,13 +874,13 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
 
             sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
-            if isCloud or card_type == NIC_Type.NAPLES100IBM:
+            if isCloud or nic_type == NIC_Type.NAPLES100IBM:
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
-            if card_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
