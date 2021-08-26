@@ -2795,10 +2795,6 @@ class mtp_ctrl():
 
     def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list):
         """
-        diag@NIC-06:$ /home/diag/diag/python/infra/dshell/diag -sresult -c NIC6 -d NIC_ASIC
-        _NOT_ a live card: NIC6
-
-        When script captures this signature "_NOT_ a live card", do following
         1. ping slot with 10 packets        <= whether management port is down
         2. connect console and do "env"     <= Check if card rebooted
         3. inventory -sts -slot <>          <= Clue of reboot reason/power/clk
