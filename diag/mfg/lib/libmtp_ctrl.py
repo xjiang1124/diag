@@ -2816,9 +2816,11 @@ class mtp_ctrl():
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                 ret = False
 
+        self._lock.acquire()
         # check if card rebooted
         if not self.mtp_check_nic_rebooted(slot):
             ret = False
+        self._lock.release()
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
