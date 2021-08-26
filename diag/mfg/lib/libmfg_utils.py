@@ -796,7 +796,7 @@ def fail_all_slots(mtp_mgmt_ctrl):
 def post_fail_steps(mtp_mgmt_ctrl, slot):
     
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Init new connection for failed NIC")
-    ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot])
+    ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot], fpo=False)
     if not ret:
         mtp_mgmt_ctrl.cli_log_err("Init NIC Connection Failed", level = 0)
     mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post fail debug"))

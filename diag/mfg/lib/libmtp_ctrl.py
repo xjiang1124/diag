@@ -544,7 +544,7 @@ class mtp_ctrl():
             return handle
 
 
-    def mtp_nic_para_session_init(self, slot_list=[]):
+    def mtp_nic_para_session_init(self, slot_list=[], fpo=True):
         if slot_list == []:
             slot_list = range(self._slots)
         userid = self._mgmt_cfg[1]
@@ -555,7 +555,8 @@ class mtp_ctrl():
                     self.cli_log_err("Unable to config MTP session")
                     return False
                 prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + "$"
-                self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
+                if fpo:
+                    self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
                 self._nic_ctrl_list[slot].nic_handle_init(handle, prompt)
                 para_cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
                 if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
@@ -4403,7 +4404,7 @@ class mtp_ctrl():
 
     def mtp_check_nic_rebooted(self, slot):
         self.cli_log_slot_inf(slot, "Init new NIC connection")
-        ret = self.mtp_nic_para_session_init(slot_list=[slot])
+        ret = self.mtp_nic_para_session_init(slot_list=[slot], fpo=False)
         if not ret:
             self.cli_log_err("Init NIC Connection Failed", level = 0)
 
