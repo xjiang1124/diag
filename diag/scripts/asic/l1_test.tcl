@@ -37,23 +37,39 @@ global G_SLOT
 set G_USE_ZMQ $use_zmq
 set G_ZMQ_CONN $zmq_conn
 set G_SLOT $slot
+set arm_freq 3000
 
 puts "sn: $sn; slot: $slot"
-
-set uut "UUT_$slot"
-set card_type $::env($uut)
-puts "card type: $card_type; UUT: $uut"
-
-set arm_freq 3000
-if {[string first "LACONA" $card_type] != -1} {
-    set arm_freq 2000
-}
-
 cd $ASIC_SRC/ip/cosim/tclsh
-if {$MTP_TYPE == "MTP_ELBA"} {
-    puts "Elba MTP"
-    set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
-    source .tclrc.diag.elb.new
+
+if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI")} {
+    set uut "UUT_$slot"
+    set card_type $::env($uut)
+    puts "card type: $card_type; UUT: $uut"
+
+    if {[string first "LACONA" $card_type] != -1} {
+        set arm_freq 2000
+    }
+    if {$MTP_TYPE == "MTP_ELBA"} {
+        puts "Elba MTP"
+        set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
+        source .tclrc.diag.elb.new
+    }
+    if {$MTP_TYPE == "MTP_CAPRI"} {
+        puts "Capri MTP"
+        if { $card_type == "NAPLES25"    ||
+             $card_type == "NAPLES25SWM" ||
+             $card_type == "NAPLES25SWMDELL" ||
+             $card_type == "NAPLES25OCP" ||
+             $card_type == "NAPLES25WFG"} {
+            set core_freq 417.0
+        } else {
+            set core_freq 833.0
+        }
+
+        set l1_cmd "cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn"
+        source .tclrc.diag.new
+    }
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
     exec cat /home/diag/diag/scripts/taormina/vtysh_port_shutdown.sh | vtysh
@@ -71,22 +87,9 @@ if {$MTP_TYPE == "MTP_ELBA"} {
         }
     }
     source .tclrc.diag.elb.new
-
 } else {
-    puts "Capri MTP"
-
-    if { $card_type == "NAPLES25"    ||
-         $card_type == "NAPLES25SWM" ||
-         $card_type == "NAPLES25SWMDELL" ||
-         $card_type == "NAPLES25OCP" ||
-         $card_type == "NAPLES25WFG"} {
-        set core_freq 417.0
-    } else {
-        set core_freq 833.0
-    }
-
-    set l1_cmd "cap_l1_screen_diag $sn 10 $slot 0 $zmq_conn 0 1 1 1 1 $core_freq $int_lpbk $vmarg $offload $esecEn"
-    source .tclrc.diag.new
+   puts "[ERROR] l1_test.tcl INVALID PLATFORM/MTP TYPE\n"
+   return -1
 }
 
 set err_cnt_init [ plog_get_err_count ]
