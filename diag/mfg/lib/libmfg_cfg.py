@@ -95,6 +95,7 @@ class NIC_IMAGES:
     goldfw_img["NAPLES25SWMDELL"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
     goldfw_dat["NAPLES25SWMDELL"] = "01-31-2021"
 
+    # OCP HPE (P37689-001)
     cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
     cpld_ver["NAPLES25OCP"] = "0xB"
     cpld_dat["NAPLES25OCP"] = "01-10"
@@ -105,6 +106,17 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25OCP"] = "03-03-2021"
     goldfw_img["NAPLES25OCP"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
     goldfw_dat["NAPLES25OCP"] = "01-31-2021"
+    # OCP DELL (68-0010)
+    # cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
+    # cpld_ver["NAPLES25OCP"] = "0xB"
+    # cpld_dat["NAPLES25OCP"] = "01-10"
+    # sec_cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV8B_03102021.bin"
+    # sec_cpld_ver["NAPLES25OCP"] = "0x8B"
+    # sec_cpld_dat["NAPLES25OCP"] = "01-10"
+    # diagfw_img["NAPLES25OCP"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    # diagfw_dat["NAPLES25OCP"] = "11-18-2020"
+    # goldfw_img["NAPLES25OCP"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
+    # goldfw_dat["NAPLES25OCP"] = "01-31-2021"
 
     cpld_img["NAPLES25SWM833"] = "naples25_833_rev2_02112021.bin"
     cpld_ver["NAPLES25SWM833"] = "0x2"
@@ -283,7 +295,7 @@ class PART_NUMBERS_MATCH:
     N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"     #68-0019-01 01       NAPLES25 SWM 833 PENSANDO
     N25_SWM_833_FMT_ALL = r"{:s}".format(N25_SWM_833_PN_FMT)
 
-    N25_OCP_PEN_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"     #68-0010-xx       NAPLES25 OCP PENSANDO
+    N25_OCP_PEN_PN_FMT = r"68-0023-0[0-9]{1} [A-Z0-9]{2}"     #68-00xx-xx       NAPLES25 OCP PENSANDO
     N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
     N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
     N25_OCP_DEL_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"     #68-0010-01       NAPLES25 OCP DELL

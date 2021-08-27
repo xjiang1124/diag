@@ -2286,7 +2286,7 @@ class mtp_ctrl():
             if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP PENSANDO
+        elif naples_pn[0:7] == "68-0023":     #NAPLES25 OCP PENSANDO
             if software_pn != "90-0002-0007":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
@@ -2299,7 +2299,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP DELL
-            if software_pn != "90-0002-0007":
+            if software_pn != "90-0007-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
