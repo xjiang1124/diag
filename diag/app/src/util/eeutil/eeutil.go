@@ -77,10 +77,13 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
            cardType == "ORTANO2" || 
            cardType == "LACONADELL" ||
            cardType == "LACONA" ||
+           cardType == "LACONA32DELL" ||
+           cardType == "LACONA32" ||
            cardType == "POMONTEDELL" ||
+           cardType == "POMONTE" ||
            cardType == "NAPLES100DELL" ||
            cardType == "NAPLES100HPE" {
-            eeprom.I2cAddr16 = true
+           eeprom.I2cAddr16 = true
 
         }
         
@@ -246,7 +249,11 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         }
         if (cardType == "LACONADELL") {
             eeprom.CustType = "LACONADELL"
-            eeprom.EepromTbl = eeprom.Lacona25DELLTbl
+            eeprom.EepromTbl = eeprom.LaconaDELLTbl
+        }
+        if (cardType == "LACONA32DELL") {
+            eeprom.CustType = "LACONA32DELL"
+            eeprom.EepromTbl = eeprom.Lacona32DELLTbl
         }
         if (cardType == "POMONTEDELL") {
             eeprom.CustType = "POMONTEDELL" 
