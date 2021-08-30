@@ -228,8 +228,8 @@ class NIC_IMAGES:
     fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
     diagfw_img["ORTANO2"] = "elba_diagfw-uboot_1.15.9-C-30_2021.08.20.tar"
     diagfw_dat["ORTANO2"] = "08-20-2021"
-    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-30_2021.08.20.tar"
-    goldfw_dat["ORTANO2"] = "08-20-2021"
+    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.8-C-9_2021.05.22.tar"
+    goldfw_dat["ORTANO2"] = "05-22-2021"
     # ORTANO MSFT
     # sec_cpld_img["ORTANO2"] = "naples200_ortano2_rev3_9_07292021.bin"
     # sec_cpld_ver["ORTANO2"] = "0x3"
@@ -237,6 +237,8 @@ class NIC_IMAGES:
     # fail_cpld_img["ORTANO2"] = "naples200_ortano2_failsafe_rev3_9_07292021.bin"
     # fail_cpld_ver["ORTANO2"] = "0x3"
     # fail_cpld_dat["ORTANO2"] = "0x09"
+    # goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-30_2021.08.20.tar"
+    # goldfw_dat["ORTANO2"] = "08-20-2021"
 
 class MTP_IMAGES:
     AMD64_IMG = dict()
