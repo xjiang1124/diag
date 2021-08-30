@@ -3223,11 +3223,11 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd_list.append("uptime")
-        nic_cmd_list.append("env")
+        nic_cmd_list.append("env | grep -v PS1")
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
