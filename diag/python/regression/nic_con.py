@@ -611,6 +611,26 @@ class nic_con:
         common.session_stop(session)
         return ret
 
+    def ping_check_mtp(self, slot=0):
+        ret = 0
+        session = common.session_start()
+
+        try:
+            cmd = "ping 10.1.1.{} -c 3 -s 64".format(100+slot)
+            ret = common.session_cmd(session, cmd, 60)
+            cmd = "ping 10.1.1.{} -c 5 -s 64".format(100+slot)
+            ret, output = common.session_cmd_w_ot(session, cmd, 60)
+            if ret == 0:
+                if " 0% packet loss" not in output:
+	            print("Ping check failed!")
+                    ret = -2
+        except:
+            print "=== TIMEOUT: Failed to ping slot {} ===".format(slot)
+            ret = -1
+
+        common.session_stop(session)
+        return ret
+
     def fix_elba_bx(self, rate=115200, slot=0):
         ret = 0
         self.switch_console(slot)
@@ -674,14 +694,14 @@ class nic_con:
         else:
             print "=== Management port is ready ==="
 
-        ret = self.ping_check()
+        ret = self.ping_check_mtp(slot)
 	print("ret:", ret)
 
         # if ping test fails, apply WA for Elba
         mtpType = os.environ['MTP_TYPE']
         if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
             self.fix_elba_bx(115200, slot)
-            ret = self.ping_check()
+            ret = self.ping_check_mtp(slot)
 
         return ret
 

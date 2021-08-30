@@ -189,7 +189,7 @@ def session_cmd_no_rc(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
         session.expect(bash_prompt)
         return -2
 
-#=============================
+##=============================
 # Run command with provided session and get return value
 def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
     session.timeout = timeout
@@ -222,6 +222,35 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
         time.sleep(0.05)
         session.expect(bash_prompt)
         return -2
+
+#=============================
+# Run command with provided session and get return value, return with output
+def session_cmd_w_ot(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
+    session.timeout = timeout
+    expstr = [pwd_prompt, ending]
+    output = ""
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = expstr + ["password for diag: "] 
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        output = session.before
+        #print session.before
+        if i ==len(expstr) and sudo == True:
+            session.sendline(sudo_pwd)
+            time.sleep(0.1)
+            j = session.expect(bash_prompt)
+        return [0, output]
+
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT:", cmd, "===")
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return [-2, output]
 
 #=============================
 # Run command with provided session and get return value
