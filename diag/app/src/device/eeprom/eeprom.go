@@ -921,15 +921,18 @@ func init () {
 func HasAssemblyEntry() (hasAssembly bool) {
     hasAssembly = false
 
-    if CustType == "IBM" || 
-       CustType == "ORACLE" || 
-       CustType == "ORTANO" || 
-       CustType == "PENORTANO" || 
-       CustType == "DELLSWM" || 
-       CustType == "DELLNAPLES100" || 
-       CustType == "DELLOCP" || 
-       CustType == "PENSWM" || 
-       CustType == "LACONADELL" || 
+    if CustType == "IBM"            ||
+       CustType == "ORACLE"         ||
+       CustType == "ORTANO"         ||
+       CustType == "PENORTANO"      ||
+       CustType == "DELLSWM"        ||
+       CustType == "DELLNAPLES100"  ||
+       CustType == "DELLOCP"        ||
+       CustType == "PENSWM"         ||
+       CustType == "LACONADELL"     ||
+       CustType == "LACONA32DELL"   ||
+       CustType == "LACONA32"       ||
+       CustType == "POMONTE"        ||
        CustType == "POMONTEDELL" {
 
         hasAssembly = true
@@ -1372,6 +1375,7 @@ func updateIntChk() () {
                 productInfoChk += calcSum(entry)
             }
         }
+
         //Calculate multi-record checksum
         for _, entry := range(EepromTbl) {
             if (entry.Offset > 316) && (entry.Offset < 342) {
@@ -1388,7 +1392,6 @@ func updateIntChk() () {
             }
         }
 
-
         //Calculate multi-record header checksum
         for _, entry := range(EepromTbl) {
             if (entry.Offset > 311) && (entry.Offset < 316) {
@@ -1401,6 +1404,73 @@ func updateIntChk() () {
                 mraHdrChk[2] += calcSum(entry)
             }
             if (entry.Offset > 376) && (entry.Offset < 381) {
+                mraHdrChk[3] += calcSum(entry)
+            }
+        }
+    }
+
+    if CustType == "LACONA32DELL" {
+        brdInfoChk = 0
+        productInfoChk = 0
+        cmnHeadChk = 0
+        var biaOff, piaOff, cHdrLen, biaLen, piaLen int = 0, 0, 8, 0, 0
+
+        for i:=0; i<len(mraHdrChk); i++ {
+            mraChk[i] = 0
+            mraHdrChk[i] = 0
+        }
+
+        for _, entry := range(EepromTbl) {
+            if entry.Name == "Board Info Offset" {
+                biaOff = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Product Area Offset" {
+                piaOff = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Board Area Length" {
+                biaLen = int(entry.Value[0]) * 8
+            }
+            if entry.Name == "Product Area Length" {
+                piaLen = int(entry.Value[0]) * 8
+            }
+        }
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset >= 0) && (entry.Offset < (cHdrLen - 1)) {      //common header
+                cmnHeadChk += calcSum(entry)
+            } else if (entry.Offset > (biaOff - 1)) && (entry.Offset < (biaLen + cHdrLen - 1)) {  //board info area
+                brdInfoChk += calcSum(entry)
+            } else if (entry.Offset > (piaOff - 1)) && (entry.Offset < (piaOff + piaLen - 1)) {  //product info area
+                productInfoChk += calcSum(entry)
+            }
+        }
+        //Calculate multi-record checksum
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 300) && (entry.Offset < 326) {
+                mraChk[0] += calcSum(entry)
+            }
+            if (entry.Offset > 330) && (entry.Offset < 346) {
+                mraChk[1] += calcSum(entry)
+            }
+            if (entry.Offset > 350) && (entry.Offset < 361) {
+                mraChk[2] += calcSum(entry)
+            }
+            if (entry.Offset > 365) && (entry.Offset < 375) {
+                mraChk[3] += calcSum(entry)
+            }
+        }
+
+        //Calculate multi-record header checksum
+        for _, entry := range(EepromTbl) {
+            if (entry.Offset > 295) && (entry.Offset < 300) {
+                mraHdrChk[0] += calcSum(entry)
+            }
+            if (entry.Offset > 325) && (entry.Offset < 330) {
+                mraHdrChk[1] += calcSum(entry)
+            }
+            if (entry.Offset > 345) && (entry.Offset < 350) {
+                mraHdrChk[2] += calcSum(entry)
+            }
+            if (entry.Offset > 360) && (entry.Offset < 365) {
                 mraHdrChk[3] += calcSum(entry)
             }
         }
