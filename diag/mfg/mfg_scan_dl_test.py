@@ -23,6 +23,7 @@ from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import PSLC_MODE_TYPE_LIST
 from libmfg_cfg import PART_NUMBERS_MATCH
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -162,7 +163,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO:
         test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.ORTANO2:
-        test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "BOOT_CHECK", "NIC_PWRCYC"]
+        test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     dsp = FF_Stage.FF_DL
 
     for skipped_test in skip_testlist:
@@ -214,8 +215,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         duration = str(stop_ts - start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
             fail_nic_list.append(slot)
             pass_nic_list.remove(slot)
@@ -223,43 +224,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             break
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
-
-
-def set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list):
-    dsp = FF_Stage.FF_DL
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot in fail_nic_list:
-            continue    #NEXT
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) != "YES":
-            continue
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if not (card_type == NIC_Type.VOMERO2 or card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2):
-            continue
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
-        mac = nic_fru_cfg[mtp_id][key]["MAC"]
-        pn = nic_fru_cfg[mtp_id][key]["PN"]
-        prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
-      
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, 'SET_PSLC'))
-        start_ts = libmfg_utils.timestamp_snapshot()        
-        ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, 'SET_PSLC', "FAILED", duration))
-            fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-        else:
-            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, 'SET_PSLC', duration))
-    mtp_mgmt_ctrl.mtp_power_on_nic()
-    return len(fail_nic_list)
 
 def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
@@ -437,39 +404,39 @@ def main():
     # Check if image update is needed
     mtp_dl_image_list = list()
     if (mtp_capability & 0x1):
-        for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
+        for nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
                 continue
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
                 continue
     if (mtp_capability & 0x2):
-        for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
+        for nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
                 continue
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
                 continue
-            if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
                 try:
-                    mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
+                    mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(nic_type))
                     continue
                 try:
-                    mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
+                    mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(nic_type))
                     continue
 
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
@@ -510,12 +477,55 @@ def main():
     pass_nic_list = list()
     fail_nic_list = list()
 
-    # if applicable, set pslc mode and powercycle
-    mtp_mgmt_ctrl.mtp_nic_mgmt_seq_init(fpo=True)
-    if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
-        mtp_mgmt_ctrl.cli_log_err("No connection to NICs", level=0)
-        return False
-    set_pslc(mtp_mgmt_ctrl,nic_fru_cfg,mtp_id,fail_nic_list)
+    dsp = FF_Stage.FF_DL
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            continue
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
+
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+
+        if nic_type not in PSLC_MODE_TYPE_LIST:
+            continue
+        test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
+        for skip_test in args.skip_test:
+            if skip_test in test_list:
+                test_list.remove(skip_test)
+        for test in test_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = libmfg_utils.timestamp_snapshot()
+            if test == "NIC_BOOT_INIT":
+                ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
+            elif test == "NIC_MGMT_INIT":
+                ret = mtp_mgmt_ctrl.mtp_nic_mgmt_init(slot, fpo=True)
+            elif test == "SET_PSLC":
+                ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+                continue
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                break
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+        # power cycle only the cards that went through set_pslc
+        if slot not in fail_nic_list:
+            mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+    mtp_mgmt_ctrl.mtp_power_on_nic()
 
     # init nic diag env.
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
@@ -528,8 +538,6 @@ def main():
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
-
-    dsp = FF_Stage.FF_DL
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -547,23 +555,23 @@ def main():
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
-        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
         failsafe_cpld_img_file = ""
-        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[card_type]
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
-        if card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
+        if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
-        elif card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
+        elif nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x2
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC type detected")
             continue
 
         if not mtp_capability & mtp_exp_capability:
-            mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(card_type))
+            mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(nic_type))
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
             logfile_close(log_filep_list)
             # cleanup the log dir
@@ -571,14 +579,14 @@ def main():
             return
 
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             
-        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
@@ -588,7 +596,8 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
 
-        pass_nic_list.append(slot)
+        if slot not in pass_nic_list:
+            pass_nic_list.append(slot)
 
         # DL precheck
         pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
@@ -616,17 +625,19 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                   mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
-                   fail_nic_list.append(slot)
-                   pass_nic_list.remove(slot)
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
                     
@@ -640,12 +651,12 @@ def main():
         if str.upper(valid) != "YES":
             continue
 
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[card_type]
-        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[card_type]
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
         failsafe_cpld_img_file = ""
-        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[card_type]
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                               nic_fru_cfg[mtp_id][key],
@@ -671,6 +682,62 @@ def main():
                 nic_thread.join()
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
+
+    # Ortano Boot check moved out of parallel tests to sequential test
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            continue
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        dsp = FF_Stage.FF_DL
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.ORTANO2:
+            testlist = ["BOOT_CHECK", "NIC_PWRCYC"]
+        else:
+            continue
+        for skip_test in args.skip_test:
+            if skip_test in testlist:
+                testlist.remove(skip_test)
+        for test in testlist:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = libmfg_utils.timestamp_snapshot()
+            
+            # check CPLD partition
+            if test == "BOOT_CHECK":
+                ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
+                ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
+            # extra powercycle to refresh CPLD
+            elif test == "NIC_PWRCYC":
+                ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+                ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+                #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+                # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+                continue
+
+            stop_ts = libmfg_utils.timestamp_snapshot()
+            duration = str(stop_ts - start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                nic_test_rslt_list[slot] = False
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                break
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not nic_test_rslt_list[slot]:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -709,22 +776,22 @@ def main():
         # mtp_mgmt_ctrl.mtp_power_cycle_nic()
     
         # nic power status check
-        testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES25:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
-        if card_type == NIC_Type.NAPLES25SWM:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+        test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES25:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+        if nic_type == NIC_Type.NAPLES25SWM:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
             if swmtestmode == Swm_Test_Mode.ALOM:
-                testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
-        if card_type == NIC_Type.ORTANO:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
-        if card_type == NIC_Type.ORTANO2:
-            testlists = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
+                test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
+        if nic_type == NIC_Type.ORTANO:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
+        if nic_type == NIC_Type.ORTANO2:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
         for skipped_test in args.skip_test:
-            if skipped_test in testlists:
-                testlists.remove(skipped_test)
-        for test in testlists:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = libmfg_utils.timestamp_snapshot()
             if test == "NIC_POWER":
@@ -764,17 +831,19 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
-                fail_nic_list.append(slot)
-                pass_nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-                card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
         # mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
@@ -792,8 +861,8 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
         
@@ -803,8 +872,8 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-        card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
     logfile_close(log_filep_list)
