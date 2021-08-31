@@ -8,6 +8,7 @@ import threading
 import argparse
 import re
 import ntpath
+import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -396,6 +397,7 @@ def main():
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   cpld_img_file,
+                                                                                  failsafe_cpld_img_file,
                                                                                   slot,
                                                                                   sn,
                                                                                   prog_fail_nic_list,
