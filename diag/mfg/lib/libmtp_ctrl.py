@@ -1402,7 +1402,15 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
                         return False
                 elif stage == FF_Stage.FF_SWI:
-                    # Secure CPLD and goldfw images
+                    # CPLD, Secure CPLD and goldfw images
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
                     try:
                         img = NIC_IMAGES.sec_cpld_img[card_type]
                         if img.strip() == "":
@@ -1410,6 +1418,15 @@ class mtp_ctrl():
                         img_list.append(img)
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                            img = NIC_IMAGES.fail_cpld_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                         pass
                     try:
                         img = NIC_IMAGES.goldfw_img[card_type]
@@ -1421,6 +1438,20 @@ class mtp_ctrl():
                         pass
 
                     # In addition to images, check the version & timestamp fields as well here
+                    try:
+                        expected_version = NIC_IMAGES.cpld_ver[card_type]
+                        if expected_version.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
+                        return False
+                    try:
+                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
+                        if expected_timestamp.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
+                        return False
                     try:
                         expected_version = NIC_IMAGES.sec_cpld_ver[card_type]
                         if expected_version.strip() == "":
@@ -1435,6 +1466,14 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing sec_cpld timestamp for {:s}".format(card_type))
                         return False
+                    try:
+                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                            expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
+                            if expected_timestamp.strip() == "":
+                                raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
+                        pass
                     try:
                         expected_timestamp = NIC_IMAGES.goldfw_dat[card_type]
                         if expected_timestamp.strip() == "":
