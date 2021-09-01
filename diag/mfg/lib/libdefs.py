@@ -14,6 +14,7 @@ class NIC_Type:
     NAPLES25SWM833 = "NAPLES25SWM833"
     ORTANO = "ORTANO"
     ORTANO2 = "ORTANO2"
+    POMONTEDELL = "POMONTEDELL"
     UNKNOWN = "Unknown"
 
 class MTP_ASIC_SUPPORT:
@@ -139,6 +140,7 @@ class MTP_Const:
     NIC_POWER_OFF_DELAY = 10
     NIC_SYSRESET_DELAY = 180
     NIC_FW_SET_DELAY = 90
+    NIC_FPGA_PROG_DELAY = 5 * 60
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -323,6 +325,8 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_ERASE_ELBA_FMT = "{:s}xo3dcpld -erase {:s}"
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
+    NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
+    NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
     NIC_SETTING_PARTITION_FMT = "/emmc_format.sh"
     NIC_DIAG_ASIC_VERSION_FMT = "head /data/nic_arm/{:s}/asic_version.txt"
     # onboard diag utils version
@@ -403,6 +407,8 @@ class MFG_DIAG_CMDS:
     ORTANO2_VRM_FIX_FMT = "/data/nic_util/fix_o2_vrm.sh"
     ORTANO_ORC_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 1033 -arm_freq 3000"
     ORTANO_PEN_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 1100 -arm_freq 3000"
+    # Pomonte:
+    POMONTEDELL_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
@@ -546,4 +552,5 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES25SWM833 = r"\bUUT_(\d+) +NAPLES25SWM833\b"
     MFG_NIC_TYPE_ORTANO = r"\bUUT_(\d+) +ORTANO\b"
     MFG_NIC_TYPE_ORTANO2 = r"\bUUT_(\d+) +ORTANO2\b"
+    MFG_NIC_TYPE_POMONTEDELL = r"\bUUT_(\d+) +POMONTEDELL\b"
 
