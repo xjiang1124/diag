@@ -447,6 +447,7 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
     NIC_DIAG_FINI_FMT = "rm -r /data/debug*"
     NIC_DIAG_CHECK_HAL_FMT = "ps -elf | grep hal"
+    NIC_DIAG_STOP_SYSMGR_FMT = "killall sysmgr"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
     NIC_DIAG_STOP_PICOCOM_FMT = "killall picocom"

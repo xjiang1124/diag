@@ -1663,9 +1663,14 @@ class nic_ctrl():
         return True
     def nic_kill_hal(self):
         for x in range(6):
+            
+            
             nic_cmd_list = list()
             nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
             nic_cmd_list.append(nic_cmd)
+            if self._nic_type == NIC_Type.NAPLES25OCP:
+                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMGR_FMT)
+            
             if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
                 return False
 
