@@ -1012,6 +1012,34 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
+        mtp_cmd = "md5sum {:s}".format(img_name)
+        self._nic_handle.sendline(mtp_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
+        nic_cmd = "{} \" md5sum {:s} \"".format(ssh_pipe_cmd, directory+os.path.basename(img_name))
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        elif idx == 1:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
         return True
     def nic_copy_image_IBM(self, img_name, directory="/update"):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)

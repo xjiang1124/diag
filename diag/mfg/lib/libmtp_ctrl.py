@@ -4552,3 +4552,18 @@ class mtp_ctrl():
         # send SIGINT to parent thread
         import signal
         os.kill(os.getpid(), signal.SIGINT)
+
+    def mtp_get_file_md5sum(self, filename):
+        cmd = "md5sum {:s}".format(filename)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute {:s}".format(cmd), level=0)
+            return None
+        cmd_buf = self.mtp_get_cmd_buf()
+        md5sum_regex = r"([0-9a-fA-F]+) +.*"
+        match = re.search(md5sum_regex, cmd_buf)
+        if match:
+            local_md5sum = match.group(1)
+            return local_md5sum
+        else:
+            self.cli_log_err("Unable to verify {:s}".format(filename))
+            return None

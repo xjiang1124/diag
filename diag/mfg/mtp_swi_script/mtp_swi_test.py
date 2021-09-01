@@ -326,11 +326,16 @@ def main():
             if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0015"]
 
+            emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
+            gold_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(gold_img_file)
+
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Non Secure CPLD image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Main image: " + os.path.basename(emmc_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MD5 chksum: " + emmc_img_chksum)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Gold image: " + os.path.basename(gold_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MD5 chksum: " + gold_img_chksum)
             if nic_profile:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
