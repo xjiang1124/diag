@@ -218,8 +218,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
             mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
             break
         else:
@@ -725,19 +727,14 @@ def main():
             duration = str(stop_ts - start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                nic_test_rslt_list[slot] = False
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if not nic_test_rslt_list[slot]:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
 
     # power cycle all nic
     mtp_mgmt_ctrl.mtp_power_cycle_nic()

@@ -517,6 +517,8 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
+            if not nic_test_rslt_list[slot]:
+                continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             key = libmfg_utils.nic_key(slot)

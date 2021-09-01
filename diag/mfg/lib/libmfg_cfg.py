@@ -245,6 +245,8 @@ class NIC_IMAGES:
     # diagfw_dat["ORTANO2"] = "08-20-2021"
     # goldfw_img["ORTANO2"] = "elba_goldfw_1.15.8-C-9_2021.05.22.tar"
     # goldfw_dat["ORTANO2"] = "05-22-2021"
+    goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-22_2021.08.07.tar"
+    goldfw_dat["68-0015"] = "08-07-2021"
 
 class MTP_IMAGES:
     AMD64_IMG = dict()

@@ -1883,6 +1883,8 @@ class mtp_ctrl():
 
         try:
             expected_timestamp = NIC_IMAGES.goldfw_dat[nic_type]
+            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
+                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw timestamp for {:s}".format(nic_type))
             return False
@@ -2304,7 +2306,7 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0011-0001")):
+        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0011-0002")):
             return True
         return False
             

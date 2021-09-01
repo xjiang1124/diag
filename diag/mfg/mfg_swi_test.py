@@ -174,6 +174,7 @@ def main():
                     continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
+                    mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0015"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                     continue
