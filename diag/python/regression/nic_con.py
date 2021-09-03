@@ -481,7 +481,7 @@ class nic_con:
     "manufacturer": "Pensando",
     "product-name": "DSC2-200 2x200GbE Dual QSFP56",
     "serial-number": "FLM20000001",
-    "part-number": "DSC2-2Q200-32R32F64P-R",
+    "part-number": "{}",
     "frufileid": "02\/19\/21",
     "board-id": "6",
     "engineering-change-level": "0",
@@ -502,13 +502,23 @@ class nic_con:
         card_type = os.environ[uut]
         if card_type == "ORTANO"  or \
            card_type == "ORTANO2" or \
-           card_type == "BIODONA" or \
-           card_type == "LACONA"  or \
-           card_type == "LACONADELL":
-            asic_type = "ELBA"
+           card_type == "BIODONA":
+            asic_type = "ELBA_CPLD"
+        elif card_type == "LACONA"       or \
+             card_type == "LACONADELL"   or \
+             card_type == "LACONA32"     or \
+             card_type == "LACONA32DELL" or \
+             card_type == "POMONTE"      or \
+             card_type == "POMONTEDELL":
+            asic_type = "ELBA_FPGA"
         else:
             asic_type = "CAPRI"
         print("asic_type:", asic_type)
+
+        if asic_type == "ELBA_CPLD":
+            dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
+        else:
+            dummy_fru_json = fmt_dummy_fru_json.format("PCFPCA00", slot)
 
         session = common.session_start()
         self.uart_session_start(session, rate)
@@ -526,7 +536,6 @@ class nic_con:
                     self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
                     self.uart_session_cmd(session, cmd_mac)
                 else:
-                    dummy_fru_json = fmt_dummy_fru_json.format(slot)
                     session.send("cat > /tmp/fru.json")
                     session.send("\r")
                     session.send(dummy_fru_json)
