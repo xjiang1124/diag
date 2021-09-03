@@ -3467,6 +3467,11 @@ class mtp_ctrl():
             self.cli_log_err("Failed to power on NIC")
             return False
 
+        ts_record = libmfg_utils.timestamp_snapshot()
+        for slot in range(self._slots):
+            if self._nic_ctrl_list[slot]:
+                self._nic_ctrl_list[slot].mtp_exec_cmd("#####  Power on NIC at {:s} #####".format(str(ts_record)))
+
         self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
         return True
@@ -3477,6 +3482,11 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to power off NIC")
             return False
+
+        ts_record = libmfg_utils.timestamp_snapshot()
+        for slot in range(self._slots):
+            if self._nic_ctrl_list[slot]:
+                self._nic_ctrl_list[slot].mtp_exec_cmd("##### Power off NIC at {:s} #####".format(str(ts_record)))
 
         self.cli_log_inf("Power off all NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_OFF_DELAY)
