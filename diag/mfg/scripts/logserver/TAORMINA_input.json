@@ -1,0 +1,29 @@
+{
+	"NAME": "TAORMINA",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_TAORMINA",
+		"TEMPDATABASE": "/home/mfg/tmp_database",
+		"testlogpath": "/mfg_log/TAORMINA",
+		"reportpath":"/samba/public/TAORMINA/",
+		"historypath":"/samba/public/TAORMINA/HISTORY"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/TAORMINA_DB_TEST16.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"KEY": "UUT",
+	"TESTLIST" :[
+					"DL1",
+					"DL2",
+					"P2C"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C"
+				]
+	
+}
