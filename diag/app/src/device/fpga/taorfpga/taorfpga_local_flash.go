@@ -40,12 +40,12 @@ const STS_REG_TBP   uint32 = 0x20
 const STS_REG_SP    uint32 = 0x40
 const STS_REG_SRP   uint32 = 0x80
 
-//delays are in ms
-const WRITE_SR_DEALY        int = 15
+//delays are in us
+const WRITE_SR_DEALY        int = 1500
 const PAGE_WR_DELAY         int = 1800 
-const SUBSECTOR_ERASE_DELAY int = 400
-const SECTOR_ERASE_DELAY    int = 1000
-const CHIP_ERASE_DELAY      int = 1000
+const SUBSECTOR_ERASE_DELAY int = 400000
+const SECTOR_ERASE_DELAY    int = 1000000
+const CHIP_ERASE_DELAY      int = 1000000
 
 const FLASH_SECTOR_SIZE    uint32 = 0x10000
 
@@ -391,9 +391,15 @@ func FlashVerifyImage(region string, filename string) (err error) {
 
 //Check if the flash is busy before executing erase or write
 func FlashPollBusyMicroSec(timeout_ms int) (sr_reg uint32, err int) {
+    var errGo error
     sr_reg, _ = FlashReadStatusReg() 
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, _ = FlashReadStatusReg() 
+        sr_reg, errGo = FlashReadStatusReg() 
+        if errGo != nil {
+            fmt.Printf("[ERROR] FlashPollBusyMicroSec-> Read Status Failed\n")
+            err = 1
+            return
+        }
         if sr_reg & STS_REG_BUSY != STS_REG_BUSY {
             return
         }
@@ -405,9 +411,15 @@ func FlashPollBusyMicroSec(timeout_ms int) (sr_reg uint32, err int) {
 
 //Check if the flash is busy before executing erase or write
 func FlashPollBusy(timeout_ms int) (sr_reg uint32, err int) {
+    var errGo error
     sr_reg, _ = FlashReadStatusReg() 
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, _ = FlashReadStatusReg() 
+        sr_reg, errGo = FlashReadStatusReg() 
+        if errGo != nil {
+            fmt.Printf("[ERROR] FlashPollBusyMicroSec-> Read Status Failed\n")
+            err = 1
+            return
+        }
         if sr_reg & STS_REG_BUSY != STS_REG_BUSY {
             return
         }
@@ -578,7 +590,7 @@ func FlashErase4kSubSector(addr uint32) (err error) {
         return
     }
 
-    sr_reg, rc := FlashPollBusy(SUBSECTOR_ERASE_DELAY)
+    sr_reg, rc := FlashPollBusyMicroSec(SUBSECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Secor Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", SUBSECTOR_ERASE_DELAY, sr_reg)
        fmt.Printf("%s", err)
@@ -610,7 +622,7 @@ func FlashEraseHalfSector(addr uint32) (err error) {
         return
     }
 
-    sr_reg, rc := FlashPollBusy(SECTOR_ERASE_DELAY)
+    sr_reg, rc := FlashPollBusyMicroSec(SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Half Sector Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", SECTOR_ERASE_DELAY, sr_reg)
        fmt.Printf("%s", err)
@@ -641,7 +653,7 @@ func FlashEraseSector(addr uint32) (err error) {
         return
     }
 
-    sr_reg, rc := FlashPollBusy(SECTOR_ERASE_DELAY)
+    sr_reg, rc := FlashPollBusyMicroSec(SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Sector Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", SECTOR_ERASE_DELAY, sr_reg)
        fmt.Printf("%s", err)

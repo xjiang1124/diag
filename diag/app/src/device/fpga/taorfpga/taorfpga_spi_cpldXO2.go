@@ -15,13 +15,14 @@ const SPI_SLICE_SZ      uint32 = 0x20
 const SPI_NUMB_BUSES    uint32 = 0x08
 const SPI_FPGA_DOMAIN   uint32 = 0x02
 
-const SPI_STA_EOP       uint32 = 0x0200
-const SPI_STA_ERROR     uint32 = 0x0100
-const SPI_STA_RCV_RDY   uint32 = 0x0080
-const SPI_STA_TMT_RDY   uint32 = 0x0040
-const SPI_STA_TMTS_RDY  uint32 = 0x0020
-const SPI_STA_TOE       uint32 = 0x0010
-const SPI_STA_ROE       uint32 = 0x0004
+const SPI_STA_FIFO_SUPPORT      uint32 = 0x80000000
+const SPI_STA_EOP               uint32 = 0x0200
+const SPI_STA_ERROR             uint32 = 0x0100
+const SPI_STA_RCV_RDY           uint32 = 0x0080
+const SPI_STA_TMT_RDY           uint32 = 0x0040
+const SPI_STA_TRANSMIT_COMPL    uint32 = 0x0020
+const SPI_STA_TOE               uint32 = 0x0010
+const SPI_STA_ROE               uint32 = 0x0008
 
 /* 
 ccpld     machXO2 2k
@@ -32,15 +33,7 @@ gcpld1    machXO2 2k
 gcpld2    machXO2 2k
 eqspi0    Micron 2G serial flash
 eqspi1    Micron 2G serial flash
- 
-const D2_SPI0_RXDATA_REG            uint64 = 0x400
-const D2_SPI0_TXDATA_REG            uint64 = 0x404
-const D2_SPI0_STATUS_REG            uint64 = 0x408
-const D2_SPI0_CONTROL_REG           uint64 = 0x40c
-const D2_SPI0_SEM_REG               uint64 = 0x410
-const D2_SPI0_SLAVESEL_REG          uint64 = 0x414
-const D2_SPI0_EOP_VALUE_REG         uint64 = 0x418
-const D2_SPI0_MUXSEL_REG            uint64 = 0x41c 
+
 */
 
 const MACHXO2_2K_PAGE_SIZE            uint32 = 16
@@ -103,8 +96,30 @@ var CPLD_NO_OP                      = []byte{0xFF, 0xFF, 0xFF, 0xFF}
 var CPLD_NO_OP_RDLNG                uint32 = 0
 
 
+
 func Spi_load_register_set(spiNumber uint32) (err error) {
     fmt.Printf(" SPI LOAD REG SET\n")
+    return
+}
+
+
+//Check Tx/Rx Transaction is done
+func Spi_check_tx_complete(spiNumber uint32) (err error) {
+    var data32 uint32 = 0
+    var timeout, x uint32 = 500, 0
+
+    //check status reg for status on tx data drain
+    for x=0; x<timeout; x++ {
+        data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))    
+        if (data32 & SPI_STA_TRANSMIT_COMPL) == SPI_STA_TRANSMIT_COMPL {
+            break;
+        }
+    }
+    if x == timeout {
+        err = fmt.Errorf("ERROR Spi_check_tx_complete. Spi-%d, not seeing transmit complete.  Status Reg = 0x%x\n", spiNumber, data32)
+        fmt.Printf("%s", err)
+        return
+    }
     return
 }
 
@@ -124,9 +139,6 @@ func Spi_check_tx_drain(spiNumber uint32) (err error) {
         if (data32 & SPI_STA_TMT_RDY) == SPI_STA_TMT_RDY {
             break;
         }
-
-
-        const SPI_STA_TOE       uint32 = 0x0010
     }
     if x == timeout {
         err = fmt.Errorf("ERROR Spi_check_tx_drain. Spi-%d, not seeing transmitter ready.  Status Reg = 0x%x\n", spiNumber, data32)
@@ -161,58 +173,193 @@ func Spi_check_rx_ready(spiNumber uint32) (err error) {
 }
 
 
+//This is for Ebla's Flash (Spi 6/7) with FPGA C or higher 
+func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
+    var timeout, x uint32 = 100, 0
+    var statsreg uint32
+
+    //check status reg for status on tx data drain
+    for x=0; x<timeout; x++ {
+        data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
+        if ((data32 & 0xC0000000) > 0) {
+            time.Sleep(time.Duration(150) * time.Nanosecond)
+            return;
+        }
+        
+        if x == 0 {
+            statsreg, _ = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
+        }
+        time.Sleep(time.Duration(1) * time.Microsecond)
+    }
+    
+    err = fmt.Errorf("ERROR Spi_Read_Data. Spi-%d, Not seeing Data Valid Bit. X=%d StatusReg=%x  RXDATA_REG Reg = 0x%x\n", spiNumber, x, statsreg, data32)
+    fmt.Printf("%s", err)
+
+    return
+}
+
+
+
 
 func Fpga_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint32) (rdData []byte, err error) {
     var data32 uint32 = 0
+    var tmpRdLength uint32 = 0
+    var ChkTxDrain uint32 = 0
 
     if spiNumber >= SPI_NUMB_BUSES {
         err = fmt.Errorf("ERROR Fpga_spi_generic_transaction. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
         fmt.Printf("%s", err)
         return
     }
+    data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
 
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn mux select to FPGA on
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_SLAVESEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //enable slave access
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x400)  //turn on spi output
-    //clear status
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)
+    if (data32 & SPI_STA_FIFO_SUPPORT) == SPI_STA_FIFO_SUPPORT {   //Newer SPI Method that supports FIFO
+        var FIFORDLENGTH uint32 = (0x8000)
+        var wr_length int = len(opCode)
+        //fmt.Printf("DEBUG: NEWER FIFO..RD LENGTH=%d\n", rdLength);
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x000)  //turn off spi to reset fifo's in case it's on
+        
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)    //turn mux select to FPGA on
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_SLAVESEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //enable slave access
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x400)  //turn on spi output
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)    //clear status
 
-
-    for i:=0; i<len(opCode); i++ {
-        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , uint32(opCode[i]))
-        err = Spi_check_tx_drain(spiNumber)
-        if err != nil {
-            return
+        data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
+        if (data32 & SPI_STA_TMT_RDY) != SPI_STA_TMT_RDY {
+            err = fmt.Errorf("ERROR Fpga_spi_generic_transaction. Spi-%d, TX FIFO IS NOT EMPTY AT START OF TRANSACTION.  Status Reg = 0x%x\n", spiNumber, data32)
+            fmt.Printf("%s", err)
+            goto SPI_TRANSACTION_END
         }
-        err = Spi_check_rx_ready(spiNumber)
-        if err != nil {
-            return
+        for i:=0; i<wr_length; i++ {
+            //if ((wr_length - i) >= 4) && ( ((i+1) % 4) == 0) {
+            //    wrdata := uint32(opCode[0]) | uint32(opCode[1])<<8 | uint32(opCode[2]) <<16 | uint32(opCode[3]) <<24
+            //    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , wrdata)
+            //    i = i + 3
+            //} else if (wr_length - i) > 1 {
+            //    TaorWriteU16(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , uint16(opCode[i]))
+            //    i = i + 1
+            //} else {
+                TaorWriteU8(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (opCode[i]))
+            //}
+
+            //fmt.Printf("I=%d\n", i)
+            //TX FIFO IN FPGA IS 1024 BYTES.. QUEUE UP TO THAT MUCH DATA BEFORE CHECKING TX DRAIN
+            if (i!=0) && ((i%1024) == 0) {
+                ChkTxDrain = 1
+            }
+            if i == (len(opCode)-1) {
+                ChkTxDrain = 1
+                if rdLength > 0 {
+                    if rdLength > FIFORDLENGTH {
+                        tmpRdLength = FIFORDLENGTH;
+                    } else {
+                        tmpRdLength = rdLength
+                    } 
+                    //fmt.Printf(" SET RD LENGTH=%d\n", tmpRdLength)
+                    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  
+                }
+            }
+
+            
+            if ChkTxDrain > 0 {
+                //fmt.Printf(" Check Tx Drain\n")
+                err = Spi_check_tx_drain(spiNumber)
+                if err != nil {
+                    goto SPI_TRANSACTION_END
+                }
+                ChkTxDrain = 0
+            }
         }
-        //Just discard this.. keeps errors from getting set in the status register
-        data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
+
+        //clear status
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)
+
+        //read data if we need to do reads
+        rdLength = rdLength + 1
+        for i:=1; i<int(rdLength); i++ {
+            data32, err = Spi_Read_Data(spiNumber) 
+            if err != nil {
+                fmt.Printf("[ERROR] Fpga_spi_generic_transaction -> Spi_Read_Data Failed.  i=%d\n", i)
+                goto SPI_TRANSACTION_END
+            }
+            //fmt.Printf("I=%.04d   data=%.08x\n", i, data32)
+            rdData = append(rdData, byte(data32))
+            if ((data32 & 0xC0000000) == 0x80000000) {
+                rdData = append(rdData, byte((data32>>8)))
+                i = i + 1
+            }
+            if ((data32 & 0xC0000000) == 0xC0000000) {
+                rdData = append(rdData, byte((data32>>8)))
+                rdData = append(rdData, byte((data32>>16)))
+                i = i + 2
+            }
+
+            if ((i%int(FIFORDLENGTH))==0) && (i != int(rdLength-1))  {
+                if (rdLength - uint32(i)) > (FIFORDLENGTH - 1) {
+                    tmpRdLength = FIFORDLENGTH
+                } else {
+                    tmpRdLength = ((rdLength-1) % FIFORDLENGTH)
+                }
+
+                TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  //turn on spi output
+            } 
+             
+        }
+
+        err = Spi_check_tx_complete(spiNumber)
+        if err != nil {
+            goto SPI_TRANSACTION_END
+        }
+SPI_TRANSACTION_END:
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn off spi output
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //turn mux select to FPGA off
+
+
+
+    } else { //Older SPI Method.. Without FIFO
+
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn mux select to FPGA on
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_SLAVESEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //enable slave access
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x400)  //turn on spi output
+        //clear status
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)
+
+
+        for i:=0; i<len(opCode); i++ {
+            TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , uint32(opCode[i]))
+            err = Spi_check_tx_drain(spiNumber)
+            if err != nil {
+                return
+            }
+            err = Spi_check_rx_ready(spiNumber)
+            if err != nil {
+                return
+            }
+            //Just discard this.. keeps errors from getting set in the status register
+            data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
+        }
+         
+      
+        //clear status
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)
+
+        for i:=0; i<int(rdLength); i++ {
+            TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0xFF)
+            err = Spi_check_tx_drain(spiNumber)
+            if err != nil {
+                return
+            }
+            err = Spi_check_rx_ready(spiNumber)
+            if err != nil {
+                return
+            }
+            data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
+            rdData = append(rdData, byte(data32))
+        }
+
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn off spi output
+        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //turn mux select to FPGA off
     }
-     
-  
-    //clear status
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)
-
-    for i:=0; i<int(rdLength); i++ {
-        TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0xFF)
-        err = Spi_check_tx_drain(spiNumber)
-        if err != nil {
-            return
-        }
-        err = Spi_check_rx_ready(spiNumber)
-        if err != nil {
-            return
-        }
-        data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
-        rdData = append(rdData, byte(data32))
-    }
-
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn off spi output
-    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //turn mux select to FPGA off
-
     return 
 }
 
@@ -758,8 +905,6 @@ func Spi_cpld_machxO2_generate_image_from_flash(spiNumber uint32, filename strin
 
     return 
 }
-
-
 
 
 

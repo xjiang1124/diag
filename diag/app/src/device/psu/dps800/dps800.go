@@ -3,6 +3,7 @@ package dps800
 import (
     "fmt"
     "os"
+    "strconv"
     //"cardinfo"
     "common/cli"
     "common/errType"
@@ -218,6 +219,9 @@ func DisplayManufacturingInfo(devName string) (err int) {
     mfgRev := []byte{}
     mfgModel := []byte{}
     mfgSerial := []byte{}
+    mfgFWrev := []byte{}
+    usercode00 := []byte{}
+    usercode01 := []byte{}
 
     if devName == "PSU_1" {
         psuNumber = 0
@@ -287,8 +291,56 @@ func DisplayManufacturingInfo(devName string) (err int) {
         cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), MFR_SERIAL_BLK_SIZE + 1)
     }
 
-    fmt.Printf("%s: %s %s   Rev: %s    S/N: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]))
+    wrData[0] = MFR_FW_REVISION
+    mfgFWrev, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFR_FW_BLK_SIZE + 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
 
+    fw_rev_major, _ := strconv.Atoi(string(mfgFWrev[2:4]))
+    fw_rev_minor, _ := strconv.Atoi(string(mfgFWrev[6:8]))
+    
+
+    if (fw_rev_major > 0) || (fw_rev_minor > 0) {
+        wrData[0] = USER_CODE_00
+        usercode00, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, USER_CODE_00_BLK_SIZE + 1 )
+        if errGo != nil {
+            err = errType.FAIL
+            return
+        }
+        if len(usercode00) != USER_CODE_00_BLK_SIZE + 1 {
+            err = errType.FAIL
+            cli.Printf("e", "%s Length of USER_CODE_00_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), USER_CODE_00_BLK_SIZE + 1)
+        }
+
+        wrData[0] = USER_CODE_01
+        usercode01, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, USER_CODE_01_BLK_SIZE + 1 )
+        if errGo != nil {
+            err = errType.FAIL
+            return
+        }
+        if len(usercode01) != USER_CODE_01_BLK_SIZE + 1 {
+            err = errType.FAIL
+            cli.Printf("e", "%s Length of USER_CODE_01_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), USER_CODE_01_BLK_SIZE + 1)
+        }
+    }
+
+    /*
+    DPS-800AB-40 A:
+    USER_CODE_00 : “R8R51A” (total 6bytes)
+    USER_CODE_01 : “CX 10000-48Y6C FB AC PSU” (total 24 bytes)
+    DPS-800AB-65 A:
+    USER_CODE_00 : “R8R52A” (total 6bytes)
+    USER_CODE_01 : “CX 10000-48Y6C BF AC PSU” (total 24 bytes)
+    */
+    //PSU_1: DELTA DPS-800AB-40    Rev: 00F   S/N: JBMD2047000089   F/W REV: S00.S01
+    //SSD MODEL: W6EN064G1TA-S91AA3-2D2.A5   S/N: 62901-0152 Capacity: 64.0 GB    Smart Health PASSED 
+
+    fmt.Printf("%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) )
+    if (fw_rev_major > 0) || (fw_rev_minor > 0) {
+        fmt.Printf("%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) )
+    }
     return
 }
 
