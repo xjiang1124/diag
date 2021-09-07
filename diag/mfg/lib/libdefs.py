@@ -331,6 +331,7 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_VERSION_FMT = "head /home/diag/diag/scripts/version.txt"
     # NIC HAL process
     NIC_HAL_RUNNING_FMT = "ps | grep hal"
+    NIC_SYSMGR_RUNNING_FMT = "ps | grep sysmgr"
 
     NIC_MOUNT_EMMC_FMT = "mount /dev/mmcblk0p10 /data"
     NIC_FSCK_EMMC_FMT = "fsck -y /dev/mmcblk0p10"

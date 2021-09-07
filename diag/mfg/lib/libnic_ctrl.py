@@ -1662,27 +1662,50 @@ class nic_ctrl():
             return False
         return True
     def nic_kill_hal(self):
+        hal_stopped, sysmgr_stopped = False, False
+
+        if self._nic_type != NIC_Type.NAPLES25OCP:
+                sysmgr_stopped = True #no need to kill for other than OCP..for now
+
         for x in range(6):
             
-            
-            nic_cmd_list = list()
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
-            nic_cmd_list.append(nic_cmd)
-            if self._nic_type == NIC_Type.NAPLES25OCP:
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMGR_FMT)
-            
-            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-                return False
+            if not hal_stopped:
+                nic_cmd_list = list()
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
+                nic_cmd_list.append(nic_cmd)
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                    return False
 
-            nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
-            cmd_buf = self.nic_get_info(nic_cmd)
-            if not cmd_buf:
-                self.nic_set_err_msg("Buffer empty")
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-            
-            match = re.findall("/nic/bin/hal", cmd_buf)
-            if not match:
+                nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
+                cmd_buf = self.nic_get_info(nic_cmd)
+                if not cmd_buf:
+                    self.nic_set_err_msg("Buffer empty")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                
+                match = re.findall("/nic/bin/hal", cmd_buf)
+                if not match:
+                    hal_stopped = True
+
+            if not sysmgr_stopped:
+                nic_cmd_list = list()
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMGR_FMT
+                nic_cmd_list.append(nic_cmd)
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                    return False
+
+                nic_cmd = MFG_DIAG_CMDS.NIC_SYSMGR_RUNNING_FMT
+                cmd_buf = self.nic_get_info(nic_cmd)
+                if not cmd_buf:
+                    self.nic_set_err_msg("Buffer empty")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                
+                match = re.findall("/nic/bin/hal", cmd_buf)
+                if not match:
+                    sysmgr_stopped = True
+
+            if hal_stopped and sysmgr_stopped:
                 break
 
             time.sleep(5)
