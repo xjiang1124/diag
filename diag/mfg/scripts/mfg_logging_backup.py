@@ -43,23 +43,23 @@ def main():
 
         output = commands.getstatusoutput(ping_cmd)
 
-        #print(output)
-        
         findmatch = re.findall(r"\s(\d+)% packet loss",output[1])
 
         if findmatch:
-            #print(findmatch)
-            
             if findmatch[0] == '100':
                 if email_to:
-                    liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files failure", "PING TEST FAILURE\n{}".format(output[1]))                
+                    liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files failure", "PING TEST FAILURE\n{}".format(output[1]))
                 continue
-        #sys.exit()
 
         ssh_cmd = "'ssh {:s}'".format(DIAG_SSH_OPTIONS) + " " + srv_username + "@" + srv_ipaddr 
         rsync_cmd = "rsync -H -t -r -v -e " + ssh_cmd + ":" + pro_srv_logpath + " " + "/mfg_log/"
         session = pexpect.spawn(rsync_cmd)
-        session.expect_exact("assword:")
+        try:
+            session.expect_exact("assword:")
+        except pexpect.TIMEOUT:
+            liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files failure", "RSYNC CMD: {}\n\n{}".format(rsync_cmd,session))
+            continue
+
         session.sendline(srv_passwd)
         session.expect_exact(pexpect.EOF, timeout=None)
         if email_to:
