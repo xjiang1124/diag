@@ -7,6 +7,7 @@ import pexpect
 import argparse
 import re
 import random
+import commands
 
 sys.path.append(os.path.relpath("/home/mfg/lib"))
 import liblog_utils
@@ -37,6 +38,23 @@ def main():
         srv_ipaddr = pro_srv_mgmt_cfg[0]
         srv_username = pro_srv_mgmt_cfg[1]
         srv_passwd = pro_srv_mgmt_cfg[2]
+        
+        ping_cmd = "ping {:s} -c 4".format(srv_ipaddr)
+
+        output = commands.getstatusoutput(ping_cmd)
+
+        #print(output)
+        
+        findmatch = re.findall(r"\s(\d+)% packet loss",output[1])
+
+        if findmatch:
+            #print(findmatch)
+            
+            if findmatch[0] == '100':
+                if email_to:
+                    liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files failure", "PING TEST FAILURE\n{}".format(output[1]))                
+                continue
+        #sys.exit()
 
         ssh_cmd = "'ssh {:s}'".format(DIAG_SSH_OPTIONS) + " " + srv_username + "@" + srv_ipaddr 
         rsync_cmd = "rsync -H -t -r -v -e " + ssh_cmd + ":" + pro_srv_logpath + " " + "/mfg_log/"
