@@ -765,7 +765,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2:
-            testlist = ["BOOT_CHECK", "NIC_PWRCYC"]
+            testlist = ["CPLD_BOOT_CHECK", "NIC_PWRCYC"]
         else:
             continue
         for skip_test in skip_testlist:
@@ -776,7 +776,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             start_ts = libmfg_utils.timestamp_snapshot()
             
             # check CPLD partition
-            if test == "BOOT_CHECK":
+            if test == "CPLD_BOOT_CHECK":
                 ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
                 ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
             # extra powercycle to refresh CPLD
