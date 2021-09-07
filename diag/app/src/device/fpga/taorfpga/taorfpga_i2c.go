@@ -38,13 +38,13 @@ type OpenI2C_reg_set struct {
 var I2Creg OpenI2C_reg_set
 var ExecutingScanChain int = 0
 
-var buffer [1024]string
+var buffer [2048]string
 var bufptr int
 
 const I2C_NUMBER_CHANNELS    uint32 = 17
 
-const I2C_CLOCK_PRESCALE_100KHZ uint8 = 0x88 //124 /* TODO: Verify with HW team */
-const I2C_TIMEOUT_US    uint32 = 250
+const I2C_CLOCK_PRESCALE_100KHZ uint8 = (0x7C) //124 /* TODO: Verify with HW team */
+const I2C_TIMEOUT_US    uint32 = 350
 
 // Control register bits
 const OCI2C_CTRL_EN       uint32 = 0x80  // enable
@@ -108,6 +108,11 @@ func TStamp() string {
     timeStr = fmt.Sprintf("%-23s", timeStrs[0]+"-"+timeStrs[1])
     return timeStr
 
+}
+
+func buffer_reset_counter() {
+    bufptr = 0
+    return
 }
 
 func buffset(s string) () {
@@ -232,8 +237,8 @@ func oci2c_enable(prelowVal uint8, prehiVal uint8) (err error) {
     TaorWriteU32(3, I2Creg.CTRL_REG, 0x00) // disable i2c 
     TaorWriteU32(3, I2Creg.CMD_REG, 0x00)  // clear any data in cmd
 
-    TaorWriteU32(3, D3_I2C_CH0_PRSCL_LO_REG, uint32(prelowVal))
-    TaorWriteU32(3, D3_I2C_CH0_PRSCL_HI_REG, uint32(prehiVal))
+    TaorWriteU32(3, I2Creg.PRSCL_LO_REG, uint32(prelowVal))
+    TaorWriteU32(3, I2Creg.PRSCL_HI_REG, uint32(prehiVal))
 
     // Make sure the interrupt flag is clear and enable the controller
     TaorWriteU32(3, I2Creg.CMD_REG, OCI2C_CMD_IACK)
@@ -478,6 +483,11 @@ func oci2c_process() (err error) {
         if I2Creg.Error < 0 {
             err = fmt.Errorf("ERROR I2C Access Failed\n")
             //fmt.Printf("%s\n", err.Error())
+            if data32 == 0xDEBDEB9A {
+                for i:=0; i<bufptr; i++ {
+                    fmt.Printf("%s", buffer[i]) 
+                }
+            }
         }
     } ()
 

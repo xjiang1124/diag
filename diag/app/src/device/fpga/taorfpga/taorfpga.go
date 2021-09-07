@@ -202,6 +202,28 @@ func FpgaDumpRegionRegisters(devRegion uint32) (err error) {
 
 
 
+func TaorReadU8(devID uint32, addr uint64) (value uint8, err error) {
+    //var bar uint64
+    //var pcidevid uint32
+
+    if uint32(devID) >= TAORMINA_MAX_PCI_DEV {
+        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINA_MAX_PCI_DEV -1), devID); 
+        err = errors.New(" ERROR") 
+        return
+    }
+
+    switch(devID){
+        case 0: value = *(*uint8)(unsafe.Pointer(&Glob_mmap0[addr])); break
+        case 1: value = *(*uint8)(unsafe.Pointer(&Glob_mmap1[addr])); break
+        case 2: value = *(*uint8)(unsafe.Pointer(&Glob_mmap2[addr])); break
+        case 3: { 
+            value = *(*uint8)(unsafe.Pointer(&Glob_mmap3[addr]));
+            break
+        }
+    }
+    return
+}
+
 func TaorReadU32(devID uint32, addr uint64) (value uint32, err error) {
     var bar uint64
     //var pcidevid uint32
@@ -268,6 +290,39 @@ func ReadU32(addr uint64) (value uint32, err error) {
     if err != nil {
         cli.Printf("e", " syscall.Munmap failed.  Err !=nil:   ERR = '%s'\n", err)  
         return 
+    }
+    return
+}
+
+func TaorWriteU8(devID uint32, addr uint64, data uint8) (err error) {
+    if uint32(devID) >= TAORMINA_MAX_PCI_DEV {
+        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINA_MAX_PCI_DEV -1), devID); 
+        err = errors.New(" ERROR") 
+        return
+    }
+
+    switch(devID){
+        case 0: *(*uint8)(unsafe.Pointer(&Glob_mmap0[addr])) = data; break
+        case 1: *(*uint8)(unsafe.Pointer(&Glob_mmap1[addr])) = data; break
+        case 2: *(*uint8)(unsafe.Pointer(&Glob_mmap2[addr])) = data; break
+        case 3: *(*uint8)(unsafe.Pointer(&Glob_mmap3[addr])) = data; break
+    }
+    return
+}
+
+func TaorWriteU16(devID uint32, addr uint64, data uint16) (err error) {
+
+    if uint32(devID) >= TAORMINA_MAX_PCI_DEV {
+        fmt.Printf(" FPGA ID# must be 0 - %d. You entered %d.  Exiting Program\n", (TAORMINA_MAX_PCI_DEV -1), devID); 
+        err = errors.New(" ERROR") 
+        return
+    }
+
+    switch(devID){
+        case 0: *(*uint16)(unsafe.Pointer(&Glob_mmap0[addr])) = data; break
+        case 1: *(*uint16)(unsafe.Pointer(&Glob_mmap1[addr])) = data; break
+        case 2: *(*uint16)(unsafe.Pointer(&Glob_mmap2[addr])) = data; break
+        case 3: *(*uint16)(unsafe.Pointer(&Glob_mmap3[addr])) = data; break
     }
     return
 }

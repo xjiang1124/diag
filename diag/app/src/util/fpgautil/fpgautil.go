@@ -394,8 +394,20 @@ func main() {
             data32, _ = taorfpga.TaorReadU32(3, 0) 
             t2 = time.Now()
             diff = t2.Sub(t1)
-            fmt.Println(" Read with pointer only takes ", diff, " time")
+            fmt.Println(" Read with 32-bit pointer only takes ", diff, " time")
             fmt.Printf(" Data32=%x\n", data32)
+
+            t1 = time.Now()
+            data8, _ := taorfpga.TaorReadU8(3, 0) 
+            t2 = time.Now()
+            diff = t2.Sub(t1)
+            fmt.Println(" Read with 8-bit pointer only takes ", diff, " time")
+            fmt.Printf(" Data8=%x\n", data8)
+
+            t1 = time.Now()
+            t2 = time.Now()
+            diff = t2.Sub(t1)
+            fmt.Println(" Reading Time takes ", diff, " time")
         }
         if os.Args[2] == "r32" {
             addr, err = strconv.ParseUint(os.Args[3], 0, 64)
@@ -658,8 +670,10 @@ func main() {
                             fmt.Printf("0x%.02x ", rdData[j])
                         }
                         fmt.Printf("\n")
+                        return
+                    } else {
+                        os.Exit(-1)
                     }
-                    return
                 } else {
                     dataArg, err := strconv.ParseUint(os.Args[i], 0, 32)
                     if err != nil {
@@ -676,6 +690,8 @@ func main() {
                     fmt.Printf("0x%02x ", wrData[i])
                 }
                 fmt.Printf("\n")
+            } else {
+                os.Exit(-1)
             }
         } else {       //read only
             rdLength, err := strconv.ParseUint(os.Args[6], 0, 32)
@@ -689,6 +705,8 @@ func main() {
                     fmt.Printf("0x%.02x ", rdData[j])
                 }
                 fmt.Printf("\n")
+            } else {
+                os.Exit(-1)
             }
         }
     } else if os.Args[1] == "cpld" {
@@ -757,7 +775,6 @@ func main() {
                 return
             }
             taorfpga.Spi_cpld_machxO2_program_flash(uint32(cpldNumber), os.Args[4])
-
         }
     } else if os.Args[1] == "elba" {
 
@@ -771,7 +788,7 @@ func main() {
             fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return 
         }
         elbaNumber = uint32(elba)
-        if elbaNumber > 2 {
+        if elbaNumber > 1 {
             fmt.Printf(" ERROR: Elba number needs to be 0 or 1\n", err); return 
         }
         if os.Args[3] == "flash" {
@@ -822,7 +839,7 @@ func main() {
                 fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
             } else if os.Args[4] == "status" {
                 flag, _ := taorfpga.Spi_elba_flash_read_status(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
-                fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
+                fmt.Printf(" FLASH  Status Reg=0x%.02x\n", flag)
             } else if os.Args[4] == "writeimage" || os.Args[4] == "verifyimage" || os.Args[4] == "generateimage"  {
                 if argc < 7 {
                     fmt.Printf(" %s \n", errhelp)
@@ -853,11 +870,11 @@ func main() {
                 }
                 fmt.Printf("\n")
                 t1 := time.Now()
-                taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength)) 
+                taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength), 1) 
                 t2 := time.Now()
                 fmt.Println(" Function took ", t2.Sub(t1), " time")
                 t3 := time.Now()
-                taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength)) 
+                taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength), 1) 
                 t4 := time.Now()
                 fmt.Println(" Function took ", t4.Sub(t3), " time")
                 return
@@ -875,7 +892,7 @@ func main() {
                     fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
                 }
                 fmt.Printf("\n")
-                rd_data, _ := taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength)) 
+                rd_data, _ := taorfpga.Spi_elba_flash_Read_N_Bytes(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr), uint32(rdLength), 1) 
                 for x:=0;x<int(rdLength);x++ {
                     if (x%16) == 0 {
                         fmt.Printf("\n%.08x: ", uint32(addr) + uint32(x))
@@ -973,6 +990,8 @@ func main() {
                     fmt.Printf(" %s \n", errhelp)
                     return
                 }
+
+                t1 := time.Now()
                 if os.Args[4] == "generateimage" {  //read flash and make an image from it
                     taorfpga.Spi_cpldX03_generate_image_from_flash(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
                 } else if os.Args[4] == "verifyimage" {   
@@ -980,6 +999,9 @@ func main() {
                 } else if os.Args[4] == "program" {   
                     taorfpga.Spi_cpldXO3_program_flash(taorfpga.ELBA0_CPLD_SPI_BUS + elbaNumber, os.Args[5], os.Args[6])
                 }
+                t2 := time.Now()
+                fmt.Println(" Function took ", t2.Sub(t1), " time")
+                
             }
         } else {
             fmt.Printf(" Args[3] '%s' is incorrect.  See help for the correct arg\n", os.Args[3]); return 

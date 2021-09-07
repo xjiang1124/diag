@@ -41,7 +41,7 @@ const (
     MFR_ID                    = 0x99
       MFG_ID_BLK_SIZE         = 0x05  
     MFR_MODEL                 = 0x9A
-      MFG_MODEL_BLK_SIZE      = 0x0D
+      MFG_MODEL_BLK_SIZE      = 0x0E
     MFR_REVISION              = 0x9B
       MFG_REVISION_BLK_SIZE   = 0x03
     MFR_LOCATION              = 0x9C
@@ -63,10 +63,15 @@ const (
     MFR_TAMBIENT_MIN          = 0xA9
     MFR_EFFICIENCY_LL         = 0xAA
     MFR_EFFICIENCY_HL         = 0xAB
+    USER_CODE_00              = 0xB0
+      USER_CODE_00_BLK_SIZE   = 0x06
+    USER_CODE_01              = 0xB1
+      USER_CODE_01_BLK_SIZE   = 0x18
     MFR_MAX_TEMP_1            = 0xC0
     MFR_MAX_TEMP_2            = 0xC1
     MFR_MAX_TEMP_3            = 0xC2
     SMART_ON_CONFIG           = 0xD0
     MFR_FW_REVISION           = 0xD5
+      MFR_FW_BLK_SIZE         = 0x07
 )
 

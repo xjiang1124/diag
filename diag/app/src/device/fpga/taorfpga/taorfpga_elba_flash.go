@@ -40,7 +40,10 @@ var WRITE_ENABLE_RDLNG                  uint32 = 0
 var READ_FLAG_STATUS_REG_OP             = []byte{0x70}
 var READ_FLAG_STATUS_REG_RDLNG          uint32 = 1
 
-var READ_ID_OP                          = []byte{0x9E}
+//var READ_ID_OP                          = []byte{0x9E}
+//var READ_ID_RDLNG                       uint32 = 4
+
+var READ_ID_OP                          = []byte{0x9F}
 var READ_ID_RDLNG                       uint32 = 4
 
 
@@ -74,6 +77,15 @@ var ERASE_SECTOR_RDLNG                  uint32 = 0
 
 const FLASH_PAGE_WRITE_SIZE             int = 256
 
+
+
+
+//delays are us
+const ELB_WRITE_SR_DELAY    int = 8000
+const ELB_PAGE_WR_DELAY     int = 1800 
+const ELB_SUBELB_SECTOR_ERASE_DELAY int = 400000
+const ELB_SECTOR_ERASE_DELAY    int = 1000000
+const ELB_CHIP_ERASE_DELAY      int = 1000000
 
 /*****************************************************************************
 * SERIAL FLASH FUNCTIONS FOR ELBA 
@@ -142,7 +154,7 @@ func Spi_elba_flash_set_extended_addr_register(spiNumber uint32, addr uint32) (e
     }
 
 
-    err = Spi_elba_flash_WriteDisable(spiNumber) 
+    //err = Spi_elba_flash_WriteDisable(spiNumber) 
     //ext, _ := Spi_elba_flash_read_extended_addr_reg(spiNumber) 
     //fmt.Printf(" Extended Register = %.02x\n", ext)
 
@@ -245,7 +257,11 @@ func Spi_elba_flash_read_nonvolatile_config(spiNumber uint32) (config uint16, er
 func Spi_elba_flash_read_status(spiNumber uint32) (flag uint32, err error) {
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, READ_STATUS_REG_OP, READ_STATUS_REG_RDLNG) 
-    flag = uint32(data[0])
+    if err == nil {
+        flag = uint32(data[0])
+    } else {
+        fmt.Printf("[ERROR] Spi_elba_flash_read_status: Fpga_spi_generic_transaction Failed\n")
+    }
     return
 }
 
@@ -260,9 +276,14 @@ func Spi_elba_flash_read_flag_status(spiNumber uint32) (flag uint32, err error) 
 
 //Check if the flash is busy before executing erase or write
 func Spi_elba_flash_PollBusyMicroSec(spiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
-    sr_reg, _ = Spi_elba_flash_read_status(spiNumber) 
+    var errGo error
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, _ = Spi_elba_flash_read_status(spiNumber) 
+        sr_reg, errGo = Spi_elba_flash_read_status(spiNumber)  
+        if errGo != nil {
+            fmt.Printf("[ERROR] Spi_elba_flash_PollBusyMicroSec-> Read Status Failed\n")
+            err = 1
+            return
+        } 
         if sr_reg & STS_REG_BUSY != STS_REG_BUSY {
             return
         }
@@ -274,9 +295,14 @@ func Spi_elba_flash_PollBusyMicroSec(spiNumber uint32, timeout_ms int) (sr_reg u
 
 //Check if the flash is busy before executing erase or write
 func Spi_elba_flash_PollBusy(spiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
-    sr_reg, _ = Spi_elba_flash_read_status(spiNumber)  
+    var errGo error
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, _ = Spi_elba_flash_read_status(spiNumber)  
+        sr_reg, errGo = Spi_elba_flash_read_status(spiNumber)  
+        if errGo != nil {
+            fmt.Printf("[ERROR] Spi_elba_flash_PollBusy-> Read Status Failed\n")
+            err = 1
+            return
+        }
         if sr_reg & STS_REG_BUSY != STS_REG_BUSY {
             return
         }
@@ -288,13 +314,18 @@ func Spi_elba_flash_PollBusy(spiNumber uint32, timeout_ms int) (sr_reg uint32, e
 
 //Check if the flash is busy before executing erase or write
 func Spi_elba_flash_CheckWriteEnable() (spiNumber uint32, err error) {
+    var errGo error
     var sr_reg uint32
-    for i:=0; i< 500; i++ {
-        sr_reg, _ := Spi_elba_flash_read_status(spiNumber) 
+    for i:=0; i< 5000; i++ {
+        sr_reg, errGo = Spi_elba_flash_read_status(spiNumber)  
+        if errGo != nil {
+            fmt.Printf("[ERROR] Spi_elba_flash_CheckWriteEnable-> Read Status Failed\n")
+            return
+        }
         if sr_reg & STS_REG_WE == STS_REG_WE {
             return
         }
-        time.Sleep(time.Duration(1) * time.Millisecond)  //Sleep 1ms
+        time.Sleep(time.Duration(1) * time.Microsecond)  //Sleep ums
     }
     err = fmt.Errorf("ERROR: FlashCheckWriteEnable.  Write Enable is not set: Status Reg=%.02x\n", sr_reg)
     fmt.Printf("%s", err)
@@ -364,19 +395,36 @@ func Spi_elba_flash_GenerateImageFromFlash(spiNumber uint32, partition string, f
 
     defer f.Close()
 
+    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
+    if err != nil {
+        return
+    }
+
 
     for i=start_addr; i<(start_addr + flash_size); i = i+read_size {
         rd_data := []byte{}
-        //if (i%0x20000) == 0 {
-        //    fmt.Printf("%.08x\n", uint32(i))
-       // }
-        rd_data, err = Spi_elba_flash_Read_N_Bytes(spiNumber, uint32(i), uint32(read_size))
+        if (i%0x20000) == 0 {
+            fmt.Printf(".")
+        }
+        if (i % 0x1000000) <= read_size {
+            err = Spi_elba_flash_set_extended_addr_register(spiNumber, uint32(i)) 
+            if err != nil {
+                return
+            }
+        }
+        rd_data, err = Spi_elba_flash_Read_N_Bytes(spiNumber, uint32(i), uint32(read_size), 0)
         if err != nil {
             fmt.Printf(" ERROR: Flash Read Failed\n")
             return
         }
         flashData = append(flashData, rd_data...)
     }
+    fmt.Printf("\n")
 
     f.WriteString(string(flashData[:]))
     return
@@ -425,19 +473,36 @@ func Spi_elba_flash_VerifyImage(spiNumber uint32, partition string, filename str
         return
     }
 
+    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
+    if err != nil {
+        return
+    }
+
 
     //fmt.Printf(" len=%d   mod=%d\n", len(data), (len(data) % read_size))
     for i=start_addr; i< start_addr + len(data); i = i+read_size {
         rd_data := []byte{}
         if (i%0x20000) == 0 {
             fmt.Printf("%.08x\n", uint32(i))
+        } 
+        if (i % 0x1000000) <= read_size {
+            err = Spi_elba_flash_set_extended_addr_register(spiNumber, uint32(i)) 
+            if err != nil {
+                return
+            }
         }
-        rd_data, err = Spi_elba_flash_Read_N_Bytes(spiNumber, uint32(i), uint32(read_size))
+         
+        rd_data, err = Spi_elba_flash_Read_N_Bytes(spiNumber, uint32(i), uint32(read_size), 0)
         if err != nil {
-            fmt.Printf(" ERROR: Flash Read Failed\n")
+            fmt.Printf(" ERROR: Flash Read Failed.  StartAddr=%x.  I=%x\n", start_addr, i)
             return
         }
-        flashData = append(flashData, rd_data...)
+        flashData = append(flashData, rd_data...) 
     }
 
     for i=0; i<len(data); i++ {
@@ -514,8 +579,32 @@ func Spi_elba_flash_WriteImage(spiNumber uint32, partition string, filename stri
     }
     fmt.Printf("\n")
 
+    /* ////// 
+    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+    if err != nil {
+        return
+    }
+
+    Spi_elba_flash_WriteEnable(spiNumber) 
+    
+    err = Spi_elba_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
+    if err != nil {
+        return
+    }     
+    ////// */
+
     fmt.Printf(" Programming flash sectors\n");
     for i=start_addr; i< start_addr + len(data); i = i+FLASH_PAGE_WRITE_SIZE {
+
+        /* //////
+        if (i % 0x1000000) < 256 {
+            err = Spi_elba_flash_set_extended_addr_register(spiNumber, uint32(i)) 
+            if err != nil {
+                return
+            } 
+        }
+        ////// */
+
         if (i%0x20000) == 0 {
             fmt.Printf("%.08x\n", uint32(i))
         }
@@ -532,7 +621,7 @@ func Spi_elba_flash_WriteImage(spiNumber uint32, partition string, filename stri
         if write_page == true {
             err = Spi_elba_flash_Write_N_Bytes(spiNumber, wr_data, uint32(i))
             if err != nil {
-                fmt.Printf(" Erasing Flash Failed\n")
+                fmt.Printf(" Writing Flash Failed\n")
                 return
             }
         } else {
@@ -550,7 +639,7 @@ func Spi_elba_flash_erase_all_sectors(spiNumber uint32) (err error) {
     var i uint32 = 0
 
 
-        elba_flash_info.region_size = uint32(0x10000000)  // 2Gb / 256megabyte
+    elba_flash_info.region_size = uint32(0x10000000)  // 2Gb / 256megabyte
     elba_flash_info.sector_size = FLASH_SECTOR_SIZE
     elba_flash_info.number_of_sectors = elba_flash_info.region_size / elba_flash_info.sector_size
     elba_flash_info.offset = 0
@@ -605,9 +694,9 @@ func Spi_elba_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
         return
     }
 
-    sr_reg, rc := Spi_elba_flash_PollBusy(spiNumber,  SECTOR_ERASE_DELAY)
+    sr_reg, rc := Spi_elba_flash_PollBusyMicroSec(spiNumber,  ELB_SECTOR_ERASE_DELAY)
     if rc != 0 {
-       err = fmt.Errorf("ERROR: Spi_elba_flash_erase_sector.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, SECTOR_ERASE_DELAY, sr_reg)
+       err = fmt.Errorf("ERROR: Spi_elba_flash_erase_sector.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
        fmt.Printf("%s", err)
     }
     return
@@ -634,6 +723,7 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
         return
     }
 
+    
     err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
     if err != nil {
         return
@@ -642,10 +732,10 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
     err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
     if err != nil {
         return
-    }
+    } 
 
-
-    Spi_elba_flash_WriteEnable(spiNumber)
+    Spi_elba_flash_WriteEnable(spiNumber) 
+     
 
     PAGE_PROGRAM_OP[1] = byte(addr >> 16)
     PAGE_PROGRAM_OP[2] = byte(addr >> 8)
@@ -655,16 +745,21 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
     wr_data = append(wr_data, data...)
 
     data, err = Fpga_spi_generic_transaction(spiNumber, wr_data, PAGE_PROGRAM_RDLNG) 
-
-    sr_reg, rc := Spi_elba_flash_PollBusy(spiNumber,  PAGE_WR_DELAY)
-    if rc != 0 {
-       err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, PAGE_WR_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+    if err != nil {
+       fmt.Printf("ERROR: Spi_elba_flash_Write_N_Bytes.  Fpga_spi_generic_transaction Failed\n")
     }
-    return
 
+    sr_reg, rc := Spi_elba_flash_PollBusyMicroSec(spiNumber,  ELB_PAGE_WR_DELAY)
+    if rc != 0 {
+       err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
+       fmt.Printf("%s", err)
+       return
+    }
 
-    err = Spi_elba_flash_WriteDisable(spiNumber) 
+    //err = Spi_elba_flash_WriteDisable(spiNumber) 
+    //if err != nil {
+    //   fmt.Printf("ERROR: Spi_elba_flash_Write_N_Bytes.  Spi_elba_flash_WriteDisable Failed\n")
+    //}
     return
 }
 
@@ -695,18 +790,18 @@ func Spi_elba_flash_FourByteAddr_Read_N_Bytes(spiNumber uint32, addr uint32, len
 }
 
 
-func Spi_elba_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
+func Spi_elba_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32, cli_call uint32) (data []byte, err error) {
+    if (cli_call > 0) {
+        err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
+        if err != nil {
+            return
+        }
 
-    err = Spi_elba_flash_disable_4byte_addr_mode(spiNumber)
-    if err != nil {
-        return
+        err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
+        if err != nil {
+            return
+        }
     }
-
-    err = Spi_elba_flash_set_extended_addr_register(spiNumber, addr) 
-    if err != nil {
-        return
-    }
-
     READ_OP[1] = byte(addr >> 16)
     READ_OP[2] = byte(addr >> 8)
     READ_OP[3] = byte(addr)
