@@ -2213,22 +2213,23 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
                         endtime = "{}_{}".format(testdate,testetime)
-                        unittesttime = str(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
-                        #print("{}: {}".format(unittesttime,endtime))
-                        #sys.exit()
-                        begintime = findbegintesttime(endtime,unittesttime)
-                        recordchassistime = "{}_{}".format(chassis,endtime)
-                        if not int(unittesttime) in TimeData["LIST"]:
-                            TimeData["LIST"].append(int(unittesttime))
-                            TimeData["LIST"].sort(reverse=True)
-                        if not unittesttime in TimeData["DATA"]:
-                            TimeData["DATA"][unittesttime] = dict()
-                            TimeData["DATA"][unittesttime]["MTP"] = dict()
-                            TimeData["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
-                        if not recordchassistime in TimeData["DATA"][unittesttime]["MTP"]:
-                            TimeData["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
-                        TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
-                        TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
+                        if 'TESTTIME' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            unittesttime = str(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
+                            #print("{}: {}".format(unittesttime,endtime))
+                            #sys.exit()
+                            begintime = findbegintesttime(endtime,unittesttime)
+                            recordchassistime = "{}_{}".format(chassis,endtime)
+                            if not int(unittesttime) in TimeData["LIST"]:
+                                TimeData["LIST"].append(int(unittesttime))
+                                TimeData["LIST"].sort(reverse=True)
+                            if not unittesttime in TimeData["DATA"]:
+                                TimeData["DATA"][unittesttime] = dict()
+                                TimeData["DATA"][unittesttime]["MTP"] = dict()
+                                TimeData["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
+                            if not recordchassistime in TimeData["DATA"][unittesttime]["MTP"]:
+                                TimeData["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
+                            TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
+                            TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
     
     for sn in workingonSNlist:
         if sn in DATA["SN"]:
@@ -2244,7 +2245,9 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
                             DatabyWeek['DATA'][weeknumber]["numberofSLOTlist"] = list()
                             DatabyWeek['DATA'][weeknumber]["DATAofNumber"] = dict()
                         timestamp = "{}_{}".format(testdate,testetime)
-                        numberofslotfortest = "{:02d}".format(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
+                        numberofslotfortest = findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp)
+                        if isinstance(numberofslotfortest, int):
+                            numberofslotfortest = "{:02d}".format(numberofslotfortest)
                         if not numberofslotfortest in DatabyWeek['DATA'][weeknumber]["numberofSLOTlist"]:
                             if not 'NO' in numberofslotfortest.upper():
                                 DatabyWeek['DATA'][weeknumber]["numberofSLOTlist"].append(numberofslotfortest)
@@ -2257,7 +2260,8 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
                             MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData)
                             DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(MaxTestTime))
                         else:
-                            DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
+                            if 'TESTTIME' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
     
     return DatabyWeek
 
@@ -2795,6 +2799,9 @@ def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     mtpdata = DATA["MTPCHASSIS"][mtp][test][timestamp]
 
     #print(json.dumps(mtpdata, indent = 4))
+
+    if not "NICRESULT" in mtpdata:
+        return "No Data"
 
     return len(mtpdata["NICRESULT"].keys())
 
