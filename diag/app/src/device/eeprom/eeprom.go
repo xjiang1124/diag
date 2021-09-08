@@ -946,7 +946,7 @@ func writeField(devName string, offset int, numBytes int, data []byte) (err int)
 
     if numBytes < len(data) {
         err = errType.INVALID_PARAM
-        cli.Println("f", "data lenght more than number of bytes! numBytes:", numBytes, "data length:", len(data))
+        cli.Println("f", "Offset=", offset, "data length more than number of bytes! numBytes:", numBytes, "data length:", len(data))
         return
     }
     for i := 0; i < numBytes; i++ {
@@ -1341,7 +1341,7 @@ func updateIntChk() () {
         }
     }
 
-    if CustType == "LACONADELL" || CustType == "POMONTEDELL" {
+    if CustType == "LACONADELL" {
         brdInfoChk = 0
         productInfoChk = 0
         cmnHeadChk = 0
@@ -1409,7 +1409,7 @@ func updateIntChk() () {
         }
     }
 
-    if CustType == "LACONA32DELL" {
+    if CustType == "LACONA32DELL" || CustType == "POMONTEDELL" {
         brdInfoChk = 0
         productInfoChk = 0
         cmnHeadChk = 0
@@ -2373,7 +2373,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
         if OutputEnabled == true { cli.Printf("i", "Checking Board Info Area Type/Lengths\n") }
         for length, i = 6, 0; length < bia_length; i++ {
             tmp = board_info_area[length]
-            if tmp == 0xC1 {
+            if tmp == 0xC1 {                //0xC1 = END OF FIELD
                 found_C1 = true
                 length++
                 for j=uint8(length); j<uint8(bia_length)-1; j++ {
@@ -2383,9 +2383,13 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
                     }
                 }
                 break
-            } else if tmp & 0xC0 == 0xC0 {
+            } else if tmp & 0xC0 == 0xC0 {  //TYPE/LENGTH
                 length++
                 if OutputEnabled == true { cli.Printf("i","[%.02x] %s\n", tmp, board_info_area[length:length+uint16(tmp & 0x3F)]) }
+            } else if tmp & 0x80 == 0x80 {  //TYPE/LENGTH 6-BIT ASCII
+                length++
+                if OutputEnabled == true { cli.Printf("i","[%.02x] \n", tmp) }
+                //if OutputEnabled == true { cli.Printf("i","[%.02x] %s\n", tmp, board_info_area[length:length+uint16(tmp & 0x3F)]) }
             } else {
                 length++
                 if OutputEnabled == true {  cli.Printf("i","[%.02x] %x\n", tmp, board_info_area[length:length+uint16(tmp & 0x3F)]) }
@@ -2399,7 +2403,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     }
 
     if header[CMN_HDR_PIA_OFFSET] > 0 {
-        var length uint16 = 6
+        var length uint16 = 3
         var found_C1 bool = false
         var tmp, i, j uint8 = 0, 0, 0
 
@@ -2419,6 +2423,10 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             } else if tmp & 0xC0 == 0xC0 {
                 length++
                 if OutputEnabled == true { cli.Printf("i","[%.02x] %s\n", tmp, product_info_area[length:length+uint16(tmp & 0x3F)]) }
+            } else if tmp & 0x80 == 0x80 {  //TYPE/LENGTH 6-BIT ASCII
+                length++
+                //if OutputEnabled == true { cli.Printf("i","[%.02x] %s\n", tmp, board_info_area[length:length+uint16(tmp & 0x3F)]) }
+                if OutputEnabled == true { cli.Printf("i","[%.02x] \n", tmp) }
             } else {
                 length++
                 if OutputEnabled == true { cli.Printf("i","[%.02x] %x\n", tmp, product_info_area[length:length+uint16(tmp & 0x3F)]) }
