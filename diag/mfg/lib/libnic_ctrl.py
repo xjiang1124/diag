@@ -1758,7 +1758,7 @@ class nic_ctrl():
         if match:
             self._diag_asic_ver = match[0]
         else:
-            self.nic_set_err_msg("Unable to find nic asic version")
+            self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
             return False
 
         # get emmc nic utils version

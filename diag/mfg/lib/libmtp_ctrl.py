@@ -4542,6 +4542,14 @@ class mtp_ctrl():
             file_p.write(line + "\n")
 
     def mtp_nic_mvl_acc_test(self, slot):
+        test = "ACC"
+
+        # log the timestamp in NIC log
+        start = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Started - at {:s}".format(test, str(start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+
         retval = ""
         err_msg_list = list()
         if self._nic_ctrl_list[slot].nic_mvl_acc_test():
@@ -4550,9 +4558,24 @@ class mtp_ctrl():
             retval = "FAILURE"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
+
+        # log the timestamp in NIC log
+        stop = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+
         return retval, err_msg_list
 
     def mtp_nic_mvl_stub_test(self, slot):
+        test = "STUB"
+
+        # log the timestamp in NIC log
+        start = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Started - at {:s}".format(test, str(start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+
         retval = ""
         err_msg_list = list()
         if self._nic_ctrl_list[slot].nic_mvl_stub_test():
@@ -4561,6 +4584,13 @@ class mtp_ctrl():
             retval = "FAILURE"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
+
+        # log the timestamp in NIC log
+        stop = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+
         return retval, err_msg_list
 
     def mtp_check_nic_rebooted(self, slot):
