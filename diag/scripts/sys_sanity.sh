@@ -12,7 +12,7 @@ else
     portnum=$1
 fi
 
-if [[ ${data[1]} == "0x43" ]] || [[ ${data[1]} == "0x44" ]] 
+if [[ $MTP_TYPE == "MTP_ELBA" ]] 
 then
     printf "====== jtag_cpurd_v2 ======\n"
     jtag_cpurd_v2 rst 0xa $portnum
