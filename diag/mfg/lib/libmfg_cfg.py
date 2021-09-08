@@ -248,10 +248,10 @@ class NIC_IMAGES:
     goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-22_2021.08.07.tar"
     goldfw_dat["68-0015"] = "08-07-2021"
 
-    cpld_img["POMONTEDELL"] = "naples200_pomonte_main_gold_rev0_12_08242021.bin"
+    cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_main_rev0_12_08242021.bin"
     cpld_ver["POMONTEDELL"] = "0x0"
     cpld_dat["POMONTEDELL"] = "0x12"
-    sec_cpld_img["POMONTEDELL"] = "naples200_pomonte_main_gold_rev0_12_08242021.bin"
+    sec_cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_main_rev0_12_08242021.bin"
     sec_cpld_ver["POMONTEDELL"] = "0x0"
     sec_cpld_dat["POMONTEDELL"] = "0x12"
     fail_cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_gold_rev0_12_08242021.bin"
