@@ -866,7 +866,7 @@ def main():
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -884,7 +884,7 @@ def main():
     log_relative_link = None
     for slot in fail_nic_list + pass_nic_list:
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not sn:
             continue
         if GLB_CFG_MFG_TEST_MODE:
