@@ -273,23 +273,26 @@ def movereporttohistorydir(inputconfig):
 def workingonLastdata(DATA,inputconfig):
 
     DATA['SN']["KEEPLASTPASS"] = dict()
-
-    if 'ORGLAST' in DATA['SN']:
-        DATA['SN']['LAST'] = DATA['SN']['ORGLAST']
+    DATA['SN']['LAST'] = dict()
 
     for test in DATA['SN']['TEST']:
         print("TEST: {}".format(test))
 
+        if not test in DATA['SN']["LAST"]:
+            DATA['SN']["LAST"][test] = dict()
 
         workingSNlist = list()
-        for SN in DATA['SN']['LAST'][test]:
+        for SN in DATA['SN']['FIRST'][test]:
             workingSNlist.append(SN)
 
         for SN in workingSNlist:
             #print("{}: {}".format(test, SN))
             #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
             checkdata = None 
-
+            NewSN = False
+            if not SN in DATA['SN']['LAST'][test]:
+                DATA['SN']['LAST'][test][SN] = dict()
+                NewSN = True
             counttesttime = 0
             if SN in DATA['teststep'][test]['SN']:
                 for chassis in DATA['teststep'][test]['SN'][SN]:
@@ -302,9 +305,12 @@ def workingonLastdata(DATA,inputconfig):
                                 checkdata = checktime2
                             counttesttime += 1
                             parpareData(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST')
-
+                            if NewSN:
+                                writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST')
+                                NewSN = False
                             if checktime2 >= checkdata:
                                 writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST')
+
             delSNwithnoData(DATA,test,SN,counttesttime,status='LAST')
 
         if not test in DATA['SN']["KEEPLASTPASS"]:

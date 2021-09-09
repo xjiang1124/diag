@@ -45,5 +45,8 @@ do
         runReportModule $name $_mydir
 done
 
+cd $_mydir
+python3 $_mydir/zip_old_json_file.py
+
 END=$(date +%s);
 echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'

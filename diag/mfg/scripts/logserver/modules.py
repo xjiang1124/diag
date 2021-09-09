@@ -55,6 +55,19 @@ class modules(object):
 			self.logfile = logfile
 		self.debug_print("Start modules...")
 
+
+	def readjsonfile(self,jsonfile):
+		start=datetime.now()
+		outputdict = dict()
+
+		if os.path.exists(jsonfile):
+			outputdict = mpu.io.read(jsonfile)
+
+		difftime = datetime.now()-start
+		self.debug_print("readjsonfile: {} use {} seconds".format(jsonfile,difftime.total_seconds()))
+
+		return outputdict
+
 	def readyamltodict(self, yamlfile):
 		with open(yamlfile) as file:
 		    # The FullLoader parameter handles the conversion from YAML
@@ -222,10 +235,15 @@ class modules(object):
 
 	def gzip_to_file(self, sourcefile):
 
+		self.debug_print("Current {} FileSize : {}".format(sourcefile,os.path.getsize(sourcefile)))
 		returnfile = "{}.gz".format(sourcefile)
-		with open(sourcefile, 'rb') as f_in:               # open original file for reading
-			with gzip.open(returnfile, 'wb') as f_out: # open gz file for writing
-				shutil.copyfileobj(f_in, f_out)                          # write/copy text file into gz file
+		with open(sourcefile, 'rb') as f_in:               	# open original file for reading
+			with gzip.open(returnfile, 'wb') as f_out: 		# open gz file for writing
+				shutil.copyfileobj(f_in, f_out)           	# write/copy text file into gz file
+
+		if os.path.exists(returnfile):
+			self.debug_print("ZIPFILE {} FileSize : {}".format(returnfile,os.path.getsize(returnfile)))
+			
 		return returnfile
 
 	def debug_print(self,msg):
