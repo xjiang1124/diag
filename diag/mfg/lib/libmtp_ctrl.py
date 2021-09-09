@@ -2308,7 +2308,12 @@ class mtp_ctrl():
     #Cloud images have slight deviation on how SWI runs
     def check_is_cloud_software_image(self, slot, software_pn):
         print(" Check if software image is cloud: {:s}".format(software_pn))            
-        if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0011-0002")):
+        if (software_pn == "90-0004-0001" or
+            software_pn == "90-0006-0001" or
+            software_pn == "90-0006-0002" or
+            software_pn == "90-0011-0002" or
+            software_pn == "90-pomonte"
+            ):
             return True
         return False
             
@@ -2398,6 +2403,10 @@ class mtp_ctrl():
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
             if software_pn != "90-0011-0002":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:7] == "68-0022":     #POMONTE DELL
+            if software_pn != "90-pomonte":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
