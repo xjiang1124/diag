@@ -2499,6 +2499,7 @@ class mtp_ctrl():
             else:
                 dev = "CPLD"
             self.cli_log_slot_inf_lock(slot, "NIC {:s} is up-do-date".format(dev))
+            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
             return True
 
         if nic_type == NIC_Type.POMONTEDELL:
@@ -2516,6 +2517,7 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
+        self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
         return True
 
     def mtp_program_nic_failsafe_cpld(self, slot, cpld_img):
@@ -2567,6 +2569,10 @@ class mtp_ctrl():
         return True
 
     def mtp_refresh_nic_cpld(self, slot, dontwait=False):
+        if not self._nic_ctrl_list[slot].nic_is_cpld_refresh_required():
+            self.cli_log_slot_inf_lock(slot, "No CPLD refresh needed")
+            return True
+
         if not self._nic_ctrl_list[slot].nic_refresh_cpld(dontwait):
             self.cli_log_slot_err_lock(slot, "Refresh NIC CPLD failed")
             return False

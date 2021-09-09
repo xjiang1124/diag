@@ -763,6 +763,8 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             continue
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             continue
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_is_cpld_refresh_required():
+            continue
         dsp = FF_Stage.FF_DL
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)

@@ -80,6 +80,7 @@ class nic_ctrl():
 
         self._asic_type = None
 
+        self._refresh_required = True
 
     def nic_handle_init(self, handle, prompt):
         self._nic_handle = handle
@@ -281,6 +282,21 @@ class nic_ctrl():
     def nic_get_cmd_buf(self):
         return self._cmd_buf
 
+    def nic_is_cpld_refresh_required(self):
+        return self._refresh_required
+
+    def nic_require_cpld_refresh(self, val):
+        """
+         Use:
+         1. cpld update
+         2. nic_require_refresh(True)
+         3. if nic_is_refresh_required(): (cpld ref)
+
+         1. cpld update skipped
+         2. nic_require_refresh(False)
+         3. if nic_is_refresh_required(): (pass)
+        """
+        self._refresh_required = val
 
     def nic_power_off(self):
         cmd = MFG_DIAG_CMDS.NIC_POWER_OFF_FMT.format(self._slot+1)
