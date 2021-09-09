@@ -243,7 +243,12 @@ class modules(object):
 
 		if os.path.exists(returnfile):
 			self.debug_print("ZIPFILE {} FileSize : {}".format(returnfile,os.path.getsize(returnfile)))
-			
+			if os.path.exists(sourcefile):
+				self.debug_print("Process to remove FILE : {}".format(sourcefile))
+				os.remove(sourcefile)
+			else:
+				self.debug_print("The file {} does not exist".format(sourcefile))
+
 		return returnfile
 
 	def debug_print(self,msg):
