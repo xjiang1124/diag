@@ -651,7 +651,7 @@ class nic_con:
             self.uart_session_cmd(session, "fwupdate --init-emmc")
             ret, output = self.uart_session_cmd_w_ot(session, "fwupdate -l")
             # Only do it with one version of diagfw
-            if "1.15.8-C-3" in output:
+            if "1.15.8-C-3" in output or "1.5.0-EXP" in output:
                 self.uart_session_cmd(session, "halctl debug port aacs-server-start --server-port 9000")
                 self.uart_session_cmd(session, "export SERDES_DUT_IP=localhost:9000")
                 self.uart_session_cmd(session, "export SERDES_SBUS_RINGS=4")
