@@ -75,7 +75,6 @@ def main():
             #pass
             workingoneachtest(pr,inputconfig,DATA,testfolder)
 
-    #
     workingonLastdata(DATA,inputconfig)
     #sys.exit()
 
@@ -272,8 +271,16 @@ def movereporttohistorydir(inputconfig):
     return None
 
 def workingonLastdata(DATA,inputconfig):
+
+    DATA['SN']["KEEPLASTPASS"] = dict()
+
+    if 'ORGLAST' in DATA['SN']:
+        DATA['SN']['LAST'] = DATA['SN']['ORGLAST']
+
     for test in DATA['SN']['TEST']:
         print("TEST: {}".format(test))
+
+
         workingSNlist = list()
         for SN in DATA['SN']['LAST'][test]:
             workingSNlist.append(SN)
@@ -282,75 +289,63 @@ def workingonLastdata(DATA,inputconfig):
             #print("{}: {}".format(test, SN))
             #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
             checkdata = None 
-            if "checktime" in DATA['SN']['LAST'][test][SN]:
-                checkdata = DATA['SN']['LAST'][test][SN]["checktime"]
+
             counttesttime = 0
             if SN in DATA['teststep'][test]['SN']:
                 for chassis in DATA['teststep'][test]['SN'][SN]:
                     for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
                         for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
+                            if "checktime" in DATA['SN']['LAST'][test][SN]:
+                                checkdata = DATA['SN']['LAST'][test][SN]["checktime"]
                             checktime2 = "{}_{}".format(testdate, testtime)
                             if not checkdata:
                                 checkdata = checktime2
                             counttesttime += 1
-                            if not "IMAGE" in DATA['SN']['LAST'][test][SN]:
-                                if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                    DATA['SN']['LAST'][test][SN]["IMAGE"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]
-                            if not "MTPINFO" in DATA['SN']['LAST'][test][SN]:
-                                if "MTPINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                    DATA['SN']['LAST'][test][SN]["MTPINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["MTPINFO"]
-                            if not "NICINFO" in DATA['SN']['LAST'][test][SN]:
-                                if "NICINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                    DATA['SN']['LAST'][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
+                            parpareData(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST')
+
                             if checktime2 >= checkdata:
-                                if "IMAGE" in DATA['SN']['LAST'][test][SN]:
-                                    if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                        DATA['SN']['LAST'][test][SN]["IMAGE"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]
-                                if "MTPINFO" in DATA['SN']['LAST'][test][SN]:
-                                    if "MTPINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                        DATA['SN']['LAST'][test][SN]["MTPINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["MTPINFO"]
-                                if "NICINFO" in DATA['SN']['LAST'][test][SN]:
-                                    if "NICINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                        DATA['SN']['LAST'][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
-                                checkdata = checktime2
-                                DATA['SN']['LAST'][test][SN]["checktime"] = checktime2
-                                DATA['SN']['LAST'][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
-                                if "SPECIAL" in inputconfig:
-                                    if SN == inputconfig["SPECIAL"]:
-                                        if "FAIL" in DATA['SN']['LAST'][test][SN]["result"]:
-                                            DATA['SN']['LAST'][test][SN]["result"] = "PASS"
-                                if not "PASS" in DATA['SN']['LAST'][test][SN]["result"]:
-                                    DATA['SN']['LAST'][test][SN]["result"] = "FAIL"
-                                DATA['SN']['LAST'][test][SN]["testfile"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["eachfile"]
-                                DATA['SN']['LAST'][test][SN]["ERROR"] = dict()
-                                DATA['SN']['LAST'][test][SN]["ERROR"]["DETAIL"] = dict()
-                                DATA['SN']['LAST'][test][SN]["ERROR"]["LIST"] = list()
-                                for eachteststepdetail in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["TESTSTEPLIST"]:
-                                    for teststepkey in eachteststepdetail:
-                                        if not eachteststepdetail[teststepkey] == 'PASS':
-                                            teststepkeywork = "{} <{}>".format(teststepkey, eachteststepdetail[teststepkey])
-                                            if not teststepkeywork in DATA['SN']['LAST'][test][SN]["ERROR"]["DETAIL"]:
-                                                DATA['SN']['LAST'][test][SN]["ERROR"]["DETAIL"][teststepkeywork] = 1
-                                            else:
-                                                DATA['SN']['LAST'][test][SN]["ERROR"]["DETAIL"][teststepkeywork] += 1
-                                            if not teststepkeywork in DATA['SN']['LAST'][test][SN]["ERROR"]["LIST"]:
-                                                DATA['SN']['LAST'][test][SN]["ERROR"]["LIST"].append(teststepkeywork)
-                                    #sys.exit()
+                                writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST')
+            delSNwithnoData(DATA,test,SN,counttesttime,status='LAST')
 
+        if not test in DATA['SN']["KEEPLASTPASS"]:
+            DATA['SN']["KEEPLASTPASS"][test] = dict()
 
-                            #print(json.dumps(DATA['teststep'][test]['SN'][SN][chassis][testdate], indent = 4))
-                            #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
-                            #print("last: {} vs working {}".format(checkdata, checktime2))
-            if counttesttime:
-                DATA['SN']['LAST'][test][SN]["count"] = counttesttime
-            else:
-                if SN in DATA['SN']['LAST'][test]:
-                    del DATA['SN']['LAST'][test][SN]
-                if SN in DATA['teststep'][test]["SN"]:
-                    del DATA['teststep'][test]["SN"][SN]
+        for SN in workingSNlist:
+            #print("{}: {}".format(test, SN))
             #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
-            #if DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"] == "FAIL" and DATA['SN']['LAST'][test][SN]["result"] == "FAIL":
-                #sys.exit()
+            checkdata = None 
+            NewSN = False
+            if not SN in DATA['SN']['KEEPLASTPASS'][test]:
+                DATA['SN']['KEEPLASTPASS'][test][SN] = dict()
+                NewSN = True
+            counttesttime = 0
+            if SN in DATA['teststep'][test]['SN']:
+                for chassis in DATA['teststep'][test]['SN'][SN]:
+                    for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
+                        for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
+                            if "checktime" in DATA['SN']['KEEPLASTPASS'][test][SN]:
+                                checkdata = DATA['SN']['KEEPLASTPASS'][test][SN]["checktime"]
+                            checktime2 = "{}_{}".format(testdate, testtime)
+                            if not checkdata:
+                                checkdata = checktime2
+                            counttesttime += 1
+                            parpareData(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                            if NewSN:
+                                writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                NewSN = False
+                            if checktime2 >= checkdata:
+                                if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and not "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                elif not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                elif 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                            else:
+                                if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                    
+            delSNwithnoData(DATA,test,SN,counttesttime,status='KEEPLASTPASS')
+
         workingSNlist = list()
         for SN in DATA['SN']['FIRST'][test]:
             workingSNlist.append(SN)
@@ -358,73 +353,86 @@ def workingonLastdata(DATA,inputconfig):
         for SN in workingSNlist:
             #print("{}: {}".format(test, SN))
             checkdata = None 
-            if "checktime" in DATA['SN']['FIRST'][test][SN]:
-                checkdata = DATA['SN']['FIRST'][test][SN]["checktime"]
             counttesttime = 0
             if SN in DATA['teststep'][test]['SN']:
                 for chassis in DATA['teststep'][test]['SN'][SN]:
                     for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
                         for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
+                            if "checktime" in DATA['SN']['FIRST'][test][SN]:
+                                checkdata = DATA['SN']['FIRST'][test][SN]["checktime"]
                             checktime2 = "{}_{}".format(testdate, testtime)
                             if not checkdata:
                                 checkdata = checktime2
                             counttesttime += 1
-                            if not "IMAGE" in DATA['SN']['FIRST'][test][SN]:
-                                if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                    DATA['SN']['FIRST'][test][SN]["IMAGE"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]
-                            if not "MTPINFO" in DATA['SN']['FIRST'][test][SN]:
-                                if "MTPINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                    DATA['SN']['FIRST'][test][SN]["MTPINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["MTPINFO"]
-                            if not "NICINFO" in DATA['SN']['FIRST'][test][SN]:
-                                if "NICINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                    DATA['SN']['FIRST'][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
+                            parpareData(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='FIRST')
                             if checktime2 <= checkdata:
-                                if "IMAGE" in DATA['SN']['FIRST'][test][SN]:
-                                    if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                        DATA['SN']['FIRST'][test][SN]["IMAGE"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]
-                                if "MTPINFO" in DATA['SN']['FIRST'][test][SN]:
-                                    if "MTPINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                        DATA['SN']['FIRST'][test][SN]["MTPINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["MTPINFO"]
-                                if "NICINFO" in DATA['SN']['FIRST'][test][SN]:
-                                    if "NICINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
-                                        DATA['SN']['FIRST'][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
-                                checkdata = checktime2
-                                DATA['SN']['FIRST'][test][SN]["checktime"] = checktime2
-                                DATA['SN']['FIRST'][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
-                                if not "PASS" in DATA['SN']['FIRST'][test][SN]["result"]:
-                                    DATA['SN']['FIRST'][test][SN]["result"] = "FAIL"
-                                DATA['SN']['FIRST'][test][SN]["testfile"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["eachfile"]
-                                DATA['SN']['FIRST'][test][SN]["ERROR"] = dict()
-                                DATA['SN']['FIRST'][test][SN]["ERROR"]["DETAIL"] = dict()
-                                DATA['SN']['FIRST'][test][SN]["ERROR"]["LIST"] = list()
-                                for eachteststepdetail in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["TESTSTEPLIST"]:
-                                    for teststepkey in eachteststepdetail:
-                                        if not eachteststepdetail[teststepkey] == 'PASS':
-                                            teststepkeywork = "{} <{}>".format(teststepkey, eachteststepdetail[teststepkey])
-                                            if not teststepkeywork in DATA['SN']['FIRST'][test][SN]["ERROR"]["DETAIL"]:
-                                                DATA['SN']['FIRST'][test][SN]["ERROR"]["DETAIL"][teststepkeywork] = 1
-                                            else:
-                                                DATA['SN']['FIRST'][test][SN]["ERROR"]["DETAIL"][teststepkeywork] += 1
-                                            if not teststepkeywork in DATA['SN']['FIRST'][test][SN]["ERROR"]["LIST"]:
-                                                DATA['SN']['FIRST'][test][SN]["ERROR"]["LIST"].append(teststepkeywork)
-                                    #sys.exit()
+                                writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='FIRST')
 
+            delSNwithnoData(DATA,test,SN,counttesttime,status='FIRST')
 
-                            #print(json.dumps(DATA['teststep'][test]['SN'][SN][chassis][testdate], indent = 4))
-                            #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
-                            #print("last: {} vs working {}".format(checkdata, checktime2))
-            if counttesttime:
-                DATA['SN']['FIRST'][test][SN]["count"] = 1
-            else:
-                if SN in DATA['SN']['FIRST'][test]:
-                    del DATA['SN']['FIRST'][test][SN]
-                if SN in DATA['teststep'][test]["SN"]:
-                    del DATA['teststep'][test]["SN"][SN]
-
+    DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
+    DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
 
     return None
 
+def parpareData(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST'):
 
+    if not "IMAGE" in DATA['SN'][status][test][SN]:
+        if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+            DATA['SN'][status][test][SN]["IMAGE"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]
+    if not "MTPINFO" in DATA['SN'][status][test][SN]:
+        if "MTPINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+            DATA['SN'][status][test][SN]["MTPINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["MTPINFO"]
+    if not "NICINFO" in DATA['SN'][status][test][SN]:
+        if "NICINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+            DATA['SN'][status][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
+
+    return None
+
+def writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST'):
+    if "IMAGE" in DATA['SN'][status][test][SN]:
+        if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+            DATA['SN'][status][test][SN]["IMAGE"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]
+    if "MTPINFO" in DATA['SN'][status][test][SN]:
+        if "MTPINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+            DATA['SN'][status][test][SN]["MTPINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["MTPINFO"]
+    if "NICINFO" in DATA['SN'][status][test][SN]:
+        if "NICINFO" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+            DATA['SN'][status][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
+    checkdata = checktime2
+    DATA['SN'][status][test][SN]["checktime"] = checktime2
+    DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    if "SPECIAL" in inputconfig:
+        if SN == inputconfig["SPECIAL"]:
+            if "FAIL" in DATA['SN'][status][test][SN]["result"]:
+                DATA['SN'][status][test][SN]["result"] = "PASS"
+    if not "PASS" in DATA['SN'][status][test][SN]["result"]:
+        DATA['SN'][status][test][SN]["result"] = "FAIL"
+    DATA['SN'][status][test][SN]["testfile"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["eachfile"]
+    DATA['SN'][status][test][SN]["ERROR"] = dict()
+    DATA['SN'][status][test][SN]["ERROR"]["DETAIL"] = dict()
+    DATA['SN'][status][test][SN]["ERROR"]["LIST"] = list()
+    for eachteststepdetail in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["TESTSTEPLIST"]:
+        for teststepkey in eachteststepdetail:
+            if not eachteststepdetail[teststepkey] == 'PASS':
+                teststepkeywork = "{} <{}>".format(teststepkey, eachteststepdetail[teststepkey])
+                if not teststepkeywork in DATA['SN'][status][test][SN]["ERROR"]["DETAIL"]:
+                    DATA['SN'][status][test][SN]["ERROR"]["DETAIL"][teststepkeywork] = 1
+                else:
+                    DATA['SN'][status][test][SN]["ERROR"]["DETAIL"][teststepkeywork] += 1
+                if not teststepkeywork in DATA['SN'][status][test][SN]["ERROR"]["LIST"]:
+                    DATA['SN'][status][test][SN]["ERROR"]["LIST"].append(teststepkeywork)
+    return None
+
+def delSNwithnoData(DATA,test,SN,counttesttime,status='LAST'):
+    if counttesttime:
+        DATA['SN'][status][test][SN]["count"] = counttesttime
+    else:
+        if SN in DATA['SN'][status][test]:
+            del DATA['SN'][status][test][SN]
+        if SN in DATA['teststep'][test]["SN"]:
+            del DATA['teststep'][test]["SN"][SN]
+    return None
 
 def checkconfigfile(ARGV):
     print(sys.argv)
@@ -1573,12 +1581,19 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
     topfailuredata['weekday'] = dict()
     topfailuredata['TEST'] = DATA['SN']['TEST']
     topfailuredata['DATA'] = dict()
+    topfailuredata['TESTSNLIST'] = dict()
     for sn in workingonSNlist:
         for test in DATA['SN']['TEST']:
             if sn in DATA['SN'][status][test]:
                 testweek = findworkweek(DATA['SN'][status][test][sn]["checktime"])
                 if not testweek in topfailuredata['weekday']:
                     topfailuredata['weekday'][testweek] = list()
+                if not testweek in topfailuredata['TESTSNLIST']:
+                    topfailuredata['TESTSNLIST'][testweek] = dict()
+                if not test in topfailuredata['TESTSNLIST'][testweek]:
+                    topfailuredata['TESTSNLIST'][testweek][test] = list()
+                if not sn in topfailuredata['TESTSNLIST'][testweek][test]:
+                    topfailuredata['TESTSNLIST'][testweek][test].append(sn)
                 testdayandtime = DATA['SN'][status][test][sn]["checktime"].split("_")
                 testday = testdayandtime[0]
                 if not testday in topfailuredata['weekday'][testweek]:
@@ -1662,9 +1677,12 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
         eachweektotallist = list()
         eachweektotoaldetail = dict()
         for test in topfailuredata['TEST']:
-             wirtedata.append(test)
-             eachweektotallist.append(test)
-             eachweektotoaldetail[test] = 0
+            writetestinformation = "{} <0>".format(test)
+            if test in topfailuredata['TESTSNLIST'][testweek]:
+                writetestinformation = "{} <{}>".format(test,len(topfailuredata['TESTSNLIST'][testweek][test]))
+            wirtedata.append(writetestinformation)
+            eachweektotallist.append(test)
+            eachweektotoaldetail[test] = 0
         wirtedata.append("TOTAL")
         eachweektotallist.append("TOTAL")
         eachweektotoaldetail["TOTAL"] = 0
@@ -3090,6 +3108,7 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
         wirtedata.append(len(listofSN))
         wirtedata.append(len(DATA['teststep'][test]["DETAILTESTSTEP"]))
         countResult = dict()
+        countResult["PASS"] = 0
         for sn in listofSN:
             if "result" in DATA['SN']['FIRST'][test][sn]:
                 testresult = DATA['SN']['FIRST'][test][sn]["result"]
@@ -3108,6 +3127,7 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
             firstyeild = "{:.2f}%".format(0)
         wirtedata.append(firstyeild)
         countResult = dict()
+        countResult["PASS"] = 0
         for sn in listofSN:
             testresult = DATA['SN']['LAST'][test][sn]["result"]
             if not testresult in countResult:
@@ -3151,7 +3171,7 @@ def findworkweek(checktime):
     #print(checktime_object.isocalendar()[:2])
     #hereweekcode = week_from_date(checktime_object)
     hereweekcode = checktime_object.isocalendar()[:2]
-    recordweekcode = "{}wk{}".format(hereweekcode[0],hereweekcode[1])
+    recordweekcode = "{}wk{:02d}".format(hereweekcode[0],hereweekcode[1])
     return recordweekcode
 
 def findbegintesttime(checktime,testime):
