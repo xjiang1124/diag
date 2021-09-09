@@ -29,7 +29,7 @@ MTP-002:
     APC1_PORT: ""
     APC1_USERID: ""
     APC1_PASSWORD: ""
-    APC2: "192.168.70.161"
+    APC2: "192.168.71.103"
     APC2_PORT: "19"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
