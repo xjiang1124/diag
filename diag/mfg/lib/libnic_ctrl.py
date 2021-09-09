@@ -115,7 +115,7 @@ class nic_ctrl():
     def nic_set_asic_type(self):
         if self._nic_type == None:
             self._asic_type = None
-        elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
             self._asic_type = "elba"
         else:
             self._asic_type = "capri"
@@ -829,7 +829,7 @@ class nic_ctrl():
             else:
                 #Program Non HPE
 
-                if nic_type == NIC_Type.ORTANO2:
+                if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
                     cmd = MFG_DIAG_CMDS.MTP_ORTANO_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                         return False
@@ -871,7 +871,7 @@ class nic_ctrl():
           
         else:
             #In NIC Program Non HPE
-            if nic_type == NIC_Type.ORTANO2:
+            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
                 nic_cmd = MFG_DIAG_CMDS.NIC_ORTANO_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
             else:
                 nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
@@ -1117,15 +1117,20 @@ class nic_ctrl():
         # Elba-based:
         if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
+            timeout = MTP_Const.OS_CMD_DELAY
+        elif self._nic_type == NIC_Type.POMONTEDELL:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
+            timeout = MTP_Const.NIC_FPGA_PROG_DELAY
         # Capri-based:
         else:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
+            timeout = MTP_Const.OS_CMD_DELAY
 
         if self._nic_type == NIC_Type.NAPLES25OCP:
             if not self.nic_exec_rst_cmd(nic_cmd_list[0], timeout=MTP_Const.OS_CMD_DELAY):
                 return False
         else:
-            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=timeout):
                 return False
 
         return True
@@ -1662,27 +1667,50 @@ class nic_ctrl():
             return False
         return True
     def nic_kill_hal(self):
+        hal_stopped, sysmgr_stopped = False, False
+
+        if self._nic_type != NIC_Type.NAPLES25OCP:
+                sysmgr_stopped = True #no need to kill for other than OCP..for now
+
         for x in range(6):
             
-            
-            nic_cmd_list = list()
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
-            nic_cmd_list.append(nic_cmd)
-            if self._nic_type == NIC_Type.NAPLES25OCP:
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMGR_FMT)
-            
-            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-                return False
+            if not hal_stopped:
+                nic_cmd_list = list()
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
+                nic_cmd_list.append(nic_cmd)
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                    return False
 
-            nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
-            cmd_buf = self.nic_get_info(nic_cmd)
-            if not cmd_buf:
-                self.nic_set_err_msg("Buffer empty")
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-            
-            match = re.findall("/nic/bin/hal", cmd_buf)
-            if not match:
+                nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
+                cmd_buf = self.nic_get_info(nic_cmd)
+                if not cmd_buf:
+                    self.nic_set_err_msg("Buffer empty")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                
+                match = re.findall("/nic/bin/hal", cmd_buf)
+                if not match:
+                    hal_stopped = True
+
+            if not sysmgr_stopped:
+                nic_cmd_list = list()
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMGR_FMT
+                nic_cmd_list.append(nic_cmd)
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                    return False
+
+                nic_cmd = MFG_DIAG_CMDS.NIC_SYSMGR_RUNNING_FMT
+                cmd_buf = self.nic_get_info(nic_cmd)
+                if not cmd_buf:
+                    self.nic_set_err_msg("Buffer empty")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                
+                match = re.findall("/nic/bin/hal", cmd_buf)
+                if not match:
+                    sysmgr_stopped = True
+
+            if hal_stopped and sysmgr_stopped:
                 break
 
             time.sleep(5)
@@ -1970,7 +1998,7 @@ class nic_ctrl():
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+            elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25OCP:
                 match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
@@ -2085,7 +2113,7 @@ class nic_ctrl():
                     match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+                elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
                     match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 else:
                     match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
@@ -2260,7 +2288,7 @@ class nic_ctrl():
             return False
         self._cpld_ver = "0x{:X}".format(read_data[0])
 
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
             rc = self.nic_read_cpld(0x1e, read_data)
@@ -2371,7 +2399,7 @@ class nic_ctrl():
 
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
             nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
@@ -2387,7 +2415,7 @@ class nic_ctrl():
 
     def nic_write_cpld(self, reg_addr, write_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
             nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:

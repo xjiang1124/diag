@@ -164,6 +164,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.ORTANO2:
         test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
+    if nic_type == NIC_Type.POMONTEDELL:
+        test_list = ["FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_GOLD_PROG"]
     dsp = FF_Stage.FF_DL
 
     for skipped_test in skip_testlist:
@@ -187,8 +189,12 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program CPLD
         elif test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        elif test == "FPGA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
+        elif test == "FPGA_GOLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
         # program feature row
         elif test == "FEA_PROG":
@@ -429,7 +435,7 @@ def main():
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
                 continue
-            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
@@ -561,7 +567,7 @@ def main():
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
         failsafe_cpld_img_file = ""
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
         if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
@@ -591,6 +597,11 @@ def main():
         if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(failsafe_cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
+        elif nic_type == NIC_Type.POMONTEDELL:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA main image: " + os.path.basename(cpld_img_file))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA gold image: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
         else:
@@ -657,7 +668,7 @@ def main():
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
         failsafe_cpld_img_file = ""
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
@@ -699,7 +710,7 @@ def main():
         dsp = FF_Stage.FF_DL
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2:
-            testlist = ["BOOT_CHECK", "NIC_PWRCYC"]
+            testlist = ["CPLD_BOOT_CHECK", "NIC_PWRCYC"]
         else:
             continue
         for skip_test in args.skip_test:
@@ -710,7 +721,7 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
             
             # check CPLD partition
-            if test == "BOOT_CHECK":
+            if test == "CPLD_BOOT_CHECK":
                 ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
                 ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
             # extra powercycle to refresh CPLD
@@ -866,7 +877,7 @@ def main():
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -884,7 +895,7 @@ def main():
     log_relative_link = None
     for slot in fail_nic_list + pass_nic_list:
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not sn:
             continue
         if GLB_CFG_MFG_TEST_MODE:
