@@ -2925,6 +2925,8 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
+        self.mtp_mgmt_nic_diag_sys_clean(slot)
+
         return True
 
     def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list):
