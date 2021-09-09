@@ -11,6 +11,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from openpyxl.cell import Cell
+from openpyxl.styles import numbers
 import timeit
 from datetime import datetime
 from datetime import timedelta
@@ -2809,6 +2810,20 @@ def highlightinred(ws,keyword):
 			if keyword in str(ws.cell(row=rowNum, column=colNum).value):
 				ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')                
 
+def converttoPERCENTAGEnumber(ws):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        for colNum in range(1, maxCol + 1):
+            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+            if '%' in checkvalue:
+                checkvalue = float(checkvalue[:-1])/100
+                ws.cell(row=rowNum, column=colNum).value = checkvalue
+                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+
 def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     
     if not mtp in DATA["MTPCHASSIS"]:
@@ -3168,6 +3183,7 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
     testyeildbySNperfixworkweek(DATA, ws1, alllistofSN, resultlist, status='LAST')
 
     fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
 
     return 0
 
@@ -3330,6 +3346,9 @@ def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
         ws1.append(wirtedata)
         ws1.append(wirtedatapass)
         ws1.append(wirtedatayield) 
+
+    wirtedata = list()
+    ws1.append(wirtedata)    
     for weekcode in myweeknumber['LIST']:
         endtoendyeild = numpy.prod(testendtoendyeildlist[weekcode])
         endtoendyeilddisplay = "{:.2f}%".format(endtoendyeild * 100)
