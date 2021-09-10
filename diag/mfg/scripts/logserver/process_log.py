@@ -3272,12 +3272,7 @@ def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
                 myweeknumber['DETAIL'][test] = dict()
             if sn in DATA['SN'][status][test]:
                 checktime = DATA['SN'][status][test][sn]["checktime"]
-                checktime_object = datetime.strptime(checktime, '%Y-%m-%d_%H-%M-%S')
-                #print(checktime)
-                #print(checktime_object.isocalendar()[:2])
-                #hereweekcode = week_from_date(checktime_object)
-                hereweekcode = checktime_object.isocalendar()[:2]
-                recordweekcode = "{}wk{}".format(hereweekcode[0],hereweekcode[1])
+                recordweekcode = findworkweek(checktime)
                 #print(recordweekcode)
                 if not recordweekcode in myweeknumber['LIST']:
                     myweeknumber['LIST'].append(recordweekcode)
