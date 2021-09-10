@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 cnt=0
 p6=$(cpldapp -mdiord 0x3 0x10)
 p7=$(cpldapp -mdiord 0x3 0x10)
