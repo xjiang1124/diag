@@ -1,0 +1,16 @@
+{
+	"NAME": "DIAG",
+	"TYPE": "IMAGE",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"imagedir": "/home/diag/hw/diag/diag_images/jenkins",
+		"local_dir": "/image/diag_images",
+		"TEMPDATABASE": "/samba/public/tmp_database/DIAG_IMAGE",
+		"reportpath":"/samba/public/REPORT/DIAG_IMAGE/",
+		"historypath":"/samba/public/HISTORY/DIAG_IMAGE"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/DIAG_IMAGE.json"
+	}	
+}

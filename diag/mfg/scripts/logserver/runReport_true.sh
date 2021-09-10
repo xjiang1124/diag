@@ -19,6 +19,8 @@ NAPLES25SWMDELL_input.json
 NAPLES100_input.json
 NAPLES100HPE_input.json
 NAPLES100IBM_input.json
+NAPLES25OCP_input.json
+TAORMINA_P2_2_input.json
 )
 
 runReportModule()

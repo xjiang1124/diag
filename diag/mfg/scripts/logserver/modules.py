@@ -55,6 +55,53 @@ class modules(object):
 			self.logfile = logfile
 		self.debug_print("Start modules...")
 
+	def copy_file(self,sourcefile,target):
+		from shutil import copyfile
+		from sys import exit
+		try:
+		    copyfile(sourcefile, target)
+		except IOError as e:
+		    self.debug_print("Unable to copy file. %s" % e)
+		    return False
+		except:
+		    self.debug_print("Unexpected error:", sys.exc_info())
+		    return False
+
+		self.debug_print("\nFile copy done!\n")
+		return True
+
+	def convert_unit(self, size_in_bytes, unit):
+	   """ Convert the size from bytes to other units like KB, MB or GB"""
+	   if unit.upper() == 'KB':
+	       return size_in_bytes/1024
+	   elif unit.upper() == 'MB':
+	       return size_in_bytes/(1024*1024)
+	   elif unit.upper() == 'GB':
+	       return size_in_bytes/(1024*1024*1024)
+	   else:
+	       return size_in_bytes
+
+	def findfilecreatedate(self,checkfile):
+		import os.path, time 
+		return time.ctime(os.path.getmtime(checkfile))
+
+	def get_file_size(self, file_name, size_type = 'MB' ):
+	   """ Get file in size in given unit like KB, MB or GB"""
+	   size = os.path.getsize(file_name)
+	   return self.convert_unit(size, size_type)
+
+	def getmd5sumoffile(self,checkfile):
+		start=datetime.now()
+		import hashlib
+		if os.path.exists(checkfile):
+			md5sumoffile = hashlib.md5(open(checkfile,'rb').read()).hexdigest()
+			filesizeinMB = self.get_file_size(checkfile)
+			filecreatedate = self.findfilecreatedate(checkfile)
+			difftime = datetime.now()-start
+			self.debug_print("FILE: {} SIZE: {} MB Create: {} ==> MD5SUM: {} RUNNING TIME: {} seconds".format(checkfile,round(filesizeinMB,3),filecreatedate,md5sumoffile,difftime.total_seconds()))
+			return md5sumoffile
+		else:
+			return None
 
 	def readjsonfile(self,jsonfile):
 		start=datetime.now()
@@ -65,6 +112,18 @@ class modules(object):
 
 		difftime = datetime.now()-start
 		self.debug_print("readjsonfile: {} use {} seconds".format(jsonfile,difftime.total_seconds()))
+
+		return outputdict
+
+	def wirtejsonfile(self,jsonfile,DATA):
+		start=datetime.now()
+		outputdict = dict()
+
+		jsonbasedir = os.path.dirname(jsonfile)
+		self.createdirinserver(jsonbasedir)
+		mpu.io.write(jsonfile, DATA)
+		difftime = datetime.now()-start
+		self.debug_print("wirtejsonfile: {} use {} seconds".format(jsonfile,difftime.total_seconds()))
 
 		return outputdict
 
@@ -91,6 +150,8 @@ class modules(object):
 	        #print(checkDir[DirName])
 	        #print(os.path.isdir(checkDir[DirName]))
 	        if "testlogpath" in DirName:
+	            continue
+	        elif "imagedir" in DirName:
 	            continue
 	        self.createdirinserver(checkDir[DirName])
 
