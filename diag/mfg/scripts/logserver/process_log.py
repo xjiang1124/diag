@@ -187,6 +187,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         return None
 
     #sys.exit()
+    TempHVLVdata = dict()
     
     if 'CM' in inputconfig:
         if inputconfig['CM'] == "FSJ":
@@ -205,18 +206,26 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
 
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False)
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False)
+        if check2C4CinTestinfunction(DATA['SN']['TEST']):
+            for eachteststep in DATA['SN']['TEST']:
+                if "4C" in eachteststep:
+                    TempHVLVdata[eachteststep] = generateHVLVdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
 
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,byweek=True)
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False,byweek=True)
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=True)
-        generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False,byweek=True)
-        #generateexeclsn4Cstatus(DATA,'4C-H',wb)
-        #generateexeclsn4Cstatus(DATA,'4C-L',wb)
-        #
+            #print(json.dumps(TempHVLVdata, indent = 4))
+            for eachteststep in DATA['SN']['TEST']:
+                if "4C" in eachteststep:
+                    generateexeclHVLVdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,TempHVLVdata)           
+            #sys.exit()
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False)
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False)
+
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,byweek=True)
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False,byweek=True)
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=True)
+            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False,byweek=True)
+
         for eachteststep in DATA['SN']['TEST']:
             generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
             if "4C" in eachteststep:
@@ -235,6 +244,14 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
 
     return None    
         
+def check2C4CinTestinfunction(teststep):
+    check2C4CinTest = False
+    for eachteststep in teststep:
+        if "4C" in eachteststep:
+            check2C4CinTest = True
+        # if "2C" in eachteststep:
+        #     check2C4CinTest = True
+    return check2C4CinTest
 
 def movereporttohistorydir(inputconfig):
     filelisttowork = getallfilebyfolder(inputconfig["DIR"]["reportpath"],keyword=None,level=1)
@@ -2482,6 +2499,108 @@ def GetSNlistbyPNfromDLtest(workingonSNlist,DATA,teststep='DL'):
                         
     return SNbyPN
 
+def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
+    start=datetime.now()
+    print("{}: {}".format("generateHVLVdata", teststep))
+    HLteststeplist = list()
+    LVteststeplist = list()
+    for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
+        if "HV" in eachdeatilteststep:
+            HLteststeplist.append(eachdeatilteststep)
+        if "LV" in eachdeatilteststep:
+            LVteststeplist.append(eachdeatilteststep)
+    #print(json.dumps(HLteststeplist, indent = 4))
+    #print(json.dumps(LVteststeplist, indent = 4))
+
+    HVLVData = dict()
+
+    for sn in workingonSNlist:
+        if sn in DATA["SN"]:
+            for chassis in DATA["SN"][sn]:
+                for testdate in DATA["SN"][sn][chassis]:
+                    for testetime in DATA["SN"][sn][chassis][testdate]:
+                        timestamp = "{}_{}".format(testdate, testetime)
+                        if not sn in HVLVData:
+                            HVLVData[sn] = dict()
+                            HVLVData[sn]["LIST"] = list()
+                            HVLVData[sn]["DATA"] = dict()
+                        if not timestamp in HVLVData[sn]["DATA"]:
+                            HVLVData[sn]["DATA"][timestamp] = dict()
+                        if not timestamp in HVLVData[sn]["LIST"]:
+                            HVLVData[sn]["LIST"].append(timestamp)
+                            HVLVData[sn]["LIST"].sort()
+                        HVstatus = "PASS"
+                        for eachdeatilteststep in HLteststeplist:
+                            if eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
+                                if not "PASS" in DATA["SN"][sn][chassis][testdate][testetime]['DETAILTESTSTEP'][eachdeatilteststep].upper():
+                                    HVstatus = "FAIL"
+                            else:
+                                HVstatus = "FAIL"
+                        LVstatus = "PASS"
+                        for eachdeatilteststep in LVteststeplist:
+                            if eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
+                                if not "PASS" in DATA["SN"][sn][chassis][testdate][testetime]['DETAILTESTSTEP'][eachdeatilteststep].upper():
+                                    LVstatus = "FAIL"
+                            else:
+                                LVstatus = "FAIL"
+                        HVLVData[sn]["DATA"][timestamp]["HVstatus"] = HVstatus
+                        HVLVData[sn]["DATA"][timestamp]["LVstatus"] = LVstatus
+                        HVLVData[sn]["DATA"][timestamp]["RESULT"] = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        HVLVData[sn]["DATA"][timestamp]["DETAILTESTSTEP"] = DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]
+                        HVLVData[sn]["DATA"][timestamp]["TESTSTEPLIST"] = DATA["SN"][sn][chassis][testdate][testetime]["TESTSTEPLIST"]
+                        #if HVstatus == "PASS" and LVstatus == "FAIL":
+                            #print(json.dumps(HVLVData[sn], indent = 4))    
+                            #sys.exit()
+
+    #print(json.dumps(HVLVData, indent = 4))  
+    difftime = datetime.now()-start
+    print("generateHVLVdata: {} use {} seconds".format(teststep,difftime.total_seconds()))
+    return HVLVData
+
+def generateexeclHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA,TempHVLVdata):
+    start=datetime.now()
+    sheettitle = "{}_HVLV_status_By_1st".format(teststep)
+    ws2 = wb.create_sheet(title=sheettitle)
+    print("{}: {}".format("generateexeclHVLVdata", teststep))
+    wirtedata = list()
+    wirtedata.append('TEST')
+    wirtedata.append('SN')
+    wirtedata.append('HV_RESULT')
+    wirtedata.append('LV_RESULT')
+    wirtedata.append('FINALRESULT')
+
+    for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
+         wirtedata.append(eachdeatilteststep)
+    ws2.append(wirtedata)
+    
+    for sn in workingonSNlist:
+        if sn in TempHVLVdata[teststep]:
+
+            wirtedata = list()
+            wirtedata.append(teststep)
+            wirtedata.append(sn)
+            wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["HVstatus"])
+            wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["LVstatus"])
+            wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["RESULT"])
+
+            for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
+                if eachdeatilteststep in TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["DETAILTESTSTEP"]:
+                    wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]['DETAILTESTSTEP'][eachdeatilteststep])
+                else:
+                    wirtedata.append("NO TEST DATA")
+            
+            ws2.append(wirtedata)
+    
+    fixcolumnssize(ws2)
+    highlightinyellow(ws2,'TIMEOUT')
+    highlightinyellow(ws2,'NO TEST DATA')
+    highlightingreen(ws2,'PASS')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    freezePosition(ws2,'F2')
+    difftime = datetime.now()-start
+    print("generateexeclHVLVdata: {} use {} seconds".format(teststep,difftime.total_seconds()))
+    return 0
 
 def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
 

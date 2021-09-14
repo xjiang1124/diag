@@ -17,6 +17,7 @@ echo "My Currently Dir ($DATE): $_mydir"
 #exit 0
 
 configNames=(
+POMONTE_test_input.json
 ORTANO2_input.json
 NAPLES25_input.json
 NAPLES25SWM_input.json

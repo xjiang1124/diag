@@ -26,7 +26,7 @@ def main():
 
     cwd = os.getcwd()
     
-    listofJson = pr['modules'].getallfilebyfolder(cwd, keyword=".json")
+    listofJson = pr['modules'].getallfilebyfolder(cwd, keyword="input.json")
 
     #pr['modules'].print_anyinformation(listofJson)
 
