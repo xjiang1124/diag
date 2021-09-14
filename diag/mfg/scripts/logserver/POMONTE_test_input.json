@@ -1,0 +1,60 @@
+{
+	"NAME": "POMONTE_TEST",
+	"TYPE": "NIC",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_POMONTE_02",
+		"TEMPDATABASE": "/samba/public/tmp_database/POMONTE",
+		"testlogpath": "/hw-srv1-log/mfg_log/POMONTEDELL",
+		"reportpath":"/samba/public/REPORT/POMONTE/",
+		"historypath":"/samba/public/HISTORY/POMONTE"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST01.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"IMAGESUB" : {
+		"CPLD1 image" : "CPLD image1",
+		"CPLD2 image" : "CPLD image2"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"DISPLAYINDO" : [
+		"CPLD image1",
+		"QSPI image",
+		"MTP Diag Version"
+	],
+	"CHECKKEYS" : [
+		"IMAGE",
+		"MTPINFO",
+		"NICINFO"
+	],
+	"DIE_ID" : 1,
+	"TESTLIST" :[
+					"DL",
+					"P2C"
+					
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"4C/4C-L",
+					"4C/4C-H",
+					"SWI",
+					"FST"
+				]
+	
+}
