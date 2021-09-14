@@ -4415,10 +4415,19 @@ class mtp_ctrl():
             mac = "000000000000"
             pn = "0"
             if swmtestmode != Swm_Test_Mode.ALOM:
-                while True:
+                sn_scanned = False
+                mac_scanned = False
+                pn_scanned = False
+                while not sn_scanned:
                     usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
-                    sn = libmfg_utils.serial_number_validate(raw_scan)
+                    if libmfg_utils.dell_ppid_validate(raw_scan):
+                        # Dell PPID
+                        sn = libmfg_utils.extract_sn_from_dell_ppid(raw_scan)
+                        pn = libmfg_utils.extract_pn_from_dell_ppid(raw_scan)
+                        pn_scanned = True
+                    else:
+                        sn = libmfg_utils.serial_number_validate(raw_scan)
                     if not sn:
                         self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
                         #return None
@@ -4427,10 +4436,13 @@ class mtp_ctrl():
                         #return None
                     else:
                         scan_sn_list.append(sn)
-                        break
+                        sn_scanned = True
+
+                    if pn_scanned and not pn:
+                        pn_scanned = False
 
                 #Scan Mac Loop
-                while True:
+                while not mac_scanned:
                     usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
                     mac = libmfg_utils.mac_address_validate(raw_scan)
@@ -4443,10 +4455,10 @@ class mtp_ctrl():
                         #return None
                     else:
                         scan_mac_list.append(mac)
-                        break
+                        mac_scanned = True
 
                 #Scan PN Loop
-                while True:
+                while not pn_scanned:
                     usr_prompt = "Please scan {:s} Part Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
                     pn = libmfg_utils.part_number_validate(raw_scan)
@@ -4454,7 +4466,7 @@ class mtp_ctrl():
                         self.cli_log_err("Invalid NIC Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
                         #return None
                     else:
-                        break
+                        pn_scanned = True
                 #Scan ALOM SN Loop
                 alom_sn = None
                 alom_pn = None

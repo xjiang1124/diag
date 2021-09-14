@@ -208,11 +208,46 @@ def get_nic_ip_addr(slot):
 def special_char_removal(buf):
     return re.sub(r"[\x00-\x09,\x0B-\x0C,\x0E-\x1F]", "", buf)
 
+def extract_sn_from_dell_ppid(tmp):
+    """ 
+    The Board Serial Number is formed by concatenating the following PPID fields: 
+    Country of Origin, MFG ID, Date Code and Serial Number. 
+    For information on the fields in the PPID label, reference DP/N ENG0014180.
+    
+        US-01234D-54321-25A-0123-A00
+        A -   B  -  C  - D - E  - F
+        SN = A+C+D+E
+    """
+    tmp = tmp.split("-")
+    sn = tmp[0] + tmp[2] + tmp[3] + tmp[4]
+    return serial_number_validate(sn)
+
+def extract_pn_from_dell_ppid(tmp):
+    """ 
+    Derived from PPDI field P/N + Rev
+    
+        US-01234D-54321-25A-0123-A00
+        A -   B  -  C  - D - E  - F
+        PN = B+F
+    """
+    tmp = tmp.split("-")
+    pn = str(tmp[1] + tmp[5])
+    return part_number_validate(pn)
+
+def dell_ppid_validate(tmp):
+    # No Dashes in Barcode read
+    tmp = tmp.replace("-","")
+    if re.match(DELL_PPID_FMT, tmp) and len(tmp) <= 23 and len(tmp) >= 22:
+        return tmp
+    else:
+        return None
 
 def serial_number_validate(tmp):
     if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
         return tmp
     elif re.match(HP_SN_FMT, tmp) and (len(tmp) == 10):
+        return tmp
+    elif re.match(DELL_PPID_SN_FMT, tmp) and (len(tmp) == 14):
         return tmp
     else:
         return None
@@ -229,6 +264,8 @@ def part_number_validate(tmp):
     if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13 or len(tmp) == 12):
         return tmp
     if re.match(HP_PN_FMT, tmp) and (len(tmp) == 10):
+        return tmp
+    if re.match(DELL_PPID_PN_FMT, tmp) and (len(tmp) <= 9 and len(tmp) >= 8):
         return tmp
     else:
         return None

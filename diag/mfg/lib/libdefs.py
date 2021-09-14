@@ -24,6 +24,7 @@ class MTP_ASIC_SUPPORT:
 class NIC_Vendor:
     PENSANDO = "Pensando"
     HPE = "HPE"
+    DELL = "DELL"
     UNKNOWN = "Unknown"
 
 

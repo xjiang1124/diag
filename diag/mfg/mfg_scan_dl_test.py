@@ -392,6 +392,22 @@ def main():
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
     libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
 
+    # Pomonte P1 build: refactor the SN and PN from the ones scanned
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        if scan_rslt[key]["NIC_VALID"]:
+            pn = scan_rslt[key]["NIC_PN"]
+            if pn.startswith("68-0022"):
+                fru_date = scan_rslt[key]["NIC_TS"]
+                year_digit = fru_date[-1:]
+                month_digit = '{:x}'.format(int(fru_date[0:2]))
+                if int(fru_date[2:4]) < 10:
+                    day_digit = fru_date[2:4]
+                else:
+                    day_digit = chr(55+int(fru_date[2:4]))
+                scan_rslt[key]["NIC_SN"] = "USFLUPK" + year_digit + month_digit + day_digit + scan_rslt[key]["NIC_SN"][-4:]
+                scan_rslt[key]["NIC_PN"] = "0PCFPCX01"
+
     scan_cfg_file = log_dir + log_sub_dir + "dl_barcode.yaml"
     scan_cfg_filep = open(scan_cfg_file, "w+")
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)

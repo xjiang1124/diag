@@ -18,6 +18,9 @@ from libmfg_cfg import NAPLES_DISP_SN_FMT
 from libmfg_cfg import NAPLES_DISP_PN_FMT
 from libmfg_cfg import NAPLES_DISP_MAC_FMT
 from libmfg_cfg import NAPLES_DISP_DATE_FMT
+from libmfg_cfg import DELL_PPID_SN_FMT
+from libmfg_cfg import DELL_PPID_PN_FMT
+from libmfg_cfg import DELL_PPID_DISP_SN_FMT
 from libmfg_cfg import MFG_VALID_FW_LIST
 from libmfg_cfg import ALOM_SN_FMT
 from libmfg_cfg import ALOM_DISP_BIA_PN_FMT
@@ -1383,6 +1386,8 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        if self._nic_type == NIC_Type.POMONTEDELL:
+            nic_cmd = "fwupdate -F -p /{:s} -i 'all'".format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
   
@@ -1883,8 +1888,12 @@ class nic_ctrl():
         if match:
             self._vendor = NIC_Vendor.HPE
             return True
+        match = re.findall(DELL_PPID_SN_FMT, fru_buf)
+        if match:
+            self._vendor == NIC_Vendor.DELL
+            return True
 
-        self.nic_set_cmd_buf(fru_buf)
+        self.nic_set_cmd_buf("Unknown vendor for: {:s}".format(fru_buf))
         self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
         return False
 
@@ -1954,6 +1963,8 @@ class nic_ctrl():
                match = re.findall(ALOM_SN_FMT, fru_buf)
             else:
                match = re.findall(HP_DISP_SN_FMT, fru_buf)
+        elif self._vendor == NIC_Vendor.DELL:
+            match = re.findall(DELL_PPID_SN_FMT, fru_buf)
         else:
             match = re.findall(NAPLES_DISP_SN_FMT, fru_buf)
         if match:
@@ -2003,10 +2014,12 @@ class nic_ctrl():
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
+            elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25OCP:
                 match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
+            elif self._nic_type == NIC_Type.POMONTEDELL:
+                match = re.findall(DELL_PPID_PN_FMT, fru_buf)
             else:
                 match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
                 if not match:
@@ -2069,6 +2082,8 @@ class nic_ctrl():
                     match = re.findall(ALOM_SN_FMT, fru_buf)
                 else:    
                     match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())
+            elif self._vendor == NIC_Vendor.DELL:
+                match = re.findall(DELL_PPID_SN_FMT, self.nic_get_cmd_buf())
             else:
                 match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
             if match:
@@ -2118,8 +2133,10 @@ class nic_ctrl():
                     match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
+                elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
                     match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
+                elif self._nic_type == NIC_Type.POMONTEDELL:
+                    match = re.findall(DELL_PPID_PN_FMT, self.nic_get_cmd_buf())
                 else:
                     match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
                     if not match:
