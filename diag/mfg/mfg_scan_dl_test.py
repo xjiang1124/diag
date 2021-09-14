@@ -895,6 +895,7 @@ def main():
     log_relative_link = None
     for slot in fail_nic_list + pass_nic_list:
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        key = libmfg_utils.nic_key(slot)
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not sn:
             continue
