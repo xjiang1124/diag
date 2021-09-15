@@ -929,11 +929,11 @@ func HasAssemblyEntry() (hasAssembly bool) {
        CustType == "DELLNAPLES100"  ||
        CustType == "DELLOCP"        ||
        CustType == "PENSWM"         ||
-       CustType == "LACONADELL"     ||
-       CustType == "LACONA32DELL"   ||
-       CustType == "LACONA32"       ||
-       CustType == "POMONTE"        ||
-       CustType == "POMONTEDELL" {
+       //CustType == "POMONTE"        ||
+       //CustType == "LACONA32"       ||
+       //CustType == "LACONA32DELL"   ||    //DELL 32G LACONA AND POMONTE HAVE AN ASSEMBLY FIELD, BUT IT IS NOT USED 
+       //CustType == "POMONTEDELL"    ||    //DELL 32G LACONA AND POMONTE HAVE AN ASSEMBLY FIELD, BUT IT IS NOT USED 
+       CustType == "LACONADELL" {
 
         hasAssembly = true
 
@@ -1454,7 +1454,7 @@ func updateIntChk() () {
             if (entry.Offset > 350) && (entry.Offset < 361) {
                 mraChk[2] += calcSum(entry)
             }
-            if (entry.Offset > 365) && (entry.Offset < 375) {
+            if (entry.Offset > 365) && (entry.Offset < 381) {
                 mraChk[3] += calcSum(entry)
             }
         }

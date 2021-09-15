@@ -1,59 +1,5 @@
 package eeprom
 
-/*
-var HpeTblLACONA = []entry {
-    entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
-    entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
-    entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},
-    entry{"Board Info Offset",                      INT8,        3,        1,    []byte{0x01}},
-    entry{"Product Area Offset",                    INT8,        4,        1,    []byte{0x13}},
-    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0x00}},
-    entry{"PAD",                                    INT8,        6,        1,    []byte{0x00}},
-    entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0x00}},
-
-    entry{"Board Info Format Version",              INT8,        8,        1,    []byte{0x01}},
-    entry{"Board Area Length",                      INT8,        9,        1,    []byte{0x12}},
-    entry{"Language Code",                          INT8,        10,       1,    []byte{0x00}},
-    entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
-    entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
-    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x44, 0x45, 0x4C, 0x4C,
-        0x20, 0x20, 0x20, 0x20}},
-    entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xE8}},
-    entry{"Product Name",                           STRING,      24,       40,   []byte{
-        0x44, 0x53, 0x43, 0x32, 0x2d, 0x32, 0x35, 0x2c, 0x32, 0x78, 
-        0x53, 0x46, 0x50, 0x35, 0x36, 0x2c, 0x31, 0x36, 0x67, 0x52, 
-        0x41, 0x4d, 0x2c, 0x36, 0x34, 0x47, 0x65, 0x4d, 0x4d, 0x43, 
-        0x2c, 0x56, 0x69, 0x2c, 0x48, 0x50, 0x45, 0x20, 0x20, 0x20}},
-    entry{"Serial Number Type/Length",              INT8,        64,       1,    []byte{0xCA}},
-    entry{"Serial Number",                          STRING,      65,       10,   []byte{0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
-    entry{"Part Number Type/Length",                INT8,        75,       1,    []byte{0xD9}},
-    entry{"Part Number",                            STRING,      76,       25,   []byte{
-        0x44, 0x53, 0x43, 0x32, 0x2d, 0x32, 0x53, 0x32, 0x35, 0x2d, 
-        0x31, 0x36, 0x52, 0x31, 0x36, 0x48, 0x36, 0x34, 0x50, 0x2d, 
-        0x48, 0x41, 0x20, 0x20, 0x20}},
-    entry{"FRU File ID Type/Length",                INT8,       101,      1,    []byte{0xC8}},
-    entry{"FRU ID",                                 STRING,     102,       8,    []byte{0x30, 0x36, 0x2f, 0x32, 
-        0x31, 0x2f, 0x32, 0x31}},
-    entry{"Board ID Type/Length",                   INT8,       110,       1,    []byte{0x04}},
-    entry{"Board ID",                               INT8,       111,       4,    []byte{0x01, 0x00, 0x00, 0x00}},
-    entry{"Engineering Change Level Type/Length",   INT8,       115,       1,    []byte{0xC2}},
-    entry{"Engineering Change Level",               INT8,       116,       2,    []byte{0x00, 0x00}},
-    entry{"Number of MAC Address Type/Length",      INT8,       118,       1,    []byte{0x02}},
-    entry{"Total Number of MAC Address",            INT8,       119,       2,    []byte{0x18, 0x00}},
-    entry{"MAC Address Base Type/Length",           INT8,       121,       1,    []byte{0x06}},
-    entry{"MAC Address Base",                       INT8,       122,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
-        0x00, 0x00}},
-    entry{"Assembly Number Type/Length",            INT8,       128,       1,    []byte{0xCD}},
-    entry{"Assembly Number",                        STRING,     129,       13,   []byte{0x50, 0x34, 0x37, 0x39, 
-        0x32, 0x37, 0x2d, 0x30, 0x30, 0x31, 0x20, 0x20, 0x20 }},
-    entry{"End of Field",                           INT8,       142,       1,    []byte{0xC1}},
-    entry{"PAD",                                    INT8,       143,       8,    []byte{0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00}},
-    entry{"Board Info Area Checksum",               INT8,       151,       1,    []byte{0x00}},
-}
-*/
- 
 //Board Information Area Table
 var HpeTblLACONA = []entry {
     entry{"Common Format Version",                  INT8,        0,        1,    []byte{1}},
