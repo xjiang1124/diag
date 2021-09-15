@@ -1104,8 +1104,8 @@ def main():
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
 
         # Readjust the voltage corners
-        # capri = HTLV, LTHV
-        # elba  = HTLV, HTHV, LTHV, LTLV
+        # capri = LTHV, HTLV
+        # elba  = LTHV, LTLV, HTLV, HTHV
         if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
             if corner == Env_Cond.MFG_LT:
                 vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT]
@@ -1300,25 +1300,19 @@ def main():
             # power cycle all the NIC
             mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-            if not GLB_CFG_MFG_TEST_MODE:
-                # Format the EMMC and get latest diag image for QA only
-                nic_util = True
-            else:
-                # Don't format EMMC to keep diag image installed in previous (DL) stage
-                nic_util = True #False
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=nic_util, stop_on_err=stop_on_err):
-                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-                return
-            if stop_on_err:
-                for nic_list in nic_test_full_list:
-                    for slot in nic_list:
-                        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                            return
+            if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
+                if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err):
+                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                    return
+                if stop_on_err:
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                                return
 
-            if not programmables_checked and corner != Env_Cond.MFG_QA:
                 # Update programmables if necessary
                 dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
                 programmables_checked = True
