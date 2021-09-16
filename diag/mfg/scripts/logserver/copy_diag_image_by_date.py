@@ -40,27 +40,49 @@ def main():
     pr['modules'].print_anyinformation(listofdiag)
 
     for eachdiagimage in listofdiag:
+        if not today in DATA:
+            DATA[today] = dict()
+
+
         md5sumoffile = pr['modules'].getmd5sumoffile(eachdiagimage)
         pr['modules'].debug_print("FILE: {} ==> MD5SUM: {}".format(eachdiagimage,md5sumoffile))
         filename = os.path.basename(eachdiagimage)
         pr['modules'].debug_print("OLD FILE: {}".format(filename))
+
+        if not filename in DATA[today]:
+            DATA[today][filename] = list()
+
         filearraybyname = filename.split('.')
-        newfilename = "{}_{}.{}".format(filearraybyname[0],today,filearraybyname[1])
+        newfilename = "{}_{}_{}.{}".format(filearraybyname[0],today,len(DATA[today][filename]),filearraybyname[1])
         pr['modules'].debug_print("NEW FILE: {}".format(newfilename))
         newpath = "{}/{}".format(pr['config']["DIR"]["local_dir"],today)
         pr['modules'].createdirinserver(newpath)
         newpathwithfile = "{}/{}".format(newpath,newfilename)
-        if not today in DATA:
-            DATA[today] = dict()
-        if not filename in DATA[today]:
-            DATA[today][filename] = dict()
-        DATA[today][filename]["origin"] = eachdiagimage
-        DATA[today][filename]["newfilename"] = newfilename
-        DATA[today][filename]["newfilepath"] = newpathwithfile
-        DATA[today][filename]["md5sum"] = md5sumoffile
-        DATA[today][filename]["size_in_MB"] = pr['modules'].get_file_size(eachdiagimage)
-        DATA[today][filename]["createdate"] = pr['modules'].findfilecreatedate(eachdiagimage)
-        pr['modules'].copy_file(eachdiagimage,newpathwithfile)
+
+        onedata = dict()
+        onedata["origin"] = eachdiagimage
+        onedata["newfilename"] = newfilename
+        onedata["newfilepath"] = newpathwithfile
+        onedata["md5sum"] = md5sumoffile
+        onedata["size_in_MB"] = pr['modules'].get_file_size(eachdiagimage)
+        onedata["createdate"] = pr['modules'].findfilecreatedate(eachdiagimage)
+
+        if not len(DATA[today][filename]):
+            DATA[today][filename].append(onedata)
+            pr['modules'].copy_file(eachdiagimage,newpathwithfile)
+        else:
+            newfile = True
+            for eachday in DATA:
+                if filename in DATA[eachday]:
+                    for eachdata in DATA[eachday][filename]:
+                        if md5sumoffile == eachdata["md5sum"]:
+                            newfile = False
+                            break
+                if not newfile:
+                    break
+            if newfile:
+                DATA[today][filename].append(onedata)
+                pr['modules'].copy_file(eachdiagimage,newpathwithfile)
 
     pr['modules'].print_anyinformation(DATA)
     pr['modules'].wirtejsonfile(pr['config']["FILE"]["datebasesjsonfile"],DATA)

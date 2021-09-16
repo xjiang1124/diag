@@ -212,9 +212,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
                     TempHVLVdata[eachteststep] = generateHVLVdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
 
             #print(json.dumps(TempHVLVdata, indent = 4))
-            for eachteststep in DATA['SN']['TEST']:
-                if "4C" in eachteststep:
-                    generateexeclHVLVdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,TempHVLVdata)           
+            generateexeclHVLVdata(workingonSNlist,DATA["teststep"],wb,DATA,TempHVLVdata)           
             #sys.exit()
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False)
@@ -2557,49 +2555,73 @@ def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
     print("generateHVLVdata: {} use {} seconds".format(teststep,difftime.total_seconds()))
     return HVLVData
 
-def generateexeclHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA,TempHVLVdata):
+def generateexeclHVLVdata(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata):
     start=datetime.now()
-    sheettitle = "{}_HVLV_status_By_1st".format(teststep)
+    sheettitle = "HVLV_status_By_1st"
     ws2 = wb.create_sheet(title=sheettitle)
-    print("{}: {}".format("generateexeclHVLVdata", teststep))
+    print("{}".format("generateexeclHVLVdata"))
+    teststeplist = list()
+    for teststep in TempHVLVdata:
+        teststeplist.append(teststep)
     wirtedata = list()
-    wirtedata.append('TEST')
+    #wirtedata.append('TEST')
     wirtedata.append('SN')
-    wirtedata.append('WeekNumber')
-    wirtedata.append('HV_RESULT')
-    wirtedata.append('LV_RESULT')
-    wirtedata.append('FINALRESULT')
-
-    for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
-         wirtedata.append(eachdeatilteststep)
+    for teststep in teststeplist:
+        wirtedata.append("{}_WeekNumber".format(teststep))  
+    for teststep in teststeplist:
+        wirtedata.append("{}_HV_RESULT".format(teststep))
+        wirtedata.append("{}_LV_RESULT".format(teststep))
+    #wirtedata.append('FINALRESULT')
+    for teststep in teststeplist:
+        for eachdeatilteststep in DATA[teststep]["DETAILTESTSTEP"]:
+             wirtedata.append("{}_{}".format(teststep, eachdeatilteststep))
     ws2.append(wirtedata)
     
     for sn in workingonSNlist:
-        if sn in TempHVLVdata[teststep]:
+        
+        checksnstatus = False
+        for teststep in teststeplist:
+            if sn in TempHVLVdata[teststep]:
+                checksnstatus = True
+        if not checksnstatus:
+            continue
 
-            wirtedata = list()
-            wirtedata.append(teststep)
-            wirtedata.append(sn)
-            wirtedata.append(findworkweek(TempHVLVdata[teststep][sn]["LIST"][0]))
-            wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["HVstatus"])
-            wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["LVstatus"])
-            wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["RESULT"])
-
-            for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
-                if eachdeatilteststep in TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["DETAILTESTSTEP"]:
-                    wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]['DETAILTESTSTEP'][eachdeatilteststep])
+        wirtedata = list()
+        #wirtedata.append(teststep)
+        wirtedata.append(sn)
+        for teststep in teststeplist:
+            if sn in TempHVLVdata[teststep]:
+                wirtedata.append(findworkweek(TempHVLVdata[teststep][sn]["LIST"][0]))
+            else:
+                wirtedata.append("NULL")
+        for teststep in teststeplist:
+            if sn in TempHVLVdata[teststep]:
+                wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["HVstatus"])
+                wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["LVstatus"])
+                #wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["RESULT"])
+            else:
+                wirtedata.append("NULL")
+                wirtedata.append("NULL")
+        for teststep in teststeplist:
+            for eachdeatilteststep in DATA[teststep]["DETAILTESTSTEP"]:
+                if sn in TempHVLVdata[teststep]:
+                    if eachdeatilteststep in TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["DETAILTESTSTEP"]:
+                        wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]['DETAILTESTSTEP'][eachdeatilteststep])
+                    else:
+                        wirtedata.append("NO TEST DATA")
                 else:
-                    wirtedata.append("NO TEST DATA")
-            
-            ws2.append(wirtedata)
+                    wirtedata.append("NULL")
+        
+        ws2.append(wirtedata)
     
     fixcolumnssize(ws2)
     highlightinyellow(ws2,'TIMEOUT')
     highlightinyellow(ws2,'NO TEST DATA')
     highlightingreen(ws2,'PASS')
+    highlightinOrange(ws2,'NULL')
     highlightinred(ws2, 'FAIL')
     highlightinred(ws2, 'FAILED')
-    freezePosition(ws2,'F2')
+    freezePosition(ws2,'H2')
     difftime = datetime.now()-start
     print("generateexeclHVLVdata: {} use {} seconds".format(teststep,difftime.total_seconds()))
     return 0
@@ -3305,6 +3327,9 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
 
     fixcolumnssize(ws1)
     converttoPERCENTAGEnumber(ws1)
+    freezePosition(ws1, "B1")
+
+
 
     return 0
 

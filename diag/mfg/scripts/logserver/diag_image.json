@@ -11,6 +11,6 @@
 		"historypath":"/samba/public/HISTORY/DIAG_IMAGE"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/DIAG_IMAGE.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/DIAG_IMAGE02.json"
 	}	
 }
