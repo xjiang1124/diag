@@ -2500,13 +2500,32 @@ def GetSNlistbyPNfromDLtest(workingonSNlist,DATA,teststep='DL'):
 def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
     start=datetime.now()
     print("{}: {}".format("generateHVLVdata", teststep))
-    HLteststeplist = list()
-    LVteststeplist = list()
+    HLteststeplist = dict()
+    LVteststeplist = dict()
+    HLteststeplist['MAIN'] = list()
+    LVteststeplist['MAIN'] = list()
     for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
         if "HV" in eachdeatilteststep:
-            HLteststeplist.append(eachdeatilteststep)
+            HLteststeplist['MAIN'].append(eachdeatilteststep)
         if "LV" in eachdeatilteststep:
-            LVteststeplist.append(eachdeatilteststep)
+            LVteststeplist['MAIN'].append(eachdeatilteststep)
+    for sn in workingonSNlist:
+        if sn in DATA["SN"]:
+            for chassis in DATA["SN"][sn]:
+                for testdate in DATA["SN"][sn][chassis]:
+                    for testetime in DATA["SN"][sn][chassis][testdate]:
+                        if "PASS" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                            if not testdate in HLteststeplist:
+                                HLteststeplist[testdate] = list()
+                                for eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
+                                    if "HV" in eachdeatilteststep:
+                                        HLteststeplist[testdate].append(eachdeatilteststep)
+                            if not testdate in LVteststeplist:
+                                LVteststeplist[testdate] = list()
+                                for eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
+                                    if "LV" in eachdeatilteststep:
+                                        LVteststeplist[testdate].append(eachdeatilteststep)
+
     #print(json.dumps(HLteststeplist, indent = 4))
     #print(json.dumps(LVteststeplist, indent = 4))
 
@@ -2527,20 +2546,50 @@ def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
                         if not timestamp in HVLVData[sn]["LIST"]:
                             HVLVData[sn]["LIST"].append(timestamp)
                             HVLVData[sn]["LIST"].sort()
+                        TestStatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
                         HVstatus = "PASS"
-                        for eachdeatilteststep in HLteststeplist:
+                        HVtestcount = 0
+                        HVtestcountinSN = 0
+                        HLteststeplistforcheck = list()
+                        if testdate in HLteststeplist:
+                            HLteststeplistforcheck = HLteststeplist[testdate]
+                        else:
+                            HLteststeplistforcheck = HLteststeplist['MAIN']
+                        for eachdeatilteststep in HLteststeplistforcheck:
+                            HVtestcount += 1
                             if eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
+                                HVtestcountinSN += 1
                                 if not "PASS" in DATA["SN"][sn][chassis][testdate][testetime]['DETAILTESTSTEP'][eachdeatilteststep].upper():
                                     HVstatus = "FAIL"
+                        if HVstatus == "PASS":
+                            if not HVtestcountinSN:
+                                HVstatus = "NO TEST"
                             else:
-                                HVstatus = "FAIL"
+                                if not "PASS" in TestStatus:
+                                    if HVtestcount != HVtestcountinSN:
+                                        HVstatus = "FAIL"
                         LVstatus = "PASS"
-                        for eachdeatilteststep in LVteststeplist:
+                        LVtestcount = 0
+                        LVtestcountinSN = 0
+                        LVteststeplistforcheck = list()
+                        if testdate in LVteststeplist:
+                            LVteststeplistforcheck = LVteststeplist[testdate]
+                        else:
+                            LVteststeplistforcheck = LVteststeplist['MAIN']
+                        for eachdeatilteststep in LVteststeplistforcheck:
+                            LVtestcount += 1
                             if eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
+                                LVtestcountinSN += 1
                                 if not "PASS" in DATA["SN"][sn][chassis][testdate][testetime]['DETAILTESTSTEP'][eachdeatilteststep].upper():
                                     LVstatus = "FAIL"
+                        if LVstatus == "PASS":
+                            if not LVtestcountinSN:
+                                LVstatus = "NO TEST"
                             else:
-                                LVstatus = "FAIL"
+                                if not "PASS" in TestStatus:
+                                    if LVtestcount != LVtestcountinSN:
+                                        LVstatus = "FAIL"
+
                         HVLVData[sn]["DATA"][timestamp]["HVstatus"] = HVstatus
                         HVLVData[sn]["DATA"][timestamp]["LVstatus"] = LVstatus
                         HVLVData[sn]["DATA"][timestamp]["RESULT"] = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
