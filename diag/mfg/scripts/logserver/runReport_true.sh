@@ -51,5 +51,8 @@ done
 cd $_mydir
 python3 $_mydir/zip_old_json_file.py
 
+cd $_mydir
+python3 $_mydir/move_old_log_file_to_one_folder.py
+
 END=$(date +%s);
 echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'

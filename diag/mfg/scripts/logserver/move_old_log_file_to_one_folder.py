@@ -49,16 +49,22 @@ def main():
 
     for eachjsonfolder in listofhistoryfolder:
         print(eachjsonfolder)
-        listofJsonfromfolder = pr['modules'].getallfolder(eachjsonfolder,level=2)
-        listofJsonfromfolder.remove(eachjsonfolder)
         BackupAlloldfolder = "{}/BACKUP".format(eachjsonfolder)
+        pr['modules'].createdirinserver(BackupAlloldfolder)
+        listofJsonfromfolder = pr['modules'].getallfolder(eachjsonfolder,level=2)
+        pr['modules'].print_anyinformation(listofJsonfromfolder) 
+        listofJsonfromfolder.remove(eachjsonfolder)
+        
         pr['modules'].debug_print("BACK UP FOLDER: {}".format(BackupAlloldfolder))
         if BackupAlloldfolder in listofJsonfromfolder:
             listofJsonfromfolder.remove(BackupAlloldfolder)
         pr['modules'].print_anyinformation(listofJsonfromfolder)
-        sys.exit()
-        #for eachgotozipfile in filterlist:
-            #pr['modules'].gzip_to_file(eachgotozipfile)
+        #sys.exit()
+        for eachdir in listofJsonfromfolder:
+            eachdir = "{}/".format(eachdir)
+            pr['modules'].rsync_and_delete_by_os_system_at_locate(eachdir,BackupAlloldfolder)
+
+        #sys.exit()
 
     difftime = datetime.now()-start
     print('Done Time: ', difftime)       

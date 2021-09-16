@@ -55,6 +55,15 @@ class modules(object):
 			self.logfile = logfile
 		self.debug_print("Start modules...")
 
+	def rsync_and_delete_by_os_system_at_locate(self,source,dest):
+		rsync_cmd = "rsync -avrz {} {}".format(source,dest)
+		os.system(rsync_cmd)
+		try:
+			shutil.rmtree(source)
+		except:
+			return False
+		return None
+
 	def copy_file(self,sourcefile,target):
 		from shutil import copyfile
 		from sys import exit
