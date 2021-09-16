@@ -3089,6 +3089,10 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_sn_init(self, slot):
+        if not self._nic_ctrl_list[slot]._sn:
+            self._nic_ctrl_list[slot].nic_sn_init()
+        self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
 
     def mtp_nic_cpld_init(self, slot):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")

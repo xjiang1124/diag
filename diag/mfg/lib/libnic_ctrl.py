@@ -31,6 +31,7 @@ from libmfg_cfg import PEN_DISP_ASSEMBLY_FMT
 from libmfg_cfg import VOMERO2_DISP_ASSEMBLY_FMT
 from libmfg_cfg import ORTANO_DISP_ASSEMBLY_FMT
 from libmfg_cfg import OCP_DELL_DISP_PN_FMT
+from libmfg_cfg import PSLC_MODE_TYPE_LIST
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import NIC_Vendor
@@ -1893,8 +1894,37 @@ class nic_ctrl():
             self._vendor == NIC_Vendor.DELL
             return True
 
-        self.nic_set_cmd_buf("Unknown vendor for: {:s}".format(fru_buf))
+        self.nic_set_err_msg("Unknown vendor for: {:s}".format(fru_buf))
         self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+        return False
+
+    def nic_sn_init(self):
+        nic_type = self._nic_type
+        if self._nic_type not in PSLC_MODE_TYPE_LIST:
+            # use regular way to get SN for these cards
+            return True
+
+        cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_SN_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Unable to read SMB FRU")
+            return False
+
+        fru_buf = self.nic_get_cmd_buf()
+
+        match = re.search(NAPLES_DISP_SN_FMT, fru_buf)
+        if match:
+            self._sn = match.group(1)
+            return True
+        else:
+            match = re.search(DELL_PPID_SN_FMT, fru_buf)
+            if match:
+                self._sn = match.group(1)
+                return True
+            else:
+                self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
+                return False
+
+        self.nic_set_err_msg("Unknown SN in: {:s}".format(fru_buf))
         return False
 
 

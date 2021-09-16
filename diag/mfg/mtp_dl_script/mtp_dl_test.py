@@ -271,6 +271,13 @@ def main():
            
         # init the nic diag environment
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
+            if nic_prsnt_list[slot]:
+                mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
                 if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
@@ -289,7 +296,7 @@ def main():
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sn = None # cant do diag init yet to get SN
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
 
             if nic_type not in PSLC_MODE_TYPE_LIST:
                 continue
