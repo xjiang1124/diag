@@ -4404,7 +4404,7 @@ class mtp_ctrl():
         return [ret, err_msg_list]
 
 
-    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM):
+    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM, no_slot=False):
         mtp_scan_rslt = dict()
         mtp_ts_snapshot = libmfg_utils.get_timestamp()
         mtp_scan_rslt["MTP_ID"] = self._id
@@ -4416,6 +4416,7 @@ class mtp_ctrl():
         scan_sn_list = list()
         scan_mac_list = list()
         scan_atom_sn_list = list()
+        slot_num = 1
 
         # build all valid nic key list
         for slot in range(self._slots):
@@ -4431,7 +4432,8 @@ class mtp_ctrl():
             else:
                 usr_prompt = "\nPlease Scan NIC ID Barcode:"
             nic_scan_rslt = dict()
-            raw_scan = raw_input(usr_prompt)
+            if not no_slot:
+                raw_scan = raw_input(usr_prompt)
 
             if raw_scan == "STOP":
                 if present_check and len(unscanned_nic_key_list) != 0:
@@ -4439,6 +4441,11 @@ class mtp_ctrl():
                     continue
                 else:
                     break
+            elif no_slot:
+                key = "NIC-{:>02d}".format(slot_num)
+                slot_num =+ 1
+                scan_nic_key_list.append(key)
+                unscanned_nic_key_list.remove(key)
             elif raw_scan in scan_nic_key_list:
                 self.cli_log_err("NIC ID Barcode: {:s} is double scanned, please restart the scan process\n".format(raw_scan), level=0)
                 return None
@@ -4470,6 +4477,8 @@ class mtp_ctrl():
                 while not sn_scanned:
                     usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
+                    if raw_scan == "STOP":
+                        break
                     if libmfg_utils.dell_ppid_validate(raw_scan):
                         # Dell PPID
                         sn = libmfg_utils.extract_sn_from_dell_ppid(raw_scan)
@@ -4491,7 +4500,7 @@ class mtp_ctrl():
                         pn_scanned = False
 
                 #Scan Mac Loop
-                while not mac_scanned:
+                while not mac_scanned and sn_scanned:
                     usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
                     mac = libmfg_utils.mac_address_validate(raw_scan)
@@ -4550,11 +4559,11 @@ class mtp_ctrl():
                     else:
                         break
 
-            nic_scan_rslt["NIC_VALID"] = True
-            nic_scan_rslt["NIC_SN"] = sn
-            nic_scan_rslt["NIC_MAC"] = mac
-            nic_scan_rslt["NIC_PN"] = pn
-            nic_scan_rslt["NIC_TS"] = libmfg_utils.get_fru_date()
+            nic_scan_rslt["VALID"] = True
+            nic_scan_rslt["SN"] = sn
+            nic_scan_rslt["MAC"] = mac
+            nic_scan_rslt["PN"] = pn
+            nic_scan_rslt["TS"] = libmfg_utils.get_fru_date()
             if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
                 nic_scan_rslt["SN_ALOM"] = alom_sn
                 nic_scan_rslt["PN_ALOM"] = alom_pn
@@ -4563,7 +4572,7 @@ class mtp_ctrl():
         nic_empty_list = list(set(valid_nic_key_list).difference(set(scan_nic_key_list)))
         for key in nic_empty_list:
             nic_scan_rslt = dict()
-            nic_scan_rslt["NIC_VALID"] = False
+            nic_scan_rslt["VALID"] = False
             mtp_scan_rslt[key] = nic_scan_rslt
 
         return mtp_scan_rslt
@@ -4579,18 +4588,18 @@ class mtp_ctrl():
             tmp = "    " + key + ":"
             config_lines.append(tmp)
 
-            if scan_rslt[key]["NIC_VALID"]:
+            if scan_rslt[key]["VALID"]:
                 tmp = "        VALID: \"Yes\""
                 config_lines.append(tmp)
-                tmp = "        SN: \"" + scan_rslt[key]["NIC_SN"] + "\""
+                tmp = "        SN: \"" + scan_rslt[key]["SN"] + "\""
                 config_lines.append(tmp)
-                tmp = "        MAC: \"" + scan_rslt[key]["NIC_MAC"] + "\""
+                tmp = "        MAC: \"" + scan_rslt[key]["MAC"] + "\""
                 config_lines.append(tmp)
-                tmp = "        PN: \"" + scan_rslt[key]["NIC_PN"] + "\""
+                tmp = "        PN: \"" + scan_rslt[key]["PN"] + "\""
                 config_lines.append(tmp)
-                tmp = "        TS: \"" + scan_rslt[key]["NIC_TS"] + "\""
+                tmp = "        TS: \"" + scan_rslt[key]["TS"] + "\""
                 config_lines.append(tmp)
-                pn = scan_rslt[key]["NIC_PN"]
+                pn = scan_rslt[key]["PN"]
                 if pn == '000000-000':
                     tmp = "        SN_ALOM: \"" + scan_rslt[key]["SN_ALOM"] + "\""
                     config_lines.append(tmp)

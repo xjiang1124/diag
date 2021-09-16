@@ -316,10 +316,10 @@ def main():
             break
         key = libmfg_utils.nic_key(slot)
         nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["NIC_VALID"]:
-            sn = scan_rslt[key]["NIC_SN"]
-            pn = scan_rslt[key]["NIC_PN"]
-            mac = scan_rslt[key]["NIC_MAC"]
+        if scan_rslt[key]["VALID"]:
+            sn = scan_rslt[key]["SN"]
+            pn = scan_rslt[key]["PN"]
+            mac = scan_rslt[key]["MAC"]
             mac_ui = libmfg_utils.mac_address_format(mac)
             
             ## ALOM:
@@ -334,24 +334,24 @@ def main():
                         fru_mapping[mac]
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s}".format(mac_ui))
-                        scan_rslt[key]["NIC_VALID"] = False
+                        scan_rslt[key]["VALID"] = False
                         continue
                     try:
                         if fru_mapping[mac]["SN"] != sn:
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned SN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["SN"], sn))
-                            scan_rslt[key]["NIC_VALID"] = False
+                            scan_rslt[key]["VALID"] = False
                         if fru_mapping[mac]["PN"] != pn: 
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["PN"], pn))
-                            scan_rslt[key]["NIC_VALID"] = False
+                            scan_rslt[key]["VALID"] = False
                         if fru_mapping[mac]["SN_ALOM"] != alom_sn: 
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["SN_ALOM"], alom_sn))
-                            scan_rslt[key]["NIC_VALID"] = False
+                            scan_rslt[key]["VALID"] = False
                         if fru_mapping[mac]["PN_ALOM"] != alom_pn: 
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["PN_ALOM"], alom_pn))
-                            scan_rslt[key]["NIC_VALID"] = False
+                            scan_rslt[key]["VALID"] = False
                     except KeyError as e:
                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s} for MAC {:s}".format(e, mac_ui))
-                        scan_rslt[key]["NIC_VALID"] = False
+                        scan_rslt[key]["VALID"] = False
                         continue
             ## not ALOM:
             else:
@@ -359,28 +359,28 @@ def main():
                     fru_mapping[mac]
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s}".format(mac_ui))
-                    scan_rslt[key]["NIC_VALID"] = False
+                    scan_rslt[key]["VALID"] = False
                     continue
                 try:
                     if fru_mapping[mac]["SN"] != sn:
                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned SN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["SN"], sn))
-                        scan_rslt[key]["NIC_VALID"] = False
+                        scan_rslt[key]["VALID"] = False
                     if fru_mapping[mac]["PN"] != pn: 
                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Scanned PN does not match: expect {:s}, got {:s}".format(fru_mapping[mac]["PN"], pn))
-                        scan_rslt[key]["NIC_VALID"] = False
+                        scan_rslt[key]["VALID"] = False
                 except KeyError as e:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Missing from FRU mapping table: {:s} for MAC {:s}".format(e, mac_ui))
-                    scan_rslt[key]["NIC_VALID"] = False
+                    scan_rslt[key]["VALID"] = False
                     continue
 
     # print scan summary
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["NIC_VALID"]:
-            sn = scan_rslt[key]["NIC_SN"]
-            pn = scan_rslt[key]["NIC_PN"]
-            mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["NIC_MAC"])
+        if scan_rslt[key]["VALID"]:
+            sn = scan_rslt[key]["SN"]
+            pn = scan_rslt[key]["PN"]
+            mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["MAC"])
             if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
                 alom_sn = scan_rslt[key]["SN_ALOM"]
                 alom_pn = scan_rslt[key]["PN_ALOM"]
@@ -397,20 +397,20 @@ def main():
     # Pomonte P1 build: refactor the SN and PN from the ones scanned
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
-        if scan_rslt[key]["NIC_VALID"]:
-            pn = scan_rslt[key]["NIC_PN"]
+        if scan_rslt[key]["VALID"]:
+            pn = scan_rslt[key]["PN"]
             if pn.startswith("68-0022") or pn.startswith("68-0025"):
-                fru_date = scan_rslt[key]["NIC_TS"]
+                fru_date = scan_rslt[key]["TS"]
                 year_digit = fru_date[-1:]
                 month_digit = '{:x}'.format(int(fru_date[0:2]))
                 if int(fru_date[2:4]) < 10:
                     day_digit = fru_date[2:4]
                 else:
                     day_digit = chr(55+int(fru_date[2:4]))
-                scan_rslt[key]["NIC_SN"] = "USFLUPK" + year_digit + month_digit + day_digit + scan_rslt[key]["NIC_SN"][-4:]
-                scan_rslt[key]["NIC_PN"] = "0PCFPCX01"
+                scan_rslt[key]["SN"] = "USFLUPK" + year_digit + month_digit + day_digit + scan_rslt[key]["SN"][-4:]
+                scan_rslt[key]["PN"] = "0PCFPCX01"
                 if pn.startswith("68-0025"):
-                    scan_rslt[key]["NIC_PN"] = "0X322FX01"
+                    scan_rslt[key]["PN"] = "0X322FX01"
 
     scan_cfg_file = log_dir + log_sub_dir + "dl_barcode.yaml"
     scan_cfg_filep = open(scan_cfg_file, "w+")

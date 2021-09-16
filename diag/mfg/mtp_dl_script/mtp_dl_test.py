@@ -219,6 +219,7 @@ def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--fru-verify", "-v", "--verify", "-verify", help="Verify FRU mode", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
 
@@ -262,7 +263,7 @@ def main():
 
         # init the nic diag environment
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        
+
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
@@ -335,34 +336,77 @@ def main():
         tmp_fru_cfg = dict()
         tmp_fru_cfg["MTP_ID"] = mtp_id
         tmp_fru_cfg["MTP_TS"] = libmfg_utils.get_timestamp()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
+        for slot in range(mtp_mgmt_ctrl._slots):
             key = libmfg_utils.nic_key(slot)
             tmp_fru_cfg[key] = dict()
             if slot in fail_nic_list or not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                tmp_fru_cfg[key]["NIC_VALID"] = False
+                tmp_fru_cfg[key]["VALID"] = False
                 continue
             if mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot):
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                tmp_fru_cfg[key]["NIC_VALID"] = True
-                tmp_fru_cfg[key]["NIC_TS"] = libmfg_utils.get_fru_date()
+                tmp_fru_cfg[key]["VALID"] = True
+                tmp_fru_cfg[key]["TS"] = libmfg_utils.get_fru_date()
                 nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
                 if nic_fru_info:
-                    tmp_fru_cfg[key]["NIC_SN"] = nic_fru_info[0]
-                    tmp_fru_cfg[key]["NIC_MAC"] = nic_fru_info[1].replace('-', '')
-                    tmp_fru_cfg[key]["NIC_PN"] = nic_fru_info[2]
+                    tmp_fru_cfg[key]["SN"] = nic_fru_info[0]
+                    tmp_fru_cfg[key]["MAC"] = nic_fru_info[1].replace('-', '')
+                    tmp_fru_cfg[key]["PN"] = nic_fru_info[2]
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_alom_fru(slot)
                         tmp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
                         tmp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
                 else:
-                    tmp_fru_cfg[key]["NIC_SN"] = "DEADBEEF"
-                    tmp_fru_cfg[key]["NIC_MAC"] = "DEADBEEF"
-                    tmp_fru_cfg[key]["NIC_PN"] = "DEADBEEF"
+                    tmp_fru_cfg[key]["SN"] = "DEADBEEF"
+                    tmp_fru_cfg[key]["MAC"] = "DEADBEEF"
+                    tmp_fru_cfg[key]["PN"] = "DEADBEEF"
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         tmp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
                         tmp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
             else:
-                tmp_fru_cfg[key]["NIC_VALID"] = False
+                tmp_fru_cfg[key]["VALID"] = False
+
+        # validate the scanned barcodes
+        if args.fru_verify:
+            # load the barcode config file made in toplevel
+            scan_cfg_file = mtp_script_dir + "/dl_barcode.yaml"
+            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)[mtp_id]
+            for slot in range(mtp_mgmt_ctrl._slots):
+                key = libmfg_utils.nic_key(slot)
+                if slot in fail_nic_list:
+                    continue
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    continue
+                if not tmp_fru_cfg[key]["VALID"]:
+                    continue
+                if nic_fru_cfg[key]["VALID"] == 'No':
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Missing scan for this slot")
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, skip_fa=True)
+                    continue
+
+                start_ts = libmfg_utils.timestamp_snapshot()
+                for item in ["SN", "MAC", "PN"]:
+                    expected = nic_fru_cfg[key][item]
+                    recieved = tmp_fru_cfg[key][item]
+                    if expected != recieved:
+                        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Incorrect {:s}. Scanned {:s}, read {:s}".format(item, expected, recieved))
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        if slot in pass_nic_list:
+                            pass_nic_list.remove(slot)
+                        mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, skip_fa=True)
+                        break
+                stop_ts = libmfg_utils.timestamp_snapshot()
+                duration = str(stop_ts - start_ts)
+
+                test = "SCAN_VERIFY"
+                if slot in fail_nic_list:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(tmp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(tmp_fru_cfg[key]["SN"], dsp, test, duration))
 
         fru_cfg_file = "dl_barcode.yaml"
         fru_cfg_filep = open(fru_cfg_file, "w+")

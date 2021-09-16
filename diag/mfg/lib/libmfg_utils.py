@@ -579,15 +579,23 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
-    cmd = "cp -r {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
+    cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
     os.system(cmd)
+    if FF_Stage.FF_DL in logfile_dir:
+        cmd = "cp {:s}/dl_barcode.yaml {:s}".format(logfile_dir, mtp_script_dir)
+        os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
     os.system(cmd)
     # remove the lib config for the next run
     if extra_script:
         cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
         os.system(cmd)
-    cmd = "rm -rf {:s}/lib {:s}/config {:s}/".format(mtp_script_dir, mtp_script_dir, logfile_dir)
+    os.system("sync")
+    if FF_Stage.FF_DL in logfile_dir:
+        cmd = "rm -rf {:s}/dl_barcode.yaml".format(mtp_script_dir)
+        os.system(cmd)
+    # cmd = "rm -rf {:s}/lib {:s}/config ".format(mtp_script_dir, mtp_script_dir)
+    cmd = "rm -rf {:s}/lib {:s}/config {:s}/*.log {:s}".format(mtp_script_dir, mtp_script_dir, mtp_script_dir, logfile_dir)
     os.system(cmd)
 
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
