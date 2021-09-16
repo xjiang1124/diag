@@ -178,7 +178,7 @@ def main():
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                         continue
-                if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+                if card_type == NIC_Type.ORTANO2:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
                     except KeyError:

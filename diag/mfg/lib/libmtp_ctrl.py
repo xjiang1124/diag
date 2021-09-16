@@ -1380,7 +1380,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                         pass
                     try:
-                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2:
+                        if card_type == NIC_Type.ORTANO2:
                             img = NIC_IMAGES.fea_cpld_img[card_type]
                             if img.strip() == "":
                                 raise KeyError
