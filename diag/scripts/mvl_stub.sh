@@ -1,5 +1,17 @@
 #!/bin/bash
 
+if [[ $1 == "0" ]]; then
+    echo "setting up internal loopback"
+    ./xo3dcpld -smiwr 0x16 0x3 0x0
+    sleep 1
+    ./xo3dcpld -smiwr 0x00 0x03 0x4000
+    sleep 1
+    ./xo3dcpld -smiwr 0x16 0x03 0x02
+    sleep 1
+    ./xo3dcpld -smiwr 0x02 0x03 0x06
+    sleep 1
+fi
+
 ./xo3dcpld -smiwr 0x16 0x3 0x06
 sleep 1
 ./xo3dcpld -smiwr 0x12 0x3 0x18
