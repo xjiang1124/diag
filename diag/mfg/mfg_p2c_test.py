@@ -7,6 +7,7 @@ import pexpect
 import re
 import argparse
 import threading
+import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -38,6 +39,12 @@ def load_mtp_cfg():
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
+def mtp_test_cleanup(error_code, fp_list=None):
+    if fp_list:
+        for fp in fp_list:
+            fp.close()
+    os.system("sync")
+
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -51,8 +58,66 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
+def mtp_setup(mtp_mgmt_ctrl, mtp_capability, setup_rslt_list):
+    setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability)
 
-def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode):
+def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        
+        # find any slots to skip
+        mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
+        mtp_mgmt_ctrl._slots_to_skip = mtp_slots_to_skip
+
+        # find the mtp capability
+        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
+
+    libmfg_utils.cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
+
+    mtp_thread_list = list()
+    setup_rslt_list = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_thread = threading.Thread(target = mtp_setup, args = (mtp_mgmt_ctrl, mtp_capability, setup_rslt_list))
+        mtp_thread.daemon = True
+        mtp_thread.start()
+        mtp_thread_list.append(mtp_thread)
+        time.sleep(2)
+
+    # monitor all the thread
+    while True:
+        if len(mtp_thread_list) == 0:
+            break
+        for mtp_thread in mtp_thread_list[:]:
+            if not mtp_thread.is_alive():
+                mtp_thread.join()
+                mtp_thread_list.remove(mtp_thread)
+        time.sleep(5)
+
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        if not setup_rslt_list[mtp_id]:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+
+    fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list)
+
+    # if all slots in an MTP fail, assert stop on failure here
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        if len(fail_nic_list[mtp_id]) == mtp_mgmt_ctrl._slots:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP completely failed Sanity Check. Test abort..")
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+
+    return fail_nic_list
+
+def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode):
+    if fail_nic_list:
+        fail_slots = " --fail-slots "
+        fail_slots += ' '.join(map(str,fail_nic_list))
+    else:
+        fail_slots = ""
+
     # go to mtp_regression and start the test
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -61,6 +126,8 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary,
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
     cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
+    if fail_slots:
+        cmd += fail_slots
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_P2C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
@@ -94,6 +161,7 @@ def main():
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
+    fail_nic_list = dict()
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
@@ -105,6 +173,13 @@ def main():
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+        fail_nic_list[mtp_id] = list()
+
+    # logfiles
+    open_file_track_mtp_list = dict()
+    logfile_dir_list = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
 
     mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -180,12 +255,26 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
+    # Sanity check
+    try:
+        fail_nic_list = sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list)
+    except Exception as e:
+        err_msg = traceback.format_exc()
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
+
+    # close file handles
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+    for mtp_id in mtpid_fail_list:
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+
     # Copy script, config file on to each MTP Chassis
     mtp_p2c_script_dir = "mtp_regression/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_p2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP P2C Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_p2c_script_dir, mtp_p2c_script_pkg):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_p2c_script_dir, mtp_p2c_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP P2C Test script failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -200,6 +289,7 @@ def main():
         mtp_thread = threading.Thread(target = single_mtp_p2c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_p2c_script_dir,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
+                                                                            fail_nic_list[mtp_id],
                                                                             mfg_p2c_summary[mtp_id],
                                                                             swmtestmode))
         mtp_thread.daemon = True

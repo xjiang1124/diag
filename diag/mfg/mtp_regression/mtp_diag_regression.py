@@ -729,8 +729,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
 
 def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist):
     nic_thread_list = list()
-    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
     fail_nic_list = list()
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
         for slot in nic_list:
             if slot in fail_nic_list:
@@ -854,6 +854,7 @@ def main():
     parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.MFG_NT)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
@@ -1059,39 +1060,18 @@ def main():
     pomontedell_pre_test_check_list = pomontedell_test_db.get_pre_diag_test_intf_list()
     pomontedell_post_test_check_list = pomontedell_test_db.get_post_diag_test_intf_list()
 
-    # logfiles
-    open_file_track_list = list()
-
-    mtp_script_dir = os.getcwd()
-    mtp_test_log_file = mtp_script_dir + "/mtp_test.log"
-    mtp_diag_log_file = mtp_script_dir + "/mtp_diag.log"
-    mtp_diag_cmd_log_file = mtp_script_dir + "/mtp_diag_cmd.log"
-    mtp_diagmgr_log_file = mtp_script_dir + "/mtp_diagmgr.log"
-    mtp_test_log_filep = open(mtp_test_log_file, "w+", buffering=0)
-    open_file_track_list.append(mtp_test_log_filep)
-    mtp_diag_log_filep = open(mtp_diag_log_file, "w+", buffering=0)
-    open_file_track_list.append(mtp_diag_log_filep)
-    mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, "w+", buffering=0)
-    open_file_track_list.append(mtp_diag_cmd_log_filep)
-    mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, "w+", buffering=0)
-
-    diag_nic_log_filep_list = list()
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        nic_key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = mtp_script_dir + "/mtp_{:s}_diag.log".format(nic_key)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
-        open_file_track_list.append(diag_nic_log_filep)
-        diag_nic_log_filep_list.append(diag_nic_log_filep)
-
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id,
-                             mtp_test_log_filep,
-                             mtp_diag_log_filep,
-                             diag_nic_log_filep_list,
-                             diag_cmd_log_filep = mtp_diag_cmd_log_filep,
+                             sys.stdout,
+                             None,
+                             [],
+                             None,
                              mgmt_cfg = mtp_mgmt_cfg,
                              apc_cfg = mtp_apc_cfg,
                              slots_to_skip = mtp_slots_to_skip,
                              dbg_mode = verbosity)
+
+    # logfiles
+    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
@@ -1142,6 +1122,11 @@ def main():
         pass_nic_list = list()
         fail_nic_list = list()
         skip_nic_list = list()
+
+        # Add failed slots from sanity check
+        if args.fail_slots:
+            for slot in args.fail_slots:
+                fail_nic_list.append(int(slot))
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):

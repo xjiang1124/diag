@@ -38,6 +38,11 @@ def load_mtp_cfg():
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
+def mtp_test_cleanup(error_code, fp_list=None):
+    if fp_list:
+        for fp in fp_list:
+            fp.close()
+    os.system("sync")
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -52,11 +57,12 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_summary, swm_test_mode, skip_test=[]):
-    if skip_test:
-        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
+def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode):
+    if fail_nic_list:
+        fail_slots = " --fail-slots"
+        fail_slots += ' '.join(map(str,fail_nic_list))
     else:
-        skipped_testlist = ""
+        fail_slots = ""
     # go to mtp_regression and Start the regression
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -68,8 +74,8 @@ def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, mtp_test_su
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
     else:
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
-    if skip_test:
-            cmd += skipped_testlist
+    if fail_slots:
+        cmd += fail_slots
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
@@ -92,7 +98,6 @@ def main():
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -113,6 +118,7 @@ def main():
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtp_mgmt_ctrl_list = list()
     mtpid_fail_list = list()
+    fail_nic_list = dict()
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
@@ -124,6 +130,7 @@ def main():
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+        fail_nic_list[mtp_id] = list()
 
     # wait operator set chamber temperature
     if args.high_temp:
@@ -136,6 +143,12 @@ def main():
         stage = FF_Stage.FF_2C_L
     else:
         libmfg_utils.sys_exit("Unknown 2C Corner... Abort")
+
+    # logfiles
+    open_file_track_mtp_list = dict()
+    logfile_dir_list = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     mfg_2c_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -211,12 +224,18 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
+    # close file handles
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+    for mtp_id in mtpid_fail_list:
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+
     # Copy script, config file on to each MTP Chassis
     mtp_2c_script_dir = "mtp_regression/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -232,9 +251,9 @@ def main():
                                                                            mtp_mgmt_ctrl,
                                                                            mtp_id,
                                                                            stage,
+                                                                           fail_nic_list[mtp_id]
                                                                            mfg_2c_summary[mtp_id],
-                                                                           swmtestmode,
-                                                                           args.skip_test))
+                                                                           swmtestmode))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

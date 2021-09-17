@@ -220,6 +220,7 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
 
     args = parser.parse_args()
     if args.mtpid:
@@ -234,27 +235,9 @@ def main():
     if not args.skip_test:
         args.skip_test = []
 
-    # local log files
-    log_filep_list = list()
-    test_log_file = "mtp_test.log"
-    test_log_filep = open(test_log_file, "w+", buffering=0)
-    log_filep_list.append(test_log_filep)
-
-    diag_log_file = "mtp_diag.log"
-    diag_log_filep = open(diag_log_file, "w+", buffering=0)
-    log_filep_list.append(diag_log_filep)
-
-    fru_cfg_file = "dl_barcode.yaml"
-
-    diag_nic_log_filep_list = list()
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "mtp_{:s}_diag.log".format(key)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
-        log_filep_list.append(diag_nic_log_filep)
-        diag_nic_log_filep_list.append(diag_nic_log_filep)
-
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [])
+    # local logfiles
+    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
@@ -262,13 +245,21 @@ def main():
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-            logfile_close(log_filep_list)
+            logfile_close(open_file_track_list)
             return
+
+        fail_nic_list = list()
+        pass_nic_list = list()
+
+        # Add failed slots from toplevel
+        if args.fail_slots:
+            for slot in args.fail_slots:
+                fail_nic_list.append(int(slot))
 
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
-           
+
         # init the nic diag environment
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         
@@ -279,14 +270,13 @@ def main():
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
             if nic_prsnt_list[slot]:
                 if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
                     continue
 
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
-        fail_nic_list = list()
-        pass_nic_list = list()
 
         dsp = FF_Stage.FF_DL
 
@@ -338,7 +328,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(log_filep_list)
+            logfile_close(open_file_track_list)
             return
 
         # construct nic fru config file
@@ -374,6 +364,7 @@ def main():
             else:
                 tmp_fru_cfg[key]["NIC_VALID"] = False
 
+        fru_cfg_file = "dl_barcode.yaml"
         fru_cfg_filep = open(fru_cfg_file, "w+")
         mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
         fru_cfg_filep.close()
@@ -421,7 +412,7 @@ def main():
             if not mtp_capability & mtp_exp_capability:
                 mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(nic_type))
                 mtp_mgmt_ctrl.mtp_chassis_shutdown()
-                logfile_close(log_filep_list)
+                logfile_close(open_file_track_list)
                 return
             print("")
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
@@ -601,7 +592,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(log_filep_list)
+            logfile_close(open_file_track_list)
             return
         # # power cycle all nic
         # mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -745,7 +736,7 @@ def main():
         err_msg = traceback.format_exc()
         mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
 
-    logfile_close(log_filep_list)
+    logfile_close(open_file_track_list)
     return
 
 

@@ -573,11 +573,13 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
         return False
 
 
-def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=None):
+def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir="/dev/null", extra_script=None):
     if extra_script:
         cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
+    os.system(cmd)
+    cmd = "cp -r {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
     os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
     os.system(cmd)
@@ -585,7 +587,7 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
     if extra_script:
         cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
         os.system(cmd)
-    cmd = "rm -rf {:s}/lib {:s}/config".format(mtp_script_dir, mtp_script_dir)
+    cmd = "rm -rf {:s}/lib {:s}/config {:s}/".format(mtp_script_dir, mtp_script_dir, logfile_dir)
     os.system(cmd)
 
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
@@ -1461,3 +1463,214 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("--------- Report End --------\n")
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+
+def display_failures(loopback_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length):
+    """
+    -------------------------------------------------
+    | MTP-XXX                                       |
+    |                                               |
+    |     o       o       o       X   o       o     |
+    |     o       o       o       X   o       X     |
+    |                                               |
+    |     1   2   3   4   5   6   7   8   9  10     |
+    |                                               |
+    |                                       MTP-XXX |
+    -------------------------------------------------
+
+    [MTP-XXX]: [NIC-07]: QSFP port 1
+    [MTP-XXX]: [NIC-07]: QSFP port 2
+    [MTP-XXX]: [NIC-10]: QSFP port 2
+
+    'o' = loopback present
+    'X' = loopback missing
+    ' ' = empty slot
+
+    """
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        print("-------------------------------------------------")
+        print("| {:s}                                       |".format(mtp_id))
+        print("|                                               |")
+
+        # Port 1 row
+        pre="|     "
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot]:
+                pre += "    "
+            elif loopback_fail_list[mtp_id][slot] > 0:
+                pre += "X   "
+            else:
+                pre += "o   "
+        pre += "  |"
+        print(pre)
+
+        # Port 2 row
+        pre="|     "
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot]:
+                pre += "    "
+            elif loopback_fail_list[mtp_id][slot+length] > 0:
+                pre += "X   "
+            else:
+                pre += "o   "
+        pre += "  |"
+        print(pre)
+
+        print("|                                               |")
+
+        pre="|    "
+        for slot in range(len(nic_prsnt_list)):
+            pre+= "{:>2s}  ".format(str(slot+1))
+        pre += "   |"
+        print(pre)
+
+        print("|                                               |")
+        print("|                                       {:s} |".format(mtp_id))
+        print("-------------------------------------------------")
+
+
+
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(len(nic_prsnt_list)):
+            if nic_prsnt_list[slot] and loopback_fail_list[mtp_id][slot]:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 1 is missing")
+            if nic_prsnt_list[slot] and loopback_fail_list[mtp_id][slot+length]:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 2 is missing")
+
+    return
+    
+
+def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
+    max_retries_per_slot = 3
+
+    loopback_fail_list = dict()
+    cur_fail_list = dict()
+    fail_nic_list = dict()
+    length = MTP_Const.MTP_SLOT_NUM
+    for mtp_id in mtpid_list:
+        loopback_fail_list[mtp_id] = [0, 0] * length
+        cur_fail_list[mtp_id] = [0, 0] * length
+        fail_nic_list[mtp_id] = list()
+
+    while True:
+        failure_detected = False
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            
+            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+            for slot in range(len(nic_prsnt_list)):
+                if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
+                    cur_fail_list[mtp_id][slot] = 0
+                    cur_fail_list[mtp_id][slot+length] = 0
+                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if (nic_type == NIC_Type.ORTANO or
+                        nic_type == NIC_Type.ORTANO2 or
+                        nic_type == NIC_Type.POMONTEDELL
+                        ):
+                        read_data = [0]
+                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
+                        if not rc:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
+                            if slot not in fail_nic_list[mtp_id]:
+                                fail_nic_list[mtp_id].append(slot)
+                            continue
+
+                        if read_data[0] & 0x01 == 0:
+                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot] = 1
+                                loopback_fail_list[mtp_id][slot] += 1
+                                failure_detected = True
+
+                        if read_data[0] & 0x02 == 0:
+                            if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot+length] = 1
+                                loopback_fail_list[mtp_id][slot+length] += 1
+                                failure_detected = True
+
+        display_failures(cur_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length)
+
+        if not failure_detected:
+            break
+
+        # while True:
+        raw_input("Please re-insert the modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
+
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
+
+
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        fail_rslt_list = list()
+        for slot in fail_nic_list[mtp_id]:
+            nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
+            fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
+        cli_log_rslt("{:s} Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
+
+    return fail_nic_list
+
+def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
+    if run_from_mtp:
+        # Running python/pexpect on the MTP
+        # Fixed directory name, always cleaned up before starting
+        logfile_path = os.getcwd()
+        MODIFIER = "a+"
+    else:
+        # Running python/pexpect outside MTP
+        # Directory name contains timestamp and MTP id
+        log_dir = "log/"
+        log_timestamp = get_timestamp()
+        mtp_id = mtp_mgmt_ctrl._id
+        if stage == FF_Stage.FF_DL:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_P2C:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_2C_L or stage == FF_Stage.FF_2C_H:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format("4C", mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_SWI:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_SWI_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_FST:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
+        else:
+            print("Unknown stage!")
+            return []
+        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
+
+        logfile_path = log_dir + log_sub_dir
+        MODIFIER = "w+"
+
+    open_file_track_list = list()
+
+    mtp_test_log_file = logfile_path + "/mtp_test.log"
+    mtp_diag_log_file = logfile_path + "/mtp_diag.log"
+    mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
+    mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
+    mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_test_log_filep)
+    mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_diag_log_filep)
+    mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_diag_cmd_log_filep)
+    mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, MODIFIER, buffering=0)
+
+    diag_nic_log_filep_list = list()
+    for slot in range(mtp_mgmt_ctrl._slots):
+        key = nic_key(slot)
+        diag_nic_log_file = logfile_path + "/mtp_{:s}_diag.log".format(key)
+        diag_nic_log_filep = open(diag_nic_log_file, MODIFIER, buffering=0)
+        open_file_track_list.append(diag_nic_log_filep)
+        diag_nic_log_filep_list.append(diag_nic_log_filep)
+
+    mtp_mgmt_ctrl._filep = mtp_test_log_filep
+    mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
+    mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
+    mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
+
+    return logfile_path, open_file_track_list

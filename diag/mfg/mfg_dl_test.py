@@ -7,6 +7,7 @@ import pexpect
 import re
 import argparse
 import threading
+import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -38,6 +39,11 @@ def load_mtp_cfg():
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
+def mtp_test_cleanup(error_code, fp_list=None):
+    if fp_list:
+        for fp in fp_list:
+            fp.close()
+    os.system("sync")
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -52,7 +58,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, swm_test_mode, skip_testlist = [], rework=False):
+def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_testlist = [], rework=False):
 
     # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
@@ -64,10 +70,19 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summar
 
     cmd = None
     if skip_testlist:
-        skipped_testlist = "--skip-test {:s}".format('"'+'" "'.join(skip_testlist).strip()+'"')
+        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_testlist).strip()+'"')
     else:
         skipped_testlist = ""
-    cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s} {:s}".format(mtp_id, swm_test_mode, skipped_testlist)
+    if fail_nic_list:
+        fail_slots = " --fail-slots"
+        fail_slots += ' '.join(map(str,fail_nic_list))
+    else:
+        fail_slots = ""
+    cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
+    if skipped_testlist:
+        cmd += skipped_testlist
+    if fail_slots:
+        cmd += fail_slots
 
     if rework:
         cmd = cmd.replace("mtp_dl_test.py", "mtp_rework_nic.py")
@@ -117,6 +132,7 @@ def main():
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtp_mgmt_ctrl_list = list()
     mtpid_fail_list = list()
+    fail_nic_list = dict()
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
@@ -128,6 +144,13 @@ def main():
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+        fail_nic_list[mtp_id] = list()
+
+    # logfiles
+    open_file_track_mtp_list = dict()
+    logfile_dir_list = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_DL)
 
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -216,12 +239,18 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
+    # Close file handles
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+    for mtp_id in mtpid_fail_list:
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+
     # Copy script, config file on to each MTP Chassis
     mtp_dl_script_dir = "mtp_dl_script/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_dl_script_pkg = "mtp_dl_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP DL Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_dl_script_pkg):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_dl_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP DL Test script failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -236,6 +265,7 @@ def main():
         mtp_thread = threading.Thread(target = single_mtp_dl_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_dl_script_dir,
                                                                            mtp_mgmt_ctrl,
                                                                            mtp_id,
+                                                                           fail_nic_list[mtp_id],
                                                                            mfg_dl_summary[mtp_id],
                                                                            swmtestmode,
                                                                            args.skip_test, 
