@@ -842,7 +842,7 @@ class mtp_ctrl():
 
     def mtp_set_nic_status_fail(self, slot, skip_fa=False):
         if self._nic_ctrl_list:
-            if self.mtp_check_nic_status(slot) or skip_fa:
+            if self.mtp_check_nic_status(slot) and not skip_fa:
                 # was previously OK, this is first failure
                 libmfg_utils.post_fail_steps(self, slot)
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)

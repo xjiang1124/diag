@@ -1125,11 +1125,6 @@ def main():
         fail_nic_list = list()
         skip_nic_list = list()
 
-        # Add failed slots from sanity check
-        if args.fail_slots:
-            for slot in args.fail_slots:
-                fail_nic_list.append(int(slot))
-
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):
             if nic_prsnt_list[slot]:
@@ -1299,6 +1294,10 @@ def main():
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                 return
+                # Add failed slots from sanity check
+                if args.fail_slots:
+                    for slot in args.fail_slots:
+                        mtp_mgmt_ctrl.mtp_set_nic_status_fail(int(slot), skip_fa=True)
 
                 # Update programmables if necessary
                 dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)

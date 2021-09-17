@@ -1464,7 +1464,7 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
 
-def display_failures(loopback_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length):
+def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length):
     """
     -------------------------------------------------
     | MTP-XXX                                       |
@@ -1483,7 +1483,7 @@ def display_failures(loopback_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length)
 
     'o' = loopback present
     'X' = loopback missing
-    ' ' = empty slot
+    ' ' = empty/failed slot
 
     """
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -1495,7 +1495,7 @@ def display_failures(loopback_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length)
         # Port 1 row
         pre="|     "
         for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
+            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
                 pre += "    "
             elif loopback_fail_list[mtp_id][slot] > 0:
                 pre += "X   "
@@ -1507,7 +1507,7 @@ def display_failures(loopback_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length)
         # Port 2 row
         pre="|     "
         for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
+            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
                 pre += "    "
             elif loopback_fail_list[mtp_id][slot+length] > 0:
                 pre += "X   "
@@ -1553,6 +1553,8 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
         cur_fail_list[mtp_id] = [0, 0] * length
         fail_nic_list[mtp_id] = list()
 
+    start_ts = timestamp_snapshot()
+
     while True:
         failure_detected = False
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -1595,7 +1597,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                                 loopback_fail_list[mtp_id][slot+length] += 1
                                 failure_detected = True
 
-        display_failures(cur_fail_list, mtpid_list, mtp_mgmt_ctrl_list, length)
+        display_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length)
 
         if not failure_detected:
             break
@@ -1606,12 +1608,15 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
 
+    stop_ts = timestamp_snapshot()
+    duration = str(stop_ts - start_ts)
 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         fail_rslt_list = list()
         for slot in fail_nic_list[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
             fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", "SANITY_CHECK", "QSFP", "FAILED", duration))
         cli_log_rslt("{:s} Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
 
     return fail_nic_list
