@@ -494,7 +494,7 @@ class MFG_DIAG_CMDS:
     NIC_SW_DEVICE_CHK_FMT = "pdsctl show device"
 
     NIC_MVL_ACC_FMT = "{:s}mvl_acc.sh"
-    NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh 0"
+    NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh {:s}"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

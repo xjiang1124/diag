@@ -3308,7 +3308,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-    def nic_mvl_stub_test(self):
+    def nic_mvl_stub_test(self, loopback=True):
         if self._nic_type != NIC_Type.ORTANO2:
             return False
 
@@ -3322,7 +3322,11 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        if loopback:
+            external_loopback = "1"
+        else:
+            external_loopback = "0"
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", external_loopback))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)

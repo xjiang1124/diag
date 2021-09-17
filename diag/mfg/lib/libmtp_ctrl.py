@@ -4597,7 +4597,7 @@ class mtp_ctrl():
 
         return retval, err_msg_list
 
-    def mtp_nic_mvl_stub_test(self, slot):
+    def mtp_nic_mvl_stub_test(self, slot, loopback=True):
         test = "STUB"
 
         # log the timestamp in NIC log
@@ -4608,7 +4608,7 @@ class mtp_ctrl():
 
         retval = ""
         err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_mvl_stub_test():
+        if self._nic_ctrl_list[slot].nic_mvl_stub_test(loopback):
             retval = "SUCCESS"
         else:
             retval = "FAILURE"

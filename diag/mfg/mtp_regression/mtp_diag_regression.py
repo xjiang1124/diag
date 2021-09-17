@@ -253,7 +253,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
     return fail_list
 
-def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode):
+def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
     
     if nic_type == NIC_Type.ORTANO2:
@@ -287,7 +287,7 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             if dsp == "MVL" and test == "ACC":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_acc_test(slot)
             elif dsp == "MVL" and test == "STUB":
-                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_stub_test(slot)
+                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_stub_test(slot, loopback)
             else:
                 ret, err_msg_list = "FAILURE", ["Not the right function for this kind of test"]
             stop_ts = libmfg_utils.timestamp_snapshot()
@@ -1566,6 +1566,10 @@ def main():
                 else:
                     continue
 
+                if corner == Env_Cond.MFG_NT:
+                    loopback = True
+                else:
+                    loopback = False
                 if nic_list:
                     mtp_mgmt_ctrl.mtp_power_cycle_nic()
                     diag_para_fail_list = naples_diag_mvl_test(mtp_mgmt_ctrl,
@@ -1576,7 +1580,8 @@ def main():
                                                                stop_on_err,
                                                                vmarg,
                                                                True,
-                                                               swmtestmode)
+                                                               swmtestmode,
+                                                               loopback)
                     for slot in diag_para_fail_list:
                         if slot in nic_list and stop_on_err:
                             nic_list.remove(slot)
