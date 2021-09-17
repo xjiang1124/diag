@@ -1974,6 +1974,12 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(cmd):
                 return False
 
+        cmd_buf = self.mtp_get_cmd_buf()
+        match = re.findall(r" 0% packet loss", cmd_buf)
+        if not match:
+            self.cli_log_slot_err(slot, "Ping failed")
+            return False
+
         return True
 
 
