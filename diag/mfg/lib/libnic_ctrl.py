@@ -1878,7 +1878,7 @@ class nic_ctrl():
 
         if not fru_buf:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            self.nic_set_err_msg("Unable to NIC vendor")
+            self.nic_set_err_msg("Unable to get NIC vendor from FRU")
             return False
 
         match = re.findall(NAPLES_SN_FMT, fru_buf)
@@ -1891,7 +1891,7 @@ class nic_ctrl():
             return True
         match = re.findall(DELL_PPID_SN_FMT, fru_buf)
         if match:
-            self._vendor == NIC_Vendor.DELL
+            self._vendor = NIC_Vendor.DELL
             return True
 
         self.nic_set_err_msg("Unknown vendor for: {:s}".format(fru_buf))
@@ -1916,7 +1916,7 @@ class nic_ctrl():
             self._sn = match.group(1)
             return True
         else:
-            match = re.search(DELL_PPID_SN_FMT, fru_buf)
+            match = re.search(DELL_PPID_DISP_SN_FMT, fru_buf)
             if match:
                 self._sn = match.group(1)
                 return True
@@ -1994,13 +1994,13 @@ class nic_ctrl():
             else:
                match = re.findall(HP_DISP_SN_FMT, fru_buf)
         elif self._vendor == NIC_Vendor.DELL:
-            match = re.findall(DELL_PPID_SN_FMT, fru_buf)
+            match = re.findall(DELL_PPID_DISP_SN_FMT, fru_buf)
         else:
             match = re.findall(NAPLES_DISP_SN_FMT, fru_buf)
         if match:
             self._sn = match[0]
         else:
-            print ("fru_buf 2: {}".format(fru_buf))
+            print ("fru_buf 2: ")
             self.nic_set_err_msg("Serial number doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
