@@ -15,6 +15,8 @@ class NIC_Type:
     ORTANO = "ORTANO"
     ORTANO2 = "ORTANO2"
     POMONTEDELL = "POMONTEDELL"
+    LACONA32DELL = "LACONA32DELL"
+    LACONA32 = "LACONA32"
     UNKNOWN = "Unknown"
 
 class MTP_ASIC_SUPPORT:
@@ -409,8 +411,10 @@ class MFG_DIAG_CMDS:
     ORTANO2_VRM_FIX_FMT = "/data/nic_util/fix_o2_vrm.sh"
     ORTANO_ORC_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 1033 -arm_freq 3000"
     ORTANO_PEN_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 1100 -arm_freq 3000"
-    # Pomonte:
+    # Lacona/Pomonte:
     POMONTEDELL_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
+    LACONA32DELL_AVS_SET_FMT = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
+    LACONA32_AVS_SET_FMT     = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
@@ -555,4 +559,7 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_ORTANO = r"\bUUT_(\d+) +ORTANO\b"
     MFG_NIC_TYPE_ORTANO2 = r"\bUUT_(\d+) +ORTANO2\b"
     MFG_NIC_TYPE_POMONTEDELL = r"\bUUT_(\d+) +POMONTEDELL\b"
+    MFG_NIC_TYPE_LACONA32DELL = r"\bUUT_(\d+) +LACONA32DELL\b"
+    MFG_NIC_TYPE_LACONA32 = r"\bUUT_(\d+) +LACONA32\b"
+
 

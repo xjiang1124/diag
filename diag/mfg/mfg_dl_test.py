@@ -195,7 +195,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                     continue
 
-                if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL:
+                if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL or card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:

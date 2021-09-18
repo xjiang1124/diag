@@ -120,7 +120,7 @@ class nic_ctrl():
     def nic_set_asic_type(self):
         if self._nic_type == None:
             self._asic_type = None
-        elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
+        elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
             self._asic_type = "elba"
         else:
             self._asic_type = "capri"
@@ -821,7 +821,7 @@ class nic_ctrl():
             return False
 
         if self.nic_2nd_fru_exist(pn):
-            if self._vendor == NIC_Vendor.HPE:
+            if self._vendor == NIC_Vendor.HPE and nic_type != NIC_Type.LACONA32:
                 #Program HPE
                 if nic_type == NIC_Type.NAPLES25OCP:
                     cmd = MFG_DIAG_CMDS.MTP_HP_OCP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
@@ -849,7 +849,7 @@ class nic_ctrl():
             else:
                 #Program Non HPE
 
-                if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
+                if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                     cmd = MFG_DIAG_CMDS.MTP_ORTANO_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                         return False
@@ -870,7 +870,7 @@ class nic_ctrl():
                
 
         nic_cmd_list = list()
-        if self._vendor == NIC_Vendor.HPE:
+        if self._vendor == NIC_Vendor.HPE and nic_type != NIC_Type.LACONA32:
             if nic_type == NIC_Type.NAPLES25OCP:
                 #In NIC Program HPE SWM
                 nic_cmd = MFG_DIAG_CMDS.NIC_HP_OCP_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
@@ -891,7 +891,7 @@ class nic_ctrl():
           
         else:
             #In NIC Program Non HPE
-            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
+            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 nic_cmd = MFG_DIAG_CMDS.NIC_ORTANO_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
             else:
                 nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
@@ -1138,7 +1138,7 @@ class nic_ctrl():
         if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.OS_CMD_DELAY
-        elif self._nic_type == NIC_Type.POMONTEDELL:
+        elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.NIC_FPGA_PROG_DELAY
         # Capri-based:
@@ -1403,7 +1403,7 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
-        if self._nic_type == NIC_Type.POMONTEDELL:
+        if self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
             nic_cmd = "fwupdate -F -p /{:s} -i 'all'".format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
@@ -1950,7 +1950,7 @@ class nic_ctrl():
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         elif self._nic_type == NIC_Type.NAPLES100HPE:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._vendor == NIC_Vendor.HPE:
+        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         else:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
@@ -1991,7 +1991,7 @@ class nic_ctrl():
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         elif self._nic_type == NIC_Type.NAPLES100HPE:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._vendor == NIC_Vendor.HPE:
+        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         else:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
@@ -2049,7 +2049,7 @@ class nic_ctrl():
         #print(swmtestmode)
         #print("***********************************")
         if self._vendor == NIC_Vendor.HPE:
-            if (self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES25OCP or self._nic_type == NIC_Type.NAPLES100HPE):
+            if (self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES25OCP or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.LACONA32):
                 match = re.findall(HP_SWM_DISP_PN_FMT, fru_buf)
             else:
                 match = re.findall(HP_DISP_PN_FMT, fru_buf)
@@ -2064,7 +2064,7 @@ class nic_ctrl():
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25OCP:
                 match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.POMONTEDELL:
+            elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
                 match = re.findall(DELL_PPID_PN_FMT, fru_buf)
             else:
                 match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
@@ -2112,7 +2112,7 @@ class nic_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
             elif self._nic_type == NIC_Type.NAPLES100HPE:
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
-            elif self._vendor == NIC_Vendor.HPE:
+            elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
                 cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
@@ -2164,7 +2164,7 @@ class nic_ctrl():
             # secondary PN
             match = None            
             if self._vendor == NIC_Vendor.HPE:
-                if (self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES25OCP or self._nic_type == NIC_Type.NAPLES100HPE):
+                if (self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES25OCP or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.LACONA32):
                     match = re.findall(HP_SWM_DISP_PN_FMT, self.nic_get_cmd_buf())
                 else:
                     match = re.findall(HP_DISP_PN_FMT, self.nic_get_cmd_buf())
@@ -2181,7 +2181,7 @@ class nic_ctrl():
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
                     match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.POMONTEDELL:
+                elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
                     match = re.findall(DELL_PPID_PN_FMT, self.nic_get_cmd_buf())
                 else:
                     match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
@@ -2276,7 +2276,7 @@ class nic_ctrl():
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         elif self._nic_type == NIC_Type.NAPLES100HPE:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._vendor == NIC_Vendor.HPE:
+        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         else:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
@@ -2309,7 +2309,7 @@ class nic_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
         elif self._nic_type == NIC_Type.NAPLES100HPE:
             cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
-        elif self._vendor == NIC_Vendor.HPE:
+        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
             cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
         else:
             cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
@@ -2356,7 +2356,7 @@ class nic_ctrl():
             return False
         self._cpld_ver = "0x{:X}".format(read_data[0])
 
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
             rc = self.nic_read_cpld(0x1e, read_data)
@@ -2467,7 +2467,7 @@ class nic_ctrl():
 
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
             nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
@@ -2483,7 +2483,7 @@ class nic_ctrl():
 
     def nic_write_cpld(self, reg_addr, write_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL:
+        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
             nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:

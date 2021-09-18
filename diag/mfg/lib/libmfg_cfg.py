@@ -257,11 +257,38 @@ class NIC_IMAGES:
     fail_cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_gold_rev0_12_08242021.bin"
     fail_cpld_ver["POMONTEDELL"] = "0x0"
     fail_cpld_dat["POMONTEDELL"] = "0x12"
-    # fea_cpld_img["POMONTEDELL"] = ""
     diagfw_img["POMONTEDELL"] = "elba_diagfw_1.33.0-3-306_2021.09.16.tar"
     diagfw_dat["POMONTEDELL"] = "09-16-2021"
-    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.33.0-3-306_2021.09.16.tar"
-    goldfw_dat["POMONTEDELL"] = "09-16-2021"
+    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.32.0-E-12_2021.19.17.tar"
+    goldfw_dat["POMONTEDELL"] = "09-17-2021"
+
+    cpld_img["LACONA32DELL"] = "lacona_dell_main_0.10.4.bin"
+    cpld_ver["LACONA32DELL"] = "0x0"
+    cpld_dat["LACONA32DELL"] = "0x13"
+    sec_cpld_img["LACONA32DELL"] = "lacona_dell_main_0.10.4.bin"
+    sec_cpld_ver["LACONA32DELL"] = "0x0"
+    sec_cpld_dat["LACONA32DELL"] = "0x13"
+    fail_cpld_img["LACONA32DELL"] = "lacona_dell_golden_0.10.4.bin"
+    fail_cpld_ver["LACONA32DELL"] = "0x0"
+    fail_cpld_dat["LACONA32DELL"] = "0x13"
+    diagfw_img["LACONA32DELL"] = "elba_diagfw_1.32.0-E-12_2021.19.17.tar"
+    diagfw_dat["LACONA32DELL"] = "09-17-2021"
+    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.32.0-E-12_2021.19.17.tar"
+    goldfw_dat["LACONA32DELL"] = "09-17-2021"
+
+    cpld_img["LACONA32"] = "lacona_dell_main_0.10.4.bin"
+    cpld_ver["LACONA32"] = "0x0"
+    cpld_dat["LACONA32"] = "0x13"
+    sec_cpld_img["LACONA32"] = "lacona_dell_main_0.10.4.bin"
+    sec_cpld_ver["LACONA32"] = "0x0"
+    sec_cpld_dat["LACONA32"] = "0x13"
+    fail_cpld_img["LACONA32"] = "lacona_dell_golden_0.10.4.bin"
+    fail_cpld_ver["LACONA32"] = "0x0"
+    fail_cpld_dat["LACONA32"] = "0x13"
+    diagfw_img["LACONA32"] = "elba_diagfw_1.32.0-E-12_2021.19.17.tar"
+    diagfw_dat["LACONA32"] = "09-17-2021"
+    goldfw_img["LACONA32"] = "elba_goldfw_1.32.0-E-12_2021.19.17.tar"
+    goldfw_dat["LACONA32"] = "09-17-2021"
 
 class MTP_IMAGES:
     AMD64_IMG = dict()
@@ -349,7 +376,9 @@ class PART_NUMBERS_MATCH:
     ORTANO2_PEN_PN_FMT = r"68-0021-0[2-9]{1} [A-Z0-9]{2}"     #68-0021-02 01    ORTANO2 GENERIC (PENSANDO)
     ORTANO2_FMT_ALL = r"{:s}|{:s}".format(ORTANO2_ORC_PN_FMT,ORTANO2_PEN_PN_FMT)
 
-    POMONTEDELL_PN_FMT = r"68-0022-0[1-9]{1} [A-Z0-9]{2}"     #68-0022-01 01    POMONTE DELL
+    POMONTEDELL_PN_FMT = r"0PCFPC(?:X|A)[0-9]{2}"             #0PCFPC X/A       POMONTE DELL
+    LACONA32DELL_PN_FMT = r"0X322F(?:X|A)[0-9]{2}"            #0X322F X/A       LACONA32 DELL
+    LACONA32_PN_FMT = r"P47930-00[0-9]{1}"                    #P47930-001       LACONA32 HPE
 
 MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
@@ -364,17 +393,17 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO]
 
 MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.VOMERO2]
-MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL]
-MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL]
+MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
+MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 
 CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
-ELBA_NIC_TYPE_LIST = [NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL]
+ELBA_NIC_TYPE_LIST = [NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 
-PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL]
+PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
@@ -385,7 +414,7 @@ HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
 HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
-DELL_PPID_PART_NUM_FMT = r"0?PCFPC"
+DELL_PPID_PART_NUM_FMT = r"0?(?:PCFPC|X322F)"
 DELL_PPID_MFG_ID_FMT = r"(?:FLUPK|FLEPK)"
 DELL_PPID_DATE_CODE_FMT = r"[0-9][1-9A-C][1-9A-V]"
 DELL_PPID_SER_NUM_FMT = r"[0-9A-O][0-9A-Z]{3}"
