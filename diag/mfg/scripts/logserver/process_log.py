@@ -12,6 +12,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from openpyxl.cell import Cell
 from openpyxl.styles import numbers
+from openpyxl.chart import BarChart, Reference, Series, LineChart
+from openpyxl.chart.label import DataLabelList
 import timeit
 from datetime import datetime
 from datetime import timedelta
@@ -46,9 +48,9 @@ def main():
     print(inputconfig['FILE']['datebasesjsonfile'])
     pr['modules'].checkDirectoryexist(inputconfig['DIR'])
 
-    datebase_DB = dict()
-    if os.path.exists(inputconfig['FILE']['datebasesjsonfile']):
-        datebase_DB = mpu.io.read(inputconfig['FILE']['datebasesjsonfile'])    
+    datebase_DB = pr['modules'].readjsonfile(inputconfig['FILE']['datebasesjsonfile'])
+    # if os.path.exists(inputconfig['FILE']['datebasesjsonfile']):
+    #     datebase_DB = mpu.io.read(inputconfig['FILE']['datebasesjsonfile'])    
     DATA = datebase_DB
     if not 'teststep' in DATA:
         DATA['teststep'] = dict()
@@ -81,8 +83,10 @@ def main():
 
     DATA['SN']['LIST'].sort()
     jsonfileoutputname = "{}/{}_{}_DATA.json".format(inputconfig['DIR']["TEMPDATABASE"],'OVERALL',date_time)
-    mpu.io.write(jsonfileoutputname, DATA)
-    mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
+    #mpu.io.write(jsonfileoutputname, DATA)
+    #mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
+    pr['modules'].wirtejsonfile(jsonfileoutputname, DATA)
+    pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
 
     if DATA['NEWFILECOUNT']:
         processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
@@ -161,6 +165,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
     print("COUNT SN: {}".format(len(workingonSNlist)))
     #sys.exit()    
     wb = Workbook()
+    wg = Workbook()
     dest_filename = "{}EXECL_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
     filenameheader = "{}EXECL_{}_DATA".format(inputconfig['DIR']["reportpath"],date_time)
     if "NAME" in inputconfig:
@@ -168,14 +173,24 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         filenameheader = "{}{}_{}_DATA".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
     if startdate:
         dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
+
+    dest_chartfilename = dest_filename.replace('DATA','CHART')
     print('OUTPUT FILE NAME: ' + dest_filename)
+    print('OUTPUT CHART FILE NAME: ' + dest_chartfilename)
     
-    generateexeclreport(DATA,wb,inputconfig,workingonSNlist,start=startdate)
+    #sys.exit()
+    chartdata = dict()
+
+    generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,start=startdate)
+    #pr['modules'].print_anyinformation(chartdata)
+    generateexeclchart(DATA,wg,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
+    wg.save(filename = dest_chartfilename)
     if "NAME" in inputconfig:
         if "ORTANO2" == inputconfig["NAME"].upper():
             SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
             for PN in SNbyPN:
-                generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,start=None)
+                generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,start=None)
+
 
 
     print("START DATE: {}".format(startdate))
@@ -653,7 +668,8 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                     #print("newcount: {}".format(count))
                     if newcount % 1000 == 0:
                         print("COUNT: {} Will save to database FILES: {}".format(newcount,inputconfig['FILE']['datebasesjsonfile']))
-                        mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
+                        #mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
+                        pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
                 else:
                     if not redo:
                         continue
@@ -1077,7 +1093,8 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
           
     for teststep in teststeplist:   
         jsonfileoutputname = "{}/{}_{}_DATA.json".format(inputconfig['DIR']["TEMPDATABASE"],teststep,date_time)
-        mpu.io.write(jsonfileoutputname, DATA['teststep'][teststep])
+        #mpu.io.write(jsonfileoutputname, DATA['teststep'][teststep])
+        pr['modules'].wirtejsonfile(jsonfileoutputname, DATA['teststep'][teststep])
     
     return None
 
@@ -3223,17 +3240,17 @@ def generateexecldieidreport(DATA,wb,inputconfig,start=None):
     return True
 
 
-def generateexeclDatabyPN(DATA,wb,inputconfig,workingonSNlist,PN,start=None):
+def generateexeclDatabyPN(DATA,wb,inputconfig,workingonSNlist,PN,chartdata,start=None):
 
     titlename = "{}_SUMMARY".format(PN)
     ws2 = wb.create_sheet(title=titlename)
     print("{}: {}".format("generateexeclDatabyPN", titlename))
 
-    SummaryReportDetail(DATA,ws2,inputconfig,workingonSNlist,start=None)
+    chartdata['PN'] = SummaryReportDetail(DATA,ws2,inputconfig,workingonSNlist,start)
 
     return None    
 
-def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,start=None):
+def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,start=None):
 
     # 1st Sheet keep active
     ws1 = wb.active
@@ -3242,7 +3259,274 @@ def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,start=None):
     #ws1 = wb.create_sheet(title='SUMMARY')
     ws1.title = "SUMMARY"
 
-    SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None)
+    chartdata["SUMMARY"] = SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None)
+
+    return None
+
+def generateexeclchart(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=None):
+    # 1st Sheet keep active
+    ws1 = wb.active
+    
+    # Will creat extra "sheet" using below
+    #ws1 = wb.create_sheet(title='SUMMARY')
+    ws1.title = "SUMMARY"
+
+    SummaryReportDetailchart(DATA,ws1,inputconfig,workingonSNlist,chartdata["SUMMARY"],pr,start)
+
+    for test in DATA['SN']['TEST']:
+        if test in chartdata["SUMMARY"]["WEEKTIME"]:
+            ws2 = wb.create_sheet(title="{}_TestTimeChart".format(test))
+            print("{}: {}".format("generateexeclchart", test))
+            SummaryReportDetailTimechart(DATA,ws2,inputconfig,workingonSNlist,chartdata["SUMMARY"]["WEEKTIME"][test],pr,test,start)
+
+    testlist = list()
+    testlist.append('DL')
+    testlist.append('P2C')
+
+    SummaryReportDetailTimechartwithcoupletest(DATA,wb,inputconfig,workingonSNlist,chartdata["SUMMARY"]["WEEKTIME"],testlist,pr,start)        
+
+    testlist = list()
+    testlist.append('4C-L')
+    testlist.append('4C-H')
+
+    SummaryReportDetailTimechartwithcoupletest(DATA,wb,inputconfig,workingonSNlist,chartdata["SUMMARY"]["WEEKTIME"],testlist,pr,start)        
+
+    return None
+
+def SummaryReportDetailTimechartwithcoupletest(DATA,wb,inputconfig,workingonSNlist,chartdata,testlist,pr,start):
+
+    #pr['modules'].print_anyinformation(chartdata)
+
+    Havethosetest = True
+    checkweeknumber = list()
+    testname = ''
+    for test in testlist:
+        if test in chartdata:
+            if len(testname) == 0:
+                testname = "{}_".format(test)
+            else:
+                testname = "{}_{}_".format(testname, test)
+            for weeknumber in chartdata[test]["WEEKLIST"]:
+                if not weeknumber in checkweeknumber:
+                    checkweeknumber.append(weeknumber)
+                    checkweeknumber.sort()
+        else:
+            Havethosetest = False
+
+    if not Havethosetest:
+        return False
+
+    ws1 = wb.create_sheet(title="{}TestTimeChart".format(testname))
+
+    countrow = 1
+    countcol = 1
+    wirtedata = list()
+    wirtedata.append('Weeknumber')
+    wirtedata.append('Test Units (AVG)')
+    wirtedata.append('MAX TestTime')
+    wirtedata.append('AVG TestTime')  
+    ws1.append(wirtedata)
+
+
+    wirtedata = list()
+    for weeknumber in checkweeknumber:
+        countrow += 1
+        wirtedata = list()
+        wirtedata.append(weeknumber)
+        avgnumber = list()
+        MaxTimeinData = 0
+        AveTimeinData = 0
+        for test in testlist:
+            if weeknumber in chartdata[test]["DATA"]:
+                MaxSlotinData = chartdata[test]["DATA"][weeknumber]["numberofSLOTlist"][-1]
+                avgnumber.append(len(chartdata[test]["DATA"][weeknumber]["DATAofNumber"][MaxSlotinData]))
+                MaxTimeinData += max(chartdata[test]["DATA"][weeknumber]["DATAofNumber"][MaxSlotinData])
+                from statistics import mean
+                AveTimeinData += mean(chartdata[test]["DATA"][weeknumber]["DATAofNumber"][MaxSlotinData])
+        from statistics import mean
+        if len(avgnumber):
+            wirtedata.append(int(mean(avgnumber)))
+        else:
+            wirtedata.append(0)
+        wirtedata.append(timedelta(seconds=int(MaxTimeinData)))
+        wirtedata.append(timedelta(seconds=int(AveTimeinData)))
+        ws1.append(wirtedata)
+
+    fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+
+    chart1 = BarChart()
+    chart1.type = "col"
+    chart1.style = 10
+    chart1.title = "{} Test Time by Week".format(testname)
+    chart1.y_axis.title = 'Units'
+    chart1.x_axis.title = 'WEEK Number'
+
+    data = Reference(ws1, min_col=2, min_row=1, max_row=countrow, max_col=2)
+    cats = Reference(ws1, min_col=1, min_row=2, max_row=countrow)
+    chart1.add_data(data, titles_from_data=True)
+    chart1.set_categories(cats)
+    chart1.dataLabels = DataLabelList() 
+    #chart1.dataLabels.showVal = True
+    chart1.shape = 4
+
+    # Create a second chart
+    c2 = LineChart()
+    v2 = Reference(ws1, min_col=3, min_row=1, max_row=countrow, max_col=4)
+    c2.add_data(v2, titles_from_data=True)
+    c2.set_categories(cats)
+    c2.y_axis.axId = 200
+    c2.y_axis.title = "Test Time in HH:MM:SS"
+
+    # Display y-axis of the second chart on the right by setting it to cross the x-axis at its maximum
+    c2.y_axis.crosses = "max"
+    chart1 += c2
+    chart1.height = 20 # default is 7.5
+    chart1.width = 30 # default is 15
+    ws1.add_chart(chart1, "E1")     
+
+    return None
+
+def SummaryReportDetailTimechart(DATA,ws1,inputconfig,workingonSNlist,chartdata,pr,test,start):
+
+    #pr['modules'].print_anyinformation(chartdata)
+
+    countrow = 1
+    countcol = 1
+    wirtedata = list()
+    wirtedata.append('Weeknumber')
+    wirtedata.append('Test Units')
+    wirtedata.append('MAX TestTime')
+    wirtedata.append('AVG TestTime')  
+    ws1.append(wirtedata)
+
+    wirtedata = list()
+    for weeknumber in chartdata["WEEKLIST"]:
+        countrow += 1
+        wirtedata = list()
+        wirtedata.append(weeknumber)
+        if weeknumber in chartdata["DATA"]:
+            MaxSlotinData = chartdata["DATA"][weeknumber]["numberofSLOTlist"][-1]
+            wirtedata.append(len(chartdata["DATA"][weeknumber]["DATAofNumber"][MaxSlotinData]))
+            MaxTimeinData = max(chartdata["DATA"][weeknumber]["DATAofNumber"][MaxSlotinData])
+            from statistics import mean
+            AveTimeinData = mean(chartdata["DATA"][weeknumber]["DATAofNumber"][MaxSlotinData])
+            wirtedata.append(timedelta(seconds=int(MaxTimeinData)))
+            wirtedata.append(timedelta(seconds=int(AveTimeinData)))
+        else:
+            wirtedata.append(0)
+            wirtedata.append("00:00:00")
+            wirtedata.append("00:00:00")
+
+        ws1.append(wirtedata)
+
+    fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+
+    chart1 = BarChart()
+    chart1.type = "col"
+    chart1.style = 10
+    chart1.title = "{} Test Time by Week".format(test)
+    chart1.y_axis.title = 'Units'
+    chart1.x_axis.title = 'WEEK Number'
+
+    data = Reference(ws1, min_col=2, min_row=1, max_row=countrow, max_col=2)
+    cats = Reference(ws1, min_col=1, min_row=2, max_row=countrow)
+    chart1.add_data(data, titles_from_data=True)
+    chart1.set_categories(cats)
+    chart1.dataLabels = DataLabelList() 
+    #chart1.dataLabels.showVal = True
+    chart1.shape = 4
+
+    # Create a second chart
+    c2 = LineChart()
+    v2 = Reference(ws1, min_col=3, min_row=1, max_row=countrow, max_col=4)
+    c2.add_data(v2, titles_from_data=True)
+    c2.set_categories(cats)
+    c2.y_axis.axId = 200
+    c2.y_axis.title = "Test Time in HH:MM:SS"
+
+    # Display y-axis of the second chart on the right by setting it to cross the x-axis at its maximum
+    c2.y_axis.crosses = "max"
+    chart1 += c2
+    chart1.height = 20 # default is 7.5
+    chart1.width = 30 # default is 15
+    ws1.add_chart(chart1, "E1")     
+
+    return None
+
+
+def SummaryReportDetailchart(DATA,ws1,inputconfig,workingonSNlist,chartdata,pr,start):
+
+    #pr['modules'].print_anyinformation(chartdata)
+
+    countrow = 1
+    countcol = 1
+    wirtedata = list()
+    wirtedata.append('Weeknumber')
+    for test in DATA['SN']['TEST']:
+        countcol += 1
+        wirtedata.append(test)
+    wirtedata.append('EndtoEndYeild')
+    ws1.append(wirtedata)
+
+    #pr['modules'].print_anyinformation(chartdata["WEEKFIRST"])
+
+    wirtedata = list()
+    for weeknumber in chartdata["WEEKFIRST"]["LIST"]:
+        countrow += 1
+        wirtedata = list()
+        wirtedata.append(weeknumber)
+        
+        if weeknumber in chartdata["WEEKFIRST"]["DATA"]:
+            for test in DATA['SN']['TEST']:
+                if "TOTAL" in chartdata["WEEKFIRST"]["DATA"][weeknumber][test]:
+                    wirtedata.append(chartdata["WEEKFIRST"]["DATA"][weeknumber][test]["TOTAL"])
+                else:
+                    wirtedata.append(0)
+        else:
+            for test in DATA['SN']['TEST']:
+                wirtedata.append(0)
+        if weeknumber in chartdata["WEEKFIRST"]["DATA"]["testendtoendyeildlist"]:
+            endtoendyeild = numpy.prod(chartdata["WEEKFIRST"]["DATA"]["testendtoendyeildlist"][weeknumber])
+            endtoendyeilddisplay = "{:.2f}%".format(endtoendyeild * 100)
+            wirtedata.append(endtoendyeilddisplay)
+        else:
+            wirtedata.append("0.0%")
+        ws1.append(wirtedata)
+
+    fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+
+    chart1 = BarChart()
+    chart1.type = "col"
+    chart1.style = 10
+    chart1.title = "First Pass data by Week"
+    chart1.y_axis.title = 'Units'
+    chart1.x_axis.title = 'WEEK Number'
+
+    data = Reference(ws1, min_col=2, min_row=1, max_row=countrow, max_col=countcol)
+    cats = Reference(ws1, min_col=1, min_row=2, max_row=countrow)
+    chart1.add_data(data, titles_from_data=True)
+    chart1.set_categories(cats)
+    chart1.dataLabels = DataLabelList() 
+    #chart1.dataLabels.showVal = True
+    chart1.shape = 4
+
+    # Create a second chart
+    c2 = LineChart()
+    v2 = Reference(ws1, min_col=countcol+1, min_row=1, max_row=countrow, max_col=countcol+1)
+    c2.add_data(v2, titles_from_data=True)
+    c2.set_categories(cats)
+    c2.y_axis.axId = 200
+    c2.y_axis.title = "End to End Yeild in %"
+
+    # Display y-axis of the second chart on the right by setting it to cross the x-axis at its maximum
+    c2.y_axis.crosses = "max"
+    chart1 += c2
+    chart1.height = 20 # default is 7.5
+    chart1.width = 30 # default is 15
+    ws1.add_chart(chart1, "E1")     
 
     return None
 
@@ -3297,10 +3581,12 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
 
     #print(json.dumps(LastfailureremoveDupSN, indent = 4))
     #sys.exit()
-
+    summarydata = dict()
     resultlist = ["PASS", "FAIL"]
     alllistofSN = list()
     for test in DATA['SN']['TEST']:
+        if not test in summarydata:
+            summarydata[test] = dict()
         wirtedata = list()
         wirtedata.append(test)
         listofSN = list()
@@ -3319,7 +3605,9 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
                         alllistofSN.append(SN)    
 
         wirtedata.append(len(listofSN))
+        summarydata[test]["TOTAL"] = len(listofSN)
         wirtedata.append(len(DATA['teststep'][test]["DETAILTESTSTEP"]))
+        summarydata[test]["TOTALTestStep"] = len(DATA['teststep'][test]["DETAILTESTSTEP"])
         countResult = dict()
         countResult["PASS"] = 0
         for sn in listofSN:
@@ -3332,12 +3620,16 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
         for testresult in resultlist:
             if testresult in countResult:
                 wirtedata.append(countResult[testresult])
+                summarydata[test]["FIRST{}".format(testresult)] = countResult[testresult]
             else:
                  wirtedata.append(0)
+                 summarydata[test]["FIRST{}".format(testresult)] = 0
         if len(listofSN):
             firstyeild = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
+            summarydata[test]["FIRSTYEILD"] = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
         else:
             firstyeild = "{:.2f}%".format(0)
+            summarydata[test]["FIRSTYEILD"] = "{:.2f}%".format(0)
         wirtedata.append(firstyeild)
         countResult = dict()
         countResult["PASS"] = 0
@@ -3350,12 +3642,16 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
         for testresult in resultlist:
             if testresult in countResult:
                 wirtedata.append(countResult[testresult])
+                summarydata[test]["LAST{}".format(testresult)] = countResult[testresult]
             else:
                  wirtedata.append(0)
+                 summarydata[test]["LASTYEILD"] = "{:.2f}%".format(0)
         if len(listofSN):
             firstyeild = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
+            summarydata[test]["LASTYEILD"] = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
         else:
             firstyeild = "{:.2f}%".format(0)
+            summarydata[test]["LASTYEILD"] = "{:.2f}%".format(0)
         wirtedata.append(firstyeild)
         wirtedata.append('')
         wirtedata.append(LastfailureremoveDupSN[test]["count"])
@@ -3367,9 +3663,12 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
     ws1.append(wirtedata)
     ws1.append(wirtedata)
 
-    testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST')
-    testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='LAST')
-    testtimebyworkweek(DATA, ws1, alllistofSN, WeekTimedata)
+    overalldata = dict()
+    overalldata['TOP'] = summarydata
+
+    overalldata['WEEKFIRST'] = testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST')
+    overalldata['WEEKLAST'] = testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='LAST')
+    overalldata['WEEKTIME'] = testtimebyworkweek(DATA, ws1, alllistofSN, WeekTimedata)
 
     testyeildbySNperfixworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST')
     testyeildbySNperfixworkweek(DATA, ws1, alllistofSN, resultlist, status='LAST')
@@ -3378,9 +3677,7 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
     converttoPERCENTAGEnumber(ws1)
     freezePosition(ws1, "B1")
 
-
-
-    return 0
+    return overalldata
 
 def findworkweek(checktime):
     checktime_object = datetime.strptime(checktime, '%Y-%m-%d_%H-%M-%S')
@@ -3409,7 +3706,7 @@ def testtimebyworkweek(DATA, ws1, alllistofSN, WeekTimedata):
             if not weeknumber in myweeknumber['LIST']:
                 myweeknumber['LIST'].append(weeknumber)
                 myweeknumber['LIST'].sort()
-    
+    WeekTimedata['OVERALLWEEKLIST'] = myweeknumber['LIST']
     wirtedata = list()
     ws1.append(wirtedata)
     ws1.append(wirtedata)
@@ -3456,10 +3753,13 @@ def testtimebyworkweek(DATA, ws1, alllistofSN, WeekTimedata):
     ws1.append(wirtedata)
     ws1.append(wirtedata)
 
+    return WeekTimedata
+
 def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
     myweeknumber = dict()
     myweeknumber['LIST'] = list()
     myweeknumber['DETAIL'] = dict()
+    myweeknumber['DATA'] = dict()
 
     for sn in alllistofSN:
         for test in DATA['SN']['TEST']:
@@ -3511,12 +3811,18 @@ def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
         wirtedatapass.append("{}_PASS".format(test))
         wirtedatayield.append("{}_YIELD".format(test))
         for weekcode in myweeknumber['LIST']:
+            if not weekcode in myweeknumber['DATA']:
+                myweeknumber['DATA'][weekcode] = dict()
+            if not test in myweeknumber['DATA'][weekcode]:
+                myweeknumber['DATA'][weekcode][test] = dict()
             if not weekcode in testendtoendyeildlist:
                 testendtoendyeildlist[weekcode] = list()
             if weekcode in myweeknumber['DETAIL'][test]:
                 wirtedata.append(myweeknumber['DETAIL'][test][weekcode]['TOTAL'])
+                myweeknumber['DATA'][weekcode][test]['TOTAL'] = myweeknumber['DETAIL'][test][weekcode]['TOTAL']
                 if 'PASS' in myweeknumber['DETAIL'][test][weekcode]:
                     wirtedatapass.append(myweeknumber['DETAIL'][test][weekcode]['PASS'])
+                    myweeknumber['DATA'][weekcode][test]['PASS'] = myweeknumber['DETAIL'][test][weekcode]['PASS']
                     firstyield = "{:.2f}%".format(myweeknumber['DETAIL'][test][weekcode]['PASS']/myweeknumber['DETAIL'][test][weekcode]['TOTAL'] * 100)
                     firstyieldsave = myweeknumber['DETAIL'][test][weekcode]['PASS']/myweeknumber['DETAIL'][test][weekcode]['TOTAL']
                 else:
@@ -3524,6 +3830,7 @@ def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
                     firstyield = "{:.2f}%".format(0)
                     firstyieldsave = 0                    
                 wirtedatayield.append(firstyield)
+                myweeknumber['DATA'][weekcode][test]['YIELD'] = firstyield
                 if myweeknumber['DETAIL'][test][weekcode]['TOTAL']:
                     testendtoendyeildlist[weekcode].append(firstyieldsave)
                 else:
@@ -3544,10 +3851,14 @@ def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
         endtoendyeilddisplay = "{:.2f}%".format(endtoendyeild * 100)
         wirtedataendtoendyeild.append(endtoendyeilddisplay)    
     ws1.append(wirtedataendtoendyeild)
+    myweeknumber['DATA']['testendtoendyeildlist'] = testendtoendyeildlist
+    myweeknumber['DATA']['wirtedataendtoendyeild'] = wirtedataendtoendyeild
 
     wirtedata = list()
     ws1.append(wirtedata)
     ws1.append(wirtedata)
+
+    return myweeknumber
 
 def testyeildbySNperfixworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
     checkeachwkcodeSNlist = dict()
