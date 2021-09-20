@@ -4647,7 +4647,8 @@ class mtp_ctrl():
 
     def mtp_nic_mvl_stub_test(self, slot, loopback=True):
         test = "STUB"
-
+        if not loopback:
+            self.cli_log_slot_inf(slot, "Internal loopback")
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(test, str(start))
