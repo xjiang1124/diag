@@ -340,8 +340,12 @@ var TaorTbl = []I2cInfo {
     I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
     I2cInfo {"CPLD_ELBA0",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_2",  2,    I2C_TEST_ENABLE},
     I2cInfo {"CPLD_ELBA1",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_3",  3,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-CPU",      "XeonD",     1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
-    I2cInfo {"TSENSOR-TD3",      "TD3",       1,   0x77,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
+    I2cInfo {"TSENSOR-CPU",      "XeonD",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-TD3",      "TD3",       2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    //I2cInfo {"TSENSOR-ASIC0",    "ELBA0",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    //I2cInfo {"TSENSOR-ASIC1",    "ELBA1",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    //END NON EXISTENT I2C DEVICES
     I2cInfo {"SFP_1",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SFP_2",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  1,    0},
     I2cInfo {"SFP_3",          "SFP",       0x4,   0x50,    0x0,    "HUB_NONE",  2,    0},
@@ -582,6 +586,7 @@ func SwitchI2cTbl(uutName string) (err int) {
               uutType == "POMONTEDELL"  {
         CurI2cTbl = LaconaDellMtpTbl
     } else if uutType == "LACONA"       ||
+              uutType == "LACONA32"     ||
               uutType == "POMONTE"      {
         CurI2cTbl = LaconaMtpTbl
     } else if uutType == "TAORMINA" {
