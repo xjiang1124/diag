@@ -568,10 +568,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None):
+    def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None, retry_with_powercycle=False):
         delay = 30
-        retries = self._mgmt_timeout / delay
-        retries = retries + 4
+        # retries = self._mgmt_timeout / delay
+        # retries = retries + 4
+        retries = 3
         if not self._mgmt_cfg:
             self.cli_log_err("management port config is empty")
             return None
@@ -589,8 +590,13 @@ class mtp_ctrl():
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"])
             if idx < 0:
                 if retries > 0:
-                    self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level = 0)
-                    time.sleep(delay)
+                    if retry_with_powercycle:
+                        self.cli_log_err("Connect to mtp timeout. Powercycle and retry...{:d} attempts remaining...".format(retries))
+                        libmfg_utils.mtpid_list_poweroff([self])
+                        libmfg_utils.mtpid_list_poweron([self])
+                    else:
+                        self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level = 0)
+                        time.sleep(delay)
                     retries -= 1
                     self._mgmt_handle = pexpect.spawn(ssh_cmd)
                     continue
