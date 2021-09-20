@@ -181,7 +181,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
     #sys.exit()
     chartdata = dict()
 
-    generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,start=startdate)
+    generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
     #pr['modules'].print_anyinformation(chartdata)
     generateexeclchart(DATA,wg,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
     wg.save(filename = dest_chartfilename)
@@ -189,7 +189,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         if "ORTANO2" == inputconfig["NAME"].upper():
             SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
             for PN in SNbyPN:
-                generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,start=None)
+                generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,pr,start=None)
 
 
 
@@ -242,7 +242,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         for eachteststep in DATA['SN']['TEST']:
             generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
             if "4C" in eachteststep:
-                generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+                generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
             else:
                 generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
             generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
@@ -2254,7 +2254,7 @@ def generatedailydataintxtfile(DATA,teststep):
     
     return 0
 
-def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
+def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,pr):
 
     DatabyWeek = dict()
     DatabyWeek['WEEKLIST'] = list()
@@ -2263,10 +2263,17 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
     TimeData = dict()
     TimeData["DATA"] = dict()
     TimeData["LIST"] = list()
+    TimeData["CHAMBER"] = dict()
 
     for sn in workingonSNlist:
         if sn in DATA["SN"]:
             for chassis in DATA["SN"][sn]:
+                chambername = pr['modules'].where_is_my_chamber(chassis)
+                if chambername:
+                    if not chambername in TimeData["CHAMBER"]:
+                        TimeData["CHAMBER"][chambername] = dict()
+                        TimeData["CHAMBER"][chambername]["DATA"] = dict()
+                        TimeData["CHAMBER"][chambername]["LIST"] = list()
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
                         endtime = "{}_{}".format(testdate,testetime)
@@ -2287,10 +2294,23 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
                                 TimeData["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
                             TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
                             TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
-    
+                            if chambername:
+                                if not int(unittesttime) in TimeData["CHAMBER"][chambername]["LIST"]:
+                                    TimeData["CHAMBER"][chambername]["LIST"].append(int(unittesttime))
+                                    TimeData["CHAMBER"][chambername]["LIST"].sort(reverse=True)
+                                if not unittesttime in TimeData["CHAMBER"][chambername]["DATA"]:
+                                    TimeData["CHAMBER"][chambername]["DATA"][unittesttime] = dict()
+                                    TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"] = dict()
+                                    TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
+                                if not recordchassistime in TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"]:
+                                    TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
+                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
+                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
+
     for sn in workingonSNlist:
         if sn in DATA["SN"]:
             for chassis in DATA["SN"][sn]:
+                chambername = pr['modules'].where_is_my_chamber(chassis)
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
                         weeknumber = findworkweek("{}_{}".format(testdate,testetime))
@@ -2312,10 +2332,14 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA):
                         if not numberofslotfortest in DatabyWeek['DATA'][weeknumber]["DATAofNumber"]:
                             DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest] = list()
 
-                        if '2C' in teststep or '4C' in teststep:
+                        if '4C' in teststep:
                             endtestime = "{}_{}".format(testdate,testetime)
-                            MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData)
-                            DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(MaxTestTime))
+                            if chambername:
+                                MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
+                                DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(MaxTestTime))
+                            else:
+                                MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData)
+                                DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(MaxTestTime))
                         else:
                             if 'TESTTIME' in DATA["SN"][sn][chassis][testdate][testetime]:
                                 DatabyWeek['DATA'][weeknumber]["DATAofNumber"][numberofslotfortest].append(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
@@ -2383,7 +2407,7 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
     freezePosition(ws2,'K2')
     return 0
 
-def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
+def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
 
     titlename = "{}_{}".format("Testtime", teststep)
     ws2 = wb.create_sheet(title=titlename)
@@ -2392,6 +2416,7 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wirtedata.append('TEST')
     wirtedata.append('SN')
     wirtedata.append('CHASSIS')
+    wirtedata.append('CHAMBER')
     wirtedata.append('WEEK')
     wirtedata.append('DATE')
     wirtedata.append('TIME')
@@ -2403,10 +2428,17 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
     TimeData = dict()
     TimeData["DATA"] = dict()
     TimeData["LIST"] = list()
+    TimeData["CHAMBER"] = dict()
 
     for sn in workingonSNlist:
         if sn in DATA["SN"]:
             for chassis in DATA["SN"][sn]:
+                chambername = pr['modules'].where_is_my_chamber(chassis)
+                if chambername:
+                    if not chambername in TimeData["CHAMBER"]:
+                        TimeData["CHAMBER"][chambername] = dict()
+                        TimeData["CHAMBER"][chambername]["DATA"] = dict()
+                        TimeData["CHAMBER"][chambername]["LIST"] = list()
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
                         endtime = "{}_{}".format(testdate,testetime)
@@ -2426,6 +2458,19 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
                             TimeData["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
                         TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
                         TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
+                        if chambername:
+                            if not int(unittesttime) in TimeData["CHAMBER"][chambername]["LIST"]:
+                                TimeData["CHAMBER"][chambername]["LIST"].append(int(unittesttime))
+                                TimeData["CHAMBER"][chambername]["LIST"].sort(reverse=True)
+                            if not unittesttime in TimeData["CHAMBER"][chambername]["DATA"]:
+                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime] = dict()
+                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"] = dict()
+                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
+                            if not recordchassistime in TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"]:
+                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
+                            TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
+                            TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime                            
+
     #print(json.dumps(TimeData, indent = 4))
     #sys.exit()
     ws2.append(wirtedata)
@@ -2440,23 +2485,42 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
                         wirtedata.append(teststep)
                         wirtedata.append(sn)
                         wirtedata.append(chassis)
-                        
+                        chambername = pr['modules'].where_is_my_chamber(chassis)
+                        wirtedata.append(chambername)
                         #sys.exit()
-                        wirtedata.append(findworkweek("{}_{}".format(testdate,testetime)))
-                        endtestime = "{}_{}".format(testdate,testetime)
-                        wirtedata.append(testdate)
-                        wirtedata.append(testetime.replace("-",":"))
-                        if 'TESTTIME' in DATA["SN"][sn][chassis][testdate][testetime]:
-                            wirtedata.append(timedelta(seconds=int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME']))))
+                        if chambername:
+                            wirtedata.append(findworkweek("{}_{}".format(testdate,testetime)))
+                            endtestime = "{}_{}".format(testdate,testetime)
+                            wirtedata.append(testdate)
+                            wirtedata.append(testetime.replace("-",":"))
+                            if 'TESTTIME' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                wirtedata.append(timedelta(seconds=int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME']))))
+                            else:
+                                wirtedata.append('NO TESTTIME')
+                            MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
+                            wirtedata.append(timedelta(seconds=int(MaxTestTime)))
+                            wirtedata.append(converttoHourtoHour(MaxTestTime))
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                            #sys.exit()
+                            timestamp = "{}_{}".format(testdate,testetime)
+                            wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
                         else:
-                            wirtedata.append('NO TESTTIME')
-                        MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData)
-                        wirtedata.append(timedelta(seconds=int(MaxTestTime)))
-                        wirtedata.append(converttoHourtoHour(MaxTestTime))
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
-                        #sys.exit()
-                        timestamp = "{}_{}".format(testdate,testetime)
-                        wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
+
+                            wirtedata.append(findworkweek("{}_{}".format(testdate,testetime)))
+                            endtestime = "{}_{}".format(testdate,testetime)
+                            wirtedata.append(testdate)
+                            wirtedata.append(testetime.replace("-",":"))
+                            if 'TESTTIME' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                wirtedata.append(timedelta(seconds=int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME']))))
+                            else:
+                                wirtedata.append('NO TESTTIME')
+                            MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData)
+                            wirtedata.append(timedelta(seconds=int(MaxTestTime)))
+                            wirtedata.append(converttoHourtoHour(MaxTestTime))
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                            #sys.exit()
+                            timestamp = "{}_{}".format(testdate,testetime)
+                            wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
                         ws2.append(wirtedata)
     
     fixcolumnssize(ws2)
@@ -3240,17 +3304,17 @@ def generateexecldieidreport(DATA,wb,inputconfig,start=None):
     return True
 
 
-def generateexeclDatabyPN(DATA,wb,inputconfig,workingonSNlist,PN,chartdata,start=None):
+def generateexeclDatabyPN(DATA,wb,inputconfig,workingonSNlist,PN,chartdata,pr,start=None):
 
     titlename = "{}_SUMMARY".format(PN)
     ws2 = wb.create_sheet(title=titlename)
     print("{}: {}".format("generateexeclDatabyPN", titlename))
 
-    chartdata['PN'] = SummaryReportDetail(DATA,ws2,inputconfig,workingonSNlist,start)
+    chartdata['PN'] = SummaryReportDetail(DATA,ws2,inputconfig,workingonSNlist,pr,start)
 
     return None    
 
-def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,start=None):
+def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=None):
 
     # 1st Sheet keep active
     ws1 = wb.active
@@ -3259,7 +3323,7 @@ def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,start=None
     #ws1 = wb.create_sheet(title='SUMMARY')
     ws1.title = "SUMMARY"
 
-    chartdata["SUMMARY"] = SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None)
+    chartdata["SUMMARY"] = SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None)
 
     return None
 
@@ -3531,12 +3595,12 @@ def SummaryReportDetailchart(DATA,ws1,inputconfig,workingonSNlist,chartdata,pr,s
     return None
 
 
-def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,start=None):
+def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
 
     #print(json.dumps(inputconfig, indent = 4))
     WeekTimedata = dict()
     for eachteststep in DATA['SN']['TEST']:
-        WeekTimedata[eachteststep] = GetTestTimedictbyweek(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,DATA)
+        WeekTimedata[eachteststep] = GetTestTimedictbyweek(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,DATA,pr)
         #print(json.dumps(WeekTimedata, indent = 4))
         #sys.exit()
 

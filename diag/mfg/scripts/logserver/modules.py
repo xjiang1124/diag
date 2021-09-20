@@ -54,6 +54,46 @@ class modules(object):
 		if logfile:
 			self.logfile = logfile
 		self.debug_print("Start modules...")
+		self.chamber_config = self.get_chamber_config()
+		self.print_anyinformation(self.chamber_config)
+		#print(self.where_is_my_chamber('MTP-637'))
+		#sys.exit()
+
+	def where_is_my_chamber(self,MTP):
+		#self.debug_print("where_is_my_chamber")
+		for chamberName in self.chamber_config:
+			if MTP in self.chamber_config[chamberName]:
+				return chamberName
+
+		return None
+
+	def get_chamber_config(self):
+		chamberFile = 'Penang_Chamber_Config.xlsx'
+		chamber_config = dict()
+		from openpyxl import load_workbook
+		self.debug_print("FILE: {}".format(chamberFile))
+		wb = load_workbook(filename = chamberFile)
+		for tabname in wb.sheetnames:
+			self.debug_print("tabname: {}".format(tabname))
+			eachsheet = wb[tabname]
+			headers = [c.value for c in next(eachsheet.iter_rows(min_row=1, max_row=1))]
+			print(headers)
+			for chambername in headers:
+				if not chambername in chamber_config:
+					chamber_config[chambername] = list()
+				chamberraw, chambercolunm = self.findposition(eachsheet,chambername)
+
+				self.debug_print("{}: Raw {} Colunm {} ({})".format(chambername,chamberraw, chambercolunm, get_column_letter(chambercolunm)))
+				colunm = eachsheet[get_column_letter(chambercolunm)]
+				for countnumberinrow in range(2,len(colunm)+1):
+					MTP = str(eachsheet.cell(row=countnumberinrow, column=chambercolunm).value)
+					self.debug_print("MTP: {}".format(MTP))
+					if len(MTP):
+						if not MTP in chamber_config[chambername]:
+							chamber_config[chambername].append(MTP)
+
+		return chamber_config
+
 
 	def rsync_and_delete_by_os_system_at_locate(self,source,dest):
 		rsync_cmd = "rsync -avrz {} {}".format(source,dest)
