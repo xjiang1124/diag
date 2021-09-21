@@ -7,7 +7,7 @@ var HpeTblLACONA = []entry {
     entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0}},
     entry{"Board Info Offset",                      INT8,        3,        1,    []byte{1}},
     entry{"Product Area Offset",                    INT8,        4,        1,    []byte{0x10}},
-    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0}},
+    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0x1C}},
     entry{"PAD",                                    INT8,        6,        1,    []byte{0}},
     entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0}},
     entry{"Board Info Format Version",              INT8,        8,        1,    []byte{1}},
@@ -77,6 +77,19 @@ var HpeTblLACONAext = []entry {
     entry{"End of Field",                           INT8,        211,        1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,        212,       11,    []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
     entry{"Product info Area Checksum",             INT8,        223,        1,    []byte{0x00}},
+
+    entry{"Multi-Record Area",                      INT8,        224,        1,    []byte{0xC0}},
+    entry{"Record Format",                          INT8,        225,        1,    []byte{0x02}},
+    entry{"Record Length",                          INT8,        226,        1,    []byte{0x24}},
+    entry{"Record Checksum",                        INT8,        227,        1,    []byte{0x00}},
+    entry{"Header Checksum",                        INT8,        228,        1,    []byte{0x00}},
+    entry{"Manufacture ID",                         INT8,        229,        3,    []byte{0x00, 0x00, 0x00}},
+    entry{"HPE Version Number",                    INT8,        232,        1,    []byte{0x01}},
+    entry{"MAC Address Base",                       INT8,        233,       32,    []byte{
+        0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00, 0x20, 0x20, 0x20, 0x20, 
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20}},
 } 
 
 
@@ -90,7 +103,7 @@ var HpeTblLACONA32G = []entry {
     entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0}},
     entry{"Board Info Offset",                      INT8,        3,        1,    []byte{1}},
     entry{"Product Area Offset",                    INT8,        4,        1,    []byte{0x10}},
-    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0}},
+    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0x1C}},
     entry{"PAD",                                    INT8,        6,        1,    []byte{0}},
     entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0}},
     entry{"Board Info Format Version",              INT8,        8,        1,    []byte{1}},
@@ -103,7 +116,7 @@ var HpeTblLACONA32G = []entry {
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xEC}},
     entry{"Product Name",                           STRING,      24,      44,    []byte{
         0x44, 0x53, 0x43, 0x32, 0x2d, 0x32, 0x35, 0x2c, 0x32, 0x78, 
-        0x53, 0x46, 0x50, 0x35, 0x36, 0x2c, 0x31, 0x36, 0x67, 0x52, 
+        0x53, 0x46, 0x50, 0x35, 0x36, 0x2c, 0x33, 0x32, 0x67, 0x52, 
         0x41, 0x4d, 0x2c, 0x36, 0x34, 0x47, 0x65, 0x4d, 0x4d, 0x43, 
         0x2c, 0x56, 0x69, 0x2c, 0x48, 0x50, 0x45, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20}},
@@ -141,10 +154,10 @@ var HpeTblLACONA32Gext = []entry {
     entry{"Manufacturer",                           STRING,      132,        3,    []byte{0x48, 0x50, 0x45}},
     entry{"Product Name Type/Length",               INT8,        135,        1,    []byte{0xE8}},
     entry{"Product Name",                           STRING,      136,       40,    []byte{
-        0x50, 0x43, 0x41, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53, 
-        0x43, 0x32, 0x35, 0x20, 0x76, 0x32, 0x20, 0x31, 0x30, 0x2f, 
-        0x32, 0x35, 0x47, 0x32, 0x70, 0x20, 0x53, 0x46, 0x50, 0x32, 
-        0x38, 0x20, 0x31, 0x36, 0x47, 0x20, 0x43, 0x61, 0x72, 0x64}},
+        0x50, 0x65, 0x6e, 0x73, 0x61, 0x6e, 0x64, 0x6f, 0x20, 0x44, 
+        0x53, 0x43, 0x32, 0x35, 0x76, 0x32, 0x20, 0x31, 0x30, 0x2f, 
+        0x32, 0x35, 0x47, 0x20, 0x32, 0x70, 0x20, 0x33, 0x32, 0x47, 
+        0x42, 0x20, 0x53, 0x70, 0x6c, 0x20, 0x43, 0x61, 0x72, 0x64}},
     entry{"PCA Product Number Type/Length",          INT8,       176,        1,    []byte{0xCA}},
     entry{"HPE Product Number",                    STRING,       177,       10,    []byte{
         0x50, 0x34, 0x37, 0x39, 0x32, 0x38, 0x2d, 0x42, 0x32, 0x31}},
@@ -160,7 +173,22 @@ var HpeTblLACONA32Gext = []entry {
     entry{"End of Field",                           INT8,        211,        1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,        212,       11,    []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
     entry{"Product info Area Checksum",             INT8,        223,        1,    []byte{0x00}},
+
+    entry{"Multi-Record Area",                      INT8,        224,        1,    []byte{0xC0}},
+    entry{"Record Format",                          INT8,        225,        1,    []byte{0x82}},
+    entry{"Record Length",                          INT8,        226,        1,    []byte{0x24}},
+    entry{"Record Checksum",                        INT8,        227,        1,    []byte{0x00}},
+    entry{"Header Checksum",                        INT8,        228,        1,    []byte{0x00}},
+    entry{"Manufacture ID",                         INT8,        229,        3,    []byte{0x00, 0x00, 0x00}},
+    entry{"HPE Version Number",                    INT8,        232,        1,    []byte{0x01}},
+    entry{"MAC Address Base",                       INT8,        233,       32,    []byte{
+        0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00, 0x20, 0x20, 0x20, 0x20, 
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20}},
 } 
+
+
 
 
 

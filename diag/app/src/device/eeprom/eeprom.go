@@ -929,8 +929,6 @@ func HasAssemblyEntry() (hasAssembly bool) {
        CustType == "DELLNAPLES100"  ||
        CustType == "DELLOCP"        ||
        CustType == "PENSWM"         ||
-       //CustType == "POMONTE"        ||
-       //CustType == "LACONA32"       ||
        //CustType == "LACONA32DELL"   ||    //DELL 32G LACONA AND POMONTE HAVE AN ASSEMBLY FIELD, BUT IT IS NOT USED 
        //CustType == "POMONTEDELL"    ||    //DELL 32G LACONA AND POMONTE HAVE AN ASSEMBLY FIELD, BUT IT IS NOT USED 
        CustType == "LACONADELL" {
@@ -1102,6 +1100,16 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
             if entry.Name == "Product info Area Checksum" || entry.Name == "HPE Multi-Record Area Checksum" {
                 updateIntChk()
                 entry.Value[0] = byte(0x100 - productInfoChk % 0x100)
+            } else if entry.Name == "Record Checksum" {
+                updateIntChk()
+                entry.Value[0] = byte(0x100 - mraChk[multiRecordNumber] % 0x100)
+                //fmt.Printf("RECORD [%d] = %x\n", multiRecordNumber, mraChk[multiRecordNumber]) 
+                updateIntChk() //Have it go re-calculate the header checksum now that the record checksum is in place
+            } else if entry.Name == "Header Checksum" {
+                updateIntChk()
+                entry.Value[0] = byte(0x100 - mraHdrChk[multiRecordNumber] % 0x100)
+                //fmt.Printf("HEADER [%d] = %x\n", multiRecordNumber, mraHdrChk[multiRecordNumber]) 
+                multiRecordNumber++
             }
             err = writeField(devName, entry.Offset, entry.NumBytes, entry.Value)
             if err != errType.SUCCESS {
@@ -1265,6 +1273,27 @@ func updateIntChk() () {
         for _, entry := range(EepromExtTbl) {
             if (entry.Offset > (piaOff - 1)) && (entry.Offset < (piaOff + piaLen - 1)) {  //product info area
                 productInfoChk += calcSum(entry)
+            }
+        }
+    }
+
+    //calc multi-record checksum.  BIA + PIA checksum is calculated above
+    if HpeLacona == 1 {
+        //Calculate multi-record checksum
+        for _, entry := range(EepromExtTbl) {
+            if (entry.Offset > 228) && (entry.Offset < 265) {
+                mraChk[0] += calcSum(entry)
+                //fmt.Printf(" mraChk Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraChk[0])
+            }
+        }
+        
+
+
+        //Calculate multi-record header checksum
+        for _, entry := range(EepromExtTbl) {
+            if (entry.Offset > 223) && (entry.Offset < 228) {
+                mraHdrChk[0] += calcSum(entry)
+                //fmt.Printf(" mraHdrChk Name -> %s [0x%.02x]   HDRCHKSUM=%x\n", entry.Name, entry.Offset, mraHdrChk[0])
             }
         }
     }
