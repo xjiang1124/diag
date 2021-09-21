@@ -2321,7 +2321,7 @@ class mtp_ctrl():
         if (software_pn == "90-0004-0001" or
             software_pn == "90-0006-0001" or
             software_pn == "90-0006-0002" or
-            software_pn == "90-0011-0002" or
+            software_pn == "90-0011-0003" or
             software_pn == "90-pomonte"
             ):
             return True
@@ -2412,7 +2412,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
-            if software_pn != "90-0011-0002":
+            if software_pn != "90-0011-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0PCFPC":     #POMONTE DELL
