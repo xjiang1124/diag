@@ -55,7 +55,7 @@ class modules(object):
 			self.logfile = logfile
 		self.debug_print("Start modules...")
 		self.chamber_config = self.get_chamber_config()
-		self.print_anyinformation(self.chamber_config)
+		#self.print_anyinformation(self.chamber_config)
 		#print(self.where_is_my_chamber('MTP-637'))
 		#sys.exit()
 
@@ -71,23 +71,23 @@ class modules(object):
 		chamberFile = 'Penang_Chamber_Config.xlsx'
 		chamber_config = dict()
 		from openpyxl import load_workbook
-		self.debug_print("FILE: {}".format(chamberFile))
+		#self.debug_print("FILE: {}".format(chamberFile))
 		wb = load_workbook(filename = chamberFile)
 		for tabname in wb.sheetnames:
-			self.debug_print("tabname: {}".format(tabname))
+			#self.debug_print("tabname: {}".format(tabname))
 			eachsheet = wb[tabname]
 			headers = [c.value for c in next(eachsheet.iter_rows(min_row=1, max_row=1))]
-			print(headers)
+			#print(headers)
 			for chambername in headers:
 				if not chambername in chamber_config:
 					chamber_config[chambername] = list()
 				chamberraw, chambercolunm = self.findposition(eachsheet,chambername)
 
-				self.debug_print("{}: Raw {} Colunm {} ({})".format(chambername,chamberraw, chambercolunm, get_column_letter(chambercolunm)))
+				#self.debug_print("{}: Raw {} Colunm {} ({})".format(chambername,chamberraw, chambercolunm, get_column_letter(chambercolunm)))
 				colunm = eachsheet[get_column_letter(chambercolunm)]
 				for countnumberinrow in range(2,len(colunm)+1):
 					MTP = str(eachsheet.cell(row=countnumberinrow, column=chambercolunm).value)
-					self.debug_print("MTP: {}".format(MTP))
+					#self.debug_print("MTP: {}".format(MTP))
 					if len(MTP):
 						if not MTP in chamber_config[chambername]:
 							chamber_config[chambername].append(MTP)
@@ -309,6 +309,32 @@ class modules(object):
 							continue
 						ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFEE08', end_color='FFEE08', fill_type = 'solid')
 		return 0
+
+	def readMACvsOLDSNvsNEWSNxlsfile(self,xlsxfile,MACvsOLDSNvsNEWSN):
+		from openpyxl import load_workbook
+		self.debug_print("FILE: {}".format(xlsxfile))
+		wb_sn = load_workbook(filename = xlsxfile)
+		for tabname in wb_sn.sheetnames:
+			self.debug_print("tabname: {}".format(tabname))
+			eachsheet = wb_sn[tabname]
+			OldSNraw, OldSNcolunm = self.findposition(eachsheet,'OldSN')
+			NewSNraw, NewSNcolunm = self.findposition(eachsheet,'NewSN')
+			MacAddraw, MacAddcolunm = self.findposition(eachsheet,'MacAdd')
+
+			self.debug_print("OldSN: Raw {} Colunm {} | NewSN: Raw {} Colunm {} | MacAdd: Raw {} Colunm {}".format(OldSNraw, OldSNcolunm, NewSNraw, NewSNcolunm,MacAddraw,MacAddcolunm))
+			#sys.exit()
+			if OldSNraw and NewSNraw and MacAddraw:
+				colunm = eachsheet['A']
+				for countnumberinrow in range(2,len(colunm)+1):
+					MAC = str(eachsheet.cell(row=countnumberinrow, column=MacAddcolunm).value)
+					OLDSN = str(eachsheet.cell(row=countnumberinrow, column=OldSNcolunm).value)
+					NEWSN = str(eachsheet.cell(row=countnumberinrow, column=NewSNcolunm).value)
+					self.debug_print("MAC: {} | OLDSN: {} | NEWSN: {}".format(MAC, OLDSN, NEWSN))
+					MACvsOLDSNvsNEWSN[MAC] = dict()
+					MACvsOLDSNvsNEWSN[MAC]["OldSN"] = OLDSN
+					MACvsOLDSNvsNEWSN[MAC]["NewSN"] = NEWSN
+
+		return None
 
 	def readSNxlsxfile(self,xlsxfile,SNvsPCBA):
 		from openpyxl import load_workbook
