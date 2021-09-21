@@ -32,21 +32,25 @@ rm -rf $mfg_script_dir/scripts
 cd $jenkins_dir
 rm -f ${release_name}.tar.gz
 tar czf ${release_name}.tar.gz ${release_name}/*
+mv ${release_name}.tar.gz ${release_name}/
 
 ## COPY NIC IMAGES
 image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
 for f in $image_files; do
-    cp /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
+    cp --preserve=timestamps /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
 done
 
 ## CREATE SW PN LINKS
 cd $mfg_script_dir/release
 rm -f 90-*
 for swpn in $(grep -o "90-....-[0-9A-Za-z]*" ../lib/libmtp_ctrl.py); do 
-    if [ -e ~/ws/psdiag/diag/mfg/release/$swpn ]; then 
-        fn=$(ls -l ~/ws/psdiag/diag/mfg/release/$swpn | awk '{print $NF}'); 
-        cp ~/ws/psdiag/diag/mfg/release/$fn ./
-        ln -s $fn $swpn
+    img_src="/home/nabeel/ws/psdiag/diag/mfg/release"
+    if [ -e $img_src/$swpn ]; then 
+        fn=$(ls -l $img_src/$swpn | awk '{print $NF}'); 
+        if [ ! -e $swpn ]; then
+            cp --preserve=timestamps $img_src/$fn ./
+            ln -s $fn $swpn
+        fi
     fi
 done
 
