@@ -39,5 +39,16 @@ for f in $image_files; do
     cp /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
 done
 
+## CREATE SW PN LINKS
+cd $mfg_script_dir/release
+rm -f 90-*
+for swpn in $(grep -o "90-....-[0-9A-Za-z]*" ../lib/libmtp_ctrl.py); do 
+    if [ -e ~/ws/psdiag/diag/mfg/release/$swpn ]; then 
+        fn=$(ls -l ~/ws/psdiag/diag/mfg/release/$swpn | awk '{print $NF}'); 
+        cp ~/ws/psdiag/diag/mfg/release/$fn ./
+        ln -s $fn $swpn
+    fi
+done
+
 sync
 
