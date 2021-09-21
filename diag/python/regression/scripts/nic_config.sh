@@ -118,7 +118,7 @@ elif [[ $cpld_id == "0x49" ]]
 then
     type="LACONA32DELL"
     asic_type="ELBA"
-elif [[ $cpld_id == "0x50" ]]
+elif [[ $cpld_id == "0x4a" ]]
 then
     type="LACONA32"
     asic_type="ELBA"
