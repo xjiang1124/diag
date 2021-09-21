@@ -1,5 +1,7 @@
 source /data/nic_arm/nic_config.sh
 
+source /etc/profile
+
 cpld_id="$(/data/nic_util/xo3dcpld -r 0x80)"
 if [[ $cpld_id == "0x0" ]]
 then

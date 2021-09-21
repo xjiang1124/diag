@@ -82,6 +82,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
+                self.nic_con.uart_session_cmd(session, "source /etc/profile", 10)
                 #if cpldID[0] == "0x43" or \
                 #   cpldID[0] == "0x44" or \
                 #   cpldID[0] == "0x45" or \
@@ -152,7 +153,7 @@ class nic_test:
         return ret
 
     def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri"):
-        numRetry = 5
+        numRetry = 2
         nic_list_remain = nic_list[:]
         timeout = 60
         for retry in range(numRetry):
@@ -267,7 +268,7 @@ class nic_test:
         if mgmt == True or aapl == True:
             if len(nic_list) != 0:
                  print "Sleep 30 sec"
-                 time.sleep(31)
+                 time.sleep(30)
             
         if aapl == True:
             for slot in nic_list:

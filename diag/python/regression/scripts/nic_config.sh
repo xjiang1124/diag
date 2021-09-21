@@ -33,79 +33,103 @@ cpld -w 0x1 0x2   #Capri Bleed Enable
 if [[ $cpld_id == "0x12" ]]
 then
     type="NAPLES100"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x13" ]]
 then
     type="NAPLES25"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x14" ]]
 then
     type="FORIO"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x15" ]]
 then
     type="VOMERO"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x1e" ]]
 then
     type="VOMERO2"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x17" ]]
 then
     type="NAPLES25SWM"
     CORECLK417MHZ=1
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x19" ]]
 then
     type="NAPLES25OCP"
     CORECLK417MHZ=1
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x1c" ]]
 then
     type="NAPLES100IBM"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x1e" ]]
 then
     type="VOMERO2"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x1f" ]]
 then
     type="NAPLES100HPE"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x20" ]]
 then
     type="NAPLES25SWMDELL"
     CORECLK417MHZ=1
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x21" ]]
 then
     type="NAPLES25SWM833"
     CORECLK833MHZ=1
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x40" ]]
 then
     type="BIODONA_D4"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x41" ]]
 then
     type="BIODONA_D5"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x43" ]]
 then
     type="ORTANO"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x44" ]]
 then
     type="ORTANO2"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x45" ]]
 then
     type="LACONADELL"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x46" ]]
 then
     type="LACONA"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x47" ]]
 then
     type="POMONTEDELL"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x48" ]]
 then
     type="POMONTE"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x49" ]]
 then
     type="LACONA32DELL"
+    asic_type="ELBA"
 elif [[ $cpld_id == "0x50" ]]
 then
     type="LACONA32"
+    asic_type="ELBA"
 else
     type="UNKNOW"
+    asic_type="UNKNOW"
 fi
 
 echo "$type Detected!"
 echo "export CARD_TYPE=\"$type\"" >> /etc/profile
+echo "export ASIC_TYPE=\"$asic_type\"" >> /etc/profile
 echo "export CARD_ENV=\"ARM\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
