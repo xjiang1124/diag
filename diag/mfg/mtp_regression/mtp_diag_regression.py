@@ -1255,6 +1255,10 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if nic_prsnt_list[slot]:
+                mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+
         # Disable PCIe poll
         diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
 

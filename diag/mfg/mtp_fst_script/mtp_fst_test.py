@@ -217,8 +217,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
 
     slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type)
     if len(slot_bus_list) == 0:
-        logfile_close(log_filep_list)
-        return
+        return pass_list, fail_list
 
     for slot, bus in slot_bus_list:
         pass_list.append(slot)
@@ -309,8 +308,7 @@ def check_pcie_stage(mtp_mgmt_ctrl, card_type):
     pass_list, fail_list = [], []
     slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type)
     if len(slot_bus_list) == 0:
-        logfile_close(log_filep_list)
-        return
+        return pass_list, fail_list
 
     for slot, bus in slot_bus_list:
         pass_list.append(slot)

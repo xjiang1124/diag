@@ -3274,7 +3274,7 @@ class mtp_ctrl():
                 ret = False
             fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
             self.mtp_set_nic_sn(slot, fru_info_list[0])
-        else:
+        elif not fru_valid:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
         if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
@@ -3985,7 +3985,7 @@ class mtp_ctrl():
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return nic_list[:]
+            return ["TIMEOUT", nic_list[:]]
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
@@ -4004,11 +4004,11 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
-            return nic_list[:]
+            return ["FAIL", nic_list[:]]
 
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
-            return nic_list[:]
+            return ["TIMEOUT", nic_list[:]]
 
         ret = "SUCCESS"
 

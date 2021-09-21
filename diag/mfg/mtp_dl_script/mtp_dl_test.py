@@ -265,8 +265,6 @@ def main():
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
             if nic_prsnt_list[slot]:
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 

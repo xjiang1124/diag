@@ -1236,6 +1236,10 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     temp_nic_type = None
     csp_log_dir = None
 
+    if len(fail_match + pass_match) == 0:
+        # no cards tested, save log to UNKNOWN folder
+        fail_match = [(0, NIC_Type.UNKNOWN, NIC_Type.UNKNOWN)]
+
     for slot, nic_type, sn in fail_match + pass_match:
         # report doesn't have valid serial number
         if nic_type:
