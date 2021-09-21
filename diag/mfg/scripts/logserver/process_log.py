@@ -244,7 +244,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
             if "4C" in eachteststep:
                 generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
             else:
-                generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+                generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
             generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
 
         wb.save(filename = dest_filename)
@@ -1137,6 +1137,15 @@ def findtotaltesttime(f):
 
     else:
         return None
+
+def cal_total_testTime(starttime,endtime):
+
+    startdatetime_object = datetime.strptime(starttime, '%Y-%m-%d_%H-%M-%S')
+    enddatetime_object = datetime.strptime(endtime, '%Y-%m-%d_%H-%M-%S')
+    difftime = enddatetime_object-startdatetime_object
+    returninseconds = int(float("{}".format(difftime.total_seconds())))
+
+    return returninseconds
 
 def generateexeclsnFSJstatus(DATA, workingonSNlist, status,wb,Withallerror=False):
 
@@ -2254,16 +2263,17 @@ def generatedailydataintxtfile(DATA,teststep):
     
     return 0
 
-def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,pr):
+def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,TimeData,pr):
 
     DatabyWeek = dict()
     DatabyWeek['WEEKLIST'] = list()
     DatabyWeek['DATA'] = dict()
 
-    TimeData = dict()
-    TimeData["DATA"] = dict()
-    TimeData["LIST"] = list()
-    TimeData["CHAMBER"] = dict()
+    #TimeData = dict()
+    if not "DATA" in TimeData:
+        TimeData["DATA"] = dict()
+        TimeData["LIST"] = list()
+        TimeData["CHAMBER"] = dict()
 
     for sn in workingonSNlist:
         if sn in DATA["SN"]:
@@ -2307,6 +2317,11 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,pr):
                                 TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
                                 TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
 
+    if len(TimeData["CHAMBER"].keys()):
+        for chambername in TimeData["CHAMBER"]:
+            pr['modules'].print_anyinformation(chambername)
+            TimeData["CHAMBER"][chambername] = findmaxchamberUsingtimeinChamber(TimeData["CHAMBER"][chambername])
+
     for sn in workingonSNlist:
         if sn in DATA["SN"]:
             for chassis in DATA["SN"][sn]:
@@ -2346,7 +2361,7 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,pr):
     
     return DatabyWeek
 
-def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
+def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
 
     titlename = "{}_{}".format("Testtime", teststep)
     ws2 = wb.create_sheet(title=titlename)
@@ -2363,8 +2378,9 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wirtedata.append('TESTSTATUS')
     wirtedata.append('# of Card in MTP')
     TimeData = dict()
-    TimeData["DATA"] = dict()
-    TimeData["LIST"] = list()
+    WeekTimedata = GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,TimeData,pr)
+    #TimeData["DATA"] = dict()
+    #TimeData["LIST"] = list()
 
     ws2.append(wirtedata)
     
@@ -2426,50 +2442,51 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
     wirtedata.append('TESTSTATUS')
     wirtedata.append('# of Card in MTP')
     TimeData = dict()
-    TimeData["DATA"] = dict()
-    TimeData["LIST"] = list()
-    TimeData["CHAMBER"] = dict()
+    WeekTimedata = GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,TimeData,pr)
+    # TimeData["DATA"] = dict()
+    # TimeData["LIST"] = list()
+    # TimeData["CHAMBER"] = dict()
 
-    for sn in workingonSNlist:
-        if sn in DATA["SN"]:
-            for chassis in DATA["SN"][sn]:
-                chambername = pr['modules'].where_is_my_chamber(chassis)
-                if chambername:
-                    if not chambername in TimeData["CHAMBER"]:
-                        TimeData["CHAMBER"][chambername] = dict()
-                        TimeData["CHAMBER"][chambername]["DATA"] = dict()
-                        TimeData["CHAMBER"][chambername]["LIST"] = list()
-                for testdate in DATA["SN"][sn][chassis]:
-                    for testetime in DATA["SN"][sn][chassis][testdate]:
-                        endtime = "{}_{}".format(testdate,testetime)
-                        unittesttime = str(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
-                        #print("{}: {}".format(unittesttime,endtime))
-                        #sys.exit()
-                        begintime = findbegintesttime(endtime,unittesttime)
-                        recordchassistime = "{}_{}".format(chassis,endtime)
-                        if not int(unittesttime) in TimeData["LIST"]:
-                            TimeData["LIST"].append(int(unittesttime))
-                            TimeData["LIST"].sort(reverse=True)
-                        if not unittesttime in TimeData["DATA"]:
-                            TimeData["DATA"][unittesttime] = dict()
-                            TimeData["DATA"][unittesttime]["MTP"] = dict()
-                            TimeData["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
-                        if not recordchassistime in TimeData["DATA"][unittesttime]["MTP"]:
-                            TimeData["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
-                        TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
-                        TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
-                        if chambername:
-                            if not int(unittesttime) in TimeData["CHAMBER"][chambername]["LIST"]:
-                                TimeData["CHAMBER"][chambername]["LIST"].append(int(unittesttime))
-                                TimeData["CHAMBER"][chambername]["LIST"].sort(reverse=True)
-                            if not unittesttime in TimeData["CHAMBER"][chambername]["DATA"]:
-                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime] = dict()
-                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"] = dict()
-                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
-                            if not recordchassistime in TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"]:
-                                TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
-                            TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
-                            TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime                            
+    # for sn in workingonSNlist:
+    #     if sn in DATA["SN"]:
+    #         for chassis in DATA["SN"][sn]:
+    #             chambername = pr['modules'].where_is_my_chamber(chassis)
+    #             if chambername:
+    #                 if not chambername in TimeData["CHAMBER"]:
+    #                     TimeData["CHAMBER"][chambername] = dict()
+    #                     TimeData["CHAMBER"][chambername]["DATA"] = dict()
+    #                     TimeData["CHAMBER"][chambername]["LIST"] = list()
+    #             for testdate in DATA["SN"][sn][chassis]:
+    #                 for testetime in DATA["SN"][sn][chassis][testdate]:
+    #                     endtime = "{}_{}".format(testdate,testetime)
+    #                     unittesttime = str(int(float(DATA["SN"][sn][chassis][testdate][testetime]['TESTTIME'])))
+    #                     #print("{}: {}".format(unittesttime,endtime))
+    #                     #sys.exit()
+    #                     begintime = findbegintesttime(endtime,unittesttime)
+    #                     recordchassistime = "{}_{}".format(chassis,endtime)
+    #                     if not int(unittesttime) in TimeData["LIST"]:
+    #                         TimeData["LIST"].append(int(unittesttime))
+    #                         TimeData["LIST"].sort(reverse=True)
+    #                     if not unittesttime in TimeData["DATA"]:
+    #                         TimeData["DATA"][unittesttime] = dict()
+    #                         TimeData["DATA"][unittesttime]["MTP"] = dict()
+    #                         TimeData["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
+    #                     if not recordchassistime in TimeData["DATA"][unittesttime]["MTP"]:
+    #                         TimeData["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
+    #                     TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
+    #                     TimeData["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime
+    #                     if chambername:
+    #                         if not int(unittesttime) in TimeData["CHAMBER"][chambername]["LIST"]:
+    #                             TimeData["CHAMBER"][chambername]["LIST"].append(int(unittesttime))
+    #                             TimeData["CHAMBER"][chambername]["LIST"].sort(reverse=True)
+    #                         if not unittesttime in TimeData["CHAMBER"][chambername]["DATA"]:
+    #                             TimeData["CHAMBER"][chambername]["DATA"][unittesttime] = dict()
+    #                             TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"] = dict()
+    #                             TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["TESTTIME"] = int(unittesttime)
+    #                         if not recordchassistime in TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"]:
+    #                             TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime] = dict()
+    #                         TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["start"] = begintime
+    #                         TimeData["CHAMBER"][chambername]["DATA"][unittesttime]["MTP"][recordchassistime]["end"] = endtime                            
 
     #print(json.dumps(TimeData, indent = 4))
     #sys.exit()
@@ -2551,6 +2568,73 @@ def findmaxtesttimeinChamber(endtesttime,TimeData):
                 return unittesttime
         
         count += 1
+
+    return None
+
+def findmaxchamberUsingtimeinChamber(TimeData):
+    start=datetime.now()
+    Keeprun = True
+    countforwholerun = 0
+
+    count = 0
+    countforwholerun += 1
+    workingonlist = TimeData["LIST"]
+    for unittesttime in workingonlist:
+        #print("{}: {}".format(count,unittesttime))
+        #print(json.dumps(TimeData["DATA"][str(unittesttime)], indent = 4))
+        for mtp in TimeData["DATA"][str(unittesttime)]["MTP"]:
+            starttime = TimeData["DATA"][str(unittesttime)]["MTP"][mtp]["start"]
+            endtime = TimeData["DATA"][str(unittesttime)]["MTP"][mtp]["end"]
+            newstartime = None 
+            newendtime = None 
+            for unittesttime2 in TimeData["LIST"]:
+                for mtp2 in TimeData["DATA"][str(unittesttime2)]["MTP"]:            
+
+                    if starttime > TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["start"] and starttime < TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["end"]:
+                        
+                        #print("Return {}: {} by starttime TIME: {}".format(count,unittesttime2,starttime))
+                        #print(json.dumps(TimeData["DATA"][str(unittesttime2)], indent = 4))
+                        if not newstartime:
+                            newstartime = TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["start"]
+                        elif newstartime > TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["start"]:
+                            newstartime = TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["start"]
+
+                        #sys.exit()
+                    if endtime > TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["start"] and endtime < TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["end"]:
+                        
+                        #print("Return {}: {} by endtime TIME: {}".format(count,unittesttime2,endtime))
+                        #print(json.dumps(TimeData["DATA"][str(unittesttime2)], indent = 4))
+                        if not newendtime:
+                            newendtime = TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["end"]
+                        elif newendtime < TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["end"]:
+                            newendtime = TimeData["DATA"][str(unittesttime2)]["MTP"][mtp2]["end"]
+                        #sys.exit()
+            if newstartime or newendtime:
+                if not newstartime:
+                    newstartime = starttime
+                if not newendtime:
+                    newendtime = endtime
+                newtesttime = cal_total_testTime(newstartime,newendtime)
+                #print("Start Time: {} to End Time: {} | TESTTIME: {}".format(newstartime,newendtime,newtesttime))
+                if not newtesttime in TimeData["LIST"]:
+                    TimeData["LIST"].append(newtesttime)
+                    TimeData["LIST"].sort(reverse=True)
+                if not str(newtesttime) in TimeData["DATA"]:
+                    TimeData["DATA"][str(newtesttime)] = dict()
+                    TimeData["DATA"][str(newtesttime)]["MTP"] = dict()
+                    TimeData["DATA"][str(newtesttime)]["TESTTIME"] = newtesttime
+                if not newendtime in TimeData["DATA"][str(newtesttime)]["MTP"]:
+                    TimeData["DATA"][str(newtesttime)]["MTP"][newendtime] = dict()
+                TimeData["DATA"][str(newtesttime)]["MTP"][newendtime]["start"] = newstartime
+                TimeData["DATA"][str(newtesttime)]["MTP"][newendtime]["end"] = newendtime
+                #print(json.dumps(TimeData["DATA"][str(newtesttime)], indent = 4))
+                #sys.exit()
+                count += 1
+
+    print("countforwholerun: {} with count {}".format(countforwholerun, count))
+    difftime = datetime.now()-start
+    print("findmaxchamberUsingtimeinChamber: use {} seconds".format(difftime.total_seconds()))
+    return TimeData
 
 def GetSNlistbyPNfromDLtest(workingonSNlist,DATA,teststep='DL'):
 
@@ -3600,7 +3684,8 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
     #print(json.dumps(inputconfig, indent = 4))
     WeekTimedata = dict()
     for eachteststep in DATA['SN']['TEST']:
-        WeekTimedata[eachteststep] = GetTestTimedictbyweek(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,DATA,pr)
+        TimeData = dict()
+        WeekTimedata[eachteststep] = GetTestTimedictbyweek(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,DATA,TimeData,pr)
         #print(json.dumps(WeekTimedata, indent = 4))
         #sys.exit()
 
