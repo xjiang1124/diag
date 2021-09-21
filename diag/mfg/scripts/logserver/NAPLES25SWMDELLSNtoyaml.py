@@ -37,7 +37,7 @@ def main():
 
     yamlfile = '/samba/public/NAPLES25SWMDELLSNtoyaml/new_fru_cfg.yaml'
     #yamlfile2 = '/home/mfg/taormina_DL3/diag/mfg/config/taormina_sn_pcbasn_cfg3.yaml'
-
+    print("yamlfile: {}".format(yamlfile))
     mac_yamldict = pr['modules'].readyamltodict(yamlfile)
 
     #pr['modules'].wirtedicttoyaml(sn_pcbasn_yamldict, yamlfile2)
@@ -78,7 +78,7 @@ def main():
     #sys.exit()
 
     pathofmac = os.path.dirname(yamlfile)
-    listoffiles = pr['modules'].getallfilebyfolder(pathofmac,keyword='xls')
+    listoffiles = pr['modules'].getallfilebyfolder(pathofmac,keyword='xlsx')
     listoffiles.sort()
 
     pr['modules'].print_anyinformation(listoffiles)
@@ -106,6 +106,21 @@ def main():
     pr['modules'].wirtedicttoyaml(mac_yamldict, yamlfile)
     mac_yamldict2 = pr['modules'].readyamltodict(yamlfile)
     pr['modules'].print_anyinformation(mac_yamldict2)
+
+    print("Total MAC: {}".format(len(mac_yamldict.keys())))
+
+    for MAC in mac_yamldict:
+        SN = mac_yamldict[MAC]['SN']
+        OLDSN = mac_yamldict[MAC]['OLD_SN']
+        for MAC2 in mac_yamldict:
+            if MAC != MAC2:
+                if SN == mac_yamldict[MAC2]['SN']:
+                    print("Find same SN issue on 2 MAC: MAC1: {} SN {} equal to MAC2: {} SN: {}".format(MAC,SN,MAC2,mac_yamldict[MAC2]['SN']))
+                    sys.exit()
+                if OLDSN == mac_yamldict[MAC2]['OLD_SN']:
+                    print("Find same OLDSN issue on 2 MAC: MAC1: {} OLDSN {} equal to MAC2: {} OLDSN: {}".format(MAC,OLDSN,MAC2,mac_yamldict[MAC2]['OLD_SN']))
+                    sys.exit()
+    print("Did not have Same SN or OLD SN issue on different MAC!")
 
     difftime = datetime.now()-start
     print('Done Time: ', difftime)       
