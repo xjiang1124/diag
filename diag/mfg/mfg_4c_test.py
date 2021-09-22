@@ -157,14 +157,15 @@ def main():
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="4C-SSH"):
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="4C-SSH", retry_with_powercycle=True):
+            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         # Check if image updated is needed
         mtp_dl_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
