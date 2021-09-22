@@ -2438,6 +2438,8 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
     wirtedata.append('TIME')
     wirtedata.append('TESTTIME(HH:MM:SS)')
     wirtedata.append('GROUP_TESTTIME(HH:MM:SS)')
+    wirtedata.append('CHAMBER_START')
+    wirtedata.append('CHAMBER_END')
     wirtedata.append('TIME_RANGE')
     wirtedata.append('TESTSTATUS')
     wirtedata.append('# of Card in MTP')
@@ -2515,7 +2517,10 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
                             else:
                                 wirtedata.append('NO TESTTIME')
                             MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
+                            chamberstarttime,chamberendtime = findmaxtestchambertimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
                             wirtedata.append(timedelta(seconds=int(MaxTestTime)))
+                            wirtedata.append(chamberstarttime)
+                            wirtedata.append(chamberendtime)
                             wirtedata.append(converttoHourtoHour(MaxTestTime))
                             wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
                             #sys.exit()
@@ -2532,7 +2537,10 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
                             else:
                                 wirtedata.append('NO TESTTIME')
                             MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData)
+
                             wirtedata.append(timedelta(seconds=int(MaxTestTime)))
+                            wirtedata.append('NO CHAMBER FIND')
+                            wirtedata.append('NO CHAMBER FIND')
                             wirtedata.append(converttoHourtoHour(MaxTestTime))
                             wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
                             #sys.exit()
@@ -2554,6 +2562,22 @@ def converttoHourtoHour(MaxTestTime):
     displaystr = "{:02d} ~ {:02d}".format(hours, hours + 1)
     return displaystr
 
+
+def findmaxtestchambertimeinChamber(endtesttime,TimeData):
+    count = 1
+    for unittesttime in TimeData["LIST"]:
+        #print("{}: {}".format(count,unittesttime))
+        #print(json.dumps(TimeData["DATA"][str(unittesttime)], indent = 4))
+        for mtp in TimeData["DATA"][str(unittesttime)]["MTP"]:
+            if endtesttime >= TimeData["DATA"][str(unittesttime)]["MTP"][mtp]["start"] and endtesttime <= TimeData["DATA"][str(unittesttime)]["MTP"][mtp]["end"]:
+                
+                #print("Return {}: {} by END TIME: {}".format(count,unittesttime,endtesttime))
+                #sys.exit()
+                return TimeData["DATA"][str(unittesttime)]["MTP"][mtp]["start"],TimeData["DATA"][str(unittesttime)]["MTP"][mtp]["end"]
+        
+        count += 1
+
+    return None, None
 
 def findmaxtesttimeinChamber(endtesttime,TimeData):
     count = 1
