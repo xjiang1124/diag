@@ -1251,6 +1251,27 @@ MTP-810:
      SLOTS: 10
      CAPABILITY: 0x3
 
+MTP-725:
+     MODE: ""
+     TS: ""
+     TS_PORT: ""
+     TS_USERID: ""
+     TS_PASSWORD: ""
+     APC1: "192.168.3.185"
+     APC1_PORT: "13"
+     APC1_USERID: "apc"
+     APC1_PASSWORD: "apc"
+     APC2: "192.168.3.185"
+     APC2_PORT: "14"
+     APC2_USERID: "apc"
+     APC2_PASSWORD: "apc"
+     IP: "192.168.3.240"
+     USERID: "diag"
+     PASSWORD: "lab123"
+     ALIAS: "mtp725"
+     SLOTS: 10
+     SKIP_SLOTS: 3-10
+     CAPABILITY: 0x3
 
 
 

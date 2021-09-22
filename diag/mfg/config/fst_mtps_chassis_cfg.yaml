@@ -84,7 +84,7 @@ MTPS-900:
     APC2_PORT: "10"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: ""
+    IP: "192.168.3.156"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps900"

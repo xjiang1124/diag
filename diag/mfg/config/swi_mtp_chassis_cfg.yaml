@@ -442,7 +442,7 @@ MTP-721:
     APC2_PORT: "5"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: ""
+    IP: "192.168.3.110"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtp721"
@@ -532,6 +532,7 @@ MTP-725:
      PASSWORD: "lab123"
      ALIAS: "mtp725"
      SLOTS: 10
+     SKIP_SLOTS: 2,6-10
      CAPABILITY: 0x3
 
 MTP-726:
@@ -548,7 +549,7 @@ MTP-726:
      APC2_PORT: "18"
      APC2_USERID: "apc"
      APC2_PASSWORD: "apc"
-     IP: "192.168.3.184"
+     IP: "192.168.3.252"
      USERID: "diag"
      PASSWORD: "lab123"
      ALIAS: "mtp726"
