@@ -3368,6 +3368,13 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
+        if "failed" in self.mtp_get_cmd_buf():
+            match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
+            if match:
+                for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
+                    slot = slot-1
+                    self.mtp_set_nic_status_fail(slot)
+                    self.cli_log_slot_err_lock(slot, "Para Init NIC MGMT failed")
 
         if not self.mtp_nic_mgmt_mac_refresh():
             return False
