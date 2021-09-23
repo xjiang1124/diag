@@ -134,6 +134,9 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
     startdate = getbeforedayinformation(checkday=31)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
+    startdate = getbeforedayinformation(checkday=15)
+    createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
+
     return None
 
 def getbeforedayinformation(checkday=30):
@@ -2477,24 +2480,40 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr):
     wirtedata = list()
     wirtedata.append('CHAMBER')
     wirtedata.append('TEST')
+    wirtedata.append('START_DATE')
     wirtedata.append('START_TIME')
+    wirtedata.append('END_DATE')
     wirtedata.append('END_TIME')
+    wirtedata.append('WAIT_TO_START_TIME')
     wirtedata.append('RUNNING_TIME')
     wirtedata.append('TEST_UNITS')
     wirtedata.append('PASS_UNITS')
+    wirtedata.append('YIELD')
     ws2.append(wirtedata)
     for chambername in Chamberref:
+        countnumber = 1
         for chamberendtime in Chamberref[chambername]['LIST']:
             wirtedata = list()
             wirtedata.append(chambername)
             wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
-            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['START'])
-            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['END'])
+            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['START'].split('_')[0])
+            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['START'].split('_')[1].replace('-',':'))
+            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['END'].split('_')[0])
+            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['END'].split('_')[1].replace('-',':'))
             #wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME'])
+            if countnumber < len(Chamberref[chambername]['LIST']):
+                starttime = Chamberref[chambername]['DICT'][chamberendtime]['START']
+                lastendtime = Chamberref[chambername]['DICT'][Chamberref[chambername]['LIST'][countnumber]]['END']
+                newtesttime = cal_total_testTime(lastendtime,starttime)
+                wirtedata.append(timedelta(seconds=int(float(newtesttime))))
+            else:
+                wirtedata.append('NULL')
             wirtedata.append(timedelta(seconds=int(float(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME']))))
             wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['SN']))
             wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['PASS']))
+            wirtedata.append("{:.2f}%".format(len(Chamberref[chambername]['DICT'][chamberendtime]['PASS'])/len(Chamberref[chambername]['DICT'][chamberendtime]['SN']) * 100))
             ws2.append(wirtedata)
+            countnumber += 1
 
 
     fixcolumnssize(ws2)
@@ -2504,6 +2523,7 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr):
     #highlightinred(ws2, 'FAIL')
     #highlightinred(ws2, 'FAILED')
     #freezePosition(ws2,'H2')
+    converttoPERCENTAGEnumber(ws2)
     return 0
 
 def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
