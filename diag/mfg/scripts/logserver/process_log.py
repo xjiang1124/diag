@@ -224,7 +224,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
 
-        generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr)
+        generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr,start=startdate)
 
         if check2C4CinTestinfunction(DATA['SN']['TEST']):
             for eachteststep in DATA['SN']['TEST']:
@@ -2428,7 +2428,7 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
     freezePosition(ws2,'K2')
     return 0
 
-def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr):
+def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None):
 
     print("{}!".format("generateexeclby4CChambertime"))
 
@@ -2494,6 +2494,9 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr):
         countnumber = 1
         for chamberendtime in Chamberref[chambername]['LIST']:
             wirtedata = list()
+            if start:
+                if start > chamberendtime.split('_')[0]:
+                    break
             wirtedata.append(chambername)
             wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
             wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['START'].split('_')[0])
