@@ -2348,9 +2348,12 @@ class nic_ctrl():
         else:
             return self._pn                            
 
-    def nic_cpld_init(self):
+    def nic_cpld_init(self, smb=False):
         read_data = [0]
-        rc = self.nic_read_cpld(0x00, read_data)
+        if smb:
+            rc = self.nic_read_cpld_via_smbus(0x00, read_data)
+        else:
+            rc = self.nic_read_cpld(0x00, read_data)
         if not rc:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
@@ -2359,7 +2362,10 @@ class nic_ctrl():
         if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
-            rc = self.nic_read_cpld(0x1e, read_data)
+            if smb:
+                rc = self.nic_read_cpld_via_smbus(0x1e, read_data)
+            else:
+                rc = self.nic_read_cpld(0x1e, read_data)
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
@@ -2368,7 +2374,11 @@ class nic_ctrl():
         elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
             # no timestamp, minor revision at 0x22 only
             read_data = [0]
-            rc = self.nic_read_cpld(0x22, read_data)
+            if smb:
+                rc = True
+                pass
+            else:
+                rc = self.nic_read_cpld(0x22, read_data)
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
@@ -2377,7 +2387,11 @@ class nic_ctrl():
         else:
             # get the month timestamp
             read_data = [0]
-            rc = self.nic_read_cpld(0x22, read_data)
+            if smb:
+                rc = True
+                pass
+            else:
+                rc = self.nic_read_cpld(0x22, read_data)
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
@@ -2385,7 +2399,11 @@ class nic_ctrl():
 
             # get the date timestamp
             read_data = [0]
-            rc = self.nic_read_cpld(0x23, read_data)
+            if smb:
+                rc = True
+                pass
+            else:
+                rc = self.nic_read_cpld(0x23, read_data)
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False

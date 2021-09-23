@@ -2511,7 +2511,7 @@ class mtp_ctrl():
                 dev = "FPGA"
             else:
                 dev = "CPLD"
-            self.cli_log_slot_inf_lock(slot, "NIC {:s} is up-do-date".format(dev))
+            self.cli_log_slot_inf_lock(slot, "NIC {:s} is up-to-date".format(dev))
             self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
             return True
 
@@ -3119,9 +3119,9 @@ class mtp_ctrl():
             self._nic_ctrl_list[slot].nic_sn_init()
         self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
 
-    def mtp_nic_cpld_init(self, slot):
+    def mtp_nic_cpld_init(self, slot, smb=False):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
-        if not self._nic_ctrl_list[slot].nic_cpld_init():
+        if not self._nic_ctrl_list[slot].nic_cpld_init(smb):
             self.cli_log_slot_err_lock(slot, "Init NIC CPLD failed")
             return False
 

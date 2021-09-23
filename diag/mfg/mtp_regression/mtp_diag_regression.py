@@ -727,15 +727,81 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
     if lock:
         lock.release()
 
-def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist):
+def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, stop_on_err):
     nic_thread_list = list()
     fail_nic_list = list()
+    cpld_prog_list = list()
+    qspi_prog_list = list()
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+
     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
         for slot in nic_list:
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
+            dsp = FF_Stage.FF_DL
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            testlist = ["CPLD_INIT", "NIC_BOOT_INIT", "CPLD_VERIFY", "QSPI_VERIFY"]
+            for skip_test in skip_testlist:
+                if skip_test in testlist:
+                    testlist.remove(skip_test)
+            for test in testlist:
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = libmfg_utils.timestamp_snapshot()
+                
+                # load CPLD version
+                if test == "CPLD_INIT":
+                    ret = mtp_mgmt_ctrl.mtp_nic_cpld_init(slot, smb=True)
+                # load diagfw version
+                elif test == "NIC_BOOT_INIT":
+                    ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
+                # check CPLD version
+                elif test == "CPLD_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+                    if not ret:
+                        cpld_prog_list.append(slot)
+                        ret = True
+                # check diagfw version
+                elif test == "QSPI_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
+                    if not ret:
+                        qspi_prog_list.append(slot)
+                        ret = True
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+                    continue
+
+                stop_ts = libmfg_utils.timestamp_snapshot()
+                duration = str(stop_ts - start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    nic_test_rslt_list[slot] = False
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    if cpld_prog_list or qspi_prog_list:
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err):
+            mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            return
+        if stop_on_err:
+            for nic_list in nic_test_full_list:
+                for slot in nic_list:
+                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                        return
+
+    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+        for slot in nic_list:
+            if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
+            if slot not in cpld_prog_list and slot not in qspi_prog_list:
                 continue
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
@@ -763,7 +829,9 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             continue
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             continue
-        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_is_cpld_refresh_required():
+        if slot not in cpld_prog_list and slot not in qspi_prog_list:
+            continue
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_is_cpld_refresh_required(): # this flag may not be needed anymore
             continue
         dsp = FF_Stage.FF_DL
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -825,7 +893,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
         # program QSPI
         elif test == "QSPI_PROG":
-            # only update if version mismatch at P2C/4C. so, force_update = False
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file, force_update=False)
         # refresh CPLD
         elif test == "CPLD_REF":
@@ -1287,24 +1354,13 @@ def main():
             mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
             if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
-                if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err):
-                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-                    return
-                if stop_on_err:
-                    for nic_list in nic_test_full_list:
-                        for slot in nic_list:
-                            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                                return
                 # Add failed slots from sanity check
                 if args.fail_slots:
                     for slot in args.fail_slots:
                         mtp_mgmt_ctrl.mtp_set_nic_status_fail(int(slot), skip_fa=True)
 
                 # Update programmables if necessary
-                dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
+                dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, stop_on_err)
                 programmables_checked = True
                 for slot in dl_check_fail_list:
                     if slot in nic_list:
