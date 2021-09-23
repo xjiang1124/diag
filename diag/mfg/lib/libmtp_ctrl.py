@@ -4013,7 +4013,7 @@ class mtp_ctrl():
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
 
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_TIMEOUT):
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
             return ["TIMEOUT", nic_list[:]]
 
@@ -4067,7 +4067,7 @@ class mtp_ctrl():
         ts_record_cmd = "######## {:s} ########".format(ts_record)
         self._nic_ctrl_list[slot].mtp_exec_cmd(ts_record_cmd)
 
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_SEQ_TEST_TIMEOUT):
             err_msg = self.mtp_get_nic_cmd_buf(slot)
             return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, [err_msg]]
 
@@ -4387,7 +4387,7 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
         # run diag test
-        if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
+        if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT):
             err_msg = self.mtp_get_nic_err_msg(slot)
             return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 

@@ -124,7 +124,6 @@ class MTP_Const:
     MTP_POWER_CYCLE_DELAY = 30
     MTP_NETCOPY_DELAY = 600
     MTP_FRU_UPDATE_DELAY = 1200
-    MTP_PARA_TEST_DELAY = 1800
     MTP_PARA_AAPL_INIT_DELAY = 2000
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
@@ -149,7 +148,11 @@ class MTP_Const:
     MTP_MGMT_IP_SET_DELAY = 10
 
     # single test, 1.5 hours
-    DIAG_TEST_TIMEOUT = 5400
+    DIAG_SEQ_TEST_TIMEOUT = 90*60
+    # single prbs test, 8 min
+    DIAG_PARA_TEST_TIMEOUT = 8*60
+    # para/snake test, 30 min
+    MTP_PARA_TEST_TIMEOUT = 30*60
 
     # more than 12 hours
     MFG_P2C_TEST_TIMEOUT = 48000
