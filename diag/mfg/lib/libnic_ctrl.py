@@ -1937,8 +1937,13 @@ class nic_ctrl():
                 self._sn = match.group(1)
                 return True
             else:
-                self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
-                return False
+                match = re.search(HP_DISP_SN_FMT, fru_buf)
+                if match:
+                    self._sn = match.group(1)
+                    return True
+                else:
+                    self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
+                    return False
 
         self.nic_set_err_msg("Unknown SN in: {:s}".format(fru_buf))
         return False

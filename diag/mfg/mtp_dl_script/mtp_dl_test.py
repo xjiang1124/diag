@@ -268,16 +268,48 @@ def main():
             if nic_prsnt_list[slot]:
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
+        dsp = FF_Stage.FF_DL
+
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
-            if nic_prsnt_list[slot]:
-                if not mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+
+            test_list = ["CONSOLE_BOOT"]
+            for skipped_test in args.skip_test:
+                if skipped_test in test_list:
+                    test_list.remove(skipped_test)
+            for test in test_list:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = libmfg_utils.timestamp_snapshot()
+                if test == "CONSOLE_BOOT":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
+                stop_ts = libmfg_utils.timestamp_snapshot()
+                duration = str(stop_ts - start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        if slot in pass_nic_list:
+                            pass_nic_list.remove(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                       mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
+
 
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
-        dsp = FF_Stage.FF_DL
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
