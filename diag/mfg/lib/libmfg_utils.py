@@ -1129,15 +1129,21 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
 
     # local dir to temporarily store test summary
     cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/")
-    err = os.system(cmd)
-    if err:
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s}".format(cmd), level=0)
-        return None
-    # temporary dir for log files on MTP
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-        return None
+    try:
+        err = os.system(cmd)
+        if err:
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s}".format(cmd), level=0)
+            return None
+    except:
+        pass
+    try:
+        # temporary dir for log files on MTP
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            return None
+    except:
+        pass
     # move onboard log files
     cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
