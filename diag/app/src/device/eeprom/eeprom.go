@@ -1474,32 +1474,32 @@ func updateIntChk() () {
         }
         //Calculate multi-record checksum
         for _, entry := range(EepromTbl) {
-            if (entry.Offset > 300) && (entry.Offset < 326) {
+            if (entry.Offset > 292) && (entry.Offset < 318) {
                 mraChk[0] += calcSum(entry)
             }
-            if (entry.Offset > 330) && (entry.Offset < 346) {
+            if (entry.Offset > 322) && (entry.Offset < 338) {
                 mraChk[1] += calcSum(entry)
             }
-            if (entry.Offset > 350) && (entry.Offset < 361) {
+            if (entry.Offset > 342) && (entry.Offset < 353) {
                 mraChk[2] += calcSum(entry)
             }
-            if (entry.Offset > 365) && (entry.Offset < 381) {
+            if (entry.Offset > 357) && (entry.Offset < 373) {
                 mraChk[3] += calcSum(entry)
             }
         }
 
         //Calculate multi-record header checksum
         for _, entry := range(EepromTbl) {
-            if (entry.Offset > 295) && (entry.Offset < 300) {
+            if (entry.Offset > 287) && (entry.Offset < 292) {
                 mraHdrChk[0] += calcSum(entry)
             }
-            if (entry.Offset > 325) && (entry.Offset < 330) {
+            if (entry.Offset > 317) && (entry.Offset < 322) {
                 mraHdrChk[1] += calcSum(entry)
             }
-            if (entry.Offset > 345) && (entry.Offset < 350) {
+            if (entry.Offset > 337) && (entry.Offset < 342) {
                 mraHdrChk[2] += calcSum(entry)
             }
-            if (entry.Offset > 360) && (entry.Offset < 365) {
+            if (entry.Offset > 352) && (entry.Offset < 357) {
                 mraHdrChk[3] += calcSum(entry)
             }
         }
