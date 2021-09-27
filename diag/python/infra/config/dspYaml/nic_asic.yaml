@@ -93,6 +93,10 @@ DSP:
                 VALUE:
                     ALL: PRBS31
                 INFO: PRBS polynomial
+            int_lpbk:
+                VALUE:
+                    ALL: 0
+                INFO: Internal loopbackk
 
     TEST#L1:
         INFO: ARM L1 test

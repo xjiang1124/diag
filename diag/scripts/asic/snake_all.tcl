@@ -2,6 +2,7 @@ source .tclrc.diag.arm
 
 set SNAKE_MODE [lindex $argv 0]
 set DURATION [lindex $argv 1]
+set INT_LB [lindex $argv 2]
 
 if { $SNAKE_MODE == "PCIE_LB" } {
     set SNAKE_NUM 6
@@ -33,7 +34,6 @@ if { ( $card_type == "NAPLES25" ) || ( $card_type == "NAPLES25SWM" )  || ( $card
     set CORE_CLK 833.0
 }
 
-set INT_LB 0
 if {$card_type == "FORIO"} {
     set INT_LB 1
 }

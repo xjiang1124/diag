@@ -486,7 +486,7 @@ class nic_test:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
-    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off"):
+    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off", dura=120, in_lpbk=False):
         print "=== Starting snake on slot {} ===".format(slot)
 
         ret = 0
@@ -494,12 +494,17 @@ class nic_test:
             print "Invalid slot number:", slot
             sys.exit(0)
 
+        int_lpbk_str = ""
+        if in_lpbk == True:
+            int_lpbk_str = "-int_lpbk"
+
         if test_type == "snake" and mode == "hbm":
             test_cmd = "/data/nic_util/asicutil -snake -mode hbm_lb 2>&1 >  /data/nic_util/asicutil_hbm.log &"
         elif test_type == "snake" and mode == "pcie":
             test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > /data/nic_util/asicutil_pcie.log &"
         elif (test_type == "snake" and ("nod" in mode)) or (test_type == "snake" and ("hod" in mode) ):
-            test_cmd = "/data/nic_util/asicutil -snake -mode {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode)
+            test_cmd = "/data/nic_util/asicutil -snake -mode {} -dura {} {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode, dura, int_lpbk_str)
+            print("test_cmd", test_cmd)
         else:
             print "Invalid test_type {} and mode {}".format(test_type, mode)
             sys.exit(0)
@@ -565,7 +570,7 @@ class nic_test:
         print "=== Checing snake result on slot {} Done ===".format(slot)
         return ret
 
-    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0, duration=120, int_lpbk=False):
         print "=== NIC Snake {} ===".format(mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -579,7 +584,7 @@ class nic_test:
         test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            ret = self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off")
+            ret = self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off", dura=duration, in_lpbk=int_lpbk)
             if ret != 0:
                 test_result[slot] = "FAIL"
             else:
@@ -1111,6 +1116,8 @@ if __name__ == "__main__":
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
+    parser.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback", action='store_true')
+    parser.add_argument("-dura", "--dura", help="Duration", type=int, default=120)
     parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
     parser.add_argument("-ite", "--iteration", help="Number of power cycle test iterations", type=int, default=1)
     parser.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
@@ -1139,7 +1146,7 @@ if __name__ == "__main__":
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
         sys.exit()
 
     if args.prbs_start == True:

@@ -24,6 +24,7 @@ func Nic_AsicPcie_PrbsHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     durationPtr := fs.Int("duration", 60, "test time")
     polyPtr := fs.String("poly", "PRBS31", "PRBS polynomial")
+    intLpbkPtr := fs.Int("int_lpbk", 0, "Internal loopback")
     var cardType string
     var err int
 
@@ -40,7 +41,7 @@ func Nic_AsicPcie_PrbsHdl(argList []string) {
     }
 
     if ( asicType == "ELBA" ) {
-        err = elba.Prbs("PCIE", *polyPtr, *durationPtr)
+        err = elba.Prbs("PCIE", *polyPtr, *durationPtr, *intLpbkPtr)
     } else {
         err = capri.Prbs("PCIE", *polyPtr, *durationPtr)
     }
@@ -55,6 +56,7 @@ func Nic_AsicEth_PrbsHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     durationPtr := fs.Int("duration", 60, "test time")
     polyPtr := fs.String("poly", "PRBS31", "PRBS polynomial")
+    intLpbkPtr := fs.Int("int_lpbk", 0, "Internal loopback")
     var cardType string
     var err int
 
@@ -72,7 +74,7 @@ func Nic_AsicEth_PrbsHdl(argList []string) {
     }
 
     if ( asicType == "ELBA" ) {
-        err = elba.Prbs("ETH", *polyPtr, *durationPtr)
+        err = elba.Prbs("ETH", *polyPtr, *durationPtr, *intLpbkPtr)
     } else {
         err = capri.Prbs("ETH", *polyPtr, *durationPtr)
     }

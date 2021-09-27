@@ -22,7 +22,7 @@ type TResult struct {
     SnakeResult string `yaml:"SNAKE_RESULT"`
 }
 
-func Prbs(mode string, poly string, duration int) (err int) {
+func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
     var cmd string
 
     err = errType.SUCCESS
@@ -44,11 +44,11 @@ func Prbs(mode string, poly string, duration int) (err int) {
     if mode == "PCIE" {
         passSign := "PCIE PRBS PASSED"
         failSign := "PCIE PRBS FAILED"
-        err = runCmd.Run(passSign, failSign, cmd, "PCIE", strconv.Itoa(duration))
+        err = runCmd.Run(passSign, failSign, cmd, "PCIE", strconv.Itoa(duration), strconv.Itoa(intLpbk))
     } else if mode == "ETH" {
         passSign := "MX PRBS PASSED"
         failSign := "MX PRBS FAILED"
-        err = runCmd.Run(passSign, failSign, cmd, "ETH", strconv.Itoa(duration))
+        err = runCmd.Run(passSign, failSign, cmd, "ETH", strconv.Itoa(duration), strconv.Itoa(intLpbk))
     } else {
         dcli.Println("e", "Invalid mode:", mode)
         err = errType.INVALID_PARAM
@@ -139,7 +139,7 @@ func SnakeCheck() (err int) {
     return
 }
 
-func Snake(mode string, duration int, int_lpbk int, verbose bool) (err int) {
+func Snake(mode string, duration int, intLpbk int, verbose bool) (err int) {
     var filename string
     var errGo error
 
@@ -168,7 +168,7 @@ func Snake(mode string, duration int, int_lpbk int, verbose bool) (err int) {
         verboseStr = "1"
     }
 
-    err = runCmd.Run(passSign, failSign, cmdStr, "../elba/elb_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(int_lpbk), verboseStr)
+    err = runCmd.Run(passSign, failSign, cmdStr, "../elba/elb_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk), verboseStr)
 
     if err != errType.SUCCESS {
         dcli.Println("e", "Snake Test Failed!")
