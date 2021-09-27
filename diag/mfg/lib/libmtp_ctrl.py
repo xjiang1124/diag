@@ -24,6 +24,8 @@ from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PART_NUMBERS_MATCH
@@ -1393,7 +1395,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                         pass
                     try:
-                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL or card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
+                        if card_type in ELBA_NIC_TYPE_LIST:
                             img = NIC_IMAGES.fail_cpld_img[card_type]
                             if img.strip() == "":
                                 raise KeyError
@@ -1402,7 +1404,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                         pass
                     try:
-                        if card_type == NIC_Type.ORTANO2:
+                        if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
                             img = NIC_IMAGES.fea_cpld_img[card_type]
                             if img.strip() == "":
                                 raise KeyError
@@ -1434,7 +1436,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
                         return False
                     try:
-                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL or card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
+                        if card_type in ELBA_NIC_TYPE_LIST:
                             expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
                             if expected_timestamp.strip() == "":
                                 raise KeyError
@@ -1485,7 +1487,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
                         pass
                     try:
-                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL or card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
+                        if card_type in ELBA_NIC_TYPE_LIST:
                             img = NIC_IMAGES.fail_cpld_img[card_type]
                             if img.strip() == "":
                                 raise KeyError
@@ -1532,7 +1534,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing sec_cpld timestamp for {:s}".format(card_type))
                         return False
                     try:
-                        if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL or card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
+                        if card_type in ELBA_NIC_TYPE_LIST:
                             expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
                             if expected_timestamp.strip() == "":
                                 raise KeyError
@@ -2504,7 +2506,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
-            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in FPGA_TYPE_LIST:
                 dev = "FPGA"
             else:
                 dev = "CPLD"
@@ -2528,7 +2530,7 @@ class mtp_ctrl():
             return True
 
         if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in FPGA_TYPE_LIST:
                 dev = "FPGA"
             else:
                 dev = "CPLD"
@@ -2536,14 +2538,14 @@ class mtp_ctrl():
             self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
             return True
 
-        if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        if nic_type in FPGA_TYPE_LIST:
             partition = "main"
-        elif nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO:
+        elif nic_type in ELBA_NIC_TYPE_LIST:
             partition = "cfg0"
         else:
             partition = ""
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, partition):
-            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in FPGA_TYPE_LIST:
                 dev = "FPGA"
             else:
                 dev = "CPLD"
@@ -2556,25 +2558,25 @@ class mtp_ctrl():
 
     def mtp_program_nic_failsafe_cpld(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if not nic_type == NIC_Type.ORTANO and not nic_type == NIC_Type.ORTANO2 and not nic_type == NIC_Type.POMONTEDELL and not nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        if not nic_type in ELBA_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no failsafe CPLD for {:s}".format(nic_type))
             return False
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip failsafe CPLD update for Proto NIC")
             return True
 
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO:
+        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             # can't check the version without loading backup partition into the running partition
             self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
 
-        if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        if nic_type in FPGA_TYPE_LIST:
             partition = "gold"
-        elif nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO:
+        elif nic_type in ELBA_NIC_TYPE_LIST:
             partition = "cfg1"
         else:
             partition = ""
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, partition):
-            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in FPGA_TYPE_LIST:
                 dev = "FPGA"
             else:
                 dev = "CPLD"
@@ -2586,7 +2588,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_cpld_feature_row(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if not nic_type == NIC_Type.ORTANO2:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
             return False
         if nic_type in self._proto_type_list:
@@ -2645,7 +2647,7 @@ class mtp_ctrl():
 
     def mtp_verify_nic_cpld_fea(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if not nic_type == NIC_Type.ORTANO2:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
             return False
 
@@ -2678,7 +2680,7 @@ class mtp_ctrl():
 
     def mtp_check_nic_cpld_partition(self, slot, console=False):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             # No cpld partition bit
             return True
 
@@ -2691,7 +2693,7 @@ class mtp_ctrl():
 
     def mtp_recover_nic_console(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             self.cli_log_slot_err(slot, "Not applicable for this NIC")
             return False
 
@@ -2704,7 +2706,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_efuse(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type != NIC_Type.ORTANO2:
+        if nic_type not in ELBA_NIC_TYPE_LIST:
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_efuse():
@@ -4007,10 +4009,19 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_ELBA":
-            if self.mtp_is_nic_ortano_oracle(nic_list[0]):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
+            slot = nic_list[0]
+            nic_type = self.mtp_get_nic_type(slot)
+
+            if nic_type not in ELBA_NIC_TYPE_LIST:
+                self.cli_log_err("Incorrect test for this NIC TYPE")
+                return ["FAIL", nic_list[:]]
+            elif nic_type == NIC_Type.ORTANO2:
+                if self.mtp_is_nic_ortano_oracle(slot):
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
+                else:
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
             # 2C/4C = internal loopback
             if vmarg != 0:
@@ -4659,7 +4670,7 @@ class mtp_ctrl():
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
         """
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.POMONTEDELL and nic_type != NIC_Type.LACONA32DELL and nic_type != NIC_Type.LACONA32:
+        if nic_type not in ELBA_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].read_nic_temp():
             self.cli_log_slot_err(slot, "Unable to read NIC temperature")

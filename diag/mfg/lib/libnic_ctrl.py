@@ -32,6 +32,9 @@ from libmfg_cfg import VOMERO2_DISP_ASSEMBLY_FMT
 from libmfg_cfg import ORTANO_DISP_ASSEMBLY_FMT
 from libmfg_cfg import OCP_DELL_DISP_PN_FMT
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
+from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import PART_NUMBERS_MATCH
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import NIC_Vendor
@@ -120,7 +123,7 @@ class nic_ctrl():
     def nic_set_asic_type(self):
         if self._nic_type == None:
             self._asic_type = None
-        elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
+        elif self._nic_type in ELBA_NIC_TYPE_LIST:
             self._asic_type = "elba"
         else:
             self._asic_type = "capri"
@@ -849,7 +852,7 @@ class nic_ctrl():
             else:
                 #Program Non HPE
 
-                if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+                if nic_type in ELBA_NIC_TYPE_LIST:
                     cmd = MFG_DIAG_CMDS.MTP_ORTANO_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
                     if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                         return False
@@ -891,7 +894,7 @@ class nic_ctrl():
           
         else:
             #In NIC Program Non HPE
-            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in ELBA_NIC_TYPE_LIST:
                 nic_cmd = MFG_DIAG_CMDS.NIC_ORTANO_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
             else:
                 nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
@@ -1135,10 +1138,10 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         # Elba-based:
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type not in FPGA_TYPE_LIST:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.OS_CMD_DELAY
-        elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
+        elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.NIC_FPGA_PROG_DELAY
         # Capri-based:
@@ -1160,7 +1163,7 @@ class nic_ctrl():
         # Capri-based:
         nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         # Elba-based:
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type not in FPGA_TYPE_LIST:
             nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY, dontwait=dontwait):
             return False
@@ -1324,7 +1327,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        if self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
             cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_ELBA_FMT.format(self._slot+1,
                                                          self._sn,
                                                          self._pn,
@@ -1369,7 +1372,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        if not self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type not in ELBA_NIC_TYPE_LIST:
             return False
 
         cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_FMT.format(self._slot+1,
@@ -1403,8 +1406,8 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
-        if self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
-            nic_cmd = "fwupdate -F -p /{:s} -i 'all'".format(img_name)
+        # if self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
+        #     nic_cmd = "fwupdate -F -p /{:s} -i 'all'".format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
   
@@ -2364,7 +2367,7 @@ class nic_ctrl():
             return False
         self._cpld_ver = "0x{:X}".format(read_data[0])
 
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
             if smb:
@@ -2490,7 +2493,7 @@ class nic_ctrl():
 
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
@@ -2506,7 +2509,7 @@ class nic_ctrl():
 
     def nic_write_cpld(self, reg_addr, write_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
@@ -2522,7 +2525,7 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
-        if self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2:
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format("./", reg_addr))
         else:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format("./", reg_addr))
@@ -3295,7 +3298,7 @@ class nic_ctrl():
         return True
 
     def nic_mvl_acc_test(self):
-        if self._nic_type != NIC_Type.ORTANO2:
+        if self._nic_type not in ELBA_NIC_TYPE_LIST:
             return False
 
         if not self.nic_console_attach():
@@ -3332,7 +3335,7 @@ class nic_ctrl():
             return False
 
     def nic_mvl_stub_test(self, loopback=True):
-        if self._nic_type != NIC_Type.ORTANO2:
+        if self._nic_type not in ELBA_NIC_TYPE_LIST:
             return False
 
         if not self.nic_console_attach():

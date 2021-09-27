@@ -218,8 +218,7 @@ def extract_sn_from_dell_ppid(tmp):
         A -   B  -  C  - D - E  - F
         SN = A+C+D+E
     """
-    tmp = tmp.split("-")
-    sn = tmp[0] + tmp[2] + tmp[3] + tmp[4]
+    sn = tmp[0:2] + tmp[8:13] + tmp[13:16] + tmp[16:20]
     return serial_number_validate(sn)
 
 def extract_pn_from_dell_ppid(tmp):
@@ -230,8 +229,7 @@ def extract_pn_from_dell_ppid(tmp):
         A -   B  -  C  - D - E  - F
         PN = B+F
     """
-    tmp = tmp.split("-")
-    pn = str(tmp[1] + tmp[5])
+    pn = tmp[2:8] + tmp[20:23]
     return part_number_validate(pn)
 
 def dell_ppid_validate(tmp):
@@ -1578,10 +1576,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                     cur_fail_list[mtp_id][slot] = 0
                     cur_fail_list[mtp_id][slot+length] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if (nic_type == NIC_Type.ORTANO or
-                        nic_type == NIC_Type.ORTANO2 or
-                        nic_type == NIC_Type.POMONTEDELL
-                        ):
+                    if nic_type in ELBA_NIC_TYPE_LIST:
                         read_data = [0]
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
                         if not rc:

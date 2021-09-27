@@ -24,6 +24,8 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
+from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import PART_NUMBERS_MATCH
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -164,10 +166,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type == NIC_Type.ORTANO2:
         test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
-    if nic_type == NIC_Type.POMONTEDELL:
+    if nic_type in FPGA_TYPE_LIST:
         test_list = ["FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_GOLD_PROG"]
-    if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        test_list = ["FRU_PROG", "QSPI_PROG"]
     dsp = FF_Stage.FF_DL
 
     for skipped_test in skip_testlist:
@@ -399,15 +399,18 @@ def main():
         if scan_rslt[key]["VALID"]:
             pn = scan_rslt[key]["PN"]
             if pn.startswith("68-0022") or pn.startswith("68-0025"):
-                fru_date = scan_rslt[key]["TS"]
-                year_digit = fru_date[-1:]
-                month_digit = '{:x}'.format(int(fru_date[0:2]))
-                if int(fru_date[2:4]) < 10:
-                    day_digit = fru_date[2:4]
-                else:
-                    day_digit = chr(55+int(fru_date[2:4]))
+                # fru_date = scan_rslt[key]["TS"]
+                # year_digit = fru_date[-1:]
+                # month_digit = '{:x}'.format(int(fru_date[0:2]))
+                # if int(fru_date[2:4]) < 10:
+                #     day_digit = fru_date[2:4]
+                # else:
+                #     day_digit = chr(55+int(fru_date[2:4]))
+                year_digit = "1"
+                month_digit = "9"
+                day_digit = "G"
                 scan_rslt[key]["SN"] = "USFLUPK" + year_digit + month_digit + day_digit + scan_rslt[key]["SN"][-4:]
-                scan_rslt[key]["PN"] = "0PCFPCX01"
+                scan_rslt[key]["PN"] = "0PCFPCX00"
                 if pn.startswith("68-0025"):
                     scan_rslt[key]["PN"] = "0X322FX01"
 
@@ -454,13 +457,13 @@ def main():
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
                 continue
-            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in ELBA_NIC_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(nic_type))
                     continue
-            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
@@ -620,7 +623,7 @@ def main():
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
         failsafe_cpld_img_file = ""
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
         if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
@@ -647,12 +650,12 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
             
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
-        elif nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA main image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA gold image: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
@@ -720,7 +723,7 @@ def main():
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
         failsafe_cpld_img_file = ""
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
