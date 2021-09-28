@@ -171,7 +171,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
     print("COUNT SN: {}".format(len(workingonSNlist)))
     #sys.exit()    
     wb = Workbook()
-    wg = Workbook()
+    
     dest_filename = "{}EXECL_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
     filenameheader = "{}EXECL_{}_DATA".format(inputconfig['DIR']["reportpath"],date_time)
     if "NAME" in inputconfig:
@@ -189,8 +189,10 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
 
     generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
     #pr['modules'].print_anyinformation(chartdata)
-    generateexeclchart(DATA,wg,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
-    wg.save(filename = dest_chartfilename)
+    if not startdate:
+        wg = Workbook()
+        generateexeclchart(DATA,wg,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
+        wg.save(filename = dest_chartfilename)
     if "NAME" in inputconfig:
         if "ORTANO2" == inputconfig["NAME"].upper():
             SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
@@ -224,7 +226,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         generateexeclsnstatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
         #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
-        generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig)
+        generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
 
@@ -249,6 +251,9 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False,byweek=True)
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=True)
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False,byweek=True)
+        if not startdate:
+            print("OUTPUT FILE: {}".format(dest_filename.replace('DATA', 'SUMMARY')))
+            wb.save(filename = dest_filename.replace('DATA', 'SUMMARY'))
 
         for eachteststep in DATA['SN']['TEST']:
             generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
@@ -260,10 +265,8 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
 
         wb.save(filename = dest_filename)
 
-        ###copyallfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
+        copyallfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
     
-    
-
     print("OUTPUT FILE: {}".format(dest_filename))
 
     return None    
