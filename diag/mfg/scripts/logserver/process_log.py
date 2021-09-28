@@ -2996,7 +2996,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
             listofweeknumber.append(checkweeknumber)
             listofweeknumber.sort(reverse=True)
 
-        summarydata[checkweeknumber]["total"] += 1
+        
         HVLVstatuslist = list()
         havebothtestresult = True
         for teststep in teststeplist:
@@ -3009,6 +3009,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
                 HVLVstatuslist.append("NULL")
                 havebothtestresult = False
         if HVLVstatuslist[0] == "PASS" and HVLVstatuslist[3] == "PASS":
+            summarydata[checkweeknumber]["total"] += 1
             if HVLVstatuslist[1] == "FAIL":
                 summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPass"] += 1
                 summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPassList"].append(sn)
@@ -3036,7 +3037,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
 
     wirtedata = list()
     wirtedata.append("WeekNumber")
-    wirtedata.append("TOTAL")
+    wirtedata.append("TOTALwith4C-L_HVand4C-H_LVPass")
     for culumnName in columnList:
         wirtedata.append(culumnName)
         wirtedata.append("FailureRate")
