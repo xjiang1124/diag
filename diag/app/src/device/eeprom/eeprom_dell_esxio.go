@@ -218,7 +218,7 @@ var Lacona32DELLTbl = []entry {
     entry{"Board Revision Type/Length",             INT8,       179,       1,    []byte{0xC2}},
     entry{"Board Revision",                         STRING,     180,       2,    []byte{0x20, 0x20}},
     entry{"System Service Tag Type/Length",         INT8,       182,       1,    []byte{0xE0}},
-    entry{"System Service Tag ",                    STRING,     182,       32,   []byte{0x20, 0x20, 0x20, 0x20,
+    entry{"System Service Tag ",                    STRING,     183,       32,   []byte{0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
