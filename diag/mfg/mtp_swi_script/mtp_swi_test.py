@@ -63,7 +63,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         test_list = ["CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
         test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
-    if nic_type == NIC_Type.POMONTEDELL:
+    if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         test_list = ["FPGA_PROG", "GOLD_FPGA_PROG", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
@@ -107,8 +107,6 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
         test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
         test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
-    if nic_type == NIC_Type.POMONTEDELL:
-        test_list = ["NIC_INIT", "SEC_FPGA_PROG", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -202,14 +200,14 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
 
 def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
-    test_list = ["GOLD_PROG"]
+    test_list = ["GOLDFW_PROG"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = libmfg_utils.timestamp_snapshot()
-        if test == "GOLD_PROG":
+        if test == "GOLDFW_PROG":
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES100:
                 ret = mtp_mgmt_ctrl.mtp_program_nic_gold_naples100(slot, gold_img_file)
@@ -305,12 +303,23 @@ def main():
         NAPLES100IBM = 0
 
 
-        if NIC_Type.POMONTEDELL in mtp_mgmt_ctrl._nic_type_list:
+        if (NIC_Type.POMONTEDELL in mtp_mgmt_ctrl._nic_type_list or
+            NIC_Type.LACONA32 in mtp_mgmt_ctrl._nic_type_list or
+            NIC_Type.LACONA32DELL in mtp_mgmt_ctrl._nic_type_list
+            ):
             args.skip_test.append("EFUSE_PROG")
             args.skip_test.append("SEC_KEY_PROG")
             args.skip_test.append("SEC_PROG_VERIFY")
             args.skip_test.append("SEC_CPLD_PROG")
             args.skip_test.append("SEC_CPLD_VERIFY")
+            # skip for lab cards
+            args.skip_test.append("GOLD_FPGA_PROG")
+            args.skip_test.append("SW_INSTALL")
+            args.skip_test.append("SET_MAINFW")
+            args.skip_test.append("SW_CLEANUP")
+            args.skip_test.append("SW_BOOT")
+            args.skip_test.append("SW_SHUTDOWN")
+
 
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -329,7 +338,7 @@ def main():
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
             if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0015"]
-            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
+            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
             else:
                 fail_cpld_img_file = ""
@@ -338,7 +347,7 @@ def main():
             gold_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(gold_img_file)
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
-            if nic_type == NIC_Type.POMONTEDELL:
+            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA main image: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA gold image: " + os.path.basename(fail_cpld_img_file))
             else:
@@ -413,7 +422,7 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             failsafe_cpld_img_file = ""
-            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
+            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
@@ -502,9 +511,6 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
-            if nic_type == NIC_Type.POMONTEDELL:
-                continue
-
             test_list = ["SEC_KEY_PROG"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
@@ -552,8 +558,7 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
 
-            if nic_type == NIC_Type.POMONTEDELL:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip Secure CPLD programming")
+            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 continue
 
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
@@ -588,9 +593,6 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
-
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.POMONTEDELL:
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -766,14 +768,14 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            test_list = ["GOLD_BOOT"]
+            test_list = ["GOLDFW_BOOT"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
                 start_ts = libmfg_utils.timestamp_snapshot()
-                if test == "GOLD_BOOT":
+                if test == "GOLDFW_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_gold_boot(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
@@ -790,7 +792,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         # power cycle NIC
-        if "GOLD_BOOT" not in args.skip_test:
+        if "GOLDFW_BOOT" not in args.skip_test:
             mtp_mgmt_ctrl.mtp_power_cycle_nic()
         
         # monitor all the thread
