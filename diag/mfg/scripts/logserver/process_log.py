@@ -3063,7 +3063,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
     converttoPERCENTAGEnumber(ws2)
     difftime = datetime.now()-start
     print("generateexeclHVLVsummary: {} use {} seconds".format(teststep,difftime.total_seconds()))
-    generateexeclHVLVdata(FailureSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=False)
+    generateexeclHVLVdata(FailureSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=True)
     return 0
 
 def generateexeclHVLVdata(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=False):
