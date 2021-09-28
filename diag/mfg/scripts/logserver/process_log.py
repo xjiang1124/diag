@@ -80,13 +80,16 @@ def main():
 
     workingonLastdata(DATA,inputconfig)
     #sys.exit()
-
     DATA['SN']['LIST'].sort()
-    jsonfileoutputname = "{}/{}_{}_DATA.json".format(inputconfig['DIR']["TEMPDATABASE"],'OVERALL',date_time)
-    #mpu.io.write(jsonfileoutputname, DATA)
-    #mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
-    pr['modules'].wirtejsonfile(jsonfileoutputname, DATA)
-    pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
+    if "skipfoldercheck" in ARGV:
+        pass 
+    else:
+        jsonfileoutputname = "{}/{}_{}_DATA.json".format(inputconfig['DIR']["TEMPDATABASE"],'OVERALL',date_time)
+        #mpu.io.write(jsonfileoutputname, DATA)
+        #mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
+
+        pr['modules'].wirtejsonfile(jsonfileoutputname, DATA)
+        pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
 
     if DATA['NEWFILECOUNT']:
         processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
@@ -192,9 +195,10 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         if "ORTANO2" == inputconfig["NAME"].upper():
             SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
             for PN in SNbyPN:
-                generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,pr,start=None)
-
-
+                checkSNstartdate = getbeforedayinformation(checkday=30)
+                if len(checksnlistafteestartdate(DATA,SNbyPN[PN],startdate=checkSNstartdate)) > 0:
+                    generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,pr,start=None)
+            #sys.exit()
 
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
@@ -225,13 +229,15 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
 
         generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr,start=startdate)
-
+        workingonSNlist2 = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+        workingonSNlist2.sort(reverse=True)
         if check2C4CinTestinfunction(DATA['SN']['TEST']):
             for eachteststep in DATA['SN']['TEST']:
                 if "4C" in eachteststep:
-                    TempHVLVdata[eachteststep] = generateHVLVdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+                    TempHVLVdata[eachteststep] = generateHVLVdata(workingonSNlist2,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
 
             #print(json.dumps(TempHVLVdata, indent = 4))
+            generateexeclHVLVsummary(workingonSNlist2,DATA["teststep"],wb,DATA,TempHVLVdata,pr) 
             generateexeclHVLVdata(workingonSNlist,DATA["teststep"],wb,DATA,TempHVLVdata)           
             #sys.exit()
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
@@ -254,7 +260,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
 
         wb.save(filename = dest_filename)
 
-        copyallfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
+        ###copyallfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
     
     
 
@@ -1283,6 +1289,38 @@ def getsnlistafteestartdate(DATA,inputconfig,startdate=None):
             if not SN in returnSNlist2:
                 returnSNlist2.append(SN)  
                 returnSNlist2.sort()
+
+    return returnSNlist2
+
+def checksnlistafteestartdate(DATA,snlist,startdate=None):
+
+    returnSNlist = list()
+    print("{} Count SN with start date {}: {}".format("checksnlistafteestartdate",startdate,len(snlist)))
+
+    if startdate:
+        for sn in DATA['SN']['LIST']:
+            for test in DATA['SN']['TEST']:
+                if sn in DATA['SN']['LAST'][test]:
+                    if "result" in DATA['SN']['LAST'][test][sn]:
+                        #DATA['SN']['ERROR'][teststep][sn][reportdetailstep]
+                        dateandtime = DATA['SN']['LAST'][test][sn]["checktime"]
+                        datetimearray = dateandtime.split('_')
+                        #print("SN: {} -> {} vs {}".format(sn, datetimearray[0], startdate))
+                        if datetimearray[0] >= startdate:
+                            if not sn in returnSNlist:
+                                returnSNlist.append(sn)
+                                returnSNlist.sort()
+                                #sys.exit()
+                break
+
+    returnSNlist2 = snlist
+
+    if len(returnSNlist) > 0:
+        for sn in snlist:
+            if not sn in returnSNlist:
+                returnSNlist2.remove(sn)
+    
+    print("{} return Count SN with start date {}: {}".format("checksnlistafteestartdate",startdate,len(snlist)))
 
     return returnSNlist2
 
@@ -2785,16 +2823,20 @@ def GetSNlistbyPNfromDLtest(workingonSNlist,DATA,teststep='DL'):
                         if 'PN' in DATA["SN"][sn][chassis][testdate][testetime]:
                             PN = str(DATA["SN"][sn][chassis][testdate][testetime]['PN'])
                         else:
-                            PN = 'CANNOT FIND'
+                            PN = 'NULL'
                         
                         teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        if PN:
+                            if len(PN) > 5:
+                                if not PN in SNbyPN:
+                                    SNbyPN[PN] = list()
+                                if not sn in SNbyPN[PN]:
+                                    SNbyPN[PN].append(sn)
+                                    SNbyPN[PN].sort(reverse=True)
 
-                        if 'PASS' in teststatus.upper():
-                            if not PN in SNbyPN:
-                                SNbyPN[PN] = list()
-                            if not sn in SNbyPN[PN]:
-                                SNbyPN[PN].append(sn)
-                                SNbyPN[PN].sort(reverse=True)
+    #print(json.dumps(SNbyPN, indent = 4))
+
+    #sys.exit()
                         
     return SNbyPN
 
@@ -2905,9 +2947,130 @@ def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
     print("generateHVLVdata: {} use {} seconds".format(teststep,difftime.total_seconds()))
     return HVLVData
 
-def generateexeclHVLVdata(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata):
+
+def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
+    start=datetime.now()
+    sheettitle = "HVLV_summary_By_1st"
+    ws2 = wb.create_sheet(title=sheettitle)
+    print("{}".format("generateexeclHVLVsummary"))
+    FailureSNlist = list()
+    teststeplist = list()
+    listofweeknumber = list()
+    for teststep in TempHVLVdata:
+        teststeplist.append(teststep)
+
+    summarydata = dict()
+    checksteplist = list()
+    for teststep in teststeplist:
+        checksteplist.append("{}_HV".format(teststep))
+        checksteplist.append("{}_LV".format(teststep))
+    columnList = list()
+    columnList.append("4C-L_LV_Failwith4C-L_HVand4C-H_LVPass")
+    columnList.append("4C-H_HV_Failwith4C-L_HVand4C-H_LVPass")
+    for sn in workingonSNlist:
+        
+        checksnstatus = False
+        for teststep in teststeplist:
+            if sn in TempHVLVdata[teststep]:
+                checksnstatus = True
+        if not checksnstatus:
+            continue
+        checkweeknumber = None
+
+        for teststep in teststeplist:
+            if sn in TempHVLVdata[teststep]:
+                if not checkweeknumber:
+                    checkweeknumber = findworkweek(TempHVLVdata[teststep][sn]["LIST"][0])
+        if not checkweeknumber in summarydata:
+            summarydata[checkweeknumber] = dict()
+            summarydata[checkweeknumber]["total"] = 0
+            summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPass"] = 0
+            summarydata[checkweeknumber]["4C-H_HV_Failwith4C-L_HVand4C-H_LVPass"] = 0
+            summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPassList"] = list()
+            summarydata[checkweeknumber]["4C-H_HV_Failwith4C-L_HVand4C-H_LVPassList"] = list()
+
+        if not checkweeknumber in listofweeknumber:
+            listofweeknumber.append(checkweeknumber)
+            listofweeknumber.sort(reverse=True)
+
+        summarydata[checkweeknumber]["total"] += 1
+        HVLVstatuslist = list()
+        havebothtestresult = True
+        for teststep in teststeplist:
+            if sn in TempHVLVdata[teststep]:
+                HVLVstatuslist.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["HVstatus"])
+                HVLVstatuslist.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["LVstatus"])
+                #wirtedata.append(TempHVLVdata[teststep][sn]["DATA"][TempHVLVdata[teststep][sn]["LIST"][0]]["RESULT"])
+            else:
+                HVLVstatuslist.append("NULL")
+                HVLVstatuslist.append("NULL")
+                havebothtestresult = False
+        if HVLVstatuslist[0] == "PASS" and HVLVstatuslist[3] == "PASS":
+            if HVLVstatuslist[1] == "FAIL":
+                summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPass"] += 1
+                summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPassList"].append(sn)
+                if not sn in FailureSNlist:
+                    FailureSNlist.append(sn)
+            if HVLVstatuslist[2] == "FAIL":
+                summarydata[checkweeknumber]["4C-H_HV_Failwith4C-L_HVand4C-H_LVPass"] += 1
+                summarydata[checkweeknumber]["4C-H_HV_Failwith4C-L_HVand4C-H_LVPassList"].append(sn)
+                if not sn in FailureSNlist:
+                    FailureSNlist.append(sn)                
+        # if summarydata[checkweeknumber]["4C-L_LV_Failwith4C-L_HVand4C-H_LVPass"] or summarydata[checkweeknumber]["4C-H_HV_Failwith4C-L_HVand4C-H_LVPass"]:
+        #     for teststep in teststeplist:
+        #         if sn in TempHVLVdata[teststep]:
+        #             print(teststep)
+        #             pr['modules'].print_anyinformation(TempHVLVdata[teststep][sn])
+        #     pr['modules'].print_anyinformation(summarydata)
+        #     pr['modules'].print_anyinformation(checksteplist)
+        #     pr['modules'].print_anyinformation(HVLVstatuslist)
+
+        #     sys.exit()
+
+    #pr['modules'].print_anyinformation(summarydata)
+    #pr['modules'].print_anyinformation(FailureSNlist)
+    #sys.exit()
+
+    wirtedata = list()
+    wirtedata.append("WeekNumber")
+    wirtedata.append("TOTAL")
+    for culumnName in columnList:
+        wirtedata.append(culumnName)
+        wirtedata.append("FailureRate")
+    
+    ws2.append(wirtedata)
+
+    for workonweeknumber in listofweeknumber:
+
+        wirtedata = list()
+
+        wirtedata.append(workonweeknumber)
+        wirtedata.append(summarydata[workonweeknumber]['total'])
+        for culumnName in columnList:
+            wirtedata.append(summarydata[workonweeknumber][culumnName])
+            wirtedata.append("{:.2f}%".format(summarydata[workonweeknumber][culumnName]/summarydata[workonweeknumber]['total'] * 100))
+
+        ws2.append(wirtedata)
+
+    fixcolumnssize(ws2)
+    highlightinyellow(ws2,'TIMEOUT')
+    highlightinyellow(ws2,'NO TEST DATA')
+    highlightingreen(ws2,'PASS')
+    highlightinOrange(ws2,'NULL')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    freezePosition(ws2,'B2')
+    converttoPERCENTAGEnumber(ws2)
+    difftime = datetime.now()-start
+    print("generateexeclHVLVsummary: {} use {} seconds".format(teststep,difftime.total_seconds()))
+    generateexeclHVLVdata(FailureSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=False)
+    return 0
+
+def generateexeclHVLVdata(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=False):
     start=datetime.now()
     sheettitle = "HVLV_status_By_1st"
+    if failureonly:
+        sheettitle = "HVLV_FailureData"
     ws2 = wb.create_sheet(title=sheettitle)
     print("{}".format("generateexeclHVLVdata"))
     teststeplist = list()
@@ -2921,7 +3084,7 @@ def generateexeclHVLVdata(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata):
     for teststep in teststeplist:
         wirtedata.append("{}_HV_RESULT".format(teststep))
         wirtedata.append("{}_LV_RESULT".format(teststep))
-    #wirtedata.append('FINALRESULT')
+    #wirtedata.append('RESULT')
     for teststep in teststeplist:
         for eachdeatilteststep in DATA[teststep]["DETAILTESTSTEP"]:
              wirtedata.append("{}_{}".format(teststep, eachdeatilteststep))
@@ -2991,7 +3154,7 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wirtedata.append('# of Card in MTP')
     wirtedata.append('CARDTYPE')
     wirtedata.append('SLOT')
-    wirtedata.append('FINALRESULT')
+    wirtedata.append('RESULT')
     if teststep == 'DL':
         wirtedata.append('PN')
         wirtedata.append('MACADDRESS')
@@ -3153,7 +3316,7 @@ def generateexeclerrdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wirtedata.append('CARDTYPE')
     wirtedata.append('SLOT')
 
-    wirtedata.append('FINALRESULT')
+    wirtedata.append('RESULT')
     wirtedata.append('ERROR_DATA')
     ws2.append(wirtedata)
     
@@ -3377,7 +3540,7 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp):
                                                         firstFailurestep = "{} <{}>".format(teststep,teststepdata[teststep])
                                                 if firstFailurestep:
                                                     break
-                            print(firstFailurestep)
+                            #print(firstFailurestep)
                             if not firstFailurestep:
                                 firstFailurestep = "CANNOT FIND FAILURE STEP"
                             wirtedataFailure.append(firstFailurestep)
@@ -3832,11 +3995,11 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
     wirtedata.append('First_PASS')
     wirtedata.append('First_FAIL')
     wirtedata.append('First_YIELD')
-    wirtedata.append('Final_PASS')
-    wirtedata.append('Final_FAIL')
-    wirtedata.append('Final_YIELD')
+    wirtedata.append('LAST_PASS')
+    wirtedata.append('LAST_FAIL')
+    wirtedata.append('LAST_YIELD')
     wirtedata.append('')
-    wirtedata.append('Final_Failure\rCount (NoDupSN)')
+    wirtedata.append('LAST_Failure\rCount (NoDupSN)')
     ws1.append(wirtedata)
 
     LastfailureremoveDupSN = dict()
@@ -4073,7 +4236,7 @@ def testyeildbyworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRST'):
     if status == 'FIRST':
         wirtedata.append('FIRST PASS YIELD BY WEEKCODE')
     else:
-        wirtedata.append('FINAL YIELD BY WEEKCODE')
+        wirtedata.append('LAST YIELD BY WEEKCODE')
     ws1.append(wirtedata)
     wirtedata = list()
     wirtedata.append('TEST')
@@ -4161,7 +4324,7 @@ def testyeildbySNperfixworkweek(DATA, ws1, alllistofSN, resultlist, status='FIRS
     if status == 'FIRST':
         wirtedata.append('FIRST PASS YIELD BY SN WEEKCODE')
     else:
-        wirtedata.append('FINAL YIELD BY SN WEEKCODE')
+        wirtedata.append('LAST YIELD BY SN WEEKCODE')
     ws1.append(wirtedata)
     wirtedata = list()
     wirtedata.append('TEST')
