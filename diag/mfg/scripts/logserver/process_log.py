@@ -231,6 +231,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
 
         generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr,start=startdate)
+        generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr,start=startdate,totimezone='Asia/Singapore')
         workingonSNlist2 = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
         workingonSNlist2.sort(reverse=True)
         if check2C4CinTestinfunction(DATA['SN']['TEST']):
@@ -2469,7 +2470,7 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
     freezePosition(ws2,'K2')
     return 0
 
-def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None):
+def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None,totimezone=None):
 
     print("{}!".format("generateexeclby4CChambertime"))
 
@@ -2516,6 +2517,8 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None):
     #pr['modules'].print_anyinformation(Chamberref)
     #sys.exit()
     titlename = "{}_{}".format("Chamber", "Time")
+    if totimezone:
+        titlename = "{}_{}".format(titlename,totimezone.replace('/','_'))
     ws2 = wb.create_sheet(title=titlename)
     
     wirtedata = list()
@@ -2540,10 +2543,16 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None):
                     break
             wirtedata.append(chambername)
             wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
-            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['START'].split('_')[0])
-            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['START'].split('_')[1].replace('-',':'))
-            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['END'].split('_')[0])
-            wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['END'].split('_')[1].replace('-',':'))
+            chamberstarttimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['START']
+            chamberendtimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['END']
+            if totimezone:
+                chamberstarttimefromrecord = converttimetonewtimezone(chamberstarttimefromrecord,totimezone)
+                chamberendtimefromrecord = converttimetonewtimezone(chamberendtimefromrecord,totimezone)
+
+            wirtedata.append(chamberstarttimefromrecord.split('_')[0])
+            wirtedata.append(chamberstarttimefromrecord.split('_')[1].replace('-',':'))
+            wirtedata.append(chamberendtimefromrecord.split('_')[0])
+            wirtedata.append(chamberendtimefromrecord.split('_')[1].replace('-',':'))
             #wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME'])
             if countnumber < len(Chamberref[chambername]['LIST']):
                 starttime = Chamberref[chambername]['DICT'][chamberendtime]['START']
@@ -2569,6 +2578,28 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None):
     #freezePosition(ws2,'H2')
     converttoPERCENTAGEnumber(ws2)
     return 0
+
+def converttimetonewtimezone(timetoconvert,totimezone):
+    print("TIME: {} | TimeZone: {}".format(timetoconvert,totimezone))
+    newtime = timetoconvert
+    import pytz
+    from datetime import datetime, timezone
+    datetime_object = datetime.strptime(timetoconvert, '%Y-%m-%d_%H-%M-%S')
+    psttimezone = pytz.timezone('US/Pacific')
+    converttimezone = pytz.timezone(totimezone)
+    datetime_object = psttimezone.localize(datetime_object)
+    #print(datetime_object.tzname())
+    #print(datetime_object)
+    # Convert time zone
+    datetime_object = datetime_object.astimezone(converttimezone)
+    #print(datetime_object.tzname())
+    #print(datetime_object)
+    newtime = datetime_object.strftime("%Y-%m-%d_%H-%M-%S")
+    #print(newtime)
+    #sys.exit()
+
+    return newtime
+
 
 def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
 
@@ -3052,7 +3083,10 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
         wirtedata.append(summarydata[workonweeknumber]['total'])
         for culumnName in columnList:
             wirtedata.append(summarydata[workonweeknumber][culumnName])
-            wirtedata.append("{:.2f}%".format(summarydata[workonweeknumber][culumnName]/summarydata[workonweeknumber]['total'] * 100))
+            failurerate = 0
+            if summarydata[workonweeknumber]['total']:
+                failurerate = summarydata[workonweeknumber][culumnName]/summarydata[workonweeknumber]['total']
+            wirtedata.append("{:.2f}%".format(failurerate * 100))
 
         ws2.append(wirtedata)
 
@@ -4145,7 +4179,7 @@ def findbegintesttime(checktime,testime):
     begintime_object = checktime_object - timedelta(seconds=float(testime))
     #print(checktime_object)
     #print(begintime_object)
-    begintimestr = date_time = begintime_object.strftime("%Y-%m-%d_%H-%M-%S")
+    begintimestr = begintime_object.strftime("%Y-%m-%d_%H-%M-%S")
     #print(begintimestr)
     return begintimestr
 
