@@ -2328,7 +2328,8 @@ class mtp_ctrl():
             software_pn == "90-0006-0001" or
             software_pn == "90-0006-0002" or
             software_pn == "90-0011-0003" or
-            software_pn == "90-pomonte"
+            software_pn == "90-pomonte" or
+            software_pn == "90-lacona"
             ):
             return True
         return False
@@ -2421,11 +2422,15 @@ class mtp_ctrl():
             if software_pn != "90-0011-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:6] == "0PCFPC":     #POMONTE DELL
+        elif naples_pn[0:6] == "0PCFPC":      #POMONTE DELL
             if software_pn != "90-pomonte":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:6] == "0X322F":
+        elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
+            if software_pn != "90-lacona":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
             if software_pn != "90-lacona":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False

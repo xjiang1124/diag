@@ -259,8 +259,8 @@ class NIC_IMAGES:
     fail_cpld_dat["POMONTEDELL"] = "0x12"
     diagfw_img["POMONTEDELL"] = "elba_diagfw_1.33.0-3-306_2021.09.16.tar"
     diagfw_dat["POMONTEDELL"] = "09-16-2021"
-    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.32.0-E-12_2021.19.17.tar"
-    goldfw_dat["POMONTEDELL"] = "09-17-2021"
+    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.32.0-E-13_2021.09.21.tar"
+    goldfw_dat["POMONTEDELL"] = "09-20-2021"
 
     cpld_img["LACONA32DELL"] = "lacona_dell_main_0.10.4.bin"
     cpld_ver["LACONA32DELL"] = "0x0"
@@ -271,10 +271,10 @@ class NIC_IMAGES:
     fail_cpld_img["LACONA32DELL"] = "lacona_dell_golden_0.10.4.bin"
     fail_cpld_ver["LACONA32DELL"] = "0x0"
     fail_cpld_dat["LACONA32DELL"] = "0x13"
-    diagfw_img["LACONA32DELL"] = "elba_diagfw_1.32.0-E-12_2021.19.17.tar"
-    diagfw_dat["LACONA32DELL"] = "09-17-2021"
-    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.32.0-E-12_2021.19.17.tar"
-    goldfw_dat["LACONA32DELL"] = "09-17-2021"
+    diagfw_img["LACONA32DELL"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
+    diagfw_dat["LACONA32DELL"] = "09-21-2021"
+    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.32.0-E-13_2021.09.21.tar"
+    goldfw_dat["LACONA32DELL"] = "09-20-2021"
 
     cpld_img["LACONA32"] = "lacona_dell_main_0.10.4.bin"
     cpld_ver["LACONA32"] = "0x0"
@@ -285,10 +285,10 @@ class NIC_IMAGES:
     fail_cpld_img["LACONA32"] = "lacona_dell_golden_0.10.4.bin"
     fail_cpld_ver["LACONA32"] = "0x0"
     fail_cpld_dat["LACONA32"] = "0x13"
-    diagfw_img["LACONA32"] = "elba_diagfw_1.32.0-E-12_2021.19.17.tar"
-    diagfw_dat["LACONA32"] = "09-17-2021"
-    goldfw_img["LACONA32"] = "elba_goldfw_1.32.0-E-12_2021.19.17.tar"
-    goldfw_dat["LACONA32"] = "09-17-2021"
+    diagfw_img["LACONA32"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
+    diagfw_dat["LACONA32"] = "09-21-2021"
+    goldfw_img["LACONA32"] = "elba_goldfw_1.32.0-E-13_2021.09.21.tar"
+    goldfw_dat["LACONA32"] = "09-20-2021"
 
 class MTP_IMAGES:
     AMD64_IMG = dict()
