@@ -37,7 +37,7 @@ func main() {
     flag.Parse()
 
     var intLpbk int
-    var cardType = os.Getenv("CARD_TYPE")
+    var asicType = os.Getenv("ASIC_TYPE")
 
     if *intLpbkPtr == true {
         intLpbk = 1
@@ -46,38 +46,46 @@ func main() {
     }
 
     if *prbsPtr == true {
-        if cardType == "ORTANO2" {
+        if asicType == "ELBA" {
             cli.Println("d", "No PRBS test for Elba cards")
-        } else {
+        } else if asicType == "CAPRI"{
             capri.Prbs(*modePtr, *polyPtr, *duraPtr)
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
         }
         return
     }
 
     if *snakePtr == true {
-        if cardType == "ORTANO2" {
+        if asicType == "ELBA" {
             cli.Println("d", "intLpbk:", intLpbk)
             elba.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr)
-        } else {
+        } else if asicType == "CAPRI"{
             capri.Snake(*modePtr, *duraPtr, *verbosePtr)
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
         }
         return
     }
 
     if *snakeChkPtr == true {
-        if cardType == "ORTANO2" {
+        if asicType == "ELBA" {
             elba.SnakeCheck()
-        } else {
+        } else if asicType == "CAPRI"{
             capri.SnakeCheck()
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
         }
         return
     }
 
     if *snakePostPtr == true {
-        if cardType == "ORTANO2" {
+        if asicType == "ELBA" {
             elba.SnakePost()
-        } else {
+        } else if asicType == "CAPRI"{
             capri.SnakePost(*modePtr)
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
         }
         return
     }
