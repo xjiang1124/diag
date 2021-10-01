@@ -2553,6 +2553,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN'] = list()
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'] = list()
                                     Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATURE"] = getlistoftemp(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
+                                    Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"] = getlistoftempdetail(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
                                     Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN'].append(sn)
                                     if 'PASS' in teststatus.upper():
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'].append(sn)
@@ -2568,6 +2569,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     ws2 = wb.create_sheet(title=titlename)
     
     wirtedata = list()
+    wirtedata.append('#')
     wirtedata.append('CHAMBER')
     wirtedata.append('TEST')
     wirtedata.append('START_DATE')
@@ -2584,14 +2586,18 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     wirtedata.append('LOW-TEMP')
     wirtedata.append('AVG-TEMP')
     ws2.append(wirtedata)
+    count = 0
     for chambername in sorted(Chamberref.keys()):
         countnumber = 1
+        
         for chamberendtime in Chamberref[chambername]['LIST']:
-            for chassis in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS']:
+            count += 1
+            for chassis in sorted(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'].keys()):
                 wirtedata = list()
                 if start:
                     if start > chamberendtime.split('_')[0]:
                         break
+                wirtedata.append(count)
                 wirtedata.append(chambername)
                 wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
                 chamberstarttimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['START']
@@ -2626,16 +2632,23 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                     wirtedata.append("NO DATA")
                     wirtedata.append("NO DATA")
                     wirtedata.append("NO DATA")
+                wirtedata.append("|||")
+                for eachdata in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"]:
+                    wirtedata.append(eachdata)
                 ws2.append(wirtedata)
                 countnumber += 1
 
-
+            wirtedata = list()
+            for i in range(15):
+                wirtedata.append('---')
+            ws2.append(wirtedata)
     fixcolumnssize(ws2)
     #highlightinyellow(ws2,'TIMEOUT')
     #highlightinyellow(ws2,'NO TEST DATA')
     #highlightingreen(ws2,'PASS')
     #highlightinred(ws2, 'FAIL')
     #highlightinred(ws2, 'FAILED')
+    highlightinyellow(ws2,'---')
     freezePosition(ws2,'A2')
     converttoPERCENTAGEnumber(ws2)
     return 0
@@ -2647,6 +2660,22 @@ def getlistoftemp(timewithtemplist):
         timelist.append(eachdata[0])
         templist.append(float(eachdata[1]))
     return templist
+
+def getlistoftempdetail(timewithtemplist):
+    timelist = list()
+    templist = list()
+    tempdetail = list()
+    starttime = None
+    for eachdata in timewithtemplist:
+        timelist.append(eachdata[0])
+        templist.append(float(eachdata[1]))
+        if not starttime:
+            starttime = eachdata[0]
+        runtesttime = cal_total_testTime(starttime,eachdata[0])
+        recordtempwithtime = "{} ({})".format(float(eachdata[1]),timedelta(seconds=int(float(runtesttime))))
+        tempdetail.append(recordtempwithtime)
+
+    return tempdetail
 
 def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None,totimezone=None):
 
