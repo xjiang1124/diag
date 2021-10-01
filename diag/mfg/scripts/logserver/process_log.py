@@ -71,12 +71,18 @@ def main():
         pass 
     else:
         for testfolder in testfolderlist:
-            # if "FST" in testfolder:
-            #     workingoneachtest(inputconfig,DATA,testfolder,redo=True)
-            # else:
-            #     workingoneachtest(inputconfig,DATA,testfolder)
+            if "rerun" in ARGV:
+                pr['modules'].print_anyinformation(ARGV)
+                if ARGV["rerun"] in testfolder:
+                    pr['modules'].print_anyinformation(ARGV["rerun"])
+                    workingoneachtest(pr,inputconfig,DATA,testfolder,redo=True)
+                else:
+                    #workingoneachtest(pr,inputconfig,DATA,testfolder)
+                    pass
+            else:
+                workingoneachtest(pr,inputconfig,DATA,testfolder)
             #pass
-            workingoneachtest(pr,inputconfig,DATA,testfolder)
+            #workingoneachtest(pr,inputconfig,DATA,testfolder)
 
     workingonLastdata(DATA,inputconfig)
     #sys.exit()
@@ -91,6 +97,11 @@ def main():
         pr['modules'].wirtejsonfile(jsonfileoutputname, DATA)
         pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
 
+    if "rerun" in ARGV:
+        difftime = datetime.now()-start
+        print('Done Time: ', difftime)       
+        print("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
+        return None        
     if DATA['NEWFILECOUNT']:
         processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
     elif "report" in ARGV:
@@ -230,6 +241,8 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
 
+        generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
+
         generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr,start=startdate)
         generateexeclby4CChambertime(workingonSNlist,wb,DATA,pr,start=startdate,totimezone='Asia/Singapore')
         workingonSNlist2 = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
@@ -243,14 +256,14 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
             generateexeclHVLVsummary(workingonSNlist2,DATA["teststep"],wb,DATA,TempHVLVdata,pr) 
             generateexeclHVLVdata(workingonSNlist,DATA["teststep"],wb,DATA,TempHVLVdata)           
             #sys.exit()
-            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
+            #generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False)
-            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
-            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False)
+            #generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
+            #generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False)
 
-            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,byweek=True)
+            #generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,byweek=True)
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig,duplicatesn=False,byweek=True)
-            generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=True)
+            #generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=True)
             generateexeclsn4CFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,duplicatesn=False,byweek=True)
         if not startdate:
             print("OUTPUT FILE: {}".format(dest_filename.replace('DATA', 'SUMMARY')))
@@ -1034,6 +1047,7 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                     #sys.exit()
 
                     DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TESTTIME'] = findtotaltesttime(tempsavelog)
+                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPERATURE'] = findtesttemperature(tempsavelog)
                     if len(failurelist) > 0:
                         #print(failurelist)
                         checkslot = "NIC-{}".format(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['SLOT'])
@@ -1112,6 +1126,23 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
         pr['modules'].wirtejsonfile(jsonfileoutputname, DATA['teststep'][teststep])
     
     return None
+
+def findtesttemperature(f):
+    
+    #print("findtesttemperature")
+
+    listoftemp = list()
+
+    #print(f)
+
+    match = re.findall(KEY_WORD.FINDTEMPWITHTIMESTAMP, f)
+
+    if match:
+        #print(match)
+        listoftemp = match
+        #sys.exit()
+
+    return listoftemp
 
 def findtotaltesttime(f):
     #print(f)
@@ -2470,6 +2501,153 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
     freezePosition(ws2,'K2')
     return 0
 
+def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totimezone=None):
+
+    print("{}!".format("generateexeclby4CChambertime"))
+
+    Chamberref = dict()
+
+    for eachteststep in FULLDATA['SN']['TEST']:
+        if '4C' in eachteststep:
+            TimeData = dict()
+            DATA = FULLDATA["teststep"][eachteststep]
+            WeekTimedata = GetTestTimedictbyweek(workingonSNlist,DATA,eachteststep,FULLDATA,TimeData,pr)
+            
+            for sn in workingonSNlist:
+                if sn in DATA["SN"]:
+                    for chassis in DATA["SN"][sn]:
+                        for testdate in DATA["SN"][sn][chassis]:
+                            for testetime in DATA["SN"][sn][chassis][testdate]:
+                                chambername = pr['modules'].where_is_my_chamber(chassis)
+                                if chambername:
+                                    if not chambername in Chamberref:
+                                        Chamberref[chambername] = dict()
+                                        Chamberref[chambername]['LIST'] = list()
+                                        Chamberref[chambername]['DICT'] = dict()
+
+                                    endtestime = "{}_{}".format(testdate,testetime)
+                                    MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
+                                    chamberstarttime,chamberendtime = findmaxtestchambertimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
+                                    teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+
+                                    if not chamberendtime in Chamberref[chambername]['LIST']:
+                                        Chamberref[chambername]['LIST'].append(chamberendtime)
+                                        Chamberref[chambername]['LIST'].sort(reverse=True)
+                                    if not chamberendtime in Chamberref[chambername]['DICT']:
+                                        Chamberref[chambername]['DICT'][chamberendtime] = dict()
+                                        Chamberref[chambername]['DICT'][chamberendtime]['SN'] = list()
+                                        Chamberref[chambername]['DICT'][chamberendtime]['PASS'] = list()
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'] = dict()
+
+                                    Chamberref[chambername]['DICT'][chamberendtime]['SN'].append(sn)
+                                    if 'PASS' in teststatus.upper():
+                                        Chamberref[chambername]['DICT'][chamberendtime]['PASS'].append(sn)
+                                    Chamberref[chambername]['DICT'][chamberendtime]['START'] = chamberstarttime
+                                    Chamberref[chambername]['DICT'][chamberendtime]['END'] = chamberendtime
+                                    Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME'] = MaxTestTime
+                                    Chamberref[chambername]['DICT'][chamberendtime]['TEST'] = eachteststep
+
+                                    #pr['modules'].print_anyinformation(DATA["SN"][sn][chassis][testdate][testetime])
+                                    if not chassis in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS']:
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis] = dict()
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN'] = list()
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'] = list()
+                                    Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATURE"] = getlistoftemp(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
+                                    Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN'].append(sn)
+                                    if 'PASS' in teststatus.upper():
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'].append(sn)
+
+    #pr['modules'].print_anyinformation(Chamberref)
+    #sys.exit()
+    
+    #pr['modules'].print_anyinformation(Chamberref)
+    #sys.exit()
+    titlename = "{}_{}".format("Chamber", "TEMP")
+    if totimezone:
+        titlename = "{}_{}".format(titlename,totimezone.replace('/','_'))
+    ws2 = wb.create_sheet(title=titlename)
+    
+    wirtedata = list()
+    wirtedata.append('CHAMBER')
+    wirtedata.append('TEST')
+    wirtedata.append('START_DATE')
+    wirtedata.append('START_TIME')
+    wirtedata.append('END_DATE')
+    wirtedata.append('END_TIME')
+    #wirtedata.append('WAIT_TO_START_TIME')
+    wirtedata.append('RUNNING_TIME')
+    wirtedata.append('MTP')
+    wirtedata.append('TEST_UNITS')
+    wirtedata.append('PASS_UNITS')
+    wirtedata.append('YIELD')
+    wirtedata.append('HIGH-TEMP')
+    wirtedata.append('LOW-TEMP')
+    wirtedata.append('AVG-TEMP')
+    ws2.append(wirtedata)
+    for chambername in sorted(Chamberref.keys()):
+        countnumber = 1
+        for chamberendtime in Chamberref[chambername]['LIST']:
+            for chassis in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS']:
+                wirtedata = list()
+                if start:
+                    if start > chamberendtime.split('_')[0]:
+                        break
+                wirtedata.append(chambername)
+                wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
+                chamberstarttimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['START']
+                chamberendtimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['END']
+                if totimezone:
+                    chamberstarttimefromrecord = converttimetonewtimezone(chamberstarttimefromrecord,totimezone)
+                    chamberendtimefromrecord = converttimetonewtimezone(chamberendtimefromrecord,totimezone)
+
+                wirtedata.append(chamberstarttimefromrecord.split('_')[0])
+                wirtedata.append(chamberstarttimefromrecord.split('_')[1].replace('-',':'))
+                wirtedata.append(chamberendtimefromrecord.split('_')[0])
+                wirtedata.append(chamberendtimefromrecord.split('_')[1].replace('-',':'))
+                #wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME'])
+                # if countnumber < len(Chamberref[chambername]['LIST']):
+                #     starttime = Chamberref[chambername]['DICT'][chamberendtime]['START']
+                #     lastendtime = Chamberref[chambername]['DICT'][Chamberref[chambername]['LIST'][countnumber]]['END']
+                #     newtesttime = cal_total_testTime(lastendtime,starttime)
+                #     wirtedata.append(timedelta(seconds=int(float(newtesttime))))
+                # else:
+                #     wirtedata.append('NULL')
+                wirtedata.append(timedelta(seconds=int(float(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME']))))
+                wirtedata.append(chassis)
+                wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN']))
+                wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS']))
+                wirtedata.append("{:.2f}%".format(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'])/len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN']) * 100))
+                if len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']):
+                    wirtedata.append(max(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']))
+                    wirtedata.append(min(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']))
+                    from statistics import mean
+                    wirtedata.append(round(mean(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']),2))
+                else:
+                    wirtedata.append("NO DATA")
+                    wirtedata.append("NO DATA")
+                    wirtedata.append("NO DATA")
+                ws2.append(wirtedata)
+                countnumber += 1
+
+
+    fixcolumnssize(ws2)
+    #highlightinyellow(ws2,'TIMEOUT')
+    #highlightinyellow(ws2,'NO TEST DATA')
+    #highlightingreen(ws2,'PASS')
+    #highlightinred(ws2, 'FAIL')
+    #highlightinred(ws2, 'FAILED')
+    freezePosition(ws2,'A2')
+    converttoPERCENTAGEnumber(ws2)
+    return 0
+
+def getlistoftemp(timewithtemplist):
+    timelist = list()
+    templist = list()
+    for eachdata in timewithtemplist:
+        timelist.append(eachdata[0])
+        templist.append(float(eachdata[1]))
+    return templist
+
 def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None,totimezone=None):
 
     print("{}!".format("generateexeclby4CChambertime"))
@@ -2534,7 +2712,7 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     wirtedata.append('PASS_UNITS')
     wirtedata.append('YIELD')
     ws2.append(wirtedata)
-    for chambername in Chamberref:
+    for chambername in sorted(Chamberref.keys()):
         countnumber = 1
         for chamberendtime in Chamberref[chambername]['LIST']:
             wirtedata = list()
@@ -2575,7 +2753,7 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     #highlightingreen(ws2,'PASS')
     #highlightinred(ws2, 'FAIL')
     #highlightinred(ws2, 'FAILED')
-    #freezePosition(ws2,'H2')
+    freezePosition(ws2,'A2')
     converttoPERCENTAGEnumber(ws2)
     return 0
 

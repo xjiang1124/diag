@@ -250,34 +250,55 @@ class modules(object):
 	    count = 1
 	    #print(level)
 
-	    while stillhavedir:
-	        
-	        if level:
-	            #print(json.dumps(listofdirs, indent = 4))
-	            if count >= level:
-	                break
-	        stillhavedir = False
-	        resultlist = list()         
-
+	    if not level:
 	        for checkdir in listofdirs:
 	            somelists = glob.glob(checkdir + '/*')
-	            #print("COUNT: {} DIR: {} STILLHAVE: {}".format(count,checkdir,stillhavedir))
 	            for something in somelists:
 	                if os.path.isdir(something):
 	                    if not something in listofdirs:
 	                        stillhavedir = True
-	                        resultlist.append(something)
-	        #print("COUNT: {} TOTAL resultlist: {} STILLHAVE: {}".format(count,len(resultlist), stillhavedir))
-	        for eachdir in resultlist:
-	            if not eachdir in listofdirs:
-	                listofdirs.append(eachdir)
+	                        listofdirs.append(something)
+	    else:
+		    while stillhavedir:
+		        
+		        if level:
+		            #print(json.dumps(listofdirs, indent = 4))
+		            if count >= level:
+		                break
+		        stillhavedir = False
+		        resultlist = list()         
 
-	        #print("COUNT: {} TOTAL listofdirs: {} STILLHAVE: {}".format(count,len(listofdirs), stillhavedir))
-	        count += 1
+		        for checkdir in listofdirs:
+		            somelists = glob.glob(checkdir + '/*')
+		            #print("COUNT: {} DIR: {} STILLHAVE: {}".format(count,checkdir,stillhavedir))
+		            for something in somelists:
+		                if os.path.isdir(something):
+		                    if not something in listofdirs:
+		                        stillhavedir = True
+		                        resultlist.append(something)
+		        #print("COUNT: {} TOTAL resultlist: {} STILLHAVE: {}".format(count,len(resultlist), stillhavedir))
+		        for eachdir in resultlist:
+		            if not eachdir in listofdirs:
+		                listofdirs.append(eachdir)
+
+		        #print("COUNT: {} TOTAL listofdirs: {} STILLHAVE: {}".format(count,len(listofdirs), stillhavedir))
+		        count += 1
 
 	    #print("LEVEL: {}".format(level))
+	    self.print_anyinformation(listofdirs)
 
 	    return listofdirs
+
+	def getallfileinfolderbyoswalk(self,rootdir,keyword=None,level=None):
+	    listOfFiles = list()
+	    for (dirpath, dirnames, filenames) in os.walk(rootdir):
+	        listOfFiles += [os.path.join(dirpath, file) for file in filenames]
+
+	    listOfFiles.sort()
+
+	    #print(json.dumps(listOfFiles, indent = 4 ))
+
+	    return listOfFiles
 
 	def fixcolumnssize(self,ws):
 		dims = {}

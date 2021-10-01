@@ -42,3 +42,4 @@ class KEY_WORD:
 	ERRORMESSAGESTART = r"Error Message Start"
 	ERRORMESSAGEEND = r"Error Message End"
 	GETELBAASICDIEID = r"ELBA\sASIC_DIE_ID:\s(.*)"
+	FINDTEMPWITHTIMESTAMP = r"\[(\d{4}.*)]\sLOG:\s.*==>\sMTP\sInlet\stemp\s=\s(\d.*\d)\s<=="
