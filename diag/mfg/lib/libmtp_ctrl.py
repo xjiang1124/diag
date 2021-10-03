@@ -169,6 +169,22 @@ class mtp_ctrl():
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
 
+    def log_slot_test_start(self, slot, testname):
+        # log the timestamp in NIC log
+        start = libmfg_utils.timestamp_snapshot()
+        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        return start
+
+    def log_slot_test_stop(self, slot, testname, start):
+        # log the timestamp in NIC log
+        stop = libmfg_utils.timestamp_snapshot()
+        duration = stop - start
+        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        return duration
 
     def mtp_sys_info_disp(self):
         self.cli_log_inf("MTP System Info Dump:", level=0)
@@ -3256,6 +3272,8 @@ class mtp_ctrl():
         ret = True
         nic_type = self.mtp_get_nic_type(slot)
 
+        start_ts = self.log_slot_test_start(slot, "NIC_DIAG_INIT")
+
         if ret and not self.mtp_nic_emmc_init(slot, emmc_format):
             ret = False
 
@@ -3289,6 +3307,8 @@ class mtp_ctrl():
         if ret and not self.mtp_nic_display_voltage(slot):
             ret = False
         
+        duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
+
         if not ret:
             libmfg_utils.post_fail_steps(self, slot)
 
@@ -4043,12 +4063,6 @@ class mtp_ctrl():
                 err_msg = self.mtp_get_nic_cmd_buf(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
-        # log the timestamp in diag log
-        start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(test, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self._nic_ctrl_list[slot].mtp_exec_cmd(ts_record_cmd)
-
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(diag_cmd, timeout=MTP_Const.DIAG_SEQ_TEST_TIMEOUT):
             err_msg = self.mtp_get_nic_cmd_buf(slot)
             return [MTP_DIAG_Error.NIC_DIAG_TIMEOUT, [err_msg]]
@@ -4062,12 +4076,6 @@ class mtp_ctrl():
                     err_msg = line.replace('\r', '')
                     err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG):]
                     err_msg_list.append(err_msg)
-
-        # log the timestamp in diag log
-        stop = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self._nic_ctrl_list[slot].mtp_exec_cmd(ts_record_cmd)
 
         # post command
         if post_cmd:
@@ -4362,12 +4370,6 @@ class mtp_ctrl():
                 err_msg = self.mtp_get_nic_err_msg(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
-        # log the timestamp in diag log
-        start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(test, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
-
         # run diag test
         if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT):
             err_msg = self.mtp_get_nic_err_msg(slot)
@@ -4382,12 +4384,6 @@ class mtp_ctrl():
                     err_msg = line.replace('\r', '')
                     err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_DIAG_ERR_MSG_SIG):]
                     err_msg_list.append(err_msg)
-
-        # log the timestamp in diag log
-        stop = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
         # post command
         if post_cmd:
@@ -4611,12 +4607,6 @@ class mtp_ctrl():
     def mtp_nic_mvl_acc_test(self, slot):
         test = "ACC"
 
-        # log the timestamp in NIC log
-        start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(test, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
-
         retval = ""
         err_msg_list = list()
         if self._nic_ctrl_list[slot].nic_mvl_acc_test():
@@ -4626,23 +4616,12 @@ class mtp_ctrl():
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
 
-        # log the timestamp in NIC log
-        stop = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
-
         return retval, err_msg_list
 
     def mtp_nic_mvl_stub_test(self, slot, loopback=True):
         test = "STUB"
         if not loopback:
             self.cli_log_slot_inf(slot, "Internal loopback")
-        # log the timestamp in NIC log
-        start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(test, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
         retval = ""
         err_msg_list = list()
@@ -4652,12 +4631,6 @@ class mtp_ctrl():
             retval = "FAILURE"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        # log the timestamp in NIC log
-        stop = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
         return retval, err_msg_list
 

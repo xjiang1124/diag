@@ -170,7 +170,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             testlist.remove(skip_test)
     for test in testlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program FRU
         if test == "FRU_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
@@ -204,8 +204,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             nic_test_rslt_list[slot] = False
@@ -283,14 +282,13 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "CONSOLE_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -327,7 +325,7 @@ def main():
                     testlist.remove(skip_test)
             for test in testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "NIC_BOOT_INIT":
                     ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
                 elif test == "NIC_MGMT_INIT":
@@ -337,8 +335,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     if slot not in fail_nic_list:
@@ -400,6 +397,8 @@ def main():
             # load the barcode config file made in toplevel
             scan_cfg_file = mtp_script_dir + "/dl_barcode.yaml"
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)[mtp_id]
+
+            test = "SCAN_VERIFY"
             for slot in range(mtp_mgmt_ctrl._slots):
                 key = libmfg_utils.nic_key(slot)
                 if slot in fail_nic_list:
@@ -417,7 +416,7 @@ def main():
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, skip_fa=True)
                     continue
 
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 for item in ["SN", "MAC", "PN"]:
                     expected = nic_fru_cfg[key][item]
                     recieved = tmp_fru_cfg[key][item]
@@ -429,10 +428,8 @@ def main():
                             pass_nic_list.remove(slot)
                         mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, skip_fa=True)
                         break
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
-                test = "SCAN_VERIFY"
                 if slot in fail_nic_list:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(tmp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
                 else:
@@ -520,7 +517,7 @@ def main():
                     pre_check_testlist.remove(skipped_test)
             for test in pre_check_testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 # nic power status check
                 if test == "NIC_POWER":
                     ret = True
@@ -541,8 +538,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     if slot not in fail_nic_list:
@@ -626,7 +622,7 @@ def main():
                     testlist.remove(skip_test)
             for test in testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 
                 # check CPLD partition
                 if test == "CPLD_BOOT_CHECK":
@@ -642,8 +638,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
 
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     nic_test_rslt_list[slot] = False
@@ -719,7 +714,7 @@ def main():
 
             for test in testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 # nic power status check
                 if test == "NIC_POWER":
                     ret = True
@@ -763,8 +758,8 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:

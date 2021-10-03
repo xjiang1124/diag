@@ -70,7 +70,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
             test_list.remove(skip_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program CPLD
         if test == "CPLD_PROG" or test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
@@ -87,8 +87,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
@@ -112,7 +111,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
             test_list.remove(skip_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program secure cpld
         if test == "SEC_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
@@ -128,8 +127,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
@@ -148,7 +146,7 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
             test_list.remove(skip_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if test == "SEC_CPLD_VERIFY":
             ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
         elif test == "COPY_GOLD":
@@ -158,8 +156,7 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
@@ -177,7 +174,7 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
             test_list.remove(skip_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program sw image onto EMMC
         if test == "SW_INSTALL":
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -188,8 +185,7 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         else:       
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
@@ -206,7 +202,7 @@ def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_ni
             test_list.remove(skip_test)
     for test in test_list:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if test == "GOLDFW_PROG":
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES100:
@@ -216,8 +212,7 @@ def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_ni
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             prog_fail_nic_list.append(slot)
@@ -299,14 +294,13 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "CONSOLE_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -408,7 +402,7 @@ def main():
 
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SW_PN_CHECK":
                     ret = mtp_mgmt_ctrl.check_swi_software_image(slot, sw_pn)
                 # nic power status check
@@ -431,8 +425,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -516,7 +509,7 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "EFUSE_PROG":
                     ret = mtp_mgmt_ctrl.mtp_program_nic_efuse(slot)
                 elif test == "NIC_INIT":
@@ -524,8 +517,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -552,14 +544,13 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SEC_KEY_PROG":
                     ret = mtp_mgmt_ctrl.mtp_program_nic_sec_key(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -637,14 +628,13 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SEC_PROG_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_sec_cpld(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -809,14 +799,13 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "GOLDFW_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_gold_boot(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -863,7 +852,7 @@ def main():
 
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SET_MAINFW":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot)
                 elif test == "SW_CLEANUP":
@@ -871,8 +860,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -904,14 +892,13 @@ def main():
                     test_list.remove(skipped_test)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "UBOOT_ENV":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_elba_uboot_env(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -980,7 +967,7 @@ def main():
                     sw_test_list.remove(skipped_test)
             for test in sw_test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SW_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
                 elif test == "SW_PROFILE" and nic_profile:
@@ -1006,8 +993,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)

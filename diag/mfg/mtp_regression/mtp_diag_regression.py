@@ -154,7 +154,7 @@ def mtp_nic_poll_set(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip
                     testlist.remove(skip_test)
             for test in testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "PCIE_POLL_DISABLE":
                     ret = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(slot, False)
                 elif test == "PCIE_POLL_ENABLE":
@@ -163,8 +163,7 @@ def mtp_nic_poll_set(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown Test: {:s}, Ignore".format(test))
                     continue
 
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     fail_nic_list.append(slot)
@@ -211,10 +210,9 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, intf))
-            start_ts = libmfg_utils.timestamp_snapshot()
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, intf)
             ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(intf, slot, vmarg)
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, intf, start_ts)
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, intf, duration))
             else:
@@ -339,15 +337,14 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
 
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
-            start_ts = libmfg_utils.timestamp_snapshot()
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
             if dsp == "MVL" and test == "ACC":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_acc_test(slot)
             elif dsp == "MVL" and test == "STUB":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_stub_test(slot, loopback)
             else:
                 ret, err_msg_list = "FAILURE", ["Not the right function for this kind of test"]
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
@@ -426,10 +423,9 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
 
-            start_ts = libmfg_utils.timestamp_snapshot()
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
             ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
             # failed nic display
             for slot in test_fail_list:
@@ -613,10 +609,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
 
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
         # Collect NIC onboard logfiles
         asic_dir_logfile_list = []
@@ -730,10 +725,9 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         rslt_cmd = diag_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
         # double check the L1 test even it pass
         if dsp == "ASIC" and test == "L1":
@@ -804,7 +798,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                     testlist.remove(skip_test)
             for test in testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = libmfg_utils.timestamp_snapshot()
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 
                 # load CPLD version
                 if test == "CPLD_INIT":
@@ -828,8 +822,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
 
-                stop_ts = libmfg_utils.timestamp_snapshot()
-                duration = str(stop_ts - start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     nic_test_rslt_list[slot] = False
@@ -901,7 +894,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                 testlist.remove(skip_test)
         for test in testlist:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = libmfg_utils.timestamp_snapshot()
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
             
             # check CPLD partition
             if test == "CPLD_BOOT_CHECK":
@@ -917,8 +910,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
 
-            stop_ts = libmfg_utils.timestamp_snapshot()
-            duration = str(stop_ts - start_ts)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 nic_test_rslt_list[slot] = False
@@ -943,7 +935,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
             testlist.remove(skip_test)
     for test in testlist:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = libmfg_utils.timestamp_snapshot()
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program CPLD
         if test == "CPLD_PROG" or test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
@@ -960,8 +952,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
-        stop_ts = libmfg_utils.timestamp_snapshot()
-        duration = str(stop_ts - start_ts)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         if not ret:
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             nic_test_rslt_list[slot] = False
