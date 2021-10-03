@@ -608,7 +608,7 @@ class mtp_ctrl():
                 if retries > 0:
                     if retry_with_powercycle:
                         self.cli_log_err("Connect to mtp timeout. Powercycle and retry...{:d} attempts remaining...".format(retries))
-                        libmfg_utils.mtpid_list_poweroff([self])
+                        libmfg_utils.mtpid_list_poweroff([self], safely=False)
                         libmfg_utils.mtpid_list_poweron([self])
                     else:
                         self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level = 0)
@@ -2999,7 +2999,7 @@ class mtp_ctrl():
                 ret = False
 
         # check if card rebooted, but not valid for bash mvl tests
-        if "ACC" not in test and "STUB" not in test:
+        if "ACC" not in test and "STUB" not in test and "L1" not in test:
             self._lock.acquire()
             if not self.mtp_check_nic_rebooted(slot):
                 ret = False

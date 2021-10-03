@@ -841,11 +841,14 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     if cpld_prog_list or qspi_prog_list:
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err):
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True, stop_on_err=stop_on_err):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-            return
+            # mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            for nic_list in nic_test_full_list:
+                for slot in nic_list:
+                    fail_nic_list.append(slot)
+            return fail_nic_list
         if stop_on_err:
             for nic_list in nic_test_full_list:
                 for slot in nic_list:
@@ -1426,7 +1429,7 @@ def main():
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
 
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, stop_on_err=stop_on_err):
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)

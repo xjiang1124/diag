@@ -635,11 +635,12 @@ def mtpid_list_poweron(mtp_mgmt_ctrl_list):
     count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
 
-def mtpid_list_poweroff(mtp_mgmt_ctrl_list):
-    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
-        mtp_mgmt_ctrl.mtp_mgmt_poweroff()
-        mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
-    count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
+def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
+    if safely:
+        for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+            mtp_mgmt_ctrl.mtp_mgmt_poweroff()
+            mtp_mgmt_ctrl.cli_log_inf("Power off OS, Wait {:d} seconds to power off APC".format(MTP_Const.MTP_OS_SHUTDOWN_DELAY), level=0)
+        count_down(MTP_Const.MTP_OS_SHUTDOWN_DELAY)
     for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
         mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
