@@ -3294,30 +3294,6 @@ class mtp_ctrl():
 
         return ret
 
-    # pre setup for the diag test
-    def mtp_nic_diag_init_pre(self):
-        fail_list = list()
-        self.cli_log_inf("NIC Diag Setup started", level = 0)
-        for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_nic_pcie_poll_enable(slot, False):
-                    fail_list.append(slot)
-        self.cli_log_inf("NIC Diag Setup complete\n", level = 0)
-        return fail_list
-
-
-    # cleanup for the diag test
-    def mtp_nic_diag_init_post(self):
-        fail_list = list()
-        self.cli_log_inf("NIC Diag Cleanup started", level = 0)
-        for slot in range(self._slots):
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_nic_pcie_poll_enable(slot, True):
-                    fail_list.append(slot)
-        self.cli_log_inf("NIC Diag Cleanup complete\n", level = 0)
-        return fail_list
-
-
     def mtp_nic_mgmt_seq_init(self, fpo, stop_on_err=False):
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot] and self.mtp_check_nic_status(slot):

@@ -136,6 +136,62 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
 
     return mode
 
+def mtp_nic_poll_set(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, testlist):
+    fail_nic_list = list()
+
+    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+        for slot in nic_list:
+            if not mtp_mgmt_ctrl._nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list:
+                continue
+            # if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            #     continue
+            dsp = "BOOT"
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            for skip_test in skip_testlist:
+                if skip_test in testlist:
+                    testlist.remove(skip_test)
+            for test in testlist:
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = libmfg_utils.timestamp_snapshot()
+                if test == "PCIE_POLL_DISABLE":
+                    ret = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(slot, False)
+                elif test == "PCIE_POLL_ENABLE":
+                    ret = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(slot, True)
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown Test: {:s}, Ignore".format(test))
+                    continue
+
+                stop_ts = libmfg_utils.timestamp_snapshot()
+                duration = str(stop_ts - start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    fail_nic_list.append(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+    return fail_nic_list
+
+def mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist):
+    """
+    setup for regression test
+    """
+    mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup started", level = 0)
+    fail_nic_list = mtp_nic_poll_set(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, testlist=["PCIE_POLL_DISABLE"])
+    mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
+    return fail_nic_list
+
+def mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist):
+    """
+    cleanup after regression test
+    """
+    mtp_mgmt_ctrl.cli_log_inf("NIC Diag Cleanup started", level = 0)
+    fail_nic_list = mtp_nic_poll_set(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, testlist=["PCIE_POLL_ENABLE"])
+    mtp_mgmt_ctrl.cli_log_inf("NIC Diag Cleanup complete\n", level = 0)
+    return fail_nic_list
+
 def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vmarg, swmtestmode):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
     nic_test_list = nic_list[:]
@@ -1327,7 +1383,7 @@ def main():
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
         # Disable PCIe poll
-        diag_pre_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_pre()
+        diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
 
         programmables_checked = False
 
@@ -1822,7 +1878,7 @@ def main():
         #ADD - Bypass shutting down slot right now for debug
         print("STOP ON ERR=" + str(stop_on_err))
         if not stop_on_err:
-            diag_post_fail_list = mtp_mgmt_ctrl.mtp_nic_diag_init_post()
+            diag_post_fail_list = mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
             # failed enable pcie poll, fail the card
             for slot in diag_post_fail_list:
                 if slot not in fail_nic_list:

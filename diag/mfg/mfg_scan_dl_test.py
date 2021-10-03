@@ -539,8 +539,9 @@ def main():
                 if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
-    # power cycle all nic
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    if "CONSOLE_BOOT" not in args.skip_test:
+        # power cycle all nic
+        mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
