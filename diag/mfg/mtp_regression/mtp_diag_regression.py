@@ -608,6 +608,15 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if dsp == "MVL" and test == "STUB":
             mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
 
+        # quick hack for parameter ETH_PRBS. need to move into yaml config
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type == NIC_Type.ORTANO2:
+            # external loopback for P2C
+            if vmarg == 0:
+                diag_cmd += " -p 'int_lpbk=0'"
+            # internal loopback for 2C/4C
+            else:
+                diag_cmd += " -p 'int_lpbk=1'"
+
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
@@ -736,7 +745,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             number_of_l1_tests = 9
             # But for Elba, there are 13 sub tests
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2 or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.POMONTEDELL:
-                number_of_l1_tests = 14
+                number_of_l1_tests = 13
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":

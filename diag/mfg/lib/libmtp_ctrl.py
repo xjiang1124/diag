@@ -4011,6 +4011,11 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
+
+            # 2C/4C = internal loopback
+            if vmarg != 0:
+                cmd += " -int_lpbk"
+
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
