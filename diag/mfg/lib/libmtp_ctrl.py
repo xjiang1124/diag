@@ -2612,7 +2612,7 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf_lock(slot, "==> Check SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))   
         if naples_pn[0:7] == "68-0003":        #NAPLES 100 PENSANDO
-            if software_pn != "90-0002-0003":
+            if software_pn != "90-0001-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:9] == "111-04635": #NAPLES 100 NETAPP

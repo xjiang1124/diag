@@ -63,10 +63,10 @@ class NIC_IMAGES:
     # goldfw_dat["NAPLES25SWM"] = "01-31-2021"
 
     # Pensando (68-0016)
-    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin.bin"
+    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin"
     # cpld_ver["NAPLES25SWM"] = "0xC"
     # cpld_dat["NAPLES25SWM"] = "01-06"
-    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin.bin"
+    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin"
     # sec_cpld_ver["NAPLES25SWM"] = "0x8C"
     # sec_cpld_dat["NAPLES25SWM"] = "01-06"
     # diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
@@ -75,10 +75,10 @@ class NIC_IMAGES:
     # goldfw_dat["NAPLES25SWM"] = "11-18-2020"
 
     # Pensando TAA (68-0017)
-    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin.bin"
+    # cpld_img["NAPLES25SWM"] = "naples25_swm_revc_01062021.bin"
     # cpld_ver["NAPLES25SWM"] = "0xC"
     # cpld_dat["NAPLES25SWM"] = "01-06"
-    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin.bin"
+    # sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8c_01062021.bin"
     # sec_cpld_ver["NAPLES25SWM"] = "0x8C"
     # sec_cpld_dat["NAPLES25SWM"] = "01-06"
     # diagfw_img["NAPLES25SWM"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
@@ -109,16 +109,8 @@ class NIC_IMAGES:
     goldfw_img["NAPLES25OCP"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
     goldfw_dat["NAPLES25OCP"] = "01-31-2021"
     # OCP DELL (68-0010)
-    # cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
-    # cpld_ver["NAPLES25OCP"] = "0xB"
-    # cpld_dat["NAPLES25OCP"] = "01-10"
-    # sec_cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV8B_03102021.bin"
-    # sec_cpld_ver["NAPLES25OCP"] = "0x8B"
-    # sec_cpld_dat["NAPLES25OCP"] = "01-10"
     diagfw_img["68-0010"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
     diagfw_dat["68-0010"] = "11-18-2020"
-    # goldfw_img["NAPLES25OCP"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    # goldfw_dat["NAPLES25OCP"] = "01-31-2021"
 
     cpld_img["NAPLES25SWM833"] = "naples25_833_rev2_02112021.bin"
     cpld_ver["NAPLES25SWM833"] = "0x2"
@@ -136,7 +128,7 @@ class NIC_IMAGES:
     cpld_dat["NAPLES100"] = "05-31"
     sec_cpld_img["NAPLES100"] = "naples100_cpld_rev89_06032019.bin"
     sec_cpld_ver["NAPLES100"] = "0x89"
-    sec_cpld_dat["NAPLES100"] = "06-23"
+    sec_cpld_dat["NAPLES100"] = "05-23"
     diagfw_img["NAPLES100"] = "naples_diagfw_05212020.tar"
     diagfw_dat["NAPLES100"] = "05-21-2020"
     goldfw_img["NAPLES100"] = "naples_goldfw_09182019.tar"
