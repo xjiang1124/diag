@@ -43,3 +43,6 @@ class KEY_WORD:
 	ERRORMESSAGEEND = r"Error Message End"
 	GETELBAASICDIEID = r"ELBA\sASIC_DIE_ID:\s(.*)"
 	FINDTEMPWITHTIMESTAMP = r"\[(\d{4}.*)]\sLOG:\s.*==>\sMTP\sInlet\stemp\s=\s(\d.*\d)\s<=="
+	TEMPGROUPFROMMFGLOGSTART = r"(devmgr -dev FAN -status.*)"
+	TEMPGROUPFROMMFGLOGEND = r"(diag@MTP)"
+	GETEMPINFORMATION = r"\[(\d{4}\-\d{2}\-\d{2})-(\d{2}:\d{2}:\d{2}).*\]\s+(NAME|FAN)\s+(\w.*\w)"

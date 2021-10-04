@@ -1112,7 +1112,76 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                         #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
                                         #sys.exit()
                                         f.close()
+                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG'] = dict()
+                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'] = list()
+                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'] = dict()
+                getallunzipfilelist = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_diag.log')
 
+                #pr['modules'].print_anyinformation(getallunzipfilelist)
+
+                for eachniccardlog in getallunzipfilelist:
+                    f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
+                    #pr['modules'].print_anyinformation(f)
+                    temploglist = list()
+                    tempgrouplog = ''
+                    startrecordtemplog = False
+                    count = 0
+                    for x in f:
+                        sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGSTART, x)
+                        if sub_match:
+                            startrecordtemplog = True
+
+                        if startrecordtemplog:
+                            tempgrouplog += x 
+                            if count > 1:
+                                sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGEND, x)
+                                if sub_match:
+                                    startrecordtemplog = False
+                                    temploglist.append(tempgrouplog)
+                                    tempgrouplog = ''
+                                    count = 0
+                            count += 1
+
+                    f.close()
+                    #pr['modules'].print_anyinformation(temploglist)
+                    for eachstr in temploglist:
+                        #print(eachstr)
+                        sub_match = re.findall(KEY_WORD.GETEMPINFORMATION, eachstr)
+                        if sub_match:
+                            #print(sub_match)
+                            listofname = list()
+                            listofdata = list()
+                            recorddate = None 
+                            recordtime = None 
+
+                            for eachmatch in sub_match:
+                                if not recorddate:
+                                    recorddate = eachmatch[0]
+                                if not recordtime:
+                                    recordtime = eachmatch[1].replace(':','-')
+
+                                if eachmatch[2] == 'NAME':
+                                    for eachkey in eachmatch[3].split():
+                                        listofname.append(eachkey)
+                                if eachmatch[2] == 'FAN':
+                                    for eachvalue in eachmatch[3].split():
+                                        listofdata.append(eachvalue)
+
+                            recorddateandtime = "{}_{}".format(recorddate,recordtime)
+                            #print(recorddateandtime)
+                            #print(listofname)
+                            #print(listofdata)
+                            if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST']:
+                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'].append(recorddateandtime)
+                            if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT']:
+                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime] = dict()
+                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['NAME'] = listofname
+                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['VALUE'] = listofdata
+
+                        #sys.exit()
+
+                #pr['modules'].print_anyinformation(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME])
+                #sys.exit()
 
                 try:
                     shutil.rmtree(inputconfig['DIR']['TEMPDIR'])
