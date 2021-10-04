@@ -139,7 +139,7 @@ func dispStatus(devName string) (err int){
         for _, dev := range(keys) {
             err = dispStatusDev(dev, true)
             if err != errType.SUCCESS {
-                return
+                cli.Println("f", "Faked to retrieve status:", dev)
             }
         }
     } else {
