@@ -70,7 +70,7 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     # Log power usage
     mtp_mgmt_ctrl.cli_log_inf("Start logging MTP syslog\n", level=0)
     mtp_syslog_handle = mtp_mgmt_ctrl.mtp_session_create()
-    mtp_syslog_handle.sendline("while [ 1 ]; do devmgr -status; sleep 1; done > /home/diag/mtp_regression/mtp_sts.log")
+    mtp_syslog_handle.sendline("while [ 1 ]; do devmgr -status; sleep 60; done > /home/diag/mtp_regression/mtp_sts.log")
 
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
