@@ -2668,7 +2668,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     for chambername in sorted(Chamberref.keys()):
         countnumber = 1
         eachchamberdata = pr['modules'].getchamberlistorderbyfloor(chambername)
-        for chamberendtime in Chamberref[chambername]['LIST']:
+        for chamberendtime in Chamberref[chambername]['LIST'][:10]:
             count += 1
             for eachfloor in eachchamberdata['LIST']:
                 for chassis in eachchamberdata['DATA'][eachfloor]:
@@ -2738,8 +2738,8 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                         wirtedata.append(chambername)
                         wirtedata.append(pr['modules'].which_floor_is_for_my_mtp(chassis))
                         wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
-                        for i in range(5):
-                            wirtedata.append('NO USE')
+                        for i in range(16):
+                            wirtedata.append('NULL')
                         ws2.append(wirtedata)
 
             wirtedata = list()
@@ -2752,8 +2752,9 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     #highlightingreen(ws2,'PASS')
     #highlightinred(ws2, 'FAIL')
     #highlightinred(ws2, 'FAILED')
+    highlightinAqua(ws2,'NULL')
     highlightinyellow(ws2,'---')
-    freezePosition(ws2,'A2')
+    freezePosition(ws2,'E2')
     converttoPERCENTAGEnumber(ws2)
     return 0
 
@@ -3788,6 +3789,18 @@ def wraptest(ws):
 
 def freezePosition(ws,keyword):
     ws.freeze_panes = keyword
+
+def highlightinAqua(ws,keyword):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        fillcolor = 0
+        for colNum in range(1, maxCol + 1):
+            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='00FFFF', end_color='00FFFF', fill_type = 'solid')
 
 def highlightinOrange(ws,keyword):
     from openpyxl.styles import Color, PatternFill, Font, Border

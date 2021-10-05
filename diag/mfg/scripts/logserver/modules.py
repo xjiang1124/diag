@@ -77,7 +77,7 @@ class modules(object):
 		returndict = dict()
 		returndict['LIST'] = floorlist
 		returndict['DATA'] = floordict
-		self.print_anyinformation(returndict)
+		#self.print_anyinformation(returndict)
 		#sys.exit()
 		return returndict
 
