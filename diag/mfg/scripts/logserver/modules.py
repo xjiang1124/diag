@@ -55,16 +55,47 @@ class modules(object):
 			self.logfile = logfile
 		self.debug_print("Start modules...")
 		self.chamber_config = self.get_chamber_config()
+		#self.getchamberlistorderbyfloor("Chamber 1")
 		#self.print_anyinformation(self.chamber_config)
 		#print(self.where_is_my_chamber('MTP-637'))
 		#sys.exit()
 
+	def getchamberlistorderbyfloor(self,chamberName):
+		#self.debug_print("where_is_my_chamber")
+		floorlist = list()
+		floordict = dict()
+		for MTP in self.chamber_config[chamberName]:
+			floorname = self.which_floor_is_for_my_mtp(MTP)
+			if not floorname in floorlist:
+				floorlist.append(floorname)
+				floorlist.sort(reverse=True)
+			if not floorname in floordict:
+				floordict[floorname] = list()
+			if not MTP in floordict[floorname]:
+				floordict[floorname].append(MTP)
+
+		returndict = dict()
+		returndict['LIST'] = floorlist
+		returndict['DATA'] = floordict
+		self.print_anyinformation(returndict)
+		#sys.exit()
+		return returndict
+
 	def where_is_my_chamber(self,MTP):
 		#self.debug_print("where_is_my_chamber")
 		for chamberName in self.chamber_config:
+			if chamberName.upper() == "FLOOR":
+				continue
 			if MTP in self.chamber_config[chamberName]:
 				return chamberName
 
+		return None
+
+	def which_floor_is_for_my_mtp(self,MTP):
+		#self.debug_print("where_is_my_chamber")
+		for floorName in self.chamber_config["FLOOR"]:
+			if MTP in self.chamber_config["FLOOR"][floorName]:
+				return floorName
 		return None
 
 	def get_chamber_config(self):
@@ -79,6 +110,8 @@ class modules(object):
 			headers = [c.value for c in next(eachsheet.iter_rows(min_row=1, max_row=1))]
 			#print(headers)
 			for chambername in headers:
+				if chambername.upper() == "FLOOR":
+					continue
 				if not chambername in chamber_config:
 					chamber_config[chambername] = list()
 				chamberraw, chambercolunm = self.findposition(eachsheet,chambername)
@@ -87,10 +120,33 @@ class modules(object):
 				colunm = eachsheet[get_column_letter(chambercolunm)]
 				for countnumberinrow in range(2,len(colunm)+1):
 					MTP = str(eachsheet.cell(row=countnumberinrow, column=chambercolunm).value)
-					#self.debug_print("MTP: {}".format(MTP))
-					if len(MTP):
+					self.debug_print("MTP: {}".format(MTP))
+					if len(MTP) and MTP.upper() != "NONE":
 						if not MTP in chamber_config[chambername]:
 							chamber_config[chambername].append(MTP)
+
+			floorraw, floorcolunm = self.findposition(eachsheet,"FLOOR")
+			colunmnumber = eachsheet[get_column_letter(floorcolunm)]
+			rownumber = eachsheet[floorraw]
+			#self.debug_print("colunmnumber: {} | rownumber: {} | {} vs {}".format(colunmnumber,rownumber,floorraw,floorcolunm))
+			if not "FLOOR" in chamber_config:
+				chamber_config["FLOOR"] = dict()
+			for countnumberinrow in range(2,len(colunmnumber)+1):
+				FLOORNAME = str(eachsheet.cell(row=countnumberinrow, column=floorcolunm).value)
+				if not FLOORNAME in chamber_config["FLOOR"]:
+					chamber_config["FLOOR"][FLOORNAME] = list()
+				for countnumberincolnum in range(2,len(rownumber)+1):
+					MTP = str(eachsheet.cell(row=countnumberinrow, column=countnumberincolnum).value)
+					self.debug_print("MTP: {}".format(MTP))
+					if len(MTP) and MTP.upper() != "NONE":
+						if not MTP in chamber_config["FLOOR"][FLOORNAME]:
+							chamber_config["FLOOR"][FLOORNAME].append(MTP)					
+			#sys.exit()
+
+
+		#self.print_anyinformation(chamber_config)
+
+		#sys.exit()
 
 		return chamber_config
 

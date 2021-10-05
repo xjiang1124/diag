@@ -2627,11 +2627,17 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                                     if 'PASS' in teststatus.upper():
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'].append(sn)
 
+                                    #pr['modules'].print_anyinformation(DATA["SN"][sn][chassis][testdate][testetime])
+                                    Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["ADDITION_TEMP"] = getchamberTempbymfglog(pr, DATA["SN"][sn][chassis][testdate][testetime])
+                                    #sys.exit()
+
     #pr['modules'].print_anyinformation(Chamberref)
     #sys.exit()
     
     #pr['modules'].print_anyinformation(Chamberref)
     #sys.exit()
+
+    additionTemp = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
     titlename = "{}_{}".format("Chamber", "TEMP")
     if totimezone:
         titlename = "{}_{}".format(titlename,totimezone.replace('/','_'))
@@ -2640,6 +2646,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     wirtedata = list()
     wirtedata.append('#')
     wirtedata.append('CHAMBER')
+    wirtedata.append('FLOOR')
     wirtedata.append('TEST')
     wirtedata.append('START_DATE')
     wirtedata.append('START_TIME')
@@ -2654,61 +2661,89 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     wirtedata.append('HIGH-TEMP')
     wirtedata.append('LOW-TEMP')
     wirtedata.append('AVG-TEMP')
+    for additionkey in additionTemp:
+        wirtedata.append("{}_AVG-TEMP".format(additionkey))
     ws2.append(wirtedata)
     count = 0
     for chambername in sorted(Chamberref.keys()):
         countnumber = 1
-        
+        eachchamberdata = pr['modules'].getchamberlistorderbyfloor(chambername)
         for chamberendtime in Chamberref[chambername]['LIST']:
             count += 1
-            for chassis in sorted(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'].keys()):
-                wirtedata = list()
-                if start:
-                    if start > chamberendtime.split('_')[0]:
-                        break
-                wirtedata.append(count)
-                wirtedata.append(chambername)
-                wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
-                chamberstarttimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['START']
-                chamberendtimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['END']
-                if totimezone:
-                    chamberstarttimefromrecord = converttimetonewtimezone(chamberstarttimefromrecord,totimezone)
-                    chamberendtimefromrecord = converttimetonewtimezone(chamberendtimefromrecord,totimezone)
+            for eachfloor in eachchamberdata['LIST']:
+                for chassis in eachchamberdata['DATA'][eachfloor]:
+                    if chassis in sorted(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'].keys()):
+                        wirtedata = list()
+                        if start:
+                            if start > chamberendtime.split('_')[0]:
+                                break
+                        wirtedata.append(count)
+                        wirtedata.append(chambername)
+                        wirtedata.append(pr['modules'].which_floor_is_for_my_mtp(chassis))
+                        wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
+                        chamberstarttimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['START']
+                        chamberendtimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['END']
+                        if totimezone:
+                            chamberstarttimefromrecord = converttimetonewtimezone(chamberstarttimefromrecord,totimezone)
+                            chamberendtimefromrecord = converttimetonewtimezone(chamberendtimefromrecord,totimezone)
 
-                wirtedata.append(chamberstarttimefromrecord.split('_')[0])
-                wirtedata.append(chamberstarttimefromrecord.split('_')[1].replace('-',':'))
-                wirtedata.append(chamberendtimefromrecord.split('_')[0])
-                wirtedata.append(chamberendtimefromrecord.split('_')[1].replace('-',':'))
-                #wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME'])
-                # if countnumber < len(Chamberref[chambername]['LIST']):
-                #     starttime = Chamberref[chambername]['DICT'][chamberendtime]['START']
-                #     lastendtime = Chamberref[chambername]['DICT'][Chamberref[chambername]['LIST'][countnumber]]['END']
-                #     newtesttime = cal_total_testTime(lastendtime,starttime)
-                #     wirtedata.append(timedelta(seconds=int(float(newtesttime))))
-                # else:
-                #     wirtedata.append('NULL')
-                wirtedata.append(timedelta(seconds=int(float(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME']))))
-                wirtedata.append(chassis)
-                wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN']))
-                wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS']))
-                wirtedata.append("{:.2f}%".format(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'])/len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN']) * 100))
-                if len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']):
-                    wirtedata.append(max(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']))
-                    wirtedata.append(min(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']))
-                    from statistics import mean
-                    wirtedata.append(round(mean(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']),2))
-                else:
-                    wirtedata.append("NO DATA")
-                    wirtedata.append("NO DATA")
-                    wirtedata.append("NO DATA")
-                wirtedata.append("|||")
-                for eachdata in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"]:
-                    wirtedata.append(eachdata)
-                ws2.append(wirtedata)
-                countnumber += 1
+                        wirtedata.append(chamberstarttimefromrecord.split('_')[0])
+                        wirtedata.append(chamberstarttimefromrecord.split('_')[1].replace('-',':'))
+                        wirtedata.append(chamberendtimefromrecord.split('_')[0])
+                        wirtedata.append(chamberendtimefromrecord.split('_')[1].replace('-',':'))
+                        #wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME'])
+                        # if countnumber < len(Chamberref[chambername]['LIST']):
+                        #     starttime = Chamberref[chambername]['DICT'][chamberendtime]['START']
+                        #     lastendtime = Chamberref[chambername]['DICT'][Chamberref[chambername]['LIST'][countnumber]]['END']
+                        #     newtesttime = cal_total_testTime(lastendtime,starttime)
+                        #     wirtedata.append(timedelta(seconds=int(float(newtesttime))))
+                        # else:
+                        #     wirtedata.append('NULL')
+                        wirtedata.append(timedelta(seconds=int(float(Chamberref[chambername]['DICT'][chamberendtime]['TESTTIME']))))
+                        wirtedata.append(chassis)
+                        wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN']))
+                        wirtedata.append(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS']))
+                        wirtedata.append("{:.2f}%".format(len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'])/len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN']) * 100))
+                        if len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']):
+                            wirtedata.append(max(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']))
+                            wirtedata.append(min(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']))
+                            from statistics import mean
+                            wirtedata.append(round(mean(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['TEMPERATURE']),2))
+                            for additionkey in additionTemp:
+                                from statistics import mean
+                                if additionkey in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["ADDITION_TEMP"]["DATA"]:
+                                    if len(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["ADDITION_TEMP"]["DATA"][additionkey]):
+                                        wirtedata.append(round(mean(Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["ADDITION_TEMP"]["DATA"][additionkey]),2))
+                                    else:
+                                        wirtedata.append("NO DATA")
+                                else:
+                                    wirtedata.append("NO DATA")
+                        else:
+                            wirtedata.append("NO DATA")
+                            wirtedata.append("NO DATA")
+                            wirtedata.append("NO DATA")
+                            for additionkey in additionTemp:
+                                wirtedata.append("NO DATA")
+
+
+                        wirtedata.append("|||")
+                        for eachdata in Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"]:
+                            wirtedata.append(eachdata)
+                        ws2.append(wirtedata)
+                        countnumber += 1
+
+                    else: 
+                        wirtedata = list()
+                        wirtedata.append(count)
+                        wirtedata.append(chambername)
+                        wirtedata.append(pr['modules'].which_floor_is_for_my_mtp(chassis))
+                        wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
+                        for i in range(5):
+                            wirtedata.append('NO USE')
+                        ws2.append(wirtedata)
 
             wirtedata = list()
-            for i in range(15):
+            for i in range(20):
                 wirtedata.append('---')
             ws2.append(wirtedata)
     fixcolumnssize(ws2)
@@ -2721,6 +2756,48 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     freezePosition(ws2,'A2')
     converttoPERCENTAGEnumber(ws2)
     return 0
+
+def getchamberTempbymfglog(pr, onedata):
+    #pr['modules'].print_anyinformation(onedata)
+    if "TEMPERATURE" in onedata:
+        if len(onedata["TEMPERATURE"]):
+            counttime = onedata["TEMPERATURE"][0][0]
+        else:
+            return None
+    else:
+        return None
+    #print("START: {}".format(counttime))
+    listofdatewillcheck = list()
+    for eachdatetime in onedata["TEMPFROMMFGLOG"]["LIST"]:
+        #print(eachdatetime)
+        if eachdatetime >= counttime:
+            #print("COUNT: {}".format(eachdatetime))
+            listofdatewillcheck.append(eachdatetime)
+
+    #print(eachdatetime)
+
+    # [5]                     Local   <TYPE:<class 'str'>>
+    # [5]                     Remote-1    <TYPE:<class 'str'>>
+    # [5]                     Remote-2    <TYPE:<class 'str'>>
+    # [5]                     Remote-3    <TYPE:<class 'str'>>    
+
+    dataforreturn = dict()
+    dataforreturn["LIST"] = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    dataforreturn["DATA"] = dict()
+    dataforreturn["DATA"]["CHECKPOINT"] = listofdatewillcheck
+    for eachcheckpoint in listofdatewillcheck:
+        res = dict(zip(onedata["TEMPFROMMFGLOG"]["DICT"][eachcheckpoint]["NAME"], onedata["TEMPFROMMFGLOG"]["DICT"][eachcheckpoint]["VALUE"]))
+        #pr['modules'].print_anyinformation(res)
+        for eachkey in dataforreturn["LIST"]:
+            if not eachkey in dataforreturn["DATA"]:
+                dataforreturn["DATA"][eachkey] = list()
+            if eachkey in res:
+                dataforreturn["DATA"][eachkey].append(float(res[eachkey]))
+
+        #sys.exit()
+    #pr['modules'].print_anyinformation(dataforreturn)
+    
+    return dataforreturn
 
 def getlistoftemp(timewithtemplist):
     timelist = list()
