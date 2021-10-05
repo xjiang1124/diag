@@ -54,6 +54,7 @@ func dispInfo() {
 
 func eepromTlbInit(uut string, pn string, update bool) (err int) {
     var cardType string
+    var mtpType string
 
     //UUT NONE ASSUMES YOU ARE ON ARM OR YOU NEED TO PROGRAM AN MTP
     //IF UUT IS ENTERED YOU ARE ON THE MTP PROGRAMMING FROM THE SMBUS SIDE
@@ -65,7 +66,12 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
     eeprom.CardType = cardType
 
     if (cardType == "MTP") {
-        eeprom.EepromTbl = eeprom.MtpTbl
+        mtpType = os.Getenv("MTP_TYPE")
+        if ( mtpType == "MTP_TURBO_ELBA" ) {
+            eeprom.EepromTbl = eeprom.MtpTurboTbl
+        } else {
+            eeprom.EepromTbl = eeprom.MtpTbl
+        }
     } else {
 
         if cardType == "NAPLES25SWM" || 

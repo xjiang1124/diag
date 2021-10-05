@@ -19,13 +19,18 @@ echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 mkdir -p $DIAG_DIR/log/
 
+if [ -f "$DIAG_DIR/log/board_env.txt" ]; then
+    echo "board_env.txt exist, removing it"
+    rm $DIAG_DIR/log/board_env.txt
+fi
+
 # Prepare all paths
 if [[ $arch == "amd64" ]]
 then
+    cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     /home/diag/diag/python/regression/envinit.py
     turn_on_slot.sh on all
     /home/diag/diag/util/inventory -env
-    cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     cat $DIAG_DIR/log/board_env.txt >> temp_profile
     echo "export DIAG_HOME=/home/diag/" >> temp_profile
 else
@@ -53,10 +58,17 @@ mtp_id=${mtp_id_str1[-1]}
 #==================================
 ASIC_DIR_TOP=$DIAG_DIR/asic_all
 
+ftdicnt=$(awk '{for (I=1;I<NF;I++) if ($I == "FTDI_DEVICE_COUNT") print$(I+1)}' temp_profile)
+
 if [ $mtp_id == "0x42" ]
 then
-    echo "ELBA MTP"
-    echo "export MTP_TYPE=MTP_ELBA" >> temp_profile
+    if [[ $ftdicnt -eq 1 ]]; then
+        echo "ELBA MTP"
+        echo "export MTP_TYPE=MTP_ELBA" >> temp_profile
+    else
+        echo "TURBO ELBA MTP"
+        echo "export MTP_TYPE=MTP_TURBO_ELBA" >> temp_profile
+    fi
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
 elif [ $mtp_id == "0x2" ]
 then
