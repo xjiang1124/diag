@@ -414,6 +414,7 @@ def main():
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, skip_fa=True)
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(tmp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
                     continue
 
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)

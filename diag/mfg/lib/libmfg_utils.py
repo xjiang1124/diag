@@ -1692,3 +1692,17 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
 
     return logfile_path, open_file_track_list
+
+def mtp_power_log_start(mtp_mgmt_ctrl):
+    mtp_mgmt_ctrl.cli_log_inf("Start logging MTP syslog\n", level=0)
+    mtp_syslog_handle = mtp_mgmt_ctrl.mtp_session_create()
+    mtp_syslog_handle.sendline("while [ 1 ]; do devmgr -status; sleep 60; done > /home/diag/mtp_regression/mtp_sts.log")
+
+    return mtp_syslog_handle
+
+def mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle):
+    mtp_mgmt_ctrl.cli_log_inf("End logging MTP syslog", level=0)
+    mtp_syslog_handle.send('\x03')
+    mtp_syslog_handle.close()
+
+

@@ -254,6 +254,11 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
         if ("NIC_ASIC","L1") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","L1"))
 
+    # Remove QSFP loopbacks in chamber
+    if vmarg != 0 and nic_type == NIC_Type.ORTANO2:
+        if ("QSFP","I2C") in sub_test_list:
+            sub_test_list.remove(("QSFP","I2C"))
+
     fail_list = list()
 
     nic_thread_list = list()
