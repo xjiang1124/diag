@@ -570,6 +570,15 @@ class nic_test:
         print "=== Checing snake result on slot {} Done ===".format(slot)
         return ret
 
+    def mtp_sts(self, wait_time, interval=15):
+        session = common.session_start()
+        print("=== Displaying MTP status ===", wait_time)
+        for time_e in range(0, wait_time, interval):
+            print("=== time", time_e, "===")
+            common.session_cmd(session, "devmgr -status")
+            time.sleep(interval)
+            
+
     def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0, duration=120, int_lpbk=False):
         print "=== NIC Snake {} ===".format(mode)
         if len(nic_list) == 0:
@@ -591,7 +600,7 @@ class nic_test:
                 test_result[slot] = "NO RESULT"
 
         print "Wait for {}s before checking result".format(wait_time)
-        time.sleep(wait_time)
+        self.mtp_sts(wait_time)
 
         done_count = 0
         for retry_idx in range(self.num_retry):
