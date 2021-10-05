@@ -1862,14 +1862,14 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
 
             cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-            if not self.mtp_mgmt_exec_cmd(cmd, timeout=10):
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=10):
                 self.cli_log_err("Execute command {:s} failed".format(cmd))
                 return False
 
             return False
 
         cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=10):
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=10):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
 
@@ -3377,8 +3377,8 @@ class mtp_ctrl():
             if match:
                 for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
-                    self.mtp_set_nic_status_fail(slot)
                     self.cli_log_slot_err_lock(slot, "Para Init NIC MGMT failed")
+                    self.mtp_set_nic_status_fail(slot)
 
         if not self.mtp_nic_mgmt_mac_refresh():
             return False

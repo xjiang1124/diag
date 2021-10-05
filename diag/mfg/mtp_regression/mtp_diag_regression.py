@@ -40,6 +40,7 @@ def mtp_test_cleanup(error_code, fp_list=None):
             fp.close()
     os.system("sync")
 
+
 def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List:".format(card_type), level = 0)
     cmd_list = naples_test_db.get_init_cmd_list()
@@ -193,7 +194,7 @@ def mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list
     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Cleanup complete\n", level = 0)
     return fail_nic_list
 
-def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vmarg, swmtestmode):
+def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vmarg, swmtestmode, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
     nic_test_list = nic_list[:]
     fail_list = list()
@@ -204,6 +205,9 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     else:
         dsp = "PRE_CHECK"
 
+    for skipped_test in skip_testlist:
+        if skipped_test in nic_check_list:
+            nic_check_list.remove(skipped_test)
     for intf in nic_check_list:
         for slot in nic_test_list[:]:
 
@@ -235,7 +239,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     return fail_list
 
 
-def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode):
+def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, skip_testlist):
     if aapl == False:
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel DSP Test Start".format(nic_type), level=0)
     else:
@@ -260,6 +264,10 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     if vmarg != 0 and nic_type == NIC_Type.ORTANO2:
         if ("QSFP","I2C") in sub_test_list:
             sub_test_list.remove(("QSFP","I2C"))
+
+    for skipped_test in skip_testlist:
+        sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
+        sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
 
     fail_list = list()
 
@@ -314,13 +322,17 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
     return fail_list
 
-def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback):
+def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
     
     if nic_type in ELBA_NIC_TYPE_LIST:
         sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
     else:
         sub_test_list = [()]
+
+    for skipped_test in skip_testlist:
+        sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
+        sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
     
     fail_list = list()
 
@@ -388,8 +400,13 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel MVL DSP Test Complete\n".format(nic_type), level=0)
     return fail_list
 
-def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode):
+def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
+
+    for skipped_test in skip_testlist:
+        if skipped_test in para_test_list:
+            para_test_list.remove(skipped_test)
+
     fail_list = list()
     nic_top_test_list = list()
     nic_bottom_test_list = list()
@@ -418,14 +435,14 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
     for nic_test_list in nic_top_test_list, nic_bot_test_list:
         fail_slot_test_list = list()
+        if not nic_test_list:
+            continue
         for test in para_test_list:
             for slot in nic_test_list[:]:
                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                     nic_test_list.remove(slot)
                     if slot not in fail_list:
                         fail_list.append(slot)
-            if not nic_test_list:
-                continue
             for slot in nic_test_list[:]:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
@@ -482,8 +499,13 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
     return fail_list
 
-def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err, swmtestmode):
+def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
+    
+    for skipped_test in skip_testlist:
+        test_list = [ (s,t) for s,t in test_list if s != skipped_test ]
+        test_list = [ (s,t) for s,t in test_list if t != skipped_test ]
+
     fail_list = list()
 
     if len(nic_list) <= 5:
@@ -1555,7 +1577,8 @@ def main():
                                                                 nic_list,
                                                                 pre_test_check_list,
                                                                 vmarg,
-                                                                swmtestmode)
+                                                                swmtestmode,
+                                                                args.skip_test)
                     for slot in pre_check_fail_list:
                         if slot in nic_list:
                             nic_list.remove(slot)
@@ -1629,7 +1652,8 @@ def main():
                                                                 stop_on_err,
                                                                 vmarg,
                                                                 False,
-                                                                swmtestmode)
+                                                                swmtestmode,
+                                                                args.skip_test)
                     for slot in diag_para_fail_list:
                         if slot in nic_list and stop_on_err:
                             nic_list.remove(slot)
@@ -1721,7 +1745,8 @@ def main():
                                                                 stop_on_err,
                                                                 vmarg,
                                                                 True,
-                                                                swmtestmode)
+                                                                swmtestmode,
+                                                                args.skip_test)
                     for slot in diag_para_fail_list:
                         if slot in nic_list and stop_on_err:
                             nic_list.remove(slot)
@@ -1753,7 +1778,8 @@ def main():
                                                                vmarg,
                                                                True,
                                                                swmtestmode,
-                                                               loopback)
+                                                               loopback,
+                                                               args.skip_test)
                     for slot in diag_para_fail_list:
                         if slot in nic_list and stop_on_err:
                             nic_list.remove(slot)
@@ -1808,7 +1834,8 @@ def main():
                                                                    mtp_para_test_list,
                                                                    vmarg,
                                                                    stop_on_err,
-                                                                   swmtestmode)
+                                                                   swmtestmode,
+                                                                   args.skip_test)
                     for slot in mtp_para_fail_list:
                         if slot in nic_list and stop_on_err:
                             nic_list.remove(slot)
@@ -1880,7 +1907,8 @@ def main():
                                                               nic_seq_test_list,
                                                               vmarg,
                                                               stop_on_err,
-                                                              swmtestmode)
+                                                              swmtestmode,
+                                                              args.skip_test)
                     for slot in diag_seq_fail_list:
                         if slot in nic_list and stop_on_err:
                             nic_list.remove(slot)
