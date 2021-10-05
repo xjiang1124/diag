@@ -67,6 +67,11 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
+    # Log power usage
+    mtp_mgmt_ctrl.cli_log_inf("Start logging MTP syslog\n", level=0)
+    mtp_syslog_handle = mtp_mgmt_ctrl.mtp_session_create()
+    mtp_syslog_handle.sendline("while [ 1 ]; do devmgr -status; sleep 1; done > /home/diag/mtp_regression/mtp_sts.log")
+
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
@@ -80,6 +85,11 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+
+    # End power usage log
+    mtp_mgmt_ctrl.cli_log_inf("End logging MTP syslog", level=0)
+    mtp_syslog_handle.send('\x03')
+    mtp_syslog_handle.close()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
