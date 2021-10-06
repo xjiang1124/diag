@@ -96,9 +96,12 @@ class nic_con:
         except:
             if verbose == True:
                 print "=== TIMEOUT:", cmd, "==="
-            session.send(chr(3))
-            time.sleep(0.05)
-            session.expect(ending)
+            try:
+                session.send(chr(3))
+                time.sleep(0.05)
+                session.expect(ending)
+            except:
+                print("Failed to recover console!")
             ret = -1
         session.timeout = temp
         return ret

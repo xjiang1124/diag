@@ -61,7 +61,7 @@ class nic_test:
             cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x80".format(slot)
             common.session_cmd_no_rc(session, cmd)
             cpldID = re.findall(r"data=(0x[0-9a-fA-F]+)", session.before)
-            if cpldID == None:
+            if cpldID == []:
                 print("Failed to find CPLD ID! Read back", session.before)
                 common.session_stop(session)
                 return -1
