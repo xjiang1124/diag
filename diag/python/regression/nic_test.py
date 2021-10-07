@@ -90,7 +90,7 @@ class nic_test:
                 #   cpldID[0] == "0x47" or \
                 #   cpldID[0] == "0x49" or \
                 #   cpldID[0] == "0x4A":
-                if mtpType == "MTP_ELBA":
+                if mtpType == "MTP_ELBA" or mtpType == "MTP_TURBO_MTP":
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x0")
                     self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
 

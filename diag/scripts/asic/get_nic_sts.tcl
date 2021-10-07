@@ -20,8 +20,8 @@ set MTP_TYPE $::env(MTP_TYPE)
 puts "Getting ASIC status - slot: $slot"
 
 cd $ASIC_SRC/ip/cosim/tclsh
-if {$MTP_TYPE == "MTP_ELBA"} {
-    puts "Elba MTP"
+if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
+    puts $MTP_TYPE
     source .tclrc.diag.elb.new
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
