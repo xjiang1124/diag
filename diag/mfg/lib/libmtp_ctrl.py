@@ -585,7 +585,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None, retry_with_powercycle=False):
-        delay = 30
+        delay = 200 # make sure this delay covers FST boot
         # retries = self._mgmt_timeout / delay
         # retries = retries + 4
         retries = 3
@@ -1729,7 +1729,7 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("MTP get inlet temperature failed")
-            return None
+            return 0.00
 
         # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
         # FAN                 23.50          25.50          21.75          21.75
@@ -1760,7 +1760,7 @@ class mtp_ctrl():
         else:
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("Unable to get inlet temperature")
-            return None
+            return 0.00
 
     def mtp_get_fanspd(self):
         """

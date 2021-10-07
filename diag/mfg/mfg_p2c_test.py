@@ -122,9 +122,6 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     cmd = "cd {:s}".format(mtp_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    # Log power usage
-    mtp_syslog_handle = libmfg_utils.mtp_power_log_start(mtp_mgmt_ctrl)
-
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
@@ -135,9 +132,6 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-
-    # End power usage log
-    libmfg_utils.mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle)
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_P2C)
     if not test_log_file:
