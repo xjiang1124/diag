@@ -521,7 +521,7 @@ class nic_con:
         if asic_type == "ELBA_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
         else:
-            dummy_fru_json = fmt_dummy_fru_json.format("PCFPCA00", slot)
+            dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot)
 
         session = common.session_start()
         self.uart_session_start(session, rate)
