@@ -98,20 +98,40 @@ MTPS-902:
     TS_USERID: ""
     TS_PASSWORD: ""
     APC1: "192.168.3.10"
-    APC1_PORT: "4"
+    APC1_PORT: "11"
     APC1_USERID: "apc"
     APC1_PASSWORD: "apc"
-    APC2: ""
-    APC2_PORT: ""
-    APC2_USERID: ""
-    APC2_PASSWORD: ""
-    IP: "192.168.3.180"
+    APC2: "192.168.3.10"
+    APC2_PORT: "12"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.135"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps902"
-    SLOTS: 4
-    CAPABILITY: 0x3
+    SLOTS: 5
+    CAPABILITY: 0x4
 
+MTPS-903:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.10"
+    APC1_PORT: "13"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.10"
+    APC2_PORT: "14"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.132"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps903"
+    SLOTS: 5
+    CAPABILITY: 0x4
 
 MTPS-904:
     MODE: ""
@@ -127,7 +147,7 @@ MTPS-904:
     APC2_PORT: "7"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.3.148"
+    IP: "192.168.3.130"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps904"
@@ -149,7 +169,7 @@ MTPS-905:
     APC2_PORT: "5"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.3.3"
+    IP: "192.168.3.253"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps905"
