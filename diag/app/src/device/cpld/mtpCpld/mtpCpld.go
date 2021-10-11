@@ -17,6 +17,15 @@ package mtpCpld
 //   return jtag_init();
 //}
 //
+//void
+//com_ftHandle_close(void *f)
+//{
+//   void (*ftHandle_close)();
+//
+//   ftHandle_close = (void(*)())f;
+//   ftHandle_close();
+//}
+//
 //int
 //com_jtag_reset(void *f, uint slot)
 //{
@@ -331,6 +340,12 @@ func CpldWrite(addr uint8, data uint8) (err int) {
         return
     }
 
+    ft_close := C.dlsym(handle, C.CString("ftHandle_close"))
+    if ft_close == nil {
+        err = errType.ERR_FIND_SYM
+        return
+    }
+
     if err = int(C.com_spi_reg_init(spi_reg_init)); err > 0 {
         err = errType.FAIL
 	cli.Println("e", "SPI init failed!")
@@ -341,6 +356,7 @@ func CpldWrite(addr uint8, data uint8) (err int) {
         err = errType.FAIL
         cli.Println("e", "CPLD write failed!")
     }
+    C.com_ftHandle_close(ft_close)
     return
 }
 
@@ -369,6 +385,12 @@ func CpldRead(addr uint8) (data uint8, err int) {
         return
     }
 
+    ft_close := C.dlsym(handle, C.CString("ftHandle_close"))
+    if ft_close == nil {
+        err = errType.ERR_FIND_SYM
+        return
+    }
+
     if err = int(C.com_spi_reg_init(spi_reg_init)); err > 0 {
         err = errType.FAIL
 	cli.Println("e", "SPI init failed!")
@@ -383,6 +405,7 @@ func CpldRead(addr uint8) (data uint8, err int) {
         data = uint8(cData)
         cli.Printf("i", "CPLD read at addr 0x%x with data 0x%x\n", addr, cData)
     }
+    C.com_ftHandle_close(ft_close)
     return
 }
 
@@ -508,6 +531,12 @@ func MvlWrite(inst uint, dev_addr uint, addr uint, data uint) (err int) {
         return
     }
 
+    ft_close := C.dlsym(handle, C.CString("ftHandle_close"))
+    if ft_close == nil {
+        err = errType.ERR_FIND_SYM
+        return
+    }
+
     if err = int(C.com_spi_mdio_init(spi_mdio_init)); err > 0 {
         err = errType.FAIL
         cli.Println("e", "MDIO init failed!")
@@ -517,6 +546,7 @@ func MvlWrite(inst uint, dev_addr uint, addr uint, data uint) (err int) {
         err = errType.FAIL
         cli.Println("e", "MDIO write failed!")
     }
+    C.com_ftHandle_close(ft_close)
     return
 }
 
@@ -545,6 +575,12 @@ func MvlRead(inst uint, dev_addr uint, addr uint) (data uint, err int) {
         return
     }
 
+    ft_close := C.dlsym(handle, C.CString("ftHandle_close"))
+    if ft_close == nil {
+        err = errType.ERR_FIND_SYM
+        return
+    }
+
     if err = int(C.com_spi_mdio_init(spi_mdio_init)); err > 0 {
         err = errType.FAIL
         cli.Println("e", "MDIO init failed!")
@@ -559,6 +595,7 @@ func MvlRead(inst uint, dev_addr uint, addr uint) (data uint, err int) {
         data = uint(cData)
         cli.Printf("i", "MDIO read data 0x%x\n", cData)
     }
+    C.com_ftHandle_close(ft_close)
     return
 }
 
