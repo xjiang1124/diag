@@ -749,24 +749,3 @@ MTP-803:
 
 
 
-MTP-675:
-     MODE: ""
-     TS: ""
-     TS_PORT: ""
-     TS_USERID: ""
-     TS_PASSWORD: ""
-     APC1: "192.168.3.14"
-     APC1_PORT: "17"
-     APC1_USERID: "apc"
-     APC1_PASSWORD: "apc"
-     APC2: "192.168.3.14"
-     APC2_PORT: "18"
-     APC2_USERID: "apc"
-     APC2_PASSWORD: "apc"
-     IP: "192.168.3.173"
-     USERID: "diag"
-     PASSWORD: "lab123"
-     ALIAS: "mtp675"
-     SLOTS: 10
-     CAPABILITY: 0x3
-
