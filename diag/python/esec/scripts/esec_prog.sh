@@ -5,9 +5,9 @@ get_asic_type () {
 
     if [[ $c_type == "ORTANO"        || \
           $c_type == "ORTANO2"       || \
-          $c_type == "LACONA32_DELL" || \
+          $c_type == "LACONA32DELL"  || \
           $c_type == "LACONA32"      || \
-          $c_type == "POMONTE_DELL"  || \
+          $c_type == "POMONTEDELL"   || \
           $c_type == "POMONTE"       || \
           $c_type == "PENSANDO"
         ]]
