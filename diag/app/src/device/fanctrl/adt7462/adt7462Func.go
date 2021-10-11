@@ -451,7 +451,7 @@ func DispStatus(devName string) (err int) {
         cli.Println("i", outStr)
 
         // Temp
-        vrmTitle := []string {"Local", "Remote-1", "Remote-2", "Remote-3"}
+        vrmTitle := []string {"Local", "Outlet", "Inlet-1", "Inlet-2"}
         outStr = fmt.Sprintf(fmtNameStr, "NAME")
         for _, title := range(vrmTitle) {
             outStr = outStr + fmt.Sprintf(fmtStr, title)
