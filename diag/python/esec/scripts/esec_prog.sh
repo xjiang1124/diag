@@ -1,8 +1,31 @@
 #!/bin/bash
 
+get_asic_type () {
+    c_type=$1
+
+    if [[ $c_type == "ORTANO"        || \
+          $c_type == "ORTANO2"       || \
+          $c_type == "LACONA32_DELL" || \
+          $c_type == "LACONA32"      || \
+          $c_type == "POMONTE_DELL"  || \
+          $c_type == "POMONTE"       || \
+          $c_type == "PENSANDO"
+        ]]
+    then
+        echo "ELBA"
+    else
+        echo "CAPRI"
+    fi
+
+}
+
 enroll_puf () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $card_type)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "elba" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     else
@@ -15,7 +38,11 @@ hsm_sign_ek () {
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
     echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/"
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $CARD_TYPE)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
         id="elba.v1"
     else
@@ -59,7 +86,11 @@ gen_otp () {
 
 otp_init () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $CARD_TYPE)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     else
@@ -69,7 +100,11 @@ otp_init () {
 
 post_check () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" ||  $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $CARD_TYPE)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     else
@@ -79,7 +114,11 @@ post_check () {
 
 show_status () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $CARD_TYPE)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     else
@@ -100,9 +139,12 @@ img_prog () {
     uut="UUT_$SLOT"
     card_type="${!uut}"
 
-    if [[ $card_type == "ORTANO" || $card_type == "ORTANO2" ]]
+    asic_type=$(get_asic_type $card_type)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
-        echo "ORTANO"
+        echo "ELBA"
         tcl_file="./esec_prog_elba.tcl"
         esec_img=$elba_esec_img
         host_img=$elba_host_img
@@ -127,7 +169,11 @@ efuse_prog () {
     cd $DIAG_HOME/diag/tools/pki
 
     echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -hsm_rn -n 256"
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $CARD_TYPE)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
         id="elba.v1"
     else
@@ -139,9 +185,12 @@ efuse_prog () {
     uut="UUT_$SLOT"
     card_type="${!uut}"
 
-    if [[ $card_type == "ORTANO" || $card_type == "ORTANO2" ]]
+    asic_type=$(get_asic_type $CARD_TYPE)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "ELBA" ]]
     then
-        echo "ORTANO"
+        echo "ELBA"
         tcl_file="./esec_prog_elba.tcl"
     else
         echo "Unsupported card type $card_type"
@@ -163,7 +212,11 @@ efuse_prog () {
 
 efuse_test () {
     cd $DIAG_HOME/diag/scripts/asic/
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+
+    asic_type=$(get_asic_type $card_type)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "elba" ]]
     then
         echo "Skip efuse test for Elba cards"
     else
