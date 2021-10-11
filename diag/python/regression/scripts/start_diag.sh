@@ -58,7 +58,7 @@ mtp_id=${mtp_id_str1[-1]}
 #==================================
 ASIC_DIR_TOP=$DIAG_DIR/asic_all
 
-ftdicnt=$(awk '{for (I=1;I<NF;I++) if ($I == "FTDI_DEVICE_COUNT") print$(I+1)}' temp_profile)
+ftdicnt=$(awk '{for (I=1;I<NF;I++) if ($I == "FTDI DEVICE COUNT") print$(I+1)}' temp_profile)
 
 if [ $mtp_id == "0x42" ]
 then
