@@ -1,0 +1,318 @@
+#!/usr/bin/env python
+
+'''
+ THIS IS A UNIT TEST ONLY, NOT USED
+
+ 1. from output of rsync (== content of email), grep ending with .tar.gz
+ 2. untar only test_dl.log/mtp_test.log from the tar
+ 3. print tail of them (where all slots' pass/fail is printed)
+ 4. email this
+ 5. optionally - search for ERR and print that too?
+'''
+
+import sys
+import os
+import time
+import pexpect
+import argparse
+import re
+import random
+
+sys.path.append(os.path.relpath("/home/mfg/lib"))
+import liblog_utils
+from liblog_cfg import *
+from libpro_srv_db import pro_srv_db
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Manufacture Logging File Backup Utility", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--email", help="email address the report will send to")
+    email_to = None
+
+    args = parser.parse_args()
+    if args.email:
+        email_to = args.email
+
+    # get the absolute file path
+    product_server_cfg_file = os.path.abspath("/home/mfg/config/pensando_pro_srv_cfg.yaml")
+
+    # load the product server config
+    pro_srv_cfg_db = pro_srv_db(pro_srv_cfg_file = product_server_cfg_file)
+    pro_srv_list = list(pro_srv_cfg_db.get_pro_srv_id_list())
+
+    for pro_srv_id in pro_srv_list:
+        pro_srv_mgmt_cfg = pro_srv_cfg_db.get_pro_srv_mgmt(pro_srv_id)
+        pro_srv_logpath = pro_srv_cfg_db.get_pro_srv_logpath(pro_srv_id)
+
+        srv_ipaddr = pro_srv_mgmt_cfg[0]
+        srv_username = pro_srv_mgmt_cfg[1]
+        srv_passwd = pro_srv_mgmt_cfg[2]
+
+        #ssh_cmd = "'ssh {:s}'".format(DIAG_SSH_OPTIONS) + " " + srv_username + "@" + srv_ipaddr 
+        #rsync_cmd = "rsync -H -t -r -v -e " + ssh_cmd + ":" + pro_srv_logpath + " " + "/mfg_log/"
+        session = pexpect.spawn("echo")#rsync_cmd)
+        #session.expect_exact("assword:")
+        #session.sendline(srv_passwd)
+        #session.expect_exact(pexpect.EOF, timeout=None)
+
+        #if email_to:
+        #    liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files complete", session.before)
+        session_before = """receiving incremental file list
+        ./
+        CSP_REC/
+        CSP_REC/NAPLES25/
+        NAPLES100/
+        NAPLES100/4C/
+        NAPLES100/4C/4C-H/
+        NAPLES100/4C/4C-L/
+        NAPLES100/DL/
+        NAPLES100/DL/FLM1914005F/
+        NAPLES100/FST/
+        NAPLES100/P2C/
+        NAPLES100/P2C/FLM1914005F/
+        NAPLES100/SWI/
+        NAPLES100IBM/
+        NAPLES100IBM/4C/
+        NAPLES100IBM/4C/4C-H/
+        NAPLES100IBM/4C/4C-L/
+        NAPLES100IBM/DL/
+        NAPLES100IBM/P2C/
+        NAPLES25/
+        NAPLES25/4C/
+        NAPLES25/4C/4C-H/
+        NAPLES25/4C/4C-L/
+        NAPLES25/DL/
+        NAPLES25/FST/
+        NAPLES25/P2C/
+        NAPLES25/P2C/FLM19220024/
+        NAPLES25/SWI/
+        NAPLES25SWM/
+        NAPLES25SWM/4C/
+        NAPLES25SWM/4C/4C-H/
+        NAPLES25SWM/4C/4C-L/
+        NAPLES25SWM/DL/
+        NAPLES25SWM/P2C/
+        NAPLES25SWM/SWI/
+        ORTANO/DL/FLM20490026/
+        ORTANO/DL/FLM20490026/DL_MTP-221_2020-12-15_10-21-38.tar.gz
+        ORTANO/DL/FLM2049003A/
+        ORTANO/DL/FLM2049003A/DL_MTP-220_2020-12-15_10-28-09.tar.gz
+        ORTANO/P2C/
+        ORTANO/P2C/FLM20490005/
+        ORTANO/P2C/FLM20490005/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM20490007/
+        ORTANO/P2C/FLM20490007/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        ORTANO/P2C/FLM20490009/
+        ORTANO/P2C/FLM20490009/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        ORTANO/P2C/FLM2049000C/
+        ORTANO/P2C/FLM2049000C/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM2049000D/
+        ORTANO/P2C/FLM2049000D/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM2049000F/
+        ORTANO/P2C/FLM2049000F/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490010/
+        ORTANO/P2C/FLM20490010/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490012/
+        ORTANO/P2C/FLM20490012/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490013/
+        ORTANO/P2C/FLM20490013/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490015/
+        ORTANO/P2C/FLM20490015/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490016/
+        ORTANO/P2C/FLM20490016/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM20490017/
+        ORTANO/P2C/FLM20490017/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        ORTANO/P2C/FLM20490019/
+        ORTANO/P2C/FLM20490019/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490020/
+        ORTANO/P2C/FLM20490020/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM20490023/
+        ORTANO/P2C/FLM20490023/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM2049002C/
+        ORTANO/P2C/FLM2049002C/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM2049002F/
+        ORTANO/P2C/FLM2049002F/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490030/
+        ORTANO/P2C/FLM20490030/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        ORTANO/P2C/FLM20490032/
+        ORTANO/P2C/FLM20490032/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        ORTANO/P2C/FLM20490038/
+        ORTANO/P2C/FLM20490038/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM2049003A/
+        ORTANO/P2C/FLM2049003A/NT_MTP-220_2020-12-15_11-59-30.tar.gz
+        ORTANO/P2C/FLM2049003A/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM2049003F/
+        ORTANO/P2C/FLM2049003F/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM20490046/
+        ORTANO/P2C/FLM20490046/NT_MTP-222_2020-12-15_08-48-35.tar.gz
+        ORTANO/P2C/FLM2049004A/
+        ORTANO/P2C/FLM2049004A/NT_MTP-221_2020-12-15_08-50-46.tar.gz
+        ORTANO/P2C/FLM20490054/
+        ORTANO/P2C/FLM20490054/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        ORTANO/P2C/FLM2049005B/
+        ORTANO/P2C/FLM2049005B/NT_MTP-220_2020-12-15_06-25-24.tar.gz
+        unknown/
+        unknown/FST/
+        unknown/FST/unknown/
+
+        sent 13,569 bytes  received 141,508,797 bytes  4,492,773.52 bytes/sec
+        total size is 62,336,448,458  speedup is 440.47
+        NAPLES100/4C/4C-H/FPN205100CE/4C-H_MTP-663_2020-12-22_03-21-22.tar.gz
+        NAPLES100/4C/4C-H/FPN205100CF/
+        NAPLES100/4C/4C-H/FPN205100CF/4C-H_MTP-634_2020-12-22_03-23-32.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D0/
+        NAPLES100/4C/4C-H/FPN205100D0/4C-H_MTP-617_2020-12-22_14-35-26.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D1/
+        NAPLES100/4C/4C-H/FPN205100D1/4C-H_MTP-644_2020-12-22_03-23-16.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D2/
+        NAPLES100/4C/4C-H/FPN205100D2/4C-H_MTP-613_2020-12-22_14-36-31.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D3/
+        NAPLES100/4C/4C-H/FPN205100D3/4C-H_MTP-632_2020-12-22_03-21-55.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D4/
+        NAPLES100/4C/4C-H/FPN205100D4/4C-H_MTP-631_2020-12-22_03-20-35.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D5/
+        NAPLES100/4C/4C-H/FPN205100D5/4C-H_MTP-640_2020-12-22_03-23-04.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D6/
+        NAPLES100/4C/4C-H/FPN205100D6/4C-H_MTP-611_2020-12-22_14-35-39.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D8/
+        NAPLES100/4C/4C-H/FPN205100D8/4C-H_MTP-662_2020-12-22_03-20-47.tar.gz
+        NAPLES100/4C/4C-H/FPN205100D9/
+        NAPLES100/4C/4C-H/FPN205100D9/4C-H_MTP-632_2020-12-22_03-21-55.tar.gz
+        NAPLES100/4C/4C-H/FPN205100DA/
+        NAPLES100/4C/4C-H/FPN205100DA/4C-H_MTP-631_2020-12-22_03-20-35.tar.gz
+        NAPLES100/4C/4C-H/FPN205100DC/
+        NAPLES100/4C/4C-H/FPN205100DC/4C-H_MTP-631_2020-12-22_03-20-35.tar.gz
+        NAPLES100/4C/4C-H/FPN205100DF/
+        NAPLES100/4C/4C-H/FPN205100DF/4C-H_MTP-614_2020-12-22_14-37-28.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E0/
+        NAPLES100/4C/4C-H/FPN205100E0/4C-H_MTP-615_2020-12-22_14-38-32.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E1/
+        NAPLES100/4C/4C-H/FPN205100E1/4C-H_MTP-642_2020-12-22_03-23-43.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E2/
+        NAPLES100/4C/4C-H/FPN205100E2/4C-H_MTP-641_2020-12-22_03-22-49.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E3/
+        NAPLES100/4C/4C-H/FPN205100E3/4C-H_MTP-662_2020-12-22_03-20-47.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E4/
+        NAPLES100/4C/4C-H/FPN205100E4/4C-H_MTP-602_2020-12-22_14-35-27.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E5/
+        NAPLES100/4C/4C-H/FPN205100E5/4C-H_MTP-618_2020-12-22_13-32-28.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E6/
+        NAPLES100/4C/4C-H/FPN205100E6/4C-H_MTP-601_2020-12-22_14-35-17.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E7/
+        NAPLES100/4C/4C-H/FPN205100E7/4C-H_MTP-610_2020-12-22_14-35-41.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E8/
+        NAPLES100/4C/4C-H/FPN205100E8/4C-H_MTP-615_2020-12-22_14-38-32.tar.gz
+        NAPLES100/4C/4C-H/FPN205100E9/
+        NAPLES100/4C/4C-H/FPN205100E9/4C-H_MTP-615_2020-12-22_14-38-32.tar.gz
+        NAPLES100/4C/4C-H/FPN205100EB/
+        NAPLES100/4C/4C-H/FPN205100EB/4C-H_MTP-642_2020-12-22_03-23-43.tar.gz
+        NAPLES100/4C/4C-H/FPN205100EE/
+        NAPLES100/4C/4C-H/FPN205100EE/4C-H_MTP-640_2020-12-22_03-23-04.tar.gz
+        NAPLES100/4C/4C-H/FPN205100EF/
+        NAPLES100/4C/4C-H/FPN205100EF/4C-H_MTP-614_2020-12-22_14-37-28.tar.gz
+        NAPLES100/4C/4C-H/FPN205100F2/
+        NAPLES100/4C/4C-H/FPN205100F2/4C-H_MTP-634_2020-12-22_03-23-32.tar.gz
+        NAPLES100/4C/4C-H/FPN205100F6/
+        NAPLES100/4C/4C-H/FPN205100F6/4C-H_MTP-616_2020-12-22_14-33-14.tar.gz
+        NAPLES100/4C/4C-H/FPN205100F7/
+        NAPLES100/4C/4C-H/FPN205100F7/4C-H_MTP-618_2020-12-22_13-32-28.tar.gz
+        NAPLES100/4C/4C-H/FPN205100F8/
+        NAPLES100/4C/4C-H/FPN205100F8/4C-H_MTP-643_2020-12-22_03-22-52.tar.gz
+        NAPLES100/4C/4C-H/FPN205100FA/
+        NAPLES100/4C/4C-H/FPN205100FA/4C-H_MTP-634_2020-12-22_03-23-32.tar.gz
+        NAPLES100/4C/4C-H/FPN205100FB/
+        NAPLES100/4C/4C-H/FPN205100FB/4C-H_MTP-643_2020-12-22_03-22-52.tar.gz
+        NAPLES100/4C/4C-H/FPN205100FE/
+        NAPLES100/4C/4C-H/FPN205100FE/4C-H_MTP-644_2020-12-22_03-23-16.tar.gz
+        NAPLES100/4C/4C-H/FPN20510101/
+        NAPLES100/4C/4C-H/FPN20510101/4C-H_MTP-640_2020-12-22_03-23-04.tar.gz
+        NAPLES100/4C/4C-H/FPN20510102/
+        NAPLES100/4C/4C-H/FPN20510102/4C-H_MTP-601_2020-12-22_14-35-17.tar.gz
+        NAPLES100/4C/4C-H/FPN20510107/
+        NAPLES100/4C/4C-H/FPN20510107/4C-H_MTP-631_2020-12-22_03-20-35.tar.gz
+        NAPLES100/4C/4C-H/FPN20510108/
+        NAPLES100/4C/4C-H/FPN20510108/4C-H_MTP-616_2020-12-22_14-33-14.tar.gz
+        NAPLES100/4C/4C-H/FPN2051010A/
+        NAPLES100/4C/4C-H/FPN2051010A/4C-H_MTP-611_2020-12-22_14-35-39.tar.gz
+        NAPLES100/4C/4C-H/FPN2051010B/
+        NAPLES100/4C/4C-H/FPN2051010B/4C-H_MTP-645_2020-12-22_03-22-12.tar.gz
+        NAPLES100/4C/4C-H/FPN2051010C/
+        NAPLES100/4C/4C-H/FPN2051010C/4C-H_MTP-663_2020-12-22_03-21-22.tar.gz
+        NAPLES100/4C/4C-H/FPN2051010D/
+        NAPLES100/4C/4C-H/FPN2051010D/4C-H_MTP-601_2020-12-22_14-35-17.tar.gz
+        NAPLES100/4C/4C-H/FPN2051010E/
+        NAPLES100/4C/4C-H/FPN2051010E/4C-H_MTP-641_2020-12-22_03-22-49.tar.gz
+        NAPLES100/4C/4C-H/FPN2051010F/
+        NAPLES100/4C/4C-H/FPN2051010F/4C-H_MTP-631_2020-12-22_03-20-35.tar.gz
+        NAPLES100/4C/4C-H/FPN20510110/
+        NAPLES100/4C/4C-H/FPN20510110/4C-H_MTP-645_2020-12-22_03-22-12.tar.gz
+        NAPLES100/4C/4C-H/FPN20510111/
+        NAPLES100/4C/4C-H/FPN20510111/4C-H_MTP-616_2020-12-22_14-33-14.tar.gz
+        NAPLES100/4C/4C-L/
+        NAPLES100/4C/4C-L/FPN20510019/
+        NAPLES100/4C/4C-L/FPN20510019/4C-L_MTP-637_2020-12-22_10-34-02.tar.gz
+        NAPLES100/4C/4C-L/FPN2051001A/
+        NAPLES100/4C/4C-L/FPN2051001A/4C-L_MTP-616_2020-12-23_00-03-32.tar.gz
+        NAPLES100/4C/4C-L/FPN2051001E/
+        NAPLES100/4C/4C-L/FPN2051001E/4C-L_MTP-643_2020-12-22_12-35-05.tar.gz
+        NAPLES100/4C/4C-L/FPN20510021/
+        NAPLES100/4C/4C-L/FPN20510021/4C-L_MTP-615_2020-12-23_01-19-03.tar.gz
+        NAPLES100/4C/4C-L/FPN20510023/
+        NAPLES100/4C/4C-L/FPN20510023/4C-L_MTP-634_2020-12-22_12-17-01.tar.gz
+        NAPLES100/4C/4C-L/FPN20510025/
+        NAPLES100/4C/4C-L/FPN20510025/4C-L_MTP-602_2020-12-23_01-29-12.tar.gz
+        NAPLES100/4C/4C-L/FPN2051002C/
+        NAPLES100/4C/4C-L/FPN2051002C/4C-L_MTP-613_2020-12-23_01-16-55.tar.gz
+        NAPLES100/4C/4C-L/FPN2051002E/
+        NAPLES100/4C/4C-L/FPN2051002E/4C-L_MTP-632_2020-12-22_13-34-23.tar.gz
+        NAPLES100/4C/4C-L/FPN20510032/
+        NAPLES100/4C/4C-L/FPN20510032/4C-L_MTP-640_2020-12-22_11-34-37.tar.gz
+        NAPLES100/4C/4C-L/FPN2051003A/
+        NAPLES100/4C/4C-L/FPN2051003A/4C-L_MTP-610_2020-12-23_00-08-10.tar.gz
+        NAPLES100/4C/4C-L/FPN2051003D/
+        NAPLES100/4C/4C-L/FPN2051003D/4C-L_MTP-642_2020-12-22_09-32-38.tar.gz
+        NAPLES100/4C/4C-L/FPN2051003F/
+        NAPLES100/4C/4C-L/FPN2051003F/4C-L_MTP-663_2020-12-22_12-34-52.tar.gz
+        NAPLES100/4C/4C-L/FPN20510040/
+        NAPLES100/4C/4C-L/FPN20510040/4C-L_MTP-643_2020-12-22_12-35-05.tar.gz
+        NAPLES100/4C/4C-L/FPN20510042/
+        NAPLES100/4C/4C-L/FPN20510042/4C-L_MTP-602_2020-12-23_01-29-12.tar.gz
+        NAPLES100/4C/4C-L/FPN20510043/
+        NAPLES100/4C/4C-L/FPN20510043/4C-L_MTP-613_2020-12-23_01-16-55.tar.gz
+        NAPLES100/4C/4C-L/FPN20510044/
+        NAPLES100/4C/4C-L/FPN20510044/4C-L_MTP-610_2020-12-23_00-08-10.tar.gz
+        NAPLES100/4C/4C-L/FPN20510045/
+        NAPLES100/4C/4C-L/FPN20510045/4C-L_MTP-644_2020-12-22_12-35-26.tar.gz"""
+
+        # session_before = """
+        # receiving incremental file list
+        # ./
+        # TAORMINA/DL/FSJ21320024/
+        # TAORMINA/DL/FSJ21320024/DL2_UUT-006_2021-08-23_13-10-54.tar.gz
+        # TAORMINA/DL/FSJ21320024/DL3_UUT-006_2021-08-23_15-18-32.tar.gz
+        # TAORMINA/P2C/
+        # TAORMINA/P2C/FSJ21320006/
+        # TAORMINA/P2C/FSJ21320006/NT_UUT-021_2021-08-23_17-24-52.tar.gz
+        # TAORMINA/P2C/FSJ21320023/
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-23_13-56-07.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-23_14-46-45.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-23_18-58-49.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-23_21-28-14.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-23_23-43-21.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-24_00-34-21.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-24_01-22-58.tar.gz
+        # TAORMINA/P2C/FSJ21320023/NT_UUT-005_2021-08-24_02-18-36.tar.gz
+        # TAORMINA/P2C/FSJ21320024/
+        # TAORMINA/P2C/FSJ21320024/NT_UUT-006_2021-08-23_17-43-26.tar.gz
+
+        # sent 454 bytes  received 3,178,937 bytes  1,271,756.40 bytes/sec
+        # total size is 53,297,643  speedup is 16.76
+
+        # """
+
+        if ".tar.gz" in session_before:
+            liblog_utils.email_report("nabeel@pensando.io", pro_srv_id + ": New logs summary", liblog_utils.get_log_summary(session_before, pro_srv_logpath))
+        break
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,23 @@
+PENSANDO-PRO-SRV1:
+    IP: "192.168.1.112"
+    USERID: "mfg"
+    PASSWORD: "pensando"
+    LOGPATH: "/mfg_log/"
+
+#PENSANDO-PRO-SRV2:
+#    IP: "192.168.2.22"
+#    USERID: "mfg"
+#    PASSWORD: "pensando"
+#    LOGPATH: "/mfg_log/"
+
+PENSANDO-PRO-SRV3:
+    IP: "192.168.3.2"
+    USERID: "mfg"
+    PASSWORD: "pensando"
+    LOGPATH: "/mfg_log/"
+
+PENSANDO-PRO-SRV4:
+    IP: "192.168.4.50"
+    USERID: "mfg"
+    PASSWORD: "pensando"
+    LOGPATH: "/mfg_log/"

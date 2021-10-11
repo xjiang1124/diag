@@ -8,6 +8,7 @@ import argparse
 import re
 import random
 import commands
+from datetime import datetime
 
 sys.path.append(os.path.relpath("/home/mfg/lib"))
 import liblog_utils
@@ -23,6 +24,8 @@ def main():
     args = parser.parse_args()
     if args.email:
         email_to = args.email
+
+    start=datetime.now()
 
     # get the absolute file path
     product_server_cfg_file = os.path.abspath("/home/mfg/config/pensando_pro_srv_cfg.yaml")
@@ -62,14 +65,40 @@ def main():
 
         session.sendline(srv_passwd)
         session.expect_exact(pexpect.EOF, timeout=None)
+
+        output = session.before
+
+        outputdict = gettransfersize(output)
+
+        difftime = datetime.now()-start
+        processtime = ("{} Use {} \n".format(pro_srv_id,difftime))
+        if outputdict:
+            processtime = ("{} Use {} | Received: {} MB | speed: {} MB/s\n".format(pro_srv_id,difftime,outputdict['received'],outputdict['spent']))
         if email_to:
-            liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files complete", session.before)
+            liblog_utils.email_report(email_to, pro_srv_id + ": Backup logging files complete", processtime + output)
         try:
             if ".tar.gz" in session.before:
                 liblog_utils.email_report(email_to, pro_srv_id + ": New logs summary", liblog_utils.get_log_summary(session.before, pro_srv_logpath))
         except:
             pass
 
+        #break
+
+def gettransfersize(outputinformation):
+    match = re.findall(r"sent\s+(\d.*\d)\s+bytes\s+received\s+(\d.*\d)\s+bytes\s+(\d.*\d)\s+bytes\/sec",outputinformation)
+    outputdict = dict()
+    outputdict['sent'] = 0
+    outputdict['received'] = 0
+    outputdict['spent'] = 0
+    if match:
+        #print(match[0])
+        outputdict['sent'] = round(float(match[0][0].replace(',',''))/1048576,2)
+        outputdict['received'] = round(float(match[0][1].replace(',',''))/1048576,2)
+        outputdict['spent'] = round(float(match[0][2].replace(',',''))/1048576,2)
+        #print(outputdict)
+        return outputdict
+
+    return None
 
 if __name__ == "__main__":
     main()

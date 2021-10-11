@@ -11,7 +11,7 @@
 		"historypath":"/samba/public/HISTORY/ORTANO2"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST15.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST16.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
