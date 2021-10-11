@@ -2621,8 +2621,13 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis] = dict()
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN'] = list()
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'] = list()
-                                    Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATURE"] = getlistoftemp(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
-                                    Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"] = getlistoftempdetail(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
+                                    
+                                    if "TEMPERATURE" in DATA["SN"][sn][chassis][testdate][testetime]:
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATURE"] = getlistoftemp(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"] = getlistoftempdetail(DATA["SN"][sn][chassis][testdate][testetime]["TEMPERATURE"])
+                                    else:
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATURE"] = []
+                                        Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]["TEMPERATUREDETAIL"] = []
                                     Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['SN'].append(sn)
                                     if 'PASS' in teststatus.upper():
                                         Chamberref[chambername]['DICT'][chamberendtime]['CHASSIS'][chassis]['PASS'].append(sn)
