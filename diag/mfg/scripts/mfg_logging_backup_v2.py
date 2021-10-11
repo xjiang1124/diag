@@ -103,7 +103,7 @@ def main():
                 listofspent.append(eachoutput['spent'])
             difftime = datetime.now()-start
             from statistics import mean
-            processtime = ("{} Use {} | Received: {} MB | speed: {} MB/s(AVE.) {} MB/s(MAX.)\n".format(pro_srv_id,difftime,sum(listofreceived),round(mean(listofspent),2)), max(listofspent))
+            processtime = ("{} Use {} | Received: {} MB | Ave. speed: {} MB/s | Max. speed {} MB/s\n".format(pro_srv_id,difftime,sum(listofreceived),round(mean(listofspent),2), max(listofspent)))
         else:
             difftime = datetime.now()-start
             processtime = ("{} Use {} \n".format(pro_srv_id,difftime))
