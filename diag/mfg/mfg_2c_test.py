@@ -252,7 +252,7 @@ def main():
                                                                            mtp_mgmt_ctrl,
                                                                            mtp_id,
                                                                            stage,
-                                                                           fail_nic_list[mtp_id]
+                                                                           fail_nic_list[mtp_id],
                                                                            mfg_2c_summary[mtp_id],
                                                                            swmtestmode))
         mtp_thread.daemon = True
