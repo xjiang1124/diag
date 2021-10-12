@@ -77,7 +77,7 @@ class Swm_Test_Mode(Enum):
     SWMALOM = "swmalom"
     ALOM = "alom"
     SW_DETECT = "sw_detect"
-
+    LIST = ["swm","swmalom","alom","sw_detect"]
 
     def __str__(self):
         return self.value
