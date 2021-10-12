@@ -240,7 +240,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
 def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=Swm_Test_Mode.LIST)
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--fru_mapping_file", "-f", help="Mapping file of allowed MACs, SNs, PNs", action="store_true")
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 

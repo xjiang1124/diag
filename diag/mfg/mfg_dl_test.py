@@ -118,7 +118,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, 
 def main():
     parser = argparse.ArgumentParser(description="MFG MTP DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=Swm_Test_Mode.LIST)
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("-r", "--rework", help="Call rework script", action='store_true')
     parser.add_argument("--fru-verify", "-v", "--verify", "-verify", help="Verify FRU mode", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])

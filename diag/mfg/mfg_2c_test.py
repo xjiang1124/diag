@@ -103,7 +103,7 @@ def main():
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=Swm_Test_Mode.LIST)
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
 
     verbosity = False
