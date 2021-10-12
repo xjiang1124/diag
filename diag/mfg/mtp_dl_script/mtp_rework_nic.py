@@ -241,7 +241,7 @@ def set_pslc(mtp_mgmt_ctrl,mtp_id, fail_nic_list):
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=Swm_Test_Mode.LIST)
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     args = parser.parse_args()
