@@ -2642,7 +2642,9 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     #pr['modules'].print_anyinformation(Chamberref)
     #sys.exit()
 
-    additionTemp = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    additionTemp = ['Local', 'Outlet', 'Inlet-1', 'Inlet-2']
+    additionTemp2 = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+
     titlename = "{}_{}".format("Chamber", "TEMP")
     if totimezone:
         titlename = "{}_{}".format(titlename,totimezone.replace('/','_'))
@@ -2788,7 +2790,9 @@ def getchamberTempbymfglog(pr, onedata):
     # [5]                     Remote-3    <TYPE:<class 'str'>>    
 
     dataforreturn = dict()
-    dataforreturn["LIST"] = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    dataforreturn["LIST1"] = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    dataforreturn["LIST"] = ['Local', 'Outlet', 'Inlet-1', 'Inlet-2']
+    refdata = dict(zip(dataforreturn["LIST"], dataforreturn["LIST1"]))
     dataforreturn["DATA"] = dict()
     dataforreturn["DATA"]["CHECKPOINT"] = listofdatewillcheck
     for eachcheckpoint in listofdatewillcheck:
@@ -2799,10 +2803,12 @@ def getchamberTempbymfglog(pr, onedata):
                 dataforreturn["DATA"][eachkey] = list()
             if eachkey in res:
                 dataforreturn["DATA"][eachkey].append(float(res[eachkey]))
+            elif refdata[eachkey] in res:
+                dataforreturn["DATA"][eachkey].append(float(res[refdata[eachkey]]))
 
         #sys.exit()
     #pr['modules'].print_anyinformation(dataforreturn)
-    
+    #sys.exit()
     return dataforreturn
 
 def getlistoftemp(timewithtemplist):
