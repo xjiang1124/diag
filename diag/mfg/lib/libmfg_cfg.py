@@ -272,7 +272,7 @@ class NIC_IMAGES:
     fail_cpld_dat["LACONA32"] = "0x13"
     diagfw_img["LACONA32"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
     diagfw_dat["LACONA32"] = "09-21-2021"
-    goldfw_img["LACONA32"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar "
+    goldfw_img["LACONA32"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar"
     goldfw_dat["LACONA32"] = "10-07-2021"
 
 class MTP_IMAGES:
