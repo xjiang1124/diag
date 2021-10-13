@@ -111,7 +111,7 @@ def main():
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH"):
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH", max_retry=10):
         #if not mtp_mgmt_ctrl.mtp_mgmt_connect():
             mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
             mtpid_list.remove(mtp_id)
@@ -194,7 +194,7 @@ def main():
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH"):
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH", max_retry=10):
                 mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)

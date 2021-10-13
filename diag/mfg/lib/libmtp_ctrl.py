@@ -586,11 +586,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None, retry_with_powercycle=False):
+    def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None, retry_with_powercycle=False, max_retry=3):
         delay = 200 # make sure this delay covers FST boot
         # retries = self._mgmt_timeout / delay
         # retries = retries + 4
-        retries = 3
+        retries = max_retry
         if not self._mgmt_cfg:
             self.cli_log_err("management port config is empty")
             return None
