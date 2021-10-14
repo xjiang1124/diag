@@ -91,6 +91,10 @@ class nic_ctrl():
         self._nic_handle.logfile_read = self._diag_filep
         self._nic_handle.logfile_send = self._diag_cmd_filep
 
+    def nic_handle_close(self):
+        self._nic_handle.logfile_send = None
+        self._nic_handle.logfile_read = None
+        self._nic_handle.close()
 
     def nic_set_type(self, nic_type):
         self._nic_type = nic_type

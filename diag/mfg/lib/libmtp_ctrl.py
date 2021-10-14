@@ -585,6 +585,14 @@ class mtp_ctrl():
                 return False
         return True
 
+    def mtp_nic_para_session_end(self, slot_list=[]):
+        self.cli_log_inf("Close NIC Connections", level=0)
+        if slot_list == []:
+            slot_list = range(self._slots)
+        for slot in slot_list:
+            self._nic_ctrl_list[slot].nic_handle_close()
+        return True
+
 
     def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None, retry_with_powercycle=False, max_retry=3):
         delay = 200 # make sure this delay covers FST boot
