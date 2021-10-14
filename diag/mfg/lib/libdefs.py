@@ -285,6 +285,7 @@ class MFG_DIAG_CMDS:
     MTP_VRM_TEST_FMT = "mtptest -vrm"
     MTP_FAN_TEST_FMT = "mtptest -fanspd"
     MTP_FAN_PRSNT_FMT = "mtptest -present"
+    MTP_PSU_TEST_FMT = "mtptest -psu"
 
     MTP_CPLD_READ_FMT = "cpldutil -cpld-rd -addr=0x{:x}"
 
@@ -508,6 +509,8 @@ class MFG_DIAG_SIG:
     MTP_ZMQ_OK_SIG = "SUCCESS"
     MTP_VRM_OK_SIG = "TEST PASSED"
     MTP_FAN_OK_SIG = "TEST PASSED"
+    MTP_PSU1_OK_SIG = "PSU_1 TEST PASSED"
+    MTP_PSU2_OK_SIG = "PSU_2 TEST PASSED"    
     MTP_PARA_TEST_SIG = "TEST RESULT:"
     MTP_FAN0_PRSNT_SIG = "Fan 0 is present"
     MTP_FAN1_PRSNT_SIG = "Fan 1 is present"

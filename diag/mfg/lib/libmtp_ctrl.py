@@ -1075,6 +1075,26 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd):
             rc = False
 
+        # PSU test
+        cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
+        pass_sig_list = []
+
+        # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
+        apc1 = self._apc_cfg[0]
+        apc2 = self._apc_cfg[4]
+
+        if apc1 != "" :
+           pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
+        if apc2 != "":
+           pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
+
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        if rc:
+            self.cli_log_inf("PSU test passed")
+        else:
+            self.cli_log_err("PSU test failed")
+            return rc
+
         return rc
 
 
