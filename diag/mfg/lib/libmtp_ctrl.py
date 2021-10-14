@@ -1917,6 +1917,12 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_verify_nic_diag_boot(self, slot):
+        if not self.mtp_nic_boot_info_init(slot):
+            self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
+            return False
+
+        return self.mtp_nic_check_diag_boot(slot)
 
     def mtp_mgmt_verify_nic_gold_boot(self, slot):
         if not self.mtp_nic_boot_info_init(slot):
@@ -2374,8 +2380,7 @@ class mtp_ctrl():
             software_pn == "90-0006-0001" or
             software_pn == "90-0006-0002" or
             software_pn == "90-0011-0003" or
-            software_pn == "90-pomonte" or
-            software_pn == "90-lacona"
+            software_pn == "90-golduefi"
             ):
             return True
         return False
@@ -2469,15 +2474,15 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0PCFPC":      #POMONTE DELL
-            if software_pn != "90-pomonte":
+            if software_pn != "90-golduefi":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
-            if software_pn != "90-lacona":
+            if software_pn != "90-golduefi":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
-            if software_pn != "90-lacona":
+            if software_pn != "90-golduefi":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:

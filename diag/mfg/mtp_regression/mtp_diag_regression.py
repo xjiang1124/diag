@@ -133,7 +133,7 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         else:
             mode = "hod_1100"
     elif nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        mode = "nod"
+        mode = "nod_550"
     else:
         mode = ""
 
