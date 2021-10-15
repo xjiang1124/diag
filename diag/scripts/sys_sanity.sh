@@ -20,11 +20,11 @@ then
     jtag_cpurd_v2 ena 0xa $portnum
     jtag_cpurd_v2 rd  0xa $portnum 0x307c0000 2
 elif [[ $MTP_TYPE == "MTP_TURBO_ELBA" ]] 
+then
     printf "====== jtag_cpurd_v2 turbo ======\n"
     jtag_cpurd_v2 rst ${ftdi_addr[$portnum]} 1
     jtag_cpurd_v2 ena ${ftdi_addr[$portnum]} 1
     jtag_cpurd_v2 rd  ${ftdi_addr[$portnum]} 1 0x307c0000 2
-then
 else
     printf "====== jtag_cpurd_debug ======\n"
     jtag_cpurd_debug rst 0xa $portnum 
