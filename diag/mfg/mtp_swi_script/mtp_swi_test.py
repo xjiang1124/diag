@@ -958,7 +958,7 @@ def main():
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
             if nic_type in FPGA_TYPE_LIST:
-                sw_test_list = ["DIAG_BOOT"]
+                sw_test_list = ["DIAG_BOOT", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_PROFILE")
