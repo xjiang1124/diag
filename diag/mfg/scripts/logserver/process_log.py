@@ -225,7 +225,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
     TempHVLVdata = dict()
     
     if 'CM' in inputconfig:
-        if inputconfig['CM'] == "FSJ":
+        if inputconfig['CM'] == "FSJ" or inputconfig['CM'] == "FLEX":
 
             generateexeclsnFSJstatus(DATA, workingonSNlist,'LAST',wb)
         
@@ -4517,7 +4517,10 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
             summarydata[test]["LASTYEILD"] = "{:.2f}%".format(0)
         wirtedata.append(firstyeild)
         wirtedata.append('')
-        wirtedata.append(LastfailureremoveDupSN[test]["count"])
+        if test in LastfailureremoveDupSN:
+            wirtedata.append(LastfailureremoveDupSN[test]["count"])
+        else:
+            wirtedata.append(0)
         ws1.append(wirtedata)
 
     wirtedata = list()

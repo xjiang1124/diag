@@ -1,0 +1,31 @@
+{
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_FLEX_LACONA32DELL",
+		"TEMPDATABASE": "/samba/public/tmp_database_FLEX_LACONA32DELL",
+		"testlogpath": "/mfg_log/LACONA32DELL",
+		"reportpath":"/samba/public/FLEX_LACONA32DELL/",
+		"historypath":"/samba/public/FLEX_LACONA32DELL/HISTORY"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32DELL_DB_FLEX1.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"TESTLIST" :[
+					"DL",
+					"P2C",
+					"SWI"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"SWI"
+				],
+	"SPECIAL" : "",
+	"STARTCountSN" : "",
+	"CM": "FLEX"
+	
+}
