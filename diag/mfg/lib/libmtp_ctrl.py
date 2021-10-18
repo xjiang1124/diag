@@ -2337,6 +2337,8 @@ class mtp_ctrl():
             exp_pn = PART_NUMBERS_MATCH.N100_IBM_FMT_ALL
         elif nic_type == NIC_Type.NAPLES100HPE:
             exp_pn = PART_NUMBERS_MATCH.N100_HPE_FMT_ALL
+        elif nic_type == NIC_Type.NAPLES100DELL:
+            exp_pn = PART_NUMBERS_MATCH.N100_DELL_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25:
             exp_pn = PART_NUMBERS_MATCH.N25_PN_FMT_ALL
         elif nic_type == NIC_Type.NAPLES25SWM:
@@ -3667,6 +3669,17 @@ class mtp_ctrl():
                 else:
                     self._nic_prsnt_list[slot] = False
                     self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+        match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100DELL, self._mgmt_handle.before)
+        if match:
+            for idx in range(len(match)):
+                slot = int(match[idx]) - 1
+                if not self._slots_to_skip[slot]:
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = NIC_Type.NAPLES100DELL
+                    self._nic_ctrl_list[slot].nic_set_type(NIC_Type.NAPLES100DELL)
+                else:
+                    self._nic_prsnt_list[slot] = False
+                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
         match = re.findall(MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25, self._mgmt_handle.before)
         if match:
             for idx in range(len(match)):
@@ -4256,6 +4269,9 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES100HPE:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100HPE_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100HPE_ARM_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.NAPLES100DELL:
+            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100DELL_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100DELL_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.VOMERO:
             vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)

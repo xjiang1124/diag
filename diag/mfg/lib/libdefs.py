@@ -4,6 +4,7 @@ class NIC_Type:
     NAPLES100 = "NAPLES100"
     NAPLES100IBM = "NAPLES100IBM"
     NAPLES100HPE = "NAPLES100HPE"
+    NAPLES100DELL = "NAPLES100DELL"
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
     VOMERO = "VOMERO"
@@ -401,6 +402,9 @@ class MFG_DIAG_CMDS:
     # Naples100HPE: core_freq=833 arm_freq=1600
     NAPLES100HPE_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
     NAPLES100HPE_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
+    # Naples100DELL: core_freq=833 arm_freq=1600
+    NAPLES100DELL_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
+    NAPLES100DELL_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
     # Vomero: core_freq=833 arm_freq=2200
     VOMERO_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2200"
     VOMERO_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2200"
@@ -563,6 +567,7 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES25OCP = r"\bUUT_(\d+) +NAPLES25OCP\b"
     MFG_NIC_TYPE_NAPLES100IBM = r"\bUUT_(\d+) +NAPLES100IBM\b"
     MFG_NIC_TYPE_NAPLES100HPE = r"\bUUT_(\d+) +NAPLES100HPE\b"
+    MFG_NIC_TYPE_NAPLES100DELL = r"\bUUT_(\d+) +NAPLES100DELL\b"
     MFG_NIC_TYPE_NAPLES25SWMDELL = r"\bUUT_(\d+) +NAPLES25SWMDELL\b"
     MFG_NIC_TYPE_NAPLES25SWM833 = r"\bUUT_(\d+) +NAPLES25SWM833\b"
     MFG_NIC_TYPE_ORTANO = r"\bUUT_(\d+) +ORTANO\b"
