@@ -927,11 +927,6 @@ def flx_sn_to_factory(sn):
     else:
         return None
 
-def FindDellSN(sn):
-    if re.match(DELL_BUILD_SN_FMT, sn):
-        return True
-    else:
-        return False
 
 def flx_stage_to_penang(stage):
     if stage == FF_Stage.FF_DL:
@@ -1418,11 +1413,6 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
-            if FindDellSN(sn):
-                nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
-                matchsn = re.findall(nic_pn_reg_exp, buf)
-                if matchsn:
-                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
@@ -1446,11 +1436,6 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
-            if FindDellSN(sn):
-                nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
-                matchsn = re.findall(nic_pn_reg_exp, buf)
-                if matchsn:
-                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))

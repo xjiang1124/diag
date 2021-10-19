@@ -273,7 +273,6 @@ class MTP_DIAG_Report:
     NIC_DIAG_REGRESSION_SKIP = "NIC_DIAG_REGRESSION_TEST_SKIP"
     NIC_DIAG_REGRESSION_RSLT_RE = r"NIC-(\d{{2}}) (\w+) (\w+) {:s}"
     NIC_DIAG_REGRESSION_SKIP_RSLT_RE = r"NIC-(\d{{2}}) {:s}" #SKIP doesnt have type and sn
-    NIC_DIAG_REGRESSION_PN_BY_FRU_RE = r"FRU: {:s},\s.*,\s(\w.*\w)"
 
 class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"
