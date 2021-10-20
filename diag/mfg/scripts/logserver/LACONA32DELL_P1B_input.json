@@ -1,17 +1,17 @@
 {
-	"NAME": "LACONA32DELL",
+	"NAME": "LACONA32DELL_3",
 	"TYPE": "NIC",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_LACONA32DELL_02",
+		"TEMPDIR": "/tmp/tmp_unzip_LACONA32DELL_03",
 		"TEMPDATABASE": "/samba/public/tmp_database/LACONA32DELL",
 		"testlogpath": "/mfg_log/LACONA32DELL",
-		"reportpath":"/samba/public/REPORT/LACONA32DELL/",
+		"reportpath":"/samba/public/LACONA32DELL_TEST/",
 		"historypath":"/samba/public/HISTORY/LACONA32DELL"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32DELL_DB_TEST1.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32DELL_DB_TEST1_1.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
