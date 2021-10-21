@@ -63,7 +63,7 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     else:
         skipped_testlist = ""
     if fail_nic_list:
-        fail_slots = " --fail-slots"
+        fail_slots = " --fail-slots "
         fail_slots += ' '.join(map(str,fail_nic_list))
     else:
         fail_slots = ""

@@ -1945,19 +1945,29 @@ class nic_ctrl():
         if match:
             self._sn = match.group(1)
             return True
+        # else:
+        match = re.search(DELL_PPID_DISP_SN_FMT, fru_buf)
+        if match:
+            self._sn = match.group(1)
+            return True
+        # else:
+        match = re.search(HP_DISP_SN_FMT, fru_buf)
+        if match:
+            self._sn = match.group(1)
+            return True
+        # else:
+        cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Unable to read SMB FRU")
+            return False
+        fru_buf = self.nic_get_cmd_buf()
+        match = re.search(HP_DISP_SN_FMT, fru_buf)
+        if match:
+            self._sn = match.group(1)
+            return True
         else:
-            match = re.search(DELL_PPID_DISP_SN_FMT, fru_buf)
-            if match:
-                self._sn = match.group(1)
-                return True
-            else:
-                match = re.search(HP_DISP_SN_FMT, fru_buf)
-                if match:
-                    self._sn = match.group(1)
-                    return True
-                else:
-                    self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
-                    return False
+            self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
+            return False
 
         self.nic_set_err_msg("Unknown SN in: {:s}".format(fru_buf))
         return False

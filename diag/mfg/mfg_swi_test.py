@@ -72,7 +72,7 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     else:
         skipped_testlist = ""
     if fail_nic_list:
-        fail_slots_cmd = " --fail-slots"
+        fail_slots_cmd = " --fail-slots "
         fail_slots_cmd += ' '.join(map(str, fail_nic_list))
     else:
         fail_slots_cmd = ""

@@ -76,7 +76,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, 
     else:
         skipped_testlist = ""
     if fail_nic_list:
-        fail_slots = " --fail-slots"
+        fail_slots = " --fail-slots "
         fail_slots += ' '.join(map(str,fail_nic_list))
     else:
         fail_slots = ""

@@ -435,14 +435,16 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
     for nic_test_list in nic_top_test_list, nic_bot_test_list:
         fail_slot_test_list = list()
-        if not nic_test_list:
-            continue
         for test in para_test_list:
             for slot in nic_test_list[:]:
                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                     nic_test_list.remove(slot)
                     if slot not in fail_list:
                         fail_list.append(slot)
+
+            if not nic_test_list:
+                continue
+
             for slot in nic_test_list[:]:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
