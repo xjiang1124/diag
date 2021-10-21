@@ -847,7 +847,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                     ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
                 # check CPLD version
                 elif test == "CPLD_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, timestamp_check=False) # cant read timestamp from smb
                     if not ret:
                         cpld_prog_list.append(slot)
                         ret = True

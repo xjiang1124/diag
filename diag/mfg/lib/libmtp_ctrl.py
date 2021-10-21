@@ -2776,7 +2776,7 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].nic_program_sec_key_dump()
         return True
 
-    def mtp_verify_nic_cpld(self, slot, sec_cpld=False):
+    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True):
         # cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
@@ -2809,7 +2809,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
                 return False
 
-        if cur_ver != expected_version or cur_timestamp != expected_timestamp:
+        if cur_ver != expected_version or (timestamp_check and cur_timestamp != expected_timestamp):
                 self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
                 self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(expected_version, cur_ver))
                 self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(expected_timestamp, cur_timestamp))

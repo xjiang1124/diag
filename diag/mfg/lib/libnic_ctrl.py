@@ -380,8 +380,13 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             return False
-        else:
-            return True
+        
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            return False
+
+        return True
 
     def nic_mgmt_config(self):
         if not self.nic_console_attach():
@@ -1695,6 +1700,10 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
+        if self._nic_type not in ELBA_NIC_TYPE_LIST:
+            # issue with capri diag image...
+            return True
+
         # wait for completion sig to avoid interfering with other tests
         if "sys_clean done" in mtp_cmd_buf:
             return True
@@ -1924,9 +1933,6 @@ class nic_ctrl():
 
     def nic_sn_init(self):
         nic_type = self._nic_type
-        if self._nic_type not in PSLC_MODE_TYPE_LIST:
-            # use regular way to get SN for these cards
-            return True
 
         cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_SN_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
@@ -2446,6 +2452,35 @@ class nic_ctrl():
         else:
             return [self._boot_image, self._kernel_timestamp]
 
+    def nic_console_read_i2c(self, bus_num, dev_addr, reg_addr, read_data):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd = "i2cget -y {:d} {:x} {:x}".format(bus_num, dev_addr, reg_addr)
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+        cpld_buf = self._nic_handle.before
+        if not cpld_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
+
+        if len(match) >= 1:
+            read_data[0] = int(match[0], 16)
+        else:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cpld_buf)
+            return False
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
+        return True
 
     def nic_get_pll_sta(self):
         pll_sta_reg_exp = r"addr 0x%x; data=(0x[0-9a-fA-F]+)"
