@@ -61,11 +61,19 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define NCSI_AND_BMC_PAGE_CONFIG        1
 #define PC_AND_SERDES_PAGE_CONFIG       2
 
+#define PAGE_ID_FLASH                   0
+#define PAGE_ID_SWITCH                  1
+#define PAGE_ID_PC                      2
+#define PAGE_ID_SERDES                  3
+
 #define SWITCH_CORE_VERSION_REG         0x00
 #define SWITCH_MAC_LOW_REG              0x04
 #define SWITCH_MAC_HIGH_REG             0x08
 
-#define QSFP_CTRL_FPGA_BASE_ADDR        0x2000000
+#define FPGA_BASE_ADDR_QSPI_CTRL        0x2000000
+#define FPGA_BASE_ADDR_MES_REG          0x1001000
+#define FPGA_BASE_ADDR_PC               0x100C000
+#define FPGA_BASE_ADDR_SERDES           0x1008000
 
 #define PS48_FRAME_SIZE                 6
 #define FLASH_PAGE_SIZE                 128
@@ -76,7 +84,7 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define DISABLE                         0
 
 #define DEBUG                           DISABLE
-//#define DEBUG                           ENABLE
+#define DEBUG                           ENABLE
 
 // 5MHz
 #define ELBA_SPI_CLK                    5000000
@@ -154,6 +162,8 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
 
     if(pageConfig == FLASH_AND_SWITCH_PAGE_CONFIG)
     {
+        // Page 0: Flash
+        // Page 1: MES Reg
         txbuf[0] = 0xc4;
         txbuf[1] = 0x02;
         txbuf[2] = 0x00;
@@ -163,12 +173,25 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
     }
     else if(pageConfig == NCSI_AND_BMC_PAGE_CONFIG)
     {
+        // Page 2: MAC Reg
+        // Page 3: NCSI
         txbuf[0] = 0xf8;
         txbuf[1] = 0x00;
         txbuf[2] = 0x00;
         txbuf[3] = 0x00;
         txbuf[4] = 0x10;
         txbuf[5] = 0x05;
+    }
+    else if(pageConfig == PC_AND_SERDES_PAGE_CONFIG)
+    {
+        // Page 2: PC/iCAPE
+        // Page 3: Serdes
+        txbuf[0] = 0xEC;
+        txbuf[1] = 0x01;
+        txbuf[2] = 0x00;
+        txbuf[3] = 0xC0;
+        txbuf[4] = 0x10;
+        txbuf[5] = 0x08;
     }
     else 
     {
@@ -193,7 +216,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
 static int ps48_init(uint32_t fd) {
     ps48_sync(fd);
     ps48_page_config(fd, FLASH_AND_SWITCH_PAGE_CONFIG);
-    ps48_page_config(fd, NCSI_AND_BMC_PAGE_CONFIG);
+    ps48_page_config(fd, PC_AND_SERDES_PAGE_CONFIG);
 
     return 0;
 }
@@ -283,7 +306,7 @@ static int ps48_clean_resp(uint32_t fd)
     return ret;
 }
 
-static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
+static int ps48_write(uint32_t fd, uint32_t page_id, uint32_t addr, uint32_t data)
 {
     struct spi_ioc_transfer msg[1];
     uint8_t txbuf[18];    
@@ -294,7 +317,7 @@ static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
     temp = (uint8_t *)(&data);
     memset(rxbuf, 0, 18);
 
-    txbuf[0] = 0x40;
+    txbuf[0] = 0x40 | ((uint8_t)(page_id & 3));
     txbuf[1] = addr;
     txbuf[5] = *temp++;
     txbuf[4] = *temp++;
@@ -355,7 +378,7 @@ static int ps48_write(uint32_t fd, uint32_t addr, uint32_t data)
 /*
  * Should only be used for Flash controller Data transmit register
  */
-static int ps48_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte)
+static int ps48_write_pipeline(uint32_t fd, uint32_t page_id, uint32_t addr, uint8_t *buf, uint32_t numByte)
 {
     struct spi_ioc_transfer msg[1];
     int ret = 1;
@@ -383,7 +406,7 @@ static int ps48_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_
     }
 
     for (int i = 0; i < numByte; i++) {
-        txbuf[i*6+0] = 0x40;
+        txbuf[i*6+0] = 0x40 | ((uint8_t)(page_id & 3));
         txbuf[i*6+1] = addr;
         txbuf[i*6+2] = 0x00;
         txbuf[i*6+3] = 0x00;
@@ -445,7 +468,7 @@ static int ps48_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_
     return ret;
 }
 
-static int ps48_read(uint32_t fd, uint32_t addr)
+static int ps48_read(uint32_t fd, uint32_t page_id, uint32_t addr)
 {
     struct spi_ioc_transfer msg[1];
     int buf_size_in_frame = 3;
@@ -454,10 +477,31 @@ static int ps48_read(uint32_t fd, uint32_t addr)
     uint8_t rxbuf[18];
     uint8_t *temp;
     int ret;
+    uint32_t addr_base;
+    uint32_t addr_f;
 
-    temp = (uint8_t *)(&addr);
+    page_id = page_id & 3;
+    switch (page_id)
+    {
+        case 0x00:
+            addr_base = FPGA_BASE_ADDR_QSPI_CTRL;
+            break;
+        case 0x01:
+            addr_base = FPGA_BASE_ADDR_MES_REG;
+            break;
+        case 0x02:
+            addr_base = FPGA_BASE_ADDR_PC;
+            break;
+        default:
+            addr_base = FPGA_BASE_ADDR_SERDES;
+            break;
+    }
+    addr_f = addr_base + addr;
+    //printf("%s: addr_f=0x%x\n", __FUNCTION__, addr_f);
 
-    txbuf[0] = 0x80;
+    temp = (uint8_t *)(&addr_f);
+
+    txbuf[0] = 0x80 | ((uint8_t)(page_id & 3));
     txbuf[1] = 0x00;
     txbuf[5] = *temp++;
     txbuf[4] = *temp++;
@@ -519,7 +563,7 @@ static int ps48_read(uint32_t fd, uint32_t addr)
 /*
  * Should only be used for Flash controller data receive register
  */
-static int ps48_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t numByte)
+static int ps48_read_pipeline(uint32_t fd, uint32_t page_id, uint32_t addr, uint8_t *buf, uint32_t numByte)
 {
     struct spi_ioc_transfer msg[1];
     int ret = 1;
@@ -534,7 +578,28 @@ static int ps48_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t
     uint32_t bufIdx = 0;
     uint8_t *tmpPtr;
     uint32_t addr_f;
-    addr_f = addr + QSFP_CTRL_FPGA_BASE_ADDR;
+    //addr_f = addr + FPGA_BASE_ADDR_QSPI_CTRL;
+
+    //tmpPtr = (uint8_t *)(&addr_f);
+    uint32_t addr_base;
+
+    switch (page_id & 0x3)
+    {
+        case 0x00:
+            addr_base = FPGA_BASE_ADDR_QSPI_CTRL;
+            break;
+        case 0x01:
+            addr_base = FPGA_BASE_ADDR_MES_REG;
+            break;
+        case 0x02:
+            addr_base = FPGA_BASE_ADDR_PC;
+            break;
+        default:
+            addr_base = FPGA_BASE_ADDR_SERDES;
+            break;
+    }
+    addr_f = addr_base + addr;
+    //printf("%s: addr_f=0x%x\n", __FUNCTION__, addr_f);
 
     tmpPtr = (uint8_t *)(&addr_f);
 
@@ -557,7 +622,7 @@ static int ps48_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_t
 #endif
 
     for (int i = 0; i < numByte; i++) {
-        txbuf[i*6+0] = 0x80;
+        txbuf[i*6+0] = 0x80 | ((uint8_t)(page_id & 3));
         txbuf[i*6+1] = 0;
         txbuf[i*6+2] = tmpPtr[3];
         txbuf[i*6+3] = tmpPtr[2];
@@ -653,8 +718,8 @@ static int ps48_qspi_ctrl_read(uint32_t fd, uint32_t addr)
 {
     uint32_t addr_f;
     int ret;
-    addr_f = addr + QSFP_CTRL_FPGA_BASE_ADDR;
-    ret = ps48_read(fd, addr_f);
+    //addr_f = addr + FPGA_BASE_ADDR_QSPI_CTRL;
+    ret = ps48_read(fd, PAGE_ID_FLASH, addr);
     if (ret == -1) {
         return ret;
     }
@@ -667,7 +732,7 @@ static int ps48_qspi_ctrl_write(uint32_t fd, uint32_t addr, uint32_t data)
 {
     uint32_t addr_f;
     int ret;
-    ret = ps48_write(fd, addr, data);
+    ret = ps48_write(fd, PAGE_ID_FLASH, addr, data);
     if (ret == -1) {
         return ret;
     }
@@ -736,7 +801,7 @@ static int flash_write_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32
 
     while(1) { 
         transByte = MIN(remainByte, PS48_PIPELINE_SIZE);
-        ps48_write_pipeline(fd, SPI_DATA_TRANSMIT_REG, transBuf, transByte);
+        ps48_write_pipeline(fd, PAGE_ID_FLASH, SPI_DATA_TRANSMIT_REG, transBuf, transByte);
         //ps48_clean_resp(fd);
 
         if (remainByte <= PS48_PIPELINE_SIZE) {
@@ -812,7 +877,7 @@ static int flash_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_
     //printf("Flushing 0s' to pop read data\n");
     while(1) { 
         transByte = MIN(remainByte, PS48_PIPELINE_SIZE);
-        ps48_write_pipeline(fd, SPI_DATA_TRANSMIT_REG, transBuf, transByte);
+        ps48_write_pipeline(fd, PAGE_ID_FLASH, SPI_DATA_TRANSMIT_REG, transBuf, transByte);
         if (remainByte <= PS48_PIPELINE_SIZE) {
             break;
         }
@@ -830,7 +895,7 @@ static int flash_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_
     while(1) { 
         transByte = MIN(remainByte, PS48_PIPELINE_SIZE);
         //printf("transByte: 0x%x\n", transByte);
-        ps48_read_pipeline(fd, SPI_DATA_RECEIVE_REG, transBuf, transByte);
+        ps48_read_pipeline(fd, PAGE_ID_FLASH, SPI_DATA_RECEIVE_REG, transBuf, transByte);
         if (remainByte <= PS48_PIPELINE_SIZE) {
             break;
         }
@@ -842,6 +907,7 @@ static int flash_read_pipeline(uint32_t fd, uint32_t addr, uint8_t *buf, uint32_
     }
 
     memcpy(buf, transBufBase+rdOvHead, numByte); 
+    free(transBufBase);
 
     return ret;
 }
@@ -1268,7 +1334,7 @@ static int flash_read_to_file(char* fn, char* imageType) {
         printf("main image; base: 0x%x\n", FLASH_OFFSET_MAIN);
         flash_base_addr = FLASH_OFFSET_MAIN;
         bufSize = 0x1000000;
-        //bufSize = 0x3B0000;
+        bufSize = 0x300000;
     }
     else if (strcmp(imageType, "gold") == 0) {
         printf("gold image; base: 0x%x\n", FLASH_OFFSET_GOLD);
@@ -1372,7 +1438,7 @@ static int ps48_write_pipeline_test(uint32_t fd, uint32_t numByte) {
     ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x1E6);
     ps48_qspi_ctrl_write(fd, SPI_CONTROL_REG, 0x186);
 
-    ps48_write_pipeline(fd, SPI_DATA_TRANSMIT_REG, buf, numByte);
+    ps48_write_pipeline(fd, PAGE_ID_FLASH, SPI_DATA_TRANSMIT_REG, buf, numByte);
 
     free(buf);
     return 0;
@@ -1391,6 +1457,59 @@ static int flash_read_pipeline_test(uint32_t fd, uint32_t addr, uint32_t numByte
     free(buf);
     return 0;
 }
+
+uint8_t bit_swap_byte(uint8_t input_byte) {
+    uint8_t output_byte = 0;
+    for(int i = 0; i < 8; i++) {
+        output_byte |= ((input_byte >> i) & 1) << (7-i);
+        //printf("i=%d; input_byte=0x%x; output_byte=0x%x\n", i, input_byte, output_byte);
+    }
+    return output_byte;
+
+}
+
+void fpga_reload(void) {
+    uint32_t fd;
+    uint8_t *buf;
+    uint32_t data;
+
+    // FPGA reload sequence
+    //uint8_t reload_dummy[]        = {0xFF, 0xFF, 0xFF, 0xFF};
+    //uint8_t reload_sync[]         = {0xAA, 0x99, 0x55, 0x66};
+    //uint8_t reload_t1_noop[]      = {0x20, 0x00, 0x00, 0x00};
+    //uint8_t reload_t1_w1_wbstar[] = {0x30, 0x02, 0x00, 0x01};
+    //uint8_t reload_boot_addr[]    = {0x00, 0x00, 0x00, 0x00};
+    //uint8_t reload_w1_cmd[]       = {0x30, 0x00, 0x80, 0x01};
+    //uint8_t reload_iprog[]        = {0x00, 0x00, 0x00, 0x0F};
+    //uint8_t reload_t1_noop[]      = {0x20, 0x00, 0x00, 0x00};
+    uint8_t reload_seq[] = { 
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xAA, 0x99, 0x55, 0x66,
+    0x20, 0x00, 0x00, 0x00,
+    0x30, 0x02, 0x00, 0x01,
+    0x00, 0x00, 0x00, 0x00,
+    0x30, 0x00, 0x80, 0x01,
+    0x00, 0x00, 0x00, 0x0F,
+    0x20, 0x00, 0x00, 0x00,
+    };
+
+    uint8_t *bit_swap_buf = malloc(sizeof(reload_seq));
+    for(int i = 0; i < sizeof(reload_seq); i++) {
+        bit_swap_buf[i] = bit_swap_byte(reload_seq[i]);
+    }
+    disp_buf(bit_swap_buf, sizeof(reload_seq));
+
+    fd = e_open(spidev_path1, O_RDWR, 0);
+    ps48_init(fd);
+
+    for (int i = 0; i < 8; i++) {
+        buf = bit_swap_buf + i * 4;
+        data = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+        ps48_write(fd, 2, 0x70, data);
+    }
+    free(bit_swap_buf);
+}
+
 
 static void usage(void)
 {
@@ -1420,6 +1539,8 @@ static void usage_full (void) {
         "       Program FPGA image to main or gold partition\n"
         "   -file file_name main/gold\n"
         "       Read flash partition (main/gold) to file. Entire 16MB of each partition will be read out\n"
+        "   -reload\n"
+        "       Reload FPGA"
         "------------------\n"
         "Debug commands\n"
         "   -init\n"
@@ -1443,6 +1564,24 @@ static void usage_full (void) {
         "";
 
     printf("%s", usage_ptr);
+}
+
+
+void util_ps48_read(char* id, uint32_t addr) {
+    uint32_t page;
+    uint32_t fd;
+
+    ps48_sync(fd);
+    uint32_t data;
+    if (strcmp(id, "fc") == 0) {
+        printf("Read flash controller\n");
+        ps48_page_config(fd, FLASH_AND_SWITCH_PAGE_CONFIG);
+        page = 0;
+    } else if (strcmp(id, "pc") == 0) {
+        printf("Read power controller\n");
+        ps48_page_config(fd, PC_AND_SERDES_PAGE_CONFIG);
+        page = 2;
+    } 
 }
 
 int main(int argc, char *argv[])
@@ -1584,6 +1723,10 @@ int main(int argc, char *argv[])
         printf("Read Pipeline test\n");
         flash_read_pipeline_test(fd, addr, numByte);
         close(fd);
+    } 
+    else if ( (strcmp(argv[1], "-reload" ) == 0) ) 
+    {
+        fpga_reload();
     } 
     else if ( strcmp(argv[1], "-help" ) == 0 ) 
     {
