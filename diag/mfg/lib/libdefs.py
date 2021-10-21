@@ -274,6 +274,7 @@ class MTP_DIAG_Report:
     NIC_DIAG_REGRESSION_RSLT_RE = r"NIC-(\d{{2}}) (\w+) (\w+) {:s}"
     NIC_DIAG_REGRESSION_SKIP_RSLT_RE = r"NIC-(\d{{2}}) {:s}" #SKIP doesnt have type and sn
     NIC_DIAG_REGRESSION_PN_BY_FRU_RE = r"FRU: {:s},\s.*,\s(\w.*\w)"
+    NIC_DIAG_REGRESSION_PN_BY_FRU2_RE = r"SN = {:s},\sPN\s=\s(\w.*\w),\sTYPE\s=\s\w+"
 
 class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"

@@ -1423,6 +1423,11 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 matchsn = re.findall(nic_pn_reg_exp, buf)
                 if matchsn:
                     sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
+                else:
+                    nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
+                    matchsn2 = re.findall(nic_pn_reg_exp2, buf)
+                    if matchsn2:
+                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
@@ -1451,6 +1456,11 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 matchsn = re.findall(nic_pn_reg_exp, buf)
                 if matchsn:
                     sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
+                else:
+                    nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
+                    matchsn2 = re.findall(nic_pn_reg_exp2, buf)
+                    if matchsn2:
+                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
