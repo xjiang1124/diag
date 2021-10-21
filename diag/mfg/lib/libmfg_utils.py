@@ -218,8 +218,7 @@ def extract_sn_from_dell_ppid(tmp):
         A -   B  -  C  - D - E  - F
         SN = A+C+D+E
     """
-    tmp = tmp.split("-")
-    sn = tmp[0] + tmp[2] + tmp[3] + tmp[4]
+    sn = tmp[0:2] + tmp[8:13] + tmp[13:16] + tmp[16:20]
     return serial_number_validate(sn)
 
 def extract_pn_from_dell_ppid(tmp):
@@ -230,8 +229,7 @@ def extract_pn_from_dell_ppid(tmp):
         A -   B  -  C  - D - E  - F
         PN = B+F
     """
-    tmp = tmp.split("-")
-    pn = str(tmp[1] + tmp[5])
+    pn = tmp[2:8] + tmp[20:23]
     return part_number_validate(pn)
 
 def dell_ppid_validate(tmp):
@@ -929,6 +927,11 @@ def flx_sn_to_factory(sn):
     else:
         return None
 
+def FindDellSN(sn):
+    if re.match(DELL_BUILD_SN_FMT, sn):
+        return True
+    else:
+        return False
 
 def flx_stage_to_penang(stage):
     if stage == FF_Stage.FF_DL:
@@ -1415,6 +1418,16 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
+            if FindDellSN(sn):
+                nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
+                matchsn = re.findall(nic_pn_reg_exp, buf)
+                if matchsn:
+                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
+                else:
+                    nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
+                    matchsn2 = re.findall(nic_pn_reg_exp2, buf)
+                    if matchsn2:
+                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
@@ -1438,6 +1451,16 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
+            if FindDellSN(sn):
+                nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
+                matchsn = re.findall(nic_pn_reg_exp, buf)
+                if matchsn:
+                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
+                else:
+                    nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
+                    matchsn2 = re.findall(nic_pn_reg_exp2, buf)
+                    if matchsn2:
+                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
@@ -1578,10 +1601,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                     cur_fail_list[mtp_id][slot] = 0
                     cur_fail_list[mtp_id][slot+length] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if (nic_type == NIC_Type.ORTANO or
-                        nic_type == NIC_Type.ORTANO2 or
-                        nic_type == NIC_Type.POMONTEDELL
-                        ):
+                    if nic_type in ELBA_NIC_TYPE_LIST:
                         read_data = [0]
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
                         if not rc:
@@ -1601,6 +1621,47 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                                 failure_detected = True
 
                         if read_data[0] & 0x02 == 0:
+                            if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot+length] = 1
+                                loopback_fail_list[mtp_id][slot+length] += 1
+                                failure_detected = True
+
+                    elif nic_type in CAPRI_NIC_TYPE_LIST:
+                        # QSFP/SFP port 1
+                        read_data = [0]
+                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
+                        if not rc:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
+                            mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read port 1 loopback over i2c")
+                            if slot not in fail_nic_list[mtp_id]:
+                                fail_nic_list[mtp_id].append(slot)
+                            continue
+
+                        if read_data[0] & 0x3 != 0x3:
+                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot] = 1
+                                loopback_fail_list[mtp_id][slot] += 1
+                                failure_detected = True
+
+                        # QSFP/SFP port 2
+                        read_data = [0]
+                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(1, 0x50, 0, read_data)
+                        if not rc:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read port 2 loopback over i2c")
+                            if slot not in fail_nic_list[mtp_id]:
+                                fail_nic_list[mtp_id].append(slot)
+                            continue
+
+                        if read_data[0] & 0x3 != 0x3:
                             if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:
                                     fail_nic_list[mtp_id].append(slot)
