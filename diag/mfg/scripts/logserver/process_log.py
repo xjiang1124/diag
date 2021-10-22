@@ -3881,6 +3881,20 @@ def highlightinred(ws,keyword):
 			if keyword in str(ws.cell(row=rowNum, column=colNum).value):
 				ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')                
 
+def highlightinlightredrow(ws,keyword):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        fillcolor = 0
+        for colNum in range(1, maxCol + 1):
+            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+                fillcolor = 1
+            if fillcolor:
+                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFCCCB', end_color='FFCCCB', fill_type = 'solid')   
+
 def converttoPERCENTAGEnumber(ws):
     from openpyxl.styles import Color, PatternFill, Font, Border
     maxRow = ws.max_row
@@ -3893,7 +3907,14 @@ def converttoPERCENTAGEnumber(ws):
                 checkvalue = float(checkvalue[:-1])/100
                 ws.cell(row=rowNum, column=colNum).value = checkvalue
                 ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
-                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+                if checkvalue > 0.95:
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+                elif checkvalue < 0.25:
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+                elif checkvalue > 0.75:
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFEE08', end_color='FFEE08', fill_type = 'solid')
+                else:
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
 
 def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     
@@ -4021,6 +4042,7 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
     wirtedata.append('MTP')
     wirtedata.append('TEST')
     wirtedata.append('STATUS')
+    wirtedata.append('TOTAL')
     for slot in inputconfig["MTP_STATUS"]:
         wirtedata.append(slot)
     ws1.append(wirtedata)
@@ -4028,29 +4050,59 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
         wirtedatatotal = list()
         wirtedatapass = list()
         wirtedatafail = list()
+        wirtedatapassrate = list()
         wirtedatatotal.append(mtp)
         wirtedatapass.append(mtp)
         wirtedatafail.append(mtp)
+        wirtedatapassrate.append(mtp)
         teststep = mtpchassisusecountbyslot[mtp]["TEST"][0]
         if len(mtpchassisusecountbyslot[mtp]["TEST"]) > 1:
             for eachtest in mtpchassisusecountbyslot[mtp]["TEST"][1:]:
                 teststep = "{},{}".format(teststep,eachtest)
         wirtedatatotal.append(teststep)
         wirtedatapass.append(teststep)
-        wirtedatafail.append(teststep)  
+        wirtedatafail.append(teststep)
+        wirtedatapassrate.append(teststep)
+        listoftotal = list()
+        listofpass = list()
+        listoffail = list()
+        for slot in inputconfig["MTP_STATUS"]:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            listofpass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            listoffail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])  
         wirtedatatotal.append("TOTAL")
         wirtedatapass.append("PASS")
-        wirtedatafail.append("FAIL")      
+        wirtedatafail.append("FAIL")
+        wirtedatapassrate.append("PASS_RATE")
+        wirtedatatotal.append(sum(listoftotal))
+        wirtedatapass.append(sum(listofpass))
+        wirtedatafail.append(sum(listoffail))
+        wirtedatapassrate.append(calculePass_rate(sum(listoftotal),sum(listofpass)))           
         for slot in inputconfig["MTP_STATUS"]:
             wirtedatatotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
             wirtedatapass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
             wirtedatafail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])
+            wirtedatapassrate.append(calculePass_rate(mtpchassisusecountbyslot[mtp][slot]["TOTAL"],mtpchassisusecountbyslot[mtp][slot]["PASS"]))
         ws1.append(wirtedatatotal)
         ws1.append(wirtedatapass)
-        ws1.append(wirtedatafail)           
+        ws1.append(wirtedatafail)
+        ws1.append(wirtedatapassrate)          
     fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+    highlightinlightredrow(ws1,'FAIL')
+    freezePosition(ws1,'D2')
 
     return True
+
+def calculePass_rate(totalnumber,passnumber):
+
+    calcule_yeild = 1
+    if totalnumber:
+        calcule_yeild = passnumber / totalnumber
+
+    yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
+
+    return yeilddisplay
 
 def generateexecldieidreport(DATA,wb,inputconfig,start=None):
     ws1 = wb.active
