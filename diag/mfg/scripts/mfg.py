@@ -34,7 +34,7 @@ class mfg:
         self.cm_server = dict()
         self.cm_server["FML"] = "192.168.1.112"
         self.cm_server["FPN"] = "192.168.2.22"
-        self.cm_server["FSN"] = "192.168.3.11"
+        self.cm_server["FSN"] = "192.168.3.2"
         self.cm_server["PEN"] = "hw-mftg-data"
         self.user = "mfg"
         self.pwd  = "pensando"
