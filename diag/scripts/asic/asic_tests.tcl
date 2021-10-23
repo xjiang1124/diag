@@ -10,6 +10,24 @@ proc init {} {
     source .tclrc.diag
 }
 
+proc get_port_turbo { slot } {
+    # Turbo-MTP slot 2 port mapping
+    set dict_slot_2_port [dict create]
+    dict set dict_slot_2_port 1  0x1021
+    dict set dict_slot_2_port 2  0x1022
+    dict set dict_slot_2_port 3  0x1031
+    dict set dict_slot_2_port 4  0x1032
+    dict set dict_slot_2_port 5  0x1041
+    dict set dict_slot_2_port 6  0x1042
+    dict set dict_slot_2_port 7  0x1051
+    dict set dict_slot_2_port 8  0x1052
+    dict set dict_slot_2_port 9  0x1081
+    dict set dict_slot_2_port 10 0x1082
+
+    set port [dict get $dict_slot_2_port $slot]
+    return $port
+}
+
 proc disp_volt_temp { {board_id SN000001} {j2c_slot 1} {use_zmq 0} {zmq_conn ""} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
@@ -134,6 +152,7 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2
     set log_file set_avs_${board_id}_${cur_time}.log
     set cur_dir [pwd]
     set j2c_port 10
+    set slot $j2c_slot
 
     set MTP_TYPE $::env(MTP_TYPE)
     if {$MTP_TYPE == "MTP_TOR"} {
@@ -143,11 +162,14 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2
             puts "[ERROR] BASH ENVIRONMENT VARIABLE FOR ELBA J2C NOT SET"
             return 1
         }
-        if { $j2c_slot == 1 } {
+        if { $slot == 1 } {
             set j2c_port $ELBA0_ID
         } else {
             set j2c_port $ELBA1_ID
         }
+    } elseif {$MTP_TYPE == "MTP_TURBO_ELBA"} {
+        set j2c_port [get_port_turbo $slot]
+        set slot 1
     }
 
 
@@ -156,10 +178,10 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2
     plog_msg "Running [info level 0]"
 
     if { $use_zmq == 1} {
-        diag_force_close_zmq_if $zmq_conn $j2c_slot
-        diag_open_zmq_if $zmq_conn $j2c_slot
+        diag_force_close_zmq_if $zmq_conn $slot
+        diag_open_zmq_if $zmq_conn $slot
     } else {
-        diag_open_j2c_if $j2c_port $j2c_slot
+        diag_open_j2c_if $j2c_port $slot
     }
 
     set in_err [plog_get_err_count]
@@ -173,7 +195,7 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2
     } elseif { $core_freq == 525 } {
         set mode nod 525
     }
-    elb_card_rst $j2c_port $j2c_slot $mode 3200 1600 0 0 "127.0.0.1" 1 1 normal 0 0
+    elb_card_rst $j2c_port $slot $mode 3200 1600 0 0 "127.0.0.1" 1 1 normal 0 0
 
     elb_set_avs $core_freq $arm_freq 
 
