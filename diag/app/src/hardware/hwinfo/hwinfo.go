@@ -491,9 +491,9 @@ func init() {
     dispMap["ORTANO"]       = ortanoDispStaList
     dispMap["ORTANO2"]      = ortanoDispStaList
     dispMap["LACONADELL"]   = laconaDispStaList
-    dispMap["LACONAD"]      = laconaDispStaList
-    dispMap["LACONAD32ELL"] = laconaDispStaList
-    dispMap["LACONAD32"]    = laconaDispStaList
+    dispMap["LACONA"]       = laconaDispStaList
+    dispMap["LACONA32DELL"]  = laconaDispStaList
+    dispMap["LACONA32"]     = laconaDispStaList
     dispMap["POMONTEDELL"]  = laconaDispStaList
     dispMap["POMONTE"]      = laconaDispStaList
     //===============================
@@ -526,9 +526,9 @@ func init() {
     eepromMap["ORTANO"]       = naplesEepList
     eepromMap["ORTANO2"]      = naplesEepList
     eepromMap["LACONADELL"]   =  naplesEepList
-    eepromMap["LACONAD"]      =  naplesEepList
-    eepromMap["LACONAD32ELL"] =  naplesEepList
-    eepromMap["LACONAD32"]    =  naplesEepList
+    eepromMap["LACONA"]       =  naplesEepList
+    eepromMap["LACONA32DELL"]  =  naplesEepList
+    eepromMap["LACONA32"]     =  naplesEepList
     eepromMap["POMONTEDELL"]  =  naplesEepList
     eepromMap["POMONTE"]      =  naplesEepList
 
@@ -563,9 +563,9 @@ func init() {
     i2cHubMap["ORTANO"]         = naples100I2cHubMap
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
     i2cHubMap["LACONADELL"]     = naples100I2cHubMap
-    i2cHubMap["LACONAD"]        = naples100I2cHubMap
-    i2cHubMap["LACONAD32ELL"]   = naples100I2cHubMap
-    i2cHubMap["LACONAD32"]      = naples100I2cHubMap
+    i2cHubMap["LACONA"]         = naples100I2cHubMap
+    i2cHubMap["LACONA32DELL"]    = naples100I2cHubMap
+    i2cHubMap["LACONA32"]       = naples100I2cHubMap
     i2cHubMap["POMONTEDELL"]    = naples100I2cHubMap
     i2cHubMap["POMONTE"]        = naples100I2cHubMap
 
@@ -596,9 +596,9 @@ func init() {
     i2cHubListMap["ORTANO"]        = forioI2cHubList
     i2cHubListMap["ORTANO2"]       = forioI2cHubList
     i2cHubListMap["LACONADELL"]    = forioI2cHubList
-    i2cHubListMap["LACONAD"]       = forioI2cHubList
-    i2cHubListMap["LACONAD32ELL"]  = forioI2cHubList
-    i2cHubListMap["LACONAD32"]     = forioI2cHubList
+    i2cHubListMap["LACONA"]        = forioI2cHubList
+    i2cHubListMap["LACONA32DELL"]   = forioI2cHubList
+    i2cHubListMap["LACONA32"]      = forioI2cHubList
     i2cHubListMap["POMONTEDELL"]   = forioI2cHubList
     i2cHubListMap["POMONTE"]       = forioI2cHubList
 
@@ -629,9 +629,9 @@ func init() {
     psuListMap["ORTANO"]        = nicPsuList
     psuListMap["ORTANO2"]       = nicPsuList
     psuListMap["LACONADELL"]    = nicPsuList
-    psuListMap["LACONAD"]       = nicPsuList
-    psuListMap["LACONAD32ELL"]  = nicPsuList
-    psuListMap["LACONAD32"]     = nicPsuList
+    psuListMap["LACONA"]        = nicPsuList
+    psuListMap["LACONA32DELL"]   = nicPsuList
+    psuListMap["LACONA32"]      = nicPsuList
     psuListMap["POMONTEDELL"]   = nicPsuList
     psuListMap["POMONTE"]       = nicPsuList
 
