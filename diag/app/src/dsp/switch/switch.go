@@ -89,7 +89,7 @@ func SwitchSnakeHdl(argList []string) {
     duration:=*durationPtr
     loopback:=*loopbackPtr
     
-    err = td3.Snake_All_Ports(uint32(mask), uint32(duration), loopback)
+    err = td3.Snake_All_Ports_Forward_Next_Port(uint32(mask), uint32(duration), loopback)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code

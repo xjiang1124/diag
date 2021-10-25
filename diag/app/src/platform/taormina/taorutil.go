@@ -37,7 +37,23 @@ import (
     "encoding/json"
     "hardware/i2cinfo"
     "hardware/hwdev"
+    "hardware/hwinfo"
     "os/exec"
+
+    "device/bcm/td3"
+    "device/cpu/XeonD"
+    "device/powermodule/sn1701022"
+    "device/powermodule/tps544c20"
+    "device/powermodule/tps53681"
+    "device/psu/dps800" 
+    "device/fanctrl/adt7462"
+    "device/tempsensor/tmp451"
+    "device/tempsensor/lm75a"
+    /*
+    
+    "device/powermodule/tps549a20"
+    
+    */ 
 )
 
 
@@ -437,6 +453,29 @@ func Process_Kill(process string) (err int) {
 }
 
 
+func GetSerialNumbers() (systemSN string, boardSN string, err int) {
+    
+    out, errGo := exec.Command("sh", "-c", "fruread --chassis 1 | grep -i Serial | awk '{$1=$1};1'").Output()
+    if errGo != nil {
+        cli.Println("e", errGo)
+        err = errType.FAIL
+        return
+    }
+    s := strings.Split(string(out), "\n")
+    //Serial Number: 'FSJ212500DF'
+    //TPM Serial Number: 'FSJ2125004F'
+    for i, temp := range s {
+        if i == 0 {
+            systemSN = temp[16:27]
+        }
+        if i == 1 {
+            boardSN = temp[20:31]
+        }
+    }
+    return
+}
+
+
 
 
 func Elba_Check_Pci_Link(elba int) (err int) {
@@ -495,9 +534,11 @@ func Elba_Check_Pci_Link(elba int) (err int) {
 
 
 func Elba_Show_Firmware(elba int) (err int) {
+    var ip string
+    var netns bool = false
+    /*
     var elb_pci string
-    var ethfound bool = false
-    var ethdev string
+    
 
     if elba == ELBA0 {
         elb_pci = ELBA0_ETH_PCIBUS
@@ -535,6 +576,32 @@ func Elba_Show_Firmware(elba int) (err int) {
 
 
     out, errGo := exec.Command("sshpass","-p","pen123","timeout","500","ssh","-o","LogLevel=ERROR","-o","UserKnownHostsFile=/dev/null","-o","StrictHostKeyChecking=no","root@169.254.13.1","/nic/tools/fwupdate","-l").Output()
+    */
+
+
+
+    out, _ := exec.Command("ip", "netns").Output()
+    s := strings.Split(string(out), "\n")
+    for _, temp := range s {
+        if strings.Contains(temp, "ntb")==true {
+            //fmt.Printf(" ETH DEV FOUND..  %s\n", ethdev)
+            netns = true
+            break
+        }
+    }
+    if netns == false {
+        fmt.Printf("[ERROR] ELBA-%d Firmware List.  Netns device ntb not found, cannot query firmware\n", elba)
+        err = errType.FAIL
+        return
+    }
+
+    if elba == ELBA0 {
+        ip = "root@169.254.13.1"
+    } else {
+        ip = "root@169.254.7.1"
+    }
+
+    out, errGo := exec.Command("ip", "netns", "exec", "ntb", "sshpass", "-p", "pen123", "timeout", "500", "ssh", "-o", "LogLevel=ERROR", "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", ip, "/nic/tools/fwupdate", "-l").Output()
     if errGo != nil {
         fmt.Println("[ERROR] 2", errGo)
         err = errType.FAIL
@@ -649,3 +716,155 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
 
     return
 }
+
+
+
+/*    
+    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20",   1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20",   1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8RT_B",       "TPS549A20",   1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    //ON P0 BOARDS, 0x4C TEMP SENSOR IS LOCATED HERE AT 0x48
+    //I2cInfo {"TSENSOR-1",      "LM75",        3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-1",      "TMP451",      3,   0x4C,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-2",      "LM75",        3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TSENSOR-3",      "LM75",        3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"P0V8RT_A",       "TPS544C20",   1,   0x04,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P3V3",           "TPS544C20",   1,   0x08,    0x0,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"P3V3S",          "TPS544C20",   1,   0x09,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"TDNT_PDVDD",     "TPS53681",    1,   0x60,    0x0,    "FPGA_HUB_0_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"TDNT_P0V8_AVDD", "TPS53681",    1,   0x60,    0x1,    "FPGA_HUB_0_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_P1V2_VDDQ",     "SN1701022", 1,  0x77,    0x0,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_P1V05_COMBINED","SN1701022", 1,  0x77,    0x1,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_PVCCIN",        "SN1701022", 1,  0x6B,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_P1V05_VCCSCSUS","SN1701022", 1,  0x6B,    0x1,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_1",           "DPS-800",    2,   0x58,    0x0,    "FPGA_HUB_1_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_2",           "DPS-800",    2,   0x58,    0x0,    "FPGA_HUB_1_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"FAN_1",           "ADT7462",    2,   0x58,    0x0,    "FPGA_HUB_1_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"FAN_2",           "ADT7462",    2,   0x5C,    0x0,    "FPGA_HUB_1_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TD3",             "TRIDENT3",   2,   0x44,    0x0,    "FPGA_HUB_1_3",  3,    0},
+    I2cInfo {"FRU_EE",          "AT24C02C",   3,   0x50,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA0",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA1",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_3",  3,    I2C_TEST_ENABLE},
+*/
+
+
+
+type VRfunc func(devName string)(err int) 
+
+type VoltageTable struct {
+    VoltName  string 
+    VRfuncPtr VRfunc 
+}
+
+
+func ShowPower()  (err int)  {
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN"}
+    voltTable := []VoltageTable { {"CPU_P1V2_VDDQ", sn1701022.DispVoltWattAmp},
+                                  {"CPU_P1V05_COMBINED", sn1701022.DispVoltWattAmp},
+                                  {"CPU_PVCCIN", sn1701022.DispVoltWattAmp},
+                                  {"CPU_P1V05_VCCSCSUS", sn1701022.DispVoltWattAmp},
+                                  {"TDNT_PDVDD", tps53681.DispVoltWattAmp},
+                                  {"TDNT_P0V8_AVDD", tps53681.DispVoltWattAmp},
+                                  {"PSU_1", dps800.DispVoltWattAmp},
+                                  {"PSU_2", dps800.DispVoltWattAmp},
+                                  {"P0V8RT_A", tps544c20.DispVoltWattAmp},
+                                  {"P3V3", tps544c20.DispVoltWattAmp},
+                                  {"P3V3S", tps544c20.DispVoltWattAmp},
+                                  
+                                }
+
+    var outStr string
+    outStr = fmt.Sprintf("%-20s", "NAME")
+    for _, title := range(vrmTitle) {
+        outStr = outStr + fmt.Sprintf("%-10s", title)
+    }
+    fmt.Println(outStr)
+
+
+    for _, volt := range(voltTable) {
+        hwinfo.EnableHubChannelExclusive(volt.VoltName)
+        volt.VRfuncPtr(volt.VoltName)
+    }
+
+    return
+}
+
+
+type TemperatureFunc func(devName string) (temperatures []float64, err int) 
+
+type TemperatureTable struct {
+    TemperatureDevName  string 
+    TemperaturefuncPtr  TemperatureFunc 
+}
+
+
+func ShowTemperature ()  (err int)  {
+    TemperatureTitle := []string {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"}
+    TemperatureTable := []TemperatureTable { {"CPU_P1V2_VDDQ", sn1701022.GetTemperature},
+                                  {"CPU_P1V05_COMBINED", sn1701022.GetTemperature},
+                                  {"CPU_PVCCIN", sn1701022.GetTemperature},
+                                  {"CPU_P1V05_VCCSCSUS", sn1701022.GetTemperature},
+                                  {"TDNT_PDVDD", tps53681.GetTemperature},
+                                  {"TDNT_P0V8_AVDD", tps53681.GetTemperature},
+                                  {"TSENSOR-1", tmp451.GetTemperature},
+                                  {"TSENSOR-2", lm75a.GetTemperature},
+                                  {"TSENSOR-3", lm75a.GetTemperature},
+                                  {"FAN_1", adt7462.GetTemperature},
+                                  {"FAN_2", adt7462.GetTemperature},
+                                  {"PSU_1", dps800.GetTemperature},
+                                  {"PSU_2", dps800.GetTemperature},
+                                  {"TSENSOR-ASIC0", taorfpga.GetTemperature},
+                                  {"TSENSOR-ASIC1", taorfpga.GetTemperature},
+                                  {"TSENSOR-CPU", XeonD.GetTemperature},
+                                  {"TSENSOR-TD3", td3.GetTemperature},
+                                  {"TSENSOR-TD3", td3.GetPeakTemperature},
+                                }
+
+    var TD3count int = 0
+    var outStr string
+    var i int
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+
+    outStr = fmt.Sprintf("%-20s", "NAME")
+    for _, title := range(TemperatureTitle) {
+        outStr = outStr + fmt.Sprintf("%-10s", title)
+    }
+    fmt.Println(outStr)
+
+
+
+    for _, temp := range(TemperatureTable) {
+        rdTemp := []float64{}
+        hwinfo.EnableHubChannelExclusive(temp.TemperatureDevName)
+        rdTemp, err = temp.TemperaturefuncPtr(temp.TemperatureDevName)
+        if err != errType.SUCCESS {
+            fmt.Printf("ERROR: Reading temperature from dev %s failed\n", temp.TemperatureDevName) 
+            return;
+        }
+        if temp.TemperatureDevName == "TSENSOR-TD3" {
+            TD3count++
+        }
+        if TD3count == 2 {
+            outStr = fmt.Sprintf(fmtNameStr, temp.TemperatureDevName+"PEAK")
+        } else {
+            outStr = fmt.Sprintf(fmtNameStr, temp.TemperatureDevName)
+        
+        }
+
+        for i=0; i<len(rdTemp);i++ {
+            outStrTemp := fmt.Sprintf("%.03f", rdTemp[i])
+            outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        }      
+        for  ; i<len(TemperatureTitle);i++ {  
+            outStr = outStr + fmt.Sprintf(fmtStr, "-")
+        }
+        fmt.Println(outStr)
+    }
+    
+
+    return
+}
+

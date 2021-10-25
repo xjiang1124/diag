@@ -368,6 +368,9 @@ func Spi_cpld_read_usercode(spiNumber uint32) (ucode uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_USERCODE_OP, CPLD_RD_USERCODE_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_USERCODE_OP_RDLNG-1) * 8); i>=0; i=(i-8) {
         ucode = ucode | (uint32(data[j])<<uint32(i))
         j++
@@ -379,6 +382,9 @@ func Spi_cpld_read_device_id(spiNumber uint32) (devid uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_DEVICE_ID_OP, CPLD_RD_DEVICE_ID_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_DEVICE_ID_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         devid = devid | (uint32(data[j])<<uint32(i))
         j++
@@ -396,6 +402,9 @@ func Spi_cpld_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err error
     }
 
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_FEA_BITS_OP, CPLD_RD_FEA_BITS_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_FEA_BITS_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         FeatureBits = FeatureBits | (uint32(data[j])<<uint32(i))
         j++
@@ -455,6 +464,9 @@ func Spi_cpld_read_busy_flag(spiNumber uint32) (BusyFlag uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_BUSYFLAG_OP, CPLD_RD_BUSYFLAG_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_BUSYFLAG_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         BusyFlag = BusyFlag | (uint32(data[j])<<uint32(i))
         j++
@@ -466,6 +478,9 @@ func Spi_cpld_read_status_reg(spiNumber uint32) (StatusReg uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_STATUS_REG_OP, CPLD_RD_STATUS_REG_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_STATUS_REG_RDLNG-1) * 8); i>=0; i=i-8 {
         StatusReg = StatusReg | (uint32(data[j])<<uint32(i))
         j++
@@ -760,6 +775,9 @@ func Spi_cpld_machxO2_verify_flash_contents(spiNumber uint32, filename string) (
         }
 
         data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_FLASH_OP, CPLD_RD_FLASH_OP_RDLNG) 
+        if err != nil {
+            return
+        }
         for i:=0; i<int(CPLD_RD_FLASH_OP_RDLNG); i++ {
             flashData = append(flashData, data[i])
         }
@@ -886,6 +904,9 @@ func Spi_cpld_machxO2_generate_image_from_flash(spiNumber uint32, filename strin
         }
 
         data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_FLASH_OP, CPLD_RD_FLASH_OP_RDLNG) 
+        if err != nil {
+            return
+        }
         for i:=0; i<int(CPLD_RD_FLASH_OP_RDLNG); i++ {
             flashData = append(flashData, data[i])
         }

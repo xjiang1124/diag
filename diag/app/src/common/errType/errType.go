@@ -36,4 +36,8 @@ const(
     SFP_NOT_PRESENT      = 600
     SFP_TX_FAULT         = 601
     SFP_RX_LOSS          = 602
+    // LINK
+    LINK_DOWN            = 700
+    LINK_UP              = 701
+    LINK_DISABLED        = 702
 )

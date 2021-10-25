@@ -352,6 +352,12 @@ func GetTemp(devName string, tempIdx uint64) (integer int, frac int,  err int) {
     return
 }
 
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    dig, frac, err := GetTemp(devName, 0)
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+    return
+}
+
 func DispStatus(devName string) (err int) {
 
 

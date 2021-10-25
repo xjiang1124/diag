@@ -131,6 +131,9 @@ func Spi_cpldXO3_read_usercode(spiNumber uint32) (ucode uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_USERCODE_OP, CPLDXO3_RD_USERCODE_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLDXO3_RD_USERCODE_OP_RDLNG-1) * 8); i>=0; i=(i-8) {
         ucode = ucode | (uint32(data[j])<<uint32(i))
         j++
@@ -142,6 +145,9 @@ func Spi_cpldXO3_read_device_id(spiNumber uint32) (devid uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_DEVICE_ID_OP, CPLDXO3_RD_DEVICE_ID_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLDXO3_RD_DEVICE_ID_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         devid = devid | (uint32(data[j])<<uint32(i))
         j++
@@ -159,17 +165,11 @@ func Spi_cpldXO3_enable_config_interface(spiNumber uint32) (err error) {
 
 func Spi_cpldXO3_disable_config_interface(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_DISABLE_CONFIG_INTF_OP, CPLDXO3_DISABLE_CONFIG_INTF_OP_RDLNG) 
-    if err != nil {
-        return
-    }
     return
 }
 
 func Spi_cpldXO3_no_op_cmd(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_NO_OP, CPLDXO3_NO_OP_RDLNG) 
-    if err != nil {
-        return
-    }
     return
 }
 
@@ -183,6 +183,9 @@ func Spi_cpldXO3_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err er
     }
 
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_FEA_BITS_OP, CPLDXO3_RD_FEA_BITS_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLDXO3_RD_FEA_BITS_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         FeatureBits = FeatureBits | (uint32(data[j])<<uint32(i))
         j++
@@ -220,6 +223,9 @@ func Spi_cpldXO3_read_feature_row(spiNumber uint32) (data []byte, err error) {
      
 
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_FEA_ROW_OP, CPLDXO3_RD_FEA_ROW_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     //for i=(int(CPLDXO3_RD_FEA_ROW_OP_RDLNG-1) * 8); i>=0; i=i-8 {
     //    FeatureBits = FeatureBits | (uint32(data[j])<<uint32(i))
     //    j++
@@ -241,6 +247,9 @@ func Spi_cpldXO3_read_busy_flag(spiNumber uint32) (BusyFlag uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_BUSYFLAG_OP, CPLDXO3_RD_BUSYFLAG_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLDXO3_RD_BUSYFLAG_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         BusyFlag = BusyFlag | (uint32(data[j])<<uint32(i))
         j++
@@ -252,6 +261,9 @@ func Spi_cpldXO3_read_status_reg(spiNumber uint32) (StatusReg uint32, err error)
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_STATUS_REG_OP, CPLDXO3_RD_STATUS_REG_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLDXO3_RD_STATUS_REG_RDLNG-1) * 8); i>=0; i=i-8 {
         StatusReg = StatusReg | (uint32(data[j])<<uint32(i))
         j++
@@ -261,9 +273,6 @@ func Spi_cpldXO3_read_status_reg(spiNumber uint32) (StatusReg uint32, err error)
 
 func Spi_cpldXO3_enable_offline_mode(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_ENABLE_OFFLINE_MODE_OP, CPLDXO3_ENABLE_OFFLINE_MODE_OP_RDLNG) 
-    if err != nil {
-        return
-    }
     return
 }
 
@@ -298,26 +307,17 @@ func Spi_cpldXO3_reset_config_flash(spiNumber uint32, image string) (err error) 
     if space == FEATUREROW {
         _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RESET_FEATURE_ROW_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
-    if err != nil {
-        return
-    }
     return
 }
 
 
 func Spi_cpldXO3_set_programming_done(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_PROGRAM_DONE_OP, CPLDXO3_PROGRAM_DONE_OP_RDLNG) 
-    if err != nil {
-        return
-    }
     return
 }
 
 func Spi_cpldXO3_refresh(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_REFRESH_OP, CPLDXO3_REFRESH_OP_RDLNG) 
-    if err != nil {
-        return
-    }
     return
 }
 
@@ -340,8 +340,6 @@ func Spi_cpldXO3_erase_config_flash(spiNumber uint32, image string) (err error) 
     if space == FEATUREROW {
         _ , err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_ERASE_FEATURE_ROW_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
-
-    
     if err != nil {
         return
     }
@@ -633,7 +631,10 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
                 fmt.Printf(".")
             }
 
-            data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_FLASH_OP, CPLDXO3_RD_FLASH_OP_RDLNG) 
+            data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_FLASH_OP, CPLDXO3_RD_FLASH_OP_RDLNG)
+            if err != nil {
+                return
+            }             
             for i:=0; i<int(CPLDXO3_RD_FLASH_OP_RDLNG); i++ {
                 flashData = append(flashData, data[i])
             }
@@ -772,6 +773,9 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
             }
 
             data, err = Fpga_spi_generic_transaction(spiNumber, CPLDXO3_RD_FLASH_OP, CPLDXO3_RD_FLASH_OP_RDLNG) 
+            if err != nil {
+                return
+            }
             for i:=0; i<int(CPLDXO3_RD_FLASH_OP_RDLNG); i++ {
                 flashData = append(flashData, data[i])
             }
