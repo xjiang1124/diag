@@ -30,7 +30,7 @@ catch {
     set ELBA1_ID $::env(ELBA1_J2C_ID)
 }
 
-source asic_tests.tcl
+source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 set zmq_conn tcp://127.0.0.1:55000/
 global G_USE_ZMQ
