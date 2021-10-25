@@ -121,16 +121,7 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
         movereporttohistorydir(inputconfig)
 
     if "MTP_STATUS" in inputconfig:
-        wb3 = Workbook()
-        dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
-        print(dest_filename3)
-
-        generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
-
-        for mtp in DATA["MTPCHASSIS"]:
-            generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
-
-        wb3.save(filename = dest_filename3) 
+        generateMTPreport(pr,DATA,inputconfig,startdate=None)
 
     if "DIE_ID" in inputconfig:
         wb2 = Workbook()
@@ -150,6 +141,20 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
+
+    return None
+
+def generateMTPreport(pr,DATA,inputconfig,startdate=None):
+    wb3 = Workbook()
+    dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
+    print(dest_filename3)
+
+    generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
+
+    for mtp in DATA["MTPCHASSIS"]:
+        generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
+
+    wb3.save(filename = dest_filename3) 
 
     return None
 
@@ -3463,7 +3468,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
     highlightinred(ws2, 'FAIL')
     highlightinred(ws2, 'FAILED')
     freezePosition(ws2,'B2')
-    converttoPERCENTAGEnumber(ws2)
+    converttoPERCENTAGEnumberbyFailurerange(ws2)
     difftime = datetime.now()-start
     print("generateexeclHVLVsummary: {} use {} seconds".format(teststep,difftime.total_seconds()))
     generateexeclHVLVdata(FailureSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=True)
@@ -3908,13 +3913,57 @@ def converttoPERCENTAGEnumber(ws):
                 ws.cell(row=rowNum, column=colNum).value = checkvalue
                 ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
                 if checkvalue > 0.95:
+                    #Green
                     ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
-                elif checkvalue < 0.25:
+                elif checkvalue < 0.1:
+                    #Red
                     ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
                 elif checkvalue > 0.75:
+                    #Yellow
                     ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFEE08', end_color='FFEE08', fill_type = 'solid')
+                elif checkvalue < 0.25:
+                    #Pink
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFC0CB', end_color='FFC0CB', fill_type = 'solid')
+                elif checkvalue > 0.50:
+                    #Arylide Yellow
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='E9D66B', end_color='E9D66B', fill_type = 'solid')
                 else:
+                    #Orange
                     ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+
+def converttoPERCENTAGEnumberbyFailurerange(ws):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        for colNum in range(1, maxCol + 1):
+            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+            if '%' in checkvalue:
+                checkvalue = float(checkvalue[:-1])/100
+                ws.cell(row=rowNum, column=colNum).value = checkvalue
+                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+                if checkvalue < 0.005:
+                    #Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+                elif checkvalue < 0.01:
+                    #Sap Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='45731E', end_color='45731E', fill_type = 'solid')
+                elif checkvalue < 0.02:
+                    #Antique Bronze
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='675E24', end_color='675E24', fill_type = 'solid')
+                elif checkvalue < 0.03:
+                    #Chestnut
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='8D472B', end_color='8D472B', fill_type = 'solid')
+                elif checkvalue < 0.04:
+                    #Sweet Brown
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='E9D66B', end_color='E9D66B', fill_type = 'solid')
+                elif checkvalue < 0.05:
+                    #Cardinal
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='C82538', end_color='C82538', fill_type = 'solid')
+                else:
+                    #Red
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
 
 def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     
