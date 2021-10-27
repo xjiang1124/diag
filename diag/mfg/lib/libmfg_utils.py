@@ -854,6 +854,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
     mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
     mtp_mgmt_ctrl._lock.release()
     mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post fail debug"))
+    mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_clear_fa()
 
 def email_report(email_to, title, body = None):
     if not email_to:

@@ -874,8 +874,12 @@ class mtp_ctrl():
 
     def mtp_set_nic_status_fail(self, slot, skip_fa=False):
         if self._nic_ctrl_list:
+            # was previously OK, this is first failure
             if self.mtp_check_nic_status(slot) and not skip_fa:
-                # was previously OK, this is first failure
+                libmfg_utils.post_fail_steps(self, slot)
+
+            # failed inside libnic_ctrl, didnt trigger post_fail_steps
+            elif self.mtp_check_nic_missed_fa(slot) and not skip_fa:
                 libmfg_utils.post_fail_steps(self, slot)
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
 
@@ -3926,6 +3930,8 @@ class mtp_ctrl():
     def mtp_check_nic_status(self, slot):
         return self._nic_ctrl_list[slot].nic_check_status()
 
+    def mtp_check_nic_missed_fa(self, slot):
+        return self._nic_ctrl_list[slot].nic_missed_fa()
 
     # log the diag test history
     def mtp_mgmt_diag_history_disp(self):

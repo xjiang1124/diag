@@ -56,6 +56,7 @@ class nic_ctrl():
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._nic_status = NIC_Status.NIC_STA_POWEROFF
+        self._nic_missed_fa = False
         self._nic_con_prompt = "# "
 
         self._diag_ver = None
@@ -116,6 +117,8 @@ class nic_ctrl():
 
     def nic_set_status(self, status):
         self._nic_status = status
+        if self._nic_status != NIC_Status.NIC_STA_OK:
+            self._nic_missed_fa = True
 
 
     def nic_check_status(self):
@@ -123,6 +126,12 @@ class nic_ctrl():
             return True
         else:
             return False
+
+    def nic_missed_fa(self):
+        return self._nic_missed_fa
+
+    def nic_clear_fa(self):
+        self._nic_missed_fa = False
 
     def nic_set_asic_type(self):
         if self._nic_type == None:
