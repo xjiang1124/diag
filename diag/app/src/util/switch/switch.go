@@ -16,11 +16,13 @@ import (
 const errhelp = "\nswitch:\n" +
         "switch fantest\n" +
         "\n" +
-        "td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>\n" +
-        "td3 snake <elbPortMask> <time> <phy/ext>\n" +
-        "td3 snakeforward <elbPortMask> <time> <phy/ext>\n" +
+        "switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>\n" +
+        "switch td3 snake <elbPortMask> <time> <phy/ext>\n" +
+        "switch td3 snakeforward <elbPortMask> <time> <phy/ext>\n" +
         "\n" + 
-        "show power\n" +
+        "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
+        "\n" +
+        "switch show power/temp/link\n" +
         "\n"
         
 
@@ -81,34 +83,54 @@ func main() {
         if os.Args[2] == "printvlan" {
             td3.PrintBCMShellVLANcmd()
         }
-    } else if os.Args[1] == "linkcheck" {
+    } else if os.Args[1] == "elba" {
+        if os.Args[2][0] == 'm' || os.Args[2][0] == 'M' {  //memtest
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            time, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
 
-        ps_output, err := td3.ExecBCMshellCMD("ps")
-        if err != errType.SUCCESS {
+            taormina.ElbaMemoryTest(uint32(mask), uint32(time)) 
+            return
+        } else {
+            fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
             return
         }
-        fmt.Printf("\n")
-        for i , entry := range(td3.TaorPortMap) {
-            rc := td3.LinkCheck(entry.Name, ps_output) 
-            if rc == errType.LINK_UP {
-                fmt.Printf("Port-%.02d  %4s: LINK UP\n", i+1, entry.Name)
-            } else if rc == errType.LINK_DOWN {
-                fmt.Printf("Port-%.02d  %4s: LINK DOWN\n", i+1, entry.Name)
-            } else if rc == errType.LINK_DISABLED {
-                fmt.Printf("Port-%.02d  %4s: LINK DISABLED\n", i+1, entry.Name)
-            } else {
-                fmt.Printf("Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, entry.Name)
-            }
-        }
-        fmt.Printf("\n")
-        
-        return
     } else if os.Args[1] == "show" {
         if argc < 3 {
             fmt.Printf(" %s \n", errhelp)
             return
         }
-        if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' { 
+        if os.Args[2][0] == 'l' || os.Args[2][0] == 'L' {
+            ps_output, err := td3.ExecBCMshellCMD("ps")
+            if err != errType.SUCCESS {
+                return
+            }
+            fmt.Printf("\n")
+            for i , entry := range(td3.TaorPortMap) {
+                rc := td3.LinkCheck(entry.Name, ps_output) 
+                if rc == errType.LINK_UP {
+                    fmt.Printf("Port-%.02d  %4s: LINK UP\n", i+1, entry.Name)
+                } else if rc == errType.LINK_DOWN {
+                    fmt.Printf("Port-%.02d  %4s: LINK DOWN\n", i+1, entry.Name)
+                } else if rc == errType.LINK_DISABLED {
+                    fmt.Printf("Port-%.02d  %4s: LINK DISABLED\n", i+1, entry.Name)
+                } else {
+                    fmt.Printf("Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, entry.Name)
+                }
+            }
+            fmt.Printf("\n")
+            
+            return
+        } else if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' { 
             taormina.ShowPower()
         } else if os.Args[2][0] == 't' || os.Args[2][0] == 'T' { 
             taormina.ShowTemperature()

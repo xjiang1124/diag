@@ -16,14 +16,6 @@ SPI7 = ELBA1 SERIAL FLASH
 package taormina
 
 import (
-    //"bufio"
-    //"os"
-    //"strconv"
-    //"time"
-    //"syscall"
-    //"unsafe"
-    //"errors"
-
     "fmt"
     "regexp"
     "strings"
@@ -31,17 +23,17 @@ import (
     "common/dcli"
     "common/misc"
     "common/errType"
-    //"device/fanctrl/adt7462"
     "device/cpld/nicCpldCommon"
-    "device/fpga/taorfpga"
     "encoding/json"
     "hardware/i2cinfo"
     "hardware/hwdev"
     "hardware/hwinfo"
+    "io/ioutil"
     "os/exec"
 
     "device/bcm/td3"
     "device/cpu/XeonD"
+    "device/fpga/taorfpga"
     "device/powermodule/sn1701022"
     "device/powermodule/tps544c20"
     "device/powermodule/tps53681"
@@ -49,6 +41,7 @@ import (
     "device/fanctrl/adt7462"
     "device/tempsensor/tmp451"
     "device/tempsensor/lm75a"
+    
     /*
     
     "device/powermodule/tps549a20"
@@ -476,6 +469,186 @@ func GetSerialNumbers() (systemSN string, boardSN string, err int) {
 }
 
 
+/********************************************************************************* 
+*
+* Check if network to Elba is up 
+* 
+*********************************************************************************/ 
+func ElbaPing(elba uint32) (err int) {
+    var cmdStr string
+    err = errType.FAIL
+
+    if  elba == ELBA0 {
+        cmdStr = "ip netns exec ntb ping -c 3 169.254.13.1"
+    } else if elba == ELBA1 {
+        cmdStr = "ip netns exec ntb ping -c 3 169.254.7.1"
+    } else {
+        fmt.Printf("[ERROR] Elba number passed (%d) is too big\n", elba)
+        err = errType.FAIL
+        return
+    }
+    out, errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+
+    if strings.Contains(string(out), "3 received, 0% packet loss") {
+        err = errType.SUCCESS
+        return
+    }
+    return
+}
+
+
+/********************************************************************************* 
+*
+* 
+* 
+*********************************************************************************/ 
+func ElbaMemoryTest(elbaMask uint32, time uint32) (err int) {
+    var cmdStr string
+    var elbafailmask, i uint32
+    err = errType.FAIL
+    var forStart, forEnd uint32
+
+    if elbaMask == 1 {
+        forStart = 0
+        forEnd = 1
+    } else if elbaMask == 2 {
+        forStart = 1
+        forEnd = 2
+    } else if elbaMask == 3 {
+        forStart = 0
+        forEnd = 2
+    } else {
+        cli.Printf("e", "Elba Mask must be 0x1, 0x2, 0x3 for both elbas.  You entered 0x%x\n", elbaMask)
+    }
+
+    dcli.Printf("i", "for start=%d   for end=%d\n", forStart, forEnd)
+
+
+    //Ping Elba to make sure the network is up
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i","[DEBUG] - Elba-%d Ping Test\n", i)
+        err = ElbaPing(i) 
+        if err != errType.SUCCESS {
+            elbafailmask |= (1<<i)
+        }
+    }
+
+    //Check that we can find stressapptest_arm in case someone tries to run this without the diag package installed
+    fileExists, _ := taorfpga.Path_exists("/fs/nos/home_diag/diag/tools/stressapptest_arm")
+    if fileExists == false {
+        cli.Printf("e", "Unable to locate stressapptest_arm.  Looking under path /fs/nos/home_diag/diag/tools/stressapptest_arm.   Check that the diag package is installed\n")
+        err = errType.FAIL
+        return
+    }
+
+    //Copy over stressarpptest and delete any old logs
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i", "[DEBUG] - Elba-%d Copying over stressapptest_arm\n", i)
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/diag/tools/stressapptest_arm root@169.254.13.1:/data"
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/diag/tools/stressapptest_arm root@169.254.7.1:/data"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /bin/rm /data/stressapptest_arm.log"
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /bin/rm /data/stressapptest_arm.log"
+        } 
+        _ , errGo = exec.Command("sh", "-c", cmdStr).Output()
+    }
+
+    dcli.Printf("i","[DEBUG] - Creating cmd files\n")
+    cmdStr = fmt.Sprintf("cd /data;./stressapptest_arm -s %d -M 1024 -m 12 -l stressapptest_arm.log\n", time)
+    //errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+    errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+
+
+    //Start Test
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i", "[DEBUG] - Elba-%d Starting Test\n", i)
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("i", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+
+    //Sleep.. give it a few extra seconds to finsih as the program needs time to setup/malloc memory
+    for i=0;i<(time + 7);i++ {
+        misc.SleepInSec(1)
+        dcli.Printf("i", ".")
+    }
+    dcli.Printf("i","\n")
+
+    //Get Results
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i", "[DEBUG] - Elba-%d Get Results\n", i)
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /bin/cat /data/stressapptest_arm.log"
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /bin/cat /data/stressapptest_arm.log"
+        }  
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", "%s\n", string(output))
+        
+        if strings.Contains(string(output), "Status: PASS")==false {
+            dcli.Printf("e", "[ERROR] Elba-%d did not pass stressapptest\n", i)
+            elbafailmask |= (1<<i)
+            return
+        } else {
+            dcli.Printf("i", "[DEBUG] Elba-%d passed stressapptest\n", i)
+        }
+    }
+
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            err = errType.FAIL
+        }
+    }
+    return
+}
 
 
 func Elba_Check_Pci_Link(elba int) (err int) {
