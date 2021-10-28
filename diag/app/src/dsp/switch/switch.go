@@ -89,7 +89,7 @@ func SwitchSnakeHdl(argList []string) {
     duration:=*durationPtr
     loopback:=*loopbackPtr
     
-    err = td3.Snake_All_Ports_Forward_Next_Port(uint32(mask), uint32(duration), loopback)
+    err = td3.Snake_Line_Rate(uint32(mask), uint32(duration), loopback)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -117,7 +117,7 @@ func AsicArm_MemoryHdl(argList []string) {
     duration:=*testtimePtr
 
     dcli.Println("i", "START TEST")
-    err = taormina.ElbaMemoryTest(uint32(mask), uint32(duration))
+    err = taormina.ElbaMemoryTest(uint32(mask), uint32(duration), 0)
     dcli.Printf("i", "END TEST err=%d", err)
 
     // Inform diag engine that test handler is done

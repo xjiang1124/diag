@@ -127,7 +127,11 @@ func main() {
                 fmt.Printf("FAN AIRFLOW:  BACK TO FRONT\n")
             }
             fmt.Printf("\n")
-            ucode, _ := taorfpga.Spi_cpld_read_usercode(uint32(0)) 
+            ucode, _ := taorfpga.Spi_cpldXO3_read_usercode(uint32(1)) 
+            fmt.Printf("CPLD-E0 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpldXO3_read_usercode(uint32(2)) 
+            fmt.Printf("CPLD-E1 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(0)) 
             fmt.Printf("CPLD-C  REVISION: 0x%.08x\n", ucode)
             ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(3)) 
             fmt.Printf("CPLD-G0 REVISION: 0x%.08x\n", ucode)
@@ -239,7 +243,7 @@ func main() {
         if os.Args[2] == "snake" {
             mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
             duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
-            td3.Snake_All_Ports_Forward_Next_Port(uint32(mask), uint32(duration), os.Args[5])
+            td3.Snake_Line_Rate(uint32(mask), uint32(duration), os.Args[5])
         }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()

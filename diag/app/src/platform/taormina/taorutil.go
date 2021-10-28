@@ -506,7 +506,7 @@ func ElbaPing(elba uint32) (err int) {
 * 
 * 
 *********************************************************************************/ 
-func ElbaMemoryTest(elbaMask uint32, time uint32) (err int) {
+func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
     var cmdStr string
     var elbafailmask, i uint32
     err = errType.FAIL
@@ -523,6 +523,8 @@ func ElbaMemoryTest(elbaMask uint32, time uint32) (err int) {
         forEnd = 2
     } else {
         cli.Printf("e", "Elba Mask must be 0x1, 0x2, 0x3 for both elbas.  You entered 0x%x\n", elbaMask)
+        err = errType.FAIL
+        return
     }
 
     dcli.Printf("i", "for start=%d   for end=%d\n", forStart, forEnd)
@@ -572,7 +574,7 @@ func ElbaMemoryTest(elbaMask uint32, time uint32) (err int) {
     }
 
     dcli.Printf("i","[DEBUG] - Creating cmd files\n")
-    cmdStr = fmt.Sprintf("cd /data;./stressapptest_arm -s %d -M 1024 -m 12 -l stressapptest_arm.log\n", time)
+    cmdStr = fmt.Sprintf("pwd\ncd /data;./stressapptest_arm -s %d -M 1024 -m 12 -l stressapptest_arm.log\n", time)
     //errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     if errGo != nil {
@@ -610,9 +612,11 @@ func ElbaMemoryTest(elbaMask uint32, time uint32) (err int) {
     //Sleep.. give it a few extra seconds to finsih as the program needs time to setup/malloc memory
     for i=0;i<(time + 7);i++ {
         misc.SleepInSec(1)
-        dcli.Printf("i", ".")
+        if calledFromCLI > 0 { fmt.Printf(".") 
+        } else { dcli.Printf("i", ".") }
     }
-    dcli.Printf("i","\n")
+    if calledFromCLI > 0 { fmt.Printf("\n") }
+
 
     //Get Results
     for i=forStart; i < forEnd; i++ {

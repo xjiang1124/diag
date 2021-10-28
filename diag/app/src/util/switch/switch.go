@@ -98,7 +98,7 @@ func main() {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
 
-            taormina.ElbaMemoryTest(uint32(mask), uint32(time)) 
+            taormina.ElbaMemoryTest(uint32(mask), uint32(time), 1) 
             return
         } else {
             fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
