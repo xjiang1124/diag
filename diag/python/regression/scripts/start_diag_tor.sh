@@ -91,8 +91,8 @@ echo "Setting tmp451 to extended mode"
 echo "Disabling Elba JTAG to external header"
 /fs/nos/home_diag/diag/util/fpgautil i2c 2 2 0x4a w 0x22 0xA0
 /fs/nos/home_diag/diag/util/fpgautil i2c 2 2 0x4a w 0x21 0x61
-/fs/nos/home_diag/diag/util/fpgautil i2c 2 2 0x4a w 0x22 0xA0
-/fs/nos/home_diag/diag/util/fpgautil i2c 2 2 0x4a w 0x21 0x61
+/fs/nos/home_diag/diag/util/fpgautil i2c 2 3 0x4a w 0x22 0xA0
+/fs/nos/home_diag/diag/util/fpgautil i2c 2 3 0x4a w 0x21 0x61
 
 echo "Killing cxos monitoring processes"
 declare -a arr=("pmd" "hhmd" "tempd" "vrfmgrd" "fand" "powerd")
