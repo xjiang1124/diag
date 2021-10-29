@@ -35,7 +35,7 @@ def main():
     pr = dict()
     pr['modules'] = modules.modules()
 
-    yamlfile = '/home/mfg/taormina_DL3/diag/mfg/config/taormina_sn_pcbasn_cfg.yaml'
+    yamlfile = '/home/mfg/taormina_PP/diag/mfg/config/taormina_sn_pcbasn_cfg.yaml'
     #yamlfile2 = '/home/mfg/taormina_DL3/diag/mfg/config/taormina_sn_pcbasn_cfg3.yaml'
 
     #sn_pcbasn_yamldict = pr['modules'].readyamltodict(yamlfile)
