@@ -959,6 +959,8 @@ def main():
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["DIAG_BOOT", "SW_SHUTDOWN"]
+            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL:
+                sw_test_list = ["DIAG_BOOT", "SET_EXTOS", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_PROFILE")
@@ -991,6 +993,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_nic_emmc_set_perf_mode(slot)
                 elif test == "SET_GOLDFW":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
+                elif test == "SET_EXTOS":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
                 elif test == "SW_SHUTDOWN":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
                 else:

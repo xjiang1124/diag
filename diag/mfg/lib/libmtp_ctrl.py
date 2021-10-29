@@ -3903,6 +3903,14 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC default mainfw boot")
         return True
 
+    def mtp_mgmt_set_nic_extos_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_extos_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with diag failed")
+            return False
+
+        self.cli_log_slot_inf(slot, "Set NIC default diag boot")
+        return True
+
 
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)

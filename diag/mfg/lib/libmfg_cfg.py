@@ -244,8 +244,8 @@ class NIC_IMAGES:
     fail_cpld_dat["POMONTEDELL"] = "0x13"
     diagfw_img["POMONTEDELL"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
     diagfw_dat["POMONTEDELL"] = "09-21-2021"
-    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar"
-    goldfw_dat["POMONTEDELL"] = "10-07-2021"
+    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
+    goldfw_dat["POMONTEDELL"] = "10-22-2021"
 
     cpld_img["LACONA32DELL"] = "naples200_lac32_dell_main_rev0_13_09292021.bin"
     cpld_ver["LACONA32DELL"] = "0x0"
@@ -258,8 +258,8 @@ class NIC_IMAGES:
     fail_cpld_dat["LACONA32DELL"] = "0x13"
     diagfw_img["LACONA32DELL"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
     diagfw_dat["LACONA32DELL"] = "09-21-2021"
-    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar"
-    goldfw_dat["LACONA32DELL"] = "10-07-2021"
+    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
+    goldfw_dat["LACONA32DELL"] = "10-22-2021"
 
     cpld_img["LACONA32"] = "naples200_lac32_hpe_main_rev0_13_09292021.bin"
     cpld_ver["LACONA32"] = "0x0"
