@@ -17,15 +17,15 @@
 	"TESTLIST" :[
 					"DL1",
 					"DL2",
-					"DL3",
-					"P2C"
+					"P2C",
+					"SWI"
 					],
 	"TESTFOLDER":[
 					"DL",
-					"P2C"
+					"P2C",
+					"SWI"
 				],
-	"SPECIAL" : "FSJ2132000A",
-	"STARTCountSN" : "FSJ21320001",
+	"STARTCountSN" : "FSJ21440001",
 	"CM": "FSJ"
 	
 }
