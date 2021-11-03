@@ -24,6 +24,8 @@ from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
@@ -74,7 +76,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, 
     else:
         skipped_testlist = ""
     if fail_nic_list:
-        fail_slots = " --fail-slots"
+        fail_slots = " --fail-slots "
         fail_slots += ' '.join(map(str,fail_nic_list))
     else:
         fail_slots = ""
@@ -241,13 +243,13 @@ def main():
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                     continue
 
-                if card_type == NIC_Type.ORTANO or card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.POMONTEDELL or card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
+                if card_type in ELBA_NIC_TYPE_LIST:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
                         continue
-                if card_type == NIC_Type.ORTANO2:
+                if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
                     except KeyError:

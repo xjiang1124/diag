@@ -78,7 +78,6 @@ class Swm_Test_Mode(Enum):
     ALOM = "alom"
     SW_DETECT = "sw_detect"
 
-
     def __str__(self):
         return self.value
 
@@ -274,6 +273,8 @@ class MTP_DIAG_Report:
     NIC_DIAG_REGRESSION_SKIP = "NIC_DIAG_REGRESSION_TEST_SKIP"
     NIC_DIAG_REGRESSION_RSLT_RE = r"NIC-(\d{{2}}) (\w+) (\w+) {:s}"
     NIC_DIAG_REGRESSION_SKIP_RSLT_RE = r"NIC-(\d{{2}}) {:s}" #SKIP doesnt have type and sn
+    NIC_DIAG_REGRESSION_PN_BY_FRU_RE = r"FRU: {:s},\s.*,\s(\w.*\w)"
+    NIC_DIAG_REGRESSION_PN_BY_FRU2_RE = r"SN = {:s},\sPN\s=\s(\w.*\w),\sTYPE\s=\s\w+"
 
 class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"
@@ -286,6 +287,7 @@ class MFG_DIAG_CMDS:
     MTP_VRM_TEST_FMT = "mtptest -vrm"
     MTP_FAN_TEST_FMT = "mtptest -fanspd"
     MTP_FAN_PRSNT_FMT = "mtptest -present"
+    MTP_PSU_TEST_FMT = "mtptest -psu"
 
     MTP_CPLD_READ_FMT = "cpldutil -cpld-rd -addr=0x{:x}"
 
@@ -366,6 +368,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
     NIC_SET_GOLD_BOOT_FMT = "fwupdate -s goldfw"
+    NIC_SET_EXTOSA_BOOT_FMT = "fwupdate -s extosa"
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
     NIC_DATE_SET_FMT = "date --set='{:s}'"
     NIC_SCP_COMPRESSED_FMT = "tar c -C {:s} {:s} | ssh {:s}@{:s} {:s} \"tar x -C {:s}\"" #format(srcdir,img,user,ip,sshoptions,dstdir)
@@ -453,6 +456,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d} -mode=pcie"
     MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=hod"
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=hod_1100"
+    MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=nod"
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
@@ -509,6 +513,8 @@ class MFG_DIAG_SIG:
     MTP_ZMQ_OK_SIG = "SUCCESS"
     MTP_VRM_OK_SIG = "TEST PASSED"
     MTP_FAN_OK_SIG = "TEST PASSED"
+    MTP_PSU1_OK_SIG = "PSU_1 TEST PASSED"
+    MTP_PSU2_OK_SIG = "PSU_2 TEST PASSED"    
     MTP_PARA_TEST_SIG = "TEST RESULT:"
     MTP_FAN0_PRSNT_SIG = "Fan 0 is present"
     MTP_FAN1_PRSNT_SIG = "Fan 1 is present"

@@ -22,6 +22,8 @@ from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
+from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
@@ -61,9 +63,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["CPLD_PROG"]
-    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+    if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
         test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
-    if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+    if nic_type in FPGA_TYPE_LIST:
         test_list = ["FPGA_PROG", "GOLD_FPGA_PROG", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
@@ -104,8 +106,10 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
-    if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
+    if nic_type in ELBA_NIC_TYPE_LIST:
         test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
+    if nic_type in FPGA_TYPE_LIST:
+        test_list = ["NIC_INIT"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -332,25 +336,6 @@ def main():
             logfile_close(open_file_track_list)
             return
 
-        if (NIC_Type.POMONTEDELL in mtp_mgmt_ctrl._nic_type_list or
-            NIC_Type.LACONA32 in mtp_mgmt_ctrl._nic_type_list or
-            NIC_Type.LACONA32DELL in mtp_mgmt_ctrl._nic_type_list
-            ):
-            args.skip_test.append("EFUSE_PROG")
-            args.skip_test.append("SEC_KEY_PROG")
-            args.skip_test.append("SEC_PROG_VERIFY")
-            args.skip_test.append("SEC_CPLD_PROG")
-            args.skip_test.append("SEC_CPLD_VERIFY")
-            # skip for lab cards
-            args.skip_test.append("GOLD_FPGA_PROG")
-            args.skip_test.append("SW_INSTALL")
-            args.skip_test.append("SET_MAINFW")
-            args.skip_test.append("SW_CLEANUP")
-            args.skip_test.append("SW_BOOT")
-            args.skip_test.append("SW_SHUTDOWN")
-
-
-
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):
             if not nic_prsnt_list[slot]:
@@ -367,7 +352,7 @@ def main():
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
             if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0015"]
-            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in ELBA_NIC_TYPE_LIST:
                 fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
             else:
                 fail_cpld_img_file = ""
@@ -376,7 +361,7 @@ def main():
             gold_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(gold_img_file)
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
-            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in FPGA_TYPE_LIST:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA main image: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA gold image: " + os.path.basename(fail_cpld_img_file))
             else:
@@ -450,7 +435,7 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             failsafe_cpld_img_file = ""
-            if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+            if nic_type in ELBA_NIC_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
@@ -499,7 +484,7 @@ def main():
                 continue
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type != NIC_Type.ORTANO2:
+            if nic_type not in ELBA_NIC_TYPE_LIST:
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -584,9 +569,6 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
 
-            if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-                continue
-
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         sec_cpld_img_file,
                                                                                         slot,
@@ -619,6 +601,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type in FPGA_TYPE_LIST:
+                # cant power up fpga only in 3.3v
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -779,7 +765,6 @@ def main():
             if slot not in fail_nic_list:
                 fail_nic_list.append(slot)
 
-
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
         
@@ -844,8 +829,11 @@ def main():
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)                
+
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
+            if nic_type in FPGA_TYPE_LIST:
+                test_list = ["SET_DIAGFW", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
@@ -855,6 +843,8 @@ def main():
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SET_MAINFW":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot)
+                elif test == "SET_DIAGFW":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
                 elif test == "SW_CLEANUP":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
                 else:
@@ -913,19 +903,30 @@ def main():
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
 
         # INIt the sw mgmt port
-        if not NAPLES100IBM:
-            for slot in range(len(nic_prsnt_list)):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot in fail_nic_list:
-                    continue
-                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                    continue
+        nic_ping_list = list()
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
 
-                if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
-                    pass_nic_list.remove(slot)
-                    fail_nic_list.append(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type in FPGA_TYPE_LIST:
+                continue
 
+            if nic_type == NIC_Type.NAPLES100IBM:
+                continue
+
+            if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
+                pass_nic_list.remove(slot)
+                fail_nic_list.append(slot)
+
+            if slot in pass_nic_list:
+                nic_ping_list.append(slot)
+
+        if nic_ping_list:
             if not mtp_mgmt_ctrl.mtp_nic_mgmt_mac_refresh():
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP mac address refresh failed, test abort...")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
@@ -956,8 +957,8 @@ def main():
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.POMONTEDELL:
-                sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
+            if nic_type in FPGA_TYPE_LIST:
+                sw_test_list = ["DIAG_BOOT", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_PROFILE")
@@ -970,6 +971,8 @@ def main():
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SW_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
+                elif test == "DIAG_BOOT":
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(slot)
                 elif test == "SW_PROFILE" and nic_profile:
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
                 elif test == "SW_MODE_SWITCH":
@@ -988,6 +991,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_nic_emmc_set_perf_mode(slot)
                 elif test == "SET_GOLDFW":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
+                elif test == "SET_EXTOS":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
                 elif test == "SW_SHUTDOWN":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
                 else:

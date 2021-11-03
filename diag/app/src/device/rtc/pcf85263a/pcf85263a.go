@@ -54,6 +54,67 @@ func ReadTime_C(devName string) (year byte, month byte, day byte, hour byte, min
     return
 }
 
+func ReadRaw_i2c(devName string) (year byte, month byte, day byte, hour byte, minute byte, second byte, err int) {
+    data, err := i2c_c.Read(devName, YEARS, misc.ONE_BYTE)
+    if err != errType.SUCCESS {
+        cli.Println("d", "failed to read RTC data")
+    }
+    year = data[0]
+
+    data, err = i2c_c.Read(devName, MONTHS, misc.ONE_BYTE)
+    if err != errType.SUCCESS {
+        cli.Println("d", "failed to read RTC data")
+    }
+    month = data[0]
+
+    data, err = i2c_c.Read(devName, DAYS, misc.ONE_BYTE)
+    if err != errType.SUCCESS {
+        cli.Println("d", "failed to read RTC data")
+    }
+    day = data[0]
+
+    data, err = i2c_c.Read(devName, HOURS, misc.ONE_BYTE)
+    if err != errType.SUCCESS {
+        cli.Println("d", "failed to read RTC data")
+    }
+    hour = data[0]
+
+    data, err = i2c_c.Read(devName, MINUTES, misc.ONE_BYTE)
+    if err != errType.SUCCESS {
+        cli.Println("d", "failed to read RTC data")
+    }
+    minute = data[0]
+
+    data, err = i2c_c.Read(devName, SECONDS, misc.ONE_BYTE)
+    if err != errType.SUCCESS {
+        cli.Println("d", "failed to read RTC data")
+    }
+    second = data[0]
+
+    return
+}
+
+
+func DumpReg(devName string) (err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    for i := 0; i <= 0x2F; i++ {
+        data, err := smbus.ReadByte(devName, rtc_reg[i].regaddr)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "RTC reg %s [0x%x] = Failed\n", rtc_reg[i].regname, rtc_reg[i].regaddr)
+        } else {
+            cli.Printf("i", "RTC reg %s [0x%x] = 0x%x\n", rtc_reg[i].regname, rtc_reg[i].regaddr, data)
+        }
+    }
+
+    return
+}
+
+
 func ReadTime(devName string) (year byte, month byte, day byte, hour byte, minute byte, second byte, err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -102,6 +163,52 @@ func ReadTime(devName string) (year byte, month byte, day byte, hour byte, minut
     }
     second = data
     second = (second & 0xF) + ((second >> 4) & 7) * 10
+
+    return
+}
+
+func ReadRaw_smbus(devName string) (year byte, month byte, day byte, hour byte, minute byte, second byte, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    data, err := smbus.ReadByte(devName, YEARS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "failed to read RTC data")
+    }
+    year = data
+
+    data, err = smbus.ReadByte(devName, MONTHS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "failed to read RTC data")
+    }
+    month = data
+
+    data, err = smbus.ReadByte(devName, DAYS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "failed to read RTC data")
+    }
+    day = data
+
+    data, err = smbus.ReadByte(devName, HOURS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "failed to read RTC data")
+    }
+    hour = data
+
+    data, err = smbus.ReadByte(devName, MINUTES)
+    if err != errType.SUCCESS {
+        cli.Println("e", "failed to read RTC data")
+    }
+    minute = data
+
+    data, err = smbus.ReadByte(devName, SECONDS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "failed to read RTC data")
+    }
+    second = data
 
     return
 }

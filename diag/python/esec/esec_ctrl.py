@@ -284,7 +284,7 @@ PRIVEK <ek.sk>"""
             return pn
 
         # Some cards does not have Assembly Number, they use Part Number instead
-        ma = re.compile(r".*Part Number.*([\d]{2}-[\d]{4}-[\d]{2}|[A-Z0-9]{6}-[0-9]{3}) .*")
+        ma = re.compile(r".*Part Number[ ]{8,}([\d]{2}-[\d]{4}-[\d]{2}|[A-Z0-9]{6}-[0-9]{3}|[A-Z0-9]{6}[X|A][A-Z0-9]{2}) .*")
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:
@@ -400,9 +400,31 @@ PRIVEK <ek.sk>"""
 
         return ret
 
+    def get_asic_type(self, card_type):
+        if card_type == "ORTANO2"       or \
+           card_type == "LACONA32"      or \
+           card_type == "LACONA32DELL"  or \
+           card_type == "POMONTE"       or \
+           card_type == "POMONTEDELL"   or \
+           card_type == "PENSANDO":      # dummy condition
+            return "ELBA"
+        else:
+            return "CAPRI"
+
+    def check_fpga_card(self, card_type):
+        if card_type == "LACONA32"      or \
+           card_type == "LACONA32DELL"  or \
+           card_type == "POMONTE"       or \
+           card_type == "POMONTEDELL"   or \
+           card_type == "PENSANDO":      # dummy condition
+            return True
+        else:
+            return False
+
     def key_prog_all(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        if card_type == "ORTANO" or card_type == "ORTANO2":
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "ELBA":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
@@ -422,7 +444,9 @@ PRIVEK <ek.sk>"""
 
     def key_prog_all_pac(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
-        if card_type == "ORTANO":
+
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "ELBA":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all_pac\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
@@ -533,19 +557,25 @@ PRIVEK <ek.sk>"""
         else:
             print "=== OTP PROG validated #{} ===".format(retry-1)
 
-        print ("slot:", slot)
-        [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
-        if ret != 0:
-            print "=== Failed to check ESEC in uboot ==="
-            print "=== ESEC PROG FAILED ==="
-            return ret
+        # Skip test for cards with FPGA
+        is_fpga = self.check_fpga_card(card_type)
+        if is_fpga == True:
+            print("Skip ESEC uboot check for FPGA cards")
+        else:
+            print ("slot:", slot)
+            [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
+            if ret != 0:
+                print "=== Failed to check ESEC in uboot ==="
+                print "=== ESEC PROG FAILED ==="
+                return ret
 
-        if crc32_ek != crc32_ek_uboot:
-            print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot 
-            print "=== ESEC PROG FAILED ==="
-            return -1
+            if crc32_ek != crc32_ek_uboot:
+                print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot 
+                print "=== ESEC PROG FAILED ==="
+                return -1
 
-        if card_type == "ORTANO" or card_type == "ORTANO2":
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "ELBA":
             print("Skip sys reset test")
         else:
             ret = self.sysrst_test(int(slot))
@@ -759,7 +789,8 @@ PRIVEK <ek.sk>"""
         return ret
 
     def efuse_test(self, slot, card_type):
-        if card_type == "ORTANO2":
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "ELBA":
             print("Skip efuse test for Elba cards")
             print("EFUSE TEST PASSED")
             return 0

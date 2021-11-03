@@ -274,7 +274,7 @@ func I2c_access(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrData []
             }
         } else {
             if ExecutingScanChain == 0 {
-                dcli.Println("e"," Error: I2C Transaction Failed bus/mux/addr", bus, mux, i2cAddr, "  wrsize/data=", wrSize, wrData," rdsize=", rdSize)
+                dcli.Println("e"," Error: I2C Transaction Failed bus/mux/decimal addr", bus, mux, i2cAddr, "  wrsize/data=", wrSize, wrData," rdsize=", rdSize)
             }
         }
         return

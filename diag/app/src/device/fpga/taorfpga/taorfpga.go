@@ -789,4 +789,31 @@ func QSFP_present(QSFPnumber uint32) (present bool, err error) {
     return
 }
 
+func AsicCoreTemp(devName string) (err int) {
+    var data32 uint32
+    var addr uint64 = D1_ELBA_0_STAT_REG
+
+    if strings.Contains(devName, "1") == true {
+        addr = D1_ELBA_1_STAT_REG
+    }
+    data32, _ = TaorReadU32(DEVREGION1, addr)
+
+    cli.Printf("i", "%s(%cC)  %d\n", devName, 0xB0, data32 & 0xFF)
+    return
+}
+
+
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    var data32 uint32
+    var addr uint64 = D1_ELBA_0_STAT_REG
+
+    if strings.Contains(devName, "1") == true {
+        addr = D1_ELBA_1_STAT_REG
+    }
+    data32, _ = TaorReadU32(DEVREGION1, addr)
+
+    temperatures = append(temperatures, float64(data32))
+    return
+}
+
 

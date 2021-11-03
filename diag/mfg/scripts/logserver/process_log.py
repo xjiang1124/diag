@@ -121,16 +121,7 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
         movereporttohistorydir(inputconfig)
 
     if "MTP_STATUS" in inputconfig:
-        wb3 = Workbook()
-        dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
-        print(dest_filename3)
-
-        generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
-
-        for mtp in DATA["MTPCHASSIS"]:
-            generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
-
-        wb3.save(filename = dest_filename3) 
+        generateMTPreport(pr,DATA,inputconfig,startdate=None)
 
     if "DIE_ID" in inputconfig:
         wb2 = Workbook()
@@ -150,6 +141,20 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
+
+    return None
+
+def generateMTPreport(pr,DATA,inputconfig,startdate=None):
+    wb3 = Workbook()
+    dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
+    print(dest_filename3)
+
+    generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
+
+    for mtp in DATA["MTPCHASSIS"]:
+        generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
+
+    wb3.save(filename = dest_filename3) 
 
     return None
 
@@ -225,7 +230,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
     TempHVLVdata = dict()
     
     if 'CM' in inputconfig:
-        if inputconfig['CM'] == "FSJ":
+        if inputconfig['CM'] == "FSJ" or inputconfig['CM'] == "FLEX":
 
             generateexeclsnFSJstatus(DATA, workingonSNlist,'LAST',wb)
         
@@ -2642,7 +2647,9 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     #pr['modules'].print_anyinformation(Chamberref)
     #sys.exit()
 
-    additionTemp = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    additionTemp = ['Local', 'Outlet', 'Inlet-1', 'Inlet-2']
+    additionTemp2 = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+
     titlename = "{}_{}".format("Chamber", "TEMP")
     if totimezone:
         titlename = "{}_{}".format(titlename,totimezone.replace('/','_'))
@@ -2788,7 +2795,9 @@ def getchamberTempbymfglog(pr, onedata):
     # [5]                     Remote-3    <TYPE:<class 'str'>>    
 
     dataforreturn = dict()
-    dataforreturn["LIST"] = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    dataforreturn["LIST1"] = ['Local', 'Remote-1', 'Remote-2', 'Remote-3']
+    dataforreturn["LIST"] = ['Local', 'Outlet', 'Inlet-1', 'Inlet-2']
+    refdata = dict(zip(dataforreturn["LIST"], dataforreturn["LIST1"]))
     dataforreturn["DATA"] = dict()
     dataforreturn["DATA"]["CHECKPOINT"] = listofdatewillcheck
     for eachcheckpoint in listofdatewillcheck:
@@ -2799,10 +2808,12 @@ def getchamberTempbymfglog(pr, onedata):
                 dataforreturn["DATA"][eachkey] = list()
             if eachkey in res:
                 dataforreturn["DATA"][eachkey].append(float(res[eachkey]))
+            elif refdata[eachkey] in res:
+                dataforreturn["DATA"][eachkey].append(float(res[refdata[eachkey]]))
 
         #sys.exit()
     #pr['modules'].print_anyinformation(dataforreturn)
-    
+    #sys.exit()
     return dataforreturn
 
 def getlistoftemp(timewithtemplist):
@@ -3457,7 +3468,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
     highlightinred(ws2, 'FAIL')
     highlightinred(ws2, 'FAILED')
     freezePosition(ws2,'B2')
-    converttoPERCENTAGEnumber(ws2)
+    converttoPERCENTAGEnumberbyFailurerange(ws2)
     difftime = datetime.now()-start
     print("generateexeclHVLVsummary: {} use {} seconds".format(teststep,difftime.total_seconds()))
     generateexeclHVLVdata(FailureSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=True)
@@ -3875,6 +3886,20 @@ def highlightinred(ws,keyword):
 			if keyword in str(ws.cell(row=rowNum, column=colNum).value):
 				ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')                
 
+def highlightinlightredrow(ws,keyword):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        fillcolor = 0
+        for colNum in range(1, maxCol + 1):
+            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+                fillcolor = 1
+            if fillcolor:
+                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFCCCB', end_color='FFCCCB', fill_type = 'solid')   
+
 def converttoPERCENTAGEnumber(ws):
     from openpyxl.styles import Color, PatternFill, Font, Border
     maxRow = ws.max_row
@@ -3887,7 +3912,90 @@ def converttoPERCENTAGEnumber(ws):
                 checkvalue = float(checkvalue[:-1])/100
                 ws.cell(row=rowNum, column=colNum).value = checkvalue
                 ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
-                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+                if checkvalue > 0.95:
+                    #Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+                elif checkvalue < 0.1:
+                    #Red
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+                elif checkvalue > 0.75:
+                    #Yellow
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFEE08', end_color='FFEE08', fill_type = 'solid')
+                elif checkvalue < 0.25:
+                    #Pink
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFC0CB', end_color='FFC0CB', fill_type = 'solid')
+                elif checkvalue > 0.50:
+                    #Arylide Yellow
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='E9D66B', end_color='E9D66B', fill_type = 'solid')
+                else:
+                    #Orange
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+
+def converttoPERCENTAGEnumberbyFailurerange(ws):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        for colNum in range(1, maxCol + 1):
+            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+            if '%' in checkvalue:
+                checkvalue = float(checkvalue[:-1])/100
+                ws.cell(row=rowNum, column=colNum).value = checkvalue
+                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+                if checkvalue < 0.005:
+                    #Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type = 'solid')
+                elif checkvalue < 0.01:
+                    #Sap Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66FF00', end_color='66FF00', fill_type = 'solid')
+                elif checkvalue < 0.02:
+                    #Antique Bronze
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='BBFF00', end_color='BBFF00', fill_type = 'solid')
+                elif checkvalue < 0.03:
+                    #Chestnut
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type = 'solid')
+                elif checkvalue < 0.04:
+                    #Sweet Brown
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFAA00', end_color='FFAA00', fill_type = 'solid')
+                elif checkvalue < 0.05:
+                    #Cardinal
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF5500', end_color='FF5500', fill_type = 'solid')
+                else:
+                    #Red
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+
+    # FF0000 <-- red
+    # FF1100
+    # FF2200
+    # FF3300
+    # FF4400
+    # FF5500
+    # FF6600
+    # FF7700
+    # FF8800
+    # FF9900
+    # FFAA00
+    # FFBB00
+    # FFCC00
+    # FFDD00
+    # FFEE00
+    # FFFF00 <-- yellow
+    # EEFF00
+    # DDFF00
+    # CCFF00
+    # BBFF00
+    # AAFF00
+    # 99FF00
+    # 88FF00
+    # 77FF00
+    # 66FF00
+    # 55FF00
+    # 44FF00
+    # 33FF00
+    # 22FF00
+    # 11FF00
+    # 00FF00 <-- green
 
 def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     
@@ -4015,6 +4123,7 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
     wirtedata.append('MTP')
     wirtedata.append('TEST')
     wirtedata.append('STATUS')
+    wirtedata.append('TOTAL')
     for slot in inputconfig["MTP_STATUS"]:
         wirtedata.append(slot)
     ws1.append(wirtedata)
@@ -4022,29 +4131,59 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
         wirtedatatotal = list()
         wirtedatapass = list()
         wirtedatafail = list()
+        wirtedatapassrate = list()
         wirtedatatotal.append(mtp)
         wirtedatapass.append(mtp)
         wirtedatafail.append(mtp)
+        wirtedatapassrate.append(mtp)
         teststep = mtpchassisusecountbyslot[mtp]["TEST"][0]
         if len(mtpchassisusecountbyslot[mtp]["TEST"]) > 1:
             for eachtest in mtpchassisusecountbyslot[mtp]["TEST"][1:]:
                 teststep = "{},{}".format(teststep,eachtest)
         wirtedatatotal.append(teststep)
         wirtedatapass.append(teststep)
-        wirtedatafail.append(teststep)  
+        wirtedatafail.append(teststep)
+        wirtedatapassrate.append(teststep)
+        listoftotal = list()
+        listofpass = list()
+        listoffail = list()
+        for slot in inputconfig["MTP_STATUS"]:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            listofpass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            listoffail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])  
         wirtedatatotal.append("TOTAL")
         wirtedatapass.append("PASS")
-        wirtedatafail.append("FAIL")      
+        wirtedatafail.append("FAIL")
+        wirtedatapassrate.append("PASS_RATE")
+        wirtedatatotal.append(sum(listoftotal))
+        wirtedatapass.append(sum(listofpass))
+        wirtedatafail.append(sum(listoffail))
+        wirtedatapassrate.append(calculePass_rate(sum(listoftotal),sum(listofpass)))           
         for slot in inputconfig["MTP_STATUS"]:
             wirtedatatotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
             wirtedatapass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
             wirtedatafail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])
+            wirtedatapassrate.append(calculePass_rate(mtpchassisusecountbyslot[mtp][slot]["TOTAL"],mtpchassisusecountbyslot[mtp][slot]["PASS"]))
         ws1.append(wirtedatatotal)
         ws1.append(wirtedatapass)
-        ws1.append(wirtedatafail)           
+        ws1.append(wirtedatafail)
+        ws1.append(wirtedatapassrate)          
     fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+    highlightinlightredrow(ws1,'FAIL')
+    freezePosition(ws1,'D2')
 
     return True
+
+def calculePass_rate(totalnumber,passnumber):
+
+    calcule_yeild = 1
+    if totalnumber:
+        calcule_yeild = passnumber / totalnumber
+
+    yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
+
+    return yeilddisplay
 
 def generateexecldieidreport(DATA,wb,inputconfig,start=None):
     ws1 = wb.active
@@ -4511,7 +4650,10 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
             summarydata[test]["LASTYEILD"] = "{:.2f}%".format(0)
         wirtedata.append(firstyeild)
         wirtedata.append('')
-        wirtedata.append(LastfailureremoveDupSN[test]["count"])
+        if test in LastfailureremoveDupSN:
+            wirtedata.append(LastfailureremoveDupSN[test]["count"])
+        else:
+            wirtedata.append(0)
         ws1.append(wirtedata)
 
     wirtedata = list()

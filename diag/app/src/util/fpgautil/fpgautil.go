@@ -27,6 +27,8 @@ import (
     "common/errType"
     "device/sfp"
     "device/qsfp"
+
+    
     
 )
 
@@ -98,6 +100,16 @@ func main() {
         if os.Args[1] == "inventory" {
             //fmt.Printf("===================================================================================================\n")
             fmt.Printf("\n")
+
+            systemSN, boardSN, err1 := taormina.GetSerialNumbers() 
+            if err1 != errType.SUCCESS { 
+                fmt.Printf("System SN: [ERROR RETREIVING DATA]\n")
+                fmt.Printf("Board  SN: [ERROR RETREIVING DATA]\n\n")
+            } else {
+                fmt.Printf("System SN: %s\n", systemSN)
+                fmt.Printf("Board  SN: %s\n\n", boardSN)
+            }
+
             dps800.DisplayManufacturingInfo("PSU_1")
             dps800.DisplayManufacturingInfo("PSU_2")
             for i:=0; i<int(taorfpga.MAXFAN);i++ {
@@ -115,7 +127,11 @@ func main() {
                 fmt.Printf("FAN AIRFLOW:  BACK TO FRONT\n")
             }
             fmt.Printf("\n")
-            ucode, _ := taorfpga.Spi_cpld_read_usercode(uint32(0)) 
+            ucode, _ := taorfpga.Spi_cpldXO3_read_usercode(uint32(1)) 
+            fmt.Printf("CPLD-E0 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpldXO3_read_usercode(uint32(2)) 
+            fmt.Printf("CPLD-E1 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(0)) 
             fmt.Printf("CPLD-C  REVISION: 0x%.08x\n", ucode)
             ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(3)) 
             fmt.Printf("CPLD-G0 REVISION: 0x%.08x\n", ucode)
@@ -227,7 +243,7 @@ func main() {
         if os.Args[2] == "snake" {
             mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
             duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
-            td3.Snake_All_Ports(uint32(mask), uint32(duration), os.Args[5])
+            td3.Snake_Line_Rate(uint32(mask), uint32(duration), os.Args[5])
         }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
@@ -485,11 +501,13 @@ func main() {
             if os.Args[2] == "program" {
                 t1 := time.Now()
                 taorfpga.FlashWriteImage(os.Args[3], os.Args[4])
-
-                taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
-
                 t2 := time.Now()
                 fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
+                taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
+                t3 := time.Now()
+                fmt.Println(" Verifyring the image took ", t3.Sub(t2), " time")
+
+                
                 return
             }
             if os.Args[2] == "verify" {

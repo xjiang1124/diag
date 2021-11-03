@@ -10,14 +10,14 @@ set_vmarg()
         #do
         #    /data/nic_util/devmgr -dev=$dev -margin -pct=$1
         #done
-	if [[ "$1" -lt 3 && "$1" -gt -1 ]] 
-	then
-            /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
-            /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=$1
-            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-            /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
-	fi
-	if [[ "$1" == -3 ]]
+        if [[ "$1" -lt 3 && "$1" -gt -1 ]] 
+        then
+                /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
+                /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=$1
+                /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
+                /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
+        fi
+        if [[ "$1" == -3 ]]
         then
             /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=-2
             /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=-2
@@ -44,10 +44,10 @@ else
         percent3=-3
         percent4=-4
         percent5=-5
-	for percent in $percent3 $percent4 $percent5
-	do
+    for percent in $percent3 $percent4 $percent5
+    do
             set_vmarg $percent
-	done
+    done
     elif [ "$1" == "high" ]
     then
         percent1=1
@@ -55,7 +55,7 @@ else
         percent3=3
         percent4=4
         percent5=5
-	for percent in $percent1 $percent2 $percent3 $percent4 $percent5
+    for percent in $percent1 $percent2 $percent3 $percent4 $percent5
         do
             echo "=== Vmarg is at $percent% ==="
             set_vmarg $percent

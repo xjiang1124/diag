@@ -99,6 +99,21 @@ func AddrDecipher(region string) (addr uint32, maxSize uint32, err error) {
 }
 
 
+func FlashSetSPItiming(value uint32) (err error) {
+
+    data32, _ := TaorReadU32(1, D1_CFG_FLASH_BAUD_RATE_REG)
+    if data32 == value {
+        return
+    }
+    err = TaorWriteU32(1, D1_CFG_FLASH_CTRL_REG, 0x00) 
+    err = TaorWriteU32(1, D1_CFG_FLASH_BAUD_RATE_REG, value)
+    err = TaorWriteU32(1, D1_CFG_FLASH_CTRL_REG, 0x01)  
+
+
+    return
+}
+
+
 func FlashGenerateImageFromFlash(region string, filename string) (err error) {
     var addr, maxSize uint32
     var rd_data64 uint64 = 0
@@ -109,6 +124,8 @@ func FlashGenerateImageFromFlash(region string, filename string) (err error) {
     if err != nil {
         return
     }
+    FlashSetSPItiming(1)
+
 
     f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
     if err != nil {
@@ -198,6 +215,7 @@ func FlashWriteImage(region string, filename string) (err error) {
     if err != nil {
         return
     }
+    FlashSetSPItiming(1)
 
     if (addr % flag_region_info.sector_size) != 0 {
         fmt.Printf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
@@ -317,6 +335,7 @@ func FlashVerifyImage(region string, filename string) (err error) {
     if err != nil {
         return
     }
+    FlashSetSPItiming(1)
 
     if (addr % flag_region_info.sector_size) != 0 {
         err = fmt.Errorf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
@@ -416,7 +435,7 @@ func FlashPollBusy(timeout_ms int) (sr_reg uint32, err int) {
     for i:=0; i<timeout_ms; i++ {
         sr_reg, errGo = FlashReadStatusReg() 
         if errGo != nil {
-            fmt.Printf("[ERROR] FlashPollBusyMicroSec-> Read Status Failed\n")
+            fmt.Printf("[ERROR] FlashPollBusy -> Read Status Failed\n")
             err = 1
             return
         }
@@ -518,10 +537,13 @@ func FlashReadStatusReg() (data32 uint32, err error) {
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_SET_REG, 0x00001805)    //Opcode 0x05 ,  READ BIT[11],  RD SIZE[12:15] = 1 BYTE
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_CTRL_REG, 0x1) 
 
-    if err = FlashPollCmdComplete(); err != nil {
+    //if err = FlashPollCmdComplete(); err != nil {
+    //    return
+    //}
+    if err = FlashPollCmdCompleteForReads(); err != nil {
         return
     }
-    time.Sleep(time.Duration(100) * time.Microsecond)  
+    //time.Sleep(time.Duration(100) * time.Microsecond)  
 
     data32, err = TaorReadU32(1, D1_CFG_FLASH_RDATA0_REG)
 

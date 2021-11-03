@@ -63,27 +63,32 @@ class diag_db():
                 self._pre_test_intf_list.append(intf)
 
         # sequential test:
-        for dsp in diag_test_cfg["MTP_SEQ"].keys():
-            for test in diag_test_cfg["MTP_SEQ"][dsp]:
-                self._seq_test_id_list.append((dsp, test))
+        if "MTP_SEQ" in diag_test_cfg.keys() and len(diag_test_cfg["MTP_SEQ"]):
+            for dsp in diag_test_cfg["MTP_SEQ"].keys():
+                for test in diag_test_cfg["MTP_SEQ"][dsp]:
+                    self._seq_test_id_list.append((dsp, test))
 
         # mtp parallel test:
-        for test in diag_test_cfg["MTP_PARA"].keys():
-            if diag_test_cfg["MTP_PARA"][test]:
-                self._mtp_para_test_list.append(test)
+        if "MTP_PARA" in diag_test_cfg.keys() and len(diag_test_cfg["MTP_PARA"]):
+            for test in diag_test_cfg["MTP_PARA"].keys():
+                if diag_test_cfg["MTP_PARA"][test]:
+                    self._mtp_para_test_list.append(test)
 
         # parallel test:
-        for dsp in diag_test_cfg["NIC_PARA"].keys():
-            for test in diag_test_cfg["NIC_PARA"][dsp]:
-                self._para_test_id_list.append((dsp, test))
+        if "NIC_PARA" in diag_test_cfg.keys() and len(diag_test_cfg["NIC_PARA"]):
+            for dsp in diag_test_cfg["NIC_PARA"].keys():
+                for test in diag_test_cfg["NIC_PARA"][dsp]:
+                    self._para_test_id_list.append((dsp, test))
 
         # post test interface check:
         for intf in diag_test_cfg["MTP_POST"].keys():
             if diag_test_cfg["MTP_POST"][intf]:
                 self._post_test_intf_list.append(intf)
 
-        self._seq_tests = diag_test_cfg["MTP_SEQ"]
-        self._para_tests = diag_test_cfg["NIC_PARA"]
+        if "MTP_SEQ" in diag_test_cfg.keys() and len(diag_test_cfg["MTP_SEQ"]):
+            self._seq_tests = diag_test_cfg["MTP_SEQ"]
+        if "NIC_PARA" in diag_test_cfg.keys() and len(diag_test_cfg["NIC_PARA"]):
+            self._para_tests = diag_test_cfg["NIC_PARA"]
 
 
     def get_init_cmd_list(self):

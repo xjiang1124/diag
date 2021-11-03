@@ -156,11 +156,40 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
 
     VOUT, err = pmbus.ReadWord(devName, READ_VOUT)
 
-    integer, dec, err =  pmbus.Convert_vr13_5mvVID(VOUT)
+    
+    if (devName == "CPU_PVCCIN") {
+        integer, dec, err =  pmbus.Convert_vr13_10mvVID(VOUT)
+    } else {
+        integer, dec, err =  pmbus.Convert_vr13_5mvVID(VOUT)
+    }
 
     return
 }
 
+
+func ReadVout_Linear(devName string) (integer uint64, dec uint64, err int) {
+    //var VMODE byte
+    var VOUT uint16
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, page)
+
+    VOUT, err = pmbus.ReadWord(devName, MFR_SPECIFIC_04)
+
+    integer, dec, err =  pmbus.Linear11(VOUT)
+
+    return
+}
 
 func ReadIin(devName string) (integer uint64, dec uint64, err int) {
     var IIN uint16
@@ -201,6 +230,11 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     }
     // Write page register
     pmbus.WriteByte(devName, PAGE, page)
+
+    //Set the phase to read max current
+    if page == 0 {
+        pmbus.WriteByte(devName, PHASE, 0x80)
+    }
 
     IOUT, err = pmbus.ReadWord(devName, READ_IOUT)
 
@@ -280,28 +314,51 @@ func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
-
-/*
-func ReadPout(devName string) (integer uint64, dec uint64, err int) {
-    voutInt, voutFrac, err := ReadVout(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    ioutInt, ioutFrac, err := ReadIout(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    voutFloat := float64(voutInt) + float64(voutFrac)/1000
-    ioutFloat := float64(ioutInt) + float64(ioutFrac)/1000
-    poutFloat := voutFloat * ioutFloat
-
-    integer = uint64(poutFloat)
-    dec = uint64((poutFloat - float64(uint64(poutFloat)))*1000)
-
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    dig, frac, err := ReadTemp(devName)
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
     return
 }
-*/
+
+func DispVoltWattAmp(devName string) (err int) {
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    dig, frac, err := ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
+
+    dig, frac, _ = ReadVout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadPin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadVin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    fmt.Println(outStr)
+    return
+}
 
 
 func DispStatus(devName string) (err int) {

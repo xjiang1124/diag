@@ -20,6 +20,8 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -77,12 +79,15 @@ def decode_pci_slot(bus_list):
 
     return slot_bus_list
 
-def check_pcie_link(mtp_mgmt_ctrl, slot, bus, card_type):
-    if card_type == "ORTANO":
+def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type in ELBA_NIC_TYPE_LIST:
         expected_speed = "16"
-        expected_width = "16"
     else:
         expected_speed = "8"
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.POMONTEDELL:
+        expected_width = "16"
+    else:
         expected_width = "8"
 
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("lspci -vv -s {:s} | grep LnkSta:".format(bus)):
@@ -131,20 +136,27 @@ def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
 
 def get_product_name_from_pn(pn):
     if "DSC2-2Q200-32R32F64P-R" in pn:
-        product_name = "ORTANO2"
+        product_name = NIC_Type.ORTANO2
     elif "DSC2-2Q200-32R32F64P" in pn:
-        product_name = "ORTANO2"
+        product_name = NIC_Type.ORTANO2
     elif "68-0015-02" in pn:
-        product_name = "ORTANO2"
+        product_name = NIC_Type.ORTANO2
     elif "68-0021-02" in pn:
-        product_name = "ORTANO2"
+        product_name = NIC_Type.ORTANO2
+    elif "0X322F" in pn:
+        product_name = NIC_Type.LACONA32DELL
+    elif "0PCFPC" in pn:
+        product_name = NIC_Type.POMONTEDELL
+    elif "P47930" in pn:
+        product_name = NIC_Type.LACONA32
     else:
-        product_name = "UNKNOWN"
+        product_name = NIC_Type.UNKNOWN
         print("Unknown PN:", pn)
 
     return product_name
 
 def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Retrieve FW info")
 
     cmd = "/nic/tools/fwupdate -r"
@@ -160,7 +172,10 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     elif "goldfw" in cmd_buf:
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into goldfw", level=0)
     elif "diagfw" in cmd_buf:
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw", level=0)
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into diagfw", level=0)
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw", level=0)
 
     cmd = "/nic/tools/fwupdate -l"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
@@ -173,34 +188,21 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
         return False
     fwlist = json.loads(fw_json[0])
-    try:
-        print_fwlist = ""
-        if "boot0" in fwlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
-        if "mainfwa" in fwlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "mainfwa:   {:15s}   {:s} ".format(fwlist["mainfwa"]["kernel_fit"]["software_version"], fwlist["mainfwa"]["kernel_fit"]["build_date"]) )
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing mainfwa info")
-        if "mainfwb" in fwlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "mainfwb:   {:15s}   {:s} ".format(fwlist["mainfwb"]["kernel_fit"]["software_version"], fwlist["mainfwb"]["kernel_fit"]["build_date"]) )
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing mainfwb info")
-        if "goldfw" in fwlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "goldfw:    {:15s}   {:s} ".format(fwlist["goldfw"]["kernel_fit"]["software_version"], fwlist["goldfw"]["kernel_fit"]["build_date"]) )
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing goldfw info")
-        if "diagfw" in fwlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "diagfw:    {:15s}   {:s} ".format(fwlist["diagfw"]["kernel_fit"]["software_version"], fwlist["diagfw"]["kernel_fit"]["build_date"]) )
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing diagfw info")
-
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, print_fwlist)
-    except KeyError as e:
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing info")
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, e)
-        return False
+    if "boot0" in fwlist:
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
+    for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw"]:
+        if nic_type in FPGA_TYPE_LIST and partition == "mainfwb":
+            continue
+        try:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
+        except KeyError as e:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, e)
+            return False
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "")
+    
     return True
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
@@ -272,6 +274,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
         # for flexflow/logging purposes:
         mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
         mtp_mgmt_ctrl.mtp_set_nic_type(slot, product_name)
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
 
         ### GET FW INFO
@@ -281,7 +284,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
             continue
 
         ### SET PEFORMANCE MODE
-        if product_name == "ORTANO2":
+        if nic_type == NIC_Type.ORTANO2:
             # Ensure performance mode even though this step is not needed with newer mainfw anymore.
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
             cmd = "touch /sysconfig/config0/.perf_mode"
@@ -293,14 +296,25 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
                 # continue
 
         ### SWITCH TO MAINFW
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
-        cmd = "/nic/tools/fwupdate -s mainfwa"
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to mainfw")
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
-            fail_list.append(slot)
-            pass_list.remove(slot)
-            continue
+        if nic_type == NIC_Type.ORTANO2:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
+            cmd = "/nic/tools/fwupdate -s mainfwa"
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to mainfw")
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+                fail_list.append(slot)
+                pass_list.remove(slot)
+                continue
+        ### OR SWITCH TO GOLDUEFI 
+        elif nic_type in FPGA_TYPE_LIST:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to golduefi")
+            cmd = "/nic/tools/fwupdate -s diagfw"
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to diagfw")
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+                fail_list.append(slot)
+                pass_list.remove(slot)
+                continue
 
     return pass_list, fail_list
 
@@ -313,7 +327,7 @@ def check_pcie_stage(mtp_mgmt_ctrl, card_type):
     for slot, bus in slot_bus_list:
         pass_list.append(slot)
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Retrieve PCIE link {:s} properties".format(bus))
-        if not check_pcie_link(mtp_mgmt_ctrl, slot, bus, card_type):
+        if not check_pcie_link(mtp_mgmt_ctrl, slot, bus):
             fail_list.append(slot)
             pass_list.remove(slot)
 
@@ -396,6 +410,9 @@ def main():
         mtp_id = args.mtpid
     card_type = args.card_type.upper()
     stage = args.stage.upper()
+
+    if card_type == "ELBA":
+        card_type = "ORTANO"
 
     mtp_cfg_db = load_mtp_cfg()
 
@@ -493,6 +510,12 @@ def main():
         testlist = ["FETCH_SN", "PCIE_LINK", "ROT"]
 
         for test in testlist:
+
+            # hack to remove ROT in-flight
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type != NIC_Type.ORTANO2 and test == "ROT":
+                continue
+
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
             start_ts = libmfg_utils.timestamp_snapshot()
 
