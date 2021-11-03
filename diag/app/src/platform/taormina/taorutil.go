@@ -18,6 +18,7 @@ package taormina
 import (
     "fmt"
     "regexp"
+    "strconv"
     "strings"
     "common/cli"
     "common/dcli"
@@ -471,7 +472,14 @@ func GetSerialNumbers() (systemSN string, boardSN string, err int) {
 
 /********************************************************************************* 
 *
-* Check if network to Elba is up 
+* Check if network to Elba is up
+* 
+* 
+ root@10000:/fs/nos/eeupdate# ip netns exec ntb ping -c 3 169.254.13.1
+ ping: connect: Network is unreachable
+ root@10000:/fs/nos/eeupdate# ip netns exec ntb ping -c 3 169.254.7.1
+ ping: connect: Network is unreachable
+
 * 
 *********************************************************************************/ 
 func ElbaPing(elba uint32) (err int) {
@@ -532,9 +540,10 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
 
     //Ping Elba to make sure the network is up
     for i=forStart; i < forEnd; i++ {
-        dcli.Printf("i","[DEBUG] - Elba-%d Ping Test\n", i)
+        dcli.Printf("i","Elba-%d Ping Test\n", i)
         err = ElbaPing(i) 
         if err != errType.SUCCESS {
+            dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed\n", i)
             elbafailmask |= (1<<i)
         }
     }
@@ -549,10 +558,10 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
 
     //Copy over stressarpptest and delete any old logs
     for i=forStart; i < forEnd; i++ {
-        dcli.Printf("i", "[DEBUG] - Elba-%d Copying over stressapptest_arm\n", i)
         if elbafailmask & (1<<i) == (1<<i) {
             continue
         }
+        dcli.Printf("i", "Elba-%d Copying over stressapptest_arm\n", i)
         if  i == ELBA0 {
             cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/diag/tools/stressapptest_arm root@169.254.13.1:/data"
         } else if i == ELBA1 {
@@ -573,7 +582,7 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
         _ , errGo = exec.Command("sh", "-c", cmdStr).Output()
     }
 
-    dcli.Printf("i","[DEBUG] - Creating cmd files\n")
+    dcli.Printf("i","Creating cmd files\n")
     cmdStr = fmt.Sprintf("pwd\ncd /data;./stressapptest_arm -s %d -M 1024 -m 12 -l stressapptest_arm.log\n", time)
     //errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
@@ -592,10 +601,10 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
 
     //Start Test
     for i=forStart; i < forEnd; i++ {
-        dcli.Printf("i", "[DEBUG] - Elba-%d Starting Test\n", i)
         if elbafailmask & (1<<i) == (1<<i) {
             continue
         }
+        dcli.Printf("i", "Elba-%d Starting Test\n", i)
         if  i == ELBA0 {
             cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
@@ -603,7 +612,7 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
         } 
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
-            dcli.Printf("i", "Cmd %s failed! %v", cmdStr, errGo)
+            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
             err = errType.FAIL
             return
         }
@@ -620,10 +629,10 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
 
     //Get Results
     for i=forStart; i < forEnd; i++ {
-        dcli.Printf("i", "[DEBUG] - Elba-%d Get Results\n", i)
         if elbafailmask & (1<<i) == (1<<i) {
             continue
         }
+        dcli.Printf("i", "Elba-%d Get Results\n", i)
         if  i == ELBA0 {
             cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /bin/cat /data/stressapptest_arm.log"
         } else if i == ELBA1 {
@@ -642,7 +651,7 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
             elbafailmask |= (1<<i)
             return
         } else {
-            dcli.Printf("i", "[DEBUG] Elba-%d passed stressapptest\n", i)
+            dcli.Printf("i", "Elba-%d passed stressapptest\n", i)
         }
     }
 
@@ -651,6 +660,7 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
             err = errType.FAIL
         }
     }
+    dcli.Printf("i", "err = %d", err)
     return
 }
 
@@ -821,6 +831,301 @@ func Elba_Show_Firmware(elba int) (err int) {
     //fmt.Printf("%s\n", out)
     return
 
+}
+
+
+func FPGA_Strapping_Test(expected_rev int) (err int) {
+    var strapping uint32
+    err = errType.SUCCESS
+
+    dcli.Printf("i", "Starting Taor Resistor Strapping Test\n")
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
+
+    dcli.Printf("i", "Strapping Rev=0x%x  Epxected=0x%x\n", strapping , expected_rev)
+    if strapping != uint32(expected_rev) {
+        dcli.Printf("e", " Taor Resistor Strapping Test FAILED\n")
+        err = errType.FAIL
+    } else {
+        dcli.Printf("i", " Taor Resistor Strapping Test PASSED\n")
+    }
+
+    return
+}
+
+
+
+/********************************************************************************* 
+*
+i2cset -y -f 0 0x62 0x00 0
+i2cset -y -f 0 0x62 0xDA 0x55 0x50 i
+
+i2cset -y -f 0 0x62 0x00 1
+i2cset -y -f 0 0x62 0xDA 0x19 0x2A i
+
+i2cset -y -f 0 0x62 0x9A 0x02 0x17 0x00 i
+i2cset -y -f 0 0x62 0x9B 0x02 0x64 0x02 i 
+ 
+i2cset -y -f 0 0x62 0x00 0 
+i2cset -y -f 0 0x62 0x00 0x11 
+ 
+ 
+i2cset -y -f 0 0x62 0x00 0
+i2cget -y -f 0 0x62 0xDA w
+i2cset -y -f 0 0x62 0x00 1
+i2cget -y -f 0 0x62 0xDA w
+i2cget -y -f 0 0x62 0x9A w
+i2cget -y -f 0 0x62 0x9b w 
+* 
+*********************************************************************************/ 
+func ElbaVRMfix() (err int) {
+    var cmdStr string
+    var elbafailmask, i uint32
+    err = errType.FAIL
+    var forStart, forEnd uint32 = 0,2
+    register := []uint32{0xDA,   0xDA,   0x9A,   0x9B}
+    expected := []uint32{0x5055, 0x2a19, 0x1702, 0x6402}
+
+    dcli.Printf("i", "for start=%d   for end=%d\n", forStart, forEnd)
+
+
+    //Ping Elba to make sure the network is up
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i","Elba-%d Ping Test\n", i)
+        err = ElbaPing(i) 
+        if err != errType.SUCCESS {
+            dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed\n", i)
+            elbafailmask |= (1<<i)
+        }
+    }
+
+    dcli.Printf("i","Writing VRM\n")
+    cmdStr = fmt.Sprintf("pwd\ni2cset -y -f 0 0x62 0x00 0;i2cset -y -f 0 0x62 0xDA 0x55 0x50 i;i2cset -y -f 0 0x62 0x00 1;i2cset -y -f 0 0x62 0xDA 0x19 0x2A i;i2cset -y -f 0 0x62 0x9A 0x02 0x17 0x00 i;i2cset -y -f 0 0x62 0x9B 0x02 0x64 0x02 i;i2cset -y -f 0 0x62 0x00 0;i2cset -y -f 0 0x62 0x11\n")
+    errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+    errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+    //run commands to see if VRM is already programmed
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Executing Script to Write VRM\n", i)
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        }
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", string(output))
+    }
+
+
+    dcli.Printf("i","Checking VRM\n")
+    cmdStr = fmt.Sprintf("pwd\ni2cset -y -f 0 0x62 0x00 0;i2cget -y -f 0 0x62 0xDA w;i2cset -y -f 0 0x62 0x00 1;i2cget -y -f 0 0x62 0xDA w;i2cget -y -f 0 0x62 0x9A w;i2cget -y -f 0 0x62 0x9b w\n")
+    errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+    errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+
+
+
+    //run commands to see if VRM is already programmed
+    for i=forStart; i < forEnd; i++ {
+        read := []uint32{}
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Check VRM\n", i)
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        //dcli.Printf("i", "%s\n", string(output))
+        s := strings.Split(string(output), "\n")
+        for _, temp := range s {
+            if temp[0] == '0' && temp[1] == 'x' {
+                data32, _ := strconv.ParseUint(temp[0:6], 0, 32)
+                fmt.Printf(" Data32=%x\n", data32)
+                read = append(read, uint32(data32))
+            }
+        }
+        if len(read) != len(expected) {
+            dcli.Printf("e","ERROR: Did not get all the I2C reads.  Read Len=%d.  Expected=%d", len(read), len(expected) )
+            err = errType.FAIL
+            return
+        }
+        for i:=0; i<len(expected); i++ {
+            dcli.Printf("i"," %x  %x\n", expected[i], read[i])
+            if expected[i] != read[i] {
+                dcli.Printf("e","ERROR: VRM Register-%d  Read=%x.  Expected=%x", register[i], expected[i], read[i] )
+                err = errType.FAIL
+                return
+            }
+        }
+    }
+
+    dcli.Printf("i", "err = %d", err)
+    return
+}
+
+
+
+/************************************************************************ 
+*  
+* FIX POUT AND IOUT READING ON TPS53681 FOR TD3 
+* 
+* 
+FIX FIX 
+./taorfpga i2c 0 3 0x60 w 0x00 00
+./taorfpga i2c 0 3 0x60 w 0xda 0xc8 0x25
+./taorfpga i2c 0 3 0x60 w 0xdc 0x70 0xd5
+./taorfpga i2c 0 3 0x60 w 0x00 01
+./taorfpga i2c 0 3 0x60 w 0xda 0x1E 0x0f
+./taorfpga i2c 0 3 0x60 w 0xdc 0xf0 0x07
+./fpgautil i2c 0 3 0x60 w 0x9a 0x02 0x17 0x00
+./fpgautil i2c 0 3 0x60 w 0x9b 0x02 0x62 0x02
+./taorfpga i2c 0 3 0x60 w 0x11
+
+
+./taorfpga i2c 0 3 0x60 w 0x00 00
+./taorfpga i2c 0 3 0x60 w 0xda 0xc8 0x50
+./taorfpga i2c 0 3 0x60 w 0xdc 0x70 0xd5
+./taorfpga i2c 0 3 0x60 w 0x00 01
+./taorfpga i2c 0 3 0x60 w 0xda 0x1E 0x20
+./taorfpga i2c 0 3 0x60 w 0xdc 0xf0 0x07
+./fpgautil i2c 0 3 0x60 w 0x9a 0x02 0x00 0x00
+./fpgautil i2c 0 3 0x60 w 0x9b 0x02 0x62 0x00
+./taorfpga i2c 0 3 0x60 w 0x11
+* 
+************************************************************************/
+func TD3_VRM_FIX(devName string) (err int) {
+    var errGo error
+    var NeedsUpdate int = 0 
+    i2cCmds := [][]byte{  {0x00, 0x00},
+                          {0xDA, 0xC8, 0x25},
+                          {0xDC, 0x70, 0xd5},
+                          {0x9A, 0x02, 0x17, 0x00},
+                          {0x9B, 0x02, 0x62, 0x02},
+                          {0x00, 0x01},
+                          {0xDA, 0x1E, 0x0F},
+                          {0xDC, 0xF0, 0x07}}
+    wrData := []uint8{ 0x00 }
+    rdData := []uint8{}
+
+    iInfo, rc := i2cinfo.GetI2cInfo(devName)
+    if rc != errType.SUCCESS {
+        dcli.Println("e", "Failed to obtain I2C info of", devName)
+        err = rc
+        return
+    }
+
+    cli.Printf("i","Checking if VRM needs updating\n")
+    for i:=0; i<len(i2cCmds); i++ {
+        //set the page to read from
+        if i2cCmds[i][0] == 0x00 {
+            _ , errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(i2cCmds[i])), i2cCmds[i], 0 )
+            if errGo != nil {
+                dcli.Println("e", "I2C Access (3) Failed to", devName, " ERROR=",errGo); 
+                err = errType.FAIL; 
+                return
+            }
+        } else {
+            wrData[0] = i2cCmds[i][0]   //set register in the write data
+            rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), 1, wrData, uint32(len(i2cCmds[i]) - 1) )
+            if errGo != nil {
+                dcli.Println("e", "I2C Access (4) Failed to", devName, " ERROR=",errGo); 
+                err = errType.FAIL; 
+                return
+            }
+            for j:=0; j<(len(i2cCmds[i])-1); j++ {
+                if i2cCmds[i][j+1] != rdData[j] {
+                    NeedsUpdate = 1
+                    break
+                }
+            }
+        }
+    }
+
+    if NeedsUpdate == 0 {
+        cli.Printf("i","TD3 VRM is up to date\n")
+        return
+    }
+
+    cli.Printf("i", "Writing TD3 VRM to fix POUT AND IOUT\n")
+    for i:=0; i<len(i2cCmds); i++ {
+        _ , errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(i2cCmds[i])), i2cCmds[i], 0 )
+        if errGo != nil {
+            dcli.Println("e", "I2C Access (2) Failed to", devName, " ERROR=",errGo); 
+            err = errType.FAIL; 
+            return
+        }
+    }
+
+    cli.Printf("i", "Checking Registers before having VRM save it's config\n")
+    for i:=0; i<len(i2cCmds); i++ {
+        //set the page to read from
+        if i2cCmds[i][0] == 0x00 {
+            _ , errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(i2cCmds[i])), i2cCmds[i], 0 )
+            if errGo != nil {
+                dcli.Println("e", "I2C Access (3) Failed to", devName, " ERROR=",errGo); 
+                err = errType.FAIL; 
+                return
+            }
+        } else {
+            wrData[0] = i2cCmds[i][0]   //set register in the write data
+            rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), 1, wrData, uint32(len(i2cCmds[i]) - 1) )
+            if errGo != nil {
+                dcli.Println("e", "I2C Access (4) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
+            }
+            for j:=0; j<(len(i2cCmds[i])-1); j++ {
+                if i2cCmds[i][j+1] != rdData[j] {
+                    dcli.Printf("e", "Checking Write data before writing config failed.  VRM Reg=%x  WR[%d]=%x  RD=%x\n", i2cCmds[i][0], j, i2cCmds[i][j+1],rdData[j])
+                    err = errType.FAIL; 
+                    return
+                }
+            }
+        }
+    }
+
+    wrData[0] = 0x11
+    _ , errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (2) Failed to", devName, " ERROR=",errGo); 
+        err = errType.FAIL; 
+        return
+    }
+    cli.Printf("i","TD3 VRM Update PASSED\n")
+    //func I2c_access(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrData []byte, rdSize uint32)(readData []byte, err error) {
+    return
 }
 
 
