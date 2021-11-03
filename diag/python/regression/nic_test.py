@@ -296,7 +296,8 @@ class nic_test:
                 try:
                     self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
                     self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
-                    self.nic_con.uart_session_cmd(session, "halctl debug port --admin-state down")
+                    if asic_type == "ELBA":
+                        self.nic_con.uart_session_cmd(session, "halctl debug port --admin-state down")
                     #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
                     #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
                     self.nic_con.uart_session_cmd(session, "halctl show port status")

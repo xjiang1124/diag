@@ -72,6 +72,10 @@ elif [[ $cpld_id == "0x1f" ]]
 then
     type="NAPLES100HPE"
     asic_type="CAPRI"
+elif [[ $cpld_id == "0x22" ]]
+then
+    type="NAPLES100DELL"
+    asic_type="CAPRI"
 elif [[ $cpld_id == "0x20" ]]
 then
     type="NAPLES25SWMDELL"

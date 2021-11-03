@@ -477,6 +477,7 @@ func init() {
     dispMap["NAPLES100"]   = naples100DispStaList
     dispMap["NAPLES100IBM"]= naples100DispStaList
     dispMap["NAPLES100HPE"]= naples100DispStaList
+    dispMap["NAPLES100DELL"]= naples100DispStaList
     dispMap["NAPLES25"]    = naples25DispStaList
     dispMap["NAPLES25OCP"] = naples25DispStaList
     dispMap["NAPLES25SWM"] = naples25DispStaList
@@ -513,6 +514,7 @@ func init() {
     eepromMap["NAPLES100"]     = naplesEepList
     eepromMap["NAPLES100IBM"]  = naplesEepList
     eepromMap["NAPLES100HPE"]  = naplesEepList
+    eepromMap["NAPLES100DELL"]  = naplesEepList
     eepromMap["NAPLES25"]      = naplesEepList
     eepromMap["NAPLES25OCP"]   = naplesEepList
     eepromMap["NAPLES25SWM"]   = naplesEepList
@@ -549,6 +551,7 @@ func init() {
     i2cHubMap["NAPLES100"]      = naples100I2cHubMap
     i2cHubMap["NAPLES100IBM"]   = naples100I2cHubMap
     i2cHubMap["NAPLES100HPE"]   = naples100I2cHubMap
+    i2cHubMap["NAPLES100DELL"]   = naples100I2cHubMap
     i2cHubMap["NAPLES25"]       = naples100I2cHubMap
     i2cHubMap["NAPLES25OCP"]    = naples100I2cHubMap
     i2cHubMap["NAPLES25SWM"]    = naples100I2cHubMap
@@ -582,6 +585,7 @@ func init() {
     i2cHubListMap["NAPLES100"]     = naples100I2cHubList
     i2cHubListMap["NAPLES100IBM"]  = naples100I2cHubList
     i2cHubListMap["NAPLES100HPE"]  = naples100I2cHubList
+    i2cHubListMap["NAPLES100DELL"]  = naples100I2cHubList
     i2cHubListMap["NAPLES25"]      = naples25I2cHubList
     i2cHubListMap["NAPLES25OCP"]   = naples25I2cHubList
     i2cHubListMap["NAPLES25SWM"]   = naples25I2cHubList
@@ -615,6 +619,7 @@ func init() {
     psuListMap["NAPLES100"]    = nicPsuList
     psuListMap["NAPLES100IBM"] = nicPsuList
     psuListMap["NAPLES100HPE"] = nicPsuList
+    psuListMap["NAPLES100DELL"] = nicPsuList
     psuListMap["NAPLES25"]     = nicPsuList
     psuListMap["NAPLES25OCP"]  = nicPsuList
     psuListMap["NAPLES25SWM"]  = nicPsuList
@@ -655,7 +660,7 @@ func init() {
     //===============================
     // Use switch case to avoid dummy data structure
     switch cardType {
-    case "NAPLES100", "NAPLES100IBM", "NAPLES100HPE", "BIODONA_D4", "BIODONA_D5":
+    case "NAPLES100", "NAPLES100IBM", "NAPLES100HPE", "NAPLES100DELL", "BIODONA_D4", "BIODONA_D5":
         QsfpTbl = naples100QsfpTbl
         var t boardinfo.NicCpld_T
         yaml.Unmarshal([]byte(boardinfo.NicCpld), &t)
