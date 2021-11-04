@@ -142,6 +142,14 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
+    if "NAME" in inputconfig:
+        if "ORTANO2" == inputconfig["NAME"].upper():
+            workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+            SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
+            for PN in SNbyPN:
+                #,listofsn=[],specpn=None
+                createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
+
     return None
 
 def generateMTPreport(pr,DATA,inputconfig,startdate=None):
@@ -178,21 +186,29 @@ def getbeforedayinformation(checkday=30):
 
     return days_before
 
-def createteststatusreport(pr,DATA,inputconfig,startdate=None):
-    workingonSNlist = DATA['SN']['LIST']
+def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
+    
+    #workingonSNlist = DATA['SN']['LIST']
     
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    if len(listofsn):
+        workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
     #sys.exit()    
     wb = Workbook()
     
-    dest_filename = "{}EXECL_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
-    filenameheader = "{}EXECL_{}_DATA".format(inputconfig['DIR']["reportpath"],date_time)
+    reportdir = inputconfig['DIR']["reportpath"]
+    if specpn:
+        reportdir = reportdir + specpn + '/'
+        pr['modules'].createdirinserver(reportdir)
+
+    dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
     if "NAME" in inputconfig:
-        dest_filename = "{}{}_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
-        filenameheader = "{}{}_{}_DATA".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
+        dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
     if startdate:
         dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
 
