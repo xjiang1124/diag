@@ -1664,8 +1664,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
         wirtedata.append("TOTAL")
         alltotal = 0
         for test in topfailuredata['OVERALL']['TEST_HVLV']["TEST"]:
-            wirtedata.append(testtotal[test])
-            alltotal += testtotal[test]
+            if test in testtotal:
+                wirtedata.append(testtotal[test])
+                alltotal += testtotal[test]
         wirtedata.append(alltotal)
         ws2.append(wirtedata)
         wirtedata = list()
