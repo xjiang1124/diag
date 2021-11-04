@@ -32,6 +32,20 @@ type entry struct {
     Value    []byte
 }
 
+var MtpTurboTbl = []entry {
+    entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
+    entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},
+    entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
+    entry{"PRODUCT_NAME",   STRING, 10,  20, []byte("TURBO NIC MTP")},
+    entry{"SERIAL_NUM",     STRING, 30,  20, []byte("1234567890          ")},
+    entry{"COMPANY_NAME",   STRING, 50,  20, []byte("Pensando Systems Inc")},
+    entry{"MFG_DEVIATION",  STRING, 70,  20, []byte("0                   ")},
+    entry{"MFG_BITS",       STRING, 90,  2,  []byte("00")},
+    entry{"ENG_BITS",       STRING, 92,  2,  []byte("00")},
+    entry{"MAC_ADDR",       STRING, 94,  12, []byte("AABBCCDDEEFF")},
+    entry{"NUM_OF_MAC",     STRING, 106, 2,  []byte("00")},
+}
+
 var MtpTbl = []entry {
     entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
     entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},

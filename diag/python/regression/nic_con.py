@@ -477,7 +477,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False, asic_type="elba"):
+    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False):
         fmt_dummy_fru_json = """
 {{
     "manufacturing-date": "1616630400",
@@ -562,7 +562,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def config_mnic(self, rate=115200, slot=0):
+    def config_mnic(self, rate=115200, slot=0, uefi=False):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -578,6 +578,13 @@ class nic_con:
             session.expect("\#")
             temp = session.after
             if 'oob_mnic0' in session.before:
+                # only works for Elba FPGA cards with PS48
+                if uefi == True:
+                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 1")
+                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x0")
+                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 0")
+                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 72 -r")
+                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x1")
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
                 time.sleep(0.5)
                 print 'oob_mnic0 enabled'
@@ -675,7 +682,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False):
+    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
@@ -691,7 +698,7 @@ class nic_con:
                 return ret
 
         for i in range(numRetry):
-            ret = self.config_mnic(rate, slot)
+            ret = self.config_mnic(rate, slot, uefi)
             if ret == -1:
                 print "=== FAIL to enable management port! ==="
                 return ret

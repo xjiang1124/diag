@@ -16,18 +16,16 @@
  *     cl jtag.c ftd2xx.lib -I..
  * and run jtag.exe.
  */
-#include "acc_v2.h"
+#include "acc.h"
 
 #define UNUSED_PARAMETER(x) (void)(x)
 
 #define ARRAY_SIZE(x) (sizeof((x))/sizeof((x)[0]))
-#define CHANNEL_A	0
-#define CHANNEL_B	1
+#define CHANNEL_A	0x1071
+#define CHANNEL_B	0x1072
 
-int verbosity = 1;
-
-FT_HANDLE ftHandle = NULL;
-FT_HANDLE ftHandle_a = NULL;
+FT_HANDLE ftHandle		= NULL;
+FT_HANDLE ftHandle_a	= NULL;
 
 const BYTE SPIDATALENGTH = 11;//3 digit command + 8 digit address
 const BYTE READ = '\x0B';//110xxxxx
@@ -56,9 +54,9 @@ BYTE 	OutputBuffer[512];
 DWORD	dwNumBytesToSend = 0;
 DWORD	dwNumBytesSent  = 0;
 DWORD 	dwNumBytesRead;
-BYTE	signature_prefix = 0xAB;
-BYTE	signature_surfix = 0xBA;
-BYTE	signature_failure = 0xBB;
+BYTE	signature_prefix 	= 0xAB;
+BYTE	signature_surfix 	= 0xBA;
+BYTE	signature_failure 	= 0xBB;
 
 BYTE	is_spi_flash	= 0;
 BYTE	is_jtag_flash	= 0;
@@ -86,26 +84,6 @@ unsigned char lsc_status_cmd[]			= {0x3C, 0x0, 0x0, 0x0};
 BYTE   setup_jtag[3] =
 {
     0x80, 0x08, 0x0B  // TMS start high; TDO is input
-};
-
-BYTE   setup_ac1_high[3] =
-{
-    0x82, 0x03, 0x0B  // TMS start high; TDO is input
-};
-
-BYTE   setup_ac1_low[3] =
-{
-    0x82, 0x01, 0x0B  // TMS start high; TDO is input
-};
-
-BYTE   setup_bd4_high[3] =
-{
-    0x80, 0x18, 0x1B  // TMS start high; TDO is input
-};
-
-BYTE   setup_bd4_low[3] =
-{
-    0x80, 0x08, 0x1B  // TMS start high; TDO is input
 };
 
 //BYTE   setup_reg[3] =
@@ -245,7 +223,6 @@ BYTE   cpu_rd[11];
 //};
 
 BYTE   cpu_res[13];
-BYTE   cpu_tst[138];
 //BYTE   cpu_res[11] =
 //{
 //	0x3C, 0x7, 0x0, 0x00, 0x42, 0x00, 0x00, 0xC1, 0x80, 0x40, 0x00
@@ -281,186 +258,45 @@ void cpld_unlock()
 	close(lock_fd);
 }
 #endif
-
-void print_binary(int index)
-{
-	int i;
-        DWORD data;
-
-	data = (DWORD)cpu_wr[index];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01) {
-			printf("1");
-		} else {
-			printf("0");
-	        }
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_wr[index + 1];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_wr[index + 2];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-		data << 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_wr[index + 3];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_wr[index + 4];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf("\n");
-	return;
-}
-
-void print_binary_rd()
-{
-	int i;
-        DWORD data;
-
-	data = (DWORD)cpu_rd[5];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01) {
-			printf("1");
-		} else {
-			printf("0");
-	        }
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_rd[6];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_rd[7];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_rd[8];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_rd[9];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf(" ");
-	data = (DWORD)cpu_rd[10];
-	for ( i = 0; i < 8 ; i++ ) {
-		if (data & 0x01)
-			printf("1");
-		else
-			printf("0");
-		data = data >> 1;
-	}
-	printf("\n");
-}
-
 void jtag_wr_instruction(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
 {
+//	printf("inst 0x%x, address 0x%llx, data 0x%x, flag 0x%x\n", inst, address, data, flag);
 	cpu_wr[0] = 0x3C;
 	cpu_wr[1] = 0x0B;
 	cpu_wr[2] = 0x00;
 	DWORD slot = 1 << (inst - 1);
 	cpu_wr[3] = slot & 0xFF;
 	cpu_wr[4] = JTAG_WR_CMD << 2 | (slot & 0x300) >> 8;
+	cpu_wr[5] = (flag & 0x1) << 6;
 	DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
-
-	cpu_wr[5] = (address & 0x1) << 7 | (size << 5) | (flag & 0x1) << 3;
-	cpu_wr[6] = (address >> 1) & 0xFF;
-	cpu_wr[7] = (address >> 9) & 0xFF;
-	cpu_wr[8] = (address >> 17) & 0xFF;
-	cpu_wr[9] = (address >> 25) & 0xFF;
-	cpu_wr[10] = (data & 0xF) << 4 | ((address >> 33) & 0xF);
+//	printf("size 0x%x\n", size);
+	cpu_wr[6] = (address & 0x3F) << 2 | size;
+	cpu_wr[7] = (address >> 6) & 0xFF;
+	cpu_wr[8] = (address >> 14) & 0xFF;
+	cpu_wr[9] = (address >> 22) & 0xFF;
+	cpu_wr[10] = (data & 0xF) << 4 | ((address >> 30) & 0xF);
 	cpu_wr[11] = (data >> 4) & 0xFF;
 	cpu_wr[12] = (data >> 12) & 0xFF;
 	cpu_wr[13] = (data >> 20) & 0xFF;
 	cpu_wr[14] = (JTAG_WR_OP & 0x3) << 4 | ((data >> 28) & 0xF);
-/*
-	printf("jtag slot number is %x\n", slot);
-	printf("jtag flag number is %x\n", flag);
-	printf("jtag wr cmd = 0x%x\n", JTAG_WR_CMD);
-	printf("jtag wr size = 0x%x\n", size);
-	printf("jtag wr op = 0x%x\n", JTAG_WR_OP);
-
-        printf("write data ...\n");
-        printf("0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x\n", cpu_wr[0], cpu_wr[1], cpu_wr[2], cpu_wr[3], cpu_wr[4]);
-	printf("\n");
-        printf("0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x\n", cpu_wr[5], cpu_wr[6], cpu_wr[7], cpu_wr[8], cpu_wr[9]);
-        printf("0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x\n", cpu_wr[10], cpu_wr[11], cpu_wr[12], cpu_wr[13], cpu_wr[14]);
-        printf("0x%2.2x 0x%2.2x 0x%2.2x\n", cpu_wr[13], cpu_wr[14], cpu_wr[15]);
-
-        print_binary(5);
-        print_binary(10);
-*/
 }
 
 void jtag_rd_instruction(DWORD inst, ULONGLONG address, DWORD flag)
 {
+//	printf("inst 0x%x, address 0x%llux, flag 0x%x\n", inst, address, flag);
 	cpu_rd[0] = 0x3C;
 	cpu_rd[1] = 0x07;
 	cpu_rd[2] = 0x00;
 	DWORD slot = 1 << (inst - 1);
 	cpu_rd[3] = slot & 0xFF;
 	cpu_rd[4] = JTAG_RD_CMD << 2 | (slot & 0x300) >> 8;
+	cpu_rd[5] = (flag & 0x1) << 6;
 	DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
-
-	cpu_rd[5] = (address & 0x1) << 7 | (size << 5) | (flag & 0x1) << 3;
-	cpu_rd[6] = (address >> 1) & 0xFF;
-	cpu_rd[7] = (address >> 9) & 0xFF;
-	cpu_rd[8] = (address >> 17) & 0xFF;
-	cpu_rd[9] = (address >> 25) & 0xFF;
-	cpu_rd[10] = (JTAG_RD_OP & 0x3) << 4 | ((address >> 33) & 0xF);
-/*
-        printf("read data instruction ...\n");
-        printf("0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x\n", cpu_rd[0], cpu_rd[1], cpu_rd[2], cpu_rd[3], cpu_rd[4]);
-	printf("\n");
-        printf("0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x 0x%2.2x\n", cpu_rd[5], cpu_rd[6], cpu_rd[7], cpu_rd[8], cpu_rd[9], cpu_rd[1]);
-        print_binary_rd();
-*/
+	cpu_rd[6] = (address & 0x3F) << 2 | size;
+	cpu_rd[7] = (address >> 6) & 0xFF;
+	cpu_rd[8] = (address >> 14) & 0xFF;
+	cpu_rd[9] = (address >> 22) & 0xFF;
+	cpu_rd[10] = (JTAG_RD_OP & 0x3) << 4 | ((address >> 30) & 0xF);
 }
 
 void jtag_res_instruction(DWORD inst)
@@ -479,115 +315,6 @@ void jtag_res_instruction(DWORD inst)
 	cpu_res[10] = 0;
 	cpu_res[11] = 0;
 	cpu_res[12] = 0;
-
-
-//	printf("response: ");
-//	for(int i = 0; i < 10; i++)
-//	{
-//		printf("0x%x ", cpu_res[i]);
-//	}
-//	printf("\n");
-}
-
-void jtag_tst_instruction(DWORD inst, BYTE enable)
-{
-	int i;
-
-	cpu_tst[0] = 0x3C;
-	cpu_tst[1] = 0x86;
-	cpu_tst[2] = 0x00;
-	DWORD slot = 1 << (inst - 1);
-	cpu_tst[3] = slot & 0xFF;
-	if(inst > 8) {
-		cpu_tst[4] = JTAG_TST_CMD << 2 | (slot & 0x300) >> 8;
-	} else {
-		cpu_tst[4] = JTAG_TST_CMD << 2 | 0x3;
-	}
-	cpu_tst[5] = 0b01000000;
-	cpu_tst[6] = 0b00101011;
-	cpu_tst[7] = 0b0;
-	cpu_tst[8] = 0b0;
-
-	BYTE   cpu_test[129] = {0b00100000, 0b11111000, 0b00011011, 0b00000011, 0b00110111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-			0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-			0b00000000, 0b01111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111000, 0b00010001, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b10000000, 0b00000000, 0b00000000,
-			0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-			0b00010110, 0b11011010, 0b00100100, 0b10100000, 0b01111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b10000000, 0b00000000, 0b00000000, 0b00000000,
-			0b00000000, 0b00000000, 0b00000111, 0b10011111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-			0b11111111, 0b11111111, 0b11111111, 0b11111110, 0b01010000, 0b00000111,
-			0b00000000, 0b00000000, 0b00101110, 0b00001000, 0b00000000, 0b00000000,
-			0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-			0b00000000, 0b00000000, 0b00000000, 0b00000100};
-	if(enable == 0)
-		cpu_test[4] = 0b00010111;
-//		BYTE   cpu_test[129] = {0b00100000, 0b11111000, 0b00011011, 0b00000011, 0b00010111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//				0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//				0b00000000, 0b01111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111000, 0b00010001, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b10000000, 0b00000000, 0b00000000,
-//				0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//				0b00010110, 0b11011010, 0b00100100, 0b10100000, 0b01111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b10000000, 0b00000000, 0b00000000, 0b00000000,
-//				0b00000000, 0b00000000, 0b00000111, 0b10011111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
-//				0b11111111, 0b11111111, 0b11111111, 0b11111110, 0b01010000, 0b00000111,
-//				0b00000000, 0b00000000, 0b00101110, 0b00001000, 0b00000000, 0b00000000,
-//				0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-//				0b00000000, 0b00000000, 0b00000000, 0b00000100};
-
-//	00100000 11111000 00011011 00000011 00110111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111000 00000000 00000000 00000000 00000000 00000000
-//	00000000 00000000 00000000 00000000 00000000 00000000
-//	00000000 01111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111000 00010001 11111111 11111111 11111111
-//	11111111 11111111 11111111 10000000 00000000 00000000
-//	00000000 00000000 00000000 00000000 00000000 00000000
-//	00010110 11011010 00100100 10100000 01111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 10000000 00000000 00000000 00000000
-//	00000000 00000000 00000111 10011111 11111111 11111111
-//	11111111 11111111 11111111 11111111 11111111 11111111
-//	11111111 11111111 11111111 11111110 01010000 00000111
-//	00000000 00000000 00101110 00001000 00000000 00000000
-//	00000000 00000000 00000000 00000000 00000000 00000000
-//	00000000 00000000 00000000 00000100 0
-
-	for(i = 0; i < 129; i++) {
-		memcpy(&cpu_tst[i+9], &cpu_test[128-i], sizeof(cpu_test[0]));
-	}
-	for(i = 0; i < 138; i++) {
-		if(i%10 == 0)
-			printf("\n");
-		printf("0x%02x ", cpu_tst[i]);
-	}
-	printf("\n");
-
 }
 
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
@@ -611,7 +338,7 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     {
         return ftStatus;
     }
-#if 1
+
     ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
     if (ftStatus != FT_OK)
     {
@@ -636,28 +363,14 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     	printf("Read failed due to other reason!\n");
     else if(ftStatus == 4)
     	printf("Read failed due to operation failed!\n");
-    else if(ftStatus == 2) {
-        jtag_recover();
-}
-//    //test only
-//    if(ftStatus == 3)
-//    {
-//	ftStatus = sendJtagCommand(ftHandle, setup_ac1_low, sizeof setup_ac1_low);
-//	if (ftStatus != FT_OK)
-//	{
-//		return ftStatus;
-//	}
-//	usleep(1000);
-//	ftStatus = sendJtagCommand(ftHandle, setup_ac1_high, sizeof setup_ac1_high);
-//	if (ftStatus != FT_OK)
-//	{
-//		return ftStatus;
-//	}
-////        printf("write address 0x%x, data 0x%x, flag 0x%x\n", address, data, flag);
-////    	printf("return 3\n");
-//    //	ftStatus = 0;
-//    }
-#endif
+
+    //test only
+    if(ftStatus == 3)
+    {
+    	printf("return 3\n");
+    	ftStatus = 0;
+    }
+
     return ftStatus;
 }
 
@@ -752,9 +465,9 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
 
     ftStatus = queue_read(ftHandle, data);
     if(ftStatus == 1)
+    {
     	printf("Read failed due to other reason!\n");
-    else if(ftStatus == 4)
-    	printf("Read failed due to operation failed!\n");
+    }
     else if(ftStatus == 2)
     {
     	//resend response after 1 second;
@@ -778,32 +491,12 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         }
     	sleep(1);
         ftStatus = queue_read(ftHandle, data);
-        if(ftStatus == 2) {
-            printf("Read failed due to corruption in resend!\n");
-            jtag_recover();
-        }
-        else if(ftStatus == 4)
-            printf("Read failed due to operation failed in resend!\n");
+        if(ftStatus == 2)
+        	printf("Read failed due to corruption in resend!\n");
         else if(ftStatus == 0)
-            printf("resend successfully!\n");
+        	printf("resend successfully!\n");
         else
-            printf("Read failed due to other reason in resend!\n");
-    } else if(ftStatus == 3)
-    {
-//        ftStatus = sendJtagCommand(ftHandle, setup_ac1_low, sizeof setup_ac1_low);
-//        if (ftStatus != FT_OK)
-//        {
-//                return ftStatus;
-//        }
-//        usleep(1000);
-//        ftStatus = sendJtagCommand(ftHandle, setup_ac1_high, sizeof setup_ac1_high);
-//        if (ftStatus != FT_OK)
-//        {
-//                return ftStatus;
-//        }
-////        printf("read address 0x%x, flag 0x%x\n", address, flag);
-////        printf("return 3\n");
-//    //  ftStatus = 0;
+        	printf("Read failed due to other reason in resend!\n");
     }
 
 #if 0
@@ -850,30 +543,6 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     return ftStatus;
 }
 
-FT_STATUS jtag_tst(DWORD inst, BYTE enable)
-	{
-	FT_STATUS ftStatus = FT_OK;
-	ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
-	if (ftStatus != FT_OK)
-	{
-		return ftStatus;
-	}
-
-	jtag_tst_instruction(inst, enable);
-	ftStatus = sendJtagCommand(ftHandle, cpu_tst, sizeof cpu_tst);
-	if (ftStatus != FT_OK)
-	{
-		return ftStatus;
-	}
-
-	ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
-	if (ftStatus != FT_OK)
-	{
-		return ftStatus;
-	}
-
-	return ftStatus;
-}
 FT_STATUS jtag_write(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
 {
 	FT_STATUS ftStatus = FT_OK;
@@ -913,20 +582,6 @@ FT_STATUS jtag_write(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     if (ftStatus != FT_OK)
     {
         return ftStatus;
-    }
-
-    ftStatus = queue_read(ftHandle, &data);
-    if(ftStatus == 1)
-    	printf("Read failed due to other reason!\n");
-    else if(ftStatus == 4)
-    	printf("Read failed due to operation failed!\n");
-    else if(ftStatus == 2)
-        jtag_recover();
-    //test only
-    if(ftStatus == 3)
-    {
-    	printf("return 3\n");
-    	ftStatus = 0;
     }
 
     return ftStatus;
@@ -978,9 +633,9 @@ DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag)
 
     ftStatus = queue_read(ftHandle, &data);
     if(ftStatus == 1)
+    {
     	printf("Read failed due to other reason!\n");
-    else if(ftStatus == 4)
-        	printf("Read failed due to operation failed!\n");
+    }
     else if(ftStatus == 2)
     {
     	//resend response after 1 second;
@@ -1004,16 +659,12 @@ DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag)
         }
     	sleep(1);
         ftStatus = queue_read(ftHandle, &data);
-        if(ftStatus == 2) {
-            printf("Read failed due to corruption in resend!\n");
-            jtag_recover();
-        }
-        else if(ftStatus == 4)
-            printf("Read failed due to operation failed in resend!\n");
+        if(ftStatus == 2)
+        	printf("Read failed due to corruption in resend!\n");
         else if(ftStatus == 0)
-            printf("resend successfully!\n");
+        	printf("resend successfully!\n");
         else
-            printf("Read failed due to other reason in resend!\n");
+        	printf("Read failed due to other reason in resend!\n");
     }
 
     return data;
@@ -1099,174 +750,45 @@ ULONGLONG xtoi(char *hexstring)
 	return i;
 }
 
-int haps = 0;
-DWORD gPortNum = 0;
-
-void set_verbosity(int level)
+FT_STATUS jtag_init()
 {
-    verbosity = level;
-    return;
-}
 
-FT_STATUS jtag_get_num_devices(DWORD *numDevs)
-{
-    FT_STATUS ftStatus = FT_OK;
+    FT_STATUS       ftStatus = FT_OK;
+    int             portNum = CHANNEL_B;
+    DWORD           driverVersion = 0;
 
-    ftStatus = FT_CreateDeviceInfoList(numDevs);
-    if ( ftStatus == FT_OK ) {
-        if ( verbosity )
-            printf("Number of devices is %d\n", *numDevs);
-    } else {
-        *numDevs = 0;
-        if ( verbosity )
-            printf("FT_CreateDeviceInfoList failed\n");
-    }
-    return ftStatus;
-}
-
-FT_STATUS jtag_get_device_info_list(FT_DEVICE_LIST_INFO_NODE *devInfo, DWORD numDevs)
-{
-    FT_STATUS ftStatus = FT_OK;
-
-    ftStatus = FT_GetDeviceInfoList(devInfo, &numDevs);
-    if ( ftStatus != FT_OK ) {
-        if ( verbosity )
-            printf("GetDeviceInfoList failed\n");
-    }
-    return ftStatus;
-}
-
-FT_STATUS jtag_get_device_handle_by_locID(DWORD locID, FT_HANDLE *ftHandle)
-{
-    FT_STATUS ftStatus = FT_OK;
-    FT_DEVICE_LIST_INFO_NODE *devInfo;
-    DWORD numDevs;
-    int i;
-
-    *ftHandle = 0;
-    ftStatus = jtag_get_num_devices(&numDevs);
-    if ( ftStatus != FT_OK ) {
-        if ( verbosity )
-            printf("jtag_get_device_handle_by_locID: failed\n");
-	return ftStatus;
-    }
-
-    if ( numDevs > 0 ) {
-        devInfo = (FT_DEVICE_LIST_INFO_NODE *)malloc(sizeof(FT_DEVICE_LIST_INFO_NODE)*numDevs);
-	ftStatus = jtag_get_device_info_list(devInfo, numDevs);
-        if ( ftStatus == FT_OK ) {
-            for ( i = 0; i < numDevs; i++ ) {
-		if ( locID == devInfo[i].LocId ) {
-		    *ftHandle = devInfo[i].ftHandle;
-		    break;
-		}
-            }
-        } else {
-	    if ( verbosity )
-                printf("get_device_handle:get_device_info_list failed\n");
-        }
-        free((void *)devInfo);
-    }
-    return;
-}
-
-FT_STATUS jtag_display_device(void)
-{
-    FT_STATUS ftStatus = FT_OK;
-    FT_DEVICE_LIST_INFO_NODE *devInfo;
-    DWORD numDevs;
-    int i;
-
-    ftStatus = FT_CreateDeviceInfoList(&numDevs);
-    if ( ftStatus == FT_OK ) {
-	if ( verbosity )
-            printf("display_device:Number of devices is %d\n", numDevs);
-    } else {
-	if ( verbosity )
-            printf("display_device:FT_CreateDeviceInfoList failed\n");
-	return ftStatus;
-    }
-
-    if ( numDevs > 0 ) {
-        devInfo = (FT_DEVICE_LIST_INFO_NODE *)malloc(sizeof(FT_DEVICE_LIST_INFO_NODE)*numDevs);
-	ftStatus = FT_GetDeviceInfoList(devInfo, &numDevs);
-        if ( ftStatus == FT_OK ) {
-            for ( i = 0; i < numDevs; i++ ) {
-                printf("Dev %d:\n", i);
-                printf("    Flags = 0x%x\n", devInfo[i].Flags);
-                printf("    Type = 0x%x\n", devInfo[i].Type);
-                printf("    IDe = 0x%x\n", devInfo[i].ID);
-                printf("    LocId = 0x%x\n", devInfo[i].LocId);
-                printf("    SerialNumber = %s\n", devInfo[i].SerialNumber);
-                printf("    Descriptione = %s\n", devInfo[i].Description);
-                printf("    ftHandle = 0x%x\n", devInfo[i].ftHandle);
-            }
-        } else {
-            if ( verbosity )
-                printf("GetDeviceInfoList failed\n");
-        }
-        free((void *)devInfo);
-    }
-    return;
-}
-
-FT_STATUS jtag_init(DWORD portNum)
-{
-    FT_STATUS ftStatus = FT_OK;
-    FT_HANDLE handle_t;
-    DWORD numDevs;
-    FT_DEVICE_LIST_INFO_NODE *devInfo;
-
-    DWORD driverVersion = 0;
-    gPortNum = portNum;
-
-    printf("04/21/21 -- port number = %x\n", portNum);
-    if ( portNum < 255 ) {
-        if ( ftHandle == NULL ) {
-            if ( portNum >= 20 ) {
-    	        haps = 1;
-    	        ftStatus = FT_Open(((portNum - 20) * 2 + 1), &ftHandle);
-	    } else if( portNum >= 10 ) {
-                haps = 0;
-	        ftStatus = FT_Open((portNum - 10), &ftHandle);
-            } else {
-                haps = 0;
-    	        ftStatus = FT_Open((portNum * 2 + 1), &ftHandle);
-            }
-        }
-    } else {
-        if ( verbosity )
-            printf("Using portNum as LocId\n");
-        haps = 0;
-        jtag_get_device_handle_by_locID(portNum, &handle_t);
-        if ( handle_t != 0 )
-            ftHandle = handle_t;
-	else 
-    	    ftStatus = FT_OpenEx(portNum, FT_OPEN_BY_LOCATION,  &ftHandle);
-    }
-
-    if ( ftStatus != FT_OK ) {
-        if ( verbosity ) {
-            printf("FT_Open(%x) failed, with error %d.\n", portNum, (int)ftStatus);
-            printf("On Linux, lsmod can check if ftdi_sio (and usbserial) are present.\n");
-            printf("If so, unload them using rmmod, as they conflict with ftd2xx.\n");
-	}
+    if(ftHandle == NULL)
+    	ftStatus = FT_Open(portNum, &ftHandle);
+    if (ftStatus != FT_OK)
+    {
+        printf("FT_Open(%d) failed, with error %d.\n", portNum, (int)ftStatus);
+        printf("On Linux, lsmod can check if ftdi_sio (and usbserial) are present.\n");
+        printf("If so, unload them using rmmod, as they conflict with ftd2xx.\n");
         return ftStatus;
     }
+
     assert(ftHandle != NULL);
 
     ftStatus = FT_GetDriverVersion(ftHandle, &driverVersion);
-    if ( ftStatus != FT_OK ) {
-        printf("Failure.  FT_GetDriverVersion returned %d.\n", (int)ftStatus);
+    if (ftStatus != FT_OK)
+    {
+        printf("Failure.  FT_GetDriverVersion returned %d.\n",
+               (int)ftStatus);
         return ftStatus;
     }
 
-    if ( verbosity ) {
-        printf("D2XX version : %x.%x.%x\n",
-                (unsigned int)((driverVersion & 0x00FF0000) >> 16),
-                (unsigned int)((driverVersion & 0x0000FF00) >> 8),
-                (unsigned int)(driverVersion & 0x000000FF));
-     }
+//    printf("D2XX version : %x.%x.%x\n",
+//           (unsigned int)((driverVersion & 0x00FF0000) >> 16),
+//           (unsigned int)((driverVersion & 0x0000FF00) >> 8),
+//           (unsigned int)(driverVersion & 0x000000FF)
+//           );
+
+//    ftStatus = FT_ResetDevice(ftHandle);
+//    if (ftStatus != FT_OK)
+//    {
+//        printf("Failure.  FT_ResetDevice returned %d.\n", (int)ftStatus);
+//        return ftStatus;
+//    }
 
     BYTE byOutputBuffer[1024];
     BYTE byInputBuffer[1024];
@@ -1275,8 +797,8 @@ FT_STATUS jtag_init(DWORD portNum)
     //Purge USB receive buffer first by reading out all old data from FT2232H receive buffer
     ftStatus |= FT_GetQueueStatus(ftHandle, &dwNumBytesToRead);
     // Get the number of bytes in the FT2232H receive buffer
-    if ( (ftStatus == FT_OK) && (dwNumBytesToRead > 0) )
-        FT_Read(ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
+    if ((ftStatus == FT_OK) && (dwNumBytesToRead > 0))
+    	FT_Read(ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
     //Read out the data from FT2232H receive buffer
     ftStatus |= FT_SetUSBParameters(ftHandle, 65536, 65535);
     //Set USB request transfer sizes to 64K
@@ -1284,73 +806,107 @@ FT_STATUS jtag_init(DWORD portNum)
 
 
 //    ftStatus = FT_SetBitMode(ftHandle, 0x00, FT_BITMODE_RESET);
-//    if ( ftStatus != FT_OK ) {
+//    if (ftStatus != FT_OK)
+//    {
 //        printf("Failure.  FT_SetBitMode returned %d\n", (int)ftStatus);
 //        return ftStatus;
 //    }
 
     ftStatus = FT_SetTimeouts(ftHandle, 0, 5000);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetTimeouts returned %d\n", (int)ftStatus);
         return ftStatus;
     }
 
-    ftStatus = FT_SetLatencyTimer(ftHandle, 2);
-    if ( ftStatus != FT_OK ) {
+    ftStatus = FT_SetLatencyTimer(ftHandle, 16);
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetLatencyTimer returned %d\n", (int)ftStatus);
         return ftStatus;
     }
 
     ftStatus = FT_SetBitMode(ftHandle, 0x00, FT_BITMODE_RESET);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetBitMode returned %d\n", (int)ftStatus);
         return ftStatus;
     }
 
     ftStatus = FT_SetBitMode(ftHandle, 0x00, FT_BITMODE_MPSSE);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         printf("Failure.  FT_SetBitMode returned %d\n", (int)ftStatus);
         return ftStatus;
     }
+#if 0
+    dwNumBytesToSend = 0;
+    byOutputBuffer[dwNumBytesToSend++] = 0xAA;//'\xAA';
+    //Add bogus command ‘xAA’ to the queue
+    ftStatus = FT_Write(ftHandle, byOutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+    // Send off the BAD commands
+    dwNumBytesToSend = 0; // Reset output buffer pointer
+    do
+    {
+		ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesToRead);
+		// Get the number of bytes in the device input buffer
+    } while ((dwNumBytesToRead == 0) && (ftStatus == FT_OK)); //or Timeout
 
+    BOOL bCommandEchod = FALSE;
+    ftStatus = FT_Read(ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
+    //Read out the data from input buffer
+    for (DWORD dwCount = 0; dwCount < dwNumBytesRead - 1; dwCount++)
+    //Check if Bad command and echo command received
+    {
+    	printf("0x%x 0x%x   ", byInputBuffer[dwCount], byInputBuffer[dwCount+1]);
+		if ((byInputBuffer[dwCount] == 0xFA) && (byInputBuffer[dwCount+1] == 0xAA))
+		{
+			bCommandEchod = TRUE;
+			break;
+		}
+    }
+//    if (bCommandEchod == FALSE) {
+//		printf("Error in synchronizing the MPSSE\n");
+//		FT_Close(ftHandle);
+//		return 1; // Exit with error
+//    } else {
+//    	printf("synchronizing the MPSSE\n");
+//    }
+    dwNumBytesToSend = 0;
+#endif
 //    ftStatus = sendJtagCommand(ftHandle, cfg_clock, sizeof cfg_clock);
-//    if ( ftStatus != FT_OK ) {
+//    if (ftStatus != FT_OK)
+//    {
 //        return ftStatus;
 //    }
 
-    ftStatus = sendJtagCommand(ftHandle, setup_jtag, sizeof setup_jtag);
-    if ( ftStatus != FT_OK ) {
-        return ftStatus;
-    }
+	ftStatus = sendJtagCommand(ftHandle, setup_jtag, sizeof setup_jtag);
+	if (ftStatus != FT_OK)
+	{
+		return ftStatus;
+	}
 
-    ftStatus = sendJtagCommand(ftHandle, setup_gpio, sizeof setup_gpio);
-    if ( ftStatus != FT_OK ) {
-        return ftStatus;
-    }
+	ftStatus = sendJtagCommand(ftHandle, setup_gpio, sizeof setup_gpio);
+	if (ftStatus != FT_OK)
+	{
+		return ftStatus;
+	}
 
     ftStatus = sendJtagCommand(ftHandle, setClock, sizeof setClock);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         return ftStatus;
     }
 
     ftStatus = sendJtagCommand(ftHandle, dis_lpbk, sizeof dis_lpbk);
-    if ( ftStatus != FT_OK ) {
+    if (ftStatus != FT_OK)
+    {
         return ftStatus;
     }
+
     return ftStatus;
 }
 
-void jtag_recover()
-{
-    FT_STATUS       ftStatus = FT_OK;
-    printf("Try to recover\n");
-    ftHandle_close();
-    jtag_init(gPortNum);
-    if (ftStatus != FT_OK)
-    {
-        printf("Failure.  Jtag_recover try to init returned %d.\n", (int)ftStatus);
-    }
-}
 
 FT_STATUS jtag_reset(DWORD inst)
 {
@@ -1363,11 +919,6 @@ FT_STATUS jtag_reset(DWORD inst)
 	jtag_reset[3] = slot & 0xFF;
 	jtag_reset[4] = JTAG_RST_CMD << 2 | (slot & 0x300) >> 8;
 	jtag_reset[5] = 0;
-    ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
-    if (ftStatus != FT_OK)
-    {
-        return ftStatus;
-    }
 
     ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
     if (ftStatus != FT_OK)
@@ -1389,18 +940,6 @@ FT_STATUS jtag_reset(DWORD inst)
     if (ftStatus != FT_OK)
     {
         return ftStatus;
-    }
-
-    ftStatus = sendJtagCommand(ftHandle, setup_ac1_low, sizeof setup_ac1_low);
-    if (ftStatus != FT_OK)
-    {
-	return ftStatus;
-    }
-    usleep(1000);
-    ftStatus = sendJtagCommand(ftHandle, setup_ac1_high, sizeof setup_ac1_high);
-    if (ftStatus != FT_OK)
-    {
-	return ftStatus;
     }
 
 	return ftStatus;
@@ -1488,12 +1027,12 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
     DWORD			retry = 0;
     BYTE			v_data = 0;
     unsigned char	buffer[10000];
-//    struct timeval  startTime;
-//    int             journeyDuration = 1;
+    struct timeval  startTime;
+    int             journeyDuration = 1;
     unsigned char  *readBuffer = NULL;
     int sof = 0, eof = 0, pre_failure = 0;
 
-//    gettimeofday(&startTime, NULL);
+    gettimeofday(&startTime, NULL);
 
 //    sleep(1);
 	ftStatus = FT_GetStatus(ftHandle, &rx_buf, &tx_buf, &event);
@@ -1508,24 +1047,20 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 
     while(!sof || !eof)
     {
-    	if(retry++ >= 1000)
-	{
-            printf("max retry reached!\n");
+    	retry++;
+        struct timeval now;
+        struct timeval elapsed;
+
+        gettimeofday(&now, NULL);
+        timersub(&now, &startTime, &elapsed);
+
+        if (elapsed.tv_sec > (long int)journeyDuration)
+        {
+            // We've waited too long.  Give up.
+            printf("\nFailure. Timed out after %ld seconds\n", elapsed.tv_sec);
+//            break;
             goto corrupt;
-	}
-//        struct timeval now;
-//        struct timeval elapsed;
-//
-//        gettimeofday(&now, NULL);
-//        timersub(&now, &startTime, &elapsed);
-//
-//        if (elapsed.tv_sec > (long int)journeyDuration)
-//        {
-//            // We've waited too long.  Give up.
-//            printf("\nFailure. Timed out after %ld seconds\n", elapsed.tv_sec);
-////            break;
-//            goto corrupt;
-//        }
+        }
 		// Then copy D2XX's buffer to ours.
 		ftStatus = FT_Read(ftHandle, &buffer[count], rx_buf, &bytesRead);
 		if (ftStatus != FT_OK)
@@ -1564,7 +1099,7 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 			{
 				for(f = count; f < count + bytesRead; f++)
 				{
-					if((buffer[f] == signature_prefix) || (buffer[f] == signature_failure))
+					if(buffer[f] == signature_prefix)
 					{
 						sof = 1;
 						if(buffer[f] == signature_failure)
@@ -1575,29 +1110,11 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 							{
 								eof = 1;
 								//verification 4 bytes
-//								v_data = (buffer[f+1] & 0xF0) >> 4 | (buffer[f+2] & 0x0F) << 4;
-//								*data = (buffer[f+6] & 0x0F) << 28 | buffer[f+5] << 20 | buffer[f+4] << 12 | buffer[f+3] << 4 | (buffer[f+2] & 0xF0) >> 4;
-								if(haps) {
+								v_data = (buffer[f+1] & 0xF0) >> 4 | (buffer[f+2] & 0x0F) << 4;
+								*data = (buffer[f+6] & 0x0F) << 28 | buffer[f+5] << 20 | buffer[f+4] << 12 | buffer[f+3] << 4 | (buffer[f+2] & 0xF0) >> 4;
 								//workaround on HAPS
-								    v_data = (buffer[f+1] & 0x70) >> 4;
-								    *data = ((buffer[f+2] & 0x80) >> 7)
-									    | (buffer[f+3] << 1)
-									    | (buffer[f+4] << 9)
-									    | (buffer[f+5] << 17)
-								            | ((buffer[f+6] & 0x7F ) << 25);
-								} else {
-								// elba 
-								    v_data = (buffer[f+1] & 0x70) >> 4;
-								    *data = ((buffer[f+6] & 0x7F) << 25) 
-                                                                            | (buffer[f+5] << 17) 
-                                                                            | (buffer[f+4] << 9) 
-                                                                            | (buffer[f+3] << 1)
-                                                                            | ((buffer[f+2] & 0x80) >> 7);
-/*
-								    v_data = (buffer[f+1] & 0xE0) >> 5 | (buffer[f+2] & 0x1F) << 5;
-								    *data = (buffer[f+6] & 0x1F) << 27 | buffer[f+5] << 19 | buffer[f+4] << 11 | buffer[f+3] << 3 | (buffer[f+2] & 0xE0) >> 5;
-*/
-								}
+//								v_data = (buffer[f+1] & 0xC0) >> 6 | (buffer[f+2] & 0x3F) << 6;
+//								*data = (buffer[f+6] & 0x3F) << 26 | buffer[f+5] << 18 | buffer[f+4] << 10 | buffer[f+3] << 2 | (buffer[f+2] & 0xC0) >> 6;
 //								printf("data 0x%x\n", ((buffer[f+6] & 0x3F) << 26) | (buffer[f+5] << 18));
 //								printf("data f+2 0x%x\n", (buffer[f+2] & 0xC0) >> 2);
 								break;
@@ -1618,30 +1135,13 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 					{
 						eof = 1;
 						//verification 4 bytes
-//						v_data = (buffer[f-6] & 0xF0) >> 4 | (buffer[f-5] & 0x0F) << 4;
-//						*data = (buffer[f-1] & 0x0F) << 28 | buffer[f-2] << 20 | buffer[f-3] << 12 | buffer[f-4] << 4 | (buffer[f-5] & 0xF0) >> 4;
-						if(haps) {
+						v_data = (buffer[f-6] & 0xF0) >> 4 | (buffer[f-5] & 0x0F) << 4;
+						*data = (buffer[f-1] & 0x0F) << 28 | buffer[f-2] << 20 | buffer[f-3] << 12 | buffer[f-4] << 4 | (buffer[f-5] & 0xF0) >> 4;
+
 						//workaround on HAPS
-						    v_data = (buffer[f-6] & 0x70) >> 4 ;
-						    *data = ((buffer[f-5] & 0x80) >> 7) 
-							    | (buffer[f-4] << 1) 
-							    | (buffer[f-3] << 9) 
-							    | (buffer[f-2] << 17)
-							    | ((buffer[f-1] & 0x7F) << 25);
-						} else {
-						// elba
-						    v_data = (buffer[f-6] & 0x70) >> 4 ;
-						    *data = ((buffer[f-5] & 0x80) >> 7) 
-							    | (buffer[f-4] << 1) 
-							    | (buffer[f-3] << 9) 
-							    | (buffer[f-2] << 17)
-							    | ((buffer[f-1] & 0x7F) << 25);
-/*
-						    v_data = (buffer[f-6] & 0xE0) >> 5 | (buffer[f-5] & 0x1F) << 5;
-						    *data = (buffer[f-1] & 0x1F) << 27 | buffer[f-2] << 19 | buffer[f-3] << 11 | buffer[f-4] << 3 | (buffer[f-5] & 0xE0) >> 5;
-*/
-						}
-						//
+//						v_data = (buffer[f-6] & 0xC0) >> 6 | (buffer[f-5] & 0x3F) << 6;
+//						*data = (buffer[f-1] & 0x3F) << 26 | buffer[f-2] << 18 | buffer[f-3] << 10 | buffer[f-4] << 2 | (buffer[f-5] & 0xC0) >> 6;
+
 						//						printf("data 0x%x\n", ((buffer[f-1] & 0x3F) << 26) | (buffer[f-2] << 18));
 //						printf("data f-5 0x%x\n", (buffer[f-5] & 0xC0) >> 2);
 						break;
@@ -1665,15 +1165,13 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
     }
 
 //	printf("data 0x%08x, valid bit 0x%x, error 0x%02x, RSP 0x%02x\n", v_data, (v_data&0x1), (v_data&0x6) >> 1, (v_data&0x18) >> 3);
-//	printf("data 0x%08x, status bit 0x%x\n", *data, v_data);
-//	//    printf("Max retry %d\n", retry);
+	//    printf("Max retry %d\n", retry);
 //	printf("Receive data:\n");
 //	for(f = 0; f < count; f++)
 //	{
 //		printf("0x%x ", buffer[f]);
 //	}
 //	printf("\n");
-
 
 	if(pre_failure == 1)
 	{
@@ -1686,33 +1184,12 @@ int queue_read(FT_HANDLE ftHandle, DWORD* data)
 	{
 		return 0;
 	} else
-  	{
-            printf("data 0x%08x, valid bit 0x%x, error 0x%02x, RSP 0x%02x\n", v_data, (v_data&0x1), (v_data&0x6) >> 1, (v_data&0x18) >> 3);
-//            //    printf("Max retry %d\n", retry);
-            printf("Receive data:\n");
-            for(f = 0; f < count; f++)
-            {
-                printf("0x%x ", buffer[f]);
-            }
-            printf("\n");
-            return 3;
+	{
+		return 3;
 	}
 
 corrupt:
-        //ftStatus = sendJtagCommand(ftHandle, setup_ac1_low, sizeof setup_ac1_low);
-        //if (ftStatus != FT_OK)
-        //{
-        //        return ftStatus;
-        //}
-        //usleep(1000);
-        //ftStatus = sendJtagCommand(ftHandle, setup_ac1_high, sizeof setup_ac1_high);
-        //if (ftStatus != FT_OK)
-        //{
-        //        return ftStatus;
-        //}
-
 	printf("\nFailure. Frame was corrupted\n");
-        
 	printf("Corrupted data:\n");
 	for(f = 0; f < count + bytesRead; f++)
 	{
@@ -1843,8 +1320,7 @@ FT_STATUS sendJtagCommand(FT_HANDLE      ftHandle,
 
 void spi_csena()
 {
-	int i;
-	for(i = 0; i < 5; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		OutputBuffer[dwNumBytesToSend++] = 0x80;
 //		OutputBuffer[dwNumBytesToSend++] = 0x08;
@@ -1855,8 +1331,7 @@ void spi_csena()
 
 void spi_csdis()
 {
-	int i;
-	for(i = 0; i < 5; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		OutputBuffer[dwNumBytesToSend++] = 0x80;
 //		OutputBuffer[dwNumBytesToSend++] = 0x08;
@@ -1870,8 +1345,7 @@ FT_STATUS cpld_csena()
 {
 	FT_STATUS       ftStatus = FT_OK;
 	DWORD dwNumBytesToSend = 0, dwNumBytesSent;
-	int i;
-	for(i = 0; i < 5; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		OutputBuffer[dwNumBytesToSend++] = 0x80;
 		//mtp
@@ -1893,14 +1367,13 @@ FT_STATUS cpld_csdis()
 {
 	FT_STATUS       ftStatus = FT_OK;
 	DWORD dwNumBytesToSend = 0, dwNumBytesSent;
-	int i;
-	for(i = 0; i < 5; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		OutputBuffer[dwNumBytesToSend++] = 0x80;
 		//mtp
-//		OutputBuffer[dwNumBytesToSend++] = 0x10;
+		OutputBuffer[dwNumBytesToSend++] = 0x10;
 		//bb flash
-		OutputBuffer[dwNumBytesToSend++] = 0x08;
+//		OutputBuffer[dwNumBytesToSend++] = 0x08;
 		OutputBuffer[dwNumBytesToSend++] = 0x1b;
 	}
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
@@ -1955,9 +1428,11 @@ FT_STATUS spi_init()
 //    printf("Opening FTDI device.\n");
 
     if(ftHandle_a == NULL)
-    	ftStatus = FT_Open(CHANNEL_A, &ftHandle_a);
+    	// ftStatus = FT_Open(CHANNEL_A, &ftHandle_a);
+        ftStatus = FT_OpenEx(0x1071, FT_OPEN_BY_LOCATION,  &ftHandle_a);
     if(ftHandle == NULL)
-    	ftStatus |= FT_Open(CHANNEL_B, &ftHandle);
+    	// ftStatus |= FT_Open(CHANNEL_B, &ftHandle);
+        ftStatus = FT_OpenEx(0x1072, FT_OPEN_BY_LOCATION,  &ftHandle);
     if (ftStatus != FT_OK)
     {
         printf("FT_Open failed, with error %d.\n", (int)ftStatus);
@@ -1992,7 +1467,7 @@ FT_STATUS spi_init()
     ftStatus = FT_ResetDevice(ftHandle_a);
     if (ftStatus != FT_OK)
     {
-        printf("Failure.  FT_ResetDeviceA returned %d.\n", (int)ftStatus);
+        printf("Failure.  FT_ResetDevice returned %d.\n", (int)ftStatus);
         return ftStatus;
     }
 
@@ -2086,7 +1561,7 @@ FT_STATUS spi_init()
         {
             return ftStatus;
         }
-        ftStatus = sendJtagCommand(ftHandle, setup_bcbus_low, sizeof setup_bcbus_high);
+       	ftStatus = sendJtagCommand(ftHandle, setup_bcbus_low, sizeof setup_bcbus_high);
         if (ftStatus != FT_OK)
         {
             return ftStatus;
@@ -2146,8 +1621,7 @@ FT_STATUS cpld_flash_wr(BYTE* data, int size)
 	OutputBuffer[dwNumBytesToSend++] = MSB_FALLING_EDGE_CLOCK_BYTE_OUT;
 	OutputBuffer[dwNumBytesToSend++] = size - 1;
 	OutputBuffer[dwNumBytesToSend++] = 0;
-	int i;
-	for(i = 0; i < size; i++)
+	for(int i = 0; i < size; i++)
 	{
 		OutputBuffer[dwNumBytesToSend++] = data[i];
 	}
@@ -2175,8 +1649,7 @@ FT_STATUS cpld_flash_wr_clear(BYTE* data, int size)
 	OutputBuffer[dwNumBytesToSend++] = MSB_RISING_FALLING_EDGE_CLOCK_BYTE_IN_OUT;
 	OutputBuffer[dwNumBytesToSend++] = size - 1;
 	OutputBuffer[dwNumBytesToSend++] = 0;
-	int i;
-	for(i = 0; i < size; i++)
+	for(int i = 0; i < size; i++)
 	{
 		OutputBuffer[dwNumBytesToSend++] = data[i];
 	}
@@ -2194,7 +1667,6 @@ FT_STATUS cpld_flash_wr_clear(BYTE* data, int size)
 FT_STATUS cpld_flash_rd(BYTE* data, int size)
 {
 	FT_STATUS       ftStatus = FT_OK;
-	int i;
 	DWORD dwNumBytesToSend = dwNumBytesSent = 0;
 
 	dwNumBytesSent = 0;
@@ -2204,7 +1676,7 @@ FT_STATUS cpld_flash_rd(BYTE* data, int size)
 	OutputBuffer[dwNumBytesToSend++] = MSB_RISING_FALLING_EDGE_CLOCK_BYTE_IN_OUT;
 	OutputBuffer[dwNumBytesToSend++] = size - 1;
 	OutputBuffer[dwNumBytesToSend++] = 0;
-	for(i = 0; i < size; i++)
+	for(int i = 0; i < size; i++)
 		OutputBuffer[dwNumBytesToSend++] = 0;
 
 
@@ -2239,7 +1711,6 @@ FT_STATUS cpld_flash_rd(BYTE* data, int size)
 FT_STATUS cpld_flash_rd_bit(BYTE* data, int size)
 {
 	FT_STATUS       ftStatus = FT_OK;
-	int i;
 	DWORD dwNumBytesToSend = dwNumBytesSent = 0;
 
 	dwNumBytesSent = 0;
@@ -2249,8 +1720,7 @@ FT_STATUS cpld_flash_rd_bit(BYTE* data, int size)
 	OutputBuffer[dwNumBytesToSend++] = MSB_RISING_FALLING_EDGE_CLOCK_BIT_IN_OUT;
 	OutputBuffer[dwNumBytesToSend++] = size - 1;
 //	OutputBuffer[dwNumBytesToSend++] = 0;
-//
-	for(i = 0; i < size; i++)
+	for(int i = 0; i < size; i++)
 		OutputBuffer[dwNumBytesToSend++] = 0;
 
 
@@ -2287,7 +1757,6 @@ FT_STATUS flash_id_check()
 {
 	FT_STATUS       ftStatus = FT_OK;
 	BYTE id[4] = {0};
-	unsigned int i;
 	cpld_csdis();
 	ftStatus = cpld_flash_wr(lsc_idcode_cmd, sizeof(lsc_idcode_cmd));
     if (ftStatus != FT_OK)
@@ -2308,7 +1777,7 @@ FT_STATUS flash_id_check()
         return ftStatus;
     }
     printf("%s ", __FUNCTION__);
-    for(i = 0; i < sizeof(id); i++)
+    for(unsigned int i = 0; i < sizeof(id); i++)
     {
     	printf("0x%02x ", id[i]);
     }
@@ -2344,6 +1813,7 @@ FT_STATUS spi_wr(BYTE address, BYTE data)
 	spi_csena();
 	//send out MPSSE command to MPSSE engine
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+	if("data to send %d don't match to sent 0xd\n", dwNumBytesToSend, &dwNumBytesSent);
 //	printf("write \n");
 //	for(int i = 0; i < dwNumBytesToSend; i++ )
 //		printf("0x%x ", OutputBuffer[i]);
@@ -2357,6 +1827,9 @@ FT_STATUS spi_wr(BYTE address, BYTE data)
 FT_STATUS spi_rd(BYTE address, BYTE* data)
 {
 	FT_STATUS       ftStatus = FT_OK;
+	BYTE retry = 10;
+	BYTE temp[512];
+	int i;
 
 	dwNumBytesSent = 0;
 	queue_clear(ftHandle);
@@ -2382,9 +1855,10 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 //	for(int i = 0; i < dwNumBytesToSend; i++ )
 //		printf("0x%x ", OutputBuffer[i]);
 //	printf("\ndwNumBytesToSend %d\n", dwNumBytesToSend);
+//	printf("\naddressToSend %d\n", address);
 	spi_csena();
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
-	dwNumBytesToSend = 0;
+
 //	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
 //	ftStatus = sendJtagCommand(ftHandle, cpu_wr, sizeof cpu_wr);
 //	ftStatus = FT_Write(ftHandle, cpu_wr, dwNumBytesToSend, &dwNumBytesSent);
@@ -2404,6 +1878,56 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 		if(dwNumBytesSent != 1 && !is_mdio)
 		{
 			printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
+			//recover
+			printf("Resend read command!\n");
+			for(i = 0; i < retry; i++)
+			{
+				ftHandle_close();
+				spi_init();
+				queue_clear(ftHandle);
+				OutputBuffer[20] = 0x80;
+				ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+				usleep(50000);
+				ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
+				if(dwNumBytesSent == 0 && !is_mdio)
+				{
+//					printf("SPI recover failed, %d\n", dwNumBytesSent);
+				}
+				else if(dwNumBytesSent > 1 && !is_mdio)
+				{
+					printf("SPI recover got multiple bytes from 0x80, return last one, retry %d\n", i);
+					ftStatus = FT_Read(ftHandle, temp, dwNumBytesSent, &dwNumBytesRead);
+					*data = temp[dwNumBytesSent - 1];
+				} else {
+//					printf("SPI recover success, retry %d\n", i);
+					ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+				}
+				printf("recover data from 0x80 %d, retry %d\n", *data, i);
+				if(*data == 0x42)
+				{
+					printf("Read 0x80 success, continue read addr 0x%x\n", address);
+					OutputBuffer[20] = address;
+					ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
+					usleep(50000);
+					ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
+					if(dwNumBytesSent == 0)
+						continue;
+					else if(dwNumBytesSent > 1)
+					{
+						printf("SPI recover got multiple bytes, return last one, retry %d\n", i);
+						ftStatus = FT_Read(ftHandle, temp, dwNumBytesSent, &dwNumBytesRead);
+						*data = temp[dwNumBytesSent - 1];
+						printf("recover data %d\n", *data);
+						break;
+					} else {
+						ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
+						printf("recover data %d\n", *data);
+						break;
+					}
+				}
+			}
+			if(i == 10)
+			    printf("Max retry hit, SPI recover failed!\n");
 		}
 		else
 			ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
@@ -2412,8 +1936,6 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 	{
 		//send out MPSSE command to MPSSE engine
 		ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
-//		if(*data == 0)
-//			printf("dwNumBytesSent = %d, dwNumBytesRead = %d\n", dwNumBytesSent, dwNumBytesRead);
 		if(!dwNumBytesSent || !dwNumBytesRead)
 			ftStatus |= 0x80;
 	}
@@ -2423,6 +1945,7 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 //	printf("\n");
 	//Read 2 bytes from device receive buffer
 //	*data = (InputBuffer[0] << 8) + InputBuffer[1];
+	dwNumBytesToSend = 0;
 	return ftStatus;
 }
 
@@ -2502,7 +2025,6 @@ int flash_disable()
 int flash_check_status()
 {
 	FT_STATUS       ftStatus = FT_OK;
-	int i, temp;
 	BYTE busy;
 	cpld_csdis();
 	ftStatus = cpld_flash_rd_bit(&busy, 1);
@@ -2518,7 +2040,7 @@ int flash_check_status()
 
     BYTE status[4];
 
-    for(temp = 0; temp < 10; temp++)
+    for(int temp = 0; temp < 10; temp++)
     {
 	cpld_csdis();
 	ftStatus = cpld_flash_wr(lsc_status_cmd, sizeof(lsc_status_cmd));
@@ -2529,7 +2051,7 @@ int flash_check_status()
         return ftStatus;
     }
     printf("Status register is ");
-    for(i = 0; i < 4; i++)
+    for(int i = 0; i < 4; i++)
     {
     	printf("0x%x ", status[i]);
     }
@@ -2755,15 +2277,13 @@ retry:
 	*data = data_hi << 8 | data_lo;
 	if((ftStatus & 0x80) && max_retry--)
 	{
-		printf("data 0x%x\n", *data);
-		printf("Invalid read, retry %d!\n", max_retry);
 		ftHandle_close();
 		spi_init();
 		goto retry;
 	}
     if (ftStatus != FT_OK)
     {
-    	printf("spi read failed!\n");
+    	printf("spi write failed!\n");
     }
 
 	return ftStatus;
@@ -2781,9 +2301,4 @@ void ftHandle_close()
     	FT_Close(ftHandle);
     	ftHandle = NULL;
     }
-}
-
-void jtag_close()
-{
-    ftHandle_close();
 }

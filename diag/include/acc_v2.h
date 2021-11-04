@@ -129,12 +129,13 @@ extern BYTE   cpu_rd[11];
 extern BYTE   cpu_res[13];
 extern BYTE   con_red[5];
 
-FT_STATUS jtag_init(int portNum);
+FT_STATUS jtag_init(DWORD portNum);
 FT_STATUS jtag_id(DWORD inst, DWORD* data);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
 FT_STATUS jtag_write(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_tst(DWORD inst, BYTE enable);
+FT_STATUS jtag_display_device(void);
 void jtag_close();
 void jtag_recover();
 DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag);
