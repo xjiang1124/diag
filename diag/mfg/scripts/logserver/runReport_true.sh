@@ -24,6 +24,7 @@ NAPLES25OCP_input.json
 TAORMINA_P2_2_input.json
 FLEX_LACONA32DELL_P1B_input.json
 LACONA32DELL_input.json
+LACONA32_input.json
 )
 
 runReportModule()
