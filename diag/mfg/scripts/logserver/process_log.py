@@ -236,6 +236,8 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
 
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
+    if len(listofsn):
+        workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
 
