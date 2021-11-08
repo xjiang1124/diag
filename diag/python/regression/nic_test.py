@@ -479,7 +479,21 @@ class nic_test:
 
         for i in range(iteration):
             print "=== Ite {} ===".format(i)
-            ret = self.setup_env(slot, True, 32, True)
+            ret = self.setup_env(slot, False, 30)
+            if ret != 0:
+                print "=== Power cycle test failed at ite {} ===".format(i)
+                break
+
+        if ret == 0:
+            print "=== Power cycle test passed {} iterations ===".format(iteration)
+        return ret
+
+    def pwr_cycle_test_multi(self, nic_list=[], iteration=1):
+        ret = 0
+
+        for i in range(iteration):
+            print "=== Ite {} ===".format(i)
+            ret, _ = self.setup_env_multi(nic_list, False, 60)
             if ret != 0:
                 print "=== Power cycle test failed at ite {} ===".format(i)
                 break
@@ -1101,6 +1115,7 @@ if __name__ == "__main__":
     group.add_argument("-setup_multi", "--setup_multi", help="Set up nic env multi", action='store_true')
 
     group.add_argument("-pct", "--pwr_cycle_test", help="Power cycle test", action='store_true')
+    group.add_argument("-pct_multi", "--pwr_cycle_test_multi", help="Power cycle test on multiple slots", action='store_true')
 
     group.add_argument("-ena_uboot_pcie", 
                        "--ena_uboot_pcie", 
@@ -1190,6 +1205,11 @@ if __name__ == "__main__":
 
     if args.pwr_cycle_test == True:
         test.pwr_cycle_test(args.slot, args.iteration)
+        sys.exit()
+
+    if args.pwr_cycle_test_multi == True:
+        slot_list = args.slot_list.split(',')
+        test.pwr_cycle_test_multi(slot_list, args.iteration)
         sys.exit()
 
     if args.ena_uboot_pcie == True or args.dis_uboot_pcie == True:
