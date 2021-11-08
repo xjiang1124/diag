@@ -1084,20 +1084,22 @@ class mtp_ctrl():
         pass_sig_list = []
 
         # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
-        apc1 = self._apc_cfg[0]
-        apc2 = self._apc_cfg[4]
+        if self._mtp_rev is not None and len(self._mtp_rev) > 0:
+            if int(self._mtp_rev) > 2:
+                apc1 = self._apc_cfg[0]
+                apc2 = self._apc_cfg[4]
 
-        if apc1 != "" :
-           pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
-        if apc2 != "":
-           pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
+                if apc1 != "" :
+                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
+                if apc2 != "":
+                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
 
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
-        if rc:
-            self.cli_log_inf("PSU test passed")
-        else:
-            self.cli_log_err("PSU test failed")
-            return rc
+                rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+                if rc:
+                    self.cli_log_inf("PSU test passed")
+                else:
+                    self.cli_log_err("PSU test failed")
+                    return rc
 
         return rc
 
@@ -2286,6 +2288,9 @@ class mtp_ctrl():
         elif re.match(PART_NUMBERS_MATCH.N100_HPE_FMT_ALL, naples_pn):
             nic_type = NIC_Type.NAPLES100HPE
 
+        elif re.match(PART_NUMBERS_MATCH.N100_DELL_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.NAPLES100DELL
+
         elif re.match(PART_NUMBERS_MATCH.N25_PN_FMT_ALL, naples_pn):
             nic_type = NIC_Type.NAPLES25
 
@@ -2418,7 +2423,11 @@ class mtp_ctrl():
         elif naples_pn[0:6] == "P41854":    #NAPLES100 HPE CLOUD
             if software_pn != "90-0006-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False    
+                return False
+        elif naples_pn[0:7] == "68-0024":    #NAPLES100 DELL 
+            if software_pn != "90-0013-0001":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
         elif naples_pn[0:7] == "68-0005":    #NAPLES25 PENSANDO
             if software_pn != "90-0002-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
