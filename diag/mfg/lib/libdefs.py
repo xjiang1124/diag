@@ -438,7 +438,7 @@ class MFG_DIAG_CMDS:
     MTP_SMB_RD_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_WR_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_RE = r"addr 0x%x; data=(0x[0-9a-fA-F]+)"
-    MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
+    MTP_SMB_SEL_FMT = "turn_on_hub.sh {:d}"
 
     NIC_POWER_CHECK_FMT = "inventory -ps -slot={:d}"
     NIC_POWER_RAIL_DISP_FMT = "inventory -pw -slot={:d}"
