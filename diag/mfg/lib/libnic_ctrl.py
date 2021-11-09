@@ -832,9 +832,13 @@ class nic_ctrl():
     def nic_check_jtag(self, asic_support):
         cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
 
+        fail_sig_list = ["JTAG Read failed!"]
+
         sig_list = ["valid bit 0x1", "error 0x00"]
         if asic_support == MTP_ASIC_SUPPORT.ELBA:
-            sig_list = ["status bit 0x1"]
+            sig_list = ["0x00000001"]
+        elif asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
+            sig_list = ["0x00000001"]
 
         error_flag = False
 
@@ -845,13 +849,14 @@ class nic_ctrl():
         if not True in [sig in cmd_buf for sig in sig_list]:
             error_flag = True
 
+        if True in [sig in cmd_buf for sig in fail_sig_list]:
+            error_flag = True
+
         if error_flag:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             self.nic_set_cmd_buf(cmd_buf)
 
-            # Some additional error printing
-            if not self.mtp_exec_cmd("inventory -sts -slot {:d}".format(self._slot+1)):
-                self.nic_set_cmd_buf(self._nic_handle.before)
+        if error_flag:
             return False
 
         return True

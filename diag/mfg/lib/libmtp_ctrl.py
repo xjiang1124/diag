@@ -28,6 +28,7 @@ from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
+from libmfg_cfg import MTP_IMAGES
 from libmfg_cfg import PART_NUMBERS_MATCH
 
 from libdefs import NIC_Type
@@ -777,7 +778,7 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to send command for getting asic supported version", level = 0)
             return False
-        match = re.findall(r"MTP_TYPE=MTP_([a-zA-Z]{4}.?)", self.mtp_get_cmd_buf())
+        match = re.findall(r"MTP_TYPE=MTP_([a-zA-Z_]+)", self.mtp_get_cmd_buf())
         if match:
             self._asic_support = match[0].strip().upper()
         else:
@@ -1618,7 +1619,7 @@ class mtp_ctrl():
          90% -> 100%    : elba HT
          max = 100%
         """
-        if self._asic_support == MTP_ASIC_SUPPORT.ELBA:
+        if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
             fan_spd = min(100, fan_spd + 20)
         rc = True
 
@@ -1712,11 +1713,9 @@ class mtp_ctrl():
             self.cli_log_err("Unable to retrieve MTP CPLD version")
             self.cli_log_err("MTP CPLD test failed")
             return False
-        io_version = MFG_MTP_CPLD_IO_VERSION
-        jtag_version = MFG_MTP_CPLD_JTAG_VERSION
-        if self._asic_support == MTP_ASIC_SUPPORT.ELBA:
-            io_version = MFG_MTP_CPLD_IO_ELBA_VERSION
-            jtag_version = MFG_MTP_CPLD_JTAG_ELBA_VERSION
+
+        io_version = MTP_IMAGES.mtp_io_cpld_ver[self._asic_support]
+        jtag_version = MTP_IMAGES.mtp_jtag_cpld_ver[self._asic_support]
 
         if int(cpld_ver_list[0],16) < int(io_version,16):
             self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], io_version))
@@ -3405,7 +3404,10 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA else "capri"
+        if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
+            asic_type = "elba"
+        else:
+            asic_type = "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if aapl:
             for slot in nic_list:

@@ -222,7 +222,7 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
 def main():
     parser = argparse.ArgumentParser(description="MFG MTP upgrade", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("-to", "--convert-to", help="Convert this MTP to ", choices=["ELBA", "CAPRI"], required=True)
+    parser.add_argument("-to", "--convert-to", help="Convert this MTP to ", choices=["ELBA", "CAPRI", "TURBO_ELBA"], required=True)
 
     args = parser.parse_args()
     if args.convert_to:
@@ -263,8 +263,8 @@ def main():
         return
     # Collect amd and arm diag images
     try:
-        mtp_images_list.append(MTP_IMAGES.AMD64_IMG[asic_support])
-        mtp_images_list.append(MTP_IMAGES.ARM64_IMG[asic_support])
+        mtp_images_list.append(MTP_IMAGES.amd64_img[asic_support])
+        mtp_images_list.append(MTP_IMAGES.arm64_img[asic_support])
     except KeyError:
         mtp_mgmt_ctrl.cli_log_err("Missing diag image for {:s}".format(asic_support), level=0)
         return

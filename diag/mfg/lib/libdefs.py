@@ -22,7 +22,9 @@ class NIC_Type:
 
 class MTP_ASIC_SUPPORT:
     CAPRI = "CAPRI"
+    TURBO_CAPRI = "TURBO_CAPRI"
     ELBA  = "ELBA"
+    TURBO_ELBA = "TURBO_ELBA"
 
 class NIC_Vendor:
     PENSANDO = "Pensando"

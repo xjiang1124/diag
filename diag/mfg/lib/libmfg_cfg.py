@@ -287,26 +287,40 @@ class NIC_IMAGES:
     goldfw_dat["LACONA32"] = "10-22-2021"
 
 class MTP_IMAGES:
-    AMD64_IMG = dict()
-    ARM64_IMG = dict()
+    amd64_img = dict()
+    arm64_img = dict()
     mtp_io_cpld_img = dict()
     mtp_io_cpld_ver = dict()
     mtp_jtag_cpld_img = dict()
     mtp_jtag_cpld_ver = dict()
 
-    AMD64_IMG["CAPRI"] = "image_amd64_capri.tar"
-    ARM64_IMG["CAPRI"] = "image_arm64_capri.tar"
+    amd64_img["CAPRI"] = "image_amd64_capri.tar"
+    arm64_img["CAPRI"] = "image_arm64_capri.tar"
     mtp_io_cpld_img["CAPRI"] = "NIC_MTP_IO_rev7_10232019.bin"
     mtp_io_cpld_ver["CAPRI"] = "0x7"
     mtp_jtag_cpld_img["CAPRI"] = "NIC_MTP_JTAG_rev3.bin"
     mtp_jtag_cpld_ver["CAPRI"] = "0x3"
 
-    AMD64_IMG["ELBA"] = "image_amd64_elba.tar"
-    ARM64_IMG["ELBA"] = "image_arm64_elba.tar"
+    amd64_img["TURBO_CAPRI"] = "image_amd64_capri.tar"
+    arm64_img["TURBO_CAPRI"] = "image_arm64_capri.tar"
+    mtp_io_cpld_img["TURBO_CAPRI"] = ""
+    mtp_io_cpld_ver["TURBO_CAPRI"] = "0x7"
+    mtp_jtag_cpld_img["TURBO_CAPRI"] = ""
+    mtp_jtag_cpld_ver["TURBO_CAPRI"] = "0x3"
+
+    amd64_img["ELBA"] = "image_amd64_elba.tar"
+    arm64_img["ELBA"] = "image_arm64_elba.tar"
     mtp_io_cpld_img["ELBA"] = "mtp_elba_io_rev1_07222020.bin"
     mtp_io_cpld_ver["ELBA"] = "0x1"
     mtp_jtag_cpld_img["ELBA"] = "mtp_elba_jtag_rev1_07302020.bin"
     mtp_jtag_cpld_ver["ELBA"] = "0x1"
+
+    amd64_img["TURBO_ELBA"] = "image_amd64_elba.tar"
+    arm64_img["TURBO_ELBA"] = "image_arm64_elba.tar"
+    mtp_io_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_io_rev1_08042021.bin"
+    mtp_io_cpld_ver["TURBO_ELBA"] = "0x1"
+    mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
+    mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
 
     MTP_PENCTL_IMAGE = "penctl.linux.02012021"
     MTP_PENCTL_TOKEN = "penctl.token"

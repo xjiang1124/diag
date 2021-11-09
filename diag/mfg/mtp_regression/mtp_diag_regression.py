@@ -228,6 +228,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, intf, ret, duration))
+                mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, intf, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), [])
                 mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             
     if GLB_CFG_MFG_TEST_MODE:
