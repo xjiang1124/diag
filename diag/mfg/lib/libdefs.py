@@ -496,6 +496,7 @@ class MFG_DIAG_CMDS:
     NIC_SYNC_FS_FMT = "sync"
     NIC_SW_UMOUNT_FMT = "/etc/init.d/S09mount stop"
     NIC_OS_SHUTDOWN_FMT = "poweroff"
+    NIC_OS_SHUTDOWN_PEN_FMT = "penvisorctl execute poweroff"
 
     MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
     MFG_MK_DIR_FMT = "mkdir -p {:s}"
