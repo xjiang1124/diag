@@ -80,8 +80,10 @@ class mtp_ctrl():
         self._nic_thread_list = [None] * self._slots
         # lock for nic cli
         self._lock = threading.Lock()
-        # lock for parallel test run sequentially
-        self._test_lock = threading.Lock()
+        # lock for sequential portion inside parallel test
+        self._seq_test_lock = threading.Lock()
+        # lock for coordinating parallel tests
+        self._para_test_lock = [threading.Lock() for x in range(self._slots)]
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
@@ -4474,9 +4476,9 @@ class mtp_ctrl():
         #     ret = "TIMEOUT"
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
         if test == "L1" and ret == "TIMEOUT":
-            self.mtp_run_diag_test_para_lock()
+            self.mtp_run_diag_test_seq_lock()
             self.mtp_mgmt_jtag_rst()
-            self.mtp_run_diag_test_para_unlock()
+            self.mtp_run_diag_test_seq_unlock()
 
         return [ret, err_msg_list]
 
@@ -4740,12 +4742,18 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_diag_test_para_lock(self):
-        self._test_lock.acquire()
+    def mtp_run_diag_test_para_lock(self, slot):
+        self._para_test_lock[slot].acquire()
+
+    def mtp_run_diag_test_para_unlock(self, slot):
+        self._para_test_lock[slot].release()
 
 
-    def mtp_run_diag_test_para_unlock(self):
-        self._test_lock.release()
+    def mtp_run_diag_test_seq_lock(self):
+        self._seq_test_lock.acquire()
+
+    def mtp_run_diag_test_seq_unlock(self):
+        self._seq_test_lock.release()
 
 
     def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):

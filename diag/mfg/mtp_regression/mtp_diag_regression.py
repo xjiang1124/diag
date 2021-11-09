@@ -353,9 +353,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
-            if dsp == "MVL" and test == "STUB":
-                mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
-
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
             if dsp == "MVL" and test == "ACC":
@@ -385,9 +382,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
                     if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp_disp, test, err_msg))
-
-            if dsp == "MVL" and test == "STUB":
-                mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
 
             if ret != "SUCCESS" and stop_on_err:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
@@ -520,6 +514,11 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         nic_top_test_list = nic_list[:nic_split]
         nic_bottom_test_list = nic_list[nic_split:]
 
+    if (mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA or
+        mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_CAPRI):
+        nic_top_test_list    = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots
+        nic_bottom_test_list = [x for x in nic_list if x in [1,3,5,7,9]] # even slots
+
     nic_thread_list = list()
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
 
@@ -638,7 +637,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
 
         if dsp == "MVL" and test == "STUB":
-            mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
+            mtp_mgmt_ctrl.mtp_run_diag_test_seq_lock()
 
         # quick hack for parameter ETH_PRBS. need to move into yaml config
         if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type == NIC_Type.ORTANO2:
@@ -706,7 +705,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp_disp, test, err_msg))
 
         if dsp == "MVL" and test == "STUB":
-            mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
+            mtp_mgmt_ctrl.mtp_run_diag_test_seq_unlock()
 
         if ret != "SUCCESS" and stop_on_err:
             break
@@ -738,8 +737,12 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
 
 
 def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, swmtestmode):
-    if lock:
+    if False: # turbo-parallel l1
+        mtp_mgmt_ctrl.mtp_run_diag_test_para_lock(slot)
+    else:
         lock.acquire()
+        
+
     for dsp, test in diag_seq_test_list:
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
@@ -789,18 +792,10 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         if ret == "SUCCESS":
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
         else:
-            if dsp == "ASIC" and test == "L1" and ret != "SUCCESS":
-                mtp_mgmt_ctrl.mtp_run_diag_test_para_lock()
-                mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock()
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp_disp, test, ret, duration))
-            
-            if not stop_on_err:
-                mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-                mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
 
             nic_test_rslt_list[slot] = False
 
@@ -816,8 +811,36 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp_disp, test, err_msg))
             if stop_on_err:
                 break;
-    if lock:
+
+    if False: # turbo-parallel l1
+        mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock(slot)
+
+        # wait for all slots to complete
+        while True in [x.locked() for x in mtp_mgmt_ctrl._para_test_lock]:
+            continue
+
+        if not stop_on_err:
+            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+
+            for dsp, test in diag_seq_test_list:
+                if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
+                    mtp_mgmt_ctrl._lock.acquire()
+                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                    mtp_mgmt_ctrl._lock.release()
+
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
+    else:
+        if not stop_on_err:
+            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
+            for dsp, test in diag_seq_test_list:
+                if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
+                    mtp_mgmt_ctrl._lock.acquire()
+                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                    mtp_mgmt_ctrl._lock.release()
+
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
         lock.release()
+
 
 def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, stop_on_err):
     nic_thread_list = list()
