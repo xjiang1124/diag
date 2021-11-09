@@ -2673,6 +2673,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD program for Proto NIC")
             return True
 
+        self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img):
             self.cli_log_slot_err_lock(slot, "Program NIC Secure CPLD failed")
             self.mtp_dump_nic_err_msg(slot)
@@ -3936,7 +3937,8 @@ class mtp_ctrl():
 
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
-        if not self._nic_ctrl_list[slot].nic_sw_shutdown(isCloud):
+        is100Dell = True if software_pn == "90-0013-0001" else False
+        if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, is100Dell=is100Dell):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             self.mtp_dump_nic_err_msg(slot)
             return False

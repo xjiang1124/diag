@@ -1634,6 +1634,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                     elif nic_type in CAPRI_NIC_TYPE_LIST:
                         # QSFP/SFP port 1
                         read_data = [0]
+                        expected_val = 0x3 if nic_type != NIC_Type.NAPLES100DELL else 0x11
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
                         if not rc:
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
@@ -1643,7 +1644,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                                 fail_nic_list[mtp_id].append(slot)
                             continue
 
-                        if read_data[0] & 0x3 != 0x3:
+                        if read_data[0] & expected_val != expected_val:
                             if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:
                                     fail_nic_list[mtp_id].append(slot)
@@ -1662,7 +1663,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                                 fail_nic_list[mtp_id].append(slot)
                             continue
 
-                        if read_data[0] & 0x3 != 0x3:
+                        if read_data[0] & expected_val != expected_val:
                             if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:
                                     fail_nic_list[mtp_id].append(slot)
