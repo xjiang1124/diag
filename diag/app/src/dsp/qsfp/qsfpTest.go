@@ -10,7 +10,9 @@ package main
 import (
     "flag"
     "fmt"
+    "os"
 
+    "cardinfo"
     "common/dcli"
     "common/diagEngine"
     "common/errType"
@@ -44,6 +46,9 @@ func QsfpI2CHdl(argList []string) {
     var ret int
     var regData uint32
     var data byte
+    var cardType string
+    var ctrlType string
+    var err int
 
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
 
@@ -59,7 +64,13 @@ func QsfpI2CHdl(argList []string) {
         return
     }
 
-    //for _, devName := range(qsfpTestList) {
+    cardType = os.Getenv("CARD_TYPE")
+    err, ctrlType = cardinfo.GetCtrlType(cardType)
+    if err != errType.SUCCESS { 
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
     for _, qsfpInfo := range hwinfo.QsfpTbl {
         devName := qsfpInfo.DevName
         i2cInfo, err := i2cinfo.GetI2cInfo(devName)
@@ -69,24 +80,26 @@ func QsfpI2CHdl(argList []string) {
         }
         dcli.Println("i", "Starting test on", devName)
 
-        // Check present bits
-        regAddr := qsfpInfo.PrstReg
-        bitPos := qsfpInfo.PrstBit
-        spi.CpldRead(uint32(regAddr), &regData)
-        data = byte(regData)
-        value := fmt.Sprintf("0x%02x", regData)
-        dcli.Println("i", "CPLD QSFP Present Register Value =", value)
-        value = fmt.Sprintf("0x%02x", data)
-        dcli.Println("i", "CPLD QSFP Present Register Byte Value =", value)
-        dcli.Println("i", "CPLD QSFP bitPos = ", bitPos)
+        if ctrlType != "FPGA" {
+            // Check present bits
+            regAddr := qsfpInfo.PrstReg
+            bitPos := qsfpInfo.PrstBit
+            spi.CpldRead(uint32(regAddr), &regData)
+            data = byte(regData)
+            value := fmt.Sprintf("0x%02x", regData)
+            dcli.Println("i", "CPLD QSFP Present Register Value =", value)
+            value = fmt.Sprintf("0x%02x", data)
+            dcli.Println("i", "CPLD QSFP Present Register Byte Value =", value)
+            dcli.Println("i", "CPLD QSFP bitPos = ", bitPos)
 
-        prstSts := data & (1<<byte(bitPos))
-        if prstSts != 0 {
-            dcli.Println("i", qsfpInfo.DevName, "Present")
-        } else {
-            dcli.Println("i", qsfpInfo.DevName, "Not Present")
-            ret = errType.FAIL
-            break
+            prstSts := data & (1<<byte(bitPos))
+            if prstSts != 0 {
+                dcli.Println("i", qsfpInfo.DevName, "Present")
+            } else {
+                dcli.Println("i", qsfpInfo.DevName, "Not Present")
+                ret = errType.FAIL
+                break
+            }
         }
 
         switch i2cInfo.Comp {
