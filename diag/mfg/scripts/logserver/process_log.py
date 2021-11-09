@@ -489,7 +489,10 @@ def writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,check
             DATA['SN'][status][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
     checkdata = checktime2
     DATA['SN'][status][test][SN]["checktime"] = checktime2
-    DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+        DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    else:
+        DATA['SN'][status][test][SN]["result"] = "NONE"
     if "SPECIAL" in inputconfig:
         if SN == inputconfig["SPECIAL"]:
             if "FAIL" in DATA['SN'][status][test][SN]["result"]:
