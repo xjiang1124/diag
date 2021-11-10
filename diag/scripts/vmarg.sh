@@ -47,8 +47,9 @@ set_vmarg()
             return
         elif [[ "$1" -lt 3 && "$1" -ge -2 ]] 
         then
-            /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
+            #/data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
             /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
+            set_vmarg_lacona arm $1
             set_vmarg_lacona core $1
             return
         fi
