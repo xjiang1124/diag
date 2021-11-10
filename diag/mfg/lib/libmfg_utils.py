@@ -849,7 +849,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
     mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
     mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
     mtp_mgmt_ctrl._lock.acquire()
-    sn = self.mtp_get_nic_sn(slot)
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
     dsp = "DIAG_INIT"
     test = "NIC_BOOT_INIT"
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
