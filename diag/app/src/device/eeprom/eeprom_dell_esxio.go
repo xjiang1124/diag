@@ -302,7 +302,7 @@ var Lacona32DELLTbl = []entry {
     entry{"FRU Card Type Identifier",               INT8,       362,       1,    []byte{0x01}},
     entry{"Storage Size",                           INT8,       363,       2,    []byte{0x20, 0x00}},
     entry{"FRU Content Size",                       INT8,       365,       2,    []byte{0x3C, 0x00}},
-    entry{"MAC Address Base",                       INT8,       367,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00}},
+    entry{"LE MAC Address Base",                    INT8,       367,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00}},
 }
 
 
@@ -455,7 +455,7 @@ var Pomonte100DELLTbl = []entry {
     entry{"FRU Card Type Identifier",               INT8,       362,       1,    []byte{0x01}},
     entry{"Storage Size",                           INT8,       363,       2,    []byte{0x20, 0x00}},
     entry{"FRU Content Size",                       INT8,       365,       2,    []byte{0x24, 0x00}},
-    entry{"MAC Address Base",                       INT8,       367,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00}},
+    entry{"LE MAC Address Base",                    INT8,       367,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00}},
 }
 
 
