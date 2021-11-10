@@ -713,9 +713,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
 def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_err):
     # power cycle all the NICs
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+    # mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err):
+    if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err, nic_util=False):
         mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed", level=0)
         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         return False
@@ -1468,7 +1468,7 @@ def main():
 
         programmables_checked = False
 
-        for vmarg in vmarg_list:
+        for vmarg_idx, vmarg in enumerate(vmarg_list):
             do_once = 0
             # stop the next vmarg corner if stop_on_err is set and some nic fails
             if fail_nic_list and stop_on_err:
@@ -1487,31 +1487,37 @@ def main():
             mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
-            # power cycle all the NIC
-            mtp_mgmt_ctrl.mtp_power_cycle_nic()
+            if vmarg_idx == 0:
+                if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
+                    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+                    # Add failed slots from sanity check
+                    if args.fail_slots:
+                        for slot in args.fail_slots:
+                            mtp_mgmt_ctrl.mtp_set_nic_status_fail(int(slot), skip_fa=True)
 
-            if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
-                # Add failed slots from sanity check
-                if args.fail_slots:
-                    for slot in args.fail_slots:
-                        mtp_mgmt_ctrl.mtp_set_nic_status_fail(int(slot), skip_fa=True)
+                    # Update programmables if necessary
+                    dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, stop_on_err)
+                    programmables_checked = True
+                    for slot in dl_check_fail_list:
+                        if slot in nic_list:
+                            nic_list.remove(slot)
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        if slot in pass_nic_list:
+                            pass_nic_list.remove(slot)
 
-                # Update programmables if necessary
-                dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, stop_on_err)
-                programmables_checked = True
-                for slot in dl_check_fail_list:
-                    if slot in nic_list:
-                        nic_list.remove(slot)
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
+                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
+                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                    return
+            else:
+                if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err):
+                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                    mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                    return
 
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
-                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-                return
             if stop_on_err:
                 for nic_list in nic_test_full_list:
                     for slot in nic_list:
@@ -1750,7 +1756,7 @@ def main():
                     else:
                         aapl = True
                     if do_once == 0:
-                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl, stop_on_err=stop_on_err):
+                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl, nic_util=False, stop_on_err=stop_on_err):
                             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment (aapl=True) failed")
                             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1794,7 +1800,14 @@ def main():
                 else:
                     loopback = False
                 if nic_list:
-                    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+                    #mtp_mgmt_ctrl.mtp_power_cycle_nic()
+                    if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
+                        #Fail every nic(s) or fail on MTP
+                        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+                        return 
+
                     diag_para_fail_list = naples_diag_mvl_test(mtp_mgmt_ctrl,
                                                                nic_type,
                                                                nic_list,

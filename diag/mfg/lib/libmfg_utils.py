@@ -849,7 +849,17 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
     mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
     mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
     mtp_mgmt_ctrl._lock.acquire()
-    mtp_mgmt_ctrl.mtp_mgmt_check_cpld_debug_bits(slot)
+    sn = self.mtp_get_nic_sn(slot)
+    dsp = "DIAG_INIT"
+    test = "NIC_BOOT_INIT"
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+    start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test) 
+    if not mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot):
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+    else:
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
     mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
     mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
     mtp_mgmt_ctrl._lock.release()
