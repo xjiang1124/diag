@@ -3675,7 +3675,7 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA else "capri"
+        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_PARA_SIG]
         for slot in nic_list:
             self.cli_log_slot_inf(slot, "Para Init NIC port")
