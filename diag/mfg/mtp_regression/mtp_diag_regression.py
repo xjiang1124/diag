@@ -713,13 +713,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             break
 
 def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_err):
-    # power cycle all the NICs
-    # mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
-    if not mtp_mgmt_ctrl.mtp_nic_diag_init(stop_on_err=stop_on_err, nic_util=False):
-        mtp_mgmt_ctrl.cli_log_err("Init NIC Diag Environment failed", level=0)
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-        return False
+    mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(False, stop_on_err=stop_on_err)
 
     mtp_mgmt_ctrl.cli_log_inf("Collecting MTP parallel test logfiles....", level=0)
     for slot in nic_list:
