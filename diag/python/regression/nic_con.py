@@ -477,6 +477,26 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
+    def get_asic_type(self, slot):
+        # Get AISC type
+        uut = "UUT_"+str(slot)
+        card_type = os.environ[uut]
+        if card_type == "ORTANO"  or \
+           card_type == "ORTANO2" or \
+           card_type == "BIODONA":
+            asic_type = "ELBA_CPLD"
+        elif card_type == "LACONA"       or \
+             card_type == "LACONADELL"   or \
+             card_type == "LACONA32"     or \
+             card_type == "LACONA32DELL" or \
+             card_type == "POMONTE"      or \
+             card_type == "POMONTEDELL":
+            asic_type = "ELBA_FPGA"
+        else:
+            asic_type = "CAPRI"
+        print("asic_type:", asic_type)
+        return asic_type
+
     def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False):
         fmt_dummy_fru_json = """
 {{
@@ -500,24 +520,7 @@ class nic_con:
             print "Invalid slot number:", slot
             return -1
 
-        # Get AISC type
-        uut = "UUT_"+str(slot)
-        card_type = os.environ[uut]
-        if card_type == "ORTANO"  or \
-           card_type == "ORTANO2" or \
-           card_type == "BIODONA":
-            asic_type = "ELBA_CPLD"
-        elif card_type == "LACONA"       or \
-             card_type == "LACONADELL"   or \
-             card_type == "LACONA32"     or \
-             card_type == "LACONA32DELL" or \
-             card_type == "POMONTE"      or \
-             card_type == "POMONTEDELL":
-            asic_type = "ELBA_FPGA"
-        else:
-            asic_type = "CAPRI"
-        print("asic_type:", asic_type)
-
+        asic_type = self.get_asic_type(slot)
         if asic_type == "ELBA_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
         else:
@@ -578,8 +581,9 @@ class nic_con:
             session.expect("\#")
             temp = session.after
             if 'oob_mnic0' in session.before:
+                asic_type = self.get_asic_type(slot)
                 # only works for Elba FPGA cards with PS48
-                if uefi == True:
+                if asic_type == "ELBA_FPGA":
                     self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 1")
                     self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x0")
                     self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 0")
