@@ -1644,7 +1644,12 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
                     elif nic_type in CAPRI_NIC_TYPE_LIST:
                         # QSFP/SFP port 1
                         read_data = [0]
-                        expected_val = 0x3 if nic_type != NIC_Type.NAPLES100DELL else 0x11
+                        expected_val = 0x3
+                        if nic_type in (NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL):
+                            expected_val = 0x11
+                        else:
+                            expected_val = 0x3
+
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
                         if not rc:
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
