@@ -1,0 +1,28 @@
+# Copyright (C) 2016-2020 Hewlett Packard Enterprise Development LP
+#!/bin/bash
+
+# check if switchd is running, if so stop it to launch diag bcm shell
+ps -x | grep -v grep | grep switchd > /dev/null
+if [ $? == 0 ]; then
+    read -p "WARNING: switchd is running, going to stop it. Are you sure? (y/n)" ans
+    if [[ "$ans" != "y" && "$ans" != "Y" ]]; then
+        exit 1
+    fi
+    systemctl stop switchd > /dev/null
+    echo "switchd stopped running"
+fi
+
+# check if Daig BCM Shell server is already running
+/sbin/ip netns exec swns netstat -plunt | grep netserve | grep 1943 > /dev/null
+if [ $? == 1 ]; then
+    /sbin/ip netns exec swns /usr/bin/netserve -d 1943 /fs/nos/eeupdate/bcm.user > /dev/null
+fi
+
+/sbin/ip netns exec swns netstat -plunt | grep netserve | grep 1943 > /dev/null
+if [ $? == 1 ]; then
+    echo "Failed to start Diag BCM Shell!!"
+    exit 1
+fi
+
+/sbin/ip netns exec swns telnet 127.0.0.1 1943
+
