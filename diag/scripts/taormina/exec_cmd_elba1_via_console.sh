@@ -8,4 +8,4 @@ picocom -qrX -b 115200 -f h /dev/ttyS3
 # waiting 1 sec in-between, after host sends reply
 while read ln; do
      echo "$ln" | picocom -qrix 1000 /dev/ttyS3
-done < cmd_elba1.txt
+done < /fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt

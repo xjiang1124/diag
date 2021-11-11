@@ -127,7 +127,11 @@ func main() {
                 fmt.Printf("FAN AIRFLOW:  BACK TO FRONT\n")
             }
             fmt.Printf("\n")
-            ucode, _ := taorfpga.Spi_cpld_read_usercode(uint32(0)) 
+            ucode, _ := taorfpga.Spi_cpldXO3_read_usercode(uint32(1)) 
+            fmt.Printf("CPLD-E0 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpldXO3_read_usercode(uint32(2)) 
+            fmt.Printf("CPLD-E1 REVISION: 0x%.08x\n", ucode)
+            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(0)) 
             fmt.Printf("CPLD-C  REVISION: 0x%.08x\n", ucode)
             ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(3)) 
             fmt.Printf("CPLD-G0 REVISION: 0x%.08x\n", ucode)
@@ -239,7 +243,7 @@ func main() {
         if os.Args[2] == "snake" {
             mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
             duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
-            td3.Snake_All_Ports_Forward_Next_Port(uint32(mask), uint32(duration), os.Args[5])
+            td3.Snake_Line_Rate(uint32(mask), uint32(duration), os.Args[5], 0, 0)
         }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
@@ -738,6 +742,8 @@ func main() {
             cpldNumber = 4
         } else if os.Args[2] == "gpio2" {
             cpldNumber = 5
+        } else if os.Args[2] == "all" {
+            cpldNumber = 0xFF
         } else {
             fmt.Printf(" ERROR: CPLD TYPE ENTERED IS NOT VALID\n")
             return
@@ -782,7 +788,40 @@ func main() {
                 fmt.Printf(" %s \n", errhelp)
                 return
             }
-            taorfpga.Spi_cpld_machxO2_verify_flash_contents(uint32(cpldNumber), os.Args[4])
+            err := taorfpga.Spi_cpld_machxO2_verify_flash_contents(uint32(cpldNumber), os.Args[4])
+            if err != nil {
+                fmt.Printf("[ERROR] : FAiled\n")
+                return
+            }
+        } else if os.Args[3] == "verifyall" {   //read flash and make an image from it
+            if argc < 7 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            loop, _ := strconv.ParseUint(os.Args[6], 0, 32)
+            for i:=0; i<int(loop); i++ {
+                fmt.Printf("Loop=%d\n", i)
+                err := taorfpga.Spi_cpld_machxO2_verify_flash_contents(0, os.Args[4])
+                if err != nil {
+                    fmt.Printf("[ERROR] : FAiled\n")
+                    return
+                }
+                err = taorfpga.Spi_cpld_machxO2_verify_flash_contents(3, os.Args[5])
+                if err != nil {
+                    fmt.Printf("[ERROR] : FAiled\n")
+                    return
+                }
+                err = taorfpga.Spi_cpld_machxO2_verify_flash_contents(4, os.Args[5])
+                if err != nil {
+                    fmt.Printf("[ERROR] : FAiled\n")
+                    return
+                }
+                err = taorfpga.Spi_cpld_machxO2_verify_flash_contents(5, os.Args[5])
+                if err != nil {
+                    fmt.Printf("[ERROR] : FAiled\n")
+                    return
+                }
+            }
         } else if os.Args[3] == "program" {   //read flash and make an image from it
             if argc < 5 {
                 fmt.Printf(" %s \n", errhelp)

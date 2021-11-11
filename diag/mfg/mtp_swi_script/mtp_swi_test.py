@@ -991,6 +991,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_nic_emmc_set_perf_mode(slot)
                 elif test == "SET_GOLDFW":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
+                elif test == "SET_EXTOS":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
                 elif test == "SW_SHUTDOWN":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
                 else:

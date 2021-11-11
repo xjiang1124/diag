@@ -1340,7 +1340,7 @@ func Snake_All_Ports_Forward_Next_Port(elba_port_mask uint32, duration uint32, l
 * allocated in DSC MANAGER. 
 *  
 ***********************************************************************************************************/ 
-func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level string) (err int) {
+func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64) (err int) {
     var rc int = errType.SUCCESS
     var errGo error
     var data32 uint32
@@ -1617,6 +1617,50 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
     {
         var internal_port uint32 = 0
         for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
+            fileData := []byte{}
+            WRdata := []byte{}
+            filename := fmt.Sprintf("/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[i].Name)
+            f, errGo := os.Open(filename)
+            if errGo != nil {
+                fmt.Printf("[ERROR] Failed to open filename=%s.   ERR=%s\n", filename, errGo)
+                err = errType.FAIL
+                return
+            }
+            scanner := bufio.NewScanner(f)
+            scanner.Split(bufio.ScanBytes)
+
+            // Use For-loop.
+            for scanner.Scan() {
+                b := scanner.Bytes()
+                fileData = append(fileData, b[0])
+            }
+            f.Close()
+            fmt.Printf(" Length File Data = %d\n", len(fileData))
+
+            filename = fmt.Sprintf("/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[i].Name)
+            outF, errGo1 := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+            if errGo1 != nil {
+                fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, errGo1)
+                return
+            }
+            if (int(pkt_size) > 0) && (int(pkt_pattern) > 0) {
+                WRdata = append(fileData[0:96])
+                outF.WriteString(string(WRdata[:]))
+                for z:=(96/2);z<int(pkt_size);z+=4 {
+                    fmt.Fprintf(outF, "%02x", uint8((pkt_pattern & 0xFF000000) >> 24))
+                    fmt.Fprintf(outF, "%02x", uint8((pkt_pattern & 0xFF0000) >> 16))
+                    fmt.Fprintf(outF, "%02x", uint8((pkt_pattern & 0xFF00) >> 8))
+                    fmt.Fprintf(outF, "%02x", uint8(pkt_pattern & 0xFF))
+                }            
+                outF.Close()
+            } else {
+                outF.WriteString(string(fileData[:]))
+                outF.Close()
+            }
+            
+            //pkt_size uint64, pkt_pattern uint64
+        }
+        for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
             if (elba_port_mask & (1<<internal_port)) == 0 {
                 internal_port++
                 continue;
@@ -1624,9 +1668,9 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
             internal_port++
 
             if TaorPortMap[i].ElbaNumber == 0 {
-                command = fmt.Sprintf("tx 70 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
+                command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
             } else {
-                command = fmt.Sprintf("tx 70 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[16].Name, TaorPortMap[i].Name)
+                command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[16].Name, TaorPortMap[i].Name)
             }
             cli.Printf("i", "%s\n", command)
             output, err = ExecBCMshellCMD(command)
@@ -1637,16 +1681,16 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
         }
         for i:=0; i<2; i++ {
             if i == 0 {
-                command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[32].Name, TaorPortMap[55].Name)
+                command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[32].Name, TaorPortMap[55].Name)
             } else {
-                command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[48].Name, TaorPortMap[55].Name)
+                command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[48].Name, TaorPortMap[55].Name)
             }
             cli.Printf("i", "%s\n", command)
             output, err = ExecBCMshellCMD(command)
             if err != errType.SUCCESS {
                 return
             }
-            time.Sleep(time.Duration(4) * time.Second)
+            time.Sleep(time.Duration(5) * time.Second)
         }
     }
 
@@ -1660,6 +1704,7 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
         var Lag522ExtPortminBandWidth uint64 = 0
         var rc int = 0
         var printRxBandwidth = 1
+        printRxBwTime := time.Now()
 
         for i:=0; i<TAOR_INTERNAL_PORTS; i++ {
             var port uint32 = uint32(i)
@@ -1707,6 +1752,7 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                 }
                 if printRxBandwidth == 1 {
                     fmt.Printf("Port-%d %d/s\n", i, RxBytes)
+                    
                 }
                 //lag521
                 if (i < 16) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
@@ -1781,6 +1827,11 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                 if uint32(diff.Seconds()) > duration {
                     fmt.Printf(" DUATION BREAK\n")
                     break
+                }
+                diff = t2.Sub(printRxBwTime)
+                if uint32(diff.Seconds()) > 10 {
+                    printRxBandwidth = 1
+                    printRxBwTime = time.Now()
                 }
             }
 

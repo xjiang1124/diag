@@ -63,6 +63,8 @@ func Mvl_AccHdl(argList []string) {
         ExtendedRegTest = false;
     } else if (cardType == "NAPLES100HPE" && data < 0x04) {
         ExtendedRegTest = false;
+    } else if (cardType == "NAPLES100DELL" && data < 0x04) {
+        ExtendedRegTest = false;
     } else if (cardType == "ORTANO" && data < 0x02) {
         ExtendedRegTest = false;
     } else if (cardType == "ORTANO2" && data < 0x02) {

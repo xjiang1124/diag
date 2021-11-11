@@ -168,6 +168,17 @@ class NIC_IMAGES:
     goldfw_img["NAPLES100IBM"] = "naples_goldfw_apulu_1.17.0-42_1117.tar"
     goldfw_dat["NAPLES100IBM"] = "10-17-2020"
 
+    cpld_img["NAPLES100DELL"] = "naples100_dell_rev1_05182021.bin"
+    cpld_ver["NAPLES100DELL"] = "0x1"
+    cpld_dat["NAPLES100DELL"] = "05-18"
+    sec_cpld_img["NAPLES100DELL"] = "naples100_dell_rev81_05182021.bin"
+    sec_cpld_ver["NAPLES100DELL"] = "0x81"
+    sec_cpld_dat["NAPLES100DELL"] = "05-18"
+    diagfw_img["NAPLES100DELL"] = "capri_diagfw_1.3.1-E-57_2021.10.29.tar"
+    diagfw_dat["NAPLES100DELL"] = "10-29-2021"
+    goldfw_img["NAPLES100DELL"] = "capri_goldfw_1.3.1-E-57_2021.10.29.tar"
+    goldfw_dat["NAPLES100DELL"] = "10-29-2021"
+
     cpld_img["FORIO"] = ""
     cpld_ver["FORIO"] = "0x4"
     cpld_dat["FORIO"] = "04-11"
@@ -244,8 +255,8 @@ class NIC_IMAGES:
     fail_cpld_dat["POMONTEDELL"] = "0x13"
     diagfw_img["POMONTEDELL"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
     diagfw_dat["POMONTEDELL"] = "09-21-2021"
-    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar"
-    goldfw_dat["POMONTEDELL"] = "10-07-2021"
+    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
+    goldfw_dat["POMONTEDELL"] = "10-22-2021"
 
     cpld_img["LACONA32DELL"] = "naples200_lac32_dell_main_rev0_13_09292021.bin"
     cpld_ver["LACONA32DELL"] = "0x0"
@@ -258,8 +269,8 @@ class NIC_IMAGES:
     fail_cpld_dat["LACONA32DELL"] = "0x13"
     diagfw_img["LACONA32DELL"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
     diagfw_dat["LACONA32DELL"] = "09-21-2021"
-    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar"
-    goldfw_dat["LACONA32DELL"] = "10-07-2021"
+    goldfw_img["LACONA32DELL"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
+    goldfw_dat["LACONA32DELL"] = "10-22-2021"
 
     cpld_img["LACONA32"] = "naples200_lac32_hpe_main_rev0_13_09292021.bin"
     cpld_ver["LACONA32"] = "0x0"
@@ -272,30 +283,44 @@ class NIC_IMAGES:
     fail_cpld_dat["LACONA32"] = "0x13"
     diagfw_img["LACONA32"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
     diagfw_dat["LACONA32"] = "09-21-2021"
-    goldfw_img["LACONA32"] = "elba_goldfw_1.32.0-E-17_2021.10.11.tar"
-    goldfw_dat["LACONA32"] = "10-07-2021"
+    goldfw_img["LACONA32"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
+    goldfw_dat["LACONA32"] = "10-22-2021"
 
 class MTP_IMAGES:
-    AMD64_IMG = dict()
-    ARM64_IMG = dict()
+    amd64_img = dict()
+    arm64_img = dict()
     mtp_io_cpld_img = dict()
     mtp_io_cpld_ver = dict()
     mtp_jtag_cpld_img = dict()
     mtp_jtag_cpld_ver = dict()
 
-    AMD64_IMG["CAPRI"] = "image_amd64_capri.tar"
-    ARM64_IMG["CAPRI"] = "image_arm64_capri.tar"
+    amd64_img["CAPRI"] = "image_amd64_capri.tar"
+    arm64_img["CAPRI"] = "image_arm64_capri.tar"
     mtp_io_cpld_img["CAPRI"] = "NIC_MTP_IO_rev7_10232019.bin"
     mtp_io_cpld_ver["CAPRI"] = "0x7"
     mtp_jtag_cpld_img["CAPRI"] = "NIC_MTP_JTAG_rev3.bin"
     mtp_jtag_cpld_ver["CAPRI"] = "0x3"
 
-    AMD64_IMG["ELBA"] = "image_amd64_elba.tar"
-    ARM64_IMG["ELBA"] = "image_arm64_elba.tar"
+    amd64_img["TURBO_CAPRI"] = "image_amd64_capri.tar"
+    arm64_img["TURBO_CAPRI"] = "image_arm64_capri.tar"
+    mtp_io_cpld_img["TURBO_CAPRI"] = ""
+    mtp_io_cpld_ver["TURBO_CAPRI"] = "0x7"
+    mtp_jtag_cpld_img["TURBO_CAPRI"] = ""
+    mtp_jtag_cpld_ver["TURBO_CAPRI"] = "0x3"
+
+    amd64_img["ELBA"] = "image_amd64_elba.tar"
+    arm64_img["ELBA"] = "image_arm64_elba.tar"
     mtp_io_cpld_img["ELBA"] = "mtp_elba_io_rev1_07222020.bin"
     mtp_io_cpld_ver["ELBA"] = "0x1"
     mtp_jtag_cpld_img["ELBA"] = "mtp_elba_jtag_rev1_07302020.bin"
     mtp_jtag_cpld_ver["ELBA"] = "0x1"
+
+    amd64_img["TURBO_ELBA"] = "image_amd64_elba.tar"
+    arm64_img["TURBO_ELBA"] = "image_arm64_elba.tar"
+    mtp_io_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_io_rev1_08042021.bin"
+    mtp_io_cpld_ver["TURBO_ELBA"] = "0x1"
+    mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
+    mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
 
     MTP_PENCTL_IMAGE = "penctl.linux.02012021"
     MTP_PENCTL_TOKEN = "penctl.token"
@@ -303,8 +328,8 @@ class MTP_IMAGES:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_elba_lacona-pomonte_v0.2.tar"
-    MTP_ARM64_IMAGE = "image_arm64_elba_lacona-pomonte_v0.2.tar"
+    MTP_AMD64_IMAGE = "image_amd64_elba_lacona-pomonte_v0.7.tar"
+    MTP_ARM64_IMAGE = "image_arm64_elba_lacona-pomonte_v0.7.tar"
     
     MTP_PENCTL_IMAGE = "penctl.linux.0915"
     MTP_PENCTL_TOKEN = "penctl.token"
@@ -321,6 +346,9 @@ class PART_NUMBERS_MATCH:
     N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                #P37692-001       NAPLES100 HPE 
     N100_HPE_CLD_PN_FMT = r"P41854-00[0-9]{1}"                #P41854-001       NAPLES100 HPE CLOUD
     N100_HPE_FMT_ALL = r"{:s}|{:s}".format(N100_HPE_PN_FMT, N100_HPE_CLD_PN_FMT)
+
+    N100_DELL_PN_FMT  = r"68-0024-0[0-9]{1} [A-Z0-9]{2}"      #68-0024-01 XX    NAPLES100 DELL
+    N100_DELL_FMT_ALL = r"{:s}".format(N100_DELL_PN_FMT) 
 
     N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [A-Z0-9]{2}"         #68-0005-03 01    NAPLES25 PENSANDO
     N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"                     #P18669-001       NAPLES25 HPE
@@ -378,14 +406,14 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.ORTANO]
 
-MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.VOMERO2]
+MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2]
 MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 
-CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
+CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
 ELBA_NIC_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 
 PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]

@@ -142,6 +142,14 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
+    if "NAME" in inputconfig:
+        if "ORTANO2" == inputconfig["NAME"].upper():
+            workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+            SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
+            for PN in SNbyPN:
+                #,listofsn=[],specpn=None
+                createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
+
     return None
 
 def generateMTPreport(pr,DATA,inputconfig,startdate=None):
@@ -178,21 +186,29 @@ def getbeforedayinformation(checkday=30):
 
     return days_before
 
-def createteststatusreport(pr,DATA,inputconfig,startdate=None):
-    workingonSNlist = DATA['SN']['LIST']
+def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
+    
+    #workingonSNlist = DATA['SN']['LIST']
     
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    if len(listofsn):
+        workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
     #sys.exit()    
     wb = Workbook()
     
-    dest_filename = "{}EXECL_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
-    filenameheader = "{}EXECL_{}_DATA".format(inputconfig['DIR']["reportpath"],date_time)
+    reportdir = inputconfig['DIR']["reportpath"]
+    if specpn:
+        reportdir = reportdir + specpn + '/'
+        pr['modules'].createdirinserver(reportdir)
+
+    dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
     if "NAME" in inputconfig:
-        dest_filename = "{}{}_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
-        filenameheader = "{}{}_{}_DATA".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
+        dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
     if startdate:
         dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
 
@@ -220,6 +236,8 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
 
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
+    if len(listofsn):
+        workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
 
@@ -471,7 +489,10 @@ def writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,check
             DATA['SN'][status][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
     checkdata = checktime2
     DATA['SN'][status][test][SN]["checktime"] = checktime2
-    DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+        DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    else:
+        DATA['SN'][status][test][SN]["result"] = "NONE"
     if "SPECIAL" in inputconfig:
         if SN == inputconfig["SPECIAL"]:
             if "FAIL" in DATA['SN'][status][test][SN]["result"]:
@@ -1646,8 +1667,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
         wirtedata.append("TOTAL")
         alltotal = 0
         for test in topfailuredata['OVERALL']['TEST_HVLV']["TEST"]:
-            wirtedata.append(testtotal[test])
-            alltotal += testtotal[test]
+            if test in testtotal:
+                wirtedata.append(testtotal[test])
+                alltotal += testtotal[test]
         wirtedata.append(alltotal)
         ws2.append(wirtedata)
         wirtedata = list()
@@ -3945,25 +3967,57 @@ def converttoPERCENTAGEnumberbyFailurerange(ws):
                 ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
                 if checkvalue < 0.005:
                     #Green
-                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type = 'solid')
                 elif checkvalue < 0.01:
                     #Sap Green
-                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='45731E', end_color='45731E', fill_type = 'solid')
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66FF00', end_color='66FF00', fill_type = 'solid')
                 elif checkvalue < 0.02:
                     #Antique Bronze
-                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='675E24', end_color='675E24', fill_type = 'solid')
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='BBFF00', end_color='BBFF00', fill_type = 'solid')
                 elif checkvalue < 0.03:
                     #Chestnut
-                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='8D472B', end_color='8D472B', fill_type = 'solid')
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type = 'solid')
                 elif checkvalue < 0.04:
                     #Sweet Brown
-                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='E9D66B', end_color='E9D66B', fill_type = 'solid')
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFAA00', end_color='FFAA00', fill_type = 'solid')
                 elif checkvalue < 0.05:
                     #Cardinal
-                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='C82538', end_color='C82538', fill_type = 'solid')
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF5500', end_color='FF5500', fill_type = 'solid')
                 else:
                     #Red
                     ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+
+    # FF0000 <-- red
+    # FF1100
+    # FF2200
+    # FF3300
+    # FF4400
+    # FF5500
+    # FF6600
+    # FF7700
+    # FF8800
+    # FF9900
+    # FFAA00
+    # FFBB00
+    # FFCC00
+    # FFDD00
+    # FFEE00
+    # FFFF00 <-- yellow
+    # EEFF00
+    # DDFF00
+    # CCFF00
+    # BBFF00
+    # AAFF00
+    # 99FF00
+    # 88FF00
+    # 77FF00
+    # 66FF00
+    # 55FF00
+    # 44FF00
+    # 33FF00
+    # 22FF00
+    # 11FF00
+    # 00FF00 <-- green
 
 def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     

@@ -3,7 +3,7 @@ include $(TOP_DIR)/build/common.mk
 
 .PHONY: all
 
-all: libacc libacc_v2
+all: libacc libacc_v2 libacc_turbo libacc_mtp
 
 libacc:
 	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
@@ -17,6 +17,18 @@ libacc_v2:
 	ar rs libacc_v2.a acc_v2.o
 	ar rs ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc_v2.a acc_v2.o
 
+libacc_turbo:
+	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
+	$(CMPL) -L../third-party -lftd2xx -I../../include -c -fPIC acc_turbo.c -o acc_turbo.o
+	$(CMPL) -shared -o libacc_turbo.so acc_turbo.o libftd2xx.a
+	cp libacc_turbo.so ${GOPATH}/pkg/linux_$(ARCH)/clib/.
+
+libacc_mtp:
+	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
+	$(CMPL) -L../third-party -lftd2xx -I../../include -c -fPIC acc.c -o acc_mtp.o
+	$(CMPL) -shared -o libacc_mtp.so acc_mtp.o libftd2xx.a
+	cp libacc_mtp.so ${GOPATH}/pkg/linux_$(ARCH)/clib/.
+
 clean:
-	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc.a libacc_v2.a *.o *.a
+	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc.a libacc_v2.a libacc_mtp.so libacc_turbo.so *.o *.a *.so
 

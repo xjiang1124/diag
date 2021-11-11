@@ -56,6 +56,7 @@ class nic_ctrl():
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._nic_status = NIC_Status.NIC_STA_POWEROFF
+        self._nic_missed_fa = False
         self._nic_con_prompt = "# "
 
         self._diag_ver = None
@@ -116,6 +117,8 @@ class nic_ctrl():
 
     def nic_set_status(self, status):
         self._nic_status = status
+        if self._nic_status != NIC_Status.NIC_STA_OK:
+            self._nic_missed_fa = True
 
 
     def nic_check_status(self):
@@ -123,6 +126,12 @@ class nic_ctrl():
             return True
         else:
             return False
+
+    def nic_missed_fa(self):
+        return self._nic_missed_fa
+
+    def nic_clear_fa(self):
+        self._nic_missed_fa = False
 
     def nic_set_asic_type(self):
         if self._nic_type == None:
@@ -495,6 +504,34 @@ class nic_ctrl():
 
         return True
 
+    def nic_set_extos_boot(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # set default to extosa boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
 
     def nic_sw_cleanup_shutdown(self):
         if not self.nic_console_attach():
@@ -528,7 +565,7 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
-    def nic_sw_shutdown(self, cloud=False):
+    def nic_sw_shutdown(self, cloud=False, is100Dell=False):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -555,8 +592,15 @@ class nic_ctrl():
                 self.nic_console_detach()
                 return False
 
-        # poweroff ... Cloud build do not support this command
-        if cloud == False:
+        # poweroff ... Cloud build do not support this command & different command for 100Dell
+        if is100Dell == True:
+            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_PEN_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False           
+        elif cloud == False:
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
@@ -788,9 +832,13 @@ class nic_ctrl():
     def nic_check_jtag(self, asic_support):
         cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
 
+        fail_sig_list = ["JTAG Read failed!"]
+
         sig_list = ["valid bit 0x1", "error 0x00"]
         if asic_support == MTP_ASIC_SUPPORT.ELBA:
-            sig_list = ["status bit 0x1"]
+            sig_list = ["0x00000001"]
+        elif asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
+            sig_list = ["0x00000001"]
 
         error_flag = False
 
@@ -801,13 +849,14 @@ class nic_ctrl():
         if not True in [sig in cmd_buf for sig in sig_list]:
             error_flag = True
 
+        if True in [sig in cmd_buf for sig in fail_sig_list]:
+            error_flag = True
+
         if error_flag:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             self.nic_set_cmd_buf(cmd_buf)
 
-            # Some additional error printing
-            if not self.mtp_exec_cmd("inventory -sts -slot {:d}".format(self._slot+1)):
-                self.nic_set_cmd_buf(self._nic_handle.before)
+        if error_flag:
             return False
 
         return True

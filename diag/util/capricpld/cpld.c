@@ -61,6 +61,7 @@
 #define ID_NAPLES25_OCP             0x19
 #define ID_NAPLES100IBM             0x1C
 #define ID_NAPLES100HPE             0x1F
+#define ID_NAPLES100DELL            0x22
 #define ID_NAPLES25_SWM_DELL        0x20
 #define ID_NAPLES25_SWM_833         0x21
 
@@ -776,6 +777,7 @@ main(int argc, char *argv[])
         if ( (cpldId == ID_NAPLES100)    ||
              (cpldId == ID_NAPLES100IBM) ||
              (cpldId == ID_NAPLES100HPE) ||
+             (cpldId == ID_NAPLES100DELL) ||
              (cpldId == ID_NAPLES25)     ||
              (cpldId == ID_VOMERO)
            )

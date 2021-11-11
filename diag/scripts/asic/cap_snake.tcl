@@ -58,8 +58,8 @@ set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
 set DIAG_SRC "$DIAG_DIR/diag/scripts/asic/"
 
-if {$MTP_TYPE == "MTP_ELBA"} {
-    puts "Elba MTP"
+if {$MTP_TYPE == "MTP_ELBA" || $MTP_TYPE == "MTP_TURBO_ELBA"} {
+    puts $MTP_TYPE
     set tclrc_source .tclrc.diag.elb.new
     set asic_type ELBA
 } else {

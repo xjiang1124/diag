@@ -34,7 +34,7 @@ func mvlIntTest() (err int) {
         //test
         data, err = mtpCpld.CpldRead(0x1)
         if err != errType.SUCCESS {
-            cli.Println("e", "CPLD read failed!")
+            cli.Println("e", "CPLD read 0x1 failed!")
             return
         }
         data |= 1 << (i+1)

@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     FT_STATUS       ftStatus = FT_OK;
     DWORD			inst;
     // CHANNEL_A 0; CHANNEL_B 1
-    int				port = 1;
+    DWORD		port = 1;
     ULONGLONG		address;
     DWORD			data;
     DWORD			flag;
@@ -36,21 +36,26 @@ int main(int argc, char *argv[])
     // Make printfs immediate (no buffer)
     setvbuf(stdout, NULL, _IONBF, 0);
     strcpy(acc_mode, argv[1]);
+    if ( !strcmp("display", acc_mode) ) {
+	printf("calling jtag_display_device\n");
+        jtag_display_device();
+        return 0;
+    }
 #ifdef HAPS
     port = (int)xtoi(argv[2]);
     inst = (DWORD)xtoi(argv[3]);
 #else
     inst = (DWORD)xtoi(argv[2]);
+    inst = 0;
 #endif
 
-//    memset(buffer, 0, 100);
     ftStatus = jtag_init(port);
+    /* jtag_display_device(); */
     if (ftStatus != FT_OK)
     {
         printf("Failure.  Jtag_init returned %d.\n", (int)ftStatus);
         goto exit;
     }
-
 #if 0
     printf("Opening FTDI device %d.\n", portNum);
     
@@ -223,7 +228,6 @@ int main(int argc, char *argv[])
 			else
 				printf("Fatal! write 0x%08x, read 0x%08x\n", data, rd_data);
 		}
-
     } else {
     	printf("Unsupported access mode\n");
     	return -1;

@@ -49,6 +49,7 @@ func init() {
     i2cTestMap["VOMERO2"]         = naples100TestList
     i2cTestMap["NAPLES100IBM"]    = naples100TestList
     i2cTestMap["NAPLES100HPE"]    = naples100TestList
+    i2cTestMap["NAPLES100DELL"]    = naples100TestList
     i2cTestMap["NAPLES25WFG"]     = naples100TestList
     i2cTestMap["BIODONA_D4"]      = biodonaTestList
     i2cTestMap["BIODONA_D5"]      = biodonaTestList
