@@ -880,6 +880,11 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                 # check diagfw version
                 elif test == "QSPI_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
+
+                    if nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
+                        # trigger qspi update
+                        ret = False
+
                     if not ret:
                         qspi_prog_list.append(slot)
                         ret = True
@@ -998,6 +1003,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         testlist = ["QSPI_PROG", "FPGA_PROG", "NIC_PWRCYC"]
+    if nic_type == NIC_Type.LACONA32 or nic_type.LACONA32DELL:
+        # program the 32G uboot
+        testlist = ["QSPI_PROG", "UBOOT_PROG", "FPGA_PROG", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -1017,6 +1025,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         elif test == "NIC_PWRCYC":
             ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+        elif test == "UBOOT_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue

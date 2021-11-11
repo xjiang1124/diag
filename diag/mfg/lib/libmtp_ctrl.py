@@ -1449,6 +1449,15 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
                         pass
+                    try:
+                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
+                            img = NIC_IMAGES.uboot_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
+                        pass
 
                     # In addition to images, check the version & timestamp fields as well here
                     try:
@@ -1479,6 +1488,14 @@ class mtp_ctrl():
                                 raise KeyError
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
+                        pass
+                    try:
+                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
+                            expected_timestamp = NIC_IMAGES.uboot_dat[card_type]
+                            if expected_timestamp.strip() == "":
+                                raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing uboot timestamp for {:s}".format(card_type))
                         pass
                 elif stage == FF_Stage.FF_CFG:
                     # CPLD image
@@ -1541,6 +1558,16 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                         pass
 
+                    try:
+                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
+                            img = NIC_IMAGES.uboot_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diag uboot image for {:s}".format(card_type))
+                        pass
+
                     # In addition to images, check the version & timestamp fields as well here
                     try:
                         expected_version = NIC_IMAGES.cpld_ver[card_type]
@@ -1584,6 +1611,15 @@ class mtp_ctrl():
                             raise KeyError
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
+                        return False
+
+                    try:
+                        if card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
+                            expected_timestamp = NIC_IMAGES.uboot_dat[card_type]
+                            if expected_timestamp.strip() == "":
+                                raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diag uboot timestamp for {:s}".format(card_type))
                         return False
 
                 else:
@@ -4515,18 +4551,25 @@ class mtp_ctrl():
 
     def mtp_nic_board_config(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2:
-            if self.mtp_is_nic_ortano_oracle(slot):
-                preset_config = "5"
-            else:
-                preset_config = "8"
-            if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
-                self.cli_log_slot_err_lock(slot, "Set board config failed")
-                self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
-                self.mtp_dump_nic_err_msg(slot)
-                return False
+        if nic_type in ELBA_NIC_TYPE_LIST:
+            if nic_type == NIC_Type.ORTANO2:
+                if self.mtp_is_nic_ortano_oracle(slot):
+                    preset_config = "5"
+                else:
+                    preset_config = "8"
+
+            elif nic_type == NIC_Type.POMONTEDELL:
+                preset_config = "1"
+
         else:
             self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
+            self.cli_log_slot_err_lock(slot, "Set board config failed")
+            self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
         return True
 
     def mtp_mgmt_dump_avs_info(self, slot, buf):

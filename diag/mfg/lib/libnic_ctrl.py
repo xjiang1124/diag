@@ -1464,8 +1464,6 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
-        # if self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL or self._nic_type == NIC_Type.LACONA32:
-        #     nic_cmd = "fwupdate -F -p /{:s} -i 'all'".format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
   
