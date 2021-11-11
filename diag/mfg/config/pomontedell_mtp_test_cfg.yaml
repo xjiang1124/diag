@@ -87,7 +87,7 @@ NIC_PARA:
 
 
 MTP_PARA:
-    SNAKE_ELBA: False
+    SNAKE_ELBA: True
 
 MTP_SEQ:
     ASIC:

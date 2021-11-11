@@ -4424,11 +4424,13 @@ class mtp_ctrl():
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
                 else:
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
+            elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, vmarg)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
             # 2C/4C = internal loopback
-            if vmarg != 0:
+            if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
 
         else:
