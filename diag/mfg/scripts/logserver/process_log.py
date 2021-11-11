@@ -422,15 +422,17 @@ def workingonLastdata(DATA,inputconfig):
                                 writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
                                 NewSN = False
                             if checktime2 >= checkdata:
-                                if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and not "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
-                                elif not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
-                                elif 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                                    if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and not "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                    elif not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                    elif 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
                             else:
-                                if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                                    if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
                                     
             delSNwithnoData(DATA,test,SN,counttesttime,status='KEEPLASTPASS')
 
@@ -1678,6 +1680,8 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
         wirtedata.append("TEST")
         wirtedata.append("SN")
         wirtedata.append("FAILURE TYPE")
+        wirtedata.append("RE-TEST COUNT")
+        wirtedata.append("LAST RESULT")
         ws2.append(wirtedata)
         for test in topfailuredata['OVERALL']['TEST_HVLV']["TEST"]:
             if test in topfailuredata['OVERALL']['TEST_HVLV']["DATA"]:
@@ -1687,6 +1691,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
                         wirtedata.append(test)
                         wirtedata.append(SN)
                         wirtedata.append(failuretype)
+                        testnamelist = test.split(' ')
+                        wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["count"])
+                        wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["result"])
                         ws2.append(wirtedata)
         wirtedata = list()
         ws2.append(wirtedata)
@@ -1760,6 +1767,8 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
             wirtedata.append("TEST")
             wirtedata.append("SN")
             wirtedata.append("FAILURE TYPE")
+            wirtedata.append("RE-TEST COUNT")
+            wirtedata.append("LAST RESULT")
             ws2.append(wirtedata)
             for test in topfailuredata['OVERALL']['TEST_HVLV_by_WEEK'][testweek]["TEST"]:
                 if test in topfailuredata['OVERALL']['TEST_HVLV_by_WEEK'][testweek]["DATA"]:
@@ -1769,6 +1778,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
                             wirtedata.append(test)
                             wirtedata.append(SN)
                             wirtedata.append(failuretype)
+                            testnamelist = test.split(' ')
+                            wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["count"])
+                            wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["result"])
                             ws2.append(wirtedata)
             wirtedata = list()
             ws2.append(wirtedata)
@@ -2563,7 +2575,6 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
                         wirtedata = list()
                         wirtedata.append(teststep)
                         wirtedata.append(sn)
@@ -2583,7 +2594,10 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
                         else:
                             wirtedata.append("No TESTTIME")
                         #sys.exit()
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        else:
+                            wirtedata.append("NONE")
                         timestamp = "{}_{}".format(testdate,testetime)
                         wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
                         ws2.append(wirtedata)
@@ -3635,7 +3649,10 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                        if 'SLOT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                        else:
+                            slot = None
                         wirtedata = list()
                         wirtedata.append(teststep)
                         wirtedata.append(sn)
@@ -3649,10 +3666,19 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
                             wirtedata.append('NO TESTTIME')
                         timestamp = "{}_{}".format(testdate,testetime)
                         wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
-                        #DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['CPLD']
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        if 'CARDTYPE' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                        else:
+                            wirtedata.append("NONE")
+                        if 'SLOT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                        else:
+                            wirtedata.append("NONE")
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            #DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['CPLD']
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        else:
+                            wirtedata.append("NONE")
                         if teststep == 'DL':
                             if 'PN' in DATA["SN"][sn][chassis][testdate][testetime]:
                                 wirtedata.append(str(DATA["SN"][sn][chassis][testdate][testetime]['PN']))
@@ -3755,35 +3781,36 @@ def generateexeclerrdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        if "FAIL" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
-                            slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
-                            howmanyerror = len(DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL'])
-                            if howmanyerror:
-                                for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
-                                    eacherrorlist = eacherror.split('\n')
-                                    neweacherror = ''
-                                    for checkeacherror in eacherrorlist:
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            if "FAIL" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                                slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                                howmanyerror = len(DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL'])
+                                if howmanyerror:
+                                    for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
+                                        eacherrorlist = eacherror.split('\n')
+                                        neweacherror = ''
+                                        for checkeacherror in eacherrorlist:
 
-                                        checkeacherror = _removeIllegalCharacterError(checkeacherror)
-                                        neweacherror += checkeacherror
-                                        neweacherror += "\r"
-                                    wirtedata = list()
-                                    wirtedata.append(teststep)
-                                    wirtedata.append(sn)
-                                    wirtedata.append(chassis)
-                                    wirtedata.append(testdate)
-                                    wirtedata.append(testetime)
-                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
-                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                                            checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                            neweacherror += checkeacherror
+                                            neweacherror += "\r"
+                                        wirtedata = list()
+                                        wirtedata.append(teststep)
+                                        wirtedata.append(sn)
+                                        wirtedata.append(chassis)
+                                        wirtedata.append(testdate)
+                                        wirtedata.append(testetime)
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
 
-                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
-                                    #print(eacherror)
-                                    #if len(eacherror) > 200:
-                                        #eacherror = eacherror[:200]
-                                    wirtedata.append(neweacherror)
-                                    #print(wirtedata)
-                                    ws2.append(wirtedata)
-                                    #print(wirtedata)
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                                        #print(eacherror)
+                                        #if len(eacherror) > 200:
+                                            #eacherror = eacherror[:200]
+                                        wirtedata.append(neweacherror)
+                                        #print(wirtedata)
+                                        ws2.append(wirtedata)
+                                        #print(wirtedata)
     
     fixcolumnssize2(ws2)
     highlightinyellow(ws2,'TIMEOUT')
