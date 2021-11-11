@@ -1126,23 +1126,6 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
     //Sub in fields for other products below and handle checksum for all extended table
     if HpeNaples == 1 || HpeOcp == 1 || HpeSwm == 1 || HpeLacona == 1 {
         for _, entry := range(EepromExtTbl) {
-
-            //For Pomonta and Lacona for Dell, need to copy the mac address into the mrec in little endian order
-            if (CardType == "LACONA32" || (CardType == "LACONA")) { 
-                if entry.Name == "LE MAC Address Base" {
-                    for _, tblEntry := range(EepromTbl) {
-                        if tblEntry.Name == "MAC Address Base" {
-                            for j:=0;j<6;j++ {
-                                entry.Value[5-j] = tblEntry.Value[j]
-                            }
-                            break
-                        }
-                    }
-                }
-            }
-
-        }
-        for _, entry := range(EepromExtTbl) {
             if entry.Name == "Product info Area Checksum" || entry.Name == "HPE Multi-Record Area Checksum" {
                 updateIntChk()
                 entry.Value[0] = byte(0x100 - productInfoChk % 0x100)
