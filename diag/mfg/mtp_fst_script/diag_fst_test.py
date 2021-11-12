@@ -82,8 +82,8 @@ def get_product_name_from_pn(pn):
 def config_eth(card_type="", fst=0):
 
     if fst == 2:
-        slot_bus_pair = [(1, '01:00.0'), (2, '41:00.0'), (3, '46:00.0'), (4, '81:00.0'), (5, 'c1:00.0')]
-        eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp67s0', 'enp131s0'}
+        slot_bus_pair = [(1, '41:00.0'), (2, '01:00.0'), (3, 'c1:00.0'), (4, '81:00.0'), (5, '46:00.0')]
+        eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp72s0', 'enp131s0'}
     elif fst == 1:
         slot_bus_dict = { 1:'2a:00.0', 2:'08:00.0', 3:'61:00.0', 4:'21:00.0', 5:'41:00.0' }
         eth_list = {'enp46s0', 'enp12s0', 'enp101s0', 'enp37s0', 'enp69s0'}
@@ -121,8 +121,8 @@ def fst_general_old(fst):
     naples_env["NAPLES_URL"] = "http://169.254.0.1"
     
     if fst == 2:
-        slot_bus_pair = [(1, '01:00.0'), (2, '41:00.0'), (3, '46:00.0'), (4, '81:00.0'), (5, 'c1:00.0')]
-        eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp67s0', 'enp131s0'}
+        slot_bus_pair = [(1, '41:00.0'), (2, '01:00.0'), (3, 'c1:00.0'), (4, '81:00.0'), (5, '46:00.0')]
+        eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp72s0', 'enp131s0'}
     elif fst == 1:
         slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
         eth_list = {'enp46s0', 'enp12s0', 'enp101s0', 'enp37s0', 'enp69s0'}
@@ -212,8 +212,8 @@ def fst_general(fst):
     naples_env["DSC_URL"] = "http://169.254.0.1"
       
     if fst == 2:
-        slot_bus_pair = [(1, '01:00.0'), (2, '41:00.0'), (3, '46:00.0'), (4, '81:00.0'), (5, 'c1:00.0')]
-        eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp67s0', 'enp131s0'}
+        slot_bus_pair = [(1, '41:00.0'), (2, '01:00.0'), (3, 'c1:00.0'), (4, '81:00.0'), (5, '46:00.0')]
+        eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp72s0', 'enp131s0'}
     elif fst == 1:
         slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
         eth_list = {'enp46s0', 'enp12s0', 'enp101s0', 'enp37s0', 'enp69s0'}
@@ -319,8 +319,8 @@ def fst_general(fst):
 def fst_general_oracle(fst):
 
     if fst == 2:
-        slot_bus_pair = [(1, '01:00.0'), (2, '41:00.0'), (3, '46:00.0'), (4, '81:00.0'), (5, 'c1:00.0')]
-        slot_bus_dict = {1:1, 2:65, 3:70, 4:129, 5:193}
+        slot_bus_pair = [(1, '41:00.0'), (2, '01:00.0'), (3, 'c1:00.0'), (4, '81:00.0'), (5, '46:00.0')]
+        slot_bus_dict = {1:65, 2:1, 3:193, 4:129, 5:70}
     elif fst == 1:
         slot_bus_pair = [(1, '2a:00.0'), (2, '08:00.0'), (3, '61:00.0'), (4, '21:00.0'), (5, '41:00.0')]
         slot_bus_dict = {1:42, 2:8, 3:97, 4:33, 5:65}
@@ -382,7 +382,7 @@ def fst_cloud_fetch_sn(card_type, fst):
         print("card_info_dict.txt not exist")
     
     if fst == 2:
-        slot_bus_dict = {1:1, 2:65, 3:70, 4:129, 5:193}
+        slot_bus_dict = {1:65, 2:1, 3:193, 4:129, 5:70}
     elif fst == 1:
         slot_bus_dict = {1:42, 2:8, 3:97, 4:33, 5:65}
     else:
@@ -485,7 +485,7 @@ def fst_cloud_check_pcie(fst):
     card_info_dict = json.load(open("/home/diag/mtp_fst_script/card_info_dict.txt"))
 
     if fst == 2:
-        slot_bus_dict = { 1:'01:00.0', 2:'41:00.0', 3:'46:00.0', 4:'81:00.0', 5:'c1:00.0' }
+        slot_bus_dict = { 1:'41:00.0', 2:'01:00.0', 3:'c1:00.0', 4:'81:00.0', 5:'46:00.0' }
     elif fst == 1:
         slot_bus_dict = { 1:'2a:00.0', 2:'08:00.0', 3:'61:00.0', 4:'21:00.0', 5:'41:00.0' }
     else:
