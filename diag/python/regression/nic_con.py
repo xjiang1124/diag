@@ -565,6 +565,22 @@ class nic_con:
         common.session_stop(session)
         return ret
 
+    def run_mes_mtp_reset_commands(self, session):
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 1")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x0")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 0")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 72 -r")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x1")
+
+    def mes_mtp_reset(self, slot, rate=115200):
+        session = common.session_start()
+        self.uart_session_start(session, rate)
+
+        session.timeout = 30
+        self.run_mes_mtp_reset_commands(session)
+        self.uart_session_stop(session)
+        common.session_stop(session)
+
     def config_mnic(self, rate=115200, slot=0, uefi=False):
         ret = 0
         if slot == 0 or slot > 10:
@@ -584,11 +600,7 @@ class nic_con:
                 asic_type = self.get_asic_type(slot)
                 # only works for Elba FPGA cards with PS48
                 if asic_type == "ELBA_FPGA":
-                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 1")
-                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x0")
-                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 0")
-                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 72 -r")
-                    self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x1")
+                    self.run_mes_mtp_reset_commands(session)
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
                 time.sleep(0.5)
                 print 'oob_mnic0 enabled'
@@ -725,6 +737,14 @@ class nic_con:
         if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
             self.fix_elba_bx(115200, slot)
             ret = self.ping_check_mtp(slot)
+
+        # if ping test fails, retry the MTP port reset
+        if ret != 0:
+            for i in range(numRetry):
+                self.mes_mtp_reset(slot)
+                ret = self.ping_check_mtp(slot)
+                if ret == 0:
+                    break
 
         return ret
 
