@@ -82,7 +82,7 @@ def get_product_name_from_pn(pn):
 def config_eth(card_type="", fst=0):
 
     if fst == 2:
-        slot_bus_pair = [(1, '41:00.0'), (2, '01:00.0'), (3, 'c1:00.0'), (4, '81:00.0'), (5, '46:00.0')]
+        slot_bus_dict = { 1:'41:00.0', 2:'01:00.0', 3:'c1:00.0', 4:'81:00.0', 5:'46:00.0' }
         eth_list = {'enp67s0', 'enp3s0', 'enp195s0', 'enp72s0', 'enp131s0'}
     elif fst == 1:
         slot_bus_dict = { 1:'2a:00.0', 2:'08:00.0', 3:'61:00.0', 4:'21:00.0', 5:'41:00.0' }
