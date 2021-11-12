@@ -334,8 +334,8 @@ class MTP_IMAGES:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_elba_lacona-pomonte_v0.7.tar"
-    MTP_ARM64_IMAGE = "image_arm64_elba_lacona-pomonte_v0.7.tar"
+    MTP_AMD64_IMAGE = "image_amd64_elba_lacona-pomonte_v0.10.tar"
+    MTP_ARM64_IMAGE = "image_arm64_elba_lacona-pomonte_v0.10.tar"
     
     MTP_PENCTL_IMAGE = "penctl.linux.0915"
     MTP_PENCTL_TOKEN = "penctl.token"

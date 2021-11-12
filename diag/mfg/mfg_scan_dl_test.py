@@ -457,6 +457,11 @@ def main():
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
                 continue
+            try:
+                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[nic_type])
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(nic_type))
+                continue
             if nic_type in ELBA_NIC_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
