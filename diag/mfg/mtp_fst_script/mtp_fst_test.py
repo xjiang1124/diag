@@ -419,7 +419,9 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
     fst = 0
     if mtp_capability == 0x4:
-        fst=1
+        fst = 1
+    elif mtp_capability == 0x5:
+        fst = 2
 
     # local log files
     log_filep_list = list()
