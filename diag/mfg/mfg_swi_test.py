@@ -195,6 +195,11 @@ def main():
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                     continue
                 try:
+                    mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(card_type))
+                    continue
+                try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0015"])
                 except KeyError:
