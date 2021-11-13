@@ -1,0 +1,59 @@
+{
+	"NAME": "POMONTEDELL",
+	"TYPE": "NIC",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_POMONTE_04",
+		"TEMPDATABASE": "/samba/public/tmp_database/POMONTEDELL",
+		"testlogpath": "/mnt/hw-mftg-data/POMONTEDELL",
+		"reportpath":"/samba/public/REPORT/POMONTEDELL/",
+		"historypath":"/samba/public/HISTORY/POMONTEDELL"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST04.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"DISPLAYINDO" : [
+		"CPLD image1",
+		"QSPI image",
+		"MTP Diag Version"
+	],
+	"CHECKKEYS" : [
+		"IMAGE",
+		"MTPINFO",
+		"NICINFO"
+	],
+	"DIE_ID" : 1,
+	"TESTLIST" :[
+					"DL",
+					"P2C",
+					"4C-L",
+					"4C-H",
+					"SWI",
+					"FST"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"4C/4C-L",
+					"4C/4C-H",
+					"SWI",
+					"FST"
+				]
+	
+}
