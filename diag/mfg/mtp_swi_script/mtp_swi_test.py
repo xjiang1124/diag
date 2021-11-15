@@ -67,6 +67,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["FPGA_PROG", "GOLD_FPGA_PROG", "NIC_PWRCYC"]
+    if nic_type == NIC_Type.POMONTEDELL:
+        test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG", "NIC_PWRCYC"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -86,6 +88,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         elif test == "NIC_PWRCYC":
             ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
             ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
+        elif test == "BOARD_CONFIG":
+            ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
             continue
