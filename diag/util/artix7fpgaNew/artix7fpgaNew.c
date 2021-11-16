@@ -23,6 +23,11 @@
 static const char spidev_path0[] = "/dev/spidev0.0";
 static const char spidev_path1[] = "/dev/spidev0.3";
 
+typedef struct {
+    uint32_t size;
+    uint32_t *p_opt;
+} SERDES_TEST_OPTIONS;
+
 #define SPI_GLOBAL_INT_REG              0x1C
 #define SPI_INT_STATUS_REG              0x20
 #define SPI_INT_ENABLE_REG              0x28
@@ -32,7 +37,7 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define SPI_DATA_TRANSMIT_REG           0x68
 #define SPI_DATA_RECEIVE_REG            0x6C
 #define SPI_SLAVE_SEL_REG               0x70
-
+// SPI commands
 #define FLASH_WRITE_STATUS_REG          0x01
 #define FLASH_PAGE_PROG                 0x02
 #define FLASH_READ_DATA_BYTES           0x03
@@ -80,11 +85,250 @@ static const char spidev_path1[] = "/dev/spidev0.3";
 #define FLASH_TRANSFER_WIDTH_B          1
 #define PS48_PIPELINE_SIZE              32
 
+#define MDIO_CRTL_LO_REG                0x6
+#define MDIO_CRTL_HI_REG                0x7
+#define MDIO_DATA_LO_REG                0x8
+#define MDIO_DATA_HI_REG                0x9
+
+#define MDIO_ACC_ENA                    0x1
+#define MDIO_RD_ENA                     0x2
+#define MDIO_WR_ENA                     0x4
+
+
+//PHY pages
+#define PHY_PAGE_0                                 0
+#define PHY_PAGE_1                                 1
+#define PHY_PAGE_6                                 6
+#define PHY_PAGE_18                                18
+
+//PHY registers
+#define PHY_PAGE_REG                               22
+
+//PHY page 0
+#define PHY_COPPER_CTRL_REG                        0
+//PHY page 1
+#define PHY_FIBER_CTRL_REG                         0
+#define PHY_FIBER_STATUS_REG                       1
+#define PHY_AN_ADV_REG                             4
+#define PHY_LINK_PARTNER_ABILITY_REG               5
+#define PHY_AN_EXPANSION_REG                       6
+#define PHY_SPECIFIC_CTRL_REG                      16
+#define PHY_SPECIFIC_STATUS_REG                    17
+#define PHY_PRBS_CTRL_REG                          23
+#define PHY_PRBS_ERROR_COUNTER_LSB_REG             24
+#define PHY_PRBS_ERROR_COUNTER_MSB_REG             25
+#define PHY_SPECIFIC_CTRL2_REG                     26
+//PHY page 6
+#define PHY_COPPER_CHECKER_CTRL_REG                18
+//PHY page 18
+#define PHY_PKT_GENERATOR_REG                      16
+#define PHY_CRC_COUNTERS_REG                       17
+#define PHY_CHECKER_CTRL_REG                       18
+
+//fields in PHY_COPPER_CTRL_REG
+#define PHY_SYS_INTF_LOOPBACK_SHIFT                14
+
+//fields in PHY_FIBER_CTRL_REG
+#define PHY_SOFTWARE_RESET_SHIFT                   15
+#define PHY_SOFTWARE_RESET_MASK                    0x1
+#define PHY_SPEED_SELECT_LSB_SHIFT                 13
+#define PHY_SPEED_SELECT_MSB_SHIFT                 6
+#define PHY_AN_ENABLE_SHIFT                        12
+#define PHY_AN_ENABLE_MASK                         0x1
+#define PHY_DUPLEX_SHIFT                           8
+#define PHY_DUPLEX_MASK                            0x1
+#define PHY_DUPLEX_FULL                            0x1
+#define PHY_AN_RESTART_SHIFT                       9
+#define PHY_AN_RESTART_MASK                        0x1
+
+//fields in PHY_FIBER_STATUS_REG
+#define PHY_AN_COMPLETE_SHIFT                      5
+#define PHY_AN_COMPLETE_MASK                       0x1
+#define PHY_LINK_STATUS_SHIFT                      2
+#define PHY_LINK_STATUS_MASK                       0x1
+
+//fields in PHY_SPECIFIC_CTRL_REG
+#define PHY_SPECIFIC_PHY_MODE_SHIFT                0
+#define PHY_SPECIFIC_PHY_MODE_MASK                 0x3
+
+//fields in PHY_SPECIFIC_STATUS_REG
+#define PHY_SPECIFIC_SPEED_SHIFT                   14
+#define PHY_SPECIFIC_SPEED_MASK                    0x3
+#define PHY_SPECIFIC_DUPLEX_SHIFT                  13
+#define PHY_SPECIFIC_DUPLEX_MASK                   0x1
+#define PHY_SPECIFIC_SPEED_DUPLEX_RESOLVED_SHIFT   11
+#define PHY_SPECIFIC_SPEED_DUPLEX_RESOLVED_MASK    0x1
+#define PHY_SPECIFIC_LINK_RT_SHIFT                 10
+#define PHY_SPECIFIC_LINK_RT_MASK                  0x1
+#define PHY_SPECIFIC_RMT_FAULT_RCVD_SHIFT          6
+#define PHY_SPECIFIC_RMT_FAULT_RCVD_MASK           0x3
+#define PHY_SPECIFIC_SYNC_STATUS_SHIFT             5
+#define PHY_SPECIFIC_SYNC_STATUS_MASK              0x1
+
+//fields in PHY_PRBS_CTRL_REG
+#define PHY_PRBS_PATTERN_MASK                      0x3
+#define PHY_PRBS_PATTERN_SHIFT                     2
+#define PHY_PRBS_PATTERN_7                         0x0
+#define PHY_PRBS_PATTERN_23                        0x1
+#define PHY_PRBS_PATTERN_31                        0x2
+#define PHY_PRBS_CHECKER_EN                        0x2
+#define PHY_PRBS_GENERATOR_EN                      0x1
+#define PHY_PRBS_CLEAR_COUNTER_SHIFT               4
+#define PHY_PRBS_TX_POLARITY_MASK                  0x1
+#define PHY_PRBS_TX_POLARITY_SHIFT                 6
+#define PHY_PRBS_RX_POLARITY_MASK                  0x1
+#define PHY_PRBS_RX_POLARITY_SHIFT                 7
+#define PHY_PRBS_LOCK_MASK                         0x1
+#define PHY_PRBS_LOCK_SHIFT                        5
+
+//fields in PHY_SPECIFIC_CTRL2_REG
+#define PHY_AN_BYPASS_ENALBE_SHIFT                 6
+#define PHY_AN_BYPASS_ENALBE_MASK                  0x1
+#define PHY_AN_BYPASS_STATUS_SHIFT                 5
+#define PHY_AN_BYPASS_STATUS_MASK                  0x1
+
+#define PHY_AN_ADV_SPEED_SHIFT                     10
+#define PHY_AN_ADV_SPEED_MASK                      0x3
+#define PHY_AN_ADV_DUPLEX_SHIFT                    12
+#define PHY_AN_ADV_DUPLEX_MASK                     0x1
+
+//fields in PHY_COPPER_CHECKER_CTRL_REG
+#define PHY_ENABLE_STUB_TEST_SHIFT                 3
+
+//fields in PHY_CHECKER_CTRL_REG
+#define CHECK_DATA_FROM_COPPER_INTERFACE           0x2
+#define CRC_COUNTER_RESET_SHIFT                    4
+
+//fields in PHY_CRC_COUNTERS_REG
+#define PACKET_COUNTER_MASK                        0xFF
+#define PACKET_COUNTER_SHIFT                       8
+#define ERROR_COUNTER_MASK                         0xFF
+#define ERROR_COUNTER_SHIFT                        0
+
+//fields in PHY_PKT_GENERATOR_REG
+#define GEN_PKT_FROM_COPPER_INTERFACE              (0x2 << 5 | 0x1 << 3)
+#define PKT_BURST_MASK                             0xFF
+#define PKT_BURST_SHIFT                            8
+#define PKT_WITH_ERROR                             0x1
+#define PKT_PAYLOAD_MASK                           0x1
+#define PKT_PAYLOAD_SHIFT                          2
+#define PKT_LENGTH_MASK                            0x1
+#define PKT_LENGTH_SHIFT                           1
+
+//xcvr registers
+#define XCVR_CFG_CTRL_OFFSET                       0x14
+#define XCVR_CFG_DBG_OFFSET                        0x28
+#define XCVR_STA_OFFSET                            0x44
+#define XCVR_CFG_DBG2_OFFSET                       0x2C
+#define XCVR_STA_DBG_OFFSET                        0x68
+#define XCVR_STA_DBG2_OFFSET                       0x6C
+
+//fields in XCVR_CFG_DBG_OFFSET reg
+#define RXBUF_RESET_MASK                           0x1
+#define RXBUF_RESET_SHIFT                          5
+#define RXPCS_RESET_MASK                           0x1
+#define RXPCS_RESET_SHIFT                          11
+#define RXPMA_RESET_MASK                           0x1
+#define RXPMA_RESET_SHIFT                          12
+#define RXPOLARITY_MASK                            0x1
+#define RXPOLARITY_SHIFT                           13
+#define RXPRBSCNT_RESET_MASK                       0x1
+#define RXPRBSCNT_RESET_SHIFT                      14
+#define RXPRBSSEL_MASK                             0x7
+#define RXPRBSSEL_SHIFT                            15
+#define XCVR_LOOPBACK_MASK                         0x7
+#define XCVR_LOOPBACK_SHIFT                        2
+#define XCVR_LOOPBACK_NEAREND_PMA                  0x2
+#define TXPMA_RESET_MASK                           0x1
+#define TXPMA_RESET_SHIFT                          24
+#define TXPOLARITY_MASK                            0x1
+#define TXPOLARITY_SHIFT                           25
+#define TXPRBSFORCEERR_MASK                        0x1
+#define TXPRBSFORCEERR_SHIFT                       31
+
+#define XCVR_PRBS_7                                0x1
+#define XCVR_PRBS_15                               0x2
+#define XCVR_PRBS_23                               0x3
+#define XCVR_PRBS_31                               0x4
+#define RXPRBSSEL_MASK                             0x7
+#define RXPRBSSEL_SHIFT                            15
+
+#define XCVR_NEAR_END_PMA_LOOPBACK                 0x2
+#define XCVR_FAR_END_PMA_LOOPBACK                  0x4
+
+//fields in XCVR_CFG_DBG2_OFFSET reg
+#define TXPRBSSEL_MASK                             0x7
+#define TXPRBSSEL_SHIFT                            0
+
+//fields in XCVR_CFG_CTRL_OFFSET reg
+#define SW_RESET_SHIFT                             0
+#define SW_RESET_MASK                              0x1
+#define CFG_VECTOR_SHIFT                           1
+#define CFG_VECTOR_MASK                            0x1f
+#define SIG_DETECT_SHIFT                           6
+#define SIG_DETECT_MASK                            0x1
+#define AN_ADV_CONFIG_VECTOR_SHIFT                 7
+#define AN_ADV_CONFIG_VECTOR_MASK                  0xFFFF
+#define AN_RESTART_CONFIG_SHIFT                    23
+#define AN_RESTART_CONFIG_MASK                     0x1
+
+#define AN_ENABLE_SHIFT                            (4 + CFG_VECTOR_SHIFT)
+#define AN_ENABLE_MASK                             0x1
+#define AN_SPEED_SHIFT                             (10 + AN_ADV_CONFIG_VECTOR_SHIFT)
+#define AN_SPEED_MASK                              0x3
+#define AN_SPEED_1000M                             0x2
+#define AN_DUPLEX_SHIFT                            (12 + AN_ADV_CONFIG_VECTOR_SHIFT)
+#define AN_DUPLEX_MASK                             0x1
+#define AN_DUPLEX_FULL                             0x1
+#define AN_ACK_SHIFT                               (14 + AN_ADV_CONFIG_VECTOR_SHIFT)
+#define AN_ACK_MASK                                0x1
+#define AN_LINK_STATUS_SHIFT                       (15 + AN_ADV_CONFIG_VECTOR_SHIFT)
+#define AN_LINK_STATUS_MASK                        0x1
+
+//fields in XCVR_STA_OFFSET reg
+#define STATUS_VECTOR_SHIFT                        5
+#define STATUS_VECTOR_MASK                         0xFFFF
+#define LINK_STATUS_SHIFT                          (0 + STATUS_VECTOR_SHIFT)
+#define LINK_STATUS_MASK                           0x1
+#define LINK_SYNC_SHIFT                            (1 + STATUS_VECTOR_SHIFT)
+#define LINK_SYNC_MASK                             0x1
+#define SGMII_PHY_LINK_STATUS_SHIFT                (7 + STATUS_VECTOR_SHIFT)
+#define SGMII_PHY_LINK_STATUS_MASK                 0x1
+#define SPEED_SHIFT                                (10 + STATUS_VECTOR_SHIFT)
+#define SPEED_MASK                                 0x3
+#define DUPLEX_MODE_SHIFT                          (12 + STATUS_VECTOR_SHIFT)
+#define DUPLEX_MODE_MASK                           0x1
+
+//fields in XCVR_STA_DBG2_OFFSET
+#define RX_RESET_DONE_MASK                         0x1
+
+//PRBS cmd options
+#define PRBS_GEN_START                             1
+#define PRBS_GEN_STOP                              2
+#define PRBS_CHECKER_START                         3
+#define PRBS_CHECKER_STOP                          4
+#define PRBS_ERR_READ                              5
+#define PRBS_ERR_CLEAR                             6
+#define AN_ENABLE                                  7
+#define AN_DISABLE                                 8
+#define DUMP_STATUS_ONLY                           9
+#define CONFIG_PHY_SYS_INTF_LOOPBACK               10
+#define CONFIG_PHY_STUB_TEST                       11
+#define CONFIG_NEAREND_PMA_LOOPBACK                12
+#define CONFIG_FAREND_PMA_LOOPBACK                 13
+#define CONFIG_PHY_PKT_CHECKER                     14
+#define CONFIG_PHY_PKT_GENERATOR                   15
+#define PHY_PKT_CHECKER_READ_COUNTER               16
+#define AN_ON_PHY_COPPER_ENABLE                    17
+
+#define PRBS_DEV_XCVR                              0
+#define PRBS_DEV_PHY                               1
+
 #define ENABLE                          1
 #define DISABLE                         0
 
 #define DEBUG                           DISABLE
-#define DEBUG                           ENABLE
+//#define DEBUG                           ENABLE
 
 // 5MHz
 #define ELBA_SPI_CLK                    5000000
@@ -126,6 +370,85 @@ void disp_buf(char *buf, uint32_t numByte) {
     printf("\n");
 }
 
+// copied from xo3dcpld.c: fpga_cs0_read() and fpga_cs0_write()
+static int fpga_cs0_read(uint8_t addr)
+{
+    struct spi_ioc_transfer msg[2];
+    uint8_t txbuf[4];
+    uint8_t rxbuf[1];
+    int fd;
+
+    txbuf[0] = 0x0b;
+    txbuf[1] = addr;
+    txbuf[2] = 0x00;
+    rxbuf[0] = 0x00;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 3;
+    /* msg[0].speed_hz = 12000000; */
+    msg[0].speed_hz = 5000000;
+    msg[1].rx_buf = (intptr_t)rxbuf;
+    msg[1].len = 1;
+
+    fd = e_open(spidev_path0, O_RDWR, 0);
+    e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
+    close(fd);
+
+    return rxbuf[0];
+}
+
+static int fpga_cs0_write(uint8_t addr, uint8_t data)
+{
+    struct spi_ioc_transfer msg[1];
+    uint8_t txbuf[3];
+    int fd, status;
+
+    txbuf[0] = 0x02;
+    txbuf[1] = addr;
+    txbuf[2] = data;
+    txbuf[3] = 0x00;
+
+    memset(msg, 0, sizeof (msg));
+    msg[0].tx_buf = (intptr_t)txbuf;
+    msg[0].len = 4;
+    /* msg[0].speed_hz = 12000000; */
+    msg[0].speed_hz = 5000000;
+
+    fd = e_open(spidev_path0, O_RDWR, 0);
+    e_ioctl(fd, SPI_IOC_MESSAGE(1), msg);
+    close(fd);
+    return 0;
+}
+
+// copied from xo3dcpld.c: mdio_rd() and mdio_wr()
+static int mdio_rd(uint8_t addr, uint16_t* data, uint8_t phy)
+{
+	uint8_t data_lo, data_hi;
+	fpga_cs0_write(MDIO_CRTL_HI_REG, addr);
+	fpga_cs0_write(MDIO_CRTL_LO_REG, (phy << 3) | MDIO_RD_ENA | MDIO_ACC_ENA);
+	usleep(1000);
+	fpga_cs0_write(MDIO_CRTL_LO_REG, 0);
+	usleep(1000);
+	data_lo = fpga_cs0_read(MDIO_DATA_LO_REG);
+	data_hi = fpga_cs0_read(MDIO_DATA_HI_REG);
+	*data = (data_hi << 8) | data_lo;
+
+	return 0;
+}
+
+static int mdio_wr(uint8_t addr, uint16_t data, uint8_t phy)
+{
+	fpga_cs0_write(MDIO_CRTL_HI_REG, addr);
+	fpga_cs0_write(MDIO_DATA_LO_REG, (data & 0xFF));
+	fpga_cs0_write(MDIO_DATA_HI_REG, ((data >> 8) & 0xFF));
+	fpga_cs0_write(MDIO_CRTL_LO_REG, (phy << 3) | MDIO_WR_ENA | MDIO_ACC_ENA);
+	usleep(1000);
+	fpga_cs0_write(MDIO_CRTL_LO_REG, 0);
+
+	return 0;
+}
+
 // This function sends a sync command to PS-48 interface.
 
 static int ps48_sync(uint32_t fd)
@@ -159,7 +482,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
 {
     struct spi_ioc_transfer msg[1];
     uint8_t txbuf[6], val;
-
+    //aid=0, bid=1, page 0 addr=0x2000000 (flash), page 1 addr=0x1001000 (switch)
     if(pageConfig == FLASH_AND_SWITCH_PAGE_CONFIG)
     {
         // Page 0: Flash
@@ -171,6 +494,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
         txbuf[4] = 0x10;
         txbuf[5] = 0x01;
     }
+    //aid=3, bid=2, page 3 addr=0x0 (NCSI), page 2 addr=0x1005000 (BMC)
     else if(pageConfig == NCSI_AND_BMC_PAGE_CONFIG)
     {
         // Page 2: MAC Reg
@@ -182,6 +506,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
         txbuf[4] = 0x10;
         txbuf[5] = 0x05;
     }
+    //aid=2, bid=3, page 3 addr=0x1008000 (serdes xcvr), page 2 addr=0x100c000 (pc)
     else if(pageConfig == PC_AND_SERDES_PAGE_CONFIG)
     {
         // Page 2: PC/iCAPE
@@ -215,6 +540,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
 
 static int ps48_init(uint32_t fd) {
     ps48_sync(fd);
+    // 4 pages in total
     ps48_page_config(fd, FLASH_AND_SWITCH_PAGE_CONFIG);
     ps48_page_config(fd, PC_AND_SERDES_PAGE_CONFIG);
 
@@ -317,8 +643,8 @@ static int ps48_write(uint32_t fd, uint32_t page_id, uint32_t addr, uint32_t dat
     temp = (uint8_t *)(&data);
     memset(rxbuf, 0, 18);
 
-    txbuf[0] = 0x40 | ((uint8_t)(page_id & 3));
-    txbuf[1] = addr;
+    txbuf[0] = 0x40 | ((page_id & 0x3) << 4) | ((addr & 0xF00) >> 8);//high 4 bits of addr
+    txbuf[1] = addr & 0xFF;//lower 8 bits of addr
     txbuf[5] = *temp++;
     txbuf[4] = *temp++;
     txbuf[3] = *temp++;
@@ -1561,6 +1887,16 @@ static void usage_full (void) {
         "       PS48 write pipeline test with specified number of bytes\n"
         "   -frp addr numBytes\n"
         "       Flash read pipeline test: read certain number of bytes at specified flash address\n"
+        "   -xcvrrd addr\n"
+        "       Read transceiver register\n"
+        "   -xcvrwr addr value\n"
+        "       Write transceiver register\n"
+        "   -mdiord addr\n"
+        "       Read PHY register\n"
+        "   -mdiowr addr value\n"
+        "       Write PHY register\n"
+        "   -serdes cmd_num [options]\n"
+        "       Debugging commands for the transceiver<->PHY interface\n"
         "";
 
     printf("%s", usage_ptr);
@@ -1582,6 +1918,696 @@ void util_ps48_read(char* id, uint32_t addr) {
         ps48_page_config(fd, PC_AND_SERDES_PAGE_CONFIG);
         page = 2;
     } 
+}
+
+static uint32_t ps48_xcvr_read(uint32_t fd, uint32_t offset)
+{
+    uint32_t ret;
+    uint32_t addr_f;
+    ret = (uint32_t)ps48_read(fd, PAGE_ID_SERDES, offset);
+    if (ret == -1) {
+        printf("ps48_read() failed\n");
+        return ret;
+    }
+    return ret;
+}
+
+static int ps48_xcvr_write(uint32_t fd, uint32_t addr, uint32_t data)
+{
+    int ret;
+    ret = ps48_write(fd, PAGE_ID_SERDES, addr, data);
+    if (ret == -1) {
+        printf("ps48_write() failed\n");
+        return ret;
+    }
+    return ret;
+
+    //ret = ps48_noop(fd);
+    //if (ret == -1) {
+    //    return ret;
+    //}
+
+    //return ps48_resp(fd);
+}
+
+void decode_xcvr_cfg_ctrl_reg(uint32_t data)
+{
+    printf("xcvr cfg ctrl reg: 0x%x\n", data);
+    printf("    sw_reset: 0x%x\n", (data >> SW_RESET_SHIFT) & SW_RESET_MASK);
+    printf("    cfg_vector: 0x%x\n", (data >> CFG_VECTOR_SHIFT) & CFG_VECTOR_MASK);
+    printf("        an_enable: 0x%x\n", (data >> AN_ENABLE_SHIFT) & AN_ENABLE_MASK);
+    printf("    sig_detect: 0x%x\n", (data >> SIG_DETECT_SHIFT) & SIG_DETECT_MASK);
+    printf("    an_adv_config_vector: 0x%x\n", (data >> AN_ADV_CONFIG_VECTOR_SHIFT) & AN_ADV_CONFIG_VECTOR_MASK);
+    printf("        speed: 0x%x\n", (data >> AN_SPEED_SHIFT) & AN_SPEED_MASK);
+    printf("        duplex: 0x%x\n", (data >> AN_DUPLEX_SHIFT) & AN_DUPLEX_MASK);
+    printf("        ack: 0x%x\n", (data >> AN_ACK_SHIFT) & AN_ACK_MASK);
+    printf("        link status: 0x%x\n", (data >> AN_LINK_STATUS_SHIFT) & AN_LINK_STATUS_MASK);
+    printf("    an_restart_config: 0x%x\n", (data >> AN_RESTART_CONFIG_SHIFT) & AN_RESTART_CONFIG_MASK);
+}
+void decode_xcvr_sta_reg(uint32_t data)
+{
+    printf("xcvr sta reg: 0x%x\n", data);
+    printf("    status_vector: 0x%x\n", (data >> STATUS_VECTOR_SHIFT) & STATUS_VECTOR_MASK);
+    printf("        link status: 0x%x\n", (data >> LINK_STATUS_SHIFT) & LINK_STATUS_MASK);
+    printf("        link sync: 0x%x\n", (data >> LINK_SYNC_SHIFT) & LINK_SYNC_MASK);
+    printf("        SGMII phy link status: 0x%x\n", (data >> SGMII_PHY_LINK_STATUS_SHIFT) & SGMII_PHY_LINK_STATUS_MASK);
+    printf("        speed: 0x%x\n", (data >> SPEED_SHIFT) & SPEED_MASK);
+    printf("        duplex: 0x%x\n", (data >> DUPLEX_MODE_SHIFT) & DUPLEX_MODE_MASK);
+}
+
+void decode_phy_fiber_ctrl_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_FIBER_CTRL_REG, &data, 0x0);
+    printf("PHY fiber ctrl reg (%d): 0x%x\n", PHY_FIBER_CTRL_REG, data);
+    printf("    speed select: 0x%x\n", (data >> (PHY_SPEED_SELECT_MSB_SHIFT - 1) & 0x2)  |
+     ((data >> PHY_SPEED_SELECT_LSB_SHIFT) & 0x1));
+    printf("    AN enable: 0x%x\n", (data >> PHY_AN_ENABLE_SHIFT) & PHY_AN_ENABLE_MASK);
+    printf("    duplex mode: 0x%x\n", (data >> PHY_DUPLEX_SHIFT) & PHY_DUPLEX_MASK);
+}
+
+void decode_phy_fiber_status_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_FIBER_STATUS_REG, &data, 0x0);
+    printf("PHY fiber status reg (%d): 0x%x\n", PHY_FIBER_STATUS_REG, data);
+    printf("    AN complete: 0x%x\n", (data >> PHY_AN_COMPLETE_SHIFT) & PHY_AN_COMPLETE_MASK);
+    printf("    link status: 0x%x\n", (data >> PHY_LINK_STATUS_SHIFT) & PHY_LINK_STATUS_MASK);
+}
+
+void decode_phy_an_adv_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_AN_ADV_REG, &data, 0x0);
+    printf("PHY AN adv reg (%d): 0x%x\n", PHY_AN_ADV_REG, data);
+    printf("    speed: 0x%x\n", (data >> PHY_AN_ADV_SPEED_SHIFT) & PHY_AN_ADV_SPEED_MASK);
+    printf("    duplex: 0x%x\n", (data >> PHY_AN_ADV_DUPLEX_SHIFT) & PHY_AN_ADV_DUPLEX_MASK);
+}
+
+void decode_phy_link_partner_ability_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_LINK_PARTNER_ABILITY_REG, &data, 0x0);
+    printf("PHY link partner ability reg (%d): 0x%x\n", PHY_LINK_PARTNER_ABILITY_REG, data);
+}
+
+void decode_phy_an_expansion_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_AN_EXPANSION_REG, &data, 0x0);
+    printf("PHY AN expansion reg (%d): 0x%x\n", PHY_AN_EXPANSION_REG, data);
+}
+
+void decode_phy_specific_status_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_SPECIFIC_STATUS_REG, &data, 0x0);
+    printf("PHY specific status reg (%d): 0x%x\n", PHY_SPECIFIC_STATUS_REG, data);
+    printf("    speed: 0x%x\n", (data >> PHY_SPECIFIC_SPEED_SHIFT) & PHY_SPECIFIC_SPEED_MASK);
+    printf("    duplex: 0x%x\n", (data >> PHY_SPECIFIC_DUPLEX_SHIFT) & PHY_SPECIFIC_DUPLEX_MASK);
+    printf("    speed & duplex resolved: 0x%x\n", (data >> PHY_SPECIFIC_SPEED_DUPLEX_RESOLVED_SHIFT) & PHY_SPECIFIC_SPEED_DUPLEX_RESOLVED_MASK);
+    printf("    link (real time): 0x%x\n", (data >> PHY_SPECIFIC_LINK_RT_SHIFT) & PHY_SPECIFIC_LINK_RT_MASK);
+    printf("    remote fault received: 0x%x\n", (data >> PHY_SPECIFIC_RMT_FAULT_RCVD_SHIFT) & PHY_SPECIFIC_RMT_FAULT_RCVD_MASK);
+    printf("    sync status: 0x%x\n", (data >> PHY_SPECIFIC_SYNC_STATUS_SHIFT) & PHY_SPECIFIC_SYNC_STATUS_MASK);
+}
+
+void decode_phy_specific_ctrl2_reg(void)
+{
+    uint16_t data;
+    mdio_rd(PHY_SPECIFIC_CTRL2_REG, &data, 0x0);
+    printf("PHY specific control 2 reg (%d): 0x%x\n", PHY_SPECIFIC_CTRL2_REG, data);
+    printf("    AN bypass status: 0x%x\n", (data >> PHY_AN_BYPASS_STATUS_SHIFT) & PHY_AN_BYPASS_STATUS_MASK);
+}
+
+static void dump_status_on_xcrv(uint32_t fd)
+{
+    uint32_t result;
+    uint16_t data;
+    printf("read status on transceiver\n");
+    result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+    decode_xcvr_cfg_ctrl_reg(result);
+    result = ps48_xcvr_read(fd, XCVR_STA_OFFSET);
+    decode_xcvr_sta_reg(result);
+}
+
+static void dump_status_on_phy(void)
+{
+    mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+    decode_phy_fiber_ctrl_reg();
+    decode_phy_fiber_status_reg();
+    decode_phy_an_adv_reg();
+    decode_phy_link_partner_ability_reg();
+    decode_phy_an_expansion_reg();
+    decode_phy_specific_status_reg();
+    decode_phy_specific_ctrl2_reg();
+}
+
+static uint8_t prbs_pattern_mapping(uint32_t prbs_pattern_sel, uint32_t dev)
+{
+    uint8_t pattern = 0;
+    switch (prbs_pattern_sel) {
+        case 7:
+            if (dev == PRBS_DEV_XCVR) {
+                pattern = XCVR_PRBS_7;
+            } else {
+                pattern = PHY_PRBS_PATTERN_7;
+            }
+            break;
+        case 15:
+            if (dev == PRBS_DEV_XCVR) {
+                pattern = XCVR_PRBS_15;
+            } else {
+                printf("PRBS 15 not supported on PHY\n");
+            }
+            break;
+        case 23:
+            if (dev == PRBS_DEV_XCVR) {
+                pattern = XCVR_PRBS_23;
+            } else {
+                pattern = PHY_PRBS_PATTERN_23;
+            }
+            break;
+        case 31:
+            if (dev == PRBS_DEV_XCVR) {
+                pattern = XCVR_PRBS_31;
+            } else {
+                pattern = PHY_PRBS_PATTERN_31;
+            }
+            break;
+        default:
+            printf("Unsupported PRBS pattern %d\n", prbs_pattern_sel);
+            break;
+    }
+    return pattern;
+}
+
+static void serdes_test_cmd(uint32_t fd, uint32_t command, SERDES_TEST_OPTIONS *p_options)
+{
+    uint32_t result;
+    uint16_t data;
+    uint8_t pattern;
+    switch (command) {
+        case CONFIG_PHY_PKT_CHECKER://opt #0: enable/disable
+            if (p_options->size != 1) {
+                usage_full();
+                return;
+            }
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_18, 0x0);
+            //clear counters
+            mdio_wr(PHY_CHECKER_CTRL_REG, 0x1 << CRC_COUNTER_RESET_SHIFT, 0x0);
+#if (DEBUG == ENABLE)
+            mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
+            printf("After clear, pkt counter: 0x%x, CRC error counter: 0x%x\n",
+                   (data >> PACKET_COUNTER_SHIFT) & PACKET_COUNTER_MASK, data & ERROR_COUNTER_MASK);
+#endif
+            if (p_options->p_opt[0] == 1) {
+                printf("Enable PHY packet checker\n");
+                mdio_wr(PHY_CHECKER_CTRL_REG, CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
+            } else {
+                printf("Disable PHY packet checker\n");
+                mdio_wr(PHY_CHECKER_CTRL_REG, 0, 0x0);
+            }
+            //read counter
+            mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
+            printf("After checker enable/disable, pkt counter: %d, CRC error counter: %d\n",
+                (data >> PACKET_COUNTER_SHIFT) & PACKET_COUNTER_MASK, data & ERROR_COUNTER_MASK);
+            break;
+        case CONFIG_PHY_PKT_GENERATOR://opt #0: enable/disable, opt #1: burst, opt #2: payload, opt #3: length, opt #4: error
+            if (p_options->size == 0) {
+                usage_full();
+                return;
+            }
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_18, 0x0);
+            if (p_options->p_opt[0] == 1) {//enable
+                if (p_options->size == 5) {
+                    printf("Enable PHY packet generator\n");
+                    data = GEN_PKT_FROM_COPPER_INTERFACE |
+                            ((p_options->p_opt[1] & PKT_BURST_MASK) << PKT_BURST_SHIFT) |
+                            ((p_options->p_opt[2] & PKT_PAYLOAD_MASK) << PKT_PAYLOAD_SHIFT) |
+                            ((p_options->p_opt[3] & PKT_LENGTH_MASK) << PKT_LENGTH_SHIFT) |
+                            (p_options->p_opt[4] & PKT_WITH_ERROR);
+                } else {
+                    usage_full();
+                    return;
+                }
+            } else {//disable
+                printf("Disable PHY packet generator\n");
+                data = 0;
+            }
+            mdio_wr(PHY_PKT_GENERATOR_REG, data, 0x0);
+            break;
+        case PHY_PKT_CHECKER_READ_COUNTER://no additional options
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_18, 0x0);
+            mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
+            printf("pkt counter: %d, CRC error counter: %d\n",
+                   (data >> PACKET_COUNTER_SHIFT) & PACKET_COUNTER_MASK, data & ERROR_COUNTER_MASK);
+            break;
+        case CONFIG_PHY_SYS_INTF_LOOPBACK://opt #0: enable/disable
+            if (p_options->size != 1) {
+                usage_full();
+                return;
+            }
+            /*  mdio_wr(PHY_PAGE_REG, 0x1, 0x0);// set page to 1
+            mdio_rd(0, &data, 0x0);
+            data |= 0x1 << 14;
+            mdio_wr(0, data, 0x0);*/
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_0, 0x0);
+            mdio_rd(PHY_COPPER_CTRL_REG, &data, 0x0);
+            if (p_options->p_opt[0] == 1) {
+                printf("Enable PHY system interface loopback\n");
+                data |= 0x1 << PHY_SYS_INTF_LOOPBACK_SHIFT;
+            } else {
+                printf("Disable PHY system interface loopback\n");
+                data &= ~(0x1 << PHY_SYS_INTF_LOOPBACK_SHIFT);
+            }
+            mdio_wr(PHY_COPPER_CTRL_REG, data, 0x0);
+            break;
+        case CONFIG_PHY_STUB_TEST://opt #0: enable/disable
+            if (p_options->size != 1) {
+                usage_full();
+                return;
+            }
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_6, 0x0);
+            mdio_rd(PHY_COPPER_CHECKER_CTRL_REG, &data, 0x0);
+            if (p_options->p_opt[0] == 1) {
+                printf("Enable PHY external loopback\n");
+                data |= 0x1 << PHY_ENABLE_STUB_TEST_SHIFT;
+            } else {
+                printf("Disable PHY external loopback\n");
+                data &= ~(0x1 << PHY_ENABLE_STUB_TEST_SHIFT);
+            }
+            mdio_wr(PHY_COPPER_CHECKER_CTRL_REG, data, 0x0);
+          /*  mdio_wr(PHY_PAGE_REG, 18, 0x0);
+            mdio_rd(20, &data, 0x0);
+            data |= 0x1 << 15;
+            mdio_wr(20, data, 0x0);
+            usleep(1000);
+            mdio_rd(20, &data, 0x0);
+            printf("register 20: 0x%x\n", data);*/
+            break;
+        case DUMP_STATUS_ONLY://no additional options
+            /*ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, 0x6c00c1);
+            mdio_rd(PHY_FIBER_CTRL_REG, &data, 0x0);
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, 0x6c00c0);*/
+            dump_status_on_xcrv(fd);
+            dump_status_on_phy();
+            break;
+        case AN_ON_PHY_COPPER_ENABLE://no additional options
+            printf("\nEnable Auto-Negotiation on PHY copper\n");
+
+            printf("step 1: set speed and duplex, enable AN\n");
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_0, 0x0);
+            mdio_rd(PHY_COPPER_CTRL_REG, &data, 0x0);
+            data &= ~(PHY_DUPLEX_MASK << PHY_DUPLEX_SHIFT);
+            data &= ~((0x1 << PHY_SPEED_SELECT_LSB_SHIFT) | (0x1 << PHY_SPEED_SELECT_MSB_SHIFT));
+            data |= 0x1 << PHY_SPEED_SELECT_MSB_SHIFT;//1000M
+            data |= PHY_DUPLEX_FULL << PHY_DUPLEX_SHIFT;
+            data |= PHY_AN_ENABLE_MASK << PHY_AN_ENABLE_SHIFT;
+            mdio_wr(PHY_COPPER_CTRL_REG, data, 0x0);
+
+            printf("step 2: do SW reset to force AN\n");
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            data |= PHY_AN_RESTART_MASK << PHY_AN_RESTART_SHIFT;//not necessary
+            mdio_wr(PHY_COPPER_CTRL_REG, data, 0x0);
+
+            printf("step 3: restart xcvr AN\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result |= AN_RESTART_CONFIG_MASK << AN_RESTART_CONFIG_SHIFT;
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 4: sleep 1s and then dump status on both sides\n");
+            sleep(1);
+            dump_status_on_xcrv(fd);
+            dump_status_on_phy();
+            break;
+        case AN_ENABLE://no additional options
+            printf("\nEnable Auto-Negotiation on xcvr\n");
+
+            printf("step 1: put xcvr in SW reset\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result |= SW_RESET_MASK << SW_RESET_SHIFT;
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 2: set speed and duplex, enable AN\n");
+            result &= ~((AN_SPEED_MASK << AN_SPEED_SHIFT) | (AN_DUPLEX_MASK << AN_DUPLEX_SHIFT));
+            result |= (AN_SPEED_1000M << AN_SPEED_SHIFT) | (AN_DUPLEX_FULL << AN_DUPLEX_SHIFT);
+            result |= AN_ENABLE_MASK << AN_ENABLE_SHIFT;
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 3: get xcvr out of SW reset\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result &= ~(SW_RESET_MASK << SW_RESET_SHIFT);
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 4: dump the xcvr cfg_ctrl register\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            decode_xcvr_cfg_ctrl_reg(result);
+
+            printf("\nEnable AN on PHY\n");
+
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+            mdio_rd(PHY_SPECIFIC_CTRL_REG, &data, 0x0);
+            printf("step 5: read PHY mode: 0x%x(0x2 means SGMII System mode)\n", (data >> PHY_SPECIFIC_PHY_MODE_SHIFT) & PHY_SPECIFIC_PHY_MODE_MASK);
+            /*printf("step x: disable AN bypass\n");
+            mdio_rd(PHY_SPECIFIC_CTRL2_REG, &data, 0x0);
+            data &= ~(PHY_AN_BYPASS_MASK << PHY_AN_BYPASS_SHIFT);
+            mdio_wr(PHY_SPECIFIC_CTRL2_REG, data, 0x0);*/
+
+            printf("step 6: set speed and duplex, enable AN on page 0\n");
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_0, 0x0);
+            mdio_rd(PHY_COPPER_CTRL_REG, &data, 0x0);
+            data &= ~(PHY_DUPLEX_MASK << PHY_DUPLEX_SHIFT);
+            data &= ~((0x1 << PHY_SPEED_SELECT_LSB_SHIFT) | (0x1 << PHY_SPEED_SELECT_MSB_SHIFT));
+            data |= 0x1 << PHY_SPEED_SELECT_MSB_SHIFT;//1000M
+            data |= PHY_DUPLEX_FULL << PHY_DUPLEX_SHIFT;
+            data |= PHY_AN_ENABLE_MASK << PHY_AN_ENABLE_SHIFT;
+            mdio_wr(PHY_COPPER_CTRL_REG, data, 0x0);
+
+            printf("step 7: do SW reset to force AN on page 0\n");
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            data |= PHY_AN_RESTART_MASK << PHY_AN_RESTART_SHIFT;//not necessary
+            mdio_wr(PHY_COPPER_CTRL_REG, data, 0x0);
+
+            printf("step 8: set speed and duplex, enable AN on page 1\n");
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+            mdio_rd(PHY_FIBER_CTRL_REG, &data, 0x0);
+            data &= ~(PHY_DUPLEX_MASK << PHY_DUPLEX_SHIFT);
+            data &= ~((0x1 << PHY_SPEED_SELECT_LSB_SHIFT) | (0x1 << PHY_SPEED_SELECT_MSB_SHIFT));
+            data |= 0x1 << PHY_SPEED_SELECT_MSB_SHIFT;//1000M
+            data |= PHY_DUPLEX_FULL << PHY_DUPLEX_SHIFT;
+            data |= PHY_AN_ENABLE_MASK << PHY_AN_ENABLE_SHIFT;
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+
+            printf("step 9: do SW reset to force AN on page 1\n");
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            data |= PHY_AN_RESTART_MASK << PHY_AN_RESTART_SHIFT;//not necessary
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+            //sleep(1);
+
+            printf("step 10: restart xcvr AN\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result |= AN_RESTART_CONFIG_MASK << AN_RESTART_CONFIG_SHIFT;
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            /*printf("step 9: dump the xcvr cfg_ctrl register\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            decode_xcvr_cfg_ctrl_reg(result);*/
+
+            /*mdio_rd(PHY_FIBER_CTRL_REG, &data, 0x0);
+                        data |= 0x1 << 9;
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);*/
+
+            printf("step 11: sleep 1s and then dump status on both sides\n");
+            sleep(1);
+            dump_status_on_xcrv(fd);
+            dump_status_on_phy();
+            break;
+        case AN_DISABLE://no additional options
+            printf("\nDisable AN on xcvr\n");
+
+            printf("step 1: put xcvr in SW reset\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result |= SW_RESET_MASK << SW_RESET_SHIFT;
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 2: clear AN enable\n");
+            result &= ~(AN_ENABLE_MASK << AN_ENABLE_SHIFT);
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 3: set speed and duplex\n");
+            result &= ~((AN_SPEED_MASK << AN_SPEED_SHIFT) | (AN_DUPLEX_MASK << AN_DUPLEX_SHIFT));
+            result |= (AN_SPEED_1000M << AN_SPEED_SHIFT) | (AN_DUPLEX_FULL << AN_DUPLEX_SHIFT);
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 4: get xcvr out of SW reset\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result &= ~(SW_RESET_MASK << SW_RESET_SHIFT);
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+
+            printf("step 5: dump the xcvr cfg_ctrl register\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            decode_xcvr_cfg_ctrl_reg(result);
+
+            printf("\nDisable AN on PHY\n");
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+            mdio_rd(PHY_SPECIFIC_CTRL_REG, &data, 0x0);
+            printf("step 6: PHY mode: 0x%x(0x2 means SGMII System mode)\n", (data >> PHY_SPECIFIC_PHY_MODE_SHIFT) & PHY_SPECIFIC_PHY_MODE_MASK);
+            //mdio_rd(PHY_FIBER_CTRL_REG, &data, 0x0);
+            //decode_phy_fiber_ctrl_reg(data);
+
+            printf("step 7: clear AN enable\n");
+            data  &= ~(PHY_AN_ENABLE_MASK << PHY_AN_ENABLE_SHIFT);
+            //mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+            /*printf("step 8: do SW reset\n");
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+            printf("step 9: sleep 1s\n");
+            sleep(1);*/
+            printf("step 8: set speed and duplex\n");
+            data &= ~(PHY_DUPLEX_MASK << PHY_DUPLEX_SHIFT);
+            data &= ~((0x1 << PHY_SPEED_SELECT_LSB_SHIFT) | (0x1 << PHY_SPEED_SELECT_MSB_SHIFT));
+            data |= 0x1 << PHY_SPEED_SELECT_MSB_SHIFT;//1000M
+            data |= PHY_DUPLEX_FULL << PHY_DUPLEX_SHIFT;
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+
+            printf("step 9: do SW reset\n");
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            mdio_wr(PHY_FIBER_CTRL_REG, data, 0x0);
+
+            printf("step 10: sleep 1s and then dump status on both sides\n");
+            sleep(1);
+            dump_status_on_xcrv(fd);
+            dump_status_on_phy();
+            break;
+        case CONFIG_NEAREND_PMA_LOOPBACK://opt #0: enable/disable
+            if (p_options->size != 1) {
+                usage_full();
+                return;
+            }
+            printf("step 1: get xcvr out of SW reset\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_CTRL_OFFSET);
+            result &= ~(SW_RESET_MASK << SW_RESET_SHIFT);
+            ps48_xcvr_write(fd, XCVR_CFG_CTRL_OFFSET, result);
+            printf("before setting PMA loopback:\n");
+            result = ps48_xcvr_read(fd, XCVR_STA_OFFSET);
+            printf("XCVR_STA_OFFSET: 0x%x\n", result);
+            result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+            printf("XCVR_CFG_DBG_OFFSET: 0x%x\n", result);
+            if (p_options->p_opt[0] == 1) {
+                printf("\nEnable new-end PMA loopback on xcvr\n");
+                result &= ~(XCVR_LOOPBACK_MASK << XCVR_LOOPBACK_SHIFT);
+                result |= XCVR_NEAR_END_PMA_LOOPBACK << XCVR_LOOPBACK_SHIFT;
+            } else {
+                printf("\nDisable new-end PMA loopback on xcvr\n");
+                result &= ~(XCVR_LOOPBACK_MASK << XCVR_LOOPBACK_SHIFT);
+            }
+            ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+            //reset
+            result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+            printf("XCVR_CFG_DBG_OFFSET: 0x%x\n", result);
+            //result |= RXBUF_RESET_MASK << RXBUF_RESET_SHIFT;
+            //result |= RXPCS_RESET_MASK << RXPCS_RESET_SHIFT;
+            result |= RXPMA_RESET_MASK << RXPMA_RESET_SHIFT;
+            //result |= RXPRBSCNT_RESET_MASK << RXPRBSCNT_RESET_SHIFT;
+            ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+            result = ps48_xcvr_read(fd, XCVR_STA_DBG2_OFFSET);
+            printf("XCVR_STA_DBG2_OFFSET before reset: 0x%x\n", result);
+            usleep(1000);
+            result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+            result &= ~(RXPMA_RESET_MASK << RXPMA_RESET_SHIFT);
+            ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+
+            int retry;
+            while(retry < 100) {
+                result = ps48_xcvr_read(fd, XCVR_STA_DBG2_OFFSET);
+                if ( (result & RX_RESET_DONE_MASK) == RX_RESET_DONE_MASK) {
+                    printf("XCVR_STA_DBG2_OFFSET after reset: 0x%x\n", result);
+                    break;
+                }
+                usleep(1000);
+                retry++;
+            }
+
+            if (retry == 100) {
+                printf("Timeout waiting for RX_RESET_DONE to be set after RX PMA reset!\n");
+            }
+#if (DEBUG == ENABLE)
+            printf("after setting PMA loopback:\n");
+            result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+            printf("CFG_DEBUG: 0x%x\n", result);
+            result = ps48_xcvr_read(fd, XCVR_STA_OFFSET);
+            printf("STA: 0x%x\n", result);
+#endif
+            break;
+        case PRBS_GEN_START://opt #0: 0 for xcvr, 1 for PHY, opt #1: PRBS pattern, opt #2: tx polarity, opt #3: force error
+            if (p_options->size < 3) {
+                usage_full();
+                return;
+            }
+            pattern = prbs_pattern_mapping(p_options->p_opt[1], p_options->p_opt[0]);
+            printf("Starting PRBS generator on ");
+
+            if (p_options->p_opt[0] == PRBS_DEV_XCVR) {
+                printf("transceiver\n");
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+                if (p_options->p_opt[2] == 1) {
+                    result |= TXPOLARITY_MASK << TXPOLARITY_SHIFT;
+                } else {
+                    result &= ~(TXPOLARITY_MASK << TXPOLARITY_SHIFT);
+                }
+                if (p_options->p_opt[3] == 1) {
+                    result |= TXPRBSFORCEERR_MASK << TXPRBSFORCEERR_SHIFT;
+                } else {
+                    result &= ~(TXPRBSFORCEERR_MASK << TXPRBSFORCEERR_SHIFT);
+                }
+                ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG2_OFFSET);
+                result &= ~(TXPRBSSEL_MASK << TXPRBSSEL_SHIFT);
+                result |= (pattern & TXPRBSSEL_MASK) << TXPRBSSEL_SHIFT;
+                ps48_xcvr_write(fd, XCVR_CFG_DBG2_OFFSET, result);
+#if (DEBUG == ENABLE)
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG2_OFFSET);
+                printf("XCVR_CFG_DBG2_OFFSET: 0x%x\n", result);
+#endif
+            } else {
+                printf("PHY\n");
+                mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+                data = (pattern & PHY_PRBS_PATTERN_MASK) << PHY_PRBS_PATTERN_SHIFT;
+                if (p_options->p_opt[2] == 1) {
+                    data |= PHY_PRBS_TX_POLARITY_MASK << PHY_PRBS_TX_POLARITY_SHIFT;
+                } else {
+                    data &= ~(PHY_PRBS_TX_POLARITY_MASK << PHY_PRBS_TX_POLARITY_SHIFT);
+                }
+                data |= PHY_PRBS_GENERATOR_EN;
+                mdio_wr(PHY_PRBS_CTRL_REG, data, 0x0);
+            }
+            break;
+        case PRBS_GEN_STOP://opt #0: 0 for xcvr, 1 for PHY
+            if (p_options->size != 1) {
+                usage_full();
+                break;
+            }
+            printf("Stopping PRBS generator on ");
+            if (p_options->p_opt[0] == PRBS_DEV_XCVR) {
+                printf("transceiver\n");
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG2_OFFSET);
+                result &= ~(TXPRBSSEL_MASK << TXPRBSSEL_SHIFT);
+                ps48_xcvr_write(fd, XCVR_CFG_DBG2_OFFSET, 0);
+            } else {
+                printf("PHY\n");
+                mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+                mdio_wr(PHY_PRBS_CTRL_REG, 0x0, 0x0);
+            }
+            break;
+        case PRBS_CHECKER_START:
+        //opt #0: 0 for xcvr, 1 for PHY, opt #1: PRBS pattern, opt #2: rx polarity, opt #3: start counting until PRBS locks
+            if (p_options->size < 3) {
+                usage_full();
+                break;
+            }
+            pattern = prbs_pattern_mapping(p_options->p_opt[1], p_options->p_opt[0]);
+            printf("Starting PRBS checker on ");
+            if (p_options->p_opt[0] == PRBS_DEV_XCVR) {
+                printf("transceiver\n");
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+                result &= ~(RXPRBSSEL_MASK << RXPRBSSEL_SHIFT);
+                result |= (pattern & RXPRBSSEL_MASK) << RXPRBSSEL_SHIFT;
+                if (p_options->p_opt[2] == 1) {
+                    result |= RXPOLARITY_MASK << RXPOLARITY_SHIFT;
+                } else {
+                    result &= ~(RXPOLARITY_MASK << RXPOLARITY_SHIFT);
+                }
+                ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+            } else {
+                printf("PHY\n");
+                mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+                data = (pattern & PHY_PRBS_PATTERN_MASK) << PHY_PRBS_PATTERN_SHIFT;
+                if (p_options->p_opt[2] == 1) {
+                    data |= PHY_PRBS_RX_POLARITY_MASK << PHY_PRBS_RX_POLARITY_SHIFT;
+                } else {
+                    data &= ~(PHY_PRBS_RX_POLARITY_MASK << PHY_PRBS_RX_POLARITY_SHIFT);
+                }
+                if (p_options->p_opt[3] == 1) {
+                    data |= PHY_PRBS_LOCK_MASK << PHY_PRBS_LOCK_SHIFT;
+                } else {
+                    data &= ~(PHY_PRBS_LOCK_MASK << PHY_PRBS_LOCK_SHIFT);
+                }
+                data |= PHY_PRBS_CHECKER_EN;
+                mdio_wr(PHY_PRBS_CTRL_REG, data, 0x0);
+#if (DEBUG == ENABLE)
+                mdio_rd(PHY_PRBS_CTRL_REG, &data, 0x0);
+                printf("PHY_PRBS_CTRL_REG: 0x%x\n", data);
+#endif
+            }
+            break;
+        case PRBS_CHECKER_STOP://opt #0: 0 for xcvr, 1 for PHY
+            if (p_options->size != 1) {
+                usage_full();
+                break;
+            }
+            printf("Stopping PRBS checker on ");
+            if (p_options->p_opt[0] == PRBS_DEV_XCVR) {
+                printf("transceiver\n");
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+                result &= ~(RXPRBSSEL_MASK << RXPRBSSEL_SHIFT);//0xFFFC7FFF;
+                ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+            } else {
+                printf("PHY\n");
+                mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+                mdio_wr(PHY_PRBS_CTRL_REG, 0x0, 0x0);
+            }
+            break;
+        case PRBS_ERR_READ://opt #0: 0 for xcvr, 1 for PHY
+            if (p_options->size != 1) {
+                usage_full();
+                break;
+            }
+            printf("Reading PRBS error on ");
+            if (p_options->p_opt[0] == PRBS_DEV_XCVR) {
+                printf("transceiver\n");
+                result = ps48_xcvr_read(fd, XCVR_STA_DBG_OFFSET);
+                printf("PRBS error bit (31) on transceiver: 0x%x\n", result);
+            } else {
+                printf("PHY\n");
+                mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+                uint16_t data_lo, data_hi;
+                mdio_rd(PHY_PRBS_ERROR_COUNTER_LSB_REG, &data_lo, 0x0);
+                mdio_rd(PHY_PRBS_ERROR_COUNTER_MSB_REG, &data_hi, 0x0);
+                printf("MSB: 0x%x, LSB: 0x%x\n", data_hi, data_lo);
+            }
+            break;
+        case PRBS_ERR_CLEAR://opt #0: 0 for xcvr, 1 for PHY
+            if (p_options->size != 1) {
+                usage_full();
+                break;
+            }
+            printf("Clearing PRBS error on ");
+            if (p_options->p_opt[0] == PRBS_DEV_XCVR) {
+                printf("transceiver\n");
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+                result |= RXPRBSCNT_RESET_MASK << RXPRBSCNT_RESET_SHIFT;
+                ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);
+               /* sleep(1);
+                result = ps48_xcvr_read(fd, XCVR_CFG_DBG_OFFSET);
+                result &= ~(RXPRBSCNT_RESET_MASK << RXPRBSCNT_RESET_SHIFT);
+                ps48_xcvr_write(fd, XCVR_CFG_DBG_OFFSET, result);*/
+            } else {
+                printf("PHY\n");
+                mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+                mdio_rd(PHY_PRBS_CTRL_REG, &data, 0x0);
+                //printf("PHY_PRBS_CTRL_REG: 0x%x\n", data);
+
+                data |= 0x1 << PHY_PRBS_CLEAR_COUNTER_SHIFT;
+                mdio_wr(PHY_PRBS_CTRL_REG, data, 0x0);
+            }
+            break;
+        default:
+            usage_full();
+            break;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -1728,6 +2754,61 @@ int main(int argc, char *argv[])
     {
         fpga_reload();
     } 
+    else if (strcmp(argv[1], "-xcvrrd") == 0)
+    {
+        if ( argc < 3 ) usage();
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        uint32_t offset = strtoul(argv[2], NULL, 0);
+        uint32_t result = ps48_xcvr_read(fd, offset);
+        printf("0x%x\n", result);
+        close(fd);
+    }
+    else if (strcmp(argv[1], "-xcvrwr") == 0)
+    {
+        if ( argc < 4 ) usage();
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        uint32_t offset = strtoul(argv[2], NULL, 0);
+        uint32_t value = strtoul(argv[3], NULL, 0);
+        uint32_t result = ps48_xcvr_write(fd, offset, value);
+        printf("write offset=0x%x: result=0x%x\n", offset, result);
+        close(fd);
+    }
+    else if (strcmp(argv[1], "-mdiord") == 0)
+    {
+        if ( argc < 3 ) usage();
+        addr = strtoul(argv[2], NULL, 0);
+        uint16_t data;
+        mdio_rd(addr, &data, 0x0);
+        printf("0x%x\n", data);
+    }
+    else if (strcmp(argv[1], "-mdiowr") == 0)
+    {
+        if ( argc < 4 ) usage();
+        addr = strtoul(argv[2], NULL, 0);
+        uint16_t data = strtoul(argv[3], NULL, 0);
+        mdio_wr(addr, data, 0x0);
+    }
+    else if (strcmp(argv[1], "-serdes") == 0)
+    {
+        if ( argc < 3 ) usage();
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        uint32_t command = strtoul(argv[2], NULL, 0);
+        SERDES_TEST_OPTIONS options;
+        uint32_t *my_opt = NULL;
+        if (argc > 3) {
+            my_opt = malloc((argc - 3) * sizeof(uint32_t));
+            for (int i = 0; i < argc - 3; i++) {
+                my_opt[i] = strtoul(argv[3 + i], NULL, 0);
+            }
+            options.size = argc - 3;
+            options.p_opt = my_opt;
+        }
+        serdes_test_cmd(fd, command, &options);
+        if (my_opt) {
+            free(my_opt);
+        }
+        close(fd);
+    }
     else if ( strcmp(argv[1], "-help" ) == 0 ) 
     {
         usage_full();
