@@ -627,7 +627,7 @@ func Prbs(sleep int, prbs string) (err int) {
     var rc int
     var errGo error
     var data32 uint32
-    var addr uint64 = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
+    var addr uint64
     var SFPnumber, QSFPnumber, bitcompare uint32
     var port25G_s string
     var port100G_s string
@@ -706,6 +706,16 @@ func Prbs(sleep int, prbs string) (err int) {
             err = errType.FAIL
             return
         }
+    }
+
+    /* Enable QSFP's */
+    cli.Printf("i", "Enabling QSFP's\n")
+    addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
+    for i:=0;i<taorfpga.MAXQSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+        data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
+        taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
     }
 
     for i:=0; i<TAOR_EXTERNAL_25G_PORTS; i++ {
@@ -905,7 +915,7 @@ func Snake_All_Ports_Forward_Next_Port(elba_port_mask uint32, duration uint32, l
     var rc int = errType.SUCCESS
     var errGo error
     var data32 uint32
-    var addr uint64 = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
+    var addr uint64
     var SFPnumber, QSFPnumber, bitcompare uint32
     var port25G_s string
     var port100G_s string
@@ -975,6 +985,16 @@ func Snake_All_Ports_Forward_Next_Port(elba_port_mask uint32, duration uint32, l
                 return
             }
         }
+
+        /* Enable QSFP's */
+        cli.Printf("i", "Enabling QSFP's\n")
+        addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
+        for i:=0;i<taorfpga.MAXQSFP;i++ {
+            addr = addr + ((uint64(i)/4) * 4)
+            data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+            data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
+            taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
+        }
     }
 
 
@@ -1032,7 +1052,8 @@ func Snake_All_Ports_Forward_Next_Port(elba_port_mask uint32, duration uint32, l
         return
     }
     {
-        execOutput, errGo := exec.Command("/bin/sh", ElbaVLANcreatScript).Output()
+    
+        execOutput, errGo := exec.Command("/bin/bash", ElbaVLANcreatScript).Output()
         if errGo != nil {
             cli.Println(string(execOutput))
             cli.Println("e", errGo)
@@ -1344,7 +1365,7 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
     var rc int = errType.SUCCESS
     var errGo error
     var data32 uint32
-    var addr uint64 = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
+    var addr uint64
     var SFPnumber, QSFPnumber, bitcompare uint32
     var port25G_s string
     var port100G_s string
@@ -1414,6 +1435,16 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                 err = errType.FAIL
                 return
             }
+        }
+
+        /* Enable QSFP's */
+        cli.Printf("i", "Enabling QSFP's\n")
+        addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
+        for i:=0;i<taorfpga.MAXQSFP;i++ {
+            addr = addr + ((uint64(i)/4) * 4)
+            data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+            data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
+            taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
         }
     }
 
@@ -1635,7 +1666,7 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                 fileData = append(fileData, b[0])
             }
             f.Close()
-            fmt.Printf(" Length File Data = %d\n", len(fileData))
+            //fmt.Printf(" Length File Data = %d\n", len(fileData))
 
             filename = fmt.Sprintf("/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[i].Name)
             outF, errGo1 := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)

@@ -3171,7 +3171,7 @@ class nic_ctrl():
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
                 if (ocp_read_data[0] & row[4]) == row[4]:
-                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} Clear".format(row[3], adapt_read_data[0], row[4]) )
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} Clear".format(row[3], ocp_read_data[0], row[4]) )
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 
@@ -3200,7 +3200,7 @@ class nic_ctrl():
                     return False
 
                 if (ocp_read_data[0] & row[4]) == row[4]:
-                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} CLEAR".format(row[3], adapt_read_data[0], row[4]) )
+                    errlist.append(" ERROR: OCP CPLD REG 0x{:x}:  READ 0x{:X}  Expect BIT 0x{:X} CLEAR".format(row[3], ocp_read_data[0], row[4]) )
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
 

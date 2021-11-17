@@ -173,16 +173,30 @@ func DispVoltWattAmp(devName string) (err int) {
     var outStrTemp string
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, err := ReadPout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-    if err != errType.SUCCESS {
-        return;
+    if devName == "P0V8RT_A" {
+        outStr = outStr + fmt.Sprintf(fmtStr, "0.800")
+    } else if devName == "P3V3" {
+        outStr = outStr + fmt.Sprintf(fmtStr, "3.300")
+    } else if devName == "P3V3S" {
+        outStr = outStr + fmt.Sprintf(fmtStr, "3.300")
+    } else {
+        outStr = outStr + fmt.Sprintf(fmtStr, "-")
     }
 
-    dig, frac, _ = ReadVout(devName)
+
+    dig, frac, err1 := ReadVout(devName)
+    if err1 != errType.SUCCESS {
+        err = err1
+        cli.Println("e", "ERROR READING VOUT CMD")
+        return;
+    }
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
 
     dig, frac, _ = ReadIout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)

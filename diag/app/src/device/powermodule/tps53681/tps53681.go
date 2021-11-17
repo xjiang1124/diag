@@ -188,6 +188,28 @@ func ReadVout_Linear(devName string) (integer uint64, dec uint64, err int) {
 }
 
 
+func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
+    var voutcmd uint16
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, page)
+
+    voutcmd, err = pmbus.ReadWord(devName, VOUT_COMMAND)
+    integer, dec, err =  pmbus.Convert_vr13_5mvVID(voutcmd)
+
+    return
+}
+
 func ReadVoutCmd(devName string) (voutcmd uint16, err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -355,26 +377,33 @@ func DispVoltWattAmp(devName string) (err int) {
     outStr = fmt.Sprintf(fmtNameStr, "NAME")
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, err := ReadPout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-    if err != errType.SUCCESS {
+    dig, frac, err1 := ReadVboot(devName)
+    if err1 != errType.SUCCESS {
+        err = err1
+        cli.Println("e", "ERROR READING VOUT CMD")
         return;
     }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
+    dig, frac, _ = ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    
+
     dig, frac, _ = ReadIout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPin(devName)
+    dig, frac, _ = ReadVin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVin(devName)
+    dig, frac, _ = ReadPin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

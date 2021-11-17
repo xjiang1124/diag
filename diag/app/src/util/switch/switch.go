@@ -24,6 +24,7 @@ const errhelp = "\nswitch:\n" +
         "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
         "\n" +
         "switch show power/temp/link\n" +
+        "switch voltage margin <+/-percent>\n" +
         "\n"
         
 
@@ -132,6 +133,18 @@ func main() {
             fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
             return
         }
+    } else if os.Args[1] == "voltage" {
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        percent, err := strconv.ParseInt(os.Args[3], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        taormina.VoltageMargin(int(percent))
+        fmt.Printf(" Voltage Margined Toarmina's applicable VRM's to %d percent\n", percent)
+        return 
     } else if os.Args[1] == "show" {
         if argc < 3 {
             fmt.Printf(" %s \n", errhelp)

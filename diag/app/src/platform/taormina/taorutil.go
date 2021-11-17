@@ -36,18 +36,17 @@ import (
     "device/cpu/XeonD"
     "device/fpga/taorfpga"
     "device/powermodule/sn1701022"
+    "device/powermodule/tps549a20"
     "device/powermodule/tps544c20"
     "device/powermodule/tps53681"
     "device/psu/dps800" 
     "device/fanctrl/adt7462"
     "device/tempsensor/tmp451"
     "device/tempsensor/lm75a"
-    
-    /*
-    
-    "device/powermodule/tps549a20"
-    
-    */ 
+
+    "device/sfp"
+    "device/qsfp"
+
 )
 
 
@@ -1201,6 +1200,152 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
 
 
 
+func ShowInventory() (err int) {
+    var data32 uint32 = 0
+    var rc int = 0
+    fmt.Printf("\n")
+
+    //EEPROM
+    systemSN, boardSN, err1 := GetSerialNumbers() 
+    if err1 != errType.SUCCESS { 
+        fmt.Printf("System SN: [ERROR RETREIVING DATA]\n")
+        fmt.Printf("Board  SN: [ERROR RETREIVING DATA]\n\n")
+        rc = -1
+    } else {
+        fmt.Printf("System SN: %s\n", systemSN)
+        fmt.Printf("Board  SN: %s\n\n", boardSN)
+    }
+
+    //PSU's
+    err=dps800.DisplayManufacturingInfo("PSU_1")
+    if err != errType.SUCCESS { rc = -1 }
+    err=dps800.DisplayManufacturingInfo("PSU_2")
+    if err != errType.SUCCESS { rc = -1 }
+    for i:=0; i<int(taorfpga.MAXFAN);i++ {
+        present, _ := taorfpga.FAN_Module_present(uint32(i))
+        if present == true {
+            fmt.Printf("FAN-%d: PRESENT\n", i+1)
+        } else {
+            fmt.Printf("FAN-%d: NOT PRESENT\n", i+1)
+            rc = -1
+        }
+    }
+    fan_air_direction, _ := taorfpga.FAN_AirFlow_Direction()
+    if fan_air_direction == taorfpga.AIRFLOW_FRONT_TO_BACK {
+        fmt.Printf("FAN AIRFLOW:  FRONT TO BACK\n")
+    } else {
+        fmt.Printf("FAN AIRFLOW:  BACK TO FRONT\n")
+    }
+    fmt.Printf("\n")
+    ucode, errGo := taorfpga.Spi_cpldXO3_read_usercode(uint32(1)) 
+    if errGo != nil { 
+        rc = -1 
+    } else {
+        fmt.Printf("CPLD-E0 REVISION: 0x%.08x\n", ucode)
+    }
+    ucode, errGo = taorfpga.Spi_cpldXO3_read_usercode(uint32(2)) 
+    if errGo != nil { 
+        rc = -1 
+    } else {
+        fmt.Printf("CPLD-E1 REVISION: 0x%.08x\n", ucode)
+    }
+    ucode, errGo = taorfpga.Spi_cpld_read_usercode(uint32(0)) 
+    if errGo != nil { 
+        rc = -1 
+    } else {
+        fmt.Printf("CPLD-C  REVISION: 0x%.08x\n", ucode)
+    }
+    ucode, errGo = taorfpga.Spi_cpld_read_usercode(uint32(3)) 
+    if errGo != nil { 
+        rc = -1 
+    } else {
+        fmt.Printf("CPLD-G0 REVISION: 0x%.08x\n", ucode)
+    }
+    ucode, errGo = taorfpga.Spi_cpld_read_usercode(uint32(4)) 
+    if errGo != nil { 
+        rc = -1 
+    } else {
+        fmt.Printf("CPLD-G1 REVISION: 0x%.08x\n", ucode)
+    }
+    ucode, errGo = taorfpga.Spi_cpld_read_usercode(uint32(5)) 
+    if errGo != nil { 
+        rc = -1 
+    } else {
+        fmt.Printf("CPLD-G2 REVISION: 0x%.08x\n", ucode)
+    }
+
+    
+    data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, taorfpga.D0_FPGA_REV_ID_REG)
+    fmt.Printf("FPGA    REVISION: 0x%.08x\n", data32)
+    fmt.Printf("\n")
+    err = SSD_Display_Info()
+    if err != errType.SUCCESS { rc = -1 }
+    err = DDR_Display_Info()
+    if err != errType.SUCCESS { rc = -1 }
+    fmt.Printf("\n")
+    err = BIOS_Display_Version()
+    if err != errType.SUCCESS { rc = -1 }
+    err = HALON_OS_Display_Version()
+    if err != errType.SUCCESS { rc = -1 }
+    fmt.Printf("\n")
+    err = Elba_Check_Pci_Link(taorfpga.ELBA0)
+    if err != errType.SUCCESS { rc = -1 }
+    err = Elba_Check_Pci_Link(taorfpga.ELBA1)
+    if err != errType.SUCCESS { rc = -1 }
+    Elba_Show_Firmware(taorfpga.ELBA0)
+    Elba_Show_Firmware(taorfpga.ELBA1)
+    fmt.Printf(" RC=%d\n", rc)
+    fmt.Printf("\n")
+    //fmt.Printf("===================================================================================================\n")
+    for i:=0; i<taorfpga.MAXSFP; i++ {
+        var devName string 
+        devName = fmt.Sprintf("SFP_%d", i+1)
+        present, _ := taorfpga.SFP_present(uint32(i)) 
+        if present == true {
+            pn, err1 := sfp.ReadPN(devName)
+            if err1 != errType.SUCCESS { rc = -1 }
+            pn = strings.TrimSpace(pn)
+            sn, err2 := sfp.ReadSerialNumber(devName)
+            if err2 != errType.SUCCESS { rc = -1 }
+            vendor, err3 := sfp.ReadVendorName(devName)
+            if err3 != errType.SUCCESS { rc = -1 }
+            vendor = strings.TrimSpace(vendor)
+            baudrate, err4 := sfp.GetBitSpeed(devName)
+            if err4 != errType.SUCCESS { rc = -1 }
+            fmt.Printf("SFP-%.2d   %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
+        } else {
+            fmt.Printf("SFP-%.2d   NOT PRESENT\n", i+1)
+        }
+    }
+    fmt.Printf("\n")
+    for i:=0; i<taorfpga.MAXQSFP; i++ {
+        var devName string 
+        devName = fmt.Sprintf("QSFP_%d", i+1)
+        present, _ := taorfpga.QSFP_present(uint32(i)) 
+        if present == true {
+            pn, err1 := qsfp.ReadPN(devName)
+            if err1 != errType.SUCCESS { rc = -1 }
+            pn = strings.TrimSpace(pn)
+            sn, err2 := qsfp.ReadSerialNumber(devName)
+            if err2 != errType.SUCCESS { rc = -1 }
+            vendor, err3 := qsfp.ReadVendorName(devName)
+            if err3 != errType.SUCCESS { rc = -1 }
+            vendor = strings.TrimSpace(vendor)
+            baudrate, err4 := qsfp.GetBitSpeed(devName)
+            if err4 != errType.SUCCESS { rc = -1 }
+            fmt.Printf("QSFP-%.2d  %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
+        } else {
+            fmt.Printf("QSFP-%.2d  NOT PRESENT\n", i+1)
+        }
+    }
+    if rc != 0 {
+        return errType.FAIL
+    } else {
+        return errType.SUCCESS
+    }
+}
+
+
 /*    
     I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20",   1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
     I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20",   1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
@@ -1232,16 +1377,54 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
 
 
 
-type VRfunc func(devName string)(err int) 
+type VRmarginFunc func(devName string, pct int)(err int) 
+
+type VoltageMarginTable struct {
+    VoltName  string 
+    VRmarginFuncPtr VRmarginFunc 
+}
+
+
+func VoltageMargin(percent int)  (err int)  {
+    voltTable := []VoltageMarginTable { {"CPU_P1V2_VDDQ", sn1701022.SetVMargin},
+                                  {"CPU_P1V05_COMBINED", sn1701022.SetVMargin},
+                                  {"CPU_PVCCIN", sn1701022.SetVMargin},
+                                  {"CPU_P1V05_VCCSCSUS", sn1701022.SetVMargin},
+                                  {"TDNT_PDVDD", tps53681.SetVMargin},
+                                  {"TDNT_P0V8_AVDD", tps53681.SetVMargin},
+                                  {"P0V8RT_A", tps544c20.SetVMargin},
+                                  {"P0V8RT_B", tps549a20.SetVMargin},
+                                  //{"P0V8AVDD_GB_A", TPS549A20.SetVMargin},
+                                  //{"P0V8AVDD_GB_B", TPS549A20.SetVMargin},
+                                  {"P3V3", tps544c20.SetVMargin},
+                                  {"P3V3S", tps544c20.SetVMargin},
+                                  
+                                }
+
+
+    for _, volt := range(voltTable) {
+        hwinfo.EnableHubChannelExclusive(volt.VoltName)
+        err = volt.VRmarginFuncPtr(volt.VoltName, percent)
+        if err != 0 {
+            fmt.Printf("ERROR: Failed to Voltage Margin %s %d percent \n", volt.VoltName, percent) 
+        }
+    }
+
+    return
+}
+
+
+
+type VRdispfunc func(devName string)(err int) 
 
 type VoltageTable struct {
     VoltName  string 
-    VRfuncPtr VRfunc 
+    VRdispfuncPtr VRdispfunc 
 }
 
 
 func ShowPower()  (err int)  {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN"}
+    vrmTitle := []string {"VBOOT", "VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN"}
     voltTable := []VoltageTable { {"CPU_P1V2_VDDQ", sn1701022.DispVoltWattAmp},
                                   {"CPU_P1V05_COMBINED", sn1701022.DispVoltWattAmp},
                                   {"CPU_PVCCIN", sn1701022.DispVoltWattAmp},
@@ -1266,7 +1449,7 @@ func ShowPower()  (err int)  {
 
     for _, volt := range(voltTable) {
         hwinfo.EnableHubChannelExclusive(volt.VoltName)
-        volt.VRfuncPtr(volt.VoltName)
+        volt.VRdispfuncPtr(volt.VoltName)
     }
 
     return

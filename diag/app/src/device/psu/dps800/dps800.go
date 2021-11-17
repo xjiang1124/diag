@@ -344,7 +344,7 @@ func DisplayManufacturingInfo(devName string) (err int) {
         return
     }
     if uint32(usercode00[0]) == 0xFF {  //Not programmed at all
-        err = errType.FAIL
+        //err = errType.FAIL
     } else if uint32(usercode00[0]) > 32 {
         err = errType.FAIL
         cli.Printf("e", "%s Length of USER_CODE_00 seem to high > 32.  Read %d", devName, uint32(usercode00[0]))
@@ -364,7 +364,7 @@ func DisplayManufacturingInfo(devName string) (err int) {
         return
     }
     if uint32(usercode01[0]) == 0xFF {  //Not programmed at all
-        err = errType.FAIL
+        //err = errType.FAIL
     } else if uint32(usercode01[0]) > 32 {
         err = errType.FAIL
         cli.Printf("e", "%s Length of USER_CODE_00 seem to high > 32.  Read %d", devName, uint32(usercode01[0]))
@@ -411,7 +411,7 @@ func DispVoltWattAmp(devName string) (err int) {
         present, _ := taorfpga.PSU_present(PSUnumber)
         pwrok, _ := taorfpga.PSU_pwrok(PSUnumber)
         if pwrok == false || present == false {
-            for i:=0;i<6;i++ {
+            for i:=0;i<7;i++ {
                 outStrTemp = "-"
                 outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
             }
@@ -419,6 +419,10 @@ func DispVoltWattAmp(devName string) (err int) {
             return
         }
     }
+
+
+    outStrTemp = "-"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, err := ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)

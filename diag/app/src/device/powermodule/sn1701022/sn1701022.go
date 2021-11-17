@@ -4,6 +4,8 @@ import (
     "fmt"
     //"os"
     //"cardinfo"
+    "math"
+    "time"
     "common/cli"
     "common/errType"
     "hardware/i2cinfo"
@@ -106,9 +108,15 @@ func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
 
     VCMD, err = pmbus.ReadWord(devName, VOUT_COMMAND)
 
-    integer, dec, err =  pmbus.Convert_vr13_5mvVID(VCMD)
+    if (devName == "CPU_PVCCIN") {
+        integer, dec, err =  pmbus.Convert_vr13_10mvVID(VCMD)
+    } else {
+        integer, dec, err =  pmbus.Convert_vr13_5mvVID(VCMD)
+    }
     return
 }
+
+
 
 
 //Read target voltage from VOUT 
@@ -329,14 +337,20 @@ func DispVoltWattAmp(devName string) (err int) {
     var outStrTemp string
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, err := ReadPout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-    if err != errType.SUCCESS {
+    dig, frac, err1 := ReadTargetVoltage(devName)
+    if err1 != errType.SUCCESS {
+        err = err1
+        cli.Println("e", "ERROR READING VOUT CMD")
         return;
     }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
@@ -344,11 +358,11 @@ func DispVoltWattAmp(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPin(devName)
+    dig, frac, _ = ReadVin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVin(devName)
+    dig, frac, _ = ReadPin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
@@ -362,7 +376,7 @@ func DispVoltWattAmp(devName string) (err int) {
 
 
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
+    vrmTitle := []string {"VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -383,7 +397,10 @@ func DispStatus(devName string) (err int) {
     //outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     //outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ := ReadPout(devName)
+    dig, frac, err := ReadPout(devName)
+    if err != 0 {
+        cli.Println("e", "ERROR READING POUT")
+    }
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
@@ -416,6 +433,90 @@ func DispStatus(devName string) (err int) {
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)// + "\n"
 
     cli.Println("i", outStr)
+
+    return
+}
+
+
+func SetVMargin(devName string, pct int) (err int) {
+    var marginCmd byte
+    var marginVal uint16
+    var voutcmd uint16
+    var def_volt, marg_tics float64
+
+    if pct > 10 || pct < -10 {
+        return errType.INVALID_PARAM
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, page)
+
+    voutcmd, err = pmbus.ReadWord(devName, VOUT_COMMAND)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read voutcmd on device ", devName)
+        return
+    }
+
+    fmt.Printf(" %s VOUT_COMMAND=%.04x\n", devName, voutcmd)
+
+
+
+    //If margin back to normal 0%, we need to put SVID back in control at the end of this function, otherwise PMBUS control
+    if (pct != 0) {
+        var mfg_spec byte
+        mfg_spec, _ = pmbus.ReadByte(devName, MFR_SPECIFIC_02)
+        if mfg_spec != MFR_SPECIFIC_02_PMBUS_CTRL {
+            pmbus.WriteByte(devName, MFR_SPECIFIC_02, MFR_SPECIFIC_02_PMBUS_CTRL)
+            time.Sleep(time.Duration(500) * time.Millisecond)
+        }
+    }
+
+    if (devName == "CPU_PVCCIN") {
+        def_volt = .50 + (float64(voutcmd-1) * .01)
+        marg_tics = (def_volt * float64(pct)) / 100;
+        marg_tics = math.Round(marg_tics / .01)
+    } else {
+        def_volt = .25 + (float64(voutcmd-1) * .005)
+        marg_tics = (def_volt * float64(pct)) / 100;
+        marg_tics = math.Round(marg_tics / .005)
+    }
+
+    marginVal = voutcmd + uint16(marg_tics)
+
+    fmt.Printf(" %s marginVal=%.04x\n", devName, marginVal)
+
+    if pct == 0 {
+        marginCmd = MARGIN_NONE_CMD
+    } else if pct > 0 {
+        marginCmd = MARGIN_HIGH_CMD
+        
+        if (devName == "CPU_PVCCIN") {  //VOUT MAX ON THIS RAIL IS SET TO THE SAME AS NOMINAL VOLTAGE.  NEED TO CHANGE IT IN ORDER TO MARGIN HIGHER
+            pmbus.WriteWord(devName, VOUT_MAX, marginVal)
+        }
+        pmbus.WriteWord(devName, VOUT_MARGIN_HIGH, marginVal)
+    } else {
+        marginCmd = MARGIN_LOW_CMD
+        pmbus.WriteWord(devName, VOUT_MARGIN_LOW, marginVal)
+    }
+
+    pmbus.WriteByte(devName, OPERATION, marginCmd)
+
+    //If margin back to normal 0%, we need to put SVID back in control at the end of this function
+    if (pct == 0) {
+        pmbus.WriteByte(devName, MFR_SPECIFIC_02, MFR_SPECIFIC_02_SVID_CTRL)
+    }
 
     return
 }

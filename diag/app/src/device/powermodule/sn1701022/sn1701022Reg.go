@@ -87,6 +87,8 @@ const (
     MFR_SPECIFIC_00           = 0xD0
     MFR_SPECIFIC_01           = 0xD1
     MFR_SPECIFIC_02           = 0xD2
+        MFR_SPECIFIC_02_SVID_CTRL  = 0x02
+        MFR_SPECIFIC_02_PMBUS_CTRL = 0x01
     MFR_SPECIFIC_03           = 0xD3
     MFR_SPECIFIC_04           = 0xD4
     MFR_SPECIFIC_05           = 0xD5
@@ -109,8 +111,4 @@ const (
     MARGIN_NONE_CMD = 0x80
     MARGIN_HIGH_CMD = 0xA4
     MARGIN_LOW_CMD  = 0x94
-    //MARGIN_NONE_CMD = 0x00
-    //MARGIN_HIGH_CMD = 0x24
-    //MARGIN_LOW_CMD  = 0x14
-
 )

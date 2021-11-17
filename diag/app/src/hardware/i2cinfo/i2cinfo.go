@@ -315,7 +315,6 @@ var MtpHubI2cTbl = []I2cInfo {
 var TaorTbl = []I2cInfo {
     //       name              comp          Bus   devAddr  page    HubName   HubPort  Flag
     I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20",   1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20",   1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
     I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20",   1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
     I2cInfo {"P0V8RT_B",       "TPS549A20",   1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
     //ON P0 BOARDS, 0x4C TEMP SENSOR IS LOCATED HERE AT 0x48

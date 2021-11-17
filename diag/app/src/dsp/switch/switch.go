@@ -24,6 +24,8 @@ func SwitchInventoryHdl(argList []string) {
 
     dcli.Println("i", "Inventory Test")
 
+    err = taormina.ShowInventory()
+
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- err

@@ -12,21 +12,23 @@ import (
     //"bufio"
     //"errors"
     "device/fpga/taorfpga"
-    "platform/taormina"
+    //"platform/taormina"
     "device/bcm/td3"
-    "device/psu/dps800"
+    //"device/psu/dps800"
     "fmt"
     "os"
     "strconv"
     "time"
     "syscall"
-    "strings"
+    //"strings"
     "unsafe"
 
     "common/cli"
     "common/errType"
     "device/sfp"
     "device/qsfp"
+
+    "platform/taormina"
 
     
     
@@ -98,6 +100,13 @@ func main() {
 
     if argc ==2 {
         if os.Args[1] == "inventory" {
+            err1 := taormina.ShowInventory()
+            if err1 != errType.SUCCESS {
+                os.Exit(-1)
+            } else { 
+                os.Exit(0)
+            }
+            /*
             //fmt.Printf("===================================================================================================\n")
             fmt.Printf("\n")
 
@@ -189,7 +198,8 @@ func main() {
                 }
             }
 
-            return
+            return 
+            */ 
         } else {
            fmt.Printf(" %s \n", errhelp); return;
         }
