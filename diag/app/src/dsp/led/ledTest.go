@@ -71,7 +71,7 @@ const (
 func IsDualMgmtBoard(dualmgmt *uint32) (error int) {
     cardInfo := diagEngine.GetCardInfo()
     cardType := cardInfo.CardType
-    if ((cardType == "NAPLES100") || (cardType == "NAPLES100IBM") || (cardType == "NAPLES100HPE")) {
+    if ((cardType == "NAPLES100") || (cardType == "NAPLES100IBM") || (cardType == "NAPLES100HPE") || (cardType == "NAPLES100DELL")) {
         *dualmgmt = 1
     }
     return 0
@@ -225,6 +225,10 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_rate = naples100Cpld.REG_LED_PORT_RATE
         *sys_ctrl = naples100Cpld.REG_LED_SYS_CTRL
     } else if (cardType == "NAPLES100HPE") {
+        *port_ctrl = naples100Cpld.REG_LED_PORT_CTRL
+        *port_rate = naples100Cpld.REG_LED_PORT_RATE
+        *sys_ctrl = naples100Cpld.REG_LED_SYS_CTRL
+    } else if (cardType == "NAPLES100DELL") {
         *port_ctrl = naples100Cpld.REG_LED_PORT_CTRL
         *port_rate = naples100Cpld.REG_LED_PORT_RATE
         *sys_ctrl = naples100Cpld.REG_LED_SYS_CTRL

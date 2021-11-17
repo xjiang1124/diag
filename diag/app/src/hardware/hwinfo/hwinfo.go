@@ -428,6 +428,8 @@ func init() {
     taorDispStaList["PSU_2"]            = dps800.DispStatus
     taorDispStaList["TSENSOR-CPU"]      = XeonD.DispStatus
     taorDispStaList["TSENSOR-TD3"]      = td3.DispStatus
+    taorDispStaList["TSENSOR-ASIC0"]    = taorfpga.AsicCoreTemp
+    taorDispStaList["TSENSOR-ASIC1"]    = taorfpga.AsicCoreTemp
     taorDispStaList["FAN_1"]   = adt7462.DispStatus
     taorDispStaList["FAN_2"]   = adt7462.DispStatus
 
@@ -475,6 +477,7 @@ func init() {
     dispMap["NAPLES100"]   = naples100DispStaList
     dispMap["NAPLES100IBM"]= naples100DispStaList
     dispMap["NAPLES100HPE"]= naples100DispStaList
+    dispMap["NAPLES100DELL"]= naples100DispStaList
     dispMap["NAPLES25"]    = naples25DispStaList
     dispMap["NAPLES25OCP"] = naples25DispStaList
     dispMap["NAPLES25SWM"] = naples25DispStaList
@@ -491,9 +494,9 @@ func init() {
     dispMap["ORTANO"]       = ortanoDispStaList
     dispMap["ORTANO2"]      = ortanoDispStaList
     dispMap["LACONADELL"]   = laconaDispStaList
-    dispMap["LACONAD"]      = laconaDispStaList
-    dispMap["LACONAD32ELL"] = laconaDispStaList
-    dispMap["LACONAD32"]    = laconaDispStaList
+    dispMap["LACONA"]       = laconaDispStaList
+    dispMap["LACONA32DELL"]  = laconaDispStaList
+    dispMap["LACONA32"]     = laconaDispStaList
     dispMap["POMONTEDELL"]  = laconaDispStaList
     dispMap["POMONTE"]      = laconaDispStaList
     //===============================
@@ -511,6 +514,7 @@ func init() {
     eepromMap["NAPLES100"]     = naplesEepList
     eepromMap["NAPLES100IBM"]  = naplesEepList
     eepromMap["NAPLES100HPE"]  = naplesEepList
+    eepromMap["NAPLES100DELL"]  = naplesEepList
     eepromMap["NAPLES25"]      = naplesEepList
     eepromMap["NAPLES25OCP"]   = naplesEepList
     eepromMap["NAPLES25SWM"]   = naplesEepList
@@ -526,9 +530,9 @@ func init() {
     eepromMap["ORTANO"]       = naplesEepList
     eepromMap["ORTANO2"]      = naplesEepList
     eepromMap["LACONADELL"]   =  naplesEepList
-    eepromMap["LACONAD"]      =  naplesEepList
-    eepromMap["LACONAD32ELL"] =  naplesEepList
-    eepromMap["LACONAD32"]    =  naplesEepList
+    eepromMap["LACONA"]       =  naplesEepList
+    eepromMap["LACONA32DELL"]  =  naplesEepList
+    eepromMap["LACONA32"]     =  naplesEepList
     eepromMap["POMONTEDELL"]  =  naplesEepList
     eepromMap["POMONTE"]      =  naplesEepList
 
@@ -547,6 +551,7 @@ func init() {
     i2cHubMap["NAPLES100"]      = naples100I2cHubMap
     i2cHubMap["NAPLES100IBM"]   = naples100I2cHubMap
     i2cHubMap["NAPLES100HPE"]   = naples100I2cHubMap
+    i2cHubMap["NAPLES100DELL"]   = naples100I2cHubMap
     i2cHubMap["NAPLES25"]       = naples100I2cHubMap
     i2cHubMap["NAPLES25OCP"]    = naples100I2cHubMap
     i2cHubMap["NAPLES25SWM"]    = naples100I2cHubMap
@@ -563,9 +568,9 @@ func init() {
     i2cHubMap["ORTANO"]         = naples100I2cHubMap
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
     i2cHubMap["LACONADELL"]     = naples100I2cHubMap
-    i2cHubMap["LACONAD"]        = naples100I2cHubMap
-    i2cHubMap["LACONAD32ELL"]   = naples100I2cHubMap
-    i2cHubMap["LACONAD32"]      = naples100I2cHubMap
+    i2cHubMap["LACONA"]         = naples100I2cHubMap
+    i2cHubMap["LACONA32DELL"]    = naples100I2cHubMap
+    i2cHubMap["LACONA32"]       = naples100I2cHubMap
     i2cHubMap["POMONTEDELL"]    = naples100I2cHubMap
     i2cHubMap["POMONTE"]        = naples100I2cHubMap
 
@@ -580,6 +585,7 @@ func init() {
     i2cHubListMap["NAPLES100"]     = naples100I2cHubList
     i2cHubListMap["NAPLES100IBM"]  = naples100I2cHubList
     i2cHubListMap["NAPLES100HPE"]  = naples100I2cHubList
+    i2cHubListMap["NAPLES100DELL"]  = naples100I2cHubList
     i2cHubListMap["NAPLES25"]      = naples25I2cHubList
     i2cHubListMap["NAPLES25OCP"]   = naples25I2cHubList
     i2cHubListMap["NAPLES25SWM"]   = naples25I2cHubList
@@ -596,9 +602,9 @@ func init() {
     i2cHubListMap["ORTANO"]        = forioI2cHubList
     i2cHubListMap["ORTANO2"]       = forioI2cHubList
     i2cHubListMap["LACONADELL"]    = forioI2cHubList
-    i2cHubListMap["LACONAD"]       = forioI2cHubList
-    i2cHubListMap["LACONAD32ELL"]  = forioI2cHubList
-    i2cHubListMap["LACONAD32"]     = forioI2cHubList
+    i2cHubListMap["LACONA"]        = forioI2cHubList
+    i2cHubListMap["LACONA32DELL"]   = forioI2cHubList
+    i2cHubListMap["LACONA32"]      = forioI2cHubList
     i2cHubListMap["POMONTEDELL"]   = forioI2cHubList
     i2cHubListMap["POMONTE"]       = forioI2cHubList
 
@@ -613,6 +619,7 @@ func init() {
     psuListMap["NAPLES100"]    = nicPsuList
     psuListMap["NAPLES100IBM"] = nicPsuList
     psuListMap["NAPLES100HPE"] = nicPsuList
+    psuListMap["NAPLES100DELL"] = nicPsuList
     psuListMap["NAPLES25"]     = nicPsuList
     psuListMap["NAPLES25OCP"]  = nicPsuList
     psuListMap["NAPLES25SWM"]  = nicPsuList
@@ -629,9 +636,9 @@ func init() {
     psuListMap["ORTANO"]        = nicPsuList
     psuListMap["ORTANO2"]       = nicPsuList
     psuListMap["LACONADELL"]    = nicPsuList
-    psuListMap["LACONAD"]       = nicPsuList
-    psuListMap["LACONAD32ELL"]  = nicPsuList
-    psuListMap["LACONAD32"]     = nicPsuList
+    psuListMap["LACONA"]        = nicPsuList
+    psuListMap["LACONA32DELL"]   = nicPsuList
+    psuListMap["LACONA32"]      = nicPsuList
     psuListMap["POMONTEDELL"]   = nicPsuList
     psuListMap["POMONTE"]       = nicPsuList
 
@@ -653,7 +660,7 @@ func init() {
     //===============================
     // Use switch case to avoid dummy data structure
     switch cardType {
-    case "NAPLES100", "NAPLES100IBM", "NAPLES100HPE", "BIODONA_D4", "BIODONA_D5":
+    case "NAPLES100", "NAPLES100IBM", "NAPLES100HPE", "NAPLES100DELL", "BIODONA_D4", "BIODONA_D5":
         QsfpTbl = naples100QsfpTbl
         var t boardinfo.NicCpld_T
         yaml.Unmarshal([]byte(boardinfo.NicCpld), &t)

@@ -451,24 +451,29 @@ def main():
                 mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
-                continue
+                #continue
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
-                continue
+                #continue
+            try:
+                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[nic_type])
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(nic_type))
+                #continue
             if nic_type in ELBA_NIC_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(nic_type))
-                    continue
+                    #continue
             if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(nic_type))
-                    continue
+                    #continue
 
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
@@ -853,6 +858,8 @@ def main():
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         if nic_type == NIC_Type.ORTANO2:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
+        if nic_type == NIC_Type.POMONTEDELL:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)

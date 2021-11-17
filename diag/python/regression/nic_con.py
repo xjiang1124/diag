@@ -477,7 +477,27 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False, asic_type="elba"):
+    def get_asic_type(self, slot):
+        # Get AISC type
+        uut = "UUT_"+str(slot)
+        card_type = os.environ[uut]
+        if card_type == "ORTANO"  or \
+           card_type == "ORTANO2" or \
+           card_type == "BIODONA":
+            asic_type = "ELBA_CPLD"
+        elif card_type == "LACONA"       or \
+             card_type == "LACONADELL"   or \
+             card_type == "LACONA32"     or \
+             card_type == "LACONA32DELL" or \
+             card_type == "POMONTE"      or \
+             card_type == "POMONTEDELL":
+            asic_type = "ELBA_FPGA"
+        else:
+            asic_type = "CAPRI"
+        print("asic_type:", asic_type)
+        return asic_type
+
+    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False):
         fmt_dummy_fru_json = """
 {{
     "manufacturing-date": "1616630400",
@@ -500,24 +520,7 @@ class nic_con:
             print "Invalid slot number:", slot
             return -1
 
-        # Get AISC type
-        uut = "UUT_"+str(slot)
-        card_type = os.environ[uut]
-        if card_type == "ORTANO"  or \
-           card_type == "ORTANO2" or \
-           card_type == "BIODONA":
-            asic_type = "ELBA_CPLD"
-        elif card_type == "LACONA"       or \
-             card_type == "LACONADELL"   or \
-             card_type == "LACONA32"     or \
-             card_type == "LACONA32DELL" or \
-             card_type == "POMONTE"      or \
-             card_type == "POMONTEDELL":
-            asic_type = "ELBA_FPGA"
-        else:
-            asic_type = "CAPRI"
-        print("asic_type:", asic_type)
-
+        asic_type = self.get_asic_type(slot)
         if asic_type == "ELBA_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
         else:
@@ -562,7 +565,23 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def config_mnic(self, rate=115200, slot=0):
+    def run_mes_mtp_reset_commands(self, session):
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 1")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x0")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 24 -w --mask 0x1 -v 0")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 72 -r")
+        self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x1")
+
+    def mes_mtp_reset(self, slot, rate=115200):
+        session = common.session_start()
+        self.uart_session_start(session, rate)
+
+        session.timeout = 30
+        self.run_mes_mtp_reset_commands(session)
+        self.uart_session_stop(session)
+        common.session_stop(session)
+
+    def config_mnic(self, rate=115200, slot=0, uefi=False):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -578,6 +597,10 @@ class nic_con:
             session.expect("\#")
             temp = session.after
             if 'oob_mnic0' in session.before:
+                asic_type = self.get_asic_type(slot)
+                # only works for Elba FPGA cards with PS48
+                if asic_type == "ELBA_FPGA":
+                    self.run_mes_mtp_reset_commands(session)
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
                 time.sleep(0.5)
                 print 'oob_mnic0 enabled'
@@ -675,7 +698,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False):
+    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
@@ -691,7 +714,7 @@ class nic_con:
                 return ret
 
         for i in range(numRetry):
-            ret = self.config_mnic(rate, slot)
+            ret = self.config_mnic(rate, slot, uefi)
             if ret == -1:
                 print "=== FAIL to enable management port! ==="
                 return ret
@@ -714,6 +737,14 @@ class nic_con:
         if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
             self.fix_elba_bx(115200, slot)
             ret = self.ping_check_mtp(slot)
+
+        # if ping test fails, retry the MTP port reset
+        if ret != 0:
+            for i in range(numRetry):
+                self.mes_mtp_reset(slot)
+                ret = self.ping_check_mtp(slot)
+                if ret == 0:
+                    break
 
         return ret
 

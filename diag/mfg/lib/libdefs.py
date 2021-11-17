@@ -4,6 +4,7 @@ class NIC_Type:
     NAPLES100 = "NAPLES100"
     NAPLES100IBM = "NAPLES100IBM"
     NAPLES100HPE = "NAPLES100HPE"
+    NAPLES100DELL = "NAPLES100DELL"
     NAPLES25 = "NAPLES25"
     FORIO = "FORIO"
     VOMERO = "VOMERO"
@@ -21,7 +22,9 @@ class NIC_Type:
 
 class MTP_ASIC_SUPPORT:
     CAPRI = "CAPRI"
+    TURBO_CAPRI = "TURBO_CAPRI"
     ELBA  = "ELBA"
+    TURBO_ELBA = "TURBO_ELBA"
 
 class NIC_Vendor:
     PENSANDO = "Pensando"
@@ -368,6 +371,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
     NIC_SET_DIAG_BOOT_FMT = "fwupdate -s diagfw"
     NIC_SET_GOLD_BOOT_FMT = "fwupdate -s goldfw"
+    NIC_SET_EXTOSA_BOOT_FMT = "fwupdate -s extosa"
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
     NIC_DATE_SET_FMT = "date --set='{:s}'"
     NIC_SCP_COMPRESSED_FMT = "tar c -C {:s} {:s} | ssh {:s}@{:s} {:s} \"tar x -C {:s}\"" #format(srcdir,img,user,ip,sshoptions,dstdir)
@@ -400,6 +404,9 @@ class MFG_DIAG_CMDS:
     # Naples100HPE: core_freq=833 arm_freq=1600
     NAPLES100HPE_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
     NAPLES100HPE_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
+    # Naples100DELL: core_freq=833 arm_freq=1600
+    NAPLES100DELL_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
+    NAPLES100DELL_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"
     # Vomero: core_freq=833 arm_freq=2200
     VOMERO_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 2200"
     VOMERO_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 2200"
@@ -433,7 +440,7 @@ class MFG_DIAG_CMDS:
     MTP_SMB_RD_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_WR_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
     MTP_SMB_RE = r"addr 0x%x; data=(0x[0-9a-fA-F]+)"
-    MTP_SMB_SEL_FMT = "turn_on_uut.sh {:d}"
+    MTP_SMB_SEL_FMT = "turn_on_hub.sh {:d}"
 
     NIC_POWER_CHECK_FMT = "inventory -ps -slot={:d}"
     NIC_POWER_RAIL_DISP_FMT = "inventory -pw -slot={:d}"
@@ -455,8 +462,10 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d} -mode=pcie"
     MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=hod"
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=hod_1100"
+    MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=nod_550"
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=nod"
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
+    MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
@@ -491,6 +500,7 @@ class MFG_DIAG_CMDS:
     NIC_SYNC_FS_FMT = "sync"
     NIC_SW_UMOUNT_FMT = "/etc/init.d/S09mount stop"
     NIC_OS_SHUTDOWN_FMT = "poweroff"
+    NIC_OS_SHUTDOWN_PEN_FMT = "penvisorctl execute poweroff"
 
     MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
     MFG_MK_DIR_FMT = "mkdir -p {:s}"
@@ -525,6 +535,7 @@ class MFG_DIAG_SIG:
     NIC_EMMC_PERF_MODE_OK_SIG = "0"
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
+    NIC_PARA_SIG = "=== Setup env top"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
@@ -562,6 +573,7 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES25OCP = r"\bUUT_(\d+) +NAPLES25OCP\b"
     MFG_NIC_TYPE_NAPLES100IBM = r"\bUUT_(\d+) +NAPLES100IBM\b"
     MFG_NIC_TYPE_NAPLES100HPE = r"\bUUT_(\d+) +NAPLES100HPE\b"
+    MFG_NIC_TYPE_NAPLES100DELL = r"\bUUT_(\d+) +NAPLES100DELL\b"
     MFG_NIC_TYPE_NAPLES25SWMDELL = r"\bUUT_(\d+) +NAPLES25SWMDELL\b"
     MFG_NIC_TYPE_NAPLES25SWM833 = r"\bUUT_(\d+) +NAPLES25SWM833\b"
     MFG_NIC_TYPE_ORTANO = r"\bUUT_(\d+) +ORTANO\b"

@@ -9,7 +9,7 @@
 		"historypath":"/samba/public/FSJ_TAORMINA/HISTORY"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database_FSJ/TAORMINA_DB_FSJ3.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database_FSJ/TAORMINA_DB_FSJ8.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
@@ -17,15 +17,15 @@
 	"TESTLIST" :[
 					"DL1",
 					"DL2",
-					"DL3",
-					"P2C"
+					"P2C",
+					"SWI"
 					],
 	"TESTFOLDER":[
 					"DL",
-					"P2C"
+					"P2C",
+					"SWI"
 				],
-	"SPECIAL" : "FSJ2132000A",
-	"STARTCountSN" : "FSJ21320001",
+	"STARTCountSN" : "FSJ21440001",
 	"CM": "FSJ"
 	
 }

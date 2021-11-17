@@ -263,6 +263,7 @@ proc efuse_test {slot} {
        ||  ($cpld_ver == 0x1C && $cpld_rev > 0x3)
        ||  ($cpld_ver == 0x1F && $cpld_rev > 0x1)
        ||  ($cpld_ver == 0x21 && $cpld_rev > 0x0)
+       ||  ($cpld_ver == 0x22 && $cpld_rev > 0x0)
        ||  ($cpld_ver == 0x19 && $cpld_rev > 0x7)  } {
         set cpld_data [ssi_cpld_read 0x10]
         set cpld_data [expr {$cpld_data | 0x20}]
@@ -289,6 +290,7 @@ proc efuse_test {slot} {
        ||  ($cpld_ver == 0x1C && $cpld_rev > 0x3)
        ||  ($cpld_ver == 0x1F && $cpld_rev > 0x1)
        ||  ($cpld_ver == 0x21 && $cpld_rev > 0x0)
+       ||  ($cpld_ver == 0x22 && $cpld_rev > 0x0)
        ||  ($cpld_ver == 0x19 && $cpld_rev > 0x7)  } {
         set cpld_data [ssi_cpld_read 0x10]
         set cpld_data [expr {$cpld_data & 0xDF}]

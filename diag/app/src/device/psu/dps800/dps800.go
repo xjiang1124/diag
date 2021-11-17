@@ -3,8 +3,7 @@ package dps800
 import (
     "fmt"
     "os"
-    "strconv"
-    //"cardinfo"
+    "unicode"
     "common/cli"
     "common/errType"
     "hardware/i2cinfo"
@@ -212,6 +211,21 @@ func ReadTemp(devName string, sensorNumber uint32) (integer uint64, dec uint64, 
     return
 }
 
+
+func StrIsAscii(s string ) bool {
+
+    if len(s) == 0 {
+        return false
+    }
+    for i := 0; i < len(s); i++ {
+        if s[i] > unicode.MaxASCII {
+            return false
+        }
+    }
+    return true
+}
+
+
 func DisplayManufacturingInfo(devName string) (err int) {
     var psuNumber uint32 = 0
     wrData := []byte{}
@@ -298,35 +312,22 @@ func DisplayManufacturingInfo(devName string) (err int) {
         return
     }
 
-    fw_rev_major, _ := strconv.Atoi(string(mfgFWrev[2:4]))
-    fw_rev_minor, _ := strconv.Atoi(string(mfgFWrev[6:8]))
-    
 
-    if (fw_rev_major > 0) || (fw_rev_minor > 0) {
-        wrData[0] = USER_CODE_00
-        usercode00, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, USER_CODE_00_BLK_SIZE + 1 )
-        if errGo != nil {
-            err = errType.FAIL
-            return
-        }
-        if len(usercode00) != USER_CODE_00_BLK_SIZE + 1 {
-            err = errType.FAIL
-            cli.Printf("e", "%s Length of USER_CODE_00_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), USER_CODE_00_BLK_SIZE + 1)
-        }
+    // USER CODE MAY BE ALL 0xFF ON EARLIER PSU'S.   ON LATER PSU'S IT SHOULD LOOK SOMETHING LIKE THIS  
+    /* 
+     WR: 0xb0
+    RD: 0x06 0x52 0x38 0x52 0x35 0x31 0x41 0x90 0xff 0xff
+    root@elba4:/fs/nos/eeupdate# ./fpgautil i2c 1 0 0x58 w 0xB0 r 10
 
-        wrData[0] = USER_CODE_01
-        usercode01, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, USER_CODE_01_BLK_SIZE + 1 )
-        if errGo != nil {
-            err = errType.FAIL
-            return
-        }
-        if len(usercode01) != USER_CODE_01_BLK_SIZE + 1 {
-            err = errType.FAIL
-            cli.Printf("e", "%s Length of USER_CODE_01_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), USER_CODE_01_BLK_SIZE + 1)
-        }
-    }
+    WR: 0xb0
+    RD: 0x06 0x52 0x38 0x52 0x35 0x31 0x41 0x90 0xff 0xff
 
-    /*
+    root@elba4:/fs/nos/eeupdate# ./fpgautil i2c 1 0 0x58 w 0xB1 r 0x19
+
+    WR: 0xb1
+    RD: 0x18 0x43 0x58 0x20 0x31 0x30 0x30 0x30 0x30 0x2d 0x34 0x38 0x59 0x36 0x43 0x20 0x46 0x42 0x20 0x41 0x43 0x20 0x50 0x53 0x55
+    root@elba4:/fs/nos/eeupdate# 
+     
     DPS-800AB-40 A:
     USER_CODE_00 : “R8R51A” (total 6bytes)
     USER_CODE_01 : “CX 10000-48Y6C FB AC PSU” (total 24 bytes)
@@ -336,11 +337,148 @@ func DisplayManufacturingInfo(devName string) (err int) {
     */
     //PSU_1: DELTA DPS-800AB-40    Rev: 00F   S/N: JBMD2047000089   F/W REV: S00.S01
     //SSD MODEL: W6EN064G1TA-S91AA3-2D2.A5   S/N: 62901-0152 Capacity: 64.0 GB    Smart Health PASSED 
+    wrData[0] = USER_CODE_00
+    usercode00, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if uint32(usercode00[0]) == 0xFF {  //Not programmed at all
+        err = errType.FAIL
+    } else if uint32(usercode00[0]) > 32 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of USER_CODE_00 seem to high > 32.  Read %d", devName, uint32(usercode00[0]))
+    } else {
+        wrData[0] = USER_CODE_00
+        usercode00, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(usercode00[0]) + 1)
+        if errGo != nil {
+            err = errType.FAIL
+            return
+        }
+    }
+
+    wrData[0] = USER_CODE_01
+    usercode01, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 1 )
+    if errGo != nil {
+        err = errType.FAIL
+        return
+    }
+    if uint32(usercode01[0]) == 0xFF {  //Not programmed at all
+        err = errType.FAIL
+    } else if uint32(usercode01[0]) > 32 {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of USER_CODE_00 seem to high > 32.  Read %d", devName, uint32(usercode01[0]))
+    } else {
+        wrData[0] = USER_CODE_01
+        usercode01, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(usercode01[0]) + 1 )
+        if errGo != nil {
+            err = errType.FAIL
+            return
+        }
+    }
+
+
 
     fmt.Printf("%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) )
-    if (fw_rev_major > 0) || (fw_rev_minor > 0) {
+    if StrIsAscii(string(usercode00[1:])) == true {
         fmt.Printf("%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) )
+    } else {
+        fmt.Printf("%s: ...... ........................\n", devName)
     }
+    return
+}
+
+
+
+
+func DispVoltWattAmp(devName string) (err int) {
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    cardType := os.Getenv("CARD_TYPE")
+    if cardType == "TAORMINA" {
+        var PSUnumber uint32
+        if devName == "PSU_1" {
+            PSUnumber = taorfpga.PSU0
+        } else {
+            PSUnumber = taorfpga.PSU1
+        }
+        present, _ := taorfpga.PSU_present(PSUnumber)
+        pwrok, _ := taorfpga.PSU_pwrok(PSUnumber)
+        if pwrok == false || present == false {
+            for i:=0;i<6;i++ {
+                outStrTemp = "-"
+                outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+            }
+            fmt.Println(outStr)
+            return
+        }
+    }
+
+    dig, frac, err := ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
+
+    dig, frac, _ = ReadVout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadPin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadVin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    fmt.Println(outStr)
+
+    return
+}
+
+
+func GetTemperature(devName string) (temperatures []float64, err int) {
+
+    cardType := os.Getenv("CARD_TYPE")
+    if cardType == "TAORMINA" {
+        var PSUnumber uint32
+        if devName == "PSU_1" {
+            PSUnumber = taorfpga.PSU0
+        } else {
+            PSUnumber = taorfpga.PSU1
+        }
+        present, _ := taorfpga.PSU_present(PSUnumber)
+        pwrok, _ := taorfpga.PSU_pwrok(PSUnumber)
+        if present == false || pwrok == false{
+               return
+        }
+    }
+
+    dig, frac, err := ReadTemp(devName, 0)
+    if err != errType.SUCCESS {
+        return;
+    }
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+    dig, frac, err = ReadTemp(devName, 1)
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+    dig, frac, err = ReadTemp(devName, 2)
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
     return
 }
 
@@ -389,9 +527,12 @@ func DispStatus(devName string) (err int) {
     //outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     //outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ := ReadPout(devName)
+    dig, frac, err := ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
 
     dig, frac, _ = ReadVout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)

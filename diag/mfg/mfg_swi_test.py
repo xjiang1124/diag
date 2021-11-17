@@ -72,7 +72,7 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     else:
         skipped_testlist = ""
     if fail_nic_list:
-        fail_slots_cmd = " --fail-slots"
+        fail_slots_cmd = " --fail-slots "
         fail_slots_cmd += ' '.join(map(str, fail_nic_list))
     else:
         fail_slots_cmd = ""
@@ -188,24 +188,29 @@ def main():
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                    continue
+                    #continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
-                    continue
+                    #continue
+                try:
+                    mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(card_type))
+                    #continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0015"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                    continue
+                    #continue
                 if card_type in ELBA_NIC_TYPE_LIST:
                     try:
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        continue
+                        #continue
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):

@@ -163,6 +163,31 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
 }
 
 
+func ReadVout_Linear(devName string) (integer uint64, dec uint64, err int) {
+    //var VMODE byte
+    var VOUT uint16
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    // Write page register
+    pmbus.WriteByte(devName, PAGE, page)
+
+    VOUT, err = pmbus.ReadWord(devName, MFR_SPECIFIC_04)
+
+    integer, dec, err =  pmbus.Linear11(VOUT)
+
+    return
+}
+
+
 func ReadVoutCmd(devName string) (voutcmd uint16, err int) {
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -224,6 +249,11 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     // Write page register
     pmbus.WriteByte(devName, PAGE, page)
 
+    //Set the phase to read max current
+    if page == 0 {
+        pmbus.WriteByte(devName, PHASE, 0x80)
+    }
+
     IOUT, err = pmbus.ReadWord(devName, READ_IOUT)
 
     integer, dec, err =  pmbus.Linear11(IOUT)
@@ -245,6 +275,12 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
+
+    //Need to set mfg-specific register 10 to take into account 1mohm resistor
+    //This must be done on PAGE0
+    //pmbus.WriteByte(devName, PAGE, 0)
+    //pmbus.WriteWord(devName, MFR_SPECIFIC_10, 0x32c8)
+
     // Write page register
     pmbus.WriteByte(devName, PAGE, page)
 
@@ -301,6 +337,56 @@ func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
 
     return
 }
+
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    dig, frac, err := ReadTemp(devName)
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+    return
+}
+
+
+func DispVoltWattAmp(devName string) (err int) {
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, "NAME")
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    dig, frac, err := ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
+
+    dig, frac, _ = ReadVout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadPin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadVin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    fmt.Println(outStr)
+
+    return
+}
+
 
 
 func DispStatus(devName string) (err int) {

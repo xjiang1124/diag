@@ -235,6 +235,12 @@ def main():
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                     continue
+                try:
+                    if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
+                        mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
+                    continue
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):

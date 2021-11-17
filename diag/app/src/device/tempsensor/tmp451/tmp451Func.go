@@ -128,6 +128,18 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
 }
 
 
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    dig, frac, err := ReadTemp(devName, LOCAL_TEMP)
+    if err != errType.SUCCESS {
+        temperatures = append(temperatures, 2989)
+        
+    } else {
+        temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+    }
+    return
+}
+
+
 func DispStatus(devName string) (err int) {
     err = errType.SUCCESS
 

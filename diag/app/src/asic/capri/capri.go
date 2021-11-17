@@ -66,6 +66,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
         if (cardType == "NAPLES100")    ||
            (cardType == "NAPLES100IBM") ||
            (cardType == "NAPLES100HPE") ||
+           (cardType == "NAPLES100DELL") ||
            (cardType == "FORIO")        ||
            (cardType == "VOMERO2")        ||
            (cardType == "VOMERO") {
@@ -90,6 +91,7 @@ func Prbs(mode string, poly string, duration int) (err int) {
         if (cardType == "NAPLES100")    ||
            (cardType == "NAPLES100IBM") ||
            (cardType == "NAPLES100HPE") ||
+           (cardType == "NAPLES100DELL") ||
            (cardType == "FORIO")        ||
            (cardType == "VOMERO2")        ||
            (cardType == "VOMERO") {

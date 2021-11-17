@@ -32,6 +32,20 @@ type entry struct {
     Value    []byte
 }
 
+var MtpTurboTbl = []entry {
+    entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
+    entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},
+    entry{"HW_MINOR_REV",   STRING, 6,   4,  []byte("0100")},
+    entry{"PRODUCT_NAME",   STRING, 10,  20, []byte("TURBO NIC MTP")},
+    entry{"SERIAL_NUM",     STRING, 30,  20, []byte("1234567890          ")},
+    entry{"COMPANY_NAME",   STRING, 50,  20, []byte("Pensando Systems Inc")},
+    entry{"MFG_DEVIATION",  STRING, 70,  20, []byte("0                   ")},
+    entry{"MFG_BITS",       STRING, 90,  2,  []byte("00")},
+    entry{"ENG_BITS",       STRING, 92,  2,  []byte("00")},
+    entry{"MAC_ADDR",       STRING, 94,  12, []byte("AABBCCDDEEFF")},
+    entry{"NUM_OF_MAC",     STRING, 106, 2,  []byte("00")},
+}
+
 var MtpTbl = []entry {
     entry{"NUM_BYTES",      STRING, 0,   4,  []byte("0256")},
     entry{"HW_MAJOR_REV",   STRING, 4,   2,  []byte("00")},
@@ -1064,6 +1078,22 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
             }
         }
 
+        //For Pomonta and Lacona for Dell, need to copy the mac address into the mrec in little endian order
+        if (CardType == "LACONA32DELL" || (CardType == "POMONTEDELL")) { 
+            if entry.Name == "LE MAC Address Base" {
+                for _, tblEntry := range(EepromTbl) {
+                    if tblEntry.Name == "MAC Address Base" {
+                        for j:=0;j<6;j++ {
+                            entry.Value[5-j] = tblEntry.Value[j]
+                        }
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    for _, entry := range(EepromTbl) {
         if entry.Name == "Board Info Area Checksum" {
             updateIntChk()
             entry.Value[0] = byte(0x100 - brdInfoChk % 0x100)
@@ -1090,7 +1120,6 @@ func ProgEeprom(devName string, bus uint32, devAddr byte) (err int) {
             return
         }
     }
-
 
     //Extended Table gets handled here
     //Default Extended Table is SWM card.  
@@ -1990,6 +2019,8 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                 outStr = fmt.Sprintf(fmtDate, entry.Name, data[2], data[1], data[0], date)
             } else if entry.Name == "MAC Address Base" {
                 outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
+            } else if entry.Name == "LE MAC Address Base" {
+                outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
             } else if entry.Name == "Class Code" {
                 outStr = fmt.Sprintf("%-45s0x%02X%02X%02X", entry.Name, data[2], data[1], data[0]) 
             } else if entry.Name == "PCI-SIG Vendor ID" {
@@ -2044,6 +2075,8 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
                     date := fmt.Sprintf("%02d/%02d/%02d", int(month), int(day), (int(year) % 100))
                     outStr = fmt.Sprintf(fmtDate, entry.Name, data[2], data[1], data[0], date)
                 } else if entry.Name == "MAC Address Base" {
+                    outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
+                } else if entry.Name == "LE MAC Address Base" {
                     outStr = fmt.Sprintf(fmtMac, entry.Name, data[0], data[1], data[2], data[3], data[4], data[5])
                 } else {
                     outStr = fmt.Sprintf(fmtHex, entry.Name, data)

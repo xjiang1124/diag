@@ -122,6 +122,27 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
+
+/*******************************************************
+ONLY IF BOARD HAS EXTERNAL SENSOR HOOKED TO 544c20 
+********************************************************/
+func ReadTemperature(devName string) (integer uint64, dec uint64, err int) {
+    var temperature uint16
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    temperature, err = pmbus.ReadWord(devName, READ_TEMPERATURE_2)
+
+    integer, dec, err =  pmbus.Linear11(temperature)
+
+    return
+}
+
+
 func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     voutInt, voutFrac, err := ReadVout(devName)
     if err != errType.SUCCESS {
@@ -142,9 +163,47 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
+
+func DispVoltWattAmp(devName string) (err int) {
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    dig, frac, err := ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
+
+    dig, frac, _ = ReadVout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    outStrTemp = "-"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    outStrTemp = "-"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    outStrTemp = "-"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    fmt.Println(outStr)
+
+    return
+}
+
+
 func DispStatus(devName string) (err int) {
 
-    vrmTitle := []string {"POUT", "VOUT_TGT", "VOUT", "IOUT", "STATUS"}
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -155,19 +214,18 @@ func DispStatus(devName string) (err int) {
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    //cli.Println("i", "0.00.00.00.00.00.0--")
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, _ := ReadPout(devName)
+    dig, frac, err := ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
 
-    dig, frac, _ = ReadTargetVoltage(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)

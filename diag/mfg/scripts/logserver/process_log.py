@@ -121,16 +121,7 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
         movereporttohistorydir(inputconfig)
 
     if "MTP_STATUS" in inputconfig:
-        wb3 = Workbook()
-        dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
-        print(dest_filename3)
-
-        generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
-
-        for mtp in DATA["MTPCHASSIS"]:
-            generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
-
-        wb3.save(filename = dest_filename3) 
+        generateMTPreport(pr,DATA,inputconfig,startdate=None)
 
     if "DIE_ID" in inputconfig:
         wb2 = Workbook()
@@ -150,6 +141,28 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
+
+    if "NAME" in inputconfig:
+        if "ORTANO2" == inputconfig["NAME"].upper():
+            workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+            SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
+            for PN in SNbyPN:
+                #,listofsn=[],specpn=None
+                createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
+
+    return None
+
+def generateMTPreport(pr,DATA,inputconfig,startdate=None):
+    wb3 = Workbook()
+    dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
+    print(dest_filename3)
+
+    generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
+
+    for mtp in DATA["MTPCHASSIS"]:
+        generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
+
+    wb3.save(filename = dest_filename3) 
 
     return None
 
@@ -173,21 +186,29 @@ def getbeforedayinformation(checkday=30):
 
     return days_before
 
-def createteststatusreport(pr,DATA,inputconfig,startdate=None):
-    workingonSNlist = DATA['SN']['LIST']
+def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
+    
+    #workingonSNlist = DATA['SN']['LIST']
     
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    if len(listofsn):
+        workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
     #sys.exit()    
     wb = Workbook()
     
-    dest_filename = "{}EXECL_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
-    filenameheader = "{}EXECL_{}_DATA".format(inputconfig['DIR']["reportpath"],date_time)
+    reportdir = inputconfig['DIR']["reportpath"]
+    if specpn:
+        reportdir = reportdir + specpn + '/'
+        pr['modules'].createdirinserver(reportdir)
+
+    dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
     if "NAME" in inputconfig:
-        dest_filename = "{}{}_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
-        filenameheader = "{}{}_{}_DATA".format(inputconfig['DIR']["reportpath"],inputconfig["NAME"],date_time)
+        dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
     if startdate:
         dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
 
@@ -215,6 +236,8 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None):
 
     print("START DATE: {}".format(startdate))
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
+    if len(listofsn):
+        workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
 
@@ -399,15 +422,17 @@ def workingonLastdata(DATA,inputconfig):
                                 writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
                                 NewSN = False
                             if checktime2 >= checkdata:
-                                if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and not "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
-                                elif not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
-                                elif 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                                    if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and not "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                    elif not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                    elif 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
                             else:
-                                if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
-                                    writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
+                                if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                                    if not 'PASS' in DATA['SN']['KEEPLASTPASS'][test][SN]["result"] and "PASS" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]:
+                                        writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='KEEPLASTPASS')
                                     
             delSNwithnoData(DATA,test,SN,counttesttime,status='KEEPLASTPASS')
 
@@ -466,7 +491,10 @@ def writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,check
             DATA['SN'][status][test][SN]["NICINFO"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICINFO"]
     checkdata = checktime2
     DATA['SN'][status][test][SN]["checktime"] = checktime2
-    DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    if "FINALRESULT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+        DATA['SN'][status][test][SN]["result"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["FINALRESULT"]
+    else:
+        DATA['SN'][status][test][SN]["result"] = "NONE"
     if "SPECIAL" in inputconfig:
         if SN == inputconfig["SPECIAL"]:
             if "FAIL" in DATA['SN'][status][test][SN]["result"]:
@@ -1641,8 +1669,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
         wirtedata.append("TOTAL")
         alltotal = 0
         for test in topfailuredata['OVERALL']['TEST_HVLV']["TEST"]:
-            wirtedata.append(testtotal[test])
-            alltotal += testtotal[test]
+            if test in testtotal:
+                wirtedata.append(testtotal[test])
+                alltotal += testtotal[test]
         wirtedata.append(alltotal)
         ws2.append(wirtedata)
         wirtedata = list()
@@ -1651,6 +1680,8 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
         wirtedata.append("TEST")
         wirtedata.append("SN")
         wirtedata.append("FAILURE TYPE")
+        wirtedata.append("RE-TEST COUNT")
+        wirtedata.append("LAST RESULT")
         ws2.append(wirtedata)
         for test in topfailuredata['OVERALL']['TEST_HVLV']["TEST"]:
             if test in topfailuredata['OVERALL']['TEST_HVLV']["DATA"]:
@@ -1660,6 +1691,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
                         wirtedata.append(test)
                         wirtedata.append(SN)
                         wirtedata.append(failuretype)
+                        testnamelist = test.split(' ')
+                        wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["count"])
+                        wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["result"])
                         ws2.append(wirtedata)
         wirtedata = list()
         ws2.append(wirtedata)
@@ -1733,6 +1767,8 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
             wirtedata.append("TEST")
             wirtedata.append("SN")
             wirtedata.append("FAILURE TYPE")
+            wirtedata.append("RE-TEST COUNT")
+            wirtedata.append("LAST RESULT")
             ws2.append(wirtedata)
             for test in topfailuredata['OVERALL']['TEST_HVLV_by_WEEK'][testweek]["TEST"]:
                 if test in topfailuredata['OVERALL']['TEST_HVLV_by_WEEK'][testweek]["DATA"]:
@@ -1742,6 +1778,9 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
                             wirtedata.append(test)
                             wirtedata.append(SN)
                             wirtedata.append(failuretype)
+                            testnamelist = test.split(' ')
+                            wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["count"])
+                            wirtedata.append(DATA['SN']["LAST"][testnamelist[0]][SN]["result"])
                             ws2.append(wirtedata)
             wirtedata = list()
             ws2.append(wirtedata)
@@ -2536,7 +2575,6 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
                         wirtedata = list()
                         wirtedata.append(teststep)
                         wirtedata.append(sn)
@@ -2556,7 +2594,10 @@ def generateexecltestbyNon4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,p
                         else:
                             wirtedata.append("No TESTTIME")
                         #sys.exit()
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        else:
+                            wirtedata.append("NONE")
                         timestamp = "{}_{}".format(testdate,testetime)
                         wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
                         ws2.append(wirtedata)
@@ -3463,7 +3504,7 @@ def generateexeclHVLVsummary(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,pr):
     highlightinred(ws2, 'FAIL')
     highlightinred(ws2, 'FAILED')
     freezePosition(ws2,'B2')
-    converttoPERCENTAGEnumber(ws2)
+    converttoPERCENTAGEnumberbyFailurerange(ws2)
     difftime = datetime.now()-start
     print("generateexeclHVLVsummary: {} use {} seconds".format(teststep,difftime.total_seconds()))
     generateexeclHVLVdata(FailureSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureonly=True)
@@ -3608,7 +3649,10 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                        if 'SLOT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                        else:
+                            slot = None
                         wirtedata = list()
                         wirtedata.append(teststep)
                         wirtedata.append(sn)
@@ -3622,10 +3666,19 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
                             wirtedata.append('NO TESTTIME')
                         timestamp = "{}_{}".format(testdate,testetime)
                         wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
-                        #DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['CPLD']
-                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        if 'CARDTYPE' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                        else:
+                            wirtedata.append("NONE")
+                        if 'SLOT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                        else:
+                            wirtedata.append("NONE")
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            #DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['CPLD']
+                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                        else:
+                            wirtedata.append("NONE")
                         if teststep == 'DL':
                             if 'PN' in DATA["SN"][sn][chassis][testdate][testetime]:
                                 wirtedata.append(str(DATA["SN"][sn][chassis][testdate][testetime]['PN']))
@@ -3728,35 +3781,36 @@ def generateexeclerrdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        if "FAIL" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
-                            slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
-                            howmanyerror = len(DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL'])
-                            if howmanyerror:
-                                for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
-                                    eacherrorlist = eacherror.split('\n')
-                                    neweacherror = ''
-                                    for checkeacherror in eacherrorlist:
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            if "FAIL" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                                slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                                howmanyerror = len(DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL'])
+                                if howmanyerror:
+                                    for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
+                                        eacherrorlist = eacherror.split('\n')
+                                        neweacherror = ''
+                                        for checkeacherror in eacherrorlist:
 
-                                        checkeacherror = _removeIllegalCharacterError(checkeacherror)
-                                        neweacherror += checkeacherror
-                                        neweacherror += "\r"
-                                    wirtedata = list()
-                                    wirtedata.append(teststep)
-                                    wirtedata.append(sn)
-                                    wirtedata.append(chassis)
-                                    wirtedata.append(testdate)
-                                    wirtedata.append(testetime)
-                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
-                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                                            checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                            neweacherror += checkeacherror
+                                            neweacherror += "\r"
+                                        wirtedata = list()
+                                        wirtedata.append(teststep)
+                                        wirtedata.append(sn)
+                                        wirtedata.append(chassis)
+                                        wirtedata.append(testdate)
+                                        wirtedata.append(testetime)
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
 
-                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
-                                    #print(eacherror)
-                                    #if len(eacherror) > 200:
-                                        #eacherror = eacherror[:200]
-                                    wirtedata.append(neweacherror)
-                                    #print(wirtedata)
-                                    ws2.append(wirtedata)
-                                    #print(wirtedata)
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                                        #print(eacherror)
+                                        #if len(eacherror) > 200:
+                                            #eacherror = eacherror[:200]
+                                        wirtedata.append(neweacherror)
+                                        #print(wirtedata)
+                                        ws2.append(wirtedata)
+                                        #print(wirtedata)
     
     fixcolumnssize2(ws2)
     highlightinyellow(ws2,'TIMEOUT')
@@ -3881,6 +3935,20 @@ def highlightinred(ws,keyword):
 			if keyword in str(ws.cell(row=rowNum, column=colNum).value):
 				ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')                
 
+def highlightinlightredrow(ws,keyword):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        fillcolor = 0
+        for colNum in range(1, maxCol + 1):
+            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+                fillcolor = 1
+            if fillcolor:
+                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFCCCB', end_color='FFCCCB', fill_type = 'solid')   
+
 def converttoPERCENTAGEnumber(ws):
     from openpyxl.styles import Color, PatternFill, Font, Border
     maxRow = ws.max_row
@@ -3893,7 +3961,90 @@ def converttoPERCENTAGEnumber(ws):
                 checkvalue = float(checkvalue[:-1])/100
                 ws.cell(row=rowNum, column=colNum).value = checkvalue
                 ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
-                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+                if checkvalue > 0.95:
+                    #Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+                elif checkvalue < 0.1:
+                    #Red
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+                elif checkvalue > 0.75:
+                    #Yellow
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFEE08', end_color='FFEE08', fill_type = 'solid')
+                elif checkvalue < 0.25:
+                    #Pink
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFC0CB', end_color='FFC0CB', fill_type = 'solid')
+                elif checkvalue > 0.50:
+                    #Arylide Yellow
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='E9D66B', end_color='E9D66B', fill_type = 'solid')
+                else:
+                    #Orange
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+
+def converttoPERCENTAGEnumberbyFailurerange(ws):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        for colNum in range(1, maxCol + 1):
+            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+            if '%' in checkvalue:
+                checkvalue = float(checkvalue[:-1])/100
+                ws.cell(row=rowNum, column=colNum).value = checkvalue
+                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+                if checkvalue < 0.005:
+                    #Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type = 'solid')
+                elif checkvalue < 0.01:
+                    #Sap Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66FF00', end_color='66FF00', fill_type = 'solid')
+                elif checkvalue < 0.02:
+                    #Antique Bronze
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='BBFF00', end_color='BBFF00', fill_type = 'solid')
+                elif checkvalue < 0.03:
+                    #Chestnut
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type = 'solid')
+                elif checkvalue < 0.04:
+                    #Sweet Brown
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFAA00', end_color='FFAA00', fill_type = 'solid')
+                elif checkvalue < 0.05:
+                    #Cardinal
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF5500', end_color='FF5500', fill_type = 'solid')
+                else:
+                    #Red
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+
+    # FF0000 <-- red
+    # FF1100
+    # FF2200
+    # FF3300
+    # FF4400
+    # FF5500
+    # FF6600
+    # FF7700
+    # FF8800
+    # FF9900
+    # FFAA00
+    # FFBB00
+    # FFCC00
+    # FFDD00
+    # FFEE00
+    # FFFF00 <-- yellow
+    # EEFF00
+    # DDFF00
+    # CCFF00
+    # BBFF00
+    # AAFF00
+    # 99FF00
+    # 88FF00
+    # 77FF00
+    # 66FF00
+    # 55FF00
+    # 44FF00
+    # 33FF00
+    # 22FF00
+    # 11FF00
+    # 00FF00 <-- green
 
 def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
     
@@ -4021,6 +4172,7 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
     wirtedata.append('MTP')
     wirtedata.append('TEST')
     wirtedata.append('STATUS')
+    wirtedata.append('TOTAL')
     for slot in inputconfig["MTP_STATUS"]:
         wirtedata.append(slot)
     ws1.append(wirtedata)
@@ -4028,29 +4180,59 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
         wirtedatatotal = list()
         wirtedatapass = list()
         wirtedatafail = list()
+        wirtedatapassrate = list()
         wirtedatatotal.append(mtp)
         wirtedatapass.append(mtp)
         wirtedatafail.append(mtp)
+        wirtedatapassrate.append(mtp)
         teststep = mtpchassisusecountbyslot[mtp]["TEST"][0]
         if len(mtpchassisusecountbyslot[mtp]["TEST"]) > 1:
             for eachtest in mtpchassisusecountbyslot[mtp]["TEST"][1:]:
                 teststep = "{},{}".format(teststep,eachtest)
         wirtedatatotal.append(teststep)
         wirtedatapass.append(teststep)
-        wirtedatafail.append(teststep)  
+        wirtedatafail.append(teststep)
+        wirtedatapassrate.append(teststep)
+        listoftotal = list()
+        listofpass = list()
+        listoffail = list()
+        for slot in inputconfig["MTP_STATUS"]:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            listofpass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            listoffail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])  
         wirtedatatotal.append("TOTAL")
         wirtedatapass.append("PASS")
-        wirtedatafail.append("FAIL")      
+        wirtedatafail.append("FAIL")
+        wirtedatapassrate.append("PASS_RATE")
+        wirtedatatotal.append(sum(listoftotal))
+        wirtedatapass.append(sum(listofpass))
+        wirtedatafail.append(sum(listoffail))
+        wirtedatapassrate.append(calculePass_rate(sum(listoftotal),sum(listofpass)))           
         for slot in inputconfig["MTP_STATUS"]:
             wirtedatatotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
             wirtedatapass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
             wirtedatafail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])
+            wirtedatapassrate.append(calculePass_rate(mtpchassisusecountbyslot[mtp][slot]["TOTAL"],mtpchassisusecountbyslot[mtp][slot]["PASS"]))
         ws1.append(wirtedatatotal)
         ws1.append(wirtedatapass)
-        ws1.append(wirtedatafail)           
+        ws1.append(wirtedatafail)
+        ws1.append(wirtedatapassrate)          
     fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+    highlightinlightredrow(ws1,'FAIL')
+    freezePosition(ws1,'D2')
 
     return True
+
+def calculePass_rate(totalnumber,passnumber):
+
+    calcule_yeild = 1
+    if totalnumber:
+        calcule_yeild = passnumber / totalnumber
+
+    yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
+
+    return yeilddisplay
 
 def generateexecldieidreport(DATA,wb,inputconfig,start=None):
     ws1 = wb.active

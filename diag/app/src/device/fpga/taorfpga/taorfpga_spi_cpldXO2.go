@@ -178,7 +178,6 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
     var timeout, x uint32 = 100, 0
     var statsreg uint32
 
-    //check status reg for status on tx data drain
     for x=0; x<timeout; x++ {
         data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
         if ((data32 & 0xC0000000) > 0) {
@@ -186,9 +185,11 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
             return;
         }
         
+        //Just capture a snapshot of the status reg in case the read times out so we have an initial snap shot for debug
         if x == 0 {
             statsreg, _ = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
         }
+        //Poll sleep
         time.Sleep(time.Duration(1) * time.Microsecond)
     }
     
@@ -231,19 +232,7 @@ func Fpga_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint
             goto SPI_TRANSACTION_END
         }
         for i:=0; i<wr_length; i++ {
-            //if ((wr_length - i) >= 4) && ( ((i+1) % 4) == 0) {
-            //    wrdata := uint32(opCode[0]) | uint32(opCode[1])<<8 | uint32(opCode[2]) <<16 | uint32(opCode[3]) <<24
-            //    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , wrdata)
-            //    i = i + 3
-            //} else if (wr_length - i) > 1 {
-            //    TaorWriteU16(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , uint16(opCode[i]))
-            //    i = i + 1
-            //} else {
-                TaorWriteU8(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (opCode[i]))
-            //}
-
-            //fmt.Printf("I=%d\n", i)
-            //TX FIFO IN FPGA IS 1024 BYTES.. QUEUE UP TO THAT MUCH DATA BEFORE CHECKING TX DRAIN
+            TaorWriteU8(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (opCode[i]))
             if (i!=0) && ((i%1024) == 0) {
                 ChkTxDrain = 1
             }
@@ -255,14 +244,12 @@ func Fpga_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint
                     } else {
                         tmpRdLength = rdLength
                     } 
-                    //fmt.Printf(" SET RD LENGTH=%d\n", tmpRdLength)
-                    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  
+                    TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  //SET READ SIZE IF WE NEED TO READ
                 }
             }
 
             
             if ChkTxDrain > 0 {
-                //fmt.Printf(" Check Tx Drain\n")
                 err = Spi_check_tx_drain(spiNumber)
                 if err != nil {
                     goto SPI_TRANSACTION_END
@@ -282,7 +269,6 @@ func Fpga_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint
                 fmt.Printf("[ERROR] Fpga_spi_generic_transaction -> Spi_Read_Data Failed.  i=%d\n", i)
                 goto SPI_TRANSACTION_END
             }
-            //fmt.Printf("I=%.04d   data=%.08x\n", i, data32)
             rdData = append(rdData, byte(data32))
             if ((data32 & 0xC0000000) == 0x80000000) {
                 rdData = append(rdData, byte((data32>>8)))
@@ -301,7 +287,7 @@ func Fpga_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint
                     tmpRdLength = ((rdLength-1) % FIFORDLENGTH)
                 }
 
-                TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  //turn on spi output
+                TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  //pipe in next read length
             } 
              
         }
@@ -368,6 +354,9 @@ func Spi_cpld_read_usercode(spiNumber uint32) (ucode uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_USERCODE_OP, CPLD_RD_USERCODE_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_USERCODE_OP_RDLNG-1) * 8); i>=0; i=(i-8) {
         ucode = ucode | (uint32(data[j])<<uint32(i))
         j++
@@ -379,6 +368,9 @@ func Spi_cpld_read_device_id(spiNumber uint32) (devid uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_DEVICE_ID_OP, CPLD_RD_DEVICE_ID_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_DEVICE_ID_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         devid = devid | (uint32(data[j])<<uint32(i))
         j++
@@ -396,6 +388,9 @@ func Spi_cpld_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err error
     }
 
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_FEA_BITS_OP, CPLD_RD_FEA_BITS_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_FEA_BITS_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         FeatureBits = FeatureBits | (uint32(data[j])<<uint32(i))
         j++
@@ -455,6 +450,9 @@ func Spi_cpld_read_busy_flag(spiNumber uint32) (BusyFlag uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_BUSYFLAG_OP, CPLD_RD_BUSYFLAG_OP_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_BUSYFLAG_OP_RDLNG-1) * 8); i>=0; i=i-8 {
         BusyFlag = BusyFlag | (uint32(data[j])<<uint32(i))
         j++
@@ -466,6 +464,9 @@ func Spi_cpld_read_status_reg(spiNumber uint32) (StatusReg uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_STATUS_REG_OP, CPLD_RD_STATUS_REG_RDLNG) 
+    if err != nil {
+        return
+    }
     for i=(int(CPLD_RD_STATUS_REG_RDLNG-1) * 8); i>=0; i=i-8 {
         StatusReg = StatusReg | (uint32(data[j])<<uint32(i))
         j++
@@ -760,6 +761,9 @@ func Spi_cpld_machxO2_verify_flash_contents(spiNumber uint32, filename string) (
         }
 
         data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_FLASH_OP, CPLD_RD_FLASH_OP_RDLNG) 
+        if err != nil {
+            return
+        }
         for i:=0; i<int(CPLD_RD_FLASH_OP_RDLNG); i++ {
             flashData = append(flashData, data[i])
         }
@@ -886,6 +890,9 @@ func Spi_cpld_machxO2_generate_image_from_flash(spiNumber uint32, filename strin
         }
 
         data, err = Fpga_spi_generic_transaction(spiNumber, CPLD_RD_FLASH_OP, CPLD_RD_FLASH_OP_RDLNG) 
+        if err != nil {
+            return
+        }
         for i:=0; i<int(CPLD_RD_FLASH_OP_RDLNG); i++ {
             flashData = append(flashData, data[i])
         }

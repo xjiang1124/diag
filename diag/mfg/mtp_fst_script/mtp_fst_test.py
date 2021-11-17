@@ -31,7 +31,7 @@ def get_nic_ssh_cmd(ip, cmd):
     ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
     return ssh_cmd
 
-def get_slot_bus_list(mtp_mgmt_ctrl, card_type):
+def get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst):
     if card_type == "ORTANO":
         # elba
         cmd = "lspci -d 1dd8:0002"
@@ -47,14 +47,14 @@ def get_slot_bus_list(mtp_mgmt_ctrl, card_type):
         bus_list = list()
         for bus in bus_list_match:
             bus_list.append(bus)
-        slot_bus_list = decode_pci_slot(bus_list)
+        slot_bus_list = decode_pci_slot(bus_list, fst)
     else:
         mtp_mgmt_ctrl.cli_log_err("No devices found")
         slot_bus_list = []
 
     return slot_bus_list
 
-def decode_pci_slot(bus_list):
+def decode_pci_slot(bus_list, fst):
     """
         41:00.0         slot 5  (top)   enp69s0
         21:00.0         slot 4          enp35s0  // 21+offset if slot 1 is taken
@@ -62,20 +62,21 @@ def decode_pci_slot(bus_list):
         08:00.0         slot 2          enp10s0
         21:00.0         slot 1  (lowest)enp35s0
     """
-    old_fst = ['18:00.0', '3b:00.0', 'd8:00.0', 'af:00.0']
-    new_fst = ['21:00.0', '08:00.0', '61:00.0', '41:00.0']
+    bus_fst = []
+    if fst == 0:
+        bus_fst = ['18:00.0', '3b:00.0', 'd8:00.0', 'af:00.0']
+    elif fst == 1:
+        bus_fst = ['21:00.0', '08:00.0', '2a:00.0', '61:00.0', '41:00.0']
+    elif fst == 2:
+        bus_fst = ['41:00.0', '01:00.0', 'c1:00.0', '46:00.0', '81:00.0']
+
     slot_bus_list = []
 
     for bus in bus_list:
-        if bus in new_fst:
-            slot_bus_list.append((new_fst.index(bus), bus))
-        elif bus in old_fst:
-            slot_bus_list.append((old_fst.index(bus), bus))
+        if bus in bus_fst:
+            slot_bus_list.append((bus_fst.index(bus), bus))
         else:
-            if "21:00.0" in bus_list: #slot 1 of new fst occupied already
-                slot_bus_list.append((3, bus))
-            else:
-                print("Unknown pci bus! "+bus)
+            print("Unknown pci bus! "+bus)
 
     return slot_bus_list
 
@@ -214,10 +215,10 @@ def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.cli_log_inf("Found /dev/ttyUSB{}".format(port))
     return usb_serial
 
-def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
+def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
     pass_list, fail_list = [], []
 
-    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type)
+    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst)
     if len(slot_bus_list) == 0:
         return pass_list, fail_list
 
@@ -318,9 +319,9 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type):
 
     return pass_list, fail_list
 
-def check_pcie_stage(mtp_mgmt_ctrl, card_type):
+def check_pcie_stage(mtp_mgmt_ctrl, card_type, fst):
     pass_list, fail_list = [], []
-    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type)
+    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst)
     if len(slot_bus_list) == 0:
         return pass_list, fail_list
 
@@ -419,7 +420,9 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
     fst = 0
     if mtp_capability == 0x4:
-        fst=1
+        fst = 1
+    elif mtp_capability == 0x5:
+        fst = 2
 
     # local log files
     log_filep_list = list()
@@ -520,9 +523,9 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
 
             if test == "FETCH_SN":
-                test_pass_list, test_fail_list = fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type)
+                test_pass_list, test_fail_list = fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst)
             elif test == "PCIE_LINK":
-                test_pass_list, test_fail_list = check_pcie_stage(mtp_mgmt_ctrl, card_type)
+                test_pass_list, test_fail_list = check_pcie_stage(mtp_mgmt_ctrl, card_type, fst)
             elif test == "ROT":
                 test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list + fail_nic_list)
             else:

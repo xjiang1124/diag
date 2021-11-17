@@ -76,7 +76,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, 
     else:
         skipped_testlist = ""
     if fail_nic_list:
-        fail_slots = " --fail-slots"
+        fail_slots = " --fail-slots "
         fail_slots += ' '.join(map(str,fail_nic_list))
     else:
         fail_slots = ""
@@ -236,25 +236,29 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                    continue
+                    #continue
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-                    continue
-
+                    #continue
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(card_type))
+                    #continue
                 if card_type in ELBA_NIC_TYPE_LIST:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
-                        continue
+                        #continue
                 if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
-                        continue
+                        #continue
         if not GLB_CFG_MFG_TEST_MODE:
             mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img["ORTANO2"])
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()

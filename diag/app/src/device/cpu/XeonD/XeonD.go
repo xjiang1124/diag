@@ -50,6 +50,17 @@ func ReadTemp(devName string) (temps []int, err int) {
 }
 
 
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    temps := []int{}
+    temps, err = ReadTemp(devName)
+    for _, temp := range temps {
+        out := fmt.Sprintf("%x", temp)
+        dec, _ := strconv.ParseUint(out, 0, 32)
+        temperatures = append(temperatures, float64(dec))
+    }
+    return
+}
+
 
 
 

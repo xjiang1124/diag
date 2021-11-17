@@ -105,4 +105,46 @@ DSP:
                     ALL: ext
                 INFO: Loopback Level, phy or ext
 
+    TEST#ELBA_ARM_MEMORY:
+        INFO: Arm memory test from Linux
+        PLATFORM:
+            TOR: ALL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 360
+                INFO: Test timeout setting
+            testtime:
+                VALUE:
+                    ALL: 300
+                INFO: Test timeout setting
+            mask:
+                VALUE:
+                    ALL: 0x3
+                INFO: Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas
+
+    TEST#FPGA_STRAPPING:
+        INFO: Check FPGA Resistor Strapping
+        PLATFORM:
+            TOR: ALL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 10
+                INFO: Test timeout setting
+            expectedvalue:
+                VALUE:
+                    ALL: 0x2
+                INFO: Expected Resistor Strapping Value
+
+    TEST#VRM_FIX:
+        INFO: VRM Fix for TD3 and Elba
+        PLATFORM:
+            TOR: ALL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 30
+                INFO: Test timeout setting
+
 ...

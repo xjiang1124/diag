@@ -1,0 +1,58 @@
+{
+	"NAME": "LACONA32",
+	"TYPE": "NIC",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_LACONA32_02",
+		"TEMPDATABASE": "/samba/public/tmp_database/LACONA32",
+		"testlogpath": "/mfg_log/LACONA32",
+		"reportpath":"/samba/public/REPORT/LACONA32/",
+		"historypath":"/samba/public/HISTORY/LACONA32"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32_DB_TEST2.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"DISPLAYINDO" : [
+		"QSPI image",
+		"MTP Diag Version"
+	],
+	"CHECKKEYS" : [
+		"IMAGE",
+		"MTPINFO",
+		"NICINFO"
+	],
+	"DIE_ID" : 1,
+	"4CFLOW" : [
+				"4C-L (HV)",
+				"4C-L (LV)",
+				"4C-H (LV)",
+				"4C-H (HV)"
+				],
+	"TESTLIST" :[
+					"DL",
+					"P2C",
+					"SWI"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"SWI"
+				]
+	
+}
