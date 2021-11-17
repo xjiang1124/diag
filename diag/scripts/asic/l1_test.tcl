@@ -49,6 +49,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
     set card_type $::env($uut)
     puts "card type: $card_type; UUT: $uut"
 
+    set port 10
     if {$MTP_TYPE == "MTP_TURBO_ELBA"} {
         set port [get_port_turbo $slot]
         set slot 1
@@ -66,7 +67,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
             set ddr_freq 2400
         }
 
-        set l1_cmd "elb_l1_screen_diag $sn 10 $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn" 
+        set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn" 
         source .tclrc.diag.elb.new
     }
     if {$MTP_TYPE == "MTP_CAPRI"} {
