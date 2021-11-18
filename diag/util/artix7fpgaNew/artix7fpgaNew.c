@@ -124,6 +124,7 @@ typedef struct {
 #define PHY_PKT_GENERATOR_REG                      16
 #define PHY_CRC_COUNTERS_REG                       17
 #define PHY_CHECKER_CTRL_REG                       18
+#define PHY_GEN_CTRL_REG                           20
 
 //fields in PHY_COPPER_CTRL_REG
 #define PHY_SYS_INTF_LOOPBACK_SHIFT                14
@@ -214,6 +215,10 @@ typedef struct {
 #define PKT_PAYLOAD_SHIFT                          2
 #define PKT_LENGTH_MASK                            0x1
 #define PKT_LENGTH_SHIFT                           1
+
+//fields in PHY_GEN_CTRL_REG
+#define SERDES_MODE_MASK                           0x7
+#define SGMII_TO_COPPER_MODE                       0x1
 
 //xcvr registers
 #define XCVR_CFG_CTRL_OFFSET                       0x14
@@ -320,6 +325,7 @@ typedef struct {
 #define CONFIG_PHY_PKT_GENERATOR                   15
 #define PHY_PKT_CHECKER_READ_COUNTER               16
 #define AN_ON_PHY_COPPER_ENABLE                    17
+#define CONFIG_PHY_MODE                            18
 
 #define PRBS_DEV_XCVR                              0
 #define PRBS_DEV_PHY                               1
@@ -2241,6 +2247,20 @@ static void serdes_test_cmd(uint32_t fd, uint32_t command, SERDES_TEST_OPTIONS *
             sleep(1);
             dump_status_on_xcrv(fd);
             dump_status_on_phy();
+            break;
+        case CONFIG_PHY_MODE://no additional options
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_18, 0x0);
+            mdio_rd(PHY_GEN_CTRL_REG, &data, 0x0);
+            data &= ~SERDES_MODE_MASK;
+            data |= SGMII_TO_COPPER_MODE;
+            mdio_wr(PHY_GEN_CTRL_REG, data, 0x0);
+            mdio_rd(PHY_GEN_CTRL_REG, &data, 0x0);
+            data |= PHY_SOFTWARE_RESET_MASK << PHY_SOFTWARE_RESET_SHIFT;
+            mdio_wr(PHY_GEN_CTRL_REG, data, 0x0);
+            sleep(1);
+            mdio_wr(PHY_PAGE_REG, PHY_PAGE_1, 0x0);
+            mdio_rd(PHY_SPECIFIC_CTRL_REG, &data, 0x0);
+            printf("read PHY mode: 0x%x(0x2 means SGMII System mode)\n", (data >> PHY_SPECIFIC_PHY_MODE_SHIFT) & PHY_SPECIFIC_PHY_MODE_MASK);
             break;
         case AN_ENABLE://no additional options
             printf("\nEnable Auto-Negotiation on xcvr\n");
