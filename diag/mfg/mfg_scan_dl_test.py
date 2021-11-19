@@ -439,41 +439,31 @@ def main():
                 mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
-                continue
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
-                continue
+
     if (mtp_capability & 0x2):
         for nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
-                #continue
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
-                #continue
-            try:
-                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[nic_type])
-            except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(nic_type))
-                #continue
             if nic_type in ELBA_NIC_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(nic_type))
-                    #continue
             if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(nic_type))
-                    #continue
 
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):

@@ -83,9 +83,14 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type in ELBA_NIC_TYPE_LIST:
+    if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
-        mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Additional Test List:")
+        mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
+        for item in para_test_list:
+            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+    if card_type in FPGA_TYPE_LIST:
+        para_test_list = [("PHY", "XCVR")]
+        mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
             mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
@@ -328,8 +333,10 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
     
-    if nic_type in ELBA_NIC_TYPE_LIST:
+    if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
         sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
+    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and loopback:
+        sub_test_list = [("PHY", "XCVR")]
     else:
         sub_test_list = [()]
 
@@ -338,6 +345,16 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
     
     fail_list = list()
+
+    if len(sub_test_list) == 0 or sub_test_list == [()]:
+        return []
+
+    if True in ["MVL" in (s,t) for (s,t) in sub_test_list]:
+        if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
+            return nic_list
+    if True in ["PHY" in (s,t) for (s,t) in sub_test_list]:
+        if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(False, stop_on_err=False):
+            return nic_list
 
     for slot in nic_list:
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -361,6 +378,8 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_acc_test(slot)
             elif dsp == "MVL" and test == "STUB":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_stub_test(slot, loopback)
+            elif dsp == "PHY" and test == "XCVR":
+                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_test(slot)
             else:
                 ret, err_msg_list = "FAILURE", ["Not the right function for this kind of test"]
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
@@ -1002,10 +1021,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
-        testlist = ["QSPI_PROG", "FPGA_PROG", "NIC_PWRCYC"]
-    if nic_type == NIC_Type.LACONA32 or nic_type.LACONA32DELL:
+        testlist = ["QSPI_PROG", "FPGA_PROG"]
+    if nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
         # program the 32G uboot
-        testlist = ["QSPI_PROG", "UBOOT_PROG", "FPGA_PROG", "NIC_PWRCYC"]
+        testlist = ["QSPI_PROG", "UBOOT_PROG", "FPGA_PROG"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -1021,12 +1040,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        # powercycle single nic
-        elif test == "NIC_PWRCYC":
-            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
         elif test == "UBOOT_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
+            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
@@ -1825,6 +1840,15 @@ def main():
                 if nic_type == NIC_Type.ORTANO2:
                     nic_para_test_list = ortano_para_test_list[:]
                     test_db = ortano_test_db
+                elif nic_type == NIC_Type.POMONTEDELL:
+                    nic_para_test_list = pomontedell_para_test_list[:]
+                    test_db = pomontedell_test_db
+                elif nic_type == NIC_Type.LACONA32DELL:
+                    nic_para_test_list = pomontedell_para_test_list[:]
+                    test_db = lacona32dell_test_db
+                elif nic_type == NIC_Type.LACONA32:
+                    nic_para_test_list = pomontedell_para_test_list[:]
+                    test_db = lacona32_test_db
                 else:
                     continue
 
@@ -1833,14 +1857,6 @@ def main():
                 else:
                     loopback = False
                 if nic_list:
-                    #mtp_mgmt_ctrl.mtp_power_cycle_nic()
-                    if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
-                        #Fail every nic(s) or fail on MTP
-                        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-                        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                        mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
-                        return 
-
                     diag_para_fail_list = naples_diag_mvl_test(mtp_mgmt_ctrl,
                                                                nic_type,
                                                                nic_list,

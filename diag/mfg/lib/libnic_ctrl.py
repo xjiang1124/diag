@@ -1505,6 +1505,24 @@ class nic_ctrl():
 
         return True
 
+    def nic_program_uboot(self, uboot_img, installer):
+        if not self.nic_copy_image(installer):
+            return False
+        if not self.nic_copy_image(uboot_img):
+            return False
+        installer_path = os.path.basename(installer)
+        img_name = os.path.basename(uboot_img)
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, img_name)
+        qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        nic_cmd_list.append(nic_cmd)
+  
+        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
 
     def nic_init_emmc(self, init = False):
         nic_cmd_list = list()
@@ -3393,7 +3411,7 @@ class nic_ctrl():
         return True
 
     def nic_mvl_acc_test(self):
-        if self._nic_type not in ELBA_NIC_TYPE_LIST:
+        if self._nic_type not in ELBA_NIC_TYPE_LIST or self._nic_type in FPGA_TYPE_LIST:
             return False
 
         if not self.nic_console_attach():
@@ -3430,7 +3448,7 @@ class nic_ctrl():
             return False
 
     def nic_mvl_stub_test(self, loopback=True):
-        if self._nic_type not in ELBA_NIC_TYPE_LIST:
+        if self._nic_type not in ELBA_NIC_TYPE_LIST or self._nic_type in FPGA_TYPE_LIST:
             return False
 
         if not self.nic_console_attach():
@@ -3470,6 +3488,52 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    def nic_phy_xcvr_test(self):
+        if self._nic_type not in FPGA_TYPE_LIST:
+            return False
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PHY_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        if MFG_DIAG_SIG.NIC_FPGA_PHY_TEST_SIG in cmd_buf:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return True
+        else:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
     def nic_check_rebooted(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -3477,7 +3541,8 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd_list.append("uptime")
-        nic_cmd_list.append("env | grep -v PS1")
+        nic_cmd_list.append("dmesg | tail -n20")
+        nic_cmd_list.append("mount")
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -3491,16 +3556,39 @@ class nic_ctrl():
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
             return False
+
+        ret = True
+        if "/dev/mmcblk0p10" not in cmd_buf:
+            self.nic_set_err_msg("EMMC not mounted")
+            self.nic_set_cmd_buf(cmd_buf)
+            ret &= False
+
+
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("env | grep -v PS1")
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+
         # if "CARD_NAME=NIC{:d}".format(self._slot+1) in cmd_buf:
         if "CARD_ENV=" in cmd_buf:
-            self.nic_console_detach()
-            self.nic_set_cmd_buf(cmd_buf)
-            return True
+            ret &= True
         else:
             self.nic_set_err_msg("NIC was rebooted")
-            self.nic_console_detach()
-            self.nic_set_cmd_buf(cmd_buf)
-            return False
+            ret &= False
+
+        self.nic_console_detach()
+        return ret
 
     def read_nic_temp(self):
         if not self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT):

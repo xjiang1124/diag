@@ -171,46 +171,38 @@ def main():
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                    continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
-                    continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                    continue
         if (mtp_capability & 0x2):
             for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                    #continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
-                    #continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot_img image for {:s}".format(card_type))
-                    #continue
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0015"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                    #continue
                 if card_type in ELBA_NIC_TYPE_LIST:
                     try:
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        #continue
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):

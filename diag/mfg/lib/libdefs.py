@@ -359,6 +359,7 @@ class MFG_DIAG_CMDS:
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
+    NIC_UBOOT_PROG_FMT = "/{:s} diaguboot /{:s}"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
     NIC_EMMC_PERF_MODE = "touch /sysconfig/config0/.perf_mode"
     NIC_EMMC_PERF_MODE_CHECK = "[[ -f /sysconfig/config0/.perf_mode ]] ; echo $?"
@@ -516,6 +517,7 @@ class MFG_DIAG_CMDS:
 
     NIC_MVL_ACC_FMT = "{:s}mvl_acc.sh"
     NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh {:s}"
+    NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
@@ -563,6 +565,7 @@ class MFG_DIAG_SIG:
     NIC_SW_DEVICE_CHK_SIG2 = "Operational Mode *: bitw-smart-switch"
     NIC_MVL_ACC_SIG = "MVL ACC TEST PASSED"
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
+    NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

@@ -1291,13 +1291,13 @@ class mtp_ctrl():
         img_list = []
         if (mtp_capability & 0x1):
             for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
-                if (stage == FF_Stage.FF_DL or 
-                    stage == FF_Stage.FF_P2C or 
-                    stage == FF_Stage.FF_4C_H or 
-                    stage == FF_Stage.FF_4C_L or
-                    stage == FF_Stage.FF_2C_H or 
-                    stage == FF_Stage.FF_2C_L
-                    ):
+                if stage in (
+                    FF_Stage.FF_DL,
+                    FF_Stage.FF_P2C,
+                    FF_Stage.FF_4C_L,
+                    FF_Stage.FF_4C_H,
+                    FF_Stage.FF_2C_L,
+                    FF_Stage.FF_2C_H):
                     # CPLD and diagfw images.
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
@@ -1432,13 +1432,13 @@ class mtp_ctrl():
 
         if (mtp_capability & 0x2):
             for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
-                if (stage == FF_Stage.FF_DL or 
-                    stage == FF_Stage.FF_P2C or 
-                    stage == FF_Stage.FF_4C_H or 
-                    stage == FF_Stage.FF_4C_L or
-                    stage == FF_Stage.FF_2C_H or 
-                    stage == FF_Stage.FF_2C_L
-                    ):
+                if stage in (
+                    FF_Stage.FF_DL,
+                    FF_Stage.FF_P2C,
+                    FF_Stage.FF_4C_L,
+                    FF_Stage.FF_4C_H,
+                    FF_Stage.FF_2C_L,
+                    FF_Stage.FF_2C_H):
                     # CPLD, failsafe, feature row and diagfw images
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
@@ -1474,15 +1474,6 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
                         pass
-                    try:
-                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
-                            img = NIC_IMAGES.uboot_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
-                        pass
 
                     # In addition to images, check the version & timestamp fields as well here
                     try:
@@ -1514,14 +1505,7 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
                         pass
-                    try:
-                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
-                            expected_timestamp = NIC_IMAGES.uboot_dat[card_type]
-                            if expected_timestamp.strip() == "":
-                                raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing uboot timestamp for {:s}".format(card_type))
-                        pass
+
                 elif stage == FF_Stage.FF_CFG:
                     # CPLD image
                     try:
@@ -1582,17 +1566,6 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                         pass
-
-                    try:
-                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
-                            img = NIC_IMAGES.uboot_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diag uboot image for {:s}".format(card_type))
-                        pass
-
                     # In addition to images, check the version & timestamp fields as well here
                     try:
                         expected_version = NIC_IMAGES.cpld_ver[card_type]
@@ -1638,14 +1611,17 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
                         return False
 
+                if stage in (FF_Stage.FF_P2C, FF_Stage.FF_4C_L, FF_Stage.FF_4C_H, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
                     try:
-                        if card_type == NIC_Type.LACONA32DELL or card_type == NIC_Type.LACONA32:
-                            expected_timestamp = NIC_IMAGES.uboot_dat[card_type]
-                            if expected_timestamp.strip() == "":
+                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
+                            img = NIC_IMAGES.uboot_img[card_type]
+                            if img.strip() == "":
                                 raise KeyError
+                            img_list.append(img)
+                            img_list.append("install_file")
                     except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diag uboot timestamp for {:s}".format(card_type))
-                        return False
+                        self.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
+                        pass
 
                 else:
                     # no images needed in this stage
@@ -2966,6 +2942,13 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
             return False
 
+        return True
+
+    def mtp_program_nic_uboot(self, slot, uboot_img, installer=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"install_file"):
+        if not self._nic_ctrl_list[slot].nic_program_uboot(uboot_img, installer):
+            self.cli_log_slot_inf_lock(slot, "Program NIC uboot failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
         return True
 
 
@@ -5061,6 +5044,20 @@ class mtp_ctrl():
         retval = ""
         err_msg_list = list()
         if self._nic_ctrl_list[slot].nic_mvl_stub_test(loopback):
+            retval = "SUCCESS"
+        else:
+            retval = "FAILURE"
+        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
+
+        return retval, err_msg_list
+
+    def mtp_nic_phy_xcvr_test(self, slot):
+        test = "PHY"
+
+        retval = ""
+        err_msg_list = list()
+        if self._nic_ctrl_list[slot].nic_phy_xcvr_test():
             retval = "SUCCESS"
         else:
             retval = "FAILURE"
