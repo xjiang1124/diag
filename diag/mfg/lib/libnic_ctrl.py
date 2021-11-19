@@ -697,7 +697,7 @@ class nic_ctrl():
                 continue
 
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
             if idx < 0:
                 self.nic_console_detach()
                 loop += 1
@@ -734,7 +734,7 @@ class nic_ctrl():
                 continue
 
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
             if idx < 0:
                 self.nic_console_detach()
                 loop += 1
