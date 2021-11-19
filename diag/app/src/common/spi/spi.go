@@ -32,7 +32,7 @@ func CpldRead(offset uint32, data* uint32) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A") {
         rd = C.cpld_read(C.uchar(offset))
     } else {
         rd = C.Cpld_read(C.uchar(offset))
@@ -45,7 +45,7 @@ func CpldWrite(offset uint32, data uint32) (err int) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A") {
         retC = C.cpld_write(C.uchar(offset), C.uchar(data))
     } else {
         retC = C.Cpld_write(C.uchar(offset), C.uchar(data))
@@ -63,7 +63,7 @@ func MvlRegRead(offset uint32, data* uint32, phy uint32) (err int) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A") {
         retC = C.mdio_rd(C.uchar(offset), &rd, C.uchar(phy))
     } else {
         retC = C.Mdio_rd(C.uchar(offset), &rd, C.uchar(phy))
@@ -82,7 +82,7 @@ func MvlRegWrite(offset uint32, data uint32, phy uint32) (err int) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A") {
         retC = C.mdio_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
     } else {
         retC = C.Mdio_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
@@ -101,7 +101,7 @@ func MvlSmiRegRead(offset uint32, data* uint32, phy uint32) (err int) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A") {
         retC = C.mdio_smi_rd(C.uchar(offset), &rd, C.uchar(phy))
     } else {
         retC = C.Mdio_smi_rd(C.uchar(offset), &rd, C.uchar(phy))
@@ -120,7 +120,7 @@ func MvlSmiRegWrite(offset uint32, data uint32, phy uint32) (err int) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A") {
         retC = C.mdio_smi_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))
     } else {
         retC = C.Mdio_smi_wr(C.uchar(offset), C.ushort(data), C.uchar(phy))

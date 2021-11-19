@@ -1,0 +1,126 @@
+package ltc3888 
+
+const (
+    CHAN_A = 0
+    CHAN_B = 1
+
+    DAC_STEP_244 = 0x27
+    DAC_STEP_10MV = 0x24
+)
+
+const (
+    MARGIN_NONE_CMD byte = 0x80
+    MARGIN_HIGH_CMD byte = 0xA8
+    MARGIN_LOW_CMD  byte = 0x98
+    SOFE_OFF byte = 0x40
+    IMMED_OFF byte = 0x00
+
+    CTRL_SVID  = 0x2
+    CTRL_PMBUS = 0x1
+
+    VOUT_MAX_MV= 1000
+)
+
+// Register/Command offset
+const (
+    PAGE uint64 = 0x00
+    OPERATION uint64 = 0x01
+    ON_OFF_CONFIG uint64 = 0x02
+    CLEAR_FAULT uint64 = 0x03
+    PAGE_PLUS_WRITE uint64 = 0x05
+    PAGE_PLUS_READ uint64 = 0x06
+    WRITE_PROTECT uint64 = 0x10
+    STORE_USER_ALL uint64 = 0x15
+    RESTORE_USER_ALL uint64 = 0x16
+    CAPABILITY uint64 = 0x19
+    SMBALERT_MASK uint64 = 0x1B
+    VOUT_MODE uint64 = 0x20
+    VOUT_COMMAND uint64 = 0x21
+    VOUT_MAX uint64 = 0x24
+    VOUT_MARGIN_HIGH uint64 = 0x25
+    VOUT_MARGIN_LOW uint64 = 0x26
+    VOUT_TRANSITION_RATE uint64 = 0x27
+    VOUT_SCALE_LOOP uint64 = 0x29
+    FREQUENCY_SWITCH uint64 = 0x33
+    VIN_ON uint64 = 0x35
+    VIN_OUT uint64 = 0x36
+    IOUT_CAL_GAIN uint64 = 0x38
+    VOUT_OV_FAULT_LIMIT uint64 = 0x40
+    VOUT_OV_FAULT_RESPONSE uint64 = 0x41
+    VOUT_OV_WARN_LIMIT uint64 = 0x42
+    VOUT_UV_WARN_LIMIT uint64 = 0x43
+    VOUT_UV_FAULT_LIMIT uint64 = 0x44
+    VOUT_UV_FAULT_RESPONSE uint64 = 0x45
+    IOUT_OC_FAULT_LIMIT uint64 = 0x46
+    IOUT_OC_FAULT_RESPONSE uint64 = 0x47
+    IOUT_OC_WARN_LIMIT uint64 = 0x4A
+    OT_FAULT_LIMIT uint64 = 0x4F
+    OT_FAULT_RESPONSE uint64 = 0x50
+    OT_WARN_LIMIT uint64 = 0x51
+    VIN_OV_FAULT_LIMIT uint64 = 0x55
+    VIN_OV_FAULT_RESPONSE uint64 = 0x56
+    VIN_UV_WARN_LIMIT uint64 = 0x58
+    TON_DELAY uint64 = 0x60
+    TON_MAX_FAULT_LIMIT uint64 = 0x62
+    TON_MAX_FAULT_RESPONSE uint64 = 0x63
+    TOFF_DELAY uint64 = 0x64
+    TOFF_MAX_WARN_LIMIT uint64 = 0x66
+    STATUS_BYTE uint64 = 0x78
+    STATUS_WORD uint64 = 0x79
+    STATUS_VOUT uint64 = 0x7A
+    STATUS_IOUT uint64 = 0x7B
+    STATUS_INPUT uint64 = 0x7C
+    STATUS_TEMPERATURE uint64 = 0x7D
+    STATUS_CML uint64 = 0x7E
+    STATUS_MFR_SPECIFIC uint64 = 0x80
+    READ_VIN uint64 = 0x88
+    READ_VOUT uint64 = 0x8B
+    READ_IOUT uint64 = 0x8C
+    READ_TEMPERATURE_1 uint64 = 0x8D
+    READ_TEMPERATURE_2 uint64 = 0x8E
+    READ_FREQUENCY uint64 = 0x95
+    PMBUS_REVISION uint64 = 0x98
+    MFR_ID uint64 = 0x99
+    MFR_VOUT_MAX uint64 = 0xA5
+    IC_DEVICE_ID uint64 = 0xAD
+    USER_DATA_00 uint64 = 0xB0
+    USER_DATA_01 uint64 = 0xB1
+    USER_DATA_02 uint64 = 0xB2
+    USER_DATA_03 uint64 = 0xB3
+    USER_DATA_04 uint64 = 0xB4
+    MFR_INFO uint64 = 0xB6
+    MFR_EE_UNLOCK uint64 = 0xBD
+    MFR_EE_ERASE uint64 = 0xBE
+    MFR_EE_DATA uint64 = 0xBF
+    MFR_CHAN_CONFIG uint64 = 0xD0
+    MFR_CONFIG_ALL uint64 = 0xD1
+    MFR_FAULT_PROPAGATE uint64 = 0xD2
+    MFR_PWM_COMP uint64 = 0xD3
+    MFR_PWM_MODE_LTC3888_1 uint64 = 0xD4
+    MFR_FAULT_RESPONSE uint64 = 0xD5
+    MFR_OT_FAULT_RESPONSE uint64 = 0xD6
+    MFR_IOUT_PEAK uint64 = 0xD7
+    MFR_RETRY_DELAY uint64 = 0xDB
+    MFR_RESTART_DELAY uint64 = 0xDC
+    MFR_VOUT_PEAK uint64 = 0xDD
+    MFR_VIN_PEAK uint64 = 0xDE
+    MFR_TEMPERATURE_1_PEAK uint64 = 0xDF
+    MFR_TOTAL_IOUT uint64 = 0xE1
+    MFR_CLEAR_PEAKS uint64 = 0xE3
+    MFR_READ_ALL_IOUT uint64 = 0xE4
+    MFR_PADS_LTC3888_1 uint64 = 0xE5
+    MFR_ADDRESS uint64 = 0xE6
+    MFR_SPECIAL_ID uint64 = 0xE7
+    MFR_FAULT_LOG_STORE uint64 = 0xEA
+    MFR_FAULT_LOG_CLEAR uint64 = 0xEC
+    MFR_FAULT_LOG uint64 = 0xEE
+    MFR_COMMON uint64 = 0xEF
+    MFR_COMPARE_USER_ALL uint64 = 0xF0
+    MFR_TEMPERATURE_2_PEAK uint64 = 0xF4
+    MFR_PWM_CONFIG uint64 = 0xF5
+    MFR_LOAD_EMULATION uint64 = 0xF7
+    MFR_TEMP_1_GAIN uint64 = 0xF8
+    MFR_TEMP_1_OFFSET uint64 = 0xF9
+    MFR_RAIL_ADDRESS uint64 = 0xFA
+    MFR_RESET uint64 = 0xFD
+)

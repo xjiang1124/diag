@@ -29,6 +29,7 @@ const (
     ID_POMONTE         = 0x48
     ID_LACONA32_DELL   = 0x49
     ID_LACONA32        = 0x4A
+    ID_ORTANO2A        = 0x4B
     ID_TAORMINA_ELBA   = 0x80
 )
 

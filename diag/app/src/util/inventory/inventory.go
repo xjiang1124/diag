@@ -125,6 +125,8 @@ func present() (err int) {
                 presentStr = "ORTANO"
             case nicCpldCommon.ID_ORTANO2:
                 presentStr = "ORTANO2"
+            case nicCpldCommon.ID_ORTANO2A:
+                presentStr = "ORTANO2A"
             case nicCpldCommon.ID_LACONA_DELL:
                 presentStr = "LACONADELL"
             case nicCpldCommon.ID_LACONA32_DELL:
@@ -293,6 +295,8 @@ func sysDetect() (err int) {
                 presentStr = "ORTANO"
             case nicCpldCommon.ID_ORTANO2:
                 presentStr = "ORTANO2"
+            case nicCpldCommon.ID_ORTANO2A:
+                presentStr = "ORTANO2A"
             case nicCpldCommon.ID_NAPLES25SWM_DELL:
                 presentStr = "NAPLES25SWMDELL"
             case nicCpldCommon.ID_NAPLES25SWM_833:
@@ -371,7 +375,7 @@ func powerStatusDump(slot int)  {
 
     if cardType == "NAPLES25SWM" {
         pwrStatName = powerStatNameSWM
-    } else if cardType == "ORTANO" || cardType == "ORTANO2" {
+    } else if cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" {
         powerStatusDumpOrtano(uutName)
         return
     }

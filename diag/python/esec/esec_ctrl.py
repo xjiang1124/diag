@@ -402,6 +402,7 @@ PRIVEK <ek.sk>"""
 
     def get_asic_type(self, card_type):
         if card_type == "ORTANO2"       or \
+           card_type == "ORTANO2A"      or \
            card_type == "LACONA32"      or \
            card_type == "LACONA32DELL"  or \
            card_type == "POMONTE"       or \

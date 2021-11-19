@@ -81,6 +81,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
            cardType == "VOMERO2" || 
            cardType == "ORTANO" || 
            cardType == "ORTANO2" || 
+           cardType == "ORTANO2A" || 
            cardType == "LACONADELL" ||
            cardType == "LACONA" ||
            cardType == "LACONA32DELL" ||
@@ -178,7 +179,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
             eeprom.EepromTbl = eeprom.OrtanoTbl
             
         }
-        if (cardType == "ORTANO2") {
+        if (cardType == "ORTANO2" || cardType == "ORTANO2A") {
             if update == true {
                 if pn == "" {
                     cli.Println("e", "For Programming ORTANO2, you must enter a part number")
@@ -356,7 +357,7 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             }
             cli.Println("e", "Unable to determine Naples25 OCP fru type.  Please program it with a valid part number")
             return -1;
-        } else if (cardType == "ORTANO2") {
+        } else if (cardType == "ORTANO2" || cardType == "ORTANO2A") {
             rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2[0:7])
             if rc == errType.SUCCESS {
                 eeprom.EepromTbl = eeprom.OrtanoTbl_V2

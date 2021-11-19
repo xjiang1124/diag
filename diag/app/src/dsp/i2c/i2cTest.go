@@ -13,6 +13,7 @@ import (
     "device/fanctrl/adt7462"
     "device/powermodule/tps53659"
     "device/powermodule/tps53659a"
+    "device/powermodule/ltc3888"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
     "device/powermodule/tps544c20"
@@ -21,6 +22,7 @@ import (
     "device/rtc/pcf85263a"
     "device/tempsensor/tmp42123"
     "device/tempsensor/tmp451"
+    "device/tempsensor/tmpadicom"
     "device/tempsensor/lm75a"
     "device/psu/dps800"
     "device/fpga/taorfpga"
@@ -71,6 +73,25 @@ func testTps53659a(devName string) (err int) {
     return
 }
 
+/*
+    Read Device ID and compare with expected one
+ */
+func testLTC3888(devName string) (err int) {
+    devID, err := ltc3888.ReadDeviceID(devName)
+
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+        return
+    }
+
+    /* hack for now. Probably need to based on device rev */
+    if (devID != ltc3888.DEVICE_ID) {
+        dcli.Println("F", devName, " Invalid Device ID: expected", ltc3888.DEVICE_ID, "read", devID)
+        return errType.FAIL
+    }
+    return
+}
+
 func testTps549a20(devName string) (err int) {
     _, err = tps549a20.ReadStatus(devName)
     if err != errType.SUCCESS {
@@ -87,6 +108,19 @@ func testTmp422(devName string) (err int) {
     }
     if mfgId != tmp42123.MFG_ID_V {
         dcli.Println("F", devName, " Invalid MFG ID: expected", tmp42123.MFG_ID_V, "read", mfgId)
+        return errType.FAIL
+    }
+    return
+}
+
+func testTmpAdiCom(devName string) (err int) {
+    mfgId, err := tmpadicom.ReadMfgId(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+        return
+    }
+    if mfgId != tmpadicom.MFG_ID_V {
+        dcli.Println("F", devName, " Invalid MFG ID: expected", tmpadicom.MFG_ID_V, "read", mfgId)
         return errType.FAIL
     }
     return
@@ -314,6 +348,11 @@ func I2cI2cHdl(argList []string) {
             if err != errType.SUCCESS {
                 ret = err
             }
+        case "LTC3888":
+            err = testLTC3888(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
         case "TPS549A20":
             err = testTps549a20(devName)
             if err != errType.SUCCESS {
@@ -321,6 +360,11 @@ func I2cI2cHdl(argList []string) {
             }
         case "TMP422":
             err = testTmp422(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "TMPADICOM":
+            err = testTmpAdiCom(devName)
             if err != errType.SUCCESS {
                 ret = err
             }

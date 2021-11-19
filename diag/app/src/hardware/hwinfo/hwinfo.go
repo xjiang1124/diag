@@ -9,6 +9,7 @@ import (
     "device/cpu/XeonD"
     "device/fpga/taorfpga"
     "device/powermodule/tps53659"
+    "device/powermodule/ltc3888"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
     "device/powermodule/tps544c20"
@@ -17,6 +18,7 @@ import (
     "device/psu/pet1600"
     "device/psu/dps800"
     "device/tempsensor/tmp42123"
+    "device/tempsensor/tmpadicom"
     "device/tempsensor/lm75a"
     "device/tempsensor/tmp451"
 
@@ -127,6 +129,7 @@ var biodonaDispStaList map[string]DispStaFunc
 // Ortano
 // Status display list
 var ortanoDispStaList map[string]DispStaFunc
+var ortanoaDispStaList map[string]DispStaFunc
 
 //===============================
 // Lacona
@@ -373,6 +376,12 @@ func init() {
     ortanoDispStaList["VDD_DDR"]   = tps549a20.DispStatus
     ortanoDispStaList["TSENSOR"]   = tmp42123.DispStatus
 
+    //Ortano ADI
+    ortanoaDispStaList = make(map[string]DispStaFunc)
+    ortanoaDispStaList["ELB0_CORE"] = ltc3888.DispStatus
+    ortanoaDispStaList["ELB0_ARM"]  = ltc3888.DispStatus
+    ortanoaDispStaList["TSENSOR"]   = tmpadicom.DispStatus
+
     //Lacona
     laconaDispStaList = make(map[string]DispStaFunc)
     laconaDispStaList["ELB0_CORE"] = tps53659.DispStatus
@@ -493,6 +502,7 @@ func init() {
     dispMap["BIODONA_D5"]   = biodonaDispStaList
     dispMap["ORTANO"]       = ortanoDispStaList
     dispMap["ORTANO2"]      = ortanoDispStaList
+    dispMap["ORTANO2A"]     = ortanoaDispStaList
     dispMap["LACONADELL"]   = laconaDispStaList
     dispMap["LACONA"]       = laconaDispStaList
     dispMap["LACONA32DELL"]  = laconaDispStaList
@@ -529,6 +539,7 @@ func init() {
     eepromMap["BIODONA_D5"]   = naplesEepList
     eepromMap["ORTANO"]       = naplesEepList
     eepromMap["ORTANO2"]      = naplesEepList
+    eepromMap["ORTANO2A"]      = naplesEepList
     eepromMap["LACONADELL"]   =  naplesEepList
     eepromMap["LACONA"]       =  naplesEepList
     eepromMap["LACONA32DELL"]  =  naplesEepList
@@ -567,6 +578,7 @@ func init() {
     i2cHubMap["BIODONA_D5"]     = naples100I2cHubMap
     i2cHubMap["ORTANO"]         = naples100I2cHubMap
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
+    i2cHubMap["ORTANO2A"]        = naples100I2cHubMap
     i2cHubMap["LACONADELL"]     = naples100I2cHubMap
     i2cHubMap["LACONA"]         = naples100I2cHubMap
     i2cHubMap["LACONA32DELL"]    = naples100I2cHubMap
@@ -601,6 +613,7 @@ func init() {
     i2cHubListMap["BIODONA_D5"]    = forioI2cHubList
     i2cHubListMap["ORTANO"]        = forioI2cHubList
     i2cHubListMap["ORTANO2"]       = forioI2cHubList
+    i2cHubListMap["ORTANO2A"]      = forioI2cHubList
     i2cHubListMap["LACONADELL"]    = forioI2cHubList
     i2cHubListMap["LACONA"]        = forioI2cHubList
     i2cHubListMap["LACONA32DELL"]   = forioI2cHubList
@@ -635,6 +648,7 @@ func init() {
     psuListMap["BIODONA_D5"]    = nicPsuList
     psuListMap["ORTANO"]        = nicPsuList
     psuListMap["ORTANO2"]       = nicPsuList
+    psuListMap["ORTANO2A"]      = nicPsuList
     psuListMap["LACONADELL"]    = nicPsuList
     psuListMap["LACONA"]        = nicPsuList
     psuListMap["LACONA32DELL"]   = nicPsuList
@@ -671,7 +685,7 @@ func init() {
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
-    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "POMONTE", "POMONTEDELL":
+    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "ORTANO2A", "POMONTE", "POMONTEDELL":
         QsfpTbl = forioQsfpTbl
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)

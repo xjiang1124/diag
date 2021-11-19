@@ -126,6 +126,10 @@ elif [[ $cpld_id == "0x4a" ]]
 then
     type="LACONA32"
     asic_type="ELBA"
+elif [[ $cpld_id == "0x4b" ]]
+then
+    type="ORTANO2A"
+    asic_type="ELBA"
 else
     type="UNKNOW"
     asic_type="UNKNOW"

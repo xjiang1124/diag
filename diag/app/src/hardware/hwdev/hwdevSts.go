@@ -10,6 +10,7 @@ import (
 
     "device/powermodule/tps53659"
     "device/powermodule/tps53659a"
+    "device/powermodule/ltc3888"
 
     "hardware/hwinfo"
     "hardware/i2cinfo"
@@ -51,6 +52,8 @@ func devInfo(devName string, lockFlag bool) (err int) {
         tps53659.Info(devName)
     } else if i2cif.Comp == "TPS53659A" {
         tps53659a.Info(devName)
+    } else if i2cif.Comp == "LTC3888" {
+        ltc3888.Info(devName)
     } else {
         cli.Println("e", "Unsupported component:", devName, i2cif.Comp)
     }

@@ -10,6 +10,7 @@ import (
     "common/errType"
     "device/powermodule/tps53659"
     "device/powermodule/tps53659a"
+    "device/powermodule/ltc3888"
     "device/powermodule/tps549a20"
     "device/powermodule/tpsAll"
 
@@ -41,6 +42,7 @@ func devInfo(devName string) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -52,6 +54,8 @@ func devInfo(devName string) {
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -67,6 +71,7 @@ func dispStatus(devName string) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -77,6 +82,8 @@ func dispStatus(devName string) {
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -92,6 +99,7 @@ func dispStatusAll() {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -99,6 +107,8 @@ func dispStatusAll() {
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -120,6 +130,7 @@ func margin(devName string, pct int) (err int){
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
     var tps549a20 tps549a20.TPS549A20
 
     for _, vrm := range(hwInfo.vrmTbl) {
@@ -130,6 +141,8 @@ func margin(devName string, pct int) (err int){
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -147,6 +160,7 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
     var tps549a20 tps549a20.TPS549A20
     var dataB byte
 
@@ -165,6 +179,8 @@ func readWriteSend(rws string, devName string, regAddr uint64, data uint16, mode
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else if vrm.Comp == "TPS549A20" {
             tps = &tps549a20
         } else {
@@ -209,6 +225,7 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err 
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
     var byteCnt int
     dataLen := 6
     dataBuf := make([]byte, dataLen)
@@ -221,6 +238,8 @@ func readWriteBlk(rws string, devName string, regAddr uint64, data uint64) (err 
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else {
             continue
         }
@@ -255,6 +274,7 @@ func program (devName string, fileName string, verbose bool) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
 
     for _, vrm := range(hwInfo.vrmTbl) {
         if devName != vrm.Name {
@@ -264,6 +284,8 @@ func program (devName string, fileName string, verbose bool) (err int) {
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else {
             continue
         }
@@ -279,6 +301,7 @@ func verify (devName string, fileName string, verbose bool) (err int) {
     var tps tpsAll.TpsAll
     var tps53659 tps53659.TPS53659
     var tps53659a tps53659a.TPS53659A
+    var ltc3888 ltc3888.LTC3888
 
     for _, vrm := range(hwInfo.vrmTbl) {
         if devName != vrm.Name {
@@ -288,6 +311,8 @@ func verify (devName string, fileName string, verbose bool) (err int) {
             tps = &tps53659
         } else if vrm.Comp == "TPS53659A" {
             tps = &tps53659a
+        } else if vrm.Comp == "LTC3888" {
+            tps = &ltc3888
         } else {
             continue
         }

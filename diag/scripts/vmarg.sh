@@ -25,7 +25,7 @@ set_vmarg_lacona()
 set_vmarg()
 {
     echo $CARD_TYPE
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" ]]
     then
         if [[ "$1" -lt 3 && "$1" -ge -2 ]] 
         then
