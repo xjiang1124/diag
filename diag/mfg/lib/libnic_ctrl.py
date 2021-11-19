@@ -343,6 +343,11 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
+        con_ts = libmfg_utils.timestamp_snapshot()
+        ts_record_cmd = "######## {:s} ########".format(str(con_ts))
+        self._nic_handle.sendline(ts_record_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
@@ -354,8 +359,6 @@ class nic_ctrl():
         if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
             self._nic_handle.sendline("")
 
-        #if self._nic_type == NIC_Type.VOMERO2:
-            #self._nic_handle.sendline("")
         exp_list = [self._nic_con_prompt, "login:", "assword:"]
         while True:
             idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=MTP_Const.NIC_CON_INIT_DELAY)
