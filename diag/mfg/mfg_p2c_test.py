@@ -158,7 +158,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG P2C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
