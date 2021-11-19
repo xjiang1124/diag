@@ -2124,6 +2124,7 @@ class mtp_ctrl():
         match = re.findall(r" 0% packet loss", cmd_buf)
         if not match:
             self.cli_log_slot_err(slot, "Ping failed")
+            self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
@@ -5146,3 +5147,12 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Unable to verify {:s}".format(filename))
             return None
+
+    def mtp_nic_port_counters(self, slot):
+        self.cli_log_slot_inf(slot, "Dumping port counters")
+        if not self._nic_ctrl_list[slot].nic_port_counters():
+            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            return False
+
+        return True
+

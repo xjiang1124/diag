@@ -771,7 +771,6 @@ class nic_ctrl():
     def nic_pcie_poll_enable(self, enable):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_exec_cmd(cmd):
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         if enable:
@@ -781,13 +780,12 @@ class nic_ctrl():
             sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG
             cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, MTP_Const.NIC_CON_CMD_DELAY):
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         if sig in self.nic_get_cmd_buf():
             return True
         else:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
 
@@ -3512,4 +3510,27 @@ class nic_ctrl():
         if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:d}".format(self._slot+1), timeout=180):
             return False
         return True
+
+    def nic_port_counters(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("halctl show port status")
+        nic_cmd_list.append("halctl show port statistics --port eth1/3")    # BX port counters
+        nic_cmd_list.append("halctl show port internal")                    # MVL switch port status
+        nic_cmd_list.append("halctl show port internal statistics")         # all port counters
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        self.nic_console_detach()
+        return True
+
 
