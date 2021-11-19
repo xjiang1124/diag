@@ -35,7 +35,7 @@ tar czf ${release_name}.tar.gz ${release_name}/*
 mv ${release_name}.tar.gz ${release_name}/
 
 ## COPY NIC IMAGES
-image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
+image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
 for f in $image_files; do
     cp --preserve=timestamps /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
 done
