@@ -56,12 +56,12 @@ func main() {
         return
     }
 
+    cli.Println("d", "intLpbk:", intLpbk)
     if *snakePtr == true {
         if asicType == "ELBA" {
-            cli.Println("d", "intLpbk:", intLpbk)
             elba.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr)
         } else if asicType == "CAPRI"{
-            capri.Snake(*modePtr, *duraPtr, *verbosePtr)
+            capri.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr)
         } else {
             cli.Println("e", "Unsupported ASIC type", asicType)
         }

@@ -323,7 +323,7 @@ func SnakeCheck() (err int) {
     return
 }
 
-func Snake(mode string, duration int, verbose bool) (err int) {
+func Snake(mode string, duration int, intLpbk int, verbose bool) (err int) {
     var filename string
     var errGo error
 
@@ -350,7 +350,7 @@ func Snake(mode string, duration int, verbose bool) (err int) {
     }
 
     cmdStr := "./diag.exe"
-    cmd := exec.Command(cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration))
+    cmd := exec.Command(cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk))
     if verbose == false {
         errGo = cmd.Run()
         if errGo != nil {
@@ -360,7 +360,7 @@ func Snake(mode string, duration int, verbose bool) (err int) {
     } else {
 	    passSign := "Snake Done"
 	    failSign := "Snake Failed"
-	    err = runCmd.Run(passSign, failSign, cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration))
+	    err = runCmd.Run(passSign, failSign, cmdStr, "snake_all.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk))
 
 	    if err != errType.SUCCESS {
 	        dcli.Println("e", "Snake Test Failed!")
