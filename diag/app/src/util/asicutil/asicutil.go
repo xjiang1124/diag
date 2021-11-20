@@ -22,6 +22,7 @@ func main() {
     flag.Usage = myUsage
 
     prbsPtr     := flag.Bool("prbs",       false, "PRBS Test")
+    prbsChkPtr  := flag.Bool("prbs_chk",   false, "PRBS Test status check")
     snakePtr    := flag.Bool("snake",      false, "SNAKE Test")
     snakePostPtr:= flag.Bool("snake_post", false, "SNAKE Test post check")
     snakeChkPtr := flag.Bool("snake_chk",  false, "SNAKE Test status check")
@@ -47,9 +48,18 @@ func main() {
 
     if *prbsPtr == true {
         if asicType == "ELBA" {
-            cli.Println("d", "No PRBS test for Elba cards")
+            elba.Prbs(*modePtr, *polyPtr, *duraPtr, intLpbk)
         } else if asicType == "CAPRI"{
             capri.Prbs(*modePtr, *polyPtr, *duraPtr)
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
+        }
+        return
+    }
+
+    if *prbsChkPtr == true {
+        if asicType == "ELBA" {
+            elba.SnakeAndPrbsCheck("PRBS")
         } else {
             cli.Println("e", "Unsupported ASIC type", asicType)
         }
@@ -70,7 +80,7 @@ func main() {
 
     if *snakeChkPtr == true {
         if asicType == "ELBA" {
-            elba.SnakeCheck()
+            elba.SnakeAndPrbsCheck("SNAKE")
         } else if asicType == "CAPRI"{
             capri.SnakeCheck()
         } else {

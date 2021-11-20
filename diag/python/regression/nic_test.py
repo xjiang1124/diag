@@ -503,7 +503,7 @@ class nic_test:
         return ret
 
     def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off", dura=120, in_lpbk=False):
-        print "=== Starting snake on slot {} ===".format(slot)
+        print "=== Starting {} on slot {} ===".format(test_type, slot)
 
         ret = 0
         if slot == 0 or slot > 10:
@@ -520,6 +520,9 @@ class nic_test:
             test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > /data/nic_util/asicutil_pcie.log &"
         elif (test_type == "snake" and ("nod" in mode)) or (test_type == "snake" and ("hod" in mode) ):
             test_cmd = "/data/nic_util/asicutil -snake -mode {} -dura {} {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode, dura, int_lpbk_str)
+            print("test_cmd", test_cmd)
+        elif test_type == "prbs" and mode == "eth":
+            test_cmd = "/data/nic_util/asicutil -prbs -mode ETH -dura {} {} 2>&1 > /data/nic_util/asicutil_elba_prbs_eth.log &".format(dura, int_lpbk_str)
             print("test_cmd", test_cmd)
         else:
             print "Invalid test_type {} and mode {}".format(test_type, mode)
@@ -544,10 +547,10 @@ class nic_test:
 
             self.nic_con.uart_session_stop(session)
 
-            print "=== Snake on slot {} started ===".format(slot)
+            print "=== {} on slot {} started ===".format(test_type, slot)
         except:
             self.nic_con.uart_session_stop(session)
-            print "=== Snake on slot {} FAILED to start! ===".format(slot)
+            print "=== {} on slot {} FAILED to start! ===".format(test_type, slot)
             common.session_stop(session)
             ret = -1
 
@@ -555,7 +558,7 @@ class nic_test:
         return ret
 
     def test_check(self, slot=0, test_type="snake", mode="hbm", timeout=30):
-        print "=== Checing snake result on slot {} ===".format(slot)
+        print "=== Checking {} result on slot {} ===".format(test_type, slot)
 
         ret = 0
         if slot == 0 or slot > 10:
@@ -576,14 +579,18 @@ class nic_test:
             else:
                  test_mode= "pcie_lb"
 
-        cmd = "/data/nic_util/asicutil -snake_chk"
+        if test_type == "prbs" and mode == "eth":
+            cmd = "/data/nic_util/asicutil -prbs_chk"
+        else:
+            cmd = "/data/nic_util/asicutil -snake_chk"
+
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
         self.nic_con.uart_session_stop(session)
 
         common.session_stop(session)
 
         print "check_result:", ret
-        print "=== Checing snake result on slot {} Done ===".format(slot)
+        print "=== Checing {} result on slot {} Done ===".format(test_type, slot)
         return ret
 
     def mtp_sts(self, wait_time, interval=15):
@@ -596,7 +603,7 @@ class nic_test:
             
 
     def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0, duration=120, int_lpbk=False):
-        print "=== NIC Snake {} ===".format(mode)
+        print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
             sys.exit(0)
@@ -627,11 +634,11 @@ class nic_test:
 
                 test_sts = self.test_check(int(slot), test_type, mode)
                 if test_sts == 0:
-                    print "=== Snake Result at Slot {}: Passed".format(slot)
+                    print "=== {} Result at Slot {}: Passed".format(test_type, slot)
                     test_result[slot] = "PASS"
                     done_count = done_count + 1
                 if test_sts == 1:
-                    print "=== Snake Result at Slot {}: Failed".format(slot)
+                    print "=== {} Result at Slot {}: Failed".format(test_type, slot)
                     test_result[slot] = "FAIL"
                     done_count = done_count + 1
 
@@ -1174,6 +1181,11 @@ if __name__ == "__main__":
     if args.snake == True:
         slot_list = args.slot_list.split(',')
         test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
+        sys.exit()
+
+    if args.prbs == True and args.asic_type == "elba":
+        slot_list = args.slot_list.split(',')
+        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
         sys.exit()
 
     if args.prbs_start == True:

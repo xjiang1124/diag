@@ -19,11 +19,14 @@ import (
 )
 
 type TResult struct {
-    SnakeResult string `yaml:"SNAKE_RESULT"`
+    TestResult string `yaml:"TEST_RESULT"`
 }
 
 func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
     var cmd string
+    var filename string
+    var errGo error
+    var resultStr string
 
     err = errType.SUCCESS
 
@@ -39,7 +42,22 @@ func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
         return
     }
 
-    dcli.Println("i", mode, strconv.Itoa(duration))
+    dcli.Println("i", mode, strconv.Itoa(duration), intLpbk)
+
+    errGo = os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+    if errGo != nil {
+        dcli.Println("e", errGo)
+        return
+    }
+
+    filename = "result.yaml"
+    errGo = os.Remove(filename)
+    if errGo != nil {
+        dcli.Println("i", errGo)
+    } else {
+        dcli.Println("i", "Yaml file deleted")
+    }
+
     cmd = "/data/nic_arm/elba/asic_src/ip/cosim/tclsh/nic_prbs.sh"
     if mode == "PCIE" {
         passSign := "PCIE PRBS PASSED"
@@ -57,14 +75,19 @@ func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
 
     if err != errType.SUCCESS {
         dcli.Println("e", mode, "PRBS Test Failed!")
+        resultStr = "FAIL"
     } else {
         dcli.Println("i", mode, "PRBS PASSED")
+        resultStr = "SUCCESS"
     }
+
+    err = updateYaml(resultStr)
+    dcli.Println("i", "YAML file updated")
 
     return err
 }
 
-func SnakeCheck() (err int) {
+func SnakeAndPrbsCheck(testType string) (err int) {
     var c TResult
     var pid string
 
@@ -99,30 +122,30 @@ func SnakeCheck() (err int) {
                 process, errGo := os.FindProcess(pidInt)
                 if errGo != nil {
                     dcli.Printf("e", "Failed to find process: %s\n", errGo)
-                    dcli.Println("i", "SNAKE FAILED")
+                    dcli.Println("i", testType, "FAILED")
                     err = errType.FAIL
                     return
                 } else {
                     errGo = process.Signal(syscall.Signal(0))
                     if errGo != nil {
                         dcli.Printf("i", "process.Signal on pid %d returned: %v\n", pid, errGo)
-                        dcli.Println("i", "SNAKE FAILED")
+                        dcli.Println("i", testType, "FAILED", )
                         err = errType.FAIL
                         return
                     }
                 }
-                dcli.Println("i", "SNAKE RUNNING")
+                dcli.Println("i", testType, "RUNNING")
                 return
             }
         }
     }
 
-    dcli.Println("i", "Snake test has finished")
+    dcli.Println("i", testType, "test has finished")
 
     yamlFile, errGo := ioutil.ReadFile("result.yaml")
     if errGo != nil {
         dcli.Printf("i", "%v \n", errGo)
-        dcli.Println("i", "No yaml file, SNAKE RUNNING")
+        dcli.Println("i", "No yaml file,", testType, "RUNNING")
         err = errType.FAIL
         return
     }
@@ -135,7 +158,8 @@ func SnakeCheck() (err int) {
     }
 
     //c.getConf()
-    dcli.Println("i", c.SnakeResult)
+    dcli.Println("i", c.TestResult)
+
     return
 }
 
@@ -294,7 +318,7 @@ func updateYaml (resultStr string) (err int) {
     }
     defer f.Close()
 
-    resultStr = fmt.Sprintf("SNAKE_RESULT: %s", resultStr)
+    resultStr = fmt.Sprintf("TEST_RESULT: %s", resultStr)
     _, errGo = f.Write([]byte(resultStr))
     if errGo != nil {
         dcli.Println("e", "Failed to open yaml file", errGo)

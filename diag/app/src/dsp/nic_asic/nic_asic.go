@@ -121,7 +121,7 @@ func Nic_Asic_L1Hdl(argList []string) {
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
     diagEngine.FuncMap["PCIE_PRBS"] = Nic_AsicPcie_PrbsHdl
-    diagEngine.FuncMap["ETH_PRBS"] = Nic_AsicEth_PrbsHdl
+    diagEngine.FuncMap["ETH_PRBS"] = Nic_AsicEth_PrbsHdl //remove this later
     diagEngine.FuncMap["L1"] = Nic_Asic_L1Hdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
