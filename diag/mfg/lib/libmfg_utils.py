@@ -1016,6 +1016,27 @@ def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
         print("################## GET UUT INF #######################")
         return "500"
 
+def soap_get_uut_resp(xml, factory=FLX_Factory.PENANG):
+    if factory == FLX_Factory.PENANG:
+        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+        webservice.putrequest("POST", FLX_PENANG_API_URL)
+        webservice.putheader("Content-Type", "text/xml")
+        webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
+    else:
+        webservice = httplib.HTTP(FLX_WEBSERVER)
+        webservice.putrequest("POST", FLX_API_URL)
+        webservice.putheader("Content-Type", "text/xml")
+        webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
+
+    webservice.putheader("Content-length", "%d" % len(xml))
+    webservice.endheaders()
+
+    webservice.send(xml)
+
+    statuscode, statusmessage, header = webservice.getreply()
+    resp = webservice.getfile().read()
+    
+    return resp
 
 def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
     factory = flx_sn_to_factory(sn)
@@ -1041,6 +1062,22 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
 
     return True
 
+def flx_web_srv_get_uut_info(sn, stage=None):
+    factory = flx_sn_to_factory(sn)
+    if not factory:
+        print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return False
+    if not stage:
+        stage = FF_Stage.FF_DL
+
+    xml = flx_soap_get_uut_info_xml(stage, sn)
+    if not xml:
+        return False
+
+    resp = soap_get_uut_resp(xml, factory)
+    #print(resp)
+    
+    return resp
 
 def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
