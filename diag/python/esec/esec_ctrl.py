@@ -290,6 +290,8 @@ PRIVEK <ek.sk>"""
         if result == None:
             print "PN not found with Part Number"
             pn = "UNKNOWN"
+            print "========== Dumping eeutil output ============"
+            print(output)
         else:
             pn = result.group(1)
 
