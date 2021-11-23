@@ -3920,7 +3920,7 @@ def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                                 #if len(eacherror) > 200:
                                                     #eacherror = eacherror[:200]
                                                 wirtedata.append(failurestep)
-                                                wirtedata.append(eacherror)
+                                                wirtedata.append(neweacherror)
                                                 #print(wirtedata)
                                                 ws2.append(wirtedata)
                                                 FAILURE_STEPS.append(failurestep)
