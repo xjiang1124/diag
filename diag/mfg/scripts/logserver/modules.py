@@ -45,7 +45,6 @@ from datetime import datetime
 now = datetime.now() # current date and time
 date_time = now.strftime("%Y%m%d_%H%M%S")
 print("date and time:",date_time)
-defecttmpfolder = "/logs/arubadashbroad"
 
 class modules(object):
 	def __init__(self, logfile=None):

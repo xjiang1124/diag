@@ -24,6 +24,7 @@ from os import listdir
 import time
 from logdef import KEY_WORD
 import modules
+import ssh_modules
 
 now = datetime.now() # current date and time
 date_time = now.strftime("%Y%m%d_%H%M%S")
@@ -101,7 +102,10 @@ def main():
         difftime = datetime.now()-start
         print('Done Time: ', difftime)       
         print("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
-        return None        
+        return None
+
+    pr['FailureSNlist'] = processFailureSNFlexFlowCheck(DATA,inputconfig,pr)
+
     if DATA['NEWFILECOUNT']:
         processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
     elif "report" in ARGV:
@@ -114,6 +118,31 @@ def main():
     print('Done Time: ', difftime)       
     print("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
     return None
+
+def processFailureSNFlexFlowCheck(DATA,inputconfig,pr):
+
+    FailureSNlist = GetFailureSNList(DATA,inputconfig,pr)
+
+    pr['modules'].print_anyinformation(FailureSNlist)
+
+    if "FLEXFLOW" in inputconfig:
+        mkssh = ssh_modules.ssh_modules(inputconfig["FLEXFLOW"])
+        mkssh.ssh_login()
+        mkssh.getuptimeinfo()
+        for teststep in FailureSNlist:
+            FailureSNlist[teststep]["FLEXFLOW"] = dict()
+            for sn in FailureSNlist[teststep]["SN"]:
+                FailureSNlist[teststep]["FLEXFLOW"][sn] = mkssh.getflowflex(sn)
+        mkssh.ssh_logout()
+
+    else:
+        return None
+
+    pr['modules'].print_anyinformation(FailureSNlist)
+
+    #sys.exit()
+
+    return FailureSNlist
 
 def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
@@ -299,6 +328,8 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
             else:
                 generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
             generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+            #L1 Sub Test only passed
+            generateexeclerrdata2(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
 
         wb.save(filename = dest_filename)
 
@@ -3821,6 +3852,89 @@ def generateexeclerrdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wraptest(ws2)
     return 0
 
+def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
+
+    teststeperrortitle = "{}_ERROR_2".format(teststep)
+    print("{}: {}".format("generateexeclerrdata", teststeperrortitle))
+    ws2 = wb.create_sheet(title=teststeperrortitle)
+    wirtedata = list()
+    wirtedata.append('TEST')
+    wirtedata.append('SN')
+    wirtedata.append('CHASSIS')
+    wirtedata.append('DATE')
+    wirtedata.append('TIME')
+    wirtedata.append('CARDTYPE')
+    wirtedata.append('SLOT')
+
+    wirtedata.append('RESULT')
+    wirtedata.append('FAILED_STEP')
+    wirtedata.append('ERROR_DATA')
+    ws2.append(wirtedata)
+    
+    for sn in workingonSNlist:
+        if sn in DATA["SN"]:
+            for chassis in DATA["SN"][sn]:
+                for testdate in DATA["SN"][sn][chassis]:
+                    for testetime in DATA["SN"][sn][chassis][testdate]:
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            if "FAIL" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                                slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                                howmanyerror = len(DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL'])
+                                if howmanyerror:
+                                    FAILURE_STEPS = list()
+                                    for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
+                                        if "ERR MSG ==" in eacherror:
+                                            failurestep = None
+                                            if "L1 Sub Test only passed" in eacherror:
+                                                continue
+                                            if "DIAG TEST" in eacherror:
+                                                Needworkonlist = eacherror.split('DIAG TEST')
+                                                match = re.findall(r"(\w.*\w),\s+ERR MSG ==\s?(.*)",Needworkonlist[-1])
+                                                #print(match)
+                                                if match:
+                                                    failurestep = match[0][0]
+                                                    failurestep = failurestep.strip() 
+                                            else:
+                                                match = re.findall(r"(\w.*\w),\s+ERR MSG ==\s?(.*)",eacherror)
+                                                #print(match)
+                                                if match:
+                                                    failurestep = match[0][0]
+                                                    failurestep = failurestep.strip()                                   
+                                            eacherrorlist = eacherror.split('\n')
+                                            neweacherror = ''
+                                            for checkeacherror in eacherrorlist:
+                                                checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                                neweacherror += checkeacherror
+                                                neweacherror += "\r"
+                                            if not failurestep in FAILURE_STEPS:
+                                                wirtedata = list()
+                                                wirtedata.append(teststep)
+                                                wirtedata.append(sn)
+                                                wirtedata.append(chassis)
+                                                wirtedata.append(testdate)
+                                                wirtedata.append(testetime)
+                                                wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                                                wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                                                wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                                                #print(eacherror)
+                                                #if len(eacherror) > 200:
+                                                    #eacherror = eacherror[:200]
+                                                wirtedata.append(failurestep)
+                                                wirtedata.append(eacherror)
+                                                #print(wirtedata)
+                                                ws2.append(wirtedata)
+                                                FAILURE_STEPS.append(failurestep)
+                                                #print(wirtedata)
+    
+    fixcolumnssize2(ws2)
+    highlightinyellow(ws2,'TIMEOUT')
+    highlightinyellow(ws2,'NO TEST DATA')
+    highlightingreen(ws2,'PASS')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    wraptest(ws2)
+    return 0
+
 def fixcolumnssize(ws,enablefilter=True):
     dims = {}
     for row in ws.rows:
@@ -4574,6 +4688,30 @@ def SummaryReportDetailchart(DATA,ws1,inputconfig,workingonSNlist,chartdata,pr,s
 
     return None
 
+def GetFailureSNList(DATA,inputconfig,pr):
+
+    workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+
+    LastfailureremoveDupSN = dict()
+    for SN in workingonSNlist:
+
+        for test in DATA['SN']['TEST']:
+            if not test in LastfailureremoveDupSN:
+                LastfailureremoveDupSN[test] = dict()
+                LastfailureremoveDupSN[test]["count"] = 0
+                LastfailureremoveDupSN[test]["SN"] = list()
+            if SN in DATA['SN']['LAST'][test]:
+                if "result" in DATA['SN']['LAST'][test][SN]:
+                    if "FAIL" in DATA['SN']['LAST'][test][SN]["result"]:
+                        LastfailureremoveDupSN[test]["count"] += 1
+                        LastfailureremoveDupSN[test]["SN"].append(SN)
+                        break
+
+    #print(json.dumps(LastfailureremoveDupSN, indent = 4))
+
+    #sys.exit()
+
+    return LastfailureremoveDupSN
 
 def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
 
