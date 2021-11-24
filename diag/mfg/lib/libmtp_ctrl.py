@@ -1105,7 +1105,7 @@ class mtp_ctrl():
 
         # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
         if self._mtp_rev is not None and len(self._mtp_rev) > 0:
-            if int(self._mtp_rev) > 2:
+            if int(self._mtp_rev) > 3:
                 apc1 = self._apc_cfg[0]
                 apc2 = self._apc_cfg[4]
 
