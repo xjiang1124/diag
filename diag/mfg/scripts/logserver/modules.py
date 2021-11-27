@@ -427,8 +427,8 @@ class modules(object):
 			if SNraw and PCBAsnraw:
 				colunm = eachsheet['A']
 				for countnumberinrow in range(2,len(colunm)+1):
-					SN = str(eachsheet.cell(row=countnumberinrow, column=SNcolunm).value)
-					PCBA_SN = str(eachsheet.cell(row=countnumberinrow, column=PCBAsncolunm).value)
+					SN = str(eachsheet.cell(row=countnumberinrow, column=SNcolunm).value).strip()
+					PCBA_SN = str(eachsheet.cell(row=countnumberinrow, column=PCBAsncolunm).value).strip()
 					self.debug_print("SN: {} | PCBA_SN: {}".format(SN, PCBA_SN))
 					SNvsPCBA[SN] = PCBA_SN		
 

@@ -25,6 +25,7 @@ import time
 from logdef import KEY_WORD
 import modules
 import ssh_modules
+import socket
 
 now = datetime.now() # current date and time
 date_time = now.strftime("%Y%m%d_%H%M%S")
@@ -33,7 +34,12 @@ print("date and time:",date_time)
 #TEST on KEY_WORD
 #print(KEY_WORD.NIC_DIAG_TEST_RSLT_RE)
 
+scriptname = os.path.basename(__file__)
+scriptname = scriptname.replace('.py','')
+
 def main():
+
+    get_lock(scriptname)
 
     start=datetime.now()
     pr = dict()
@@ -120,8 +126,12 @@ def main():
     return None
 
 def processFailureSNFlexFlowCheck(DATA,inputconfig,pr):
-
-    FailureSNlist = GetFailureSNList(DATA,inputconfig,pr)
+    start=datetime.now()
+    FailureSNlist = dict()
+    FailureSNlist["DATA"] = GetFailureSNList(DATA,inputconfig,pr)
+    FailureSNlist["FailureSN"] = list()
+    FailureSNlist["FailureSNFlexflow"] = dict()
+    FailureSNlist["FlexflowType"] = dict()
 
     pr['modules'].print_anyinformation(FailureSNlist)
 
@@ -129,17 +139,27 @@ def processFailureSNFlexFlowCheck(DATA,inputconfig,pr):
         mkssh = ssh_modules.ssh_modules(inputconfig["FLEXFLOW"])
         mkssh.ssh_login()
         mkssh.getuptimeinfo()
-        for teststep in FailureSNlist:
-            FailureSNlist[teststep]["FLEXFLOW"] = dict()
-            for sn in FailureSNlist[teststep]["SN"]:
-                FailureSNlist[teststep]["FLEXFLOW"][sn] = mkssh.getflowflex(sn)
+        for teststep in FailureSNlist["DATA"]:
+            FailureSNlist["DATA"][teststep]["FLEXFLOW"] = dict()
+            FailureSNlist["DATA"][teststep]["FlexflowType"] = dict()
+            for sn in FailureSNlist["DATA"][teststep]["SN"]:
+                FailureSNlist["FailureSN"].append(sn)
+                FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] = mkssh.getflowflex(sn)
+                FailureSNlist["FailureSNFlexflow"][sn] = FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]
+                if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["DATA"][teststep]["FlexflowType"]:
+                    FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
+                if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["FlexflowType"]:
+                    FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
+                FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
+                FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
         mkssh.ssh_logout()
 
     else:
         return None
 
     pr['modules'].print_anyinformation(FailureSNlist)
-
+    difftime = datetime.now()-start
+    print('Done Time: ', difftime)     
     #sys.exit()
 
     return FailureSNlist
@@ -179,6 +199,9 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
                 #,listofsn=[],specpn=None
                 createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
 
+    if pr['FailureSNlist']:
+        createfailureteststatusreport(pr,DATA,inputconfig)
+
     return None
 
 def generateMTPreport(pr,DATA,inputconfig,startdate=None):
@@ -214,6 +237,43 @@ def getbeforedayinformation(checkday=30):
     # print("30 days after current date : ",days_after)
 
     return days_before
+
+def createfailureteststatusreport(pr,DATA,inputconfig,startdate=None):
+    
+    #workingonSNlist = DATA['SN']['LIST']
+    
+    print("START DATE: {}".format(startdate))
+    workingonSNlist = pr['FailureSNlist']["FailureSN"]
+    workingonSNlist.sort(reverse=True)
+    print("COUNT SN: {}".format(len(workingonSNlist)))
+    #sys.exit()    
+    wb = Workbook()
+    
+    reportdir = inputconfig['DIR']["reportpath"]
+
+    dest_filename = "{}FAILURE_{}_FAILURE.xlsx".format(reportdir,date_time)
+    filenameheader = "{}FAILURE_{}_FAILURE".format(reportdir,date_time)
+    if "NAME" in inputconfig:
+        dest_filename = "{}{}_{}_FAILURE.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_FAILURE".format(reportdir,inputconfig["NAME"],date_time)
+    if startdate:
+        dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
+
+    print('OUTPUT FILE NAME: ' + dest_filename)
+
+    generateexeclfailurereport(DATA,wb,inputconfig,workingonSNlist,pr,start=startdate)
+
+    generateexeclsnfailurestatusalldata(DATA,pr, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
+
+    for eachteststep in DATA['SN']['TEST']:
+
+        generateexeclerrdata2(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+
+    wb.save(filename = dest_filename)
+    
+    print("OUTPUT FILE: {}".format(dest_filename))
+
+    return None    
 
 def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
     
@@ -2168,6 +2228,174 @@ def generateexeclsnstatus(DATA, workingonSNlist,status,wb,inputconfig,Withallerr
                         wirtedata.append(reportresut)
                     else:
                         wirtedata.append('NO TEST DATA')
+                else:
+                    wirtedata.append('NO TEST DATA')
+            else:
+                wirtedata.append('NO TEST DATA')
+            #time.sleep(2)
+        ws2.append(wirtedata)
+        
+    
+    fixcolumnssize(ws2)
+    highlightinyellow(ws2,'TIMEOUT')
+    highlightinyellow(ws2,'NO TEST DATA')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    highlightingreen(ws2,'PASS')
+    highlightinOrange(ws2,'INCOMPLETE')
+    wraptest(ws2)
+    freezePosition(ws2,'C2')
+    
+    return 0
+
+def generateexeclsnfailurestatusalldata(DATA,pr, workingonSNlist,status,wb,inputconfig,Withallerror=False):
+
+    # DATA['SN']['LIST'] = list()
+    # DATA['SN']['TEST'] = list()
+    # DATA['SN']['FIRST'] = dict()
+    # DATA['SN']['LAST'] = dict()
+    
+    print("generateexeclsnfailurestatusalldata: {}".format(status))
+    #titlename = "{} ALL DATE".format(status)
+    titlename = "{}".format(status)
+    if Withallerror:
+        titlename = "{} ALL ERROR".format(titlename)
+    ws2 = wb.create_sheet(title=titlename)
+    wirtedata = list()
+    wirtedata.append('SN')
+    wirtedata.append('FLEXFLOWSTATUS')
+    wirtedata.append('OVERALL')
+    wirtedata.append('TEST_WEEK')
+    # if status == 'LAST':
+    #     wirtedata.append('LAST_TESTDATE')
+    #     wirtedata.append('LAST_STATION(RESULT)')
+    
+    #     wirtedata.append('QSPI')
+    #     wirtedata.append('CPLD1')
+    if "DISPLAYINDO" in inputconfig:
+        for displaykey in inputconfig["DISPLAYINDO"]:
+            wirtedata.append(displaykey)
+
+    #wirtedata.append('')
+    for test in DATA['SN']['TEST']:
+         wirtedata.append(test)
+    ws2.append(wirtedata)
+
+    for sn in workingonSNlist:
+        wirtedata = list()
+        wirtedata.append(sn)
+        wirtedata.append(pr["FailureSNlist"]["FailureSNFlexflow"][sn])
+        overall = dict()
+        overall['result'] = 'PASS'
+        overall['TESTWEEK'] = 'NODATA'
+        overall['LAST'] = dict()
+        overall['LAST']['test'] = None
+        overall['LAST']['result'] = None  
+        overall['LAST']['date'] = None 
+        for test in DATA['SN']['TEST']:
+            if sn in DATA['SN'][status][test]:
+                firsttesttimestamp = DATA['SN'][status][test][sn]["checktime"]
+                break
+
+        testcount = 0
+        for test in DATA['SN']['TEST']:
+
+            if sn in DATA['SN'][status][test]:
+
+                testcount += 1
+                if "result" in DATA['SN'][status][test][sn]:
+                    if not overall['LAST']['result']:
+                        overall['LAST']['test'] = test
+                        overall['LAST']['result'] = DATA['SN'][status][test][sn]["result"]
+                        overall['LAST']['date'] = DATA['SN'][status][test][sn]["checktime"]
+                        overall['TESTWEEK'] = findworkweek(overall['LAST']['date'])
+                    elif DATA['SN'][status][test][sn]["checktime"] > overall['LAST']['date']:
+                        overall['LAST']['test'] = test
+                        overall['LAST']['result'] = DATA['SN'][status][test][sn]["result"]
+                        overall['LAST']['date'] = DATA['SN'][status][test][sn]["checktime"]
+                        overall['TESTWEEK'] = findworkweek(overall['LAST']['date'])                     
+                    if "FAIL" in DATA['SN'][status][test][sn]["result"]:
+                        overall['result'] = "FAIL"
+
+        if overall['result'] == 'PASS':
+            if not testcount == len(DATA['SN']['TEST']):
+                overall['result'] = "INCOMPLETE"
+        wirtedata.append(overall['result'])
+        wirtedata.append(overall['TESTWEEK'])
+        if "DISPLAYINDO" in inputconfig:
+            for displaykey in inputconfig["DISPLAYINDO"]:
+                #finddisplay = False
+                displaydict = dict()
+                for test in DATA['SN']['TEST']:
+                    if sn in DATA['SN'][status][test]:
+                        for checkkey in inputconfig["CHECKKEYS"]:
+                            if checkkey in DATA['SN'][status][test][sn]:
+                                if isinstance(DATA['SN'][status][test][sn][checkkey], dict):
+                                    if displaykey in DATA['SN'][status][test][sn][checkkey]:
+                                        if not "data" in displaydict:
+                                            displaydict["data"] = DATA['SN'][status][test][sn][checkkey][displaykey]
+                                            displaydict["checktime"] = DATA['SN'][status][test][sn]["checktime"]
+                                        elif DATA['SN'][status][test][sn]["checktime"] > displaydict["checktime"]:
+                                            displaydict["data"] = DATA['SN'][status][test][sn][checkkey][displaykey]
+                                            displaydict["checktime"] = DATA['SN'][status][test][sn]["checktime"]                                            
+                                        #finddisplay = True
+                                        #wirtedata.append(DATA['SN'][status][test][sn][checkkey][displaykey])
+                                        #break
+                if "data" in displaydict:
+                    wirtedata.append(displaydict["data"])
+                else:
+                    wirtedata.append('NODATA')
+        # if status == 'LAST':
+        #     last_dateandtime = overall['LAST']['date']
+
+        #     last_datetimearray = last_dateandtime.split('_')
+        #     reporttestandresult = "{} ({})".format(overall['LAST']['test'],overall['LAST']['result'])
+        #     wirtedata.append(last_datetimearray[0])
+        #     wirtedata.append(reporttestandresult)
+        #     if sn in DATA['SN']['LAST'][DATA['SN']['TEST'][0]]:
+        #         if 'QSPI' in DATA['SN']['LAST'][DATA['SN']['TEST'][0]][sn]:
+        #             wirtedata.append(DATA['SN']['LAST'][DATA['SN']['TEST'][0]][sn]['QSPI'])
+        #         else:
+        #             wirtedata.append('NO INFORMATION')
+        #     else:
+        #         wirtedata.append('NO INFORMATION')
+        #     #'CPLD1'
+        #     if sn in DATA['SN']['LAST'][DATA['SN']['TEST'][0]]:
+        #         if 'CPLD1' in DATA['SN']['LAST'][DATA['SN']['TEST'][0]][sn]:
+        #             wirtedata.append(DATA['SN']['LAST'][DATA['SN']['TEST'][0]][sn]['CPLD1'])
+        #         else:
+        #             wirtedata.append('NO INFORMATION')
+        #     else:
+        #         wirtedata.append('NO INFORMATION')
+        #wirtedata.append('')
+
+        for test in DATA['SN']['TEST']:
+            #print("{} : {}".format(sn,test))
+            #print(json.dumps(DATA['SN'][status][test], indent = 4))
+            #sys.exit()
+            if sn in DATA['SN'][status][test]:
+                # print("TEST: {} | STATUS: {}".format(test, status))
+                # print(json.dumps(DATA['SN'][status][test][sn], indent = 4))
+                # sys.exit()
+                #time.sleep(5)
+
+                if "result" in DATA['SN'][status][test][sn]:
+                    #DATA['SN']['ERROR'][teststep][sn][reportdetailstep]
+                    dateandtime = DATA['SN'][status][test][sn]["checktime"]
+                    datetimearray = dateandtime.split('_')
+                    reportresut = "{} ({})".format(DATA['SN'][status][test][sn]["result"],datetimearray[0])
+                    #DATA['SN']['LAST'][teststep][sn]['count']
+                    if "count" in DATA['SN'][status][test][sn]:
+                        reportresut = "{} <{}> ".format(reportresut,DATA['SN'][status][test][sn]["count"])
+                    if Withallerror:
+                        if sn in DATA['SN']['ERROR'][test]:
+                            for eachfailstep in DATA['SN']['ERROR'][test][sn]['LIST']:
+                                reportresut = "{}\r{} <{}>".format(reportresut,eachfailstep,DATA['SN']['ERROR'][test][sn]['DETAIL'][eachfailstep])
+                    else:
+                        if "FAIL" in DATA['SN'][status][test][sn]["result"]:
+                            for eachfailstep in DATA['SN'][status][test][sn]['ERROR']['LIST']:
+                                reportresut = "{}\r{} <{}>".format(reportresut,eachfailstep,DATA['SN']['ERROR'][test][sn]['DETAIL'][eachfailstep])
+                    wirtedata.append(reportresut)
                 else:
                     wirtedata.append('NO TEST DATA')
             else:
@@ -4421,6 +4649,19 @@ def generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=N
 
     return None
 
+def generateexeclfailurereport(DATA,wb,inputconfig,workingonSNlist,pr,start=None):
+
+    # 1st Sheet keep active
+    ws1 = wb.active
+    
+    # Will creat extra "sheet" using below
+    #ws1 = wb.create_sheet(title='SUMMARY')
+    ws1.title = "FailureSUMMARY"
+
+    SummaryfailureReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None)
+
+    return None
+
 def generateexeclchart(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=None):
     # 1st Sheet keep active
     ws1 = wb.active
@@ -4712,6 +4953,21 @@ def GetFailureSNList(DATA,inputconfig,pr):
     #sys.exit()
 
     return LastfailureremoveDupSN
+
+def SummaryfailureReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
+
+    wirtedata = list()
+    wirtedata.append('FLEXFLOWSTATUS')
+    wirtedata.append('SN_QTY')
+    ws1.append(wirtedata)
+
+    for flexflowtype in pr["FailureSNlist"]["FlexflowType"]:
+        wirtedata = list()
+        wirtedata.append(flexflowtype)
+        wirtedata.append(len(pr["FailureSNlist"]["FlexflowType"][flexflowtype]))
+        ws1.append(wirtedata)
+
+    return None
 
 def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
 
@@ -5221,6 +5477,22 @@ def _removespace(s): return "".join(i for i in s if ord(i)!=32)
 def _onlykeepword(s): return "".join(i for i in s if (ord(i)>48 and ord(i)<57) or (ord(i)>97 and ord(i)<122) or (ord(i)>65 and ord(i)<90))
 
 def _remove47(s): return "".join(i for i in s if ord(i)!=47 and ord(i)!=43 and ord(i)!=58 and ord(i)!=33)
+
+def get_lock(process_name):
+    # Without holding a reference to our socket somewhere it gets garbage
+    # collected when the function exits
+    get_lock._lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+
+    try:
+        # The null byte (\0) means the socket is created 
+        # in the abstract namespace instead of being created 
+        # on the file system itself.
+        # Works only in Linux
+        get_lock._lock_socket.bind('\0' + process_name)
+        print('{} got the lock'.format(process_name))
+    except socket.error:
+        print('{} lock exists, another jobs running...'.format(process_name))
+        sys.exit()
 
 if __name__ == "__main__":
     sys.exit(main())

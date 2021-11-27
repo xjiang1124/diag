@@ -1,6 +1,7 @@
 {
 	"NAME": "ORTANO2",
 	"TYPE": "NIC",
+	"FLEXFLOW": "192.168.3.11",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
