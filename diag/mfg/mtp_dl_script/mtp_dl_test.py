@@ -167,6 +167,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         testlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["FRU_PROG", "QSPI_PROG"]#, "FPGA_PROG", "GOLD_FPGA_PROG"]
+    if nic_type == NIC_Type.NAPLES100DELL:
+        testlist = ["FRU_PROG", "CPLD_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -319,9 +321,13 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
 
-            if nic_type not in PSLC_MODE_TYPE_LIST:
+            if nic_type not in PSLC_MODE_TYPE_LIST and nic_type != NIC_Type.NAPLES100DELL:
                 continue
+
             testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
+            if nic_type == NIC_Type.NAPLES100DELL:
+                testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
+
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -334,6 +340,9 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_nic_mgmt_init(slot, fpo=True)
                 elif test == "SET_PSLC":
                     ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
+                elif test == "QSPI_PROG":
+                    qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+                    ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
@@ -357,7 +366,7 @@ def main():
         if not rc:
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_mgmt_ctrl.mtp_chassis_shutdown()
+            #mtp_mgmt_ctrl.mtp_chassis_shutdown()
             logfile_close(open_file_track_list)
             return
 
@@ -485,7 +494,7 @@ def main():
                 continue
             if not mtp_capability & mtp_exp_capability:
                 mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(nic_type))
-                mtp_mgmt_ctrl.mtp_chassis_shutdown()
+                #mtp_mgmt_ctrl.mtp_chassis_shutdown()
                 logfile_close(open_file_track_list)
                 return
             print("")
@@ -663,7 +672,7 @@ def main():
         if not mtp_mgmt_ctrl.mtp_nic_diag_init():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_mgmt_ctrl.mtp_chassis_shutdown()
+            #mtp_mgmt_ctrl.mtp_chassis_shutdown()
             logfile_close(open_file_track_list)
             return
         # # power cycle all nic
