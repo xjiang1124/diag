@@ -264,9 +264,11 @@ def createfailureteststatusreport(pr,DATA,inputconfig,startdate=None):
     generateexeclfailurereport(DATA,wb,inputconfig,workingonSNlist,pr,start=startdate)
 
     generateexeclsnfailurestatusalldata(DATA,pr, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
+    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
     for eachteststep in DATA['SN']['TEST']:
-
+        generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
         generateexeclerrdata2(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
 
     wb.save(filename = dest_filename)
@@ -1893,7 +1895,7 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
     
     return 0
 
-def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,Withallerror=False):
+def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,Withallerror=False,byweek=True):
 
     # DATA['SN']['LIST'] = list()
     # DATA['SN']['TEST'] = list()
@@ -1909,6 +1911,11 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
     topfailuredata['TEST'] = DATA['SN']['TEST']
     topfailuredata['DATA'] = dict()
     topfailuredata['TESTSNLIST'] = dict()
+    alltopfailuredata = dict()
+    alltopfailuredata['TEST'] = DATA['SN']['TEST']
+    alltopfailuredata['DATA'] = dict()
+    alltopfailuredata['TESTSNLIST'] = dict()
+
     for sn in workingonSNlist:
         for test in DATA['SN']['TEST']:
             if sn in DATA['SN'][status][test]:
@@ -1919,8 +1926,12 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                     topfailuredata['TESTSNLIST'][testweek] = dict()
                 if not test in topfailuredata['TESTSNLIST'][testweek]:
                     topfailuredata['TESTSNLIST'][testweek][test] = list()
+                if not test in alltopfailuredata['TESTSNLIST']:
+                    alltopfailuredata['TESTSNLIST'][test] = list()
                 if not sn in topfailuredata['TESTSNLIST'][testweek][test]:
                     topfailuredata['TESTSNLIST'][testweek][test].append(sn)
+                if not sn in alltopfailuredata['TESTSNLIST'][test]:
+                    alltopfailuredata['TESTSNLIST'][test].append(sn)
                 testdayandtime = DATA['SN'][status][test][sn]["checktime"].split("_")
                 testday = testdayandtime[0]
                 if not testday in topfailuredata['weekday'][testweek]:
@@ -1930,6 +1941,8 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                     topfailuredata['DATA'][testweek] = dict()
                 if not test in topfailuredata['DATA'][testweek]:
                     topfailuredata['DATA'][testweek][test] = dict()
+                if not test in alltopfailuredata['DATA']:
+                    alltopfailuredata['DATA'][test] = dict()
                 if not testweek in topfailuredata['week']:
                     topfailuredata['week'].append(testweek)
                     topfailuredata['week'].sort(reverse=True)
@@ -1946,6 +1959,14 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                         else:
                             topfailuredata['DATA'][testweek][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["count"] += 1
                             topfailuredata['DATA'][testweek][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["SN"].append(sn)
+                        if not DATA['SN'][status][test][sn]["ERROR"]["LIST"][0] in alltopfailuredata['DATA'][test]:
+                            alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]] = dict()
+                            alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["count"] = 1 
+                            alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["SN"] = list() 
+                            alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["SN"].append(sn)
+                        else:
+                            alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["count"] += 1
+                            alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["SN"].append(sn)
                     else:
                         if not "UNKNOWN" in topfailuredata['DATA'][testweek][test]:
                             topfailuredata['DATA'][testweek][test]["UNKNOWN"] = dict()
@@ -1954,7 +1975,15 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                             topfailuredata['DATA'][testweek][test]["UNKNOWN"]["SN"].append(sn)
                         else:
                             topfailuredata['DATA'][testweek][test]["UNKNOWN"]["count"] += 1
-                            topfailuredata['DATA'][testweek][test]["UNKNOWN"]["SN"].append(sn)    
+                            topfailuredata['DATA'][testweek][test]["UNKNOWN"]["SN"].append(sn)
+                        if not "UNKNOWN" in alltopfailuredata['DATA'][test]:
+                            alltopfailuredata['DATA'][test]["UNKNOWN"] = dict()
+                            alltopfailuredata['DATA'][test]["UNKNOWN"]["count"] = 1
+                            alltopfailuredata['DATA'][test]["UNKNOWN"]["SN"] = list()
+                            alltopfailuredata['DATA'][test]["UNKNOWN"]["SN"].append(sn)
+                        else:
+                            alltopfailuredata['DATA'][test]["UNKNOWN"]["count"] += 1
+                            alltopfailuredata['DATA'][test]["UNKNOWN"]["SN"].append(sn)    
                     #print(json.dumps(topfailuredata, indent = 4))                    
                     #sys.exit()
 
@@ -1968,6 +1997,16 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                     topfailuredata['OVERALL'][failuretype] = topfailuredata['DATA'][testweek][test][failuretype]["count"]
                 else:
                     topfailuredata['OVERALL'][failuretype] += topfailuredata['DATA'][testweek][test][failuretype]["count"]
+
+    alltopfailuredata['OVERALL'] = dict()
+    for test in alltopfailuredata['TEST']:
+        if not test in alltopfailuredata['DATA']:
+            continue
+        for failuretype in alltopfailuredata['DATA'][test]:
+            if not failuretype in alltopfailuredata['OVERALL']:
+                alltopfailuredata['OVERALL'][failuretype] = alltopfailuredata['DATA'][test][failuretype]["count"]
+            else:
+                alltopfailuredata['OVERALL'][failuretype] += alltopfailuredata['DATA'][test][failuretype]["count"]
 
     topfailuredata['OVERALLbyWeek'] = dict()
     for testweek in topfailuredata['week']:
@@ -1988,25 +2027,96 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
             print("Failure: {} - {}".format(failuretype,number))
 
     #sys.exit()
+    if byweek:
+        ws2 = wb.create_sheet(title=titlename)
+        
+        for testweek in topfailuredata['week']:
+            wirtedata = list()
+            wirtedata.append("WEEK: {} {} Top Failure Type".format(testweek,status))
+            wirtedata.append("START:")
+            wirtedata.append(topfailuredata['weekday'][testweek][0])
+            wirtedata.append("END:")
+            wirtedata.append(topfailuredata['weekday'][testweek][-1])
+            ws2.append(wirtedata)
+            wirtedata = list()
+            wirtedata.append("FAILURE TYPE")
+            eachweektotallist = list()
+            eachweektotoaldetail = dict()
+            for test in topfailuredata['TEST']:
+                writetestinformation = "{} <0>".format(test)
+                if test in topfailuredata['TESTSNLIST'][testweek]:
+                    writetestinformation = "{} <{}>".format(test,len(topfailuredata['TESTSNLIST'][testweek][test]))
+                wirtedata.append(writetestinformation)
+                eachweektotallist.append(test)
+                eachweektotoaldetail[test] = 0
+            wirtedata.append("TOTAL")
+            eachweektotallist.append("TOTAL")
+            eachweektotoaldetail["TOTAL"] = 0
+            
+            ws2.append(wirtedata)
 
-    ws2 = wb.create_sheet(title=titlename)
-    
-    for testweek in topfailuredata['week']:
-        wirtedata = list()
-        wirtedata.append("WEEK: {} {} Top Failure Type".format(testweek,status))
-        wirtedata.append("START:")
-        wirtedata.append(topfailuredata['weekday'][testweek][0])
-        wirtedata.append("END:")
-        wirtedata.append(topfailuredata['weekday'][testweek][-1])
-        ws2.append(wirtedata)
+            for failuretype, number in sorted(topfailuredata['OVERALLbyWeek'][testweek].items(), key=lambda item: item[1],reverse=True):
+                print("Failure: {} - {}".format(failuretype,number))
+                wirtedata = list()
+                wirtedata.append(failuretype)
+                for test in topfailuredata['TEST']:
+                    if testweek in topfailuredata['DATA']:
+                        if test in topfailuredata['DATA'][testweek]:
+                            if failuretype in topfailuredata['DATA'][testweek][test]:
+                                wirtedata.append(topfailuredata['DATA'][testweek][test][failuretype]["count"])
+                                eachweektotoaldetail[test] += topfailuredata['DATA'][testweek][test][failuretype]["count"]
+                            else:
+                                wirtedata.append("")
+                        else:
+                            wirtedata.append("")
+                    else:
+                        wirtedata.append("")
+                wirtedata.append(number)
+                eachweektotoaldetail["TOTAL"] += number
+                ws2.append(wirtedata)
+
+            wirtedata = list()
+            wirtedata.append("TOTAL")
+            for test in eachweektotallist:
+                wirtedata.append(eachweektotoaldetail[test])
+            ws2.append(wirtedata)
+
+            wirtedata = list()
+            ws2.append(wirtedata)
+            wirtedata = list()
+            wirtedata.append("TEST")
+            wirtedata.append("SN")
+            wirtedata.append("FAILURE TYPE")
+            wirtedata.append("RE-TEST COUNT")
+            wirtedata.append("LAST RESULT")
+            ws2.append(wirtedata)
+            for test in topfailuredata['TEST']:
+                if testweek in topfailuredata['DATA']:
+                    if test in topfailuredata['DATA'][testweek]:
+                        for failuretype in topfailuredata['DATA'][testweek][test]:
+                            for SN in topfailuredata['DATA'][testweek][test][failuretype]["SN"]:
+                                wirtedata = list()
+                                wirtedata.append(test)
+                                wirtedata.append(SN)
+                                wirtedata.append(failuretype)
+                                wirtedata.append(DATA['SN']["LAST"][test][SN]["count"])
+                                wirtedata.append(DATA['SN']["LAST"][test][SN]["result"])
+                                ws2.append(wirtedata)
+            wirtedata = list()
+            ws2.append(wirtedata)
+            ws2.append(wirtedata)
+            ws2.append(wirtedata)
+    else:
+        ws2 = wb.create_sheet(title=titlename)
+        
         wirtedata = list()
         wirtedata.append("FAILURE TYPE")
         eachweektotallist = list()
         eachweektotoaldetail = dict()
         for test in topfailuredata['TEST']:
             writetestinformation = "{} <0>".format(test)
-            if test in topfailuredata['TESTSNLIST'][testweek]:
-                writetestinformation = "{} <{}>".format(test,len(topfailuredata['TESTSNLIST'][testweek][test]))
+            if test in alltopfailuredata['TESTSNLIST']:
+                writetestinformation = "{} <{}>".format(test,len(alltopfailuredata['TESTSNLIST'][test]))
             wirtedata.append(writetestinformation)
             eachweektotallist.append(test)
             eachweektotoaldetail[test] = 0
@@ -2016,18 +2126,15 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
         
         ws2.append(wirtedata)
 
-        for failuretype, number in sorted(topfailuredata['OVERALLbyWeek'][testweek].items(), key=lambda item: item[1],reverse=True):
+        for failuretype, number in sorted(alltopfailuredata['OVERALL'].items(), key=lambda item: item[1],reverse=True):
             print("Failure: {} - {}".format(failuretype,number))
             wirtedata = list()
             wirtedata.append(failuretype)
-            for test in topfailuredata['TEST']:
-                if testweek in topfailuredata['DATA']:
-                    if test in topfailuredata['DATA'][testweek]:
-                        if failuretype in topfailuredata['DATA'][testweek][test]:
-                            wirtedata.append(topfailuredata['DATA'][testweek][test][failuretype]["count"])
-                            eachweektotoaldetail[test] += topfailuredata['DATA'][testweek][test][failuretype]["count"]
-                        else:
-                            wirtedata.append("")
+            for test in alltopfailuredata['TEST']:
+                if test in alltopfailuredata['DATA']:
+                    if failuretype in alltopfailuredata['DATA'][test]:
+                        wirtedata.append(alltopfailuredata['DATA'][test][failuretype]["count"])
+                        eachweektotoaldetail[test] += alltopfailuredata['DATA'][test][failuretype]["count"]
                     else:
                         wirtedata.append("")
                 else:
@@ -2051,23 +2158,21 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
         wirtedata.append("RE-TEST COUNT")
         wirtedata.append("LAST RESULT")
         ws2.append(wirtedata)
-        for test in topfailuredata['TEST']:
-            if testweek in topfailuredata['DATA']:
-                if test in topfailuredata['DATA'][testweek]:
-                    for failuretype in topfailuredata['DATA'][testweek][test]:
-                        for SN in topfailuredata['DATA'][testweek][test][failuretype]["SN"]:
-                            wirtedata = list()
-                            wirtedata.append(test)
-                            wirtedata.append(SN)
-                            wirtedata.append(failuretype)
-                            wirtedata.append(DATA['SN']["LAST"][test][SN]["count"])
-                            wirtedata.append(DATA['SN']["LAST"][test][SN]["result"])
-                            ws2.append(wirtedata)
+        for test in alltopfailuredata['TEST']:
+            if test in alltopfailuredata['DATA']:
+                for failuretype in alltopfailuredata['DATA'][test]:
+                    for SN in alltopfailuredata['DATA'][test][failuretype]["SN"]:
+                        wirtedata = list()
+                        wirtedata.append(test)
+                        wirtedata.append(SN)
+                        wirtedata.append(failuretype)
+                        wirtedata.append(DATA['SN']["LAST"][test][SN]["count"])
+                        wirtedata.append(DATA['SN']["LAST"][test][SN]["result"])
+                        ws2.append(wirtedata)
         wirtedata = list()
         ws2.append(wirtedata)
         ws2.append(wirtedata)
         ws2.append(wirtedata)
-
 
 
     fixcolumnssize(ws2,False)
@@ -4959,6 +5064,140 @@ def GetFailureSNList(DATA,inputconfig,pr):
 def SummaryfailureReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
 
     wirtedata = list()
+    wirtedata.append('TEST')
+    wirtedata.append('SN_QTY')
+    #wirtedata.append('DETAIL_STEP_QTY')
+    #wirtedata.append('First_PASS')
+    #wirtedata.append('First_FAIL')
+    #wirtedata.append('First_YIELD')
+    #wirtedata.append('LAST_PASS')
+    #wirtedata.append('LAST_FAIL')
+    #wirtedata.append('LAST_YIELD')
+    wirtedata.append('')
+    wirtedata.append('LAST_Failure\rCount (NoDupSN)')
+    if pr['FailureSNlist']:
+        wirtedata.append('')
+        wirtedata.append('FLEXFLOWSTATUS')
+    ws1.append(wirtedata)
+
+    LastfailureremoveDupSN = dict()
+    for SN in workingonSNlist:
+
+        for test in DATA['SN']['TEST']:
+            if not test in LastfailureremoveDupSN:
+                LastfailureremoveDupSN[test] = dict()
+                LastfailureremoveDupSN[test]["count"] = 0
+                LastfailureremoveDupSN[test]["SN"] = list()
+            if SN in DATA['SN']['LAST'][test]:
+                if "result" in DATA['SN']['LAST'][test][SN]:
+                    if "FAIL" in DATA['SN']['LAST'][test][SN]["result"]:
+                        LastfailureremoveDupSN[test]["count"] += 1
+                        LastfailureremoveDupSN[test]["SN"].append(SN)
+                        break
+                else:
+                    print("LAST <{}> SN: {}".format(test, SN))
+                    #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
+                    del DATA['SN']['LAST'][test][SN]
+                    #sys.exit()
+            if SN in DATA['SN']['FIRST'][test]:
+                if not "result" in DATA['SN']['FIRST'][test][SN]:
+                    print("FIRST <{}> SN: {}".format(test, SN))
+                    #print(json.dumps(DATA['SN']['FIRST'][test][SN], indent = 4))
+                    del DATA['SN']['FIRST'][test][SN]
+
+    #print(json.dumps(LastfailureremoveDupSN, indent = 4))
+    #sys.exit()
+    summarydata = dict()
+    resultlist = ["PASS", "FAIL"]
+    alllistofSN = list()
+    for test in DATA['SN']['TEST']:
+        if not test in summarydata:
+            summarydata[test] = dict()
+        wirtedata = list()
+        wirtedata.append(test)
+        listofSN = list()
+        for SN in DATA['teststep'][test]["SN"]:
+            recordSN = True
+            if "SKIPPrefix" in inputconfig:
+                if inputconfig["SKIPPrefix"] in SN:
+                    recordSN = False
+            if "STARTCountSN" in inputconfig:
+                if SN < inputconfig["STARTCountSN"]:
+                    recordSN = False
+            if recordSN:
+                if SN in workingonSNlist:
+                    listofSN.append(SN)
+                    if not SN in alllistofSN:
+                        alllistofSN.append(SN)    
+
+        wirtedata.append(len(listofSN))
+        summarydata[test]["TOTAL"] = len(listofSN)
+        #wirtedata.append(len(DATA['teststep'][test]["DETAILTESTSTEP"]))
+        summarydata[test]["TOTALTestStep"] = len(DATA['teststep'][test]["DETAILTESTSTEP"])
+        countResult = dict()
+        countResult["PASS"] = 0
+        for sn in listofSN:
+            if "result" in DATA['SN']['FIRST'][test][sn]:
+                testresult = DATA['SN']['FIRST'][test][sn]["result"]
+                if not testresult in countResult:
+                    countResult[testresult] = 1
+                else:
+                    countResult[testresult] += 1
+        for testresult in resultlist:
+            if testresult in countResult:
+                #wirtedata.append(countResult[testresult])
+                summarydata[test]["FIRST{}".format(testresult)] = countResult[testresult]
+            else:
+                 #wirtedata.append(0)
+                 summarydata[test]["FIRST{}".format(testresult)] = 0
+        if len(listofSN):
+            firstyeild = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
+            summarydata[test]["FIRSTYEILD"] = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
+        else:
+            firstyeild = "{:.2f}%".format(0)
+            summarydata[test]["FIRSTYEILD"] = "{:.2f}%".format(0)
+        #wirtedata.append(firstyeild)
+        countResult = dict()
+        countResult["PASS"] = 0
+        for sn in listofSN:
+            testresult = DATA['SN']['LAST'][test][sn]["result"]
+            if not testresult in countResult:
+                countResult[testresult] = 1
+            else:
+                countResult[testresult] += 1
+        for testresult in resultlist:
+            if testresult in countResult:
+                #wirtedata.append(countResult[testresult])
+                summarydata[test]["LAST{}".format(testresult)] = countResult[testresult]
+            else:
+                 #wirtedata.append(0)
+                 summarydata[test]["LASTYEILD"] = "{:.2f}%".format(0)
+        if len(listofSN):
+            firstyeild = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
+            summarydata[test]["LASTYEILD"] = "{:.2f}%".format(countResult["PASS"]/len(listofSN) * 100)
+        else:
+            firstyeild = "{:.2f}%".format(0)
+            summarydata[test]["LASTYEILD"] = "{:.2f}%".format(0)
+        #wirtedata.append(firstyeild)
+        wirtedata.append('')
+        if test in LastfailureremoveDupSN:
+            wirtedata.append(LastfailureremoveDupSN[test]["count"])
+        else:
+            wirtedata.append(0)
+
+        if pr['FailureSNlist']:
+            wirtedata.append('')
+            if test in pr['FailureSNlist']['DATA']:
+                for flexflowstatus in pr['FailureSNlist']['DATA'][test]["FlexflowType"]:
+                    wirtedata.append("{} <{}>".format(flexflowstatus,len(pr['FailureSNlist']['DATA'][test]["FlexflowType"][flexflowstatus])))
+        ws1.append(wirtedata)
+
+    wirtedata = list()
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    wirtedata = list()
     wirtedata.append('FLEXFLOWSTATUS')
     wirtedata.append('SN_QTY')
     ws1.append(wirtedata)
@@ -4968,6 +5207,10 @@ def SummaryfailureReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=Non
         wirtedata.append(flexflowtype)
         wirtedata.append(len(pr["FailureSNlist"]["FlexflowType"][flexflowtype]))
         ws1.append(wirtedata)
+
+    fixcolumnssize(ws1)
+    converttoPERCENTAGEnumber(ws1)
+    freezePosition(ws1, "B1")
 
     return None
 
@@ -4993,6 +5236,9 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
     wirtedata.append('LAST_YIELD')
     wirtedata.append('')
     wirtedata.append('LAST_Failure\rCount (NoDupSN)')
+    if pr['FailureSNlist']:
+        wirtedata.append('')
+        wirtedata.append('FLEXFLOWSTATUS')
     ws1.append(wirtedata)
 
     LastfailureremoveDupSN = dict()
@@ -5099,6 +5345,12 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
             wirtedata.append(LastfailureremoveDupSN[test]["count"])
         else:
             wirtedata.append(0)
+
+        if pr['FailureSNlist']:
+            wirtedata.append('')
+            if test in pr['FailureSNlist']['DATA']:
+                for flexflowstatus in pr['FailureSNlist']['DATA'][test]["FlexflowType"]:
+                    wirtedata.append("{} <{}>".format(flexflowstatus,len(pr['FailureSNlist']['DATA'][test]["FlexflowType"][flexflowstatus])))
         ws1.append(wirtedata)
 
     wirtedata = list()
