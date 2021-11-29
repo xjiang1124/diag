@@ -1652,14 +1652,6 @@ class mtp_ctrl():
 
 
     def mtp_hw_init(self, fan_spd):
-        """
-         Elba cards need higher fan_spd
-         40% -> 50%     : elba LT, NT
-         90% -> 100%    : elba HT
-         max = 100%
-        """
-        if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
-            fan_spd = min(100, fan_spd + 20)
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
