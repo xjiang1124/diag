@@ -335,10 +335,7 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(open_file_track_list)
-            return
+
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):
@@ -475,10 +472,7 @@ def main():
         if "EFUSE_PROG" not in args.skip_test:
             if not mtp_mgmt_ctrl.mtp_nic_diag_init():
                 mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                mtp_mgmt_ctrl.mtp_chassis_shutdown()
-                logfile_close(open_file_track_list)
-                return
+
 
         # Efuse programming for Elba
         for slot in range(len(nic_prsnt_list)):
@@ -555,10 +549,7 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(open_file_track_list)
-            return
+
 
         # program the NIC Secure CPLD
         nic_thread_list = list()
@@ -634,16 +625,9 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-
-        # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
         if not mtp_mgmt_ctrl.mtp_nic_diag_init():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(open_file_track_list)
-            return
+
 
         # Copy the NIC Gold image
         nic_thread_list = list()

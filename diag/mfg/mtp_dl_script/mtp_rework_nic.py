@@ -667,8 +667,8 @@ def main():
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
             logfile_close(log_filep_list)
             return
-        # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        # # power cycle all nic
+        # mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:

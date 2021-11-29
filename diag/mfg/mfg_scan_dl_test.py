@@ -593,10 +593,7 @@ def main():
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
+
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
@@ -799,15 +796,10 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-    # power cycle all nic
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        logfile_close(log_filep_list)
-        return
+
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -831,9 +823,6 @@ def main():
             exp_alom_sn = alom_sn
             exp_alom_pn = alom_pn
             exp_assettag = 'C0'
-
-        # # power cycle all nic (Debug Power Failure Issue)   #NZ: but why inside for loop -> cycling 10 times?
-        # mtp_mgmt_ctrl.mtp_power_cycle_nic()
     
         # nic power status check
         test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]

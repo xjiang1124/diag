@@ -362,13 +362,9 @@ def main():
                 mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
         mtp_mgmt_ctrl.mtp_power_on_nic()
 
-        rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True)
-        if not rc:
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(open_file_track_list)
-            return
+
 
         # construct nic fru config file
         tmp_fru_cfg = dict()
@@ -494,9 +490,7 @@ def main():
                 continue
             if not mtp_capability & mtp_exp_capability:
                 mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(nic_type))
-                #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-                logfile_close(open_file_track_list)
-                return
+
             print("")
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
@@ -666,17 +660,9 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
 
-        # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
         # init nic diag env.
         if not mtp_mgmt_ctrl.mtp_nic_diag_init():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(open_file_track_list)
-            return
-        # # power cycle all nic
-        # mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
