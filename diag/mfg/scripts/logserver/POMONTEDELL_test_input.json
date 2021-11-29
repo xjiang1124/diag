@@ -12,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/POMONTEDELL"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST04.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST07.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
@@ -43,10 +43,7 @@
 	"TESTLIST" :[
 					"DL",
 					"P2C",
-					"4C-L",
-					"4C-H",
-					"SWI",
-					"FST"
+					"SWI"
 					],
 	"TESTFOLDER":[
 					"DL",

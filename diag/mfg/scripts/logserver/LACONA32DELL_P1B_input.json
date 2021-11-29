@@ -6,7 +6,7 @@
 		"logdir": "/home/mfg/recordlogs",
 		"TEMPDIR": "/tmp/tmp_unzip_LACONA32DELL_03",
 		"TEMPDATABASE": "/samba/public/tmp_database/LACONA32DELL",
-		"testlogpath": "/mfg_log/LACONA32DELL",
+		"testlogpath": "/mnt/hw-mftg-data/LACONA32DELL",
 		"reportpath":"/samba/public/LACONA32DELL_TEST/",
 		"historypath":"/samba/public/HISTORY/LACONA32DELL"
 	},

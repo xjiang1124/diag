@@ -1,6 +1,7 @@
 {
 	"NAME": "POMONTE_TEST",
 	"TYPE": "NIC",
+	"FLEXFLOW": "192.168.1.112",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
@@ -11,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/POMONTE"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST01.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST05.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"

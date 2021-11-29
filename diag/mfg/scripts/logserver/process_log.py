@@ -424,22 +424,24 @@ def movereporttohistorydir(inputconfig):
     for eachfile in filelisttowork:
         workingfileandfoldermovinglist.append(eachfile)
     #print(json.dumps(workingfileandfoldermovinglist, indent = 4))
-
-    for eachworkitem in workingfileandfoldermovinglist:
-        if os.path.isdir(eachworkitem):
-            smallitemslist = eachworkitem.split('/')
-            #print(smallitemslist)
-            movetopath = "{}/{}".format(inputconfig["DIR"]["historypath"],smallitemslist[-1])
-            #print(movetopath)
-            dest = shutil.move(eachworkitem, movetopath, copy_function = shutil.copytree)
-            #print(dest)
-        else:
-            smallitemslist = eachworkitem.split('/')
-            #print(smallitemslist)
-            movetopath = "{}/{}".format(inputconfig["DIR"]["historypath"],smallitemslist[-1])
-            #print(movetopath)
-            dest = shutil.move(eachworkitem, movetopath)
-            #print(dest)            
+    try:
+        for eachworkitem in workingfileandfoldermovinglist:
+            if os.path.isdir(eachworkitem):
+                smallitemslist = eachworkitem.split('/')
+                #print(smallitemslist)
+                movetopath = "{}/{}".format(inputconfig["DIR"]["historypath"],smallitemslist[-1])
+                #print(movetopath)
+                dest = shutil.move(eachworkitem, movetopath, copy_function = shutil.copytree)
+                #print(dest)
+            else:
+                smallitemslist = eachworkitem.split('/')
+                #print(smallitemslist)
+                movetopath = "{}/{}".format(inputconfig["DIR"]["historypath"],smallitemslist[-1])
+                #print(movetopath)
+                dest = shutil.move(eachworkitem, movetopath)
+                #print(dest)    
+    except:
+        print("Something else went wrong")        
     #sys.exit()
     return None
 

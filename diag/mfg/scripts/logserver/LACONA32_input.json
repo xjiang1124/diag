@@ -7,12 +7,12 @@
 		"logdir": "/home/mfg/recordlogs",
 		"TEMPDIR": "/tmp/tmp_unzip_LACONA32_02",
 		"TEMPDATABASE": "/samba/public/tmp_database/LACONA32",
-		"testlogpath": "/mfg_log/LACONA32",
+		"testlogpath": "/mnt/hw-mftg-data/LACONA32",
 		"reportpath":"/samba/public/REPORT/LACONA32/",
 		"historypath":"/samba/public/HISTORY/LACONA32"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32_DB_TEST2.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32_DB_TEST30.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
