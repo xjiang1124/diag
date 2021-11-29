@@ -273,8 +273,8 @@ class NIC_IMAGES:
     diagfw_dat["LACONA32DELL"] = "09-21-2021"
     goldfw_img["LACONA32DELL"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
     goldfw_dat["LACONA32DELL"] = "10-22-2021"
-    uboot_img["LACONA32DELL"] = "ubootd_1.5.0_2021.11.06.img"
-    uboot_dat["LACONA32DELL"] = "11-06-2021"
+    uboot_img["LACONA32DELL"] = "elba_goldfw_1.38-E-7_32g_uboot_2021.11.06.tar"
+    uboot_dat["LACONA32DELL"] = "10-22-2021"
 
     cpld_img["LACONA32"] = "naples200_lac32_hpe_main_rev0_13_09292021.bin"
     cpld_ver["LACONA32"] = "0x0"
@@ -289,8 +289,8 @@ class NIC_IMAGES:
     diagfw_dat["LACONA32"] = "09-21-2021"
     goldfw_img["LACONA32"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
     goldfw_dat["LACONA32"] = "10-22-2021"
-    uboot_img["LACONA32"] = "ubootd_1.5.0_2021.11.06.img"
-    uboot_dat["LACONA32"] = "11-06-2021"
+    uboot_img["LACONA32"] = "elba_goldfw_1.38-E-7_32g_uboot_2021.11.06.tar"
+    uboot_dat["LACONA32"] = "10-22-2021"
 
 class MTP_IMAGES:
     amd64_img = dict()

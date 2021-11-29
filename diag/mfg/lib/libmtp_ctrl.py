@@ -1618,7 +1618,6 @@ class mtp_ctrl():
                             if img.strip() == "":
                                 raise KeyError
                             img_list.append(img)
-                            img_list.append("install_file")
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
                         pass
