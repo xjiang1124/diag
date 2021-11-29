@@ -331,7 +331,6 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     return fail_list
 
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
     
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
         sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
@@ -348,6 +347,9 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
 
     if len(sub_test_list) == 0 or sub_test_list == [()]:
         return []
+
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
 
     if True in ["MVL" in (s,t) for (s,t) in sub_test_list]:
         if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
@@ -1038,7 +1040,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
         elif test == "UBOOT_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
+            # if need diaguboot:
+            # ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
