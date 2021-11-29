@@ -4767,6 +4767,52 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
+    def mtp_reset_hub(self, slot=None):
+        """
+        cpldutil -cpld-wr -addr=0x2 -data=0xf
+        cpldutil -cpld-wr -addr=0x2 -data=0x0
+        """
+        # on mtp_diag.log
+        if slot is None:
+            ts = libmfg_utils.timestamp_snapshot()
+            ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
+            ts_record_cmd = "######## {:s} ########".format(ts_record)
+            self.mtp_mgmt_exec_cmd(ts_record_cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
+            self.mtp_mgmt_exec_cmd(cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            self.mtp_mgmt_exec_cmd(cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0x0)
+            self.mtp_mgmt_exec_cmd(cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            self.mtp_mgmt_exec_cmd(cmd)
+
+        # on mtp_NIC*_diag.log
+        else:
+            ts = libmfg_utils.timestamp_snapshot()
+            ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
+            ts_record_cmd = "######## {:s} ########".format(ts_record)
+            self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
+            self.mtp_mgmt_exec_cmd_para(slot, cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            self.mtp_mgmt_exec_cmd_para(slot, cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0x0)
+            self.mtp_mgmt_exec_cmd_para(slot, cmd)
+
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            self.mtp_mgmt_exec_cmd_para(slot, cmd)
+
+        return True
+
+
     def mtp_run_diag_test_para_lock(self, slot):
         self._para_test_lock[slot].acquire()
 

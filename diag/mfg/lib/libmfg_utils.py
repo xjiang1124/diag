@@ -855,6 +855,9 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
         mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
     mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
     mtp_mgmt_ctrl._lock.release()
+    # in case nic hung up the bus:
+    mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+    mtp_mgmt_ctrl.mtp_reset_hub(slot)
     mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post fail debug"))
     mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_clear_fa()
 

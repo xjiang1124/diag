@@ -293,7 +293,8 @@ class MFG_DIAG_CMDS:
     MTP_FAN_PRSNT_FMT = "mtptest -present"
     MTP_PSU_TEST_FMT = "mtptest -psu"
 
-    MTP_CPLD_READ_FMT = "cpldutil -cpld-rd -addr=0x{:x}"
+    MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
+    MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"
 
     MTP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update"
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
