@@ -98,6 +98,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG Software Install Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 
     args = parser.parse_args()
     if args.verbosity:
@@ -106,7 +107,7 @@ def main():
         verbosity = False
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()

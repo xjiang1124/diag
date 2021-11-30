@@ -621,9 +621,17 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     return True
 
 
-def mtpid_list_select(mtp_cfg_db):
+def mtpid_list_select(mtp_cfg_db, preselect=[]):
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = multiple_select_menu("Select MTP Chassis", mtpid_list)
+    if preselect:
+        sub_mtpid_list = list()
+        for mtpid in preselect:
+            if mtpid not in mtpid_list:
+                cli_err("Invalid MTP ID: {:s}".format(mtpid))
+            else:
+                sub_mtpid_list.append(mtpid)
+    else:
+        sub_mtpid_list = multiple_select_menu("Select MTP Chassis", mtpid_list)
     return sub_mtpid_list
 
 

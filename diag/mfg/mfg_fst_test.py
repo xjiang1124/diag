@@ -80,6 +80,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 
     args = parser.parse_args()
     card_type = args.card_type.upper()
@@ -89,7 +90,7 @@ def main():
         verbosity = False
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 

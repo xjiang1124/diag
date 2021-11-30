@@ -117,6 +117,7 @@ def main():
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("-r", "--rework", help="Call rework script", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 
     verbosity = False
     args = parser.parse_args()
@@ -131,7 +132,7 @@ def main():
         rework = False
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtp_mgmt_ctrl_list = list()
     mtpid_fail_list = list()
     fail_nic_list = dict()

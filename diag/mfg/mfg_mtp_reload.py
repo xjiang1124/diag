@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--image", help="New MTP image file")
     parser.add_argument("--nic-image", help="New NIC image file")
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 
     skip_image_update = True
     nic_image_file = None
@@ -41,8 +42,9 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/swi_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
+
+    sub_mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+
     mtp_mgmt_ctrl_list = list()
 
     for mtp_id in sub_mtpid_list:
