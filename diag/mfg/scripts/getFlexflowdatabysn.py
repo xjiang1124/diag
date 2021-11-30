@@ -57,6 +57,7 @@ def main():
     #return "500"
     else:
         print("CURRENT STATUS: NONE")
+        print(resp)
 
     difftime = datetime.now()-start
     #print('Done Time: ', difftime)       
