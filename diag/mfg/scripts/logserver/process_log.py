@@ -185,6 +185,9 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
     createteststatusreport(pr,DATA,inputconfig)
 
+    if pr['FailureSNlist']:
+        createfailureteststatusreport(pr,DATA,inputconfig)
+
     startdate = getbeforedayinformation(checkday=31)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
@@ -198,9 +201,6 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
             for PN in SNbyPN:
                 #,listofsn=[],specpn=None
                 createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
-
-    if pr['FailureSNlist']:
-        createfailureteststatusreport(pr,DATA,inputconfig)
 
     return None
 
@@ -354,6 +354,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
         generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
+        generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
         generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
 
@@ -2028,7 +2029,7 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
 
     #sys.exit()
     if byweek:
-        ws2 = wb.create_sheet(title=titlename)
+        ws2 = wb.create_sheet(title="{}_byWeek".format(titlename))
         
         for testweek in topfailuredata['week']:
             wirtedata = list()
