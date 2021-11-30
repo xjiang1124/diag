@@ -140,7 +140,7 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     // Write page register
     pmbus.WriteByte(devName, pmbus.PAGE, page)
 
-    data, err = pmbus.ReadWord(devName, READ_IOUT)
+    data, err = pmbus.ReadWord(devName, MFR_TOTAL_IOUT)
     integer, dec, err = pmbus.Linear11(data)
     return
 }
@@ -205,7 +205,7 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     }
     pout = (vout_int * 1000 + vout_dec) * (iout_int * 1000 + iout_dec)
      
-    return pout/1000, pout%1000, errType.SUCCESS
+    return pout/1000000, pout%1000000/1000, errType.SUCCESS
 }
 
 func ReadPin(devName string) (integer uint64, dec uint64, err int) {
@@ -227,7 +227,7 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     }
     pin = (vin_int * 1000 + vin_dec) * (iin_int * 1000 + iin_dec)
      
-    return pin/1000, pin%1000, errType.SUCCESS
+    return pin/1000000, pin%1000000/1000, errType.SUCCESS
 }
 
 func ReadDeviceID(devName string) (devID string, err int) {

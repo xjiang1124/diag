@@ -466,7 +466,7 @@ func init() {
     } else if CardType == "ORTANO2" {
         I2cTbl = OrtanoTbl
     } else if CardType == "ORTANO2A" {
-        I2cTbl = OrtanoTbl
+        I2cTbl = OrtanoADITbl
     } else if CardType == "LACONADELL"      ||
               CardType == "LACONA"          ||
               CardType == "LACONA32DELL"    ||

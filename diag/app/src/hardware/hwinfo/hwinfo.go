@@ -5,11 +5,11 @@ import (
 
     "device/boardinfo"
     "device/fanctrl/adt7462"
+    "device/powermodule/ltc2301"
+    "device/powermodule/ltc3888"
     "device/bcm/td3"
-    "device/cpu/XeonD"
     "device/fpga/taorfpga"
     "device/powermodule/tps53659"
-    "device/powermodule/ltc3888"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
     "device/powermodule/tps544c20"
@@ -21,6 +21,7 @@ import (
     "device/tempsensor/tmpadicom"
     "device/tempsensor/lm75a"
     "device/tempsensor/tmp451"
+    "device/cpu/XeonD"
 
     "gopkg.in/yaml.v2"
 )
@@ -380,6 +381,7 @@ func init() {
     ortanoaDispStaList = make(map[string]DispStaFunc)
     ortanoaDispStaList["ELB0_CORE"] = ltc3888.DispStatus
     ortanoaDispStaList["ELB0_ARM"]  = ltc3888.DispStatus
+    ortanoaDispStaList["VRM_IIN"] = ltc2301.DispStatus
     ortanoaDispStaList["TSENSOR"]   = tmpadicom.DispStatus
 
     //Lacona

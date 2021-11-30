@@ -41,6 +41,7 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
     } else {
         err = errType.INVALID_PARAM
     }
+    integer, dec, err = max6657.ReadTemp(devName, channel)
     return
 }
 
@@ -56,6 +57,7 @@ func DispStatus(devName string) (err int) {
     } else {
         err = errType.INVALID_PARAM
     }
+    err = max6657.DispStatus(devName)
     return
 }
 

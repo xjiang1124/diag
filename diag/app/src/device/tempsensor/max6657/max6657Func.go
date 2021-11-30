@@ -21,20 +21,20 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
 
     switch channel {
     case LOCAL_TEMP:
-        tempHighAddr = READ_INT_EXT_TEMP
-        tempLowAddr = READ_INT_TEMP
+        tempHighAddr = READ_INT_TEMP
+        tempLowAddr = READ_INT_EXT_TEMP
     case REMOTE_TEMP:
-        tempHighAddr = READ_EXT_EXT_TEMP
-        tempLowAddr = READ_EXT_TEMP
+        tempHighAddr = READ_EXT_TEMP
+        tempLowAddr = READ_EXT_EXT_TEMP
     default:
         err = errType.INVALID_PARAM
         return
     }
 
-    config, err := smbus.ReadByte(devName, READ_CONFIG)
-    cli.Println("i", "config value", config)
-    rate, err := smbus.ReadByte(devName, READ_CONV_RATE)
-    cli.Println("i", "conversion rate", rate)
+    //config, err := smbus.ReadByte(devName, READ_CONFIG)
+    //cli.Println("i", "config value", config)
+    //rate, err := smbus.ReadByte(devName, READ_CONV_RATE)
+    //cli.Println("i", "conversion rate", rate)
 
     tempHighByte, err := smbus.ReadByte(devName, tempHighAddr)
     if err != errType.SUCCESS {
