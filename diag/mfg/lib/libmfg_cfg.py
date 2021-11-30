@@ -451,6 +451,7 @@ FLX_PENANG_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_PENANG_SN_FMT, HP_PE
 DELL_BUILD_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT, DELL_PPID_PENANG_SN_FMT)
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
 NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}$"
+PN_MINUS_REV_MASK = -3 # (last three digits)
 HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
 HP_SWN_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)

@@ -30,6 +30,7 @@ from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_IMAGES
 from libmfg_cfg import PART_NUMBERS_MATCH
+from libmfg_cfg import PN_MINUS_REV_MASK
 
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -5185,4 +5186,91 @@ class mtp_ctrl():
             return False
 
         return True
+
+    def mtp_construct_nic_fru_config(self, fail_nic_list):
+        # construct nic fru config file
+        temp_fru_cfg = dict()
+        temp_fru_cfg["MTP_ID"] = self._id
+        temp_fru_cfg["MTP_TS"] = libmfg_utils.get_timestamp()
+        for slot in range(self._slots):
+            key = libmfg_utils.nic_key(slot)
+            temp_fru_cfg[key] = dict()
+            if slot in fail_nic_list or not self.mtp_check_nic_status(slot):
+                temp_fru_cfg[key]["VALID"] = False
+                continue
+            if self.mtp_nic_check_prsnt(slot):
+                nic_type = self.mtp_get_nic_type(slot)
+                temp_fru_cfg[key]["VALID"] = True
+                temp_fru_cfg[key]["TS"] = libmfg_utils.get_fru_date()
+                nic_fru_info = self.mtp_get_nic_fru(slot)
+                if nic_fru_info:
+                    temp_fru_cfg[key]["SN"] = nic_fru_info[0]
+                    temp_fru_cfg[key]["MAC"] = nic_fru_info[1].replace('-', '')
+                    temp_fru_cfg[key]["PN"] = nic_fru_info[2]
+                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                        nic_fru_info = self.mtp_get_nic_alom_fru(slot)
+                        temp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
+                        temp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
+                else:
+                    temp_fru_cfg[key]["SN"] = "DEADBEEF"
+                    temp_fru_cfg[key]["MAC"] = "DEADBEEF"
+                    temp_fru_cfg[key]["PN"] = "DEADBEEF"
+                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                        temp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
+                        temp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
+            else:
+                temp_fru_cfg[key]["VALID"] = False
+
+        return temp_fru_cfg
+
+    def mtp_scan_verify(self, temp_fru_cfg, scan_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=False):
+        fru_reprogram_list = list()
+
+        test = "SCAN_VERIFY"
+        for slot in range(self._slots):
+            key = libmfg_utils.nic_key(slot)
+            if slot in fail_nic_list:
+                continue
+            if not self.mtp_check_nic_status(slot):
+                continue
+            if not temp_fru_cfg[key]["VALID"]:
+                continue
+            if scan_fru_cfg[key]["VALID"] == 'No':
+                self.cli_log_slot_err_lock(slot, "Missing scan for this slot")
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                self.mtp_set_nic_status_fail(slot, skip_fa=True)
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(temp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+                continue
+
+            start_ts = self.log_slot_test_start(slot, test)
+            for item in ["SN", "MAC", "PN"]:
+                expected = scan_fru_cfg[key][item]
+                received = temp_fru_cfg[key][item]
+
+                if expected != received:
+                    if item == "PN" and ignore_pn_rev:
+                        expected = expected[:PN_MINUS_REV_MASK]
+                        received = received[:PN_MINUS_REV_MASK]
+                        if expected == received:
+                            fru_reprogram_list.append(slot)
+                            continue
+
+                    self.cli_log_slot_err_lock(slot, "Incorrect {:s}. Scanned {:s}, read {:s}.".format(item, expected, received))
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    self.mtp_set_nic_status_fail(slot, skip_fa=True)
+                    break
+            duration = self.log_slot_test_stop(slot, test, start_ts)
+
+            if slot in fail_nic_list:
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(temp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+            else:
+                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(temp_fru_cfg[key]["SN"], dsp, test, duration))
+
+        return fru_reprogram_list
 

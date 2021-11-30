@@ -580,8 +580,8 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     os.system(cmd)
     cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
     os.system(cmd)
-    if FF_Stage.FF_DL in logfile_dir:
-        cmd = "cp {:s}/dl_barcode.yaml {:s}".format(logfile_dir, mtp_script_dir)
+    if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
+        cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
         os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
     os.system(cmd)
@@ -590,8 +590,8 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
         cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
         os.system(cmd)
     os.system("sync")
-    if FF_Stage.FF_DL in logfile_dir:
-        cmd = "rm -rf {:s}/dl_barcode.yaml".format(mtp_script_dir)
+    if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
+        cmd = "rm -rf {:s}/{:s}".format(mtp_script_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
         os.system(cmd)
     # cmd = "rm -rf {:s}/lib {:s}/config ".format(mtp_script_dir, mtp_script_dir)
     cmd = "rm -rf {:s}/lib {:s}/config {:s}/*.log {:s}".format(mtp_script_dir, mtp_script_dir, mtp_script_dir, logfile_dir)
@@ -1814,5 +1814,42 @@ def mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle):
     mtp_mgmt_ctrl.cli_log_inf("End logging MTP syslog", level=0)
     mtp_syslog_handle.send('\x03')
     mtp_syslog_handle.close()
+
+def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_Test_Mode.SW_DETECT):
+    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
+
+    while True:
+        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode)
+        if scan_rslt:
+            break;
+        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
+
+    pass_rslt_list = list()
+    fail_rslt_list = list()
+    # print scan summary
+    for slot in range(mtp_mgmt_ctrl._slots):
+        key = nic_key(slot)
+        nic_cli_id_str = id_str(mtp = mtp_id, nic = slot)
+        if scan_rslt[key]["VALID"]:
+            sn = scan_rslt[key]["SN"]
+            pn = scan_rslt[key]["PN"]
+            mac_ui = mac_address_format(scan_rslt[key]["MAC"])
+            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
+                alom_sn = scan_rslt[key]["SN_ALOM"]
+                alom_pn = scan_rslt[key]["PN_ALOM"]
+                if swmtestmode == Swm_Test_Mode.ALOM:
+                    pass_rslt_list.append(nic_cli_id_str + "SN_ALOM = " + alom_sn + " PN_ALOM = " + alom_pn)
+                else:
+                    pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn)
+            else:
+                pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
+        else:
+            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
+    cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, mtp_mgmt_ctrl._filep)
+
+    scan_cfg_file = logfile_dir + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+    scan_cfg_filep = open(scan_cfg_file, "w+")
+    mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
+    scan_cfg_filep.close()
 
 

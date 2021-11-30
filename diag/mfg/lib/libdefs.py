@@ -247,6 +247,8 @@ class MTP_DIAG_Logfile:
     MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
     MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
 
+    SCAN_BARCODE_FILE = "fru_barcode.yaml"
+
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"

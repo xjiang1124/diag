@@ -60,7 +60,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_testlist=[], rework=False, fru_verify=False):
+def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_testlist=[], rework=False):
 
     # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
@@ -80,11 +80,7 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, 
         fail_slots += ' '.join(map(str,fail_nic_list))
     else:
         fail_slots = ""
-    if fru_verify:
-        fru_verify_cmd = " --fru-verify"
-    else:
-        fru_verify_cmd = ""
-    cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s} {:s}".format(mtp_id, swm_test_mode, fru_verify_cmd)
+    cmd = "./mtp_dl_test.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
     if skipped_testlist:
         cmd += skipped_testlist
     if fail_slots:
@@ -120,7 +116,6 @@ def main():
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("-r", "--rework", help="Call rework script", action='store_true')
-    parser.add_argument("--fru-verify", "-v", "--verify", "-verify", help="Verify FRU mode", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 
     verbosity = False
@@ -159,45 +154,12 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_DL)
 
-    if GLB_CFG_MFG_TEST_MODE:
-        args.fru_verify = True
+    if not GLB_CFG_MFG_TEST_MODE:
+        args.skip_test.append("SCAN_VERIFY")
 
-    if args.fru_verify:
+    if "SCAN_VERIFY" not in args.skip_test:
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-            while True:
-                scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode)
-                if scan_rslt:
-                    break;
-                mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-
-            pass_rslt_list = list()
-            fail_rslt_list = list()
-            # print scan summary
-            for slot in range(mtp_mgmt_ctrl._slots):
-                key = libmfg_utils.nic_key(slot)
-                nic_cli_id_str = libmfg_utils.id_str(mtp = mtp_id, nic = slot)
-                if scan_rslt[key]["VALID"]:
-                    sn = scan_rslt[key]["SN"]
-                    pn = scan_rslt[key]["PN"]
-                    mac_ui = libmfg_utils.mac_address_format(scan_rslt[key]["MAC"])
-                    if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
-                        alom_sn = scan_rslt[key]["SN_ALOM"]
-                        alom_pn = scan_rslt[key]["PN_ALOM"]
-                        if swmtestmode == Swm_Test_Mode.ALOM:
-                            pass_rslt_list.append(nic_cli_id_str + "SN_ALOM = " + alom_sn + " PN_ALOM = " + alom_pn)
-                        else:
-                            pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn)
-                    else:
-                        pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
-                else:
-                    fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-            libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, mtp_mgmt_ctrl._filep)
-
-            scan_cfg_file = logfile_dir_list[mtp_id] + "dl_barcode.yaml"
-            scan_cfg_filep = open(scan_cfg_file, "w+")
-            mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
-            scan_cfg_filep.close()
+            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], swmtestmode)
 
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -311,8 +273,7 @@ def main():
                                                                            mfg_dl_summary[mtp_id],
                                                                            swmtestmode,
                                                                            args.skip_test, 
-                                                                           args.rework, 
-                                                                           args.fru_verify))
+                                                                           args.rework))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

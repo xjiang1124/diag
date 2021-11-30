@@ -146,6 +146,13 @@ def main():
         profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
         mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
 
+    if not GLB_CFG_MFG_TEST_MODE:
+        args.skip_test.append("SCAN_VERIFY")
+
+    if "SCAN_VERIFY" not in args.skip_test:
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id])
+
     mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power on the mtp chassis

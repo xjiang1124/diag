@@ -57,6 +57,41 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
     
+def single_nic_fru_program(mtp_mgmt_ctrl, fru_cfg, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
+    sn = fru_cfg["SN"]
+    mac = fru_cfg["MAC"]
+    pn = fru_cfg["PN"]
+    prog_date = str(fru_cfg["TS"])
+    test_list = ["FRU_PROG"]
+
+    dsp = FF_Stage.FF_SWI
+
+    for skipped_test in skip_testlist:
+        if skipped_test in test_list:
+            test_list.remove(skipped_test)
+    for test in test_list:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        # program FRU
+        if test == "FRU_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
+            continue
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+
 def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
     test_list = ["CPLD_PROG", "CPLD_REF"]
@@ -289,6 +324,9 @@ def main():
         dsp = FF_Stage.FF_SWI
         NAPLES100IBM = 0
 
+        # Set Naples25SWM test mode
+        mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
+
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
@@ -312,8 +350,6 @@ def main():
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                     if slot not in fail_nic_list:
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
@@ -323,19 +359,52 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                       mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
         if "CONSOLE_BOOT" not in args.skip_test:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_power_cycle_nic()
 
-        # Set Naples25SWM test mode
-        mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
-
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
+        if "SCAN_VERIFY" not in args.skip_test:
+            # load the barcode config file made in toplevel
+            scan_cfg_file = mtp_script_dir + "/" + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+            scanned_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)[mtp_id]
+            print(scanned_fru_cfg)
+
+            tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
+            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=True)
+
+            # reload the barcode config file
+            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+
+            nic_thread_list = list()
+            for slot in fru_reprogram_list:
+                key = libmfg_utils.nic_key(slot)
+                valid = nic_fru_cfg[mtp_id][key]["VALID"]
+                if str.upper(valid) != "YES":
+                    continue
+                nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
+                                                                                      nic_fru_cfg[mtp_id][key],
+                                                                                      slot,
+                                                                                      fail_nic_list,
+                                                                                      pass_nic_list,
+                                                                                      args.skip_test))
+                nic_thread.daemon = True
+                nic_thread.start()
+                nic_thread_list.append(nic_thread)
+                time.sleep(2)
+
+            # monitor all the thread
+            while True:
+                if len(nic_thread_list) == 0:
+                    break
+                for nic_thread in nic_thread_list[:]:
+                    if not nic_thread.is_alive():
+                        nic_thread.join()
+                        nic_thread_list.remove(nic_thread)
+                time.sleep(5)
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):

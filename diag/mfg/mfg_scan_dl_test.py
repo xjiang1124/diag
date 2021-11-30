@@ -414,7 +414,7 @@ def main():
                 if pn.startswith("68-0025"):
                     scan_rslt[key]["PN"] = "0X322FX01"
 
-    scan_cfg_file = log_dir + log_sub_dir + "dl_barcode.yaml"
+    scan_cfg_file = log_dir + log_sub_dir + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
     scan_cfg_filep = open(scan_cfg_file, "w+")
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
