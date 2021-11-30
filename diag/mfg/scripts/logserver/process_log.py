@@ -1915,6 +1915,7 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
     alltopfailuredata = dict()
     alltopfailuredata['TEST'] = DATA['SN']['TEST']
     alltopfailuredata['DATA'] = dict()
+    alltopfailuredata['DATA2'] = dict()
     alltopfailuredata['TESTSNLIST'] = dict()
 
     for sn in workingonSNlist:
@@ -1944,6 +1945,8 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                     topfailuredata['DATA'][testweek][test] = dict()
                 if not test in alltopfailuredata['DATA']:
                     alltopfailuredata['DATA'][test] = dict()
+                if not test in alltopfailuredata['DATA2']:
+                    alltopfailuredata['DATA2'][test] = dict()
                 if not testweek in topfailuredata['week']:
                     topfailuredata['week'].append(testweek)
                     topfailuredata['week'].sort(reverse=True)
@@ -1960,6 +1963,17 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                         else:
                             topfailuredata['DATA'][testweek][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["count"] += 1
                             topfailuredata['DATA'][testweek][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["SN"].append(sn)
+                        failurestep = DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]
+                        failurestep = getsimpleteststep(failurestep)
+                        if not failurestep in alltopfailuredata['DATA2'][test]:
+                            alltopfailuredata['DATA2'][test][failurestep] = dict()
+                            alltopfailuredata['DATA2'][test][failurestep]["count"] = 1 
+                            alltopfailuredata['DATA2'][test][failurestep]["SN"] = list() 
+                            alltopfailuredata['DATA2'][test][failurestep]["SN"].append(sn)
+                        else:
+                            alltopfailuredata['DATA2'][test][failurestep]["count"] += 1
+                            alltopfailuredata['DATA2'][test][failurestep]["SN"].append(sn)
+
                         if not DATA['SN'][status][test][sn]["ERROR"]["LIST"][0] in alltopfailuredata['DATA'][test]:
                             alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]] = dict()
                             alltopfailuredata['DATA'][test][DATA['SN'][status][test][sn]["ERROR"]["LIST"][0]]["count"] = 1 
@@ -2001,13 +2015,13 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
 
     alltopfailuredata['OVERALL'] = dict()
     for test in alltopfailuredata['TEST']:
-        if not test in alltopfailuredata['DATA']:
+        if not test in alltopfailuredata['DATA2']:
             continue
-        for failuretype in alltopfailuredata['DATA'][test]:
+        for failuretype in alltopfailuredata['DATA2'][test]:
             if not failuretype in alltopfailuredata['OVERALL']:
-                alltopfailuredata['OVERALL'][failuretype] = alltopfailuredata['DATA'][test][failuretype]["count"]
+                alltopfailuredata['OVERALL'][failuretype] = alltopfailuredata['DATA2'][test][failuretype]["count"]
             else:
-                alltopfailuredata['OVERALL'][failuretype] += alltopfailuredata['DATA'][test][failuretype]["count"]
+                alltopfailuredata['OVERALL'][failuretype] += alltopfailuredata['DATA2'][test][failuretype]["count"]
 
     topfailuredata['OVERALLbyWeek'] = dict()
     for testweek in topfailuredata['week']:
@@ -2132,10 +2146,10 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
             wirtedata = list()
             wirtedata.append(failuretype)
             for test in alltopfailuredata['TEST']:
-                if test in alltopfailuredata['DATA']:
-                    if failuretype in alltopfailuredata['DATA'][test]:
-                        wirtedata.append(alltopfailuredata['DATA'][test][failuretype]["count"])
-                        eachweektotoaldetail[test] += alltopfailuredata['DATA'][test][failuretype]["count"]
+                if test in alltopfailuredata['DATA2']:
+                    if failuretype in alltopfailuredata['DATA2'][test]:
+                        wirtedata.append(alltopfailuredata['DATA2'][test][failuretype]["count"])
+                        eachweektotoaldetail[test] += alltopfailuredata['DATA2'][test][failuretype]["count"]
                     else:
                         wirtedata.append("")
                 else:
@@ -2188,6 +2202,16 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
     #freezePosition(ws2,'C2')
     
     return 0
+
+def getsimpleteststep(failureteststep):
+
+    failureteststep = failureteststep.replace('LV_','')
+    failureteststep = failureteststep.replace('HV_','')
+    failureteststep = failureteststep.replace('DL ','')
+    failureteststep = failureteststep.replace('FST ','')
+    failureteststep = failureteststep.replace('SWI ','')
+
+    return failureteststep
 
 def generateexeclsnstatus(DATA, workingonSNlist,status,wb,inputconfig,Withallerror=False):
 
