@@ -13,9 +13,6 @@ source ./cmdline.tcl
 set parameters {
     {sn.arg          "FLM00000001"   "Serial Number"}
     {slot.arg        ""              "Slot number"}
-    {use_zmq.arg     0               "Use ZMQ"}
-    {zmq_srv_ip.arg  ""              "MTP IP"}
-    {zmq_port.arg    "55000"         "ZMQ port"}
     {stage.arg       ""              "Esecure program stage"}
     {fn.arg          ""              "File name"}
     {cm_file.arg     ""              "CM file"}
@@ -44,9 +41,6 @@ if {[catch {array set options [cmdline::getoptions ::argv $parameters $usage]}]}
 
 set sn          $options(sn)
 set slot        $options(slot)
-set use_zmq     $options(use_zmq)
-set zmq_srv_ip  $options(zmq_srv_ip)
-set zmq_port    $options(zmq_port)
 set stage       $options(stage)
 set fn          $options(fn)
 set cm_file     $options(cm_file)
@@ -67,21 +61,9 @@ set backend_url   $options(backend_url)
 
 puts "slot: $slot"
 
-if { $use_zmq != 0 } {
-    if { $zmq_srv_ip == "" || $zmq_port == ""} {
-        error "Need ZMQ SRV IP and port args"
-        exit
-    }
-}
-
 if { $slot == "" } {
     error "Need slot arg"
     exit
-}
-
-if {$use_zmq != 0} {
-    set zmq_conn "tcp://${arg(zmq_srv_ip)}:${arg(zmq_port)}/"
-    puts "zmq_conn: $zmq_conn"
 }
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -102,7 +84,11 @@ proc read_pub_ek { sn slot fn } {
         plog_stop
         return -1
     }
-    diag_open_j2c_if 10 $slot
+
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
 
     set pub_ek [elb_chlng_read_pub_ek_str]
@@ -122,9 +108,14 @@ proc puf_enroll { sn slot fn } {
         plog_stop
         return -1
     }
-    diag_open_j2c_if 10 $slot
+
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
     elb_power_cycle_chk 25 10 $slot
@@ -148,7 +139,11 @@ proc otp_init { sn slot cm_file sm_file } {
         plog_stop
         return -1
     }
-    diag_open_j2c_if 10 $slot
+
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
 
     set cmd_cm [list elb_chlng_init_otpf_str 0 0 0 0 439 $cm_file]
@@ -193,9 +188,12 @@ proc show_status { sn slot } {
 proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     plog_start puf_enroll_slot${slot}.log
 
-    diag_open_j2c_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     set ret [elb_prog_qspi $fw_ptr 0x70010000]
     if {$ret != 0} {
@@ -234,9 +232,12 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
 proc efuse_prog {slot sn} {
     plog_start efuse_prog_slot${slot}_sn_${sn}.log
 
-    diag_open_j2c_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     set ret [elb_prog_efuse rand_sn_${sn}.txt 10 $slot]
 
@@ -248,7 +249,10 @@ proc efuse_test {slot} {
     set ret 0
     set bit_loc 127
 
-    diag_open_j2c_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
     
     #Set to 417 for now.  With CPLD's where EFUSE VDDQ can be disabled/enabled.  On a SWM it will not set an efuse bit at 833Mhz if we enable EFUSE VDDQ after asic reset
@@ -257,7 +261,7 @@ proc efuse_test {slot} {
     set cpld_rev [ssi_cpld_read 0x00]
     set cpld_ver [ssi_cpld_read 0x80]
     
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     cpu_force_global_flags 1
 
@@ -277,7 +281,7 @@ proc efuse_test {slot} {
 
     elb_efuse_vddq_disable
 
-    diag_close_j2c_if 10 $slot
+    #diag_close_j2c_if 10 $slot
 
     return $ret
 }
@@ -453,9 +457,12 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     plog_msg "sn: $sn; slot: $slot"
     plog_start esec_all_${sn}_slot${slot}.log
 
-    diag_open_j2c_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
 
@@ -482,7 +489,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     }
 
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
     elb_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
     plog_msg "CSP recorded"
 
@@ -494,7 +501,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     plog_msg "Key Prog Time: $time_key_prog"
     plog_msg "Boot Test Time: $time_boot_test"
 
-    diag_close_j2c_if 10 $slot
+    #diag_close_j2c_if 10 $slot
     plog_stop
 
     set err1 [plog_get_err_count]
@@ -518,9 +525,12 @@ proc esec_all {sn usb_port slot PN MAC MTP
     plog_msg "sn: $sn; slot: $slot"
     plog_start esec_all_${sn}_slot${slot}.log
 
-    diag_open_j2c_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $slot
     _msrd
-    elb_card_rst 10 $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
     set card_type [elb_get_card_type]
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
@@ -637,23 +647,16 @@ proc esec_all {sn usb_port slot PN MAC MTP
     plog_msg "Key Prog Time: $time_key_prog"
     plog_msg "Boot Test Time: $time_boot_test"
 
-    diag_close_j2c_if 10 $slot
+    #diag_close_j2c_if 10 $slot
     plog_stop
 
     return $ret
 }
 
+set port [mtp_get_j2c_port $slot]
+set slot [mtp_get_j2c_slot $slot]
 
-if { $use_zmq == 1 } {
-    set ::SSI_OPERATION_TIMEOUT_S 10
-    diag_zmq_lock_release $zmq_conn $slot
-    p
-    iag_force_close_zmq_if $zmq_conn $slot
-
-    #diag_open_zmq_if $zmq_conn $slot
-} else {
-    diag_close_j2c_if 10 $slot
-}
+diag_open_j2c_if $port $slot
 
 set stage [string toupper $stage]
 plog_msg "stage: $stage"
@@ -694,12 +697,7 @@ switch $stage {
     }
 }
 
-if { $use_zmq == 1 } {
-    diag_zmq_lock_release $zmq_conn $slot
-    diag_force_close_zmq_if $zmq_conn $slot
-} else {
-    diag_close_j2c_if 10 $slot
-}
+mtp_close_j2c_if $slot
 
 # Print twice for DSP to capture signature
 if {$ret == 0} {
