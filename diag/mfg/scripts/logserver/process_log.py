@@ -310,6 +310,18 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
     #sys.exit()
     chartdata = dict()
 
+    snmaclist = getsnmaclist(DATA,inputconfig)
+    macsnlist = getmacsnlist(DATA,inputconfig)
+        
+    if not startdate:
+        if len(snmaclist):
+            dest_filenameformac = dest_filename.replace('DATA','SNandMAClist')
+            wsandc = Workbook()
+            generateexeclmacandsnreport(DATA,wsandc,snmaclist)
+            if len(macsnlist):
+                generateexeclmacandsnreport2(DATA,wsandc,macsnlist)
+            wsandc.save(filename = dest_filenameformac)
+
     generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
     #pr['modules'].print_anyinformation(chartdata)
     if not startdate:
@@ -1520,6 +1532,73 @@ def getsnlistafteestartdate(DATA,inputconfig,startdate=None):
 
     return returnSNlist2
 
+def getsnmaclist(DATA,inputconfig):
+
+    returnSNlist = dict()
+
+    statuslist = ['FIRST', 'LAST']
+
+    for sn in DATA['SN']['LIST']:
+        if not sn in returnSNlist:
+            returnSNlist[sn] = dict()
+            returnSNlist[sn]['MAC'] = list()
+            returnSNlist[sn]['PN'] = list()
+        for test in DATA['SN']['TEST']:
+            for status in statuslist:
+                if sn in DATA['SN'][status][test]:
+                    if "NICINFO" in DATA['SN'][status][test][sn]:
+                        try:
+                            if not "FRU" in DATA['SN'][status][test][sn]["NICINFO"]:
+                                continue
+                            frudata = DATA['SN'][status][test][sn]["NICINFO"]["FRU"]
+                            #print("FRU: {}".format(frudata))
+                            frudatalist = frudata.split(', ')
+                            #print(frudatalist)
+                            if not frudatalist[1] in returnSNlist[sn]['MAC']:
+                                returnSNlist[sn]['MAC'].append(frudatalist[1])
+                            if not frudatalist[2] in returnSNlist[sn]['PN']:
+                                returnSNlist[sn]['PN'].append(frudatalist[2])
+                            #print(returnSNlist)
+                            #sys.exit()
+                        except:
+                            print("An exception occurred in SN {}, {} test: {}".format(sn,status,test))
+
+    return returnSNlist
+
+def getmacsnlist(DATA,inputconfig):
+
+    returnSNlist = dict()
+
+    statuslist = ['FIRST', 'LAST']
+
+    for sn in DATA['SN']['LIST']:
+        for test in DATA['SN']['TEST']:
+            for status in statuslist:
+                if sn in DATA['SN'][status][test]:
+                    if "NICINFO" in DATA['SN'][status][test][sn]:
+                        try:
+                            if not "FRU" in DATA['SN'][status][test][sn]["NICINFO"]:
+                                continue
+                            frudata = DATA['SN'][status][test][sn]["NICINFO"]["FRU"]
+                            #print("FRU: {}".format(frudata))
+                            frudatalist = frudata.split(', ')
+                            #print(frudatalist)
+                            if not frudatalist[1] in returnSNlist:
+                                returnSNlist[frudatalist[1]] = dict()
+                                returnSNlist[frudatalist[1]]['SN'] = list()
+                                returnSNlist[frudatalist[1]]['PN'] = list()
+                            if not frudatalist[0] in returnSNlist[frudatalist[1]]['SN']:
+                                returnSNlist[frudatalist[1]]['SN'].append(frudatalist[0])
+                            if not frudatalist[2] in returnSNlist[frudatalist[1]]['PN']:
+                                returnSNlist[frudatalist[1]]['PN'].append(frudatalist[2])
+                            #print(returnSNlist)
+                            
+                        except:
+                            print("An exception occurred in SN {}, {} test: {}".format(sn,status,test))
+                        #sys.exit()
+
+    return returnSNlist
+
 def checksnlistafteestartdate(DATA,snlist,startdate=None):
 
     returnSNlist = list()
@@ -2210,6 +2289,8 @@ def getsimpleteststep(failureteststep):
     failureteststep = failureteststep.replace('DL ','')
     failureteststep = failureteststep.replace('FST ','')
     failureteststep = failureteststep.replace('SWI ','')
+    #<FAIL>
+    failureteststep = failureteststep.replace('<FAIL> ','<FAILED>')
 
     return failureteststep
 
@@ -4707,6 +4788,53 @@ def calculePass_rate(totalnumber,passnumber):
     yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
 
     return yeilddisplay
+
+def generateexeclmacandsnreport(DATA,wb,snmaclist):
+    ws1 = wb.active
+    ws1.title = "SNvsMAC"
+
+    wirtedata = list()
+    wirtedata.append('SN')
+    wirtedata.append('PN')
+    wirtedata.append('MAC')
+    ws1.append(wirtedata)
+
+    for SN in snmaclist:
+        wirtedata = list()
+        wirtedata.append(SN)        
+        if len(snmaclist[SN]['PN']):
+            wirtedata.append(snmaclist[SN]['PN'][0])
+        if len(snmaclist[SN]['MAC']):
+            for macaddress in snmaclist[SN]['MAC']:
+                wirtedata.append(macaddress.replace('-',''))   
+        ws1.append(wirtedata)
+
+    fixcolumnssize(ws1)
+
+    return True
+
+def generateexeclmacandsnreport2(DATA,wb,snmaclist):
+    ws1 = wb.create_sheet(title="MACvsSN")
+
+    wirtedata = list()
+    wirtedata.append('MAC')
+    wirtedata.append('PN')
+    wirtedata.append('SN')
+    ws1.append(wirtedata)
+
+    for mac in snmaclist:
+        wirtedata = list()
+        wirtedata.append(mac.replace('-',''))        
+        if len(snmaclist[mac]['PN']):
+            wirtedata.append(snmaclist[mac]['PN'][0])
+        if len(snmaclist[mac]['SN']):
+            for sn in snmaclist[mac]['SN']:
+                wirtedata.append(sn)   
+        ws1.append(wirtedata)
+
+    fixcolumnssize(ws1)
+
+    return True
 
 def generateexecldieidreport(DATA,wb,inputconfig,start=None):
     ws1 = wb.active
