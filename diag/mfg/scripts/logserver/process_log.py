@@ -4865,7 +4865,7 @@ def generateexecldieidreport(DATA,wb,inputconfig,start=None):
 
     for SN in alllistofSN:
         #DATA["SN"][sn][chassis][testdate][testetime]
-        die_id = None
+        die_ids = list()
         for test in DATA['teststep']:
             if SN in DATA['teststep'][test]["SN"]:
                 for chassis in DATA['teststep'][test]["SN"][SN]:
@@ -4873,10 +4873,13 @@ def generateexecldieidreport(DATA,wb,inputconfig,start=None):
                         for testetime in DATA['teststep'][test]["SN"][SN][chassis][testdate]:
                             if "ELBA_DIE_ID" in DATA['teststep'][test]["SN"][SN][chassis][testdate][testetime]:
                                 die_id = DATA['teststep'][test]["SN"][SN][chassis][testdate][testetime]["ELBA_DIE_ID"]
+                                if not die_id in die_ids:
+                                    die_ids.append(die_id)
         wirtedata = list()
         wirtedata.append(SN)        
-        if die_id:
-            wirtedata.append(die_id)
+        if len(die_ids):
+            for die_id in die_ids:
+                wirtedata.append(die_id)
         else:
             wirtedata.append("Cannot find")
         ws1.append(wirtedata)
