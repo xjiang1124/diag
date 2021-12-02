@@ -4,14 +4,14 @@
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_NAPLES25SWMDELL_01",
+		"TEMPDIR": "/tmp/tmp_unzip_NAPLES25SWMDELL_05",
 		"TEMPDATABASE": "/samba/public/tmp_database/NAPLES25SWMDELL",
 		"testlogpath": "/mnt/hw-mftg-data/NAPLES25SWMDELL",
 		"reportpath":"/samba/public/REPORT/NAPLES25SWMDELL/",
 		"historypath":"/samba/public/HISTORY/NAPLES25SWMDELL"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/NAPLES25SWMDELL_DB1_TEST.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/NAPLES25SWMDELL_DB3_TEST.json"
 	},
 	"MTP_STATUS" : [
 					"01",
