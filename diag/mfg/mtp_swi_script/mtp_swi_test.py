@@ -92,6 +92,82 @@ def single_nic_fru_program(mtp_mgmt_ctrl, fru_cfg, slot, fail_nic_list, pass_nic
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
+def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
+    import itertools
+
+    dsp = FF_Stage.FF_SWI
+
+    ping_test_fail_list = list()
+    ping_test_slots = list()
+
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(len(nic_prsnt_list)):
+        if not nic_prsnt_list[slot]:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
+            continue
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
+            continue
+        ping_test_slots.append(slot)
+    a = iter(ping_test_slots)
+    ping_test_tuples = zip(a,a)
+
+    for slotA, slotB in ping_test_tuples:
+        sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slotA)
+        sn_B = mtp_mgmt_ctrl.mtp_get_nic_sn(slotB)
+        nic_type_A = mtp_mgmt_ctrl.mtp_get_nic_type(slotA)
+        nic_type_B = mtp_mgmt_ctrl.mtp_get_nic_type(slotB)
+
+        test_list = ["PING_TEST"]
+        for skipped_test in skip_testlist:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+
+        for test in test_list:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slotA, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_A, dsp, test))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_B, dsp, test))
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slotA, test)
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slotB, test)
+            if test == "PING_TEST":
+                # fail other slot if either in pair is failed
+                if slotA in fail_nic_list or slotB in fail_nic_list:
+                    if slotA in fail_nic_list:
+                        keyA = libmfg_utils.nic_key(slotA)
+                        keyB = libmfg_utils.nic_key(slotB)
+                        mtp_mgmt_ctrl.cli_log_slot_err(slotB, "Skipping {:s} ping test because {:s} failed".format(keyB, keyA))
+                    if slotB in fail_nic_list:
+                        keyA = libmfg_utils.nic_key(slotA)
+                        keyB = libmfg_utils.nic_key(slotB)
+                        mtp_mgmt_ctrl.cli_log_slot_err(slotA, "Skipping {:s} ping test because {:s} failed".format(keyA, keyB))
+                    ret = False
+                else:
+                    ret = mtp_mgmt_ctrl.mtp_nic_ping_test(slotA, slotB)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
+                continue
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slotA, test, start_ts)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slotB, test, start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slotA, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_A, dsp, test, "FAILED", duration))
+                mtp_mgmt_ctrl.cli_log_slot_err(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_B, dsp, test, "FAILED", duration))
+                if slotA not in fail_nic_list:
+                    fail_nic_list.append(slotA)
+                if slotB not in fail_nic_list:
+                    fail_nic_list.append(slotB)
+                if slotA in pass_nic_list:
+                    pass_nic_list.remove(slotA)
+                if slotB in pass_nic_list:
+                    pass_nic_list.remove(slotB)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slotA)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slotB)
+                ping_test_fail_list.append(slotA)
+                ping_test_fail_list.append(slotB)
+                break
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slotA, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_A, dsp, test, duration))
+                mtp_mgmt_ctrl.cli_log_slot_inf(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_B, dsp, test, duration))
+
+    return ping_test_fail_list
+
 def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
     test_list = ["CPLD_PROG", "CPLD_REF"]
@@ -489,7 +565,10 @@ def main():
                     break
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-                
+
+
+        ping_test_fail_list = ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, args.skip_test)
+
         # program the NIC firmware
         nic_thread_list = list()
         prog_fail_nic_list = list()

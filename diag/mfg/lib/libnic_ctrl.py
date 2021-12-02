@@ -3624,4 +3624,188 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
+    def nic_console_read_sgmii(self, port, reg_addr, read_data):
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_READ_ELBA_FMT.format("./", port, reg_addr))
+        else:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_READ_FMT.format("./", port, reg_addr))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cpld_buf = self._nic_handle.before
+        if not cpld_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        match = re.findall(r"0x%x\r\n(0x[0-9a-fA-F]+)" % reg_addr, cpld_buf)
+        if len(match) > 0:
+            read_data[0] = int(match[0], 16)
+        else:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cpld_buf)
+            return False
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
+        return True
+
+    def nic_console_write_sgmii(self, port, reg_addr, write_data):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_WRITE_ELBA_FMT.format("./", port, reg_addr, write_data))
+        else:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_WRITE_FMT.format("./", port, reg_addr, write_data))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        time.sleep(5)
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
+        return True
+
+    def nic_console_enable_network_port(self):
+        # Disable MTP port
+        if not self.nic_console_write_sgmii(port=0, reg_addr=0xd, write_data=0x1940):
+            self.nic_set_err_msg("Failed to write SGMII reg 0xd")
+            return False
+
+        # Verify 0xd is 0x1940
+        read_data = [0]
+        if not self.nic_console_read_sgmii(port=0, reg_addr=0xd, read_data=read_data):
+            self.nic_set_err_msg("Failed to read SGMII reg 0xd")
+            return False
+        if read_data[0] != 0x1940:
+            if not self.nic_console_write_sgmii(port=0, reg_addr=0xd, write_data=0x1940):
+                self.nic_set_err_msg("Failed to write SGMII reg 0xd")
+                return False
+            if not self.nic_console_read_sgmii(port=0, reg_addr=0xd, read_data=read_data):
+                self.nic_set_err_msg("Failed to read SGMII reg 0xd")
+                return False
+            if read_data[0] != 0x1940:
+                return False
+
+        # Enable Network port
+        if not self.nic_console_write_sgmii(port=0, reg_addr=0x3, write_data=0x1140):
+            self.nic_set_err_msg("Failed to write SGMII reg 0xd")
+            return False
+
+        # Verify 0x3 is 0x1140
+        read_data = [0]
+        if not self.nic_console_read_sgmii(port=0, reg_addr=0x3, read_data=read_data):
+            self.nic_set_err_msg("Failed to read SGMII reg 0x3")
+            return False
+        if read_data[0] != 0x1140:
+            if not self.nic_console_write_sgmii(port=0, reg_addr=0x3, write_data=0x1140):
+                self.nic_set_err_msg("Failed to write SGMII reg 0x3")
+                return False
+            if not self.nic_console_read_sgmii(port=0, reg_addr=0x3, read_data=read_data):
+                self.nic_set_err_msg("Failed to read SGMII reg 0x3")
+                return False
+            if read_data[0] != 0x1140:
+                return False
+
+        return True
+
+    def nic_console_disable_network_port(self):
+        # Disable Network port
+        if not self.nic_console_write_sgmii(port=0, reg_addr=0x3, write_data=0x1940):
+            self.nic_set_err_msg("Failed to write SGMII reg 0xd")
+            return False
+
+        # Verify 0x3 is 0x1940
+        read_data = [0]
+        if not self.nic_console_read_sgmii(port=0, reg_addr=0x3, read_data=read_data):
+            self.nic_set_err_msg("Failed to read SGMII reg 0x3")
+            return False
+        if read_data[0] != 0x1940:
+            if not self.nic_console_write_sgmii(port=0, reg_addr=0x3, write_data=0x1940):
+                self.nic_set_err_msg("Failed to write SGMII reg 0x3")
+                return False
+            if not self.nic_console_read_sgmii(port=0, reg_addr=0x3, read_data=read_data):
+                self.nic_set_err_msg("Failed to read SGMII reg 0x3")
+                return False
+            if read_data[0] != 0x1940:
+                return False
+
+        # ENable MTP port
+        if not self.nic_console_write_sgmii(port=0, reg_addr=0xd, write_data=0x1140):
+            self.nic_set_err_msg("Failed to write SGMII reg 0xd")
+            return False
+
+        # Verify 0xd is 0x1140
+        read_data = [0]
+        if not self.nic_console_read_sgmii(port=0, reg_addr=0xd, read_data=read_data):
+            self.nic_set_err_msg("Failed to read SGMII reg 0xd")
+            return False
+        if read_data[0] != 0x1140:
+            if not self.nic_console_write_sgmii(port=0, reg_addr=0xd, write_data=0x1140):
+                self.nic_set_err_msg("Failed to write SGMII reg 0xd")
+                return False
+            if not self.nic_console_read_sgmii(port=0, reg_addr=0xd, read_data=read_data):
+                self.nic_set_err_msg("Failed to read SGMII reg 0xd")
+                return False
+            if read_data[0] != 0x1140:
+                return False
+
+        return True
+
+    def nic_console_ping(self, to_slot):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        ipaddr = libmfg_utils.get_nic_ip_addr(to_slot)
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr))
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+
+        match = re.findall(r" 0% packet loss", cmd_buf)
+        if match:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return True
+
+        self.nic_console_detach()
+        self.nic_set_cmd_buf(cmd_buf)
+        return False
 

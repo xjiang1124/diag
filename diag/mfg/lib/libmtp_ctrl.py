@@ -3594,7 +3594,10 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if swm_lp:
-                cmd = "".join((cmd, " -swm_lp")) 
+                cmd = "".join((cmd, " -swm_lp"))
+            # in case of nic-to-nic loopback, disable network ports:
+            if asic_type == "elba":
+                cmd = "".join((cmd, " -dis_net_port"))
 
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
@@ -5286,4 +5289,43 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(temp_fru_cfg[key]["SN"], dsp, test, duration))
 
         return fru_reprogram_list
+
+    def mtp_nic_ping_test(self, slotA, slotB):
+        if not self._nic_ctrl_list[slotA].nic_console_enable_network_port():
+            self.cli_log_slot_err(slotA, "Setup mgmt failed")
+            self.cli_log_slot_err(slotA, self.mtp_get_nic_err_msg(slotA))
+            self.mtp_dump_nic_err_msg(slotA)
+            return False
+        if not self._nic_ctrl_list[slotB].nic_console_enable_network_port():
+            self.cli_log_slot_err(slotB, "Setup mgmt failed")
+            self.cli_log_slot_err(slotB, self.mtp_get_nic_err_msg(slotB))
+            self.mtp_dump_nic_err_msg(slotB)
+            return False
+
+        keyA = libmfg_utils.nic_key(slotA)
+        keyB = libmfg_utils.nic_key(slotB)
+        self.cli_log_slot_inf(slotA, "Ping {:s} to {:s}".format(keyA, keyB))
+        retA = self._nic_ctrl_list[slotA].nic_console_ping(slotB)
+        if not retA:
+            self.cli_log_slot_err(slotA, "Failed to ping link partner")
+        self.cli_log_slot_inf(slotB, "Ping {:s} to {:s}".format(keyB, keyA))
+        retB = self._nic_ctrl_list[slotB].nic_console_ping(slotA)
+        if not retB:
+            self.cli_log_slot_err(slotB, "Failed to ping link partner")
+
+        if not self._nic_ctrl_list[slotA].nic_console_disable_network_port():
+            self.cli_log_slot_err(slotA, "Enable MTP port failed")
+            self.cli_log_slot_err(slotA, self.mtp_get_nic_err_msg(slotA))
+            self.mtp_dump_nic_err_msg(slotA)
+            return False
+        if not self._nic_ctrl_list[slotB].nic_console_disable_network_port():
+            self.cli_log_slot_err(slotB, "Enable MTP port failed")
+            self.cli_log_slot_err(slotB, self.mtp_get_nic_err_msg(slotB))
+            self.mtp_dump_nic_err_msg(slotB)
+            return False
+
+        if retA and retB:
+            return True
+        else:
+            return False
 

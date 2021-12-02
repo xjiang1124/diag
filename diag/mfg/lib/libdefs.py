@@ -343,6 +343,10 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
     NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
     NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
+    NIC_SGMII_READ_FMT  = "{:s}cpld -smird 0x{:x} 0x{:x}"
+    NIC_SGMII_WRITE_FMT = "{:s}cpld -smiwr 0x{:x} 0x{:x} 0x{:x}"
+    NIC_SGMII_READ_ELBA_FMT  = "{:s}xo3dcpld -smird 0x{:x} 0x{:x}"
+    NIC_SGMII_WRITE_ELBA_FMT = "{:s}xo3dcpld -smiwr 0x{:x} 0x{:x} 0x{:x}"
     NIC_SETTING_PARTITION_FMT = "/emmc_format.sh"
     NIC_DIAG_ASIC_VERSION_FMT = "head /data/nic_arm/{:s}/asic_version.txt"
     # onboard diag utils version
