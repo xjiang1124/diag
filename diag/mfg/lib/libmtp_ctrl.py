@@ -1897,6 +1897,8 @@ class mtp_ctrl():
             filename = "{:s}_snake_pcie.log".format(sn)
         elif test == "SNAKE_ELBA":
             filename = "{:s}_snake_elba.log".format(sn)
+        elif test == "ETH_PRBS":
+            filename = "{:s}_asicutil_elba_prbs_eth.log".format(sn)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return err_msg_list
@@ -4368,7 +4370,6 @@ class mtp_ctrl():
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
         nic_fail_list = list()
-
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
@@ -4404,6 +4405,18 @@ class mtp_ctrl():
             # 2C/4C = internal loopback
             if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
+
+        elif test == "ETH_PRBS":
+            slot = nic_list[0]
+            nic_type = self.mtp_get_nic_type(slot)
+            if nic_type not in ELBA_NIC_TYPE_LIST:
+                self.cli_log_err("Incorrect test for this NIC TYPE")
+                return ["FAIL", nic_list[:]]
+            else:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
+                # 2C/4C = internal loopback
+                if vmarg != 0:
+                    cmd += " -int_lpbk"
 
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))

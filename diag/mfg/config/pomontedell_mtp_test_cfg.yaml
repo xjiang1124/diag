@@ -68,13 +68,6 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-        ETH_PRBS:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: No
-                SLOT: No
         L1:
             INIT: ""
             POST: ""
@@ -87,6 +80,7 @@ NIC_PARA:
 
 
 MTP_PARA:
+    ETH_PRBS: True
     SNAKE_ELBA: True
 
 MTP_SEQ:

@@ -257,9 +257,9 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
     if aapl:
         if nic_type in ELBA_NIC_TYPE_LIST:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS"), ("NIC_ASIC","L1")]
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","L1")]
         else:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS")]
     else:
         if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
@@ -510,7 +510,12 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                 if not sn:
                     continue
                 err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(sn, test)
-                for err_msg in err_msg_list:
+                # only display first 3 and last 3 error messages
+                if len(err_msg_list) < 6:
+                    err_msg_disp_list = err_msg_list
+                else:
+                    err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+                for err_msg in err_msg_disp_list:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp, test, err_msg))
                     card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                     if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
@@ -682,12 +687,13 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
         # Collect NIC onboard logfiles
         asic_dir_logfile_list = []
+        path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
         if dsp == "NIC_ASIC" and test == "PCIE_PRBS":
-            asic_dir_logfile_list.append("elba_PRBS_PCIE.log")
+            asic_dir_logfile_list.append(path+"elba_PRBS_PCIE.log")
         if dsp == "NIC_ASIC" and test == "ETH_PRBS":
-            asic_dir_logfile_list.append("elba_PRBS_MX.log")
+            asic_dir_logfile_list.append(path+"elba_PRBS_MX.log")
         if dsp == "NIC_ASIC" and test == "L1":
-            asic_dir_logfile_list.append("elba_arm_l1_test.log")
+            asic_dir_logfile_list.append(path+"elba_arm_l1_test.log")
 
         if asic_dir_logfile_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
@@ -743,14 +749,17 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
     mtp_mgmt_ctrl.cli_log_inf("Collecting MTP parallel test logfiles....", level=0)
     for slot in nic_list:
         logfile_list = list()
+        path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
         if "SNAKE_HBM" in mtp_para_test_list:
-            logfile_list.append("snake_hbm.log")
+            logfile_list.append(path+"snake_hbm.log")
         if "SNAKE_PCIE" in mtp_para_test_list:
-            logfile_list.append("snake_pcie.log")
+            logfile_list.append(path+"snake_pcie.log")
         if "PRBS_ETH" in mtp_para_test_list:
-            logfile_list.append("prbs_eth.log")
+            logfile_list.append(path+"prbs_eth.log")
         if "SNAKE_ELBA" in mtp_para_test_list:
-            logfile_list.append("snake_elba.log")
+            logfile_list.append(path+"snake_elba.log")
+        if "ETH_PRBS" in mtp_para_test_list:
+            logfile_list.append("/data/nic_util/asicutil_elba_prbs_eth.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")

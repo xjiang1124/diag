@@ -1692,8 +1692,8 @@ class nic_ctrl():
             return False
 
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
-        for log in logfile_list:
-            logfile = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR + log
+        for logfile in logfile_list:
+            log = os.path.basename(logfile)
             dst_logfile = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR + self._sn + "_" + log
             cmd = "scp {:s} {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, logfile, dst_logfile)
             self._nic_handle.sendline(cmd)
