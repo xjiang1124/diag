@@ -1543,6 +1543,9 @@ def main():
             mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
+            if vmarg_idx > 0:
+                mtp_mgmt_ctrl.mtp_diag_dsp_restart()
+
             if vmarg_idx == 0:
                 if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
                     mtp_mgmt_ctrl.mtp_power_cycle_nic()

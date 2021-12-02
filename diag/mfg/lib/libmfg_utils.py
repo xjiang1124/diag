@@ -654,7 +654,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
     # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init():
         mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -1786,7 +1786,6 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     open_file_track_list.append(mtp_diag_log_filep)
     mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_diag_cmd_log_filep)
-    mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, MODIFIER, buffering=0)
 
     diag_nic_log_filep_list = list()
     for slot in range(mtp_mgmt_ctrl._slots):
@@ -1800,6 +1799,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
+    mtp_mgmt_ctrl._diagmgr_logfile = mtp_diagmgr_log_file
 
     return logfile_path, open_file_track_list
 

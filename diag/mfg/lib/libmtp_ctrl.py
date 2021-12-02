@@ -101,6 +101,7 @@ class mtp_ctrl():
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
+        self._diagmgr_logfile = None
         self._temppn = None
 
 
@@ -1125,7 +1126,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_pre_init(self, diagmgr_logfile):
+    def mtp_diag_pre_init(self):
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
@@ -1145,8 +1146,6 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute env command", level=0)
             return False
 
-
-
         # kill other diagmgr instances
         cmd = "killall diagmgr"
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1159,7 +1158,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(diagmgr_logfile)
+        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
         diagmgr_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
         if idx < 0:
@@ -1203,6 +1202,61 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_diag_dsp_restart(self):
+        self.cli_log_inf("DSP Restart", level=0)
+
+        # stop MTP DSP
+        cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        # sys cleanup
+        cmd = MFG_DIAG_CMDS.MTP_DSP_CLEANUP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        # kill other diagmgr instances
+        cmd = "killall diagmgr"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+            return False
+
+        # start the mtp diagmgr
+        diagmgr_handle = self.mtp_session_create()
+        if not diagmgr_handle:
+            self.cli_log_err("Failed to create new diagmgr handle", level=0)
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
+        diagmgr_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(diagmgr_handle, ["$"])
+        if idx < 0:
+            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+            self.cli_log_err("{:s}".format(diagmgr_handle.before))
+            return False
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+        diagmgr_handle.close()
+
+        # register MTP diagsp
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+        sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+            return False
+
+        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+
+        self.cli_log_inf("DSP restart complete\n", level=0)
+
+        return True
 
     def mtp_diag_zmq_init(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
