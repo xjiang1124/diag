@@ -11,6 +11,7 @@ exec 2>&1
 echo "Log Location should be: [ $SCRIPTLOG ]"
 
 configNames=(
+NAPLES100DELL_input.json
 POMONTE_test_input.json
 ORTANO2_input.json
 NAPLES25_input.json
