@@ -581,7 +581,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def config_mnic(self, rate=115200, slot=0, uefi=False):
+    def config_mnic(self, rate=115200, slot=0, uefi=False, dis_net_port=False):
         ret = 0
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -604,6 +604,8 @@ class nic_con:
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
                 time.sleep(0.5)
                 print 'oob_mnic0 enabled'
+                if dis_net_port == True:
+                    self.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig")
             else:
@@ -698,7 +700,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False):
+    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False, dis_net_port=False):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
@@ -714,7 +716,7 @@ class nic_con:
                 return ret
 
         for i in range(numRetry):
-            ret = self.config_mnic(rate, slot, uefi)
+            ret = self.config_mnic(rate, slot, uefi, dis_net_port)
             if ret == -1:
                 print "=== FAIL to enable management port! ==="
                 return ret

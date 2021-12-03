@@ -152,7 +152,7 @@ class nic_test:
 
         return ret
 
-    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False):
+    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False):
         numRetry = 2
         nic_list_remain = nic_list[:]
         timeout = 60
@@ -160,7 +160,7 @@ class nic_test:
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
             print "timestamp", datetime.datetime.now().time()
-            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi)
+            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port)
             timeout += retry*10
             if ret == 0:
                 break
@@ -202,7 +202,7 @@ class nic_test:
             for slot in nic_list:
                 if ret_list[int(slot)-1] != 0:
                     continue
-                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True)
+                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True, dis_net_port)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
@@ -218,7 +218,7 @@ class nic_test:
         return ret, nic_list_remain
 
 
-    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False):
+    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
@@ -316,7 +316,7 @@ class nic_test:
             for slot in nic_list:
                 if ret_list[int(slot)-1] != 0:
                     continue
-                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True, asic_type, uefi)
+                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
         for slot in nic_list:
@@ -1162,6 +1162,7 @@ if __name__ == "__main__":
     parser.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="capri")
     parser.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
     parser.add_argument("-num_ite", "--num_ite", help="Number of iterations", type=int, default=1)
+    parser.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -1212,7 +1213,7 @@ if __name__ == "__main__":
         elif args.goldfw == True:
             test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
-            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi)
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port)
         sys.exit()
 
     if args.pwr_cycle_test == True:
