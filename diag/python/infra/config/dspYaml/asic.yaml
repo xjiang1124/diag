@@ -152,6 +152,10 @@ DSP:
                 VALUE:
                     ALL: 1
                 INFO: Enable esecure test in L1
+            simplified:
+                VALUE:
+                    ALL: 0
+                INFO: Set 1 to run L1 in simplified mode
 
     CMD#start_zmq:
         INFO: Start ZMQ server

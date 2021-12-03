@@ -13,9 +13,10 @@ set vmarg    [lindex $argv 4]
 set use_zmq  [lindex $argv 5]
 set offload  [lindex $argv 6]
 set esecEn   [lindex $argv 7]
+set simplified [lindex $argv 8]
 set port 10
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified"
 set err_cnt 0
 
 set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
@@ -67,7 +68,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
             set ddr_freq 2400
         }
 
-        set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn" 
+        set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn 1 $simplified"
         source .tclrc.diag.elb.new
     }
     if {$MTP_TYPE == "MTP_CAPRI"} {

@@ -99,6 +99,7 @@ func AsicL1_TestHdl(argList []string) {
     zmqEnPtr   := fs.Uint64("zmq_en",   0,          "ZMQ enable flag")
     offloadPtr := fs.Uint64("offload",  0,          "Offload flag for legacy L1")
     esecEnPtr  := fs.Uint64("esec_en",  1,          "Enable esecure test in L1")
+    simplifiedPtr  := fs.Uint64("simplified",  0,   "Set 1 to run L1 in simplified mode")
 
     errFs := fs.Parse(argList)
     if errFs != nil {
@@ -113,8 +114,9 @@ func AsicL1_TestHdl(argList []string) {
     zmqEn := *zmqEnPtr
     offload := *offloadPtr
     esecEn := *esecEnPtr
+    simplified := *simplifiedPtr
 
-    dcli.Println("i", "sn", *snPtr, "slot", *slotPtr, "mode", *modePtr, "intLpbk", *intLpbkPtr, "vmarg", *vmargPtr, "zmq_en", *zmqEnPtr, "offload", *offloadPtr, "esec_en", *esecEnPtr)
+    dcli.Println("i", "sn", *snPtr, "slot", *slotPtr, "mode", *modePtr, "intLpbk", *intLpbkPtr, "vmarg", *vmargPtr, "zmq_en", *zmqEnPtr, "offload", *offloadPtr, "esec_en", *esecEnPtr, "simplified", *simplifiedPtr)
 
     // Diable time stamp since there are too much asic output
     dcli.TimeStampEnable(misc.DISABLE)
@@ -160,7 +162,7 @@ func AsicL1_TestHdl(argList []string) {
         //Run on SLOT+1 (elba1)
         err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot) + 1), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
     } else {
-        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)), strconv.Itoa(int(simplified)))
     }
 
     diagEngine.FuncMsgChan <- err
