@@ -447,7 +447,6 @@ def main():
             # load the barcode config file made in toplevel
             scan_cfg_file = mtp_script_dir + "/" + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
             scanned_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)[mtp_id]
-            print(scanned_fru_cfg)
 
             tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
             fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=True)
@@ -481,6 +480,11 @@ def main():
                         nic_thread.join()
                         nic_thread_list.remove(nic_thread)
                 time.sleep(5)
+
+            for slot in fru_reprogram_list:
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type):
+                    mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):

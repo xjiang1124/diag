@@ -2544,6 +2544,10 @@ class mtp_ctrl():
             if software_pn != "90-0009-0004":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
+            if not naples_pn.endswith("C1"):
+                self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
+                self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PN_MINUS_REV_MASK]+" C1", naples_pn))
+                return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
             if software_pn != "90-0011-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
@@ -5271,7 +5275,8 @@ class mtp_ctrl():
                         expected = expected[:PN_MINUS_REV_MASK]
                         received = received[:PN_MINUS_REV_MASK]
                         if expected == received:
-                            fru_reprogram_list.append(slot)
+                            if slot not in fru_reprogram_list:
+                                fru_reprogram_list.append(slot)
                             continue
 
                     self.cli_log_slot_err_lock(slot, "Incorrect {:s}. Scanned {:s}, read {:s}.".format(item, expected, received))
