@@ -259,7 +259,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
         if nic_type in ELBA_NIC_TYPE_LIST:
             sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","L1")]
         else:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS")]
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
     else:
         if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
@@ -334,7 +334,7 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
         sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
-    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and loopback:
+    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == 0:
         sub_test_list = [("PHY", "XCVR")]
     else:
         sub_test_list = [()]
@@ -1862,10 +1862,7 @@ def main():
                 else:
                     continue
 
-                if corner == Env_Cond.MFG_NT:
-                    loopback = True
-                else:
-                    loopback = False
+                loopback = False
                 if nic_list:
                     diag_para_fail_list = naples_diag_mvl_test(mtp_mgmt_ctrl,
                                                                nic_type,

@@ -194,7 +194,7 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     else:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
     for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw"]:
-        if nic_type in FPGA_TYPE_LIST and partition == "mainfwb":
+        if nic_type in FPGA_TYPE_LIST and (partition == "mainfwa" or partition == "mainfwb"):
             continue
         try:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
