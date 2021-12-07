@@ -1831,7 +1831,10 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_test_log_file = logfile_path + "/mtp_test.log"
     mtp_diag_log_file = logfile_path + "/mtp_diag.log"
     mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
-    mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
+    if run_from_mtp:
+        mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
+    else:
+        mtp_diagmgr_log_file = "/dev/null"
     mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)

@@ -1321,7 +1321,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to create new diagmgr handle", level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
+        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_RESTART_FMT.format(self._diagmgr_logfile)
         diagmgr_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(diagmgr_handle, ["$"])
         if idx < 0:

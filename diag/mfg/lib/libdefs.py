@@ -502,6 +502,7 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_CONFIG_FMT = "source /data/nic_arm/nic_config.sh"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"
+    MTP_DIAG_MGR_RESTART_FMT = "nohup diagmgr >> {:s} 2>&1 &"
     MTP_DSP_START_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_start"
     MTP_DSP_STOP_FMT = "/home/diag/diag/python/infra/dshell/diag -r -c MTP1 -d diagmgr -t dsp_stop"
     MTP_ZMQ_START_FMT = "/home/diag/diag/python/infra/dshell/diag -rc -c MTP1 -d ASIC -t start_zmq"
