@@ -1393,14 +1393,6 @@ def main():
     # logfiles
     mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
-    #MTP connect
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="SRN-SSH", retry_with_powercycle=True):
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
-        fail_step = "connect MTP failed"
-        fail_desc = "Unable to connect MTP Chassis. Abort test"
-        return False
-    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
 
     try:
 
@@ -1431,31 +1423,47 @@ def main():
         for slot in range(10):
             pass_nic_list.append(slot) 
 
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+        #MTP connect
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="SRN-SSH", retry_with_powercycle=True):
+            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
-            fail_step = "MTP common setup failed"
-            fail_desc = "MTP common setup fails"
-            for i in range(10):
+            fail_step = "connect MTP failed"
+            fail_desc = "Unable to connect MTP Chassis. Abort test"
+            for slot in range(10):
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot) 
-            rs = False
+            return False
+        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
+        if rs:
+            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
+                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
+                fail_step = "MTP common setup failed"
+                fail_desc = "MTP common setup fails"
+                for slot in range(10):
+                    fail_nic_list.append(slot)
+                    pass_nic_list.remove(slot) 
+                rs = False
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
 
         #get MTP MAC AA:BB:CC:DD:EE:FF
         if rs:
             mac = mtp_mgmt_ctrl.mtp_get_mac()
             if mac.startswith("[FAIL]:"):
-                mtp_mgmt_ctrl.mtp_diag_fail_report("Failed to get MTP MAC Address, test abort...")
+                mtp_mgmt_ctrl.mtp_diag_fail_report("Failed to retrieve MTP MAC Address")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
                 fail_step = "Unable to get MTP MAC Address"
                 fail_desc = "Unable to get MTP MAC Address"
-                for i in range(10):
+                for slot in range(10):
                     fail_nic_list.append(slot)
                     pass_nic_list.remove(slot) 
                 rs = False
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("Retrieve MTP Mac Address passed", level=0)
 
         mac = mac.upper().replace(':','')
 
@@ -1470,7 +1478,7 @@ def main():
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
                 fail_step = "MTP program FRU failed"
                 fail_desc = "MTP program FRU fails"
-                for i in range(10):
+                for slot in range(10):
                     fail_nic_list.append(slot)
                     pass_nic_list.remove(slot) 
                 rs = False
@@ -1491,22 +1499,26 @@ def main():
                 vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT]
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        if rs and len(nic_prsnt_list) != 10:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("Not able to detect 10 NICs")
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
-            miss_slot_list = ""
-            for slot in range(len(nic_prsnt_list)):
-                if not nic_prsnt_list[slot]:
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
-                    if len(miss_slot_list) > 0: 
-                        miss_slot_list += "," + str(slot + 1)
-                    else:
-                        miss_slot_list = str(slot + 1)
-            fail_step = "MTP not able to detect 10 NICs. --> (missing slots: " + miss_slot_list + ")"
-            fail_desc = "MTP not able to detect 10 NICs. --> (missing slots: " + miss_slot_list + ")"
-            rs = False
+
+        if rs:
+            if len(nic_prsnt_list) != 10:
+                mtp_mgmt_ctrl.mtp_diag_fail_report("Not able to detect 10 NICs")
+                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+                mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
+                miss_slot_list = ""
+                for slot in range(len(nic_prsnt_list)):
+                    if not nic_prsnt_list[slot]:
+                        fail_nic_list.append(slot)
+                        pass_nic_list.remove(slot)
+                        if len(miss_slot_list) > 0: 
+                            miss_slot_list += "," + str(slot + 1)
+                        else:
+                            miss_slot_list = str(slot + 1)
+                fail_step = "MTP not able to detect 10 NICs. --> (missing slots: " + miss_slot_list + ")"
+                fail_desc = "MTP not able to detect 10 NICs. --> (missing slots: " + miss_slot_list + ")"
+                rs = False
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP detect 10 NIC passed", level=0)               
 
         if rs:
             mismatch_slot_list = ""
@@ -1527,14 +1539,16 @@ def main():
             if not rs:
                 fail_step = "MTP not able to detect 10 ORTANO2 NICs. --> (slots: " + mismatch_slot_list + ")"
                 fail_desc = "MTP not able to detect 10 ORTANO2 NICs. --> (slots: " + mismatch_slot_list + ")"
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP detect 10 ORTANO2 NIC passed", level=0)   
 
-        if rs and len(pass_nic_list) != 10:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("Not able to detect 10 NICs")
-            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-            mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
-            fail_step = "MTP not able to detect 10 ORTANO2 NICs"
-            fail_desc = "MTP not able to detect 10 ORTANO2 NICs"
-            rs = False
+        # if rs and len(pass_nic_list) != 10:
+        #     mtp_mgmt_ctrl.mtp_diag_fail_report("Not able to detect 10 NICs")
+        #     libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+        #     mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
+        #     fail_step = "MTP not able to detect 10 ORTANO2 NICs"
+        #     fail_desc = "MTP not able to detect 10 ORTANO2 NICs"
+        #     rs = False
 
         nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, "MTP_SCREEN"]
         nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples100dell_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, naples25swm833_nic_list, ortano_nic_list, ortano2_nic_list, pomontedell_nic_list, lacona32dell_nic_list, lacona32_nic_list, mtp_screen_nic_list]
@@ -1555,11 +1569,11 @@ def main():
                 rs = False
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_mgmt_ctrl.cli_log_err("Fail to diasable PCIe poll", level=0)
-                fail_step += "Fail to diasable PCIe poll(slot:" + str(slot) + ")"
-                fail_desc += "Fail to diasable PCIe poll(slot:" + str(slot) + ")"
-                for i in range(10):
+                fail_step += "Fail to disable PCIe poll"
+                fail_desc += "Fail to disable PCIe poll"
+                for slot in range(10):
                     fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot) 
+                    pass_nic_list.remove(slot)
 
         if rs:   
             mtp_mgmt_ctrl.mtp_power_cycle_nic()
@@ -1575,8 +1589,13 @@ def main():
                                                         args.skip_test)
             for slot in pre_check_fail_list:
                 rs = False
-                fail_step += "Fail to Pre check(slot:" + str(slot) + ")"
-                fail_desc += "Fail to Pre check(slot:" + str(slot) + ")"
+                if len(fail_step) == 0:
+                    fail_step = "Fail to Pre check(slot:" + str(slot + 1) + ")"
+                    fail_desc = "Fail to Pre check(slot:" + str(slot + 1) + ")"
+                else:
+                    fail_step += ", Fail to Pre check(slot:" + str(slot + 1) + ")"
+                    fail_desc += ", Fail to Pre check(slot:" + str(slot + 1) + ")"
+
                 if slot not in fail_nic_list:
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
@@ -1589,7 +1608,7 @@ def main():
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
             fail_step = "Initialize NIC diag environment failed"
             fail_desc = "Initialize NIC diag environment failed"
-            for i in range(10):
+            for slot in range(10):
                 fail_nic_list.append(slot)
                 pass_nic_list.remove(slot) 
             rs = False
@@ -1613,9 +1632,12 @@ def main():
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
-                fail_step += "Fail to PCIE_PRBS check(slot:" + str(slot) + ")"
-                fail_desc += "Fail to PCIE_PRBS check(slot:" + str(slot) + ")"
-
+                if len(fail_step) == 0:
+                    fail_step = "Fail to PCIE_PRBS check(slot:" + str(slot + 1) + ")"
+                    fail_desc = "Fail to PCIE_PRBS check(slot:" + str(slot + 1) + ")"
+                else:
+                    fail_step += ", Fail to PCIE_PRBS check(slot:" + str(slot + 1) + ")"
+                    fail_desc += ", Fail to PCIE_PRBS check(slot:" + str(slot + 1) + ")"
 
         if rs:
             nic_seq_test_list = mtp_screen_seq_test_list[:]
@@ -1634,8 +1656,12 @@ def main():
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
-                fail_step += "Fail to L1 check(slot:" + str(slot) + ")"
-                fail_desc += "Fail to L1 check(slot:" + str(slot) + ")"
+                if len(fail_step) == 0:
+                    fail_step = "Fail to L1 check(slot:" + str(slot + 1) + ")"
+                    fail_desc = "Fail to L1 check(slot:" + str(slot + 1) + ")"
+                else:
+                    fail_step += ", Fail to L1 check(slot:" + str(slot + 1) + ")"
+                    fail_desc += ", Fail to L1 check(slot:" + str(slot + 1) + ")"
 
         if rs:
             diag_post_fail_list = mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
@@ -1646,7 +1672,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_err("Fail to enable PCIe poll", level=0)
                 fail_step = "Fail to enable PCIe poll"
                 fail_desc = "Fail to enable PCIe poll"
-                for i in range(10):
+                for slot in range(10):
                     fail_nic_list.append(slot)
                     pass_nic_list.remove(slot) 
 
@@ -1785,7 +1811,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("##########  MFG {:s} Test Summary  ##########".format("MTP_SCREEN"))
         mtp_mgmt_ctrl.cli_log_inf("---------- {:s} Report: ----------".format(mtp_id))
 
-        if len(fail_nic_list) != 0 or len(pass_nic_list) != 10:
+        if len(fail_nic_list) != 0 or len(pass_nic_list) != 10 or len(fail_step) > 0:
             mtp_mgmt_ctrl.cli_log_err("[{:s}] {:s} FAIL --> {:s}".format(mtp_id, mtp_sn, fail_step))
         else:
             mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} PASS".format(mtp_id, mtp_sn))
