@@ -748,6 +748,97 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_exec_sudo_cmd_resp(self, cmd):
+        userid = self._mgmt_cfg[1]
+        passwd = self._mgmt_cfg[2]
+        rs = ""
+
+        if not self._mgmt_handle:
+            self.cli_log_err("Management port is not connected")
+            return "[FAIL]: Management port is not connected"
+
+        self._mgmt_handle.sendline("sudo -k " + cmd)
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [userid + ":"])
+        if idx < 0:
+            rs = self._mgmt_handle.before
+            self._mgmt_handle.logfile_read = None
+            self._mgmt_handle.logfile_send = None
+            self.mtp_mgmt_disconnect()
+            return rs
+        self._mgmt_handle.sendline(passwd)
+
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt])
+        if idx < 0:
+            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
+            return "[FAIL]: Connect to mtp mgmt timeout"
+        else:
+            rs = self._mgmt_handle.before
+
+        return rs  
+
+    def mtp_get_mac(self):
+        # MTP MAC info
+        rs = ""
+        cmd = MFG_DIAG_CMDS.MTP_MAC_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute cmd to get MTP MAC info", level = 0)
+            return "[FAIL]: Failed to execute cmd to get MTP MAC info"
+        match = re.findall(r"(([0-9a-f]{2}[:]){5}([0-9a-f]{2}))", self.mtp_get_cmd_buf())
+        if match:
+            return match[0][0]
+        else:
+            self.cli_log_err("Failed to locate MTP MAC info." + self.mtp_get_cmd_buf(), level = 0)
+            return "[FAIL]: Failed to locate MTP MAC info"
+
+
+    def mtp_set_sn_rev_mac_command(self, sn, maj, mac):
+        cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_SN_MAJ_MAC_FMT.format(sn, maj, mac)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Unable to set MTP SN, REV and MAC")
+            return False
+        match = re.findall(r"Programming", self.mtp_get_cmd_buf())
+        if match:
+            cmd = "eeutil -disp"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Unable to display MTP SN, REV and MAC info")
+                return False                
+            
+            match = re.findall(r"SERIAL_NUM\s+(\S+)", self.mtp_get_cmd_buf())
+            if match:
+                prog_sn = match[0]
+                if prog_sn != sn:
+                    self.cli_log_err("Failed to set MTP SN info", level = 0)
+                    return False
+            else:
+                self.cli_log_err("Failed to locate MTP SN info", level = 0)
+                return False
+
+            match = re.findall(r"HW_MAJOR_REV\s+(\S+)", self.mtp_get_cmd_buf())        
+            if match:
+                prog_maj = match[0]
+                if prog_maj != maj:
+                    self.cli_log_err("Failed to set MTP REV info", level = 0)
+                    return False
+            else:
+                self.cli_log_err("Failed to locate MTP REV info", level = 0)
+                return False                
+
+            match = re.findall(r"MAC_ADDR\s+(\S+)", self.mtp_get_cmd_buf())        
+            if match:
+                prog_mac = match[0]
+                if prog_mac != mac:
+                    self.cli_log_err("Failed to set MTP MAC info", level = 0)
+                    return False
+            else:
+                self.cli_log_err("Failed to locate MTP MAC info", level = 0)
+                return False 
+
+            return True
+        else:
+            self.cli_log_err("Failed to set MTP SN, REV and MAC info", level = 0)
+            return False
+        return True
+
     def mtp_nic_send_ctrl_c(self, slot):
         if self._nic_ctrl_list[slot] == None:
             # script not running anything.
@@ -5095,6 +5186,38 @@ class mtp_ctrl():
             nic_scan_rslt = dict()
             nic_scan_rslt["VALID"] = False
             mtp_scan_rslt[key] = nic_scan_rslt
+
+        return mtp_scan_rslt
+
+    def mtp_screen_barcode_scan(self):
+        mtp_scan_rslt = dict()
+        mtp_ts_snapshot = libmfg_utils.get_timestamp()
+        mtp_scan_rslt["MTP_ID"] = self._id
+        mtp_scan_rslt["MTP_TS"] = mtp_ts_snapshot
+        mtp_scan_rslt["VALID"] = False
+        scan_sn_list = list()
+
+        sn = ""
+        sn_scanned = False
+        while not sn_scanned:
+            usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(self._id)
+            raw_scan = raw_input(usr_prompt)
+            if raw_scan == "STOP":
+                break
+            sn = libmfg_utils.serial_number_validate(raw_scan)
+
+            if not sn:
+                self.cli_log_err("Invalid MTP Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                #return None
+            elif sn in scan_sn_list:
+                self.cli_log_err("MTP Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
+                #return None
+            else:
+                scan_sn_list.append(sn)
+                sn_scanned = True
+                mtp_scan_rslt["VALID"] = True
+        
+        mtp_scan_rslt["MTP_SN"] = sn
 
         return mtp_scan_rslt
 

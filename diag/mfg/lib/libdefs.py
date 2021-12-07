@@ -48,6 +48,7 @@ class FF_Stage:
     FF_SWI = "SWI"
     FF_FST = "FST"
     FF_CFG = "CFG"
+    FF_SRN = "SRN"
 
 
 class FPN_FF_Stage:
@@ -165,6 +166,7 @@ class MTP_Const:
     MFG_DL_TEST_TIMEOUT = 14400
     # 2.5 hour SWM and IBM update to 6 hours
     MFG_SW_TEST_TIMEOUT = 21600
+    MFG_MTPSCREEN_TEST_TIMEOUT = 21600
     # 1 hour
     MFG_FST_TEST_TIMEOUT = 3600
     MFG_CFG_TEST_TIMEOUT = 3600
@@ -205,6 +207,7 @@ class MTP_DIAG_Logfile:
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_CSP_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*txt"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
+    ONBOARD_SRN_TEST_LOG_FILES = "/home/diag/mtp_srn_script/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_DL_LOG_FILES = "/home/diag/mtp_dl_script/*log /home/diag/mtp_dl_script/*yaml"
     ONBOARD_CFG_LOG_FILES = "/home/diag/mtp_cfg_script/*log /home/diag/mtp_cfg_script/*yaml"
@@ -223,6 +226,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_SWI_LOG_DIR_FMT = "/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
     DIAG_MFG_CSP_LOG_DIR_FMT = "/mfg_log/CSP_REC/{:s}/"
+    DIAG_MFG_SRN_LOG_DIR_FMT = "/mfg_log/{:s}/SRN/{:s}/"
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_CFG_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/CFG/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
@@ -231,6 +235,8 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
     DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"                                                                                                                             
+    DIAG_MFG_MODEL_SRN_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SRN/{:s}/"
+
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -246,6 +252,8 @@ class MTP_DIAG_Logfile:
     MFG_SWI_LOG_DIR = "SWI_{:s}_{:s}/"
     MFG_FST_LOG_PKG_FILE = "FST_{:s}_{:s}.tar.gz"
     MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
+    MFG_SRN_LOG_PKG_FILE = "SRN_{:s}_{:s}.tar.gz"
+    MFG_SRN_LOG_DIR = "SRN_{:s}_{:s}/"
 
     SCAN_BARCODE_FILE = "fru_barcode.yaml"
 
@@ -297,6 +305,7 @@ class MFG_DIAG_CMDS:
 
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
     MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"
+    MTP_MAC_FMT = "cat /sys/class/net/enp4s0/address"
 
     MTP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update"
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
@@ -311,6 +320,7 @@ class MFG_DIAG_CMDS:
     MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"
     MTP_HP_ALOM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeAlom"
     MTP_NIC_FRU_DUMP_FMT = "eeutil -uut=UUT_{:d} -dump -numBytes=512"
+    MTP_FRU_PROG_SN_MAJ_MAC_FMT = "eeutil -update  -sn='{:s}' -maj='{:s}' -mac='{:s}'"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
     NIC_HP_SWM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeSwm"
     NIC_HP_OCP_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeOcp"

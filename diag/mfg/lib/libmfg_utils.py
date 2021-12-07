@@ -1170,6 +1170,17 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         test_log_file = "{:s}test_fst.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_test_fst.log".format(mtp_id)
+    elif stage == FF_Stage.FF_SRN:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_SRN_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_SRN_TEST_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id) 
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
@@ -1198,7 +1209,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-    elif stage == FF_Stage.FF_P2C:
+    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN:
         diag_log_dir = log_dir + "diag_logs/"
         asic_log_dir = log_dir + "asic_logs/"
         nic_log_dir = log_dir + "nic_logs/"
@@ -1330,6 +1341,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_SRN:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SRN_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SRN_LOG_DIR_FMT.format(nic_type, sn)
         else:
             pass
 
@@ -1407,14 +1423,28 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 continue
             mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(csp_log_file))
 
-    for slot in skip_match:
-        mtp_test_summary.append((slot, "SKIPPED", "SLOT", True))
+    if stage != FF_Stage.FF_SRN:
+        for slot in skip_match:
+            mtp_test_summary.append((slot, "SKIPPED", "SLOT", True))
 
-    for slot, nic_type, sn in fail_match:
-        mtp_test_summary.append((slot, sn, nic_type, False))
+        for slot, nic_type, sn in fail_match:
+            mtp_test_summary.append((slot, sn, nic_type, False))
 
-    for slot, nic_type, sn in pass_match:
-        mtp_test_summary.append((slot, sn, nic_type, True))
+        for slot, nic_type, sn in pass_match:
+            mtp_test_summary.append((slot, sn, nic_type, True))
+
+    else:
+        ret = True
+        first_rcd = True
+        for slot, nic_type, sn in fail_match:
+            if first_rcd:
+                mtp_test_summary.append((slot, sn, nic_type, False))
+                first_rcd = False
+                ret = False
+        if ret:
+            for slot, nic_type, sn in pass_match:
+                if first_rcd:
+                    mtp_test_summary.append((slot, sn, nic_type, True))
 
     # clear the onboard logs
     logfile_list.append(log_pkg_file)
@@ -1542,6 +1572,26 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("--------- Report End --------\n")
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+
+def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
+    cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
+    result = True
+    for mtp_id in summary_dict.keys():
+        cli_inf("---------- {:s} Report: ----------".format(mtp_id))
+        if len(mtp_fail_list) > 0:
+            cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
+        else:
+            #one fail all fail
+            for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+                nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
+                if not rc:
+                    result = False
+                    
+        if result:
+            cli_inf("[{:s}] {:s} PASS".format(mtp_id, mtp_sn))
+        else:
+            cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
+        cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
 
 def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length):
     """
@@ -1766,6 +1816,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
             log_sub_dir = MTP_DIAG_Logfile.MFG_SWI_LOG_DIR.format(mtp_id, log_timestamp)
         elif stage == FF_Stage.FF_FST:
             log_sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_SRN:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp) 
         else:
             print("Unknown stage!")
             return []

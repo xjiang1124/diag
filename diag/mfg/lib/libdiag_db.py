@@ -161,6 +161,8 @@ class diag_db():
                 param += ' vmarg=normal'
         if "MODE" in opts and opts["MODE"]:
             param += ' mode={:s}'.format(mode)
+        if "SIMPLIFIED" in opts and opts["SIMPLIFIED"]:
+            param += ' simplified=1'
         param += '"'
 
         return libmfg_utils.diag_seq_run_cmd(card_name, dsp, test, param)
