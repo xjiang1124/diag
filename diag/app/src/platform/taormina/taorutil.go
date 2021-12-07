@@ -715,8 +715,117 @@ func Elba_Check_Pci_Link(elba int) (err int) {
         }
     }
     return
-
 }
+
+
+/********************************************************************************* 
+*
+* 
+* 
+*********************************************************************************/ 
+func ElbaRTCtest(elbaMask uint32, calledFromCLI int) (err int) {
+    var cmdStr string
+    var elbafailmask, i uint32
+    err = errType.FAIL
+    var forStart, forEnd uint32
+
+    if elbaMask == 1 {
+        forStart = 0
+        forEnd = 1
+    } else if elbaMask == 2 {
+        forStart = 1
+        forEnd = 2
+    } else if elbaMask == 3 {
+        forStart = 0
+        forEnd = 2
+    } else {
+        cli.Printf("e", "Elba Mask must be 0x1, 0x2, 0x3 for both elbas.  You entered 0x%x\n", elbaMask)
+        err = errType.FAIL
+        return
+    }
+
+    dcli.Printf("i", "for start=%d   for end=%d\n", forStart, forEnd)
+
+
+    //Ping Elba to make sure the network is up
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i","Elba-%d Ping Test\n", i)
+        err = ElbaPing(i) 
+        if err != errType.SUCCESS {
+            dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed\n", i)
+            elbafailmask |= (1<<i)
+        }
+    }
+
+    //Check that we can find stressapptest_arm in case someone tries to run this without the diag package installed
+    fileExists, _ := taorfpga.Path_exists("/fs/nos/home_diag/nic_diag/diag/util/rtcutil")
+    if fileExists == false {
+        cli.Printf("e", "Unable to locate rtcutil.  Looking under path /fs/nos/home_diag/nic_diag/diag/util/rtcutil.   Check that the arm diag package is installed\n")
+        err = errType.FAIL
+        return
+    }
+
+    //Copy over stressarpptest and delete any old logs
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Copying over rtcutil\n", i)
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/nic_diag/diag/util/rtcutil root@169.254.13.1:/data/nic_util"
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/nic_diag/diag/util/rtcutil root@169.254.7.1:/data/nic_util"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+
+    //Run Test & Get Results
+    /*
+    [INFO]    [2021-12-01-17:44:27.644] RTC 1st reading: 01/12/00(m/d/n) 21:38:50(h:m:s)
+    [INFO]    [2021-12-01-17:44:32.646] RTC 2nd reading: 01/12/00(m/d/n) 21:38:55(h:m:s)
+    [INFO]    [2021-12-01-17:44:32.646] RTC Test on RTC Passed.
+    */
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Running Test\n", i)
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 \"export CARD_TYPE=ORTANO2;/data/nic_util/rtcutil -dev RTC -test\""
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 \"export CARD_TYPE=ORTANO2;/data/nic_util/rtcutil -dev RTC -test\""
+        }  
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", "%s", string(output))
+        
+        if strings.Contains(string(output), "Test on RTC Passed")==false {
+            dcli.Printf("e", "[ERROR] Elba-%d did not pass it's RTC test\n", i)
+            elbafailmask |= (1<<i)
+            return
+        } else {
+            dcli.Printf("i", "Elba-%d passed RTC test\n", i)
+        }
+    }
+
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            err = errType.FAIL
+        }
+    }
+    dcli.Printf("i", "err = %d", err)
+    return
+}
+
 
 
 func Elba_Show_Firmware(elba int) (err int) {

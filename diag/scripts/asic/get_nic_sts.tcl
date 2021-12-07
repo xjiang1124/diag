@@ -31,10 +31,16 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
     }
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
+    catch {
+        set ELBA0_ID $::env(ELBA0_J2C_ID)
+	set ELBA1_ID $::env(ELBA1_J2C_ID)
+    }
     if { $slot == 1 } {
-        set port 0x3021
+        set port $ELBA0_ID
+        exec echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove
     } else {
-        set port 0x3031
+        set port $ELBA1_ID
+        exec echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove
     }
     set slot 10
     source .tclrc.diag.elb.new

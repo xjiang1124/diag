@@ -101,7 +101,7 @@ func SwitchSnakeHdl(argList []string) {
 }
 
 
-func AsicArm_MemoryHdl(argList []string) {
+func SwitchElba_Arm_MemoryHdl(argList []string) {
     var err int = 0
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     testtimePtr := fs.Int("testtime", 300, "Test timeout setting")
@@ -121,6 +121,33 @@ func AsicArm_MemoryHdl(argList []string) {
 
     dcli.Println("i", "START TEST")
     err = taormina.ElbaMemoryTest(uint32(mask), uint32(duration), 0)
+    dcli.Printf("i", "END TEST err=%d", err)
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+
+func SwitchElba_RtcHdl(argList []string) {
+    var err int = 0
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    maskPtr := fs.Int("mask", 3, "Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    //dcli.Println("i", "testtime", *testtimePtr, "mask", *maskPtr)
+
+     mask:=*maskPtr 
+
+    dcli.Println("i", "START TEST")
+    err = taormina.ElbaRTCtest(uint32(mask), 0)
     dcli.Printf("i", "END TEST err=%d", err)
 
     // Inform diag engine that test handler is done
@@ -180,7 +207,8 @@ func main() {
     diagEngine.FuncMap["PRESENT"] = SwitchPresentHdl
     diagEngine.FuncMap["FANRPM"] = SwitchFanrpmHdl
     diagEngine.FuncMap["SNAKE"] = SwitchSnakeHdl
-    diagEngine.FuncMap["ELBA_ARM_MEMORY"] = AsicArm_MemoryHdl
+    diagEngine.FuncMap["ELBA_ARM_MEMORY"] = SwitchElba_Arm_MemoryHdl
+    diagEngine.FuncMap["ELBA_RTC"] = SwitchElba_RtcHdl
     diagEngine.FuncMap["FPGA_STRAPPING"] = SwitchFgpa_StrappingHdl
     diagEngine.FuncMap["VRM_FIX"] = SwitchVrm_FixHdl
 

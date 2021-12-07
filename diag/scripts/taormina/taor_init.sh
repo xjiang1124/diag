@@ -25,7 +25,7 @@ export PATH=$PATH:$DIAG_DIR/scripts
 export PATH=$PATH:$DIAG_DIR/scripts/asic
 export PATH=$PATH:$DIAG_DIR/tools
 
-cp /usr/lib/libstdc++.so.6 /fs/nos/home_diag/diag/asic/depend_libs/tool/lib64/libstdc++.so.6
+cp /usr/lib/libstdc++.so.6 /fs/nos/home_diag/diag/asic_all/elba/depend_libs/tool/lib64/libstdc++.so.6
 
 # Elba J2C ID
 elba0_id=$(/home/diag/diag/tools/jtag_cpurd_v2 display | grep -A4 "Dev 0" | grep LocId | awk -F " " '{print $3}')

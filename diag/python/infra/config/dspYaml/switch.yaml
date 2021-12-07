@@ -123,6 +123,20 @@ DSP:
                     ALL: 0x3
                 INFO: Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas
 
+    TEST#ELBA_RTC:
+        INFO: Elba Real Time Clock Test
+        PLATFORM:
+            TOR: ALL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 30
+                INFO: Test timeout setting
+            mask:
+                VALUE:
+                    ALL: 0x3
+                INFO: Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas                
+
     TEST#FPGA_STRAPPING:
         INFO: Check FPGA Resistor Strapping
         PLATFORM:

@@ -22,6 +22,7 @@ const errhelp = "\nswitch:\n" +
         "switch td3 vrmfix\n" +
         "\n" + 
         "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
+        "switch elba rtctest <elba mask 0x1/0x2/0x3>\n" +
         "\n" +
         "switch show power/temp/link\n" +
         "switch voltage margin <+/-percent>\n" +
@@ -128,6 +129,17 @@ func main() {
             }
 
             taormina.ElbaMemoryTest(uint32(mask), uint32(time), 1) 
+            return
+        } else if os.Args[2][0] == 'r' || os.Args[2][0] == 'R' {  //rtctest
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            taormina.ElbaRTCtest(uint32(mask), 1) 
             return
         } else {
             fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
