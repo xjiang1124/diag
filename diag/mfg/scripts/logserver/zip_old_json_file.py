@@ -38,13 +38,14 @@ def main():
         pr['modules'].debug_print("FILE: {}".format(eachjsonfile))
         eachjsondict = pr['modules'].readjsonfile(eachjsonfile)
         jsonfiledata[eachjsonfile] = eachjsondict
-        thisdatabase = getcurrentlydatabase(eachjsondict)
-        if thisdatabase:
-            if not thisdatabase in listofcurrentusingdatabase:
-                listofcurrentusingdatabase.append(thisdatabase)
-            datebasedir = os.path.dirname(thisdatabase)
-            if not datebasedir in listofdatabasefolder:
-                listofdatabasefolder.append(datebasedir)
+        thisdatabaselist = getcurrentlydatabase(eachjsondict)
+        if len(thisdatabaselist):
+            for thisdatabase in thisdatabaselist:
+                if not thisdatabase in listofcurrentusingdatabase:
+                    listofcurrentusingdatabase.append(thisdatabase)
+                datebasedir = os.path.dirname(thisdatabase)
+                if not datebasedir in listofdatabasefolder:
+                    listofdatabasefolder.append(datebasedir)
 
         thisdatabasefolder = getcurrentlydatabasefolder(eachjsondict)
         if thisdatabasefolder:
@@ -73,11 +74,12 @@ def main():
     return None
 
 def getcurrentlydatabase(eachjsondict):
+    listfordatabase = list()
     if 'FILE' in eachjsondict:
-        if 'datebasesjsonfile' in eachjsondict['FILE']:
-            return eachjsondict['FILE']['datebasesjsonfile']
+        for filename in eachjsondict['FILE']:
+            listfordatabase.append(eachjsondict['FILE'][filename])
 
-    return None
+    return listfordatabase
 
 def getcurrentlydatabasefolder(eachjsondict):
     if 'DIR' in eachjsondict:

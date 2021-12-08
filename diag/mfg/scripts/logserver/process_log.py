@@ -214,6 +214,14 @@ def generateMTPreport(pr,DATA,inputconfig,startdate=None):
     for mtp in DATA["MTPCHASSIS"]:
         generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
 
+    try:
+        if "mtpdatabasejsonfile" in inputconfig["FILE"]:
+            mtpdatabase = pr['modules'].readjsonfile(inputconfig["FILE"]["mtpdatabasejsonfile"])
+            mtpdatabase[inputconfig["NAME"]] = DATA["MTPCHASSIS"]
+            pr['modules'].wirtejsonfile(inputconfig["FILE"]["mtpdatabasejsonfile"],mtpdatabase)
+    except:
+        print("mtpdatabasejsonfile issue!")
+
     wb3.save(filename = dest_filename3) 
 
     return None
@@ -312,7 +320,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
 
     snmaclist = getsnmaclist(DATA,inputconfig)
     macsnlist = getmacsnlist(DATA,inputconfig)
-        
+
     if not startdate:
         if len(snmaclist):
             dest_filenameformac = dest_filename.replace('DATA','SNandMAClist')
@@ -321,6 +329,19 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
             if len(macsnlist):
                 generateexeclmacandsnreport2(DATA,wsandc,macsnlist)
             wsandc.save(filename = dest_filenameformac)
+            try:
+                if "snandmacjsonfile" in inputconfig["FILE"]:
+                    snmacdatabase = pr['modules'].readjsonfile(inputconfig["FILE"]["snandmacjsonfile"])
+                    if not "snmaclist" in snmacdatabase:
+                        snmacdatabase["snmaclist"] = dict()
+                    if not "macsnlist" in snmacdatabase:
+                        snmacdatabase["macsnlist"] = dict()
+                    snmacdatabase["snmaclist"][inputconfig["NAME"]] = snmaclist
+                    snmacdatabase["macsnlist"][inputconfig["NAME"]] = macsnlist
+                    pr['modules'].wirtejsonfile(inputconfig["FILE"]["snandmacjsonfile"],snmacdatabase)
+            except:
+                print("snandmacjsonfile issue!")
+
 
     generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
     #pr['modules'].print_anyinformation(chartdata)
