@@ -759,7 +759,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
         if "SNAKE_ELBA" in mtp_para_test_list:
             logfile_list.append(path+"snake_elba.log")
         if "ETH_PRBS" in mtp_para_test_list:
-            logfile_list.append("/data/nic_util/asicutil_elba_prbs_eth.log")
+            logfile_list.append(path+"elba_PRBS_MX.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")

@@ -2043,7 +2043,7 @@ class mtp_ctrl():
         elif test == "SNAKE_ELBA":
             filename = "{:s}_snake_elba.log".format(sn)
         elif test == "ETH_PRBS":
-            filename = "{:s}_asicutil_elba_prbs_eth.log".format(sn)
+            filename = "{:s}_elba_PRBS_MX.log".format(sn)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return err_msg_list
@@ -2206,7 +2206,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
             # retry
             if not self.mtp_nic_mgmt_reinit(slot):
-                #self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
+                self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
                 duration = self.log_slot_test_stop(slot, test, start_ts)
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 return False
@@ -2215,6 +2215,7 @@ class mtp_ctrl():
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
         cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_slot_err(slot, "Command sudo {:s} failed".format(cmd))
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
@@ -2223,6 +2224,7 @@ class mtp_ctrl():
             time.sleep(5)
             cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
             if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_slot_err(slot, "Command {:s} failed".format(cmd))
                 duration = self.log_slot_test_stop(slot, test, start_ts)
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 return False
@@ -2230,7 +2232,7 @@ class mtp_ctrl():
         cmd_buf = self.mtp_get_cmd_buf()
         match = re.findall(r" 0% packet loss", cmd_buf)
         if not match:
-            self.cli_log_slot_err(slot, "Ping failed")
+            self.cli_log_slot_err(slot, "Ping MTP to NIC failed")
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
@@ -5384,7 +5386,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_construct_nic_fru_config(self, fail_nic_list):
+    def mtp_construct_nic_fru_config(self, fail_nic_list, swmtestmode=Swm_Test_Mode.SW_DETECT):
         # construct nic fru config file
         temp_fru_cfg = dict()
         temp_fru_cfg["MTP_ID"] = self._id
