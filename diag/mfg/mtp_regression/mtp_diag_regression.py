@@ -466,14 +466,15 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
             for slot in nic_test_list[:]:
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
 
             mtp_start_ts = mtp_mgmt_ctrl.log_test_start(test)
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
 
             ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
             
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-            duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
+            for slot in nic_test_list[:]:
+                duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
 
             # failed nic display
             for slot in test_fail_list:
