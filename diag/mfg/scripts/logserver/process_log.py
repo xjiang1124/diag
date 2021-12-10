@@ -209,10 +209,10 @@ def generateMTPreport(pr,DATA,inputconfig,startdate=None):
     dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
     print(dest_filename3)
 
-    generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig)
+    generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig,startdate)
 
     for mtp in DATA["MTPCHASSIS"]:
-        generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp)
+        generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp,startdate)
 
     try:
         if "mtpdatabasejsonfile" in inputconfig["FILE"]:
@@ -589,8 +589,9 @@ def workingonLastdata(DATA,inputconfig):
 
             delSNwithnoData(DATA,test,SN,counttesttime,status='FIRST')
 
-    DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
-    DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
+    if "KEEPLASTPASS" in inputconfig:
+        DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
+        DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
 
     return None
 
@@ -1220,8 +1221,12 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                         #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['ERRORDETAIL'], indent = 4))
 
                     if len(temperrormessagelist) > 0:
+                        checkslot = "NIC-{}".format(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['SLOT'])
+                        if "KEY" in inputconfig:
+                            checkslot = "{}-{}".format(inputconfig["KEY"],DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['SLOT'])
                         for eacherrormessage in temperrormessagelist:
-                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['ERRORDETAIL'].append(eacherrormessage)
+                            if checkslot in eacherrormessage:
+                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['ERRORDETAIL'].append(eacherrormessage)
                         #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['ERRORDETAIL'], indent = 4))
 
                         #sys.exit()
@@ -4642,7 +4647,7 @@ def findhowmanycardinthistestbymtp(DATA,mtp,test,timestamp):
 
     return len(mtpdata["NICRESULT"].keys())
 
-def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp):
+def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp,startdate=None):
     print("generateexeclmtpstatusbyeachmtpreport: {}".format(mtp))
     titlename = mtp
     ws2 = wb.create_sheet(title=titlename)
@@ -4656,50 +4661,58 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp):
         wirtedata.append(slot)
     ws2.append(wirtedata)
 
+    timelinelist = list()
     for test in DATA["MTPCHASSIS"][mtp]:
         for datetime in sorted(DATA["MTPCHASSIS"][mtp][test].keys(), reverse=True):
-            wirtedata = list()
-            wirtedataFailure = list()
-            wirtedata.append(test)
-            wirtedata.append(datetime)
-            for slot in inputconfig["MTP_STATUS"]:
+            if not datetime in timelinelist:
+                timelinelist.append(datetime)
 
-                if slot in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"]:
-                    if "FAIL" in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["RESULT"]:
-                        #print(json.dumps(DATA["MTPCHASSIS"][mtp][test][datetime], indent = 4))
-                        testdateandtime = datetime.split("_")
-                        SN = DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["SN"]
-                        if SN in DATA["teststep"][test]["SN"]:
-                            #print(json.dumps(DATA["teststep"][test]["SN"][SN][mtp][testdateandtime[0]][testdateandtime[1]], indent = 4))
-                            firstFailurestep = None 
+    timelinelist.sort(reverse=True)
+    for datetime in timelinelist:
+        for test in DATA["MTPCHASSIS"][mtp]:
+            if datetime in DATA["MTPCHASSIS"][mtp][test]:
+                wirtedata = list()
+                wirtedataFailure = list()
+                wirtedata.append(test)
+                wirtedata.append(datetime)
+                for slot in inputconfig["MTP_STATUS"]:
+
+                    if slot in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"]:
+                        if "FAIL" in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["RESULT"]:
+                            #print(json.dumps(DATA["MTPCHASSIS"][mtp][test][datetime], indent = 4))
+                            testdateandtime = datetime.split("_")
+                            SN = DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["SN"]
                             if SN in DATA["teststep"][test]["SN"]:
-                                if mtp in DATA["teststep"][test]["SN"][SN]:
-                                    if testdateandtime[0] in DATA["teststep"][test]["SN"][SN][mtp]:
-                                        if testdateandtime[1] in DATA["teststep"][test]["SN"][SN][mtp][testdateandtime[0]]:
-                                            for teststepdata in DATA["teststep"][test]["SN"][SN][mtp][testdateandtime[0]][testdateandtime[1]]["TESTSTEPLIST"]:
-                                                for teststep in teststepdata:
-                                                    if "FAIL" in teststepdata[teststep]:
-                                                        firstFailurestep = "{} <{}>".format(teststep,teststepdata[teststep])
-                                                if firstFailurestep:
-                                                    break
-                            #print(firstFailurestep)
-                            if not firstFailurestep:
-                                firstFailurestep = "CANNOT FIND FAILURE STEP"
-                            wirtedataFailure.append(firstFailurestep)
-                            #sys.exit()
+                                #print(json.dumps(DATA["teststep"][test]["SN"][SN][mtp][testdateandtime[0]][testdateandtime[1]], indent = 4))
+                                firstFailurestep = None 
+                                if SN in DATA["teststep"][test]["SN"]:
+                                    if mtp in DATA["teststep"][test]["SN"][SN]:
+                                        if testdateandtime[0] in DATA["teststep"][test]["SN"][SN][mtp]:
+                                            if testdateandtime[1] in DATA["teststep"][test]["SN"][SN][mtp][testdateandtime[0]]:
+                                                for teststepdata in DATA["teststep"][test]["SN"][SN][mtp][testdateandtime[0]][testdateandtime[1]]["TESTSTEPLIST"]:
+                                                    for teststep in teststepdata:
+                                                        if "FAIL" in teststepdata[teststep]:
+                                                            firstFailurestep = "{} <{}>".format(teststep,teststepdata[teststep])
+                                                    if firstFailurestep:
+                                                        break
+                                #print(firstFailurestep)
+                                if not firstFailurestep:
+                                    firstFailurestep = "CANNOT FIND FAILURE STEP"
+                                wirtedataFailure.append(firstFailurestep)
+                                #sys.exit()
+                            else:
+                                wirtedataFailure.append("CANNOT FIND SN: {}".format(SN))
                         else:
-                            wirtedataFailure.append("CANNOT FIND SN: {}".format(SN))
+                            wirtedataFailure.append("PASS")
+                        wirtedata.append(DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["RESULT"])
                     else:
-                        wirtedataFailure.append("PASS")
-                    wirtedata.append(DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["RESULT"])
-                else:
-                    wirtedata.append("None")
-                    wirtedataFailure.append("None")
-            wirtedata.append("|||")
-            for eachdata in wirtedataFailure:
-                wirtedata.append(eachdata)
+                        wirtedata.append("None")
+                        wirtedataFailure.append("None")
+                wirtedata.append("|||")
+                for eachdata in wirtedataFailure:
+                    wirtedata.append(eachdata)
 
-            ws2.append(wirtedata)
+                ws2.append(wirtedata)
 
     highlightinred(ws2, 'FAIL')
     highlightinred(ws2, 'FAILED')
@@ -4708,7 +4721,7 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp):
 
     return True
 
-def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig):
+def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig,startdate=None):
     ws1 = wb.active
     ws1.title = "SUMMARY"
 

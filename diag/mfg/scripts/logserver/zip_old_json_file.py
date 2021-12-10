@@ -55,6 +55,7 @@ def main():
     pr['modules'].print_anyinformation(jsonfiledata)
     pr['modules'].print_anyinformation(listofcurrentusingdatabase)
     pr['modules'].print_anyinformation(listofdatabasefolder)
+    #sys.exit()
 
     for eachjsonfolder in listofdatabasefolder:
         print(eachjsonfolder)

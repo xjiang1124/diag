@@ -49,12 +49,17 @@
 	"TESTLIST" :[
 					"DL",
 					"P2C",
+					"4C-L",
+					"4C-H",
 					"SWI"
 					],
 	"TESTFOLDER":[
 					"DL",
 					"P2C",
-					"SWI"
+					"4C/4C-L",
+					"4C/4C-H",
+					"SWI",
+					"FST"
 				]
 	
 }
