@@ -2605,7 +2605,7 @@ class mtp_ctrl():
             
     #Check if the loaded image correct for the cards p/n.  i.e. cloud card gets a cloud image, 
     #and etnerprise card get an enterprise image
-    def check_swi_software_image(self, slot, software_pn):
+    def check_swi_software_image(self, slot, software_pn, pn_check=True):
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         if not naples_pn:
             self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
@@ -2691,7 +2691,7 @@ class mtp_ctrl():
             if software_pn != "90-0009-0004":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-            if not naples_pn.endswith("C1"):
+            if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
                 self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PN_MINUS_REV_MASK]+" C1", naples_pn))
                 return False

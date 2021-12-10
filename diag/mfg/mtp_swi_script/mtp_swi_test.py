@@ -491,6 +491,8 @@ def main():
                 if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type):
                     mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
 
+        check_naples_pn = "SCAN_VERIFY" not in args.skip_test
+
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(len(nic_prsnt_list)):
             if not nic_prsnt_list[slot]:
@@ -544,7 +546,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
                 if test == "SW_PN_CHECK":
-                    ret = mtp_mgmt_ctrl.check_swi_software_image(slot, sw_pn)
+                    ret = mtp_mgmt_ctrl.check_swi_software_image(slot, sw_pn, check_naples_pn)
                 # nic power status check
                 elif test == "NIC_POWER":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
