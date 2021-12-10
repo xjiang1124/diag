@@ -92,6 +92,21 @@ def single_nic_fru_program(mtp_mgmt_ctrl, fru_cfg, slot, fail_nic_list, pass_nic
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
+def ping_precheck(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, slotA, slotB):
+    # fail other slot if either in pair is failed
+    if slotA in fail_nic_list or slotB in fail_nic_list:
+        if slotA in fail_nic_list:
+            keyA = libmfg_utils.nic_key(slotA)
+            keyB = libmfg_utils.nic_key(slotB)
+            mtp_mgmt_ctrl.cli_log_slot_err(slotB, "Skipping {:s} to {:s} ping test because {:s} failed".format(keyA, keyB, keyA))
+        if slotB in fail_nic_list:
+            keyA = libmfg_utils.nic_key(slotA)
+            keyB = libmfg_utils.nic_key(slotB)
+            mtp_mgmt_ctrl.cli_log_slot_err(slotA, "Skipping {:s} to {:s} ping test because {:s} failed".format(keyA, keyB, keyB))
+        return False
+    else:
+        return True
+
 def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
     import itertools
 
@@ -117,7 +132,7 @@ def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
         nic_type_A = mtp_mgmt_ctrl.mtp_get_nic_type(slotA)
         nic_type_B = mtp_mgmt_ctrl.mtp_get_nic_type(slotB)
 
-        test_list = ["PING_TEST"]
+        test_list = ["PING_PRE", "PING_TEST"]
         for skipped_test in skip_testlist:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)
@@ -127,20 +142,10 @@ def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
             mtp_mgmt_ctrl.cli_log_slot_inf(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_B, dsp, test))
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slotA, test)
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slotB, test)
-            if test == "PING_TEST":
-                # fail other slot if either in pair is failed
-                if slotA in fail_nic_list or slotB in fail_nic_list:
-                    if slotA in fail_nic_list:
-                        keyA = libmfg_utils.nic_key(slotA)
-                        keyB = libmfg_utils.nic_key(slotB)
-                        mtp_mgmt_ctrl.cli_log_slot_err(slotB, "Skipping {:s} ping test because {:s} failed".format(keyB, keyA))
-                    if slotB in fail_nic_list:
-                        keyA = libmfg_utils.nic_key(slotA)
-                        keyB = libmfg_utils.nic_key(slotB)
-                        mtp_mgmt_ctrl.cli_log_slot_err(slotA, "Skipping {:s} ping test because {:s} failed".format(keyA, keyB))
-                    ret = False
-                else:
-                    ret = mtp_mgmt_ctrl.mtp_nic_ping_test(slotA, slotB)
+            if test == "PING_PRE":
+                ret = ping_precheck(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, slotA, slotB)
+            elif test == "PING_TEST":
+                ret = mtp_mgmt_ctrl.mtp_nic_ping_test(slotA, slotB)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                 continue
@@ -1041,43 +1046,6 @@ def main():
         # power cycle NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic()
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-
-        # INIt the sw mgmt port
-        nic_ping_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
-
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type in FPGA_TYPE_LIST:
-                continue
-
-            if nic_type == NIC_Type.NAPLES100IBM:
-                continue
-
-            if not mtp_mgmt_ctrl.mtp_nic_mgmt_reinit(slot):
-                pass_nic_list.remove(slot)
-                fail_nic_list.append(slot)
-
-            if slot in pass_nic_list:
-                nic_ping_list.append(slot)
-
-        if nic_ping_list:
-            if not mtp_mgmt_ctrl.mtp_nic_mgmt_mac_refresh():
-                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP mac address refresh failed, test abort...")
-                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                logfile_close(open_file_track_list)
-                return
-
-            if not mtp_mgmt_ctrl.mtp_mgmt_nic_mac_validate():
-                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP detect duplicate mac address, test abort...")
-                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                logfile_close(open_file_track_list)
-                return
 
         # Verify the NIC Software boot
         for slot in range(len(nic_prsnt_list)):
