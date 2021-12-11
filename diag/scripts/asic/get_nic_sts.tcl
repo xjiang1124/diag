@@ -51,9 +51,6 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
 }
 
 diag_open_j2c_if $port $slot
-rst_arm0_set 0
-ssi_cpld_write 0x20 0x0
-elb_print_voltage_temp
 
 if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || $MTP_TYPE == "MTP_TOR"} {
     puts "Getting ECC status"
@@ -63,6 +60,10 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || $MTP_TYPE ==
         puts "Reg $ecc_reg; value: $val"
     }
 }
+
+rst_arm0_set 0
+ssi_cpld_write 0x20 0x0
+elb_print_voltage_temp
 
 puts "Getting ASIC status - Done"
 
