@@ -57,7 +57,6 @@ func DispStatus(devName string) (err int) {
     } else {
         err = errType.INVALID_PARAM
     }
-    err = max6657.DispStatus(devName)
     return
 }
 
