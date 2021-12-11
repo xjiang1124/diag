@@ -1451,8 +1451,88 @@ def main():
 
         #get MTP MAC AA:BB:CC:DD:EE:FF
         if rs:
-            mac = mtp_mgmt_ctrl.mtp_get_mac()
-            if mac.startswith("[FAIL]:"):
+            # mac = mtp_mgmt_ctrl.mtp_get_mac()
+            # if mac.startswith("[FAIL]:"):
+            #     mtp_mgmt_ctrl.mtp_diag_fail_report("Failed to retrieve MTP MAC Address")
+            #     libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            #     mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
+            #     fail_step = "Unable to get MTP MAC Address"
+            #     fail_desc = "Unable to get MTP MAC Address"
+            #     for slot in range(10):
+            #         fail_nic_list.append(slot)
+            #         pass_nic_list.remove(slot) 
+            #     rs = False
+            # else:
+            #     mtp_mgmt_ctrl.cli_log_inf("Retrieve MTP Mac Address passed", level=0)
+
+
+            mac_dict = {
+                        "FLM21330006" : "BBBBBBBBBBAF",
+                        "FLM21330004" : "BBBBBBBBBBAE",
+                        "FLM21330005" : "BBBBBBBBBBA8",
+                        "FLM2133000B" : "BBBBBBBBBBA0",
+                        "FLM21330001" : "BBBBBBBBBBA1",
+                        "FLM21330013" : "BBBBBBBBBBA2",
+                        "FLM21330002" : "BBBBBBBBBBA7",
+                        "FLM2133000F" : "BBBBBBBBBBAD",
+                        "FLM21330008" : "BBBBBBBBBBAC",
+                        "FLM2133000D" : "BBBBBBBBBBA4",
+                        "FLM21330009" : "BBBBBBBBBBA5",
+                        "FLM21330003" : "BBBBBBBBBBA6",
+                        "FLM21330011" : "BBBBBBBBBBA9",
+                        "FLM21330012" : "BBBBBBBBBBAA",
+                        "FLM2133000E" : "BBBBBBBBBBAF",
+                        "FLM2133000C" : "BBBBBBBBBBAB",
+                        "FLM21400023" : "BBBBBBBBBBB0",
+                        "FLM2140001F" : "BBBBBBBBBBB1",
+                        "FLM21400018" : "BBBBBBBBBBB2",
+                        "FLM2140002D" : "BBBBBBBBBBB3",
+                        "FLM2140002A" : "BBBBBBBBBBB4",
+                        "FLM21400008" : "BBBBBBBBBBB5",
+                        "FLM2140000D" : "BBBBBBBBBBB6",
+                        "FLM21400004" : "BBBBBBBBBBB7",
+                        "FLM2140001C" : "BBBBBBBBBBB8",
+                        "FLM2140000E" : "BBBBBBBBBBB9",
+                        "FLM2140000C" : "BBBBBBBBBBBA",
+                        "FLM21400002" : "BBBBBBBBBBBB",
+                        "FLM21400007" : "BBBBBBBBBBBC",
+                        "FLM21400005" : "BBBBBBBBBBBD",
+                        "FLM21400024" : "BBBBBBBBBBBE",
+                        "FLM21400010" : "BBBBBBBBBBBF",
+                        "FLM21400021" : "BBBBBBBBBBC0",
+                        "FLM21400015" : "BBBBBBBBBBC1",
+                        "FLM21400006" : "BBBBBBBBBBC2",
+                        "FLM21400012" : "BBBBBBBBBBC3",
+                        "FLM21400001" : "BBBBBBBBBBC4",
+                        "FLM2140002C" : "BBBBBBBBBBC5",
+                        "FLM2140002F" : "BBBBBBBBBBC6",
+                        "FLM2140001E" : "BBBBBBBBBBC7",
+                        "FLM2140000A" : "BBBBBBBBBBC8",
+                        "FLM2140000B" : "BBBBBBBBBBC9",
+                        "FLM21400025" : "BBBBBBBBBBCA",
+                        "FLM21400028" : "BBBBBBBBBBCB",
+                        "FLM21400029" : "BBBBBBBBBBCC",
+                        "FLM2140001A" : "BBBBBBBBBBCD",
+                        "FLM21400009" : "BBBBBBBBBBCE",
+                        "FLM21400003" : "BBBBBBBBBBCF",
+                        "FLM2140001D" : "BBBBBBBBBBD0",
+                        "FLM21400032" : "BBBBBBBBBBD1",
+                        "FLM21400027" : "BBBBBBBBBBD2",
+                        "FLM21400031" : "BBBBBBBBBBD3",
+                        "FLM21400026" : "BBBBBBBBBBD4",
+                        "FLM21400011" : "BBBBBBBBBBD5",
+                        "FLM2140002B" : "BBBBBBBBBBD6",
+                        "FLM21400017" : "BBBBBBBBBBD7",
+                        "FLM21400016" : "BBBBBBBBBBD8",
+                        "FLM21400014" : "BBBBBBBBBBD9",
+                        "FLM2140000F" : "BBBBBBBBBBDA",
+                        "FLM21400020" : "BBBBBBBBBBDB",
+                        "FLM2140002E" : "BBBBBBBBBBDC",
+                        "FLM2140001B" : "BBBBBBBBBBDD",
+                        "FLM21400019" : "BBBBBBBBBBDE",
+                        "FLM21400013" : "BBBBBBBBBBDF"
+                        }
+            if mtp_sn not in mac_dict:
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Failed to retrieve MTP MAC Address")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
@@ -1463,7 +1543,9 @@ def main():
                     pass_nic_list.remove(slot) 
                 rs = False
             else:
+                mac = mac_dict[mtp_sn].strip()
                 mtp_mgmt_ctrl.cli_log_inf("Retrieve MTP Mac Address passed", level=0)
+
 
         mac = mac.upper().replace(':','')
 
