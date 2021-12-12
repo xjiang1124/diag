@@ -605,7 +605,7 @@ class nic_con:
                 time.sleep(0.5)
                 print 'oob_mnic0 enabled'
                 if dis_net_port == True:
-                    self.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
+                    self.uart_session_cmd(session, "/data/nic_util/xo3cpld -smiwr 0 0x3 0x1940")
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig")
             else:
