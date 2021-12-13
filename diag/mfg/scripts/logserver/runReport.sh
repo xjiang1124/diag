@@ -60,6 +60,9 @@ do
 done
 
 cd $_mydir
+python3 $_mydir/all_mtp_report.py
+
+cd $_mydir
 python3 $_mydir/zip_old_json_file.py
 
 cd $_mydir

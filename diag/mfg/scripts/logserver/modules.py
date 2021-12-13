@@ -370,6 +370,66 @@ class modules(object):
 		ws.auto_filter.ref = ws.dimensions
 		return None
 
+	def fixcolumnssize3(self,ws,enablefilter=True):
+	    dims = {}
+	    for row in ws.rows:
+	        for cell in row:
+	            if cell.value:
+	                dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))  
+	    for col, value in dims.items():
+	        if value > 30:
+	            value = 30
+	        ws.column_dimensions[col].width = value + 2
+	    if enablefilter:
+	        ws.auto_filter.ref = ws.dimensions
+	def highlightinlightredrow(self,ws,keyword):
+	    from openpyxl.styles import Color, PatternFill, Font, Border
+	    maxRow = ws.max_row
+	    maxCol = ws.max_column
+	    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+	    for rowNum in range(1, maxRow + 1):
+	        fillcolor = 0
+	        for colNum in range(1, maxCol + 1):
+	            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+	            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+	                fillcolor = 1
+	            if fillcolor:
+	                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFCCCB', end_color='FFCCCB', fill_type = 'solid')   
+
+	def freezePosition(self,ws,keyword):
+	    ws.freeze_panes = keyword
+
+	def converttoPERCENTAGEnumber(self,ws):
+	    from openpyxl.styles import Color, PatternFill, Font, Border
+	    maxRow = ws.max_row
+	    maxCol = ws.max_column
+	    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+	    for rowNum in range(1, maxRow + 1):
+	        for colNum in range(1, maxCol + 1):
+	            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+	            if '%' in checkvalue:
+	                checkvalue = float(checkvalue[:-1])/100
+	                ws.cell(row=rowNum, column=colNum).value = checkvalue
+	                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+	                if checkvalue > 0.95:
+	                    #Green
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+	                elif checkvalue < 0.1:
+	                    #Red
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
+	                elif checkvalue > 0.75:
+	                    #Yellow
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFEE08', end_color='FFEE08', fill_type = 'solid')
+	                elif checkvalue < 0.25:
+	                    #Pink
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFC0CB', end_color='FFC0CB', fill_type = 'solid')
+	                elif checkvalue > 0.50:
+	                    #Arylide Yellow
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='E9D66B', end_color='E9D66B', fill_type = 'solid')
+	                else:
+	                    #Orange
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+
 	def highlightinyellownumber(self,ws):
 		from openpyxl.styles import Color, PatternFill, Font, Border
 		maxRow = ws.max_row
@@ -411,6 +471,75 @@ class modules(object):
 					MACvsOLDSNvsNEWSN[MAC]["NewSN"] = NEWSN
 
 		return None
+
+	def calculePass_rate(self,totalnumber,passnumber):
+
+	    calcule_yeild = 1
+	    if totalnumber:
+	        calcule_yeild = passnumber / totalnumber
+
+	    yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
+
+	    return yeilddisplay
+	    
+	def highlightingreen(self,ws,keyword):
+		from openpyxl.styles import Color, PatternFill, Font, Border
+		maxRow = ws.max_row
+		maxCol = ws.max_column
+		#print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+		for rowNum in range(1, maxRow + 1):
+			fillcolor = 0
+			for colNum in range(1, maxCol + 1):
+				#print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+				if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+					fillcolor = 1
+					ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+	                
+	def highlightinred(self,ws,keyword):
+		from openpyxl.styles import Color, PatternFill, Font, Border
+		maxRow = ws.max_row
+		maxCol = ws.max_column
+		#print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+		for rowNum in range(1, maxRow + 1):
+			fillcolor = 0
+			for colNum in range(1, maxCol + 1):
+				#print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+				if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+					ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')                
+
+	def highlightinlightredrow(self,ws,keyword):
+	    from openpyxl.styles import Color, PatternFill, Font, Border
+	    maxRow = ws.max_row
+	    maxCol = ws.max_column
+	    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+	    for rowNum in range(1, maxRow + 1):
+	        fillcolor = 0
+	        for colNum in range(1, maxCol + 1):
+	            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+	            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+	                fillcolor = 1
+	            if fillcolor:
+	                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFCCCB', end_color='FFCCCB', fill_type = 'solid')   
+
+	def getbeforedayinformation(self,checkday=30):
+	    from datetime import date, timedelta
+
+	    current_date = date.today().isoformat()   
+	    days_before = (date.today()-timedelta(days=checkday)).isoformat()
+	    days_after = (date.today()+timedelta(days=checkday)).isoformat()  
+
+	    # print("\nCurrent Date: ",current_date)
+	    # print("30 days before current date: ",days_before)
+	    # print("30 days after current date : ",days_after)
+	    current_date = str(current_date)
+	    days_before = str(days_before)
+	    days_after = str(days_after)
+
+	    # print("\nCurrent Date: ",current_date)
+	    # print("30 days before current date: ",days_before)
+	    # print("30 days after current date : ",days_after)
+
+	    return days_before
 
 	def readSNxlsxfile(self,xlsxfile,SNvsPCBA):
 		from openpyxl import load_workbook
