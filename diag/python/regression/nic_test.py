@@ -301,6 +301,9 @@ class nic_test:
                     #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
                     #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
                     self.nic_con.uart_session_cmd(session, "halctl show port status")
+                    if dis_net_port == True:
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smird 0 0x3")
                 except:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
