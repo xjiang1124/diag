@@ -52,7 +52,8 @@
 					"P2C",
 					"4C-L",
 					"4C-H",
-					"SWI"
+					"SWI",
+					"FST"
 					],
 	"TESTFOLDER":[
 					"DL",

@@ -171,6 +171,7 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
     if "MTP_STATUS" in inputconfig:
         generateMTPreport(pr,DATA,inputconfig,startdate=None)
+        generateMTPreport(pr,DATA,inputconfig,startdate=getbeforedayinformation(checkday=31))
 
     if "DIE_ID" in inputconfig:
         wb2 = Workbook()
@@ -207,6 +208,8 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 def generateMTPreport(pr,DATA,inputconfig,startdate=None):
     wb3 = Workbook()
     dest_filename3 = "{}MTP_STATUS_{}_DATA.xlsx".format(inputconfig['DIR']["reportpath"],date_time)
+    if startdate:
+        dest_filename3 = "{}MTP_STATUS_{}_DATA_StartWith_{}.xlsx".format(inputconfig['DIR']["reportpath"],date_time,startdate)
     print(dest_filename3)
 
     generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig,startdate)
@@ -4664,6 +4667,10 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp,startdate=None
     timelinelist = list()
     for test in DATA["MTPCHASSIS"][mtp]:
         for datetime in sorted(DATA["MTPCHASSIS"][mtp][test].keys(), reverse=True):
+            if startdate:
+                datelist = datetime.split("_")
+                if datelist[0] < startdate:
+                    continue
             if not datetime in timelinelist:
                 timelinelist.append(datetime)
 
@@ -4743,6 +4750,10 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig,startdate=None):
             for datetime in DATA["MTPCHASSIS"][MTP][test]:
                 #print(datetime)
                 #print(json.dumps(DATA["MTPCHASSIS"][MTP][test][datetime], indent = 4))
+                if startdate:
+                    datelist = datetime.split("_")
+                    if datelist[0] < startdate:
+                        continue
                 for eachslot in DATA["MTPCHASSIS"][MTP][test][datetime]["NICRESULT"]:
                     if "PASS" in DATA["MTPCHASSIS"][MTP][test][datetime]["NICRESULT"][eachslot]["RESULT"]:
                         mtpchassisusecountbyslot[MTP][eachslot]["TOTAL"] += 1
