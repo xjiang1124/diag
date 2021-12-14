@@ -84,7 +84,7 @@ var HpeTblLACONAext = []entry {
     entry{"Record Checksum",                        INT8,        227,        1,    []byte{0x00}},
     entry{"Header Checksum",                        INT8,        228,        1,    []byte{0x00}},
     entry{"Manufacture ID",                         INT8,        229,        3,    []byte{0x00, 0x00, 0x00}},
-    entry{"HPE Version Number",                     INT8,        232,        1,    []byte{0x01}},
+    entry{"UUID String Length",                     INT8,        232,        1,    []byte{0x20}},
     entry{"MAC Address Base",                    INT8,        233,       32,    []byte{
         0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00, 0x20, 0x20, 0x20, 0x20, 
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 
@@ -180,7 +180,7 @@ var HpeTblLACONA32Gext = []entry {
     entry{"Record Checksum",                        INT8,        227,        1,    []byte{0x00}},
     entry{"Header Checksum",                        INT8,        228,        1,    []byte{0x00}},
     entry{"Manufacture ID",                         INT8,        229,        3,    []byte{0x00, 0x00, 0x00}},
-    entry{"HPE Version Number",                     INT8,        232,        1,    []byte{0x01}},
+    entry{"UUID String Length",                     INT8,        232,        1,    []byte{0x20}},
     entry{"MAC Address Base",                    INT8,        233,       32,    []byte{
         0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00, 0x20, 0x20, 0x20, 0x20, 
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 
