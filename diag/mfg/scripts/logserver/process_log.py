@@ -120,6 +120,8 @@ def main():
     if startdate:
         createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
+    pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
+    
     difftime = datetime.now()-start
     print('Done Time: ', difftime)       
     print("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
@@ -4683,6 +4685,8 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp,startdate=None
                 wirtedata.append(test)
                 wirtedata.append(datetime)
                 for slot in inputconfig["MTP_STATUS"]:
+                    if not "FAILURESTEP" in DATA["MTPCHASSIS"][mtp][test][datetime]:
+                        DATA["MTPCHASSIS"][mtp][test][datetime]["FAILURESTEP"] = dict()
 
                     if slot in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"]:
                         if "FAIL" in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["RESULT"]:
@@ -4706,15 +4710,19 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp,startdate=None
                                 if not firstFailurestep:
                                     firstFailurestep = "CANNOT FIND FAILURE STEP"
                                 wirtedataFailure.append(firstFailurestep)
+                                DATA["MTPCHASSIS"][mtp][test][datetime]["FAILURESTEP"][slot] = firstFailurestep
                                 #sys.exit()
                             else:
                                 wirtedataFailure.append("CANNOT FIND SN: {}".format(SN))
+                                DATA["MTPCHASSIS"][mtp][test][datetime]["FAILURESTEP"][slot] = "CANNOT FIND SN: {}".format(SN)
                         else:
                             wirtedataFailure.append("PASS")
+                            DATA["MTPCHASSIS"][mtp][test][datetime]["FAILURESTEP"][slot] = "PASS"
                         wirtedata.append(DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["RESULT"])
                     else:
                         wirtedata.append("None")
                         wirtedataFailure.append("None")
+                        DATA["MTPCHASSIS"][mtp][test][datetime]["FAILURESTEP"][slot] = "None"
                 wirtedata.append("|||")
                 for eachdata in wirtedataFailure:
                     wirtedata.append(eachdata)
