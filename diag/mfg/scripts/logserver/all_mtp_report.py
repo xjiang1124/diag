@@ -95,9 +95,9 @@ def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb
     wirtedata.append("DATE_TIME")
     for slot in MTPslot:
         wirtedata.append(slot)
-    # wirtedata.append("FAILURE_TYPE")
-    # for slot in inputconfig["MTP_STATUS"]:
-    #     wirtedata.append(slot)
+    wirtedata.append("FAILURE_TYPE")
+    for slot in MTPslot:
+        wirtedata.append(slot)
     ws2.append(wirtedata)
 
     for datetime in mtpchassisusecountbyslot[mtp]["datetimelist"]:
@@ -116,6 +116,17 @@ def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb
                             else:
                                 wirtedata.append("None")
 
+                        wirtedata.append("||||||||||")
+                        for slot in MTPslot:
+
+                            if not "FAILURESTEP" in DATA[family][mtp][test][datetime]:
+                                wirtedata.append("No Data")
+                                continue
+                                
+                            if slot in DATA[family][mtp][test][datetime]["FAILURESTEP"]:
+                                wirtedata.append(DATA[family][mtp][test][datetime]["FAILURESTEP"][slot])
+                            else:
+                                wirtedata.append("None")
                         ws2.append(wirtedata)
 
     pr['modules'].highlightinred(ws2, 'FAIL')
