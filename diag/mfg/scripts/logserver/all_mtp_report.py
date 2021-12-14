@@ -153,12 +153,6 @@ def generateexeclallmtpstatussummaryreport(pr,DATA,wb,startdate=None):
                     mtpchassisusecountbyslot[MTP][slot]["FAIL"] = 0
             for test in DATA[family][MTP]:
                 #print(test)
-                if not test in mtpchassisusecountbyslot[MTP]["TEST"]:
-                    mtpchassisusecountbyslot[MTP]["TEST"].append(test)
-                    mtpchassisusecountbyslot[MTP]["TEST"].sort()
-                if not family in mtpchassisusecountbyslot[MTP]["FAMILY"]:
-                    mtpchassisusecountbyslot[MTP]["FAMILY"].append(family)
-                    mtpchassisusecountbyslot[MTP]["FAMILY"].sort()
                 for datetime in DATA[family][MTP][test]:
                     #print(datetime)
                     #print(json.dumps(DATA["MTPCHASSIS"][MTP][test][datetime], indent = 4))
@@ -166,6 +160,12 @@ def generateexeclallmtpstatussummaryreport(pr,DATA,wb,startdate=None):
                         datelist = datetime.split("_")
                         if datelist[0] < startdate:
                             continue
+                    if not test in mtpchassisusecountbyslot[MTP]["TEST"]:
+                        mtpchassisusecountbyslot[MTP]["TEST"].append(test)
+                        mtpchassisusecountbyslot[MTP]["TEST"].sort()
+                    if not family in mtpchassisusecountbyslot[MTP]["FAMILY"]:
+                        mtpchassisusecountbyslot[MTP]["FAMILY"].append(family)
+                        mtpchassisusecountbyslot[MTP]["FAMILY"].sort()
                     if not datetime in mtpchassisusecountbyslot[MTP]["datetimelist"]:
                         mtpchassisusecountbyslot[MTP]["datetimelist"].append(datetime)
                         mtpchassisusecountbyslot[MTP]["datetimelist"].sort(reverse=True)
