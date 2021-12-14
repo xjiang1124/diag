@@ -199,6 +199,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
+                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                 if card_type in ELBA_NIC_TYPE_LIST:

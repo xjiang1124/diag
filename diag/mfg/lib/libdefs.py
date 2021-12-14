@@ -316,6 +316,7 @@ class MFG_DIAG_CMDS:
     MTP_ORTANO_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=512"
     MTP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp"
     MTP_FRU_DISP_SN_FMT = "eeutil -uut=UUT_{:d} -disp -field=sn"
+    MTP_FRU_DISP_PN_FMT = "eeutil -uut=UUT_{:d} -disp -field=pn"
     MTP_HP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -hpe"
     MTP_HP_OCP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeOcp"
     MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"

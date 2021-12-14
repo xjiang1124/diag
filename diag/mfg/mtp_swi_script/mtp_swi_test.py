@@ -123,6 +123,8 @@ def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
             continue
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
             continue
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in ELBA_NIC_TYPE_LIST:
+            continue
         if slot in fail_nic_list:
             continue
         ping_test_slots.append(slot)

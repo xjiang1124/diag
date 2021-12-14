@@ -3107,6 +3107,8 @@ class mtp_ctrl():
 
         try:
             expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
+            if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
+                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw timestamp for {:s}".format(nic_type))
             return False
@@ -3418,6 +3420,11 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot]._sn:
             self._nic_ctrl_list[slot].nic_sn_init()
         self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
+
+    def mtp_nic_pn_init(self, slot):
+        if not self._nic_ctrl_list[slot]._pn:
+            self._nic_ctrl_list[slot].nic_pn_init()
+        self.mtp_set_nic_pn(slot, self._nic_ctrl_list[slot]._pn)
 
     def mtp_nic_cpld_init(self, slot, smb=False):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
@@ -4336,6 +4343,26 @@ class mtp_ctrl():
             return False
         oracle_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_ORC_PN_FMT, slot_pn)
         if oracle_pn:
+            return True
+        else:
+            return False
+
+    def mtp_is_nic_ocp_dell(self, slot):
+        """
+         Differentiate OCP by PN
+         - 68-0010: Dell version -> return True
+         - P37689-001: HPE version -> return False
+         - any other -> return False with err msg
+        """
+        if self._nic_type_list[slot] != NIC_Type.NAPLES25OCP:
+            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for OCP")
+            return False
+        slot_pn = self.mtp_get_nic_pn(slot)
+        if not slot_pn:
+            self.cli_log_slot_err_lock(slot, "Unknown PN for OCP: ".format(slot_pn))
+            return False
+        nic_pn = re.match(PART_NUMBERS_MATCH.N25_OCP_DEL_PN_FMT, slot_pn)
+        if nic_pn:
             return True
         else:
             return False

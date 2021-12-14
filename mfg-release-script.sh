@@ -18,8 +18,13 @@ chmod 777 $mfg_script_dir/release/
 sync
 
 ## COPY DIAG IMAGES
-cp build/images/image_amd64_${asic_type}.tar $mfg_script_dir/release/image_amd64_${asic_type}_${release_name}.tar
-cp build/images/image_arm64_${asic_type}.tar $mfg_script_dir/release/image_arm64_${asic_type}_${release_name}.tar
+if [[ -z ${alternate_diag_image} ]]; then
+    cp build/images/image_amd64_${asic_type}.tar $mfg_script_dir/release/image_amd64_${asic_type}_${release_name}.tar
+    cp build/images/image_arm64_${asic_type}.tar $mfg_script_dir/release/image_arm64_${asic_type}_${release_name}.tar
+else
+    cp $(ls ${alternate_diag_image}/image_amd64_${asic_type}*.tar) $mfg_script_dir/release/image_amd64_${asic_type}_${release_name}.tar
+    cp $(ls ${alternate_diag_image}/image_arm64_${asic_type}*.tar) $mfg_script_dir/release/image_arm64_${asic_type}_${release_name}.tar
+fi
 
 sed -i "s/MTP_ARM64_IMAGE = \".*\.tar\"/MTP_ARM64_IMAGE = \"image_arm64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
 sed -i "s/MTP_AMD64_IMAGE = \".*\.tar\"/MTP_AMD64_IMAGE = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
@@ -55,3 +60,4 @@ done
 
 sync
 
+echo "Release available at: ${jenkins_dir}/${release_name}"

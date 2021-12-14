@@ -2022,6 +2022,11 @@ class nic_ctrl():
             self._sn = match.group(1)
             return True
         # else:
+        match = re.search(ALOM_SN_FMT, fru_buf)
+        if match:
+            self._sn = match.group(1)
+            return True
+        # else:
         cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Unable to read SMB FRU")
@@ -2036,6 +2041,52 @@ class nic_ctrl():
             return False
 
         self.nic_set_err_msg("Unknown SN in: {:s}".format(fru_buf))
+        return False
+
+    def nic_pn_init(self):
+        nic_type = self._nic_type
+
+        cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_PN_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Unable to read SMB FRU")
+            return False
+
+        fru_buf = self.nic_get_cmd_buf()
+
+        match = re.search(NAPLES_DISP_PN_FMT, fru_buf)
+        if match:
+            self._pn = match.group(1)
+            return True
+        # else:
+        match = re.search(PEN_DISP_ASSEMBLY_FMT, fru_buf)
+        if match:
+            self._pn = match.group(1)
+            return True
+        # else:
+        match = re.search(DELL_PPID_PN_FMT, fru_buf)
+        if match:
+            self._pn = match.group(1)
+            return True
+        # else:
+        match = re.search(HP_SWM_DISP_PN_FMT, fru_buf)
+        if match:
+            self._pn = match.group(1)
+            return True
+        # else:
+        cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Unable to read SMB FRU")
+            return False
+        fru_buf = self.nic_get_cmd_buf()
+        match = re.search(HP_DISP_PN_FMT, fru_buf)
+        if match:
+            self._pn = match.group(1)
+            return True
+        else:
+            self.nic_set_err_msg("Part number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
+            return False
+
+        self.nic_set_err_msg("Unknown PN in: {:s}".format(fru_buf))
         return False
 
 

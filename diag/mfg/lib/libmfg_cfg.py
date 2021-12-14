@@ -115,8 +115,8 @@ class NIC_IMAGES:
     # sec_cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV8B_03102021.bin"
     # sec_cpld_ver["NAPLES25OCP"] = "0x8B"
     # sec_cpld_dat["NAPLES25OCP"] = "01-10"
-    # diagfw_img["NAPLES25OCP"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    # diagfw_dat["NAPLES25OCP"] = "11-18-2020"
+    diagfw_img["68-0010"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
+    diagfw_dat["68-0010"] = "11-18-2020"
     # goldfw_img["NAPLES25OCP"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
     # goldfw_dat["NAPLES25OCP"] = "01-31-2021"
 
