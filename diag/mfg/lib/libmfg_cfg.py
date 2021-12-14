@@ -553,6 +553,14 @@ FLX_SAVE_UUT_RSLT_ENTRY_FMT =                                                   
 FLX_SAVE_UUT_TEST_RSLT_FMT =                                                               \
          '&lt;TEST NAME="{:s}" STATUS="{:s}" VALUE="{:s}" DESCRIPTION="{:s}" FAILURECODE="{:s}" /&gt;&#xD;'
 
+#TEST NAME="MAC-ADD" STATUS="PASS" VALUE="XXXXXXXXXXXX" DESCRIPTION="FRU MAC-ADD" FAILURECODE="PASS"
+#TEST NAME="PART-NO" STATUS="PASS" VALUE="XXXXXXX" DESCRIPTION="FRU PART-NO" FAILURECODE="PASS"
+
+FLX_SAVE_UUT_MAC_RSLT_FMT =                                                               \
+         '&lt;TEST NAME="MAC-ADD" STATUS="PASS" VALUE="{:s}" DESCRIPTION="FRU MAC-ADD" FAILURECODE="PASS" /&gt;&#xD;'
+FLX_SAVE_UUT_PN_RSLT_FMT =                                                               \
+         '&lt;TEST NAME="PART-NO" STATUS="PASS" VALUE="{:s}" DESCRIPTION="FRU PART-NO" FAILURECODE="PASS" /&gt;&#xD;'         
+
 FLX_SAVE_UUT_RSLT_ENTRY_END =                                                              \
          '&lt;/GROUP&gt;&#xD;                                                              \
           &lt;/DUT&gt;&#xD;                                                                \

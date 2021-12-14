@@ -887,8 +887,12 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac=None, pn=None):
     test_xml = ""
+    if mac:
+        test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
+    if pn:
+        test_xml += FLX_SAVE_UUT_PN_RSLT_FMT.format(pn)
     for test, test_rslt, err_dsc, err_code in zip(test_list, test_rslt_list, err_dsc_list, err_code_list):
         # (test, status, value, description, failure code)
         value = ""
@@ -1049,7 +1053,7 @@ def soap_get_uut_resp(xml, factory=FLX_Factory.PENANG):
     
     return resp
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac=None, pn=None):
     factory = flx_sn_to_factory(sn)
     if not factory:
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
@@ -1063,7 +1067,7 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac, pn)
     if not xml:
         return False
 
@@ -1499,6 +1503,15 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
+
+            mac=None 
+            pn=None
+            nic_mac_pc_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE.format(sn)
+            matchsnformacpn = re.findall(nic_mac_pc_reg_exp, buf)
+            if matchsnformacpn:
+                mac=matchsnformacpn[0][0]
+                pn=matchsnformacpn[0][1]
+
             if FindDellSN(sn):
                 nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
                 matchsn = re.findall(nic_pn_reg_exp, buf)
@@ -1509,7 +1522,8 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                     matchsn2 = re.findall(nic_pn_reg_exp2, buf)
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
-            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+
+            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
@@ -1532,6 +1546,15 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
+
+            mac=None 
+            pn=None
+            nic_mac_pc_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE.format(sn)
+            matchsnformacpn = re.findall(nic_mac_pc_reg_exp, buf)
+            if matchsnformacpn:
+                mac=matchsnformacpn[0][0]
+                pn=matchsnformacpn[0][1]
+
             if FindDellSN(sn):
                 nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
                 matchsn = re.findall(nic_pn_reg_exp, buf)
@@ -1542,7 +1565,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                     matchsn2 = re.findall(nic_pn_reg_exp2, buf)
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
-            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
+            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
