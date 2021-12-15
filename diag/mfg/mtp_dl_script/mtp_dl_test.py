@@ -389,6 +389,7 @@ def main():
 
         # enter in failures from construct_nic_fru_config
         for slot in range(MTP_Const.MTP_SLOT_NUM):
+            key = libmfg_utils.nic_key(slot)
             if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
                 if not nic_prsnt_list[slot]:
                     continue
