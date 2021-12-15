@@ -52,7 +52,7 @@ child.expect("\$ ")
 
 child.sendline("devmgr -dev=fan -faninit")
 child.expect("\$ ")
-child.sendline("devmgr -dev=fan -speed -pct=40")
+child.sendline("devmgr -dev=fan -speed -pct=60")
 child.expect("\$ ")
 
 child.close()
