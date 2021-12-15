@@ -163,7 +163,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FRU_PROG"]
 
     if nic_type == NIC_Type.ORTANO:
-        test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2:
         test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
@@ -210,10 +210,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # check booted from correct CPLD partition
         elif test == "BOOT_CHECK":
             ret = mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot)
-        # extra powercycle to refresh CPLD
-        elif test == "NIC_PWRCYC":
-            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
         elif test == "FIX_VRM":
             ret = mtp_mgmt_ctrl.mtp_nic_fix_vrm(slot)
         else:
@@ -488,12 +484,22 @@ def main():
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
 
-    # power cycle all nic
-    mtp_mgmt_ctrl.mtp_power_cycle_nic()
     pass_nic_list = list()
     fail_nic_list = list()
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     dsp = FF_Stage.FF_DL
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot not in pass_nic_list:
+            pass_nic_list.append(slot)
+
+    mtp_mgmt_ctrl.mtp_power_off_nic()
+    mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
@@ -540,7 +546,7 @@ def main():
 
     if "CONSOLE_BOOT" not in args.skip_test:
         # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -587,7 +593,7 @@ def main():
         # power cycle only the cards that went through set_pslc
         if slot not in fail_nic_list:
             mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-    mtp_mgmt_ctrl.mtp_power_on_nic()
+    mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
     # init nic diag env.
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
@@ -760,7 +766,7 @@ def main():
         dsp = FF_Stage.FF_DL
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2:
-            testlist = ["CPLD_BOOT_CHECK", "NIC_PWRCYC"]
+            testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
         for skip_test in args.skip_test:
@@ -774,12 +780,6 @@ def main():
             if test == "CPLD_BOOT_CHECK":
                 ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
                 ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
-            # extra powercycle to refresh CPLD
-            elif test == "NIC_PWRCYC":
-                ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
-                #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
-                # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -896,7 +896,6 @@ def main():
                 if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
-        # mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic

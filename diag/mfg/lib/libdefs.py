@@ -450,8 +450,8 @@ class MFG_DIAG_CMDS:
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
-    MTP_POWER_ON_NIC_FMT = "turn_on_slot.sh on all"
-    MTP_POWER_OFF_NIC_FMT = "turn_on_slot.sh off all"
+    MTP_POWER_ON_NIC_FMT = "turn_on_slot.sh on {:s}"
+    MTP_POWER_OFF_NIC_FMT = "turn_on_slot.sh off {:s}"
 
 
     MTP_RD_ALOM_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"

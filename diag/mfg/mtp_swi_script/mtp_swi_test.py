@@ -180,11 +180,11 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["CPLD_PROG"]
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
-        test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
-        test_list = ["FPGA_PROG", "GOLD_FPGA_PROG", "NIC_PWRCYC"]
+        test_list = ["FPGA_PROG", "GOLD_FPGA_PROG"]
     if nic_type == NIC_Type.POMONTEDELL:
-        test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG", "NIC_PWRCYC"]
+        test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG"]
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -200,10 +200,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        # extra powercycle to refresh CPLD
-        elif test == "NIC_PWRCYC":
-            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
         elif test == "BOARD_CONFIG":
             ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
         else:
@@ -227,7 +223,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
     if nic_type in ELBA_NIC_TYPE_LIST:
-        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF", "NIC_PWRCYC"]
+        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["NIC_INIT"]
     for skip_test in skip_testlist:
@@ -241,10 +237,6 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
             ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
         elif test == "SEC_CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        # extra powercycle to refresh CPLD
-        elif test == "NIC_PWRCYC":
-            ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-            ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
         # nic diag init status
         elif test == "NIC_INIT":
             ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
@@ -390,14 +382,24 @@ def main():
         fail_nic_list = list()
         pass_nic_list = list()
 
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+
         # Add failed slots from toplevel
         if args.fail_slots:
             for slot in args.fail_slots:
                 fail_nic_list.append(int(slot))
 
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in pass_nic_list:
+                pass_nic_list.append(slot)
+
         # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        mtp_mgmt_ctrl.mtp_power_off_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
@@ -441,9 +443,9 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
-        if "CONSOLE_BOOT" not in args.skip_test:
-            # power cycle all nic
-            mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        # if "CONSOLE_BOOT" not in args.skip_test:
+        #     # power cycle all nic
+        #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -502,7 +504,6 @@ def main():
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            pass_nic_list.append(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
@@ -621,11 +622,13 @@ def main():
             time.sleep(5)
         
         for slot in prog_fail_nic_list:
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
-        # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        # # power cycle all nic
+        # mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
         # Ensure nic_util and nic_arm as needed for elba's efuse script
         if "EFUSE_PROG" not in args.skip_test:
@@ -662,8 +665,10 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
@@ -695,16 +700,18 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        # power cycle NIC
-        if "EFUSE_PROG" not in args.skip_test and "SEC_KEY_PROG" not in args.skip_test:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        # # power cycle NIC
+        # if "EFUSE_PROG" not in args.skip_test and "SEC_KEY_PROG" not in args.skip_test:
+        #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -745,8 +752,12 @@ def main():
             time.sleep(5)
 
         for slot in prog_fail_nic_list:
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
         # Secure CPLD Check
         for slot in range(len(nic_prsnt_list)):
@@ -777,8 +788,10 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
@@ -826,8 +839,10 @@ def main():
             time.sleep(5)
 
         for slot in prog_fail_nic_list:
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
 
         # program the NIC EMMC image
@@ -864,8 +879,10 @@ def main():
             time.sleep(5)
 
         for slot in prog_fail_nic_list:
-            fail_nic_list.append(slot)
-            pass_nic_list.remove(slot)
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
 
         # program the NIC Gold image
@@ -913,7 +930,7 @@ def main():
                 fail_nic_list.append(slot)
 
         # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
         
         # verify the NIC goldfw boot
         for slot in range(len(nic_prsnt_list)):
@@ -940,8 +957,10 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
@@ -949,7 +968,7 @@ def main():
 
         # power cycle NIC
         if "GOLDFW_BOOT" not in args.skip_test:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic()
+            mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
         
         # monitor all the thread
         while True:
@@ -1000,8 +1019,10 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
@@ -1038,15 +1059,17 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         # power cycle NIC
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
 
         # Verify the NIC Software boot
@@ -1111,8 +1134,10 @@ def main():
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:

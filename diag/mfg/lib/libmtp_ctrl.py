@@ -4055,8 +4055,11 @@ class mtp_ctrl():
             return False
 
 
-    def mtp_power_on_nic(self):
-        cmd = MFG_DIAG_CMDS.MTP_POWER_ON_NIC_FMT
+    def mtp_power_on_nic(self, slot_list=[]):
+        slot_list_param = ",".join(str(slot+1) for slot in slot_list)
+        if not slot_list_param:
+            slot_list_param = "all"
+        cmd = MFG_DIAG_CMDS.MTP_POWER_ON_NIC_FMT.format(slot_list_param)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to power on NIC")
             return False
@@ -4071,8 +4074,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_power_off_nic(self):
-        cmd = MFG_DIAG_CMDS.MTP_POWER_OFF_NIC_FMT
+    def mtp_power_off_nic(self, slot_list=[]):
+        slot_list_param = ",".join(str(slot+1) for slot in slot_list)
+        if not slot_list_param:
+            slot_list_param = "all"
+        cmd = MFG_DIAG_CMDS.MTP_POWER_OFF_NIC_FMT.format(slot_list_param)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to power off NIC")
             return False
@@ -4087,12 +4093,12 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_power_cycle_nic(self):
-        rc = self.mtp_power_off_nic()
+    def mtp_power_cycle_nic(self, slot_list=[]):
+        rc = self.mtp_power_off_nic(slot_list)
         if not rc:
             return rc
 
-        rc = self.mtp_power_on_nic()
+        rc = self.mtp_power_on_nic(slot_list)
         if not rc:
             return rc
 

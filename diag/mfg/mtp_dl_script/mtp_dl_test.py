@@ -162,7 +162,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.NAPLES25OCP:
         testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO:
-        testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF", "NIC_PWRCYC"]
+        testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2:
         testlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -252,6 +252,8 @@ def main():
             logfile_close(open_file_track_list)
             return
 
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+
         fail_nic_list = list()
         pass_nic_list = list()
 
@@ -260,12 +262,18 @@ def main():
             for slot in args.fail_slots:
                 fail_nic_list.append(int(slot))
 
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in pass_nic_list:
+                pass_nic_list.append(slot)
+
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
-        mtp_mgmt_ctrl.mtp_power_cycle_nic()
-
-        # init the nic diag environment
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        mtp_mgmt_ctrl.mtp_power_off_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
@@ -310,8 +318,8 @@ def main():
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
-        if "CONSOLE_BOOT" not in args.skip_test:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic()
+        # if "CONSOLE_BOOT" not in args.skip_test:
+        #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
@@ -360,12 +368,11 @@ def main():
             # power cycle only the cards that went through set_pslc
             if slot not in fail_nic_list:
                 mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-        mtp_mgmt_ctrl.mtp_power_on_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
-        
         tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
         if "SCAN_VERIFY" not in args.skip_test:
             # load the barcode config file made in toplevel
@@ -445,8 +452,6 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
-            if slot not in pass_nic_list:
-                pass_nic_list.append(slot)
             pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
             for skipped_test in args.skip_test:
                 if skipped_test in pre_check_testlist:
@@ -550,7 +555,7 @@ def main():
             dsp = FF_Stage.FF_DL
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.ORTANO2:
-                testlist = ["CPLD_BOOT_CHECK", "NIC_PWRCYC"]
+                testlist = ["CPLD_BOOT_CHECK"]
             else:
                 continue
             for skip_test in args.skip_test:
@@ -564,12 +569,6 @@ def main():
                 if test == "CPLD_BOOT_CHECK":
                     ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
                     ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
-                # extra powercycle to refresh CPLD
-                elif test == "NIC_PWRCYC":
-                    ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                    ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
-                    #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
-                    # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
