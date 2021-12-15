@@ -120,7 +120,8 @@ func updateVboot(devName string, tgtVbootMv uint64, lockFlag bool) (err int){
     } else if i2cif.Comp == "TPS53659A" {
         err = tps53659a.UpdateVboot(devName, tgtVbootMv)
     } else if i2cif.Comp == "LTC3888" {
-        cli.Println("i", "Unsupported function", i2cif.Comp)
+        ltc3888.UpdateVboot(devName, tgtVbootMv)
+        // cli.Println("i", "Unsupported function", i2cif.Comp)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM

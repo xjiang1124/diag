@@ -291,14 +291,14 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     // Update VOUT_MARGIN_HIGH/HOW with target VID
     vidTgt, _ := calcVidFromVolt(tgtVoutMv)
 
-    if marginCmd != MARGIN_NONE_CMD {
-        // Disable Vmargin
-        err = pmbus.WriteByte(devName, OPERATION, MARGIN_NONE_CMD)
-        if err != errType.SUCCESS {
-            cli.Println("e", "Disable VMargin failed!")
-            return
-        }
+    // Disable Vmargin
+    err = pmbus.WriteByte(devName, OPERATION, MARGIN_NONE_CMD)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Disable VMargin failed!")
+        return
+    }
 
+    if marginCmd != MARGIN_NONE_CMD {
         err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
         if err != errType.SUCCESS {
             cli.Println("e", "VMargin failed!")
@@ -337,13 +337,11 @@ func SetVMargin(devName string, pct int) (err int) {
     // Write page register
     pmbus.WriteByte(devName, pmbus.PAGE, page)
 
-    if pct != 0 {
-        // Disable Vmargin
-        err = pmbus.WriteByte(devName, OPERATION, MARGIN_NONE_CMD)
-        if err != errType.SUCCESS {
-            cli.Println("e", "Disable VMargin failed!")
-            return
-        }
+    // Disable Vmargin
+    err = pmbus.WriteByte(devName, OPERATION, MARGIN_NONE_CMD)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Disable VMargin failed!")
+        return
     }
 
     if pct == 0 {
@@ -394,6 +392,40 @@ func SetVMargin(devName string, pct int) (err int) {
     return
 }
 
+func UpdateVboot(devName string, tgtVoutMv uint64) (err int) {
+    var data uint16
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to write Page")
+        return
+    }
+
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+
+    data, err = pmbus.ReadWord(devName, VOUT_COMMAND)
+
+    integer, dec, _ := calcVoltFromVid(data)
+    voltMv := integer * 1000 + dec
+    cli.Printf("d", "Current VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, tgtVoutMv)
+
+    data, err = calcVidFromVolt(tgtVoutMv)
+    err = pmbus.WriteWord(devName, VOUT_COMMAND, data)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to write Vout")
+        return
+    }
+    // Store to NVM
+    // err = pmbus.SendByte(devName, pmbus.STORE_DEFAULT_ALL)
+
+    return
+}
 
 func DispStatus(devName string) (err int) {
     vrmTitle := []string {"VOUT", "IOUT", "POUT", "VIN", "IIN", "PIN", "TEMP", "STATUS"}
@@ -502,7 +534,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
         // WriteByte and WriteWord: remove first "0x" and last two char (PEC)
         // BlockWrite: remove first "0x" and next two char (byte count), and last two char (PEC)
         switch cmd[0] {
-        case "ReadByte":
+        case "RB":
             var readData byte
             dataStr := cmd[2][2:len(cmd[2])]
             data, errgo := hex.DecodeString(dataStr)
@@ -525,7 +557,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
                 cli.Printf("e", "Data mismatch! addr=0x%x, expected 0x%x, read back 0x%x", regAddr[0], data[0], readData)
                 errCnt = errCnt + 1
             }
-        case "ReadWord":
+        case "RW":
             var readData uint16
             dataStr := cmd[2][2:len(cmd[2])]
             dataArr, _ := hex.DecodeString(dataStr)
@@ -546,7 +578,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
                 errCnt = errCnt + 1
             }
 
-        case "BlockRead":
+        case "BR":
             dataStr := cmd[2][4:len(cmd[2])]
             dataLenStr := cmd[2][2:4]
             data, _ := hex.DecodeString(dataStr)
@@ -573,37 +605,39 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
                 errCnt = errCnt + 1
             }
 
-        case "WriteByte":
+        case "WB":
             dataStr := cmd[2][2:len(cmd[2])]
             data, _ := hex.DecodeString(dataStr)
 
             if verbose == true {
-                cli.Printf("i", "%s; addr=0x%x, data=0x%x", dataStr, regAddr[0], data[0])
+                cli.Printf("i", "WB %s; addr=0x%x, data=0x%x\n\n", dataStr, regAddr[0], data[0])
             }
 
             err = pmbus.WriteByte(devName, uint64(regAddr[0]), data[0])
+            err = errType.SUCCESS
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
                 return
             }
 
-        case "WriteWord":
+        case "WW":
             dataStr := cmd[2][2:len(cmd[2])]
             dataArr, _ := hex.DecodeString(dataStr)
-            data := uint16(dataArr[0]) | uint16(dataArr[1] << 8)
+            data := uint16(dataArr[1]) | uint16(dataArr[0]) << 8
 
             if verbose == true {
-                cli.Printf("i", "%s; addr=0x%x; data=0x%x", dataStr, regAddr[0], data)
+                cli.Printf("i", "WW %s; addr=0x%x; dataArr=0x%x:0x%x data=0x%x\n\n", dataStr, regAddr[0], dataArr[0], dataArr[1], data)
             }
             err = pmbus.WriteWord(devName, uint64(regAddr[0]), data)
+            err = errType.SUCCESS
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write word data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
                 return
             }
 
-        case "BlockWrite":
+        case "BW":
             // Do not check number of byte written. API always return 0
             dataStr := cmd[2][4:len(cmd[2])]
             data, _ := hex.DecodeString(dataStr)
@@ -619,7 +653,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
                 return
             }
 
-        case "SendByte":
+        case "SB":
             if verbose == true {
                 cli.Println("i", "SendByte", cmd[1])
             }
