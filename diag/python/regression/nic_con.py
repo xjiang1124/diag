@@ -741,7 +741,8 @@ class nic_con:
             ret = self.ping_check_mtp(slot)
 
         # if ping test fails, retry the MTP port reset
-        if ret != 0:
+        asic_type = self.get_asic_type(slot)
+        if ret != 0 and asic_type == "ELBA_FPGA":
             for i in range(numRetry):
                 self.mes_mtp_reset(slot)
                 ret = self.ping_check_mtp(slot)
