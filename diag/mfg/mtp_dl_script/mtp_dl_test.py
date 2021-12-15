@@ -387,6 +387,16 @@ def main():
             mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
         nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
 
+        # enter in failures from construct_nic_fru_config
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+                if not nic_prsnt_list[slot]:
+                    continue
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+
         mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):

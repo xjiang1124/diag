@@ -3757,6 +3757,7 @@ class mtp_ctrl():
                 self.log_slot_test_stop(slot, test, start_ts)
                 sn = self.mtp_get_nic_sn(int(slot))
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                self.mtp_set_nic_status_fail(slot)
             return False
         if "failed" in self.mtp_get_cmd_buf():
             match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
@@ -3770,9 +3771,9 @@ class mtp_ctrl():
             duration = self.log_test_stop(test, start_ts)
             for slot in nic_list:
                 self.log_slot_test_stop(slot, test, start_ts)
-                self.mtp_set_nic_status_fail(slot)
                 sn = self.mtp_get_nic_sn(int(slot))
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                self.mtp_set_nic_status_fail(slot)
             return False
 
         duration = self.log_test_stop(test, start_ts)
@@ -3788,7 +3789,9 @@ class mtp_ctrl():
         for slot in nic_list:
             sn = self.mtp_get_nic_sn(slot)
             dsp = "DIAG_INIT"
-            test = "NIC_BOOT_INIT"  
+            test = "NIC_BOOT_INIT"
+            if not self.mtp_check_nic_status(slot):
+                continue
             self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = self.log_slot_test_start(slot, test)
             
