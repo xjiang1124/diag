@@ -2973,10 +2973,8 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Program NIC Efuse failed")
             self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
-            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
-        self._nic_ctrl_list[slot].nic_program_sec_key_dump()
         return True
 
     def mtp_program_nic_sec_key(self, slot):
