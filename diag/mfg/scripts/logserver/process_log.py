@@ -4354,6 +4354,7 @@ def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                 howmanyerror = len(DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL'])
                                 if howmanyerror:
                                     FAILURE_STEPS = list()
+                                    FAILURE_DICT = dict()
                                     for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
                                         if "ERR MSG ==" in eacherror:
                                             failurestep = None
@@ -4379,24 +4380,31 @@ def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                                 neweacherror += checkeacherror
                                                 neweacherror += "\r"
                                             if not failurestep in FAILURE_STEPS:
-                                                wirtedata = list()
-                                                wirtedata.append(teststep)
-                                                wirtedata.append(sn)
-                                                wirtedata.append(chassis)
-                                                wirtedata.append(testdate)
-                                                wirtedata.append(testetime)
-                                                wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
-                                                wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
-                                                wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
-                                                #print(eacherror)
-                                                #if len(eacherror) > 200:
-                                                    #eacherror = eacherror[:200]
-                                                wirtedata.append(failurestep)
-                                                wirtedata.append(neweacherror)
-                                                #print(wirtedata)
-                                                ws2.append(wirtedata)
                                                 FAILURE_STEPS.append(failurestep)
-                                                #print(wirtedata)
+                                            if not failurestep in FAILURE_DICT:
+                                                FAILURE_DICT[failurestep] = neweacherror
+                                            else:
+                                                FAILURE_DICT[failurestep] += neweacherror 
+
+                                    for failurestep in FAILURE_STEPS:
+                                        wirtedata = list()
+                                        wirtedata.append(teststep)
+                                        wirtedata.append(sn)
+                                        wirtedata.append(chassis)
+                                        wirtedata.append(testdate)
+                                        wirtedata.append(testetime)
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                                        wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                                        #print(eacherror)
+                                        #if len(eacherror) > 200:
+                                            #eacherror = eacherror[:200]
+                                        wirtedata.append(failurestep)
+                                        wirtedata.append(FAILURE_DICT[failurestep][:-2])
+                                        #print(wirtedata)
+                                        ws2.append(wirtedata)
+                                        
+                                        #print(wirtedata)
     
     fixcolumnssize2(ws2)
     highlightinyellow(ws2,'TIMEOUT')
