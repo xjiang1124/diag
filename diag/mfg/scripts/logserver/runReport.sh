@@ -1,6 +1,8 @@
 #!/bin/bash
 set -x 
 
+
+
 DATE=`date +%d-%m-%y` 
 now=$(date +"%b%d-%Y-%H%M%S")
 #_mydir="`pwd`"
@@ -15,6 +17,14 @@ echo "Log Location should be: [ $SCRIPTLOG ]"
 echo "My Currently Dir ($DATE): $_mydir"
 
 #exit 0
+
+# Exit if /tmp/lock.file exists
+[ -f /tmp/runReportlock.file ] && exit
+
+# Create lock file, sleep 1 sec and verify lock
+echo $$ > /tmp/runReportlock.file
+sleep 1
+[ "x$(cat /tmp/runReportlock.file)" == "x"$$ ] || exit
 
 configNames=(
 NAPLES100DELL_input.json
@@ -70,3 +80,6 @@ python3 $_mydir/move_old_log_file_to_one_folder.py
 
 END=$(date +%s);
 echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'
+
+# Remove lock file
+rm /tmp/runReportlock.file

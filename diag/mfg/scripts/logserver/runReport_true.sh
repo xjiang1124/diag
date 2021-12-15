@@ -10,6 +10,14 @@ exec 2>&1
 
 echo "Log Location should be: [ $SCRIPTLOG ]"
 
+# Exit if /tmp/lock.file exists
+[ -f /tmp/runReport_truelock.file ] && exit
+
+# Create lock file, sleep 1 sec and verify lock
+echo $$ > /tmp/runReport_truelock.file
+sleep 1
+[ "x$(cat /tmp/runReport_truelock.file)" == "x"$$ ] || exit
+
 configNames=(
 NAPLES100DELL_input.json
 POMONTE_test_input.json
@@ -64,3 +72,6 @@ python3 $_mydir/move_old_log_file_to_one_folder.py
 
 END=$(date +%s);
 echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'
+
+# Remove lock file
+rm /tmp/runReport_truelock.file
