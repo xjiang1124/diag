@@ -757,7 +757,7 @@ def main():
             if slot in pass_nic_list:
                 pass_nic_list.remove(slot)
 
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
         # Secure CPLD Check
         for slot in range(len(nic_prsnt_list)):
