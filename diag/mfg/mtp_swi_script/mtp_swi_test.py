@@ -114,6 +114,7 @@ def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
 
     ping_test_fail_list = list()
     ping_test_slots = list()
+    ping_test_tuples = list()
 
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(len(nic_prsnt_list)):
@@ -122,9 +123,52 @@ def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
             continue
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
             continue
+        if slot in fail_nic_list:
+            continue
         ping_test_slots.append(slot)
-    a = iter(ping_test_slots)
-    ping_test_tuples = zip(a,a)
+
+
+    if len(ping_test_slots) > 0:    
+        for cnt in range(5):
+            nic_start_slot = 0
+            test = "PING_PRE_PAIRING"
+            slot_A = nic_start_slot + (cnt * 2)
+            slot_B = nic_start_slot + (cnt * 2) + 1
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot_A, test)
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot_B, test)
+            if slot_A in ping_test_slots and slot_B in ping_test_slots:
+                ping_test_tuples.append([slot_A, slot_B])
+                sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_A) 
+                sn_B = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_B)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_A, test, start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_B, test, start_ts)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_A, dsp, test, duration))
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot_B, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_B, dsp, test, duration))
+            elif slot_A in ping_test_slots and slot_B not in ping_test_slots:
+                sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_A)            
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_A, dsp, test))
+                if slot_A not in fail_nic_list:
+                    fail_nic_list.append(slot_A)
+                if slot_A in pass_nic_list:
+                    pass_nic_list.remove(slot_A)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot_A)
+                ping_test_fail_list.append(slot_A)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_A, test, start_ts)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_A, dsp, test, "FAILED", duration))
+            elif slot_A not in ping_test_slots and slot_B in ping_test_slots:
+                sn_B = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_B)            
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot_B, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_B, dsp, test))
+                if slot_B not in fail_nic_list:
+                    fail_nic_list.append(slot_B)
+                if slot_B in pass_nic_list:
+                    pass_nic_list.remove(slot_B)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot_B)
+                ping_test_fail_list.append(slot_B)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_B, test, start_ts)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_B, dsp, test, "FAILED", duration))
+
+    # a = iter(ping_test_slots)
+    # ping_test_tuples = zip(a,a)
 
     for slotA, slotB in ping_test_tuples:
         sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slotA)
@@ -185,6 +229,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         test_list = ["FPGA_PROG", "GOLD_FPGA_PROG"]
     if nic_type == NIC_Type.POMONTEDELL:
         test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG"]
+    if nic_type == NIC_Type.ORTANO2:
+        test_list = []
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -223,9 +269,12 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
     if nic_type in ELBA_NIC_TYPE_LIST:
-        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]
+        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]        
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["NIC_INIT"]
+    if nic_type == NIC_Type.ORTANO2:
+        test_list = ["NIC_INIT"]
+
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)

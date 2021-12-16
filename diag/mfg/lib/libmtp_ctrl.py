@@ -2998,7 +2998,6 @@ class mtp_ctrl():
             self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
-        self._nic_ctrl_list[slot].nic_program_sec_key_dump()
         return True
 
     def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True):
