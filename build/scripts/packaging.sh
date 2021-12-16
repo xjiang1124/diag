@@ -122,6 +122,7 @@ do
         cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh                  $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_acc.sh                     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_stub.sh                    $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_link.sh                    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/xcvr_phy_intf.sh               $NIC_UTIL_DIR
         cp $TEMP_DIR/scripts/version.txt                        $NIC_UTIL_DIR
     
