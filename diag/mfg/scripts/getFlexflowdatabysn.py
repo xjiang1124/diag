@@ -56,8 +56,17 @@ def main():
     #print("################## GET UUT INF #######################")
     #return "500"
     else:
-        print("CURRENT STATUS: NONE")
-        print(resp)
+        resp = libmfg_utils.flx_web_srv_get_uut_info(ARGV["sn"],stage="P2C")
+        resp = resp.replace(':\n',': ')
+        resp = resp.replace('&gt;', ' ')
+        #print resp
+        match = re.findall(r"Unit Current State:\s+(\w.*\w)",resp)
+        #print(match)
+        if match:
+            print("CURRENT STATUS: {}".format(match[0]))
+        else:
+            print("CURRENT STATUS: NONE")
+            print(resp)
 
     difftime = datetime.now()-start
     #print('Done Time: ', difftime)       
