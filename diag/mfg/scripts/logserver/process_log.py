@@ -491,15 +491,17 @@ def workingonLastdata(DATA,inputconfig):
     DATA['SN']["KEEPLASTPASS"] = dict()
     DATA['SN']['LAST'] = dict()
 
+    workingSNlist = list()
+    for test in DATA['SN']['TEST']:
+        for SN in DATA['SN']['FIRST'][test]:
+            if not SN in workingSNlist:
+                workingSNlist.append(SN) 
+
     for test in DATA['SN']['TEST']:
         print("TEST: {}".format(test))
 
         if not test in DATA['SN']["LAST"]:
             DATA['SN']["LAST"][test] = dict()
-
-        workingSNlist = list()
-        for SN in DATA['SN']['FIRST'][test]:
-            workingSNlist.append(SN)
 
         for SN in workingSNlist:
             #print("{}: {}".format(test, SN))
@@ -575,7 +577,7 @@ def workingonLastdata(DATA,inputconfig):
             workingSNlist.append(SN)
 
         for SN in workingSNlist:
-            #print("{}: {}".format(test, SN))
+
             checkdata = None 
             counttesttime = 0
             if SN in DATA['teststep'][test]['SN']:
@@ -597,6 +599,8 @@ def workingonLastdata(DATA,inputconfig):
     if "KEEPLASTPASS" in inputconfig:
         DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
         DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
+
+
 
     return None
 
@@ -2452,28 +2456,27 @@ def generateexeclsnstatus(DATA, workingonSNlist,status,wb,inputconfig,Withallerr
                 # print(json.dumps(DATA['SN'][status][test][sn], indent = 4))
                 # sys.exit()
                 #time.sleep(5)
-                if DATA['SN'][status][test][sn]["checktime"] >= firsttesttimestamp:
-                    if "result" in DATA['SN'][status][test][sn]:
-                        #DATA['SN']['ERROR'][teststep][sn][reportdetailstep]
-                        dateandtime = DATA['SN'][status][test][sn]["checktime"]
-                        datetimearray = dateandtime.split('_')
-                        reportresut = "{} ({})".format(DATA['SN'][status][test][sn]["result"],datetimearray[0])
-                        #DATA['SN']['LAST'][teststep][sn]['count']
-                        if "count" in DATA['SN'][status][test][sn]:
-                            reportresut = "{} <{}> ".format(reportresut,DATA['SN'][status][test][sn]["count"])
-                        if Withallerror:
-                            if sn in DATA['SN']['ERROR'][test]:
-                                for eachfailstep in DATA['SN']['ERROR'][test][sn]['LIST']:
-                                    reportresut = "{}\r{} <{}>".format(reportresut,eachfailstep,DATA['SN']['ERROR'][test][sn]['DETAIL'][eachfailstep])
-                        else:
-                            if "FAIL" in DATA['SN'][status][test][sn]["result"]:
-                                for eachfailstep in DATA['SN'][status][test][sn]['ERROR']['LIST']:
-                                    reportresut = "{}\r{} <{}>".format(reportresut,eachfailstep,DATA['SN']['ERROR'][test][sn]['DETAIL'][eachfailstep])
-                        wirtedata.append(reportresut)
+
+                if "result" in DATA['SN'][status][test][sn]:
+                    #DATA['SN']['ERROR'][teststep][sn][reportdetailstep]
+                    dateandtime = DATA['SN'][status][test][sn]["checktime"]
+                    datetimearray = dateandtime.split('_')
+                    reportresut = "{} ({})".format(DATA['SN'][status][test][sn]["result"],datetimearray[0])
+                    #DATA['SN']['LAST'][teststep][sn]['count']
+                    if "count" in DATA['SN'][status][test][sn]:
+                        reportresut = "{} <{}> ".format(reportresut,DATA['SN'][status][test][sn]["count"])
+                    if Withallerror:
+                        if sn in DATA['SN']['ERROR'][test]:
+                            for eachfailstep in DATA['SN']['ERROR'][test][sn]['LIST']:
+                                reportresut = "{}\r{} <{}>".format(reportresut,eachfailstep,DATA['SN']['ERROR'][test][sn]['DETAIL'][eachfailstep])
                     else:
-                        wirtedata.append('NO TEST DATA')
+                        if "FAIL" in DATA['SN'][status][test][sn]["result"]:
+                            for eachfailstep in DATA['SN'][status][test][sn]['ERROR']['LIST']:
+                                reportresut = "{}\r{} <{}>".format(reportresut,eachfailstep,DATA['SN']['ERROR'][test][sn]['DETAIL'][eachfailstep])
+                    wirtedata.append(reportresut)
                 else:
                     wirtedata.append('NO TEST DATA')
+
             else:
                 wirtedata.append('NO TEST DATA')
             #time.sleep(2)
