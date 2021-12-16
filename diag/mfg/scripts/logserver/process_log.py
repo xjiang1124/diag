@@ -197,13 +197,13 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
-    if "NAME" in inputconfig:
-        if "ORTANO2" == inputconfig["NAME"].upper():
-            workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
-            SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
-            for PN in SNbyPN:
-                #,listofsn=[],specpn=None
-                createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
+    # if "NAME" in inputconfig:
+    #     if "ORTANO2" == inputconfig["NAME"].upper():
+    #         workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    #         SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
+    #         for PN in SNbyPN:
+    #             #,listofsn=[],specpn=None
+    #             createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
 
     return None
 
@@ -323,68 +323,68 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
     #sys.exit()
     chartdata = dict()
 
-    snmaclist = getsnmaclist(DATA,inputconfig)
-    macsnlist = getmacsnlist(DATA,inputconfig)
-
-    if not startdate:
-        if len(snmaclist):
-            dest_filenameformac = dest_filename.replace('DATA','SNandMAClist')
-            wsandc = Workbook()
-            generateexeclmacandsnreport(DATA,wsandc,snmaclist)
-            if len(macsnlist):
-                generateexeclmacandsnreport2(DATA,wsandc,macsnlist)
-            wsandc.save(filename = dest_filenameformac)
-            try:
-                if "snandmacjsonfile" in inputconfig["FILE"]:
-                    snmacdatabase = pr['modules'].readjsonfile(inputconfig["FILE"]["snandmacjsonfile"])
-                    if not "snmaclist" in snmacdatabase:
-                        snmacdatabase["snmaclist"] = dict()
-                    if not "macsnlist" in snmacdatabase:
-                        snmacdatabase["macsnlist"] = dict()
-                    snmacdatabase["snmaclist"][inputconfig["NAME"]] = snmaclist
-                    snmacdatabase["macsnlist"][inputconfig["NAME"]] = macsnlist
-                    pr['modules'].wirtejsonfile(inputconfig["FILE"]["snandmacjsonfile"],snmacdatabase)
-            except:
-                print("snandmacjsonfile issue!")
-
-
     generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
     #pr['modules'].print_anyinformation(chartdata)
-    if not startdate:
-        wg = Workbook()
-        generateexeclchart(DATA,wg,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
-        wg.save(filename = dest_chartfilename)
-    if "NAME" in inputconfig:
-        if "ORTANO2" == inputconfig["NAME"].upper():
-            SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
-            for PN in SNbyPN:
-                checkSNstartdate = getbeforedayinformation(checkday=30)
-                if len(checksnlistafteestartdate(DATA,SNbyPN[PN],startdate=checkSNstartdate)) > 0:
-                    generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,pr,start=None)
-            #sys.exit()
 
-    print("START DATE: {}".format(startdate))
-    workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
-    if len(listofsn):
-        workingonSNlist = listofsn
-    workingonSNlist.sort(reverse=True)
-    print("COUNT SN: {}".format(len(workingonSNlist)))
 
-    if not len(workingonSNlist):
-        return None
-
-    #sys.exit()
-    TempHVLVdata = dict()
-    
     if 'CM' in inputconfig:
-        if inputconfig['CM'] == "FSJ" or inputconfig['CM'] == "FLEX":
+        if not startdate:
+            if inputconfig['CM'] == "FSJ" or inputconfig['CM'] == "FLEX":
 
-            generateexeclsnFSJstatus(DATA, workingonSNlist,'LAST',wb)
-        
-        wb.save(filename = dest_filename)
-        createlastfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
+                generateexeclsnFSJstatus(DATA, workingonSNlist,'LAST',wb)
+            
+            wb.save(filename = dest_filename)
+            createlastfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
 
     else:
+        if not startdate:
+            wg = Workbook()
+            generateexeclchart(DATA,wg,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
+            wg.save(filename = dest_chartfilename)
+
+        # if "NAME" in inputconfig:
+        #     if "ORTANO2" == inputconfig["NAME"].upper():
+        #         SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
+        #         for PN in SNbyPN:
+        #             checkSNstartdate = getbeforedayinformation(checkday=30)
+        #             if len(checksnlistafteestartdate(DATA,SNbyPN[PN],startdate=checkSNstartdate)) > 0:
+        #                 generateexeclDatabyPN(DATA,wb,inputconfig,SNbyPN[PN],PN,chartdata,pr,start=None)
+
+        print("START DATE: {}".format(startdate))
+        workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
+        if len(listofsn):
+            workingonSNlist = listofsn
+        workingonSNlist.sort(reverse=True)
+        print("COUNT SN: {}".format(len(workingonSNlist)))
+
+        if not len(workingonSNlist):
+            return None
+
+        snmaclist = getsnmaclist(DATA,inputconfig)
+        macsnlist = getmacsnlist(DATA,inputconfig)
+
+        if not startdate:
+            if len(snmaclist):
+                dest_filenameformac = dest_filename.replace('DATA','SNandMAClist')
+                wsandc = Workbook()
+                generateexeclmacandsnreport(DATA,wsandc,snmaclist)
+                if len(macsnlist):
+                    generateexeclmacandsnreport2(DATA,wsandc,macsnlist)
+                wsandc.save(filename = dest_filenameformac)
+                try:
+                    if "snandmacjsonfile" in inputconfig["FILE"]:
+                        snmacdatabase = pr['modules'].readjsonfile(inputconfig["FILE"]["snandmacjsonfile"])
+                        if not "snmaclist" in snmacdatabase:
+                            snmacdatabase["snmaclist"] = dict()
+                        if not "macsnlist" in snmacdatabase:
+                            snmacdatabase["macsnlist"] = dict()
+                        snmacdatabase["snmaclist"][inputconfig["NAME"]] = snmaclist
+                        snmacdatabase["macsnlist"][inputconfig["NAME"]] = macsnlist
+                        pr['modules'].wirtejsonfile(inputconfig["FILE"]["snandmacjsonfile"],snmacdatabase)
+                except:
+                    print("snandmacjsonfile issue!")
+        #sys.exit()
+        TempHVLVdata = dict()
 
         generateexeclsnstatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
         #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
@@ -572,9 +572,9 @@ def workingonLastdata(DATA,inputconfig):
                                     
             delSNwithnoData(DATA,test,SN,counttesttime,status='KEEPLASTPASS')
 
-        workingSNlist = list()
-        for SN in DATA['SN']['FIRST'][test]:
-            workingSNlist.append(SN)
+        # workingSNlist = list()
+        # for SN in DATA['SN']['FIRST'][test]:
+        #     workingSNlist.append(SN)
 
         for SN in workingSNlist:
 
@@ -599,8 +599,6 @@ def workingonLastdata(DATA,inputconfig):
     if "KEEPLASTPASS" in inputconfig:
         DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
         DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
-
-
 
     return None
 
