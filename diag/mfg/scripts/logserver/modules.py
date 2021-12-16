@@ -149,6 +149,25 @@ class modules(object):
 
 		return chamber_config
 
+	def get_snlist_from_xlsx(self,xlsxfilename):
+		sn_list = list()
+		from openpyxl import load_workbook
+		wb = load_workbook(filename = xlsxfilename)
+		for tabname in wb.sheetnames:
+			#self.debug_print("tabname: {}".format(tabname))
+			eachsheet = wb[tabname]
+
+			snraw, sncolunm = self.findposition(eachsheet,'SN')
+
+			colunm = eachsheet[get_column_letter(sncolunm)]
+			for countnumberinrow in range(2,len(colunm)+1):
+				SN = str(eachsheet.cell(row=countnumberinrow, column=sncolunm).value)
+				self.debug_print("SN: {}".format(SN))
+				if len(SN) and SN.upper() != "NONE":
+					if not SN in sn_list:
+						sn_list.append(SN)
+						
+		return sn_list
 
 	def rsync_and_delete_by_os_system_at_locate(self,source,dest):
 		rsync_cmd = "rsync -avrz {} {}".format(source,dest)

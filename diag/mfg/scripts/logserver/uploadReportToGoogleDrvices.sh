@@ -18,4 +18,6 @@ echo "My Currently Dir ($DATE): $_mydir"
 
 rsync -r -a -v --delete --include="*.xlsx" --exclude="*LastFail*" -e ssh mfg@logserver01:/samba/public/REPORT/  /testreport/
 
+rsync -r -a -v --delete -e ssh mfg@logserver01:/samba/public/REPORT/ORTANO2_EMMC/  /testreport/ORTANO2_EMMC/
+
 rsync -r -a -v -e "ssh winson@192.168.100.2" /testreport/ ":/cygdrive/g/Shared\ drives/TestStatus/"
