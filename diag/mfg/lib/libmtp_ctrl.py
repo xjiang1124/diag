@@ -5433,6 +5433,7 @@ class mtp_ctrl():
 
         test = "SCAN_VERIFY"
         for slot in range(self._slots):
+            start_ts = self.log_slot_test_start(slot, test)
             key = libmfg_utils.nic_key(slot)
             if slot in fail_nic_list:
                 continue
@@ -5447,10 +5448,10 @@ class mtp_ctrl():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
                 self.mtp_set_nic_status_fail(slot, skip_fa=True)
+                duration = self.log_slot_test_stop(slot, test, start_ts)
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(temp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
                 continue
 
-            start_ts = self.log_slot_test_start(slot, test)
             for item in ["SN", "MAC", "PN"]:
                 expected = scan_fru_cfg[key][item]
                 received = temp_fru_cfg[key][item]
