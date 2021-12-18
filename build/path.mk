@@ -52,13 +52,15 @@ ARM64_SRC_DIR=			\
 	dsp/nic_asic		\
 	dsp/qsfp    		\
 	dsp/rtc				\
-	dsp/sfp 
+	dsp/sfp				\
+	dsp/ddr_stress
 
 ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\
 	util/capricpld		\
 	util/xo3dcpld		\
 	util/artix7fpgaNew	\
+	util/ddrstress  	\
 	lib/capricpld		\
 	lib/xo3dcpld
 
