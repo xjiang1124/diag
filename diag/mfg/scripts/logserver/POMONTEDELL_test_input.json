@@ -12,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/POMONTEDELL"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST07.json",
+		"datebasesjsonfile" : "/samba/public/tmp_database/POMONTE_DB_TEST08.json",
 		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
 		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
 	},

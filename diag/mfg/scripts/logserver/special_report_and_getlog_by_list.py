@@ -81,8 +81,8 @@ def main():
 
 def processtocreatedailyreportbyworkingonSNlist(pr,DATA,inputconfig,date_time,startdate,workingonSNlist):
 
-    if "historypath" in inputconfig["DIR"]:
-        movereporttohistorydir(inputconfig)
+    #if "historypath" in inputconfig["DIR"]:
+    #    movereporttohistorydir(inputconfig)
 
     createteststatusreportbyworkingonSNlist(pr,DATA,inputconfig,listofsn=workingonSNlist)
 
@@ -118,6 +118,8 @@ def createteststatusreportbyworkingonSNlist(pr,DATA,inputconfig,startdate=None,l
     workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
     if len(listofsn):
         workingonSNlist = listofsn
+
+    workingonSNlist = checkSNexistindate(DATA,inputconfig,workingonSNlist)
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
     #sys.exit()    
@@ -145,11 +147,6 @@ def createteststatusreportbyworkingonSNlist(pr,DATA,inputconfig,startdate=None,l
 
     generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
 
-    print("START DATE: {}".format(startdate))
-    workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
-    if len(listofsn):
-        workingonSNlist = listofsn
-    workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
 
     if not len(workingonSNlist):
@@ -206,7 +203,7 @@ def createteststatusreportbyworkingonSNlist(pr,DATA,inputconfig,startdate=None,l
 
     wb.save(filename = dest_filename)
 
-    copyalllogfolder(pr,DATA,workingonSNlist,inputconfig)
+    #copyalllogfolder(pr,DATA,workingonSNlist,inputconfig)
     
     print("OUTPUT FILE: {}".format(dest_filename))
 
@@ -264,28 +261,64 @@ def workingonLastdata(DATA,inputconfig):
     DATA['SN']['LAST'] = dict()
 
     workingSNlist = list()
-    for test in DATA['SN']['TEST']:
-        for SN in DATA['SN']['FIRST'][test]:
-            if not SN in workingSNlist:
-                workingSNlist.append(SN)        
+    for SN in DATA['SN']['LIST']:
+        workingSNlist.append(SN)        
 
     for test in DATA['SN']['TEST']:
         print("TEST: {}".format(test))
 
+        for SN in workingSNlist:
+            if SN == 'FPN21220097':
+                print("{}: {}".format(test, SN))
+            checkdata = None 
+            NewSN = False
+            if not SN in DATA['SN']['FIRST'][test]:
+                DATA['SN']['FIRST'][test][SN] = dict()
+                NewSN = True
+                if SN == 'FPN21220097':
+                    print("NEW DATA")
+                    print(DATA['SN']['FIRST'][test][SN])
+            counttesttime = 0
+            if SN in DATA['teststep'][test]['SN']:
+                for chassis in DATA['teststep'][test]['SN'][SN]:
+                    for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
+                        for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
+                            if "checktime" in DATA['SN']['FIRST'][test][SN]:
+                                checkdata = DATA['SN']['FIRST'][test][SN]["checktime"]
+                            checktime2 = "{}_{}".format(testdate, testtime)
+                            if not checkdata:
+                                checkdata = checktime2
+                            counttesttime += 1
+                            parpareData(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='FIRST')
+                            if NewSN:
+                                writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='FIRST')
+                                NewSN = False
+                            if checktime2 <= checkdata:
+                                writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='FIRST')
+
+            delSNwithnoData(DATA,test,SN,counttesttime,status='FIRST')
+
+        #DATA['SN']["LAST"] = dict()
         if not test in DATA['SN']["LAST"]:
             DATA['SN']["LAST"][test] = dict()
 
         for SN in workingSNlist:
-            #print("{}: {}".format(test, SN))
+            if SN == 'FPN21220097':
+                print("{}: {}".format(test, SN))
             #print(json.dumps(DATA['SN']['LAST'][test][SN], indent = 4))
             checkdata = None 
             NewSN = False
             if not SN in DATA['SN']['LAST'][test]:
                 DATA['SN']['LAST'][test][SN] = dict()
                 NewSN = True
+                if SN == 'FPN21220097':
+                    print("NEW DATA")
+                    print(DATA['SN']['LAST'][test][SN])
             counttesttime = 0
             if SN in DATA['teststep'][test]['SN']:
                 for chassis in DATA['teststep'][test]['SN'][SN]:
+                    if SN == 'FPN21220097':
+                        print(DATA['teststep'][test]['SN'][SN])
                     for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
                         for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
                             if "checktime" in DATA['SN']['LAST'][test][SN]:
@@ -300,7 +333,6 @@ def workingonLastdata(DATA,inputconfig):
                                 NewSN = False
                             if checktime2 >= checkdata:
                                 writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='LAST')
-
             delSNwithnoData(DATA,test,SN,counttesttime,status='LAST')
 
         if not test in DATA['SN']["KEEPLASTPASS"]:
@@ -344,13 +376,8 @@ def workingonLastdata(DATA,inputconfig):
                                     
             delSNwithnoData(DATA,test,SN,counttesttime,status='KEEPLASTPASS')
 
-        workingSNlist = list()
-        for SN in DATA['SN']['FIRST'][test]:
-            workingSNlist.append(SN)
-
         for SN in workingSNlist:
-            if SN == 'FPN2122010D':
-                print("{}: {}".format(test, SN))
+
             checkdata = None 
             counttesttime = 0
             if SN in DATA['teststep'][test]['SN']:
@@ -368,12 +395,10 @@ def workingonLastdata(DATA,inputconfig):
                                 writedatatolastdict(DATA,inputconfig,test,SN,chassis,testdate,testtime,checktime2,status='FIRST')
 
             delSNwithnoData(DATA,test,SN,counttesttime,status='FIRST')
-            if SN == 'FPN2122010D':
-                print(DATA['SN']['FIRST'][test][SN])
 
     if "KEEPLASTPASS" in inputconfig:
-        DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
-        DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
+        DATA['SN']['ORGLAST'] = DATA['SN']['LAST'].copy()
+        DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"].copy()
 
     #sys.exit()
 
@@ -1301,6 +1326,17 @@ def generateexeclsnFSJstatus(DATA, workingonSNlist, status,wb,Withallerror=False
     
     
     return 0
+
+def checkSNexistindate(DATA,inputconfig,workingonSNlist):
+    returnSNlist = list()
+
+    for sn in workingonSNlist:
+        for test in DATA['SN']['TEST']:
+            if sn in DATA['SN']['LAST'][test]:
+                if not sn in returnSNlist:
+                    returnSNlist.append(sn)
+    print("REMOVE SN FROM LIST: {}".format(len(workingonSNlist)-len(returnSNlist)))
+    return returnSNlist
 
 def getsnlistafteestartdate(DATA,inputconfig,startdate=None):
 
@@ -5337,11 +5373,12 @@ def SummaryReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=None):
         countResult = dict()
         countResult["PASS"] = 0
         for sn in listofSN:
-            testresult = DATA['SN']['LAST'][test][sn]["result"]
-            if not testresult in countResult:
-                countResult[testresult] = 1
-            else:
-                countResult[testresult] += 1
+            if "result" in DATA['SN']['LAST'][test][sn]:
+                testresult = DATA['SN']['LAST'][test][sn]["result"]
+                if not testresult in countResult:
+                    countResult[testresult] = 1
+                else:
+                    countResult[testresult] += 1
         for testresult in resultlist:
             if testresult in countResult:
                 wirtedata.append(countResult[testresult])

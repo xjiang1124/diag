@@ -12,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/ORTANO2"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST16.json",
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST17.json",
 		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
 		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
 	},

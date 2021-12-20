@@ -59,69 +59,30 @@ def main():
     # if os.path.exists(inputconfig['FILE']['datebasesjsonfile']):
     #     datebase_DB = mpu.io.read(inputconfig['FILE']['datebasesjsonfile'])    
     DATA = datebase_DB
-    if not 'teststep' in DATA:
-        DATA['teststep'] = dict()
-        DATA['SN'] = dict()
-        DATA['SN']['LIST'] = list()
-        DATA['SN']['FIRST'] = dict()
-        DATA['SN']['LAST'] = dict()
-        DATA['SN']['ERROR'] = dict()
-        DATA['SN']['DL'] = dict()
 
-    DATA['SN']['TEST'] = inputconfig["TESTLIST"]
-    #print(json.dumps(DATA['SN']['TEST'], indent = 4))
-    DATA['NEWFILECOUNT'] = 0
-    testfolderlist = inputconfig["TESTFOLDER"]
-    #print(testfolderlist)
-
-    if "skipfoldercheck" in ARGV:
-        pass 
-    else:
-        for testfolder in testfolderlist:
-            if "rerun" in ARGV:
-                pr['modules'].print_anyinformation(ARGV)
-                if ARGV["rerun"] in testfolder:
-                    pr['modules'].print_anyinformation(ARGV["rerun"])
-                    workingoneachtest(pr,inputconfig,DATA,testfolder,redo=True)
-                else:
-                    #workingoneachtest(pr,inputconfig,DATA,testfolder)
-                    pass
-            else:
-                workingoneachtest(pr,inputconfig,DATA,testfolder)
-            #pass
-            #workingoneachtest(pr,inputconfig,DATA,testfolder)
-
-    workingonLastdata(DATA,inputconfig)
-    #sys.exit()
-    DATA['SN']['LIST'].sort()
-    if "skipfoldercheck" in ARGV:
-        pass 
-    else:
-        jsonfileoutputname = "{}/{}_{}_DATA.json".format(inputconfig['DIR']["TEMPDATABASE"],'OVERALL',date_time)
-        #mpu.io.write(jsonfileoutputname, DATA)
-        #mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
-
-        pr['modules'].wirtejsonfile(jsonfileoutputname, DATA)
-        pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
-
-    if "rerun" in ARGV:
-        difftime = datetime.now()-start
-        print('Done Time: ', difftime)       
-        print("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
-        return None
-
-    pr['FailureSNlist'] = processFailureSNFlexFlowCheck(DATA,inputconfig,pr)
-
-    if DATA['NEWFILECOUNT']:
-        processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
-    elif "report" in ARGV:
-        processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
- 
-    if startdate:
-        createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
-
-    pr['modules'].wirtejsonfile(inputconfig['FILE']['datebasesjsonfile'], DATA)
     
+
+    snmaclist = getsnmaclist(DATA,inputconfig)
+    macsnlist = getmacsnlist(DATA,inputconfig)
+
+    pr['SNlist'] = processFailureSNFlexFlowCheck(DATA,inputconfig,pr)
+
+    reportdir = inputconfig['DIR']["reportpath"]
+
+    dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
+    if "NAME" in inputconfig:
+        dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
+
+    if len(snmaclist):
+        dest_filenameformac = dest_filename.replace('DATA','SNandMAClistwithFlexflow')
+        wsandc = Workbook()
+        generateexeclmacandsnreport(pr,DATA,wsandc,snmaclist)
+        if len(macsnlist):
+            generateexeclmacandsnreport2(pr,DATA,wsandc,macsnlist)
+        wsandc.save(filename = dest_filenameformac)
+
     difftime = datetime.now()-start
     print('Done Time: ', difftime)       
     print("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
@@ -130,36 +91,41 @@ def main():
 def processFailureSNFlexFlowCheck(DATA,inputconfig,pr):
     start=datetime.now()
     FailureSNlist = dict()
-    FailureSNlist["DATA"] = GetFailureSNList(DATA,inputconfig,pr)
+    #FailureSNlist["DATA"] = GetFailureSNList(DATA,inputconfig,pr)
     FailureSNlist["FailureSN"] = list()
     FailureSNlist["FailureSNFlexflow"] = dict()
     FailureSNlist["FlexflowType"] = dict()
 
     pr['modules'].print_anyinformation(FailureSNlist)
 
+    workingSNlist = list()
+    for SN in DATA['SN']['LIST']:
+        if "FPN" in SN:
+            if not SN in workingSNlist:
+                workingSNlist.append(SN)    
+
     if "FLEXFLOW" in inputconfig:
         mkssh = ssh_modules.ssh_modules(inputconfig["FLEXFLOW"])
         mkssh.ssh_login()
         mkssh.getuptimeinfo()
-        for teststep in FailureSNlist["DATA"]:
-            FailureSNlist["DATA"][teststep]["FLEXFLOW"] = dict()
-            FailureSNlist["DATA"][teststep]["FlexflowType"] = dict()
-            for sn in FailureSNlist["DATA"][teststep]["SN"]:
-                FailureSNlist["FailureSN"].append(sn)
-                FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] = mkssh.getflowflex(sn)
-                FailureSNlist["FailureSNFlexflow"][sn] = FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]
-                if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["DATA"][teststep]["FlexflowType"]:
-                    FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
-                if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["FlexflowType"]:
-                    FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
-                FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
-                FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
+        count = 0
+        for sn in workingSNlist:
+            FailureSNlist["FailureSN"].append(sn)
+            flexflowdata = mkssh.getflowflex(sn)
+            FailureSNlist["FailureSNFlexflow"][sn] = flexflowdata
+            if not flexflowdata in FailureSNlist["FlexflowType"]:
+                FailureSNlist["FlexflowType"][flexflowdata] = list()
+            FailureSNlist["FlexflowType"][flexflowdata].append(sn)
+            count += 1
+            print("{} of {}".format(count, len(workingSNlist)))
+            #if count > 100:
+                #break
         mkssh.ssh_logout()
 
     else:
         return None
 
-    pr['modules'].print_anyinformation(FailureSNlist)
+    #pr['modules'].print_anyinformation(FailureSNlist)
     difftime = datetime.now()-start
     print('Done Time: ', difftime)     
     #sys.exit()
@@ -804,8 +770,6 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
             continue
         if len(sn) < 5:
             continue
-        #if not sn == 'FPN214604C3':
-        #    continue
         count += 1
         if count % 100 == 0:
             print("count: {}".format(count))
@@ -1268,36 +1232,20 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                                 
                                                 #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
                                                 #sys.exit()
-                                        f.close()
-                                        
-                                        f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
 
-                                        ecctemperrormessagelist = list()
-                                        ecctemperrormessagedata = ''
-                                        eccstarttocatcherrormessage = False
-                                        temploginfo = ''
-                                        for x in f:
-                                            temploginfo += x
-                                            sub_match = re.findall(KEY_WORD.ECCMESSAGESTART, x)
-                                            if sub_match:
-                                                eccstarttocatcherrormessage = True
-
-                                            if eccstarttocatcherrormessage:
-                                                ecctemperrormessagedata += x
-
-                                                sub_match = re.findall(KEY_WORD.ECCMESSAGEEND, x)
+                                        if not "ELBA_DIE_ID" in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]:
+                                            for x in f:
                                                 if sub_match:
-                                                    eccstarttocatcherrormessage = False
-                                                    ecctemperrormessagelist.append(ecctemperrormessagedata)
-                                                    ecctemperrormessagedata = ''
-                                                    #print(ecctemperrormessagelist)
                                                     #print(x)
+                                                    #print(sub_match)                                     
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ELBA_DIE_ID"] = sub_match[0]
+
+                                                    
+                                                    #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
                                                     #sys.exit()
-                                        #print(temploginfo)
-                                        if len(ecctemperrormessagelist):
-                                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ECC_STATUS"] = ecctemperrormessagelist
-                                            #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
-                                            #sys.exit()
+                                                #print(x)
+                                        #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
+                                        #sys.exit()
                                         f.close()
                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG'] = dict()
                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'] = list()
@@ -1374,7 +1322,7 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                     shutil.rmtree(inputconfig['DIR']['TEMPDIR'])
                 except OSError as e:
                     print("Error: %s : %s" % (inputconfig['DIR']['TEMPDIR'], e.strerror))  
-    #sys.exit()
+
           
     for teststep in teststeplist:   
         jsonfileoutputname = "{}/{}_{}_DATA.json".format(inputconfig['DIR']["TEMPDATABASE"],teststep,date_time)
@@ -4359,8 +4307,6 @@ def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
 
     wirtedata.append('RESULT')
     wirtedata.append('FAILED_STEP')
-    #DDR_BIST
-    wirtedata.append('SPECIALCHECK')
     wirtedata.append('ERROR_DATA')
     ws2.append(wirtedata)
     
@@ -4421,51 +4367,11 @@ def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                         #if len(eacherror) > 200:
                                             #eacherror = eacherror[:200]
                                         wirtedata.append(failurestep)
-                                        if "elb_l1_ddr_bist" in FAILURE_DICT[failurestep]:
-                                            wirtedata.append("DDR_BIST")
-                                        elif "int_mcc.intreg" in FAILURE_DICT[failurestep]:
-                                            wirtedata.append("int_mcc.intreg")
-                                        else:
-                                            wirtedata.append("None")
                                         wirtedata.append(FAILURE_DICT[failurestep][:-2])
                                         #print(wirtedata)
                                         ws2.append(wirtedata)
                                         
                                         #print(wirtedata)
-
-                                if 'ECC_STATUS' in DATA["SN"][sn][chassis][testdate][testetime]:
-                                    howmanyeccstatus = len(DATA["SN"][sn][chassis][testdate][testetime]['ECC_STATUS'])
-                                    if howmanyeccstatus:
-                                        for eacheccstatus in DATA["SN"][sn][chassis][testdate][testetime]['ECC_STATUS']:
-                                            sub_match = re.findall(KEY_WORD.CHECKECCSTATUS, eacheccstatus)
-                                            #print(sub_match)
-                                            if sub_match:
-                                                checkeccresult = False
-                                                for eacheccresult in sub_match:
-                                                    if not eacheccresult[1] == '0x00000000':
-                                                        checkeccresult = True
-
-                                                if checkeccresult:
-                                                    wirtedata = list()
-                                                    wirtedata.append(teststep)
-                                                    wirtedata.append(sn)
-                                                    wirtedata.append(chassis)
-                                                    wirtedata.append(testdate)
-                                                    wirtedata.append(testetime)
-                                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
-                                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
-                                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
-                                                    #print(eacherror)
-                                                    #if len(eacherror) > 200:
-                                                        #eacherror = eacherror[:200]
-                                                    wirtedata.append("ECC_CHECK")
-                                                    wirtedata.append("ECC_ERROR")
-                                                    wirtedata.append(eacheccstatus)
-                                                    #print(wirtedata)
-                                                    ws2.append(wirtedata)
-                                                    break
-                                            #sys.exit()
-
     
     fixcolumnssize2(ws2)
     highlightinyellow(ws2,'TIMEOUT')
@@ -4912,7 +4818,7 @@ def calculePass_rate(totalnumber,passnumber):
 
     return yeilddisplay
 
-def generateexeclmacandsnreport(DATA,wb,snmaclist):
+def generateexeclmacandsnreport(pr,DATA,wb,snmaclist):
     ws1 = wb.active
     ws1.title = "SNvsMAC"
 
@@ -4920,6 +4826,7 @@ def generateexeclmacandsnreport(DATA,wb,snmaclist):
     wirtedata.append('SN')
     wirtedata.append('PN')
     wirtedata.append('MAC')
+    wirtedata.append('FLEXFLOW')
     ws1.append(wirtedata)
 
     for SN in snmaclist:
@@ -4927,16 +4834,28 @@ def generateexeclmacandsnreport(DATA,wb,snmaclist):
         wirtedata.append(SN)        
         if len(snmaclist[SN]['PN']):
             wirtedata.append(snmaclist[SN]['PN'][0])
+        else:
+            wirtedata.append('') 
         if len(snmaclist[SN]['MAC']):
+            wirtemacaddress = ''
             for macaddress in snmaclist[SN]['MAC']:
-                wirtedata.append(macaddress.replace('-',''))   
+                wirtemacaddress += macaddress.replace('-','')
+                wirtemacaddress += '\r'
+            wirtedata.append(wirtemacaddress[:-2])
+        else:
+            wirtedata.append('')    
+        if SN in pr['SNlist']["FailureSNFlexflow"]:
+            wirtedata.append(pr['SNlist']["FailureSNFlexflow"][SN]) 
         ws1.append(wirtedata)
 
+    wraptest(ws1)
+    freezePosition(ws1,'B2')
     fixcolumnssize(ws1)
+
 
     return True
 
-def generateexeclmacandsnreport2(DATA,wb,snmaclist):
+def generateexeclmacandsnreport2(pr,DATA,wb,snmaclist):
     ws1 = wb.create_sheet(title="MACvsSN")
 
     wirtedata = list()
@@ -4955,7 +4874,10 @@ def generateexeclmacandsnreport2(DATA,wb,snmaclist):
                 wirtedata.append(sn)   
         ws1.append(wirtedata)
 
+    wraptest(ws1)
+    freezePosition(ws1,'B2')
     fixcolumnssize(ws1)
+
 
     return True
 
@@ -5329,10 +5251,9 @@ def GetFailureSNList(DATA,inputconfig,pr):
                 LastfailureremoveDupSN[test]["SN"] = list()
             if SN in DATA['SN']['LAST'][test]:
                 if "result" in DATA['SN']['LAST'][test][SN]:
-                    if "FAIL" in DATA['SN']['LAST'][test][SN]["result"]:
-                        LastfailureremoveDupSN[test]["count"] += 1
-                        LastfailureremoveDupSN[test]["SN"].append(SN)
-                        break
+                    LastfailureremoveDupSN[test]["count"] += 1
+                    LastfailureremoveDupSN[test]["SN"].append(SN)
+                    break
 
     #print(json.dumps(LastfailureremoveDupSN, indent = 4))
 
@@ -5439,12 +5360,11 @@ def SummaryfailureReportDetail(DATA,ws1,inputconfig,workingonSNlist,pr,start=Non
         countResult = dict()
         countResult["PASS"] = 0
         for sn in listofSN:
-            if "result" in DATA['SN']['LAST'][test][sn]:
-                testresult = DATA['SN']['LAST'][test][sn]["result"]
-                if not testresult in countResult:
-                    countResult[testresult] = 1
-                else:
-                    countResult[testresult] += 1
+            testresult = DATA['SN']['LAST'][test][sn]["result"]
+            if not testresult in countResult:
+                countResult[testresult] = 1
+            else:
+                countResult[testresult] += 1
         for testresult in resultlist:
             if testresult in countResult:
                 #wirtedata.append(countResult[testresult])

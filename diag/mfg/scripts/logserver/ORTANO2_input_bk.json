@@ -1,23 +1,26 @@
 {
-	"NAME": "LACONA32DELL",
+	"NAME": "ORTANO2",
 	"TYPE": "NIC",
-	"FLEXFLOW": "192.168.1.112",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_LACONA32DELL_02",
-		"TEMPDATABASE": "/samba/public/tmp_database/LACONA32DELL",
-		"testlogpath": "/mnt/hw-mftg-data/LACONA32DELL",
-		"reportpath":"/samba/public/REPORT/LACONA32DELL/",
-		"historypath":"/samba/public/HISTORY/LACONA32DELL"
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_05",
+		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
+		"reportpath":"/samba/public/REPORT/ORTANO2_BK/",
+		"historypath":"/samba/public/HISTORY/ORTANO2_BK"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/LACONA32DELL_DB_TEST14.json",
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST17.json",
 		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
 		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
+	},
+	"IMAGESUB" : {
+		"CPLD1 image" : "CPLD image1",
+		"CPLD2 image" : "CPLD image2"
 	},
 	"MTP_STATUS" : [
 					"01",
@@ -32,6 +35,7 @@
 					"10"
 	],
 	"DISPLAYINDO" : [
+		"CPLD image1",
 		"QSPI image",
 		"MTP Diag Version"
 	],
@@ -41,6 +45,9 @@
 		"NICINFO"
 	],
 	"DIE_ID" : 1,
+	"KEEPLASTPASS" : 1,
+	"SKIPPrefix" : "FLM",
+	"STARTCountSN" : "FPN21200001",
 	"4CFLOW" : [
 				"4C-L (HV)",
 				"4C-L (LV)",
@@ -54,6 +61,7 @@
 					"4C-H",
 					"SWI",
 					"FST"
+					
 					],
 	"TESTFOLDER":[
 					"DL",

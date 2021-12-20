@@ -12,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/ORTANO2_EMMC"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST16.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST17.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
