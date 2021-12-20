@@ -5300,7 +5300,7 @@ class mtp_ctrl():
         if self._nic_ctrl_list[slot].nic_mvl_acc_test():
             retval = "SUCCESS"
         else:
-            retval = "FAILURE"
+            retval = "FAIL"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
 
@@ -5316,7 +5316,21 @@ class mtp_ctrl():
         if self._nic_ctrl_list[slot].nic_mvl_stub_test(loopback):
             retval = "SUCCESS"
         else:
-            retval = "FAILURE"
+            retval = "FAIL"
+        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
+
+        return retval, err_msg_list
+
+    def mtp_nic_mvl_link_test(self, slot):
+        test = "LINK"
+
+        retval = ""
+        err_msg_list = list()
+        if self._nic_ctrl_list[slot].nic_mvl_link_test():
+            retval = "SUCCESS"
+        else:
+            retval = "FAIL"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
 
@@ -5330,7 +5344,7 @@ class mtp_ctrl():
         if self._nic_ctrl_list[slot].nic_phy_xcvr_test():
             retval = "SUCCESS"
         else:
-            retval = "FAILURE"
+            retval = "FAIL"
         err_msg_list.append(self.mtp_get_nic_err_msg(slot))
         err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
 

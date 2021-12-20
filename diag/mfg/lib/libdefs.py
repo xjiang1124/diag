@@ -538,6 +538,7 @@ class MFG_DIAG_CMDS:
 
     NIC_MVL_ACC_FMT = "{:s}mvl_acc.sh"
     NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh {:s}"
+    NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
     NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh"
 
 class MFG_DIAG_SIG:
@@ -586,6 +587,7 @@ class MFG_DIAG_SIG:
     NIC_SW_DEVICE_CHK_SIG2 = "Operational Mode *: bitw-smart-switch"
     NIC_MVL_ACC_SIG = "MVL ACC TEST PASSED"
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
+    NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
 
 class MFG_DIAG_RE:

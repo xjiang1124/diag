@@ -333,7 +333,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
-        sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
+        sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
     elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == 0:
         sub_test_list = [("PHY", "XCVR")]
     else:
@@ -380,10 +380,12 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_acc_test(slot)
             elif dsp == "MVL" and test == "STUB":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_stub_test(slot, loopback)
+            elif dsp == "MVL" and test == "LINK":
+                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
             elif dsp == "PHY" and test == "XCVR":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_test(slot)
             else:
-                ret, err_msg_list = "FAILURE", ["Not the right function for this kind of test"]
+                ret, err_msg_list = "FAIL", ["Not the right function for this kind of test"]
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
             if ret == "SUCCESS":
