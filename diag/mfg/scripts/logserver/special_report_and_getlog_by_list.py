@@ -203,7 +203,7 @@ def createteststatusreportbyworkingonSNlist(pr,DATA,inputconfig,startdate=None,l
 
     wb.save(filename = dest_filename)
 
-    #copyalllogfolder(pr,DATA,workingonSNlist,inputconfig)
+    copyalllogfolder(pr,DATA,workingonSNlist,inputconfig)
     
     print("OUTPUT FILE: {}".format(dest_filename))
 

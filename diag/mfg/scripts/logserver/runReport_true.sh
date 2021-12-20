@@ -19,6 +19,7 @@ sleep 1
 [ "x$(cat /tmp/runReport_truelock.file)" == "x"$$ ] || exit
 
 configNames=(
+ORTANO2_SNAKE_input.json
 NAPLES100DELL_input.json
 POMONTE_test_input.json
 ORTANO2_input.json
