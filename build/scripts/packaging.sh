@@ -126,6 +126,8 @@ do
         cp $TOP_DIR/diag/scripts/mvl_link.sh                    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/xcvr_phy_intf.sh               $NIC_UTIL_DIR
         cp $TEMP_DIR/scripts/version.txt                        $NIC_UTIL_DIR
+        cp $TEMP_DIR/scripts/pre_ltc3888                        $NIC_UTIL_DIR
+        cp $TEMP_DIR/scripts/ltc3888.txt                        $NIC_UTIL_DIR
     
         cp $TOP_DIR/diag/scripts/sw/*                           $NIC_UTIL_DIR/sw/
     
