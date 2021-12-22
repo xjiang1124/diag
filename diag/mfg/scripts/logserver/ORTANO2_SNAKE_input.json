@@ -1,7 +1,7 @@
 {
 	"NAME": "ORTANO2_SNAKE",
 	"TYPE": "NIC",
-	"FLEXFLOW": "192.168.3.11",
+	"SNLIST": "experiment.xlsx",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
@@ -12,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/ORTANO2_SNAKE"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_SNAKE_DB_TEST1.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_SNAKE_DB_TEST7.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
@@ -34,8 +34,6 @@
 					"10"
 	],
 	"DISPLAYINDO" : [
-		"CPLD image1",
-		"QSPI image",
 		"MTP Diag Version"
 	],
 	"CHECKKEYS" : [
@@ -44,7 +42,6 @@
 		"NICINFO"
 	],
 	"DIE_ID" : 1,
-	"KEEPLASTPASS" : 1,
 	"SKIPPrefix" : "FLM",
 	"STARTCountSN" : "FPN21200001",
 	"4CFLOW" : [
@@ -54,13 +51,8 @@
 				"4C-H (HV)"
 				],
 	"TESTLIST" :[
-					"DL",
-					"P2C",
 					"4C-L",
-					"4C-H",
-					"SWI",
-					"FST"
-					
+					"4C-H"					
 					],
 	"TESTFOLDER":[
 					"DL",

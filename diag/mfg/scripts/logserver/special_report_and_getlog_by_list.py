@@ -2698,7 +2698,7 @@ def copyallfailurelogfolder(pr,DATA,workingonSNlist,inputconfig):
     return 0
 
 def copyalllogfolder(pr,DATA,workingonSNlist,inputconfig):
-    lastfailurefolder = "{}LOG_COPY_BY_{}".format(inputconfig['DIR']["reportpath"],date_time)
+    lastfailurefolder = "{}LOG_COPY".format(inputconfig['DIR']["reportpath"])
     pr['modules'].createdirinserver(lastfailurefolder)
     status = 'LAST'
     countforcreateunzipfile = 0

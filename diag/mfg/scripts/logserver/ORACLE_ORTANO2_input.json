@@ -1,19 +1,19 @@
 {
 	"NAME": "ORTANO2_ORACLE",
 	"TYPE": "NIC",
-	"SNLIST": "Oracle_SN_01.xlsx",
+	"SNLIST": "Oracle_SN_02.xlsx",
 	"FLEXFLOW": "192.168.3.2",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_02_ORACLE",
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_05_ORACLE",
 		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2_ORACLE",
 		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
 		"reportpath":"/samba/public/REPORT/ORTANO2_ORACLE/",
 		"historypath":"/samba/public/HISTORY/ORTANO2_ORACLE"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST17.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"

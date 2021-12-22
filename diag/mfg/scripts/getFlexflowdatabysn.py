@@ -41,22 +41,13 @@ def main():
     ARGV = dict()
     checkargv(ARGV)
 
-    resp = libmfg_utils.flx_web_srv_get_uut_info(ARGV["sn"])
+    if 'test' in ARGV:
 
-    #print(resp)
+        resp = libmfg_utils.flx_web_srv_get_uut_info(ARGV["sn"],ARGV['test'])
 
-    #print("################## GET UUT INF #######################")
-    resp = resp.replace(':\n',': ')
-    resp = resp.replace('&gt;', ' ')
-    #print resp
-    match = re.findall(r"Unit Current State:\s+(\w.*\w)",resp)
-    #print(match)
-    if match:
-        print("CURRENT STATUS: {}".format(match[0]))
-    #print("################## GET UUT INF #######################")
-    #return "500"
-    else:
-        resp = libmfg_utils.flx_web_srv_get_uut_info(ARGV["sn"],stage="P2C")
+        #print(resp)
+
+        #print("################## GET UUT INF #######################")
         resp = resp.replace(':\n',': ')
         resp = resp.replace('&gt;', ' ')
         #print resp
@@ -67,6 +58,35 @@ def main():
         else:
             print("CURRENT STATUS: NONE")
             print(resp)
+
+    else:        
+
+        resp = libmfg_utils.flx_web_srv_get_uut_info(ARGV["sn"])
+
+        #print(resp)
+
+        #print("################## GET UUT INF #######################")
+        resp = resp.replace(':\n',': ')
+        resp = resp.replace('&gt;', ' ')
+        #print resp
+        match = re.findall(r"Unit Current State:\s+(\w.*\w)",resp)
+        #print(match)
+        if match:
+            print("CURRENT STATUS: {}".format(match[0]))
+        #print("################## GET UUT INF #######################")
+        #return "500"
+        else:
+            resp = libmfg_utils.flx_web_srv_get_uut_info(ARGV["sn"],stage="P2C")
+            resp = resp.replace(':\n',': ')
+            resp = resp.replace('&gt;', ' ')
+            #print resp
+            match = re.findall(r"Unit Current State:\s+(\w.*\w)",resp)
+            #print(match)
+            if match:
+                print("CURRENT STATUS: {}".format(match[0]))
+            else:
+                print("CURRENT STATUS: NONE")
+                print(resp)
 
     difftime = datetime.now()-start
     #print('Done Time: ', difftime)       
