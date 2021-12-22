@@ -3257,6 +3257,10 @@ class mtp_ctrl():
         self.cli_log_slot_err(slot, "Performing post DSP fail steps")
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp fail debug"))
 
+        # dump cpld status bits
+        if not self.mtp_mgmt_set_nic_avs_post(slot):
+            ret = False
+
         # ping test (try twice)
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
         for x in range(2):
@@ -3272,10 +3276,6 @@ class mtp_ctrl():
             if not self.mtp_check_nic_rebooted(slot):
                 ret = False
             self._lock.release()
-
-        # dump cpld status bits
-        if not self.mtp_mgmt_set_nic_avs_post(slot):
-            ret = False
 
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
         return ret
@@ -5389,6 +5389,20 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC board temperature = {:s}C".format(board_temp))
         self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
         self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+
+        ##### Use this dump to check ECC errors as well
+        ecc_regs = re.findall(r"Reg 0x(.*); value: 0x(.*)", cmd_buf)
+        if ecc_regs:
+            errors_found = False
+            for reg, val in ecc_regs:
+                if int(val.strip(),16) != 0:
+                    self.cli_log_slot_err(slot, "ECC errors found")
+                    self.cli_log_slot_err(slot, "Reg 0x{:s}; value: 0x{:s}".format(reg,val))
+                    errors_found = True
+
+            if not errors_found:
+                self.cli_log_slot_inf(slot, "No ECC errors found")
+
         return True
 
     def mtp_thread_stop_on_err(self):

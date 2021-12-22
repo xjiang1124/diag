@@ -849,21 +849,22 @@ def fail_all_slots(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
 def post_fail_steps(mtp_mgmt_ctrl, slot):
-    
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Init new connection for failed NIC")
     ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot], fpo=False)
     if not ret:
         mtp_mgmt_ctrl.cli_log_err("Init NIC Connection Failed", level = 0)
     mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post fail debug"))
-    if not mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot):
+    powered_on = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+    if not powered_on:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC not powered on")
-    mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
-    mtp_mgmt_ctrl._lock.acquire()
-    if mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot):
+    else:
+        mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
+        mtp_mgmt_ctrl._lock.acquire()
+        mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
         mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
         mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
-    mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
-    mtp_mgmt_ctrl._lock.release()
+        mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
+        mtp_mgmt_ctrl._lock.release()
     # in case nic hung up the bus:
     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
     mtp_mgmt_ctrl.mtp_reset_hub(slot)
