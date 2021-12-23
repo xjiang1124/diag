@@ -12,7 +12,7 @@
 		"historypath":"/samba/public/HISTORY/ORTANO2_SNAKE"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_SNAKE_DB_TEST7.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_SNAKE_DB_TEST11.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"

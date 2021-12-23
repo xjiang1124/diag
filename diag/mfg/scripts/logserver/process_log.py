@@ -343,10 +343,10 @@ def createspecialsnakereport(pr,DATA,inputconfig,startdate=None,listofsn=[],spec
 
     for eachteststep in DATA['SN']['TEST']:
         generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
-        if "4C" in eachteststep:
-            generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
-        else:
-            generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
+        # if "4C" in eachteststep:
+        #     generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
+        # else:
+        #     generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
         generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
         #L1 Sub Test only passed
         generateexeclerrdata2(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
@@ -1400,12 +1400,15 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                     if sn in eachniccardlog:
                                         #print(eachniccardlog)
                                         f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
+                                        basefilename = os.path.basename(eachniccardlog)
                                         temploginfo = ''
                                         for x in f:
                                             temploginfo += x
                                             sub_match = re.findall(KEY_WORD.GETERROR, x)
                                             if sub_match:
-                                                basefilename = os.path.basename(eachniccardlog)
+                                                if '_ERROR' in x:
+                                                    continue
+                                                
                                                 if not basefilename in allerrormessage:
                                                     allerrormessage[basefilename] = list()
                                                 allerrormessage[basefilename].append(x)
@@ -1427,9 +1430,15 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                                     #sys.exit()
                                                     break
                                             if SNAKELOGCOMPLETECHECK:
-                                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGCOMPLETECHECK"] = "PASS"
+                                                if basefilename in allerrormessage:
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGCOMPLETECHECK"] = "HAVE ERROR"
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGERROR"] = allerrormessage[basefilename]
+                                                else:
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGCOMPLETECHECK"] = "PASS"
                                             else:
-                                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGCOMPLETECHECK"] = "FAIL"
+                                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGCOMPLETECHECK"] = "INCOMPLETE"
+                                                if basefilename in allerrormessage:
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SNAKELOGERROR"] = allerrormessage[basefilename]
                                     #sys.exit()
 
 
@@ -1505,7 +1514,8 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                     if sub_match2:
                                         if enablecatch:
                                             enablecatch = False
-                                        enablecatch = True
+                                        if len(teamtoecclog) == 0:
+                                            enablecatch = True
 
                                     if enablecatch:
                                         teamtoecclog += "{}\r".format(eachline)
@@ -4694,13 +4704,14 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
     #wirtedata.append('RESULT')
     wirtedata.append('SNAKE_TEST_RESULT')
     wirtedata.append('SNAKE_LOG_CHECK')
+    wirtedata.append('SNAKE_LOG_ERROR')
     #DDR_BIST
     wirtedata.append('Vmarh')
     wirtedata.append('ECC_RESULT')
     wirtedata.append('ECC_DATA')
     #wirtedata.append('ECC syndrome')
-    wirtedata.append('int_mcc_CHECK')
-    wirtedata.append('int_mcc_DATA')
+    wirtedata.append('SNAKE_ECC')
+    wirtedata.append('SNAKE_ECC_LOG')
     ws2.append(wirtedata)
 
     summarydict = dict()
@@ -4752,6 +4763,7 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
                         slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
                         if "ECCDUMP" in DATA["SN"][sn][chassis][testdate][testetime]:
                             for eachvmarh in DATA["SN"][sn][chassis][testdate][testetime]["ECCDUMP"]:
+                                SNAKE_ECCRESULT = ''
                                 if not eachvmarh in summarydict['VM']:
                                     summarydict['VM'].append(eachvmarh)
                                 if not eachvmarh in eachstepdata:
@@ -4783,16 +4795,32 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                                 SNAKERESULT = "PASS"
 
                                     wirtedata.append(SNAKERESULT)
-                                    eachstepdata[eachvmarh]['SNAKERESULT'] = SNAKERESULT
+                                    
                                     if "SNAKELOGCOMPLETECHECK" in DATA["SN"][sn][chassis][testdate][testetime]:
                                         wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]["SNAKELOGCOMPLETECHECK"])
+                                        if DATA["SN"][sn][chassis][testdate][testetime]["SNAKELOGCOMPLETECHECK"] == 'INCOMPLETE':
+                                            SNAKE_ECCRESULT += 'EC_SNAKE_LOG_IMC'
+                                            SNAKE_ECCRESULT += '\r'
                                     else:
                                         wirtedata.append("NO SNAKE LOG")
+                                        SNAKE_ECCRESULT += "EC_SNAKE_NO_LOG"
+                                        SNAKE_ECCRESULT += '\r'
+                                    if "SNAKELOGERROR" in DATA["SN"][sn][chassis][testdate][testetime]:
+                                        neweacherror = ''
+                                        for checkeacherror in DATA["SN"][sn][chassis][testdate][testetime]["SNAKELOGERROR"]:
+                                            checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                            neweacherror += checkeacherror
+                                            neweacherror += "\r"
+                                        wirtedata.append(neweacherror)
+                                        SNAKE_ECCRESULT += 'EC_SNAKE_OTHER'
+                                        SNAKE_ECCRESULT += '\r'
+                                    else:
+                                        wirtedata.append("")
                                     wirtedata.append(eachvmarh)
                                     checkdone = False
                                     saveECCdata = ''
                                     saveECCstart = False
-                                    ECC_RESULT = 'NONE'
+                                    ECC_RESULT = 'NO RESULT'
                                     for eachline in eacheccdump.split("\r"):
                                         match = re.findall(KEY_WORD.ECC_ENCHECK,eachline)
                                         if match:
@@ -4819,8 +4847,7 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                             saveECCdata += "\r"
                                             ECC_RESULT = 'FAIL'
                                             checkdone = True
-                                    wirtedata.append(ECC_RESULT)
-                                    eachstepdata[eachvmarh]['ECC_RESULT'] = ECC_RESULT
+
                                     # ECC_EN:0x33 ECC_INTERRUPT:0x0 ECC_INTERRUPT_COUNTER:0x0
 
                                     #  6833 [21-12-21 05:33:13] MSG :: MC0: CORE0: read syndrome^M
@@ -4832,9 +4859,9 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                     #  6839 [21-12-21 05:33:13] MSG :: FAIL: ECC_EN:0x33 ECC_INTERRUPT:0x1 ECC_INTERRUPT_COUNTER:0x1 ^M
 
                                     # Multi-bit Uncorrectable ECC Syndrome
-
+                                    wirtedata.append(ECC_RESULT)
+                                    eachstepdata[eachvmarh]['ECC_RESULT'] = ECC_RESULT
                                     if not checkdone:
-                                        wirtedata.append("None")
                                         wirtedata.append(eacheccdump)
                                     else:
                                         wirtedata.append(saveECCdata[:-2])
@@ -4850,10 +4877,23 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                         if "SNAKE_ELBA" in failurestep:
                                             if keyofvmarh in failurestep:
                                                 if "int_mcc" in FAILURE_DICT[failurestep]:
-                                                    int_mcc_check = "YES"
-                                                    int_mcc_data = FAILURE_DICT[failurestep]
+                                                    int_mcc_check = "FAIL"
+                                                    eacherrorlist = FAILURE_DICT[failurestep].split('\n')
+                                                    neweacherror = ''
+                                                    for checkeacherror in eacherrorlist:
+                                                        checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                                        neweacherror += checkeacherror
+                                                        neweacherror += "\r"
+                                                    int_mcc_data = neweacherror
+                                                    SNAKE_ECCRESULT += 'EC_SNAKE_ECC'
+                                                    SNAKE_ECCRESULT += '\r'
                                     wirtedata.append(int_mcc_check)
                                     wirtedata.append(int_mcc_data)
+                                    #print(wirtedata)
+                                    if len(SNAKE_ECCRESULT):
+                                        eachstepdata[eachvmarh]['SNAKE_ECC'] = SNAKE_ECCRESULT[:-1]
+                                    else:
+                                        eachstepdata[eachvmarh]['SNAKE_ECC'] = 'PASS'
                                     ws2.append(wirtedata)
 
                         if len(eachstepdata) == 0:
@@ -4872,18 +4912,21 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
     highlightingreen(ws2,'PASS')
     highlightinred(ws2, 'FAIL')
     highlightinred(ws2, 'FAILED')
+    highlightinred(ws2, 'HAVE ERROR')
+    highlightinred(ws2, 'INCOMPLETE')
+    freezePosition(ws2,'H2')
     wraptest(ws2)
 
     #print(json.dumps(summarydict, indent = 4)) 
 
     #generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytype="RESULT")
-    generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytype="SNAKERESULT")
-    generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytype="ECC_RESULT")
+    generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict)
 
     return 0
 
-def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytype="RESULT"):
-    teststeperrortitle = "{}_SNAKE_SUMMARY_{}".format(teststep,keytype)
+def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict):
+    teststeperrortitle = "{}_SNAKE_SUMMARY".format(teststep)
+    keytypelist = ["ECC_RESULT","SNAKE_ECC"]
     print("{}: {}".format("generateexeclerrdata", teststeperrortitle))
     ws3 = wb.create_sheet(title=teststeperrortitle)
     getmaxtestnumber = 0
@@ -4893,9 +4936,12 @@ def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULL
     wirtedata = list()
     wirtedata.append('SN')
     wirtedata.append('Vmarh')
-    for b in range(getmaxtestnumber):
-        wirtedata.append("TEST #{}".format(b+1))
-    wirtedata.append('OVERALL RESULT')
+
+    for keytype in keytypelist:
+        wirtedata.append(keytype)
+        for b in range(getmaxtestnumber):
+            wirtedata.append("TEST #{}".format(b+1))
+    #wirtedata.append('OVERALL RESULT')
     ws3.append(wirtedata)
 
     for sn in sorted(summarydict['LIST']):
@@ -4905,26 +4951,28 @@ def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULL
             wirtedata = list()
             wirtedata.append(sn)
             wirtedata.append(Vmarh)
-            for b in range(getmaxtestnumber):
-                if b < gettestnumber:
-                    eachdata = summarydict['DATA'][sn][b]
-                    print(eachdata)
-                    if not Vmarh in eachdata:
-                        wirtedata.append('NO DATA')
-                        continue
-                    if keytype in eachdata[Vmarh]:
-                        wirtedata.append(eachdata[Vmarh][keytype])
-                        overallresult.append(eachdata[Vmarh][keytype])
+            for keytype in keytypelist:
+                wirtedata.append(keytype)
+                for b in range(getmaxtestnumber):
+                    if b < gettestnumber:
+                        eachdata = summarydict['DATA'][sn][b]
+                        print(eachdata)
+                        if not Vmarh in eachdata:
+                            wirtedata.append('NO DATA')
+                            continue
+                        if keytype in eachdata[Vmarh]:
+                            wirtedata.append(eachdata[Vmarh][keytype])
+                            overallresult.append(eachdata[Vmarh][keytype])
+                        else:
+                            wirtedata.append('NO DATA')
                     else:
-                        wirtedata.append('NO DATA')
-                else:
-                    wirtedata.append('NO TEST')
-            if overallresult.count('PASS') == gettestnumber:
-                wirtedata.append('PASS')
-            elif overallresult.count('FAIL') == gettestnumber:
-                wirtedata.append('FAIL')
-            else:
-                wirtedata.append('OTHERS')
+                        wirtedata.append('NO TEST')
+            # if overallresult.count('PASS') == gettestnumber:
+            #     wirtedata.append('PASS')
+            # elif overallresult.count('FAIL') == gettestnumber:
+            #     wirtedata.append('FAIL')
+            # else:
+            #     wirtedata.append('OTHERS')
             ws3.append(wirtedata)
 
     fixcolumnssize2(ws3)
@@ -4934,6 +4982,8 @@ def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULL
     highlightingreen(ws3,'PASS')
     highlightinred(ws3, 'FAIL')
     highlightinred(ws3, 'FAILED')
+    highlightinred(ws3, 'EC_SNAKE')
+    freezePosition(ws3,'C2')
     wraptest(ws3)
 
 def generateexeclerrdata3(workingonSNlist,DATA,teststep,wb,FULLDATA):
