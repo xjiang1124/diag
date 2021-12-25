@@ -39,7 +39,7 @@ scriptname = scriptname.replace('.py','')
 
 def main():
 
-    #get_lock(scriptname)
+    get_lock(scriptname)
 
     start=datetime.now()
     pr = dict()
@@ -113,7 +113,10 @@ def main():
     pr['FailureSNlist'] = processFailureSNFlexFlowCheck(DATA,inputconfig,pr)
 
     if "specreport" in ARGV:
-        createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
+        if DATA['NEWFILECOUNT']:
+            createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
+        elif "report" in ARGV:
+            createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
     else:
         if DATA['NEWFILECOUNT']:
             processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
@@ -343,6 +346,7 @@ def createspecialsnakereport(pr,DATA,inputconfig,startdate=None,listofsn=[],spec
 
     for eachteststep in DATA['SN']['TEST']:
         generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexecltestbytesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
         # if "4C" in eachteststep:
         #     generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
         # else:
@@ -4485,6 +4489,77 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
     freezePosition(ws2,'L2')
     return 0
 
+def generateexecltestbytesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
+
+    testtitle = "{}_byTimes".format(teststep)
+    ws2 = wb.create_sheet(title=testtitle)
+    print("{}: {}".format("generateexecltestbytesttime", teststep))
+
+    SNdatabyTest = dict()
+
+
+    for sn in workingonSNlist:
+        if sn in DATA["SN"]:
+            if not sn in SNdatabyTest:
+                SNdatabyTest[sn] = dict()
+                SNdatabyTest[sn]['list'] = list()
+                SNdatabyTest[sn]['data'] = dict()
+            for chassis in DATA["SN"][sn]:
+                for testdate in DATA["SN"][sn][chassis]:
+                    for testetime in DATA["SN"][sn][chassis][testdate]:
+                        dateandtime = "{}_{}".format(testdate,testetime)
+                        SNdatabyTest[sn]['list'].append(dateandtime)
+                        SNdatabyTest[sn]['list'].sort()
+                        SNdatabyTest[sn]['data'][dateandtime] = DATA["SN"][sn][chassis][testdate][testetime]
+
+    MaxTestTime = 0
+
+    for sn in SNdatabyTest:
+        if len(SNdatabyTest[sn]['list']) > MaxTestTime:
+            MaxTestTime = len(SNdatabyTest[sn]['list'])
+
+    wirtedata = list()
+    wirtedata.append('TEST')
+    wirtedata.append('SN')
+    for c in range(MaxTestTime):
+        wirtedata.append("TEST #{}".format(c + 1))
+    ws2.append(wirtedata)
+
+    for sn in sorted(SNdatabyTest):
+        wirtedata = list()
+        wirtedata.append(teststep)
+        wirtedata.append(sn)
+        for c in range(MaxTestTime):
+            if len(SNdatabyTest[sn]['list']) > c:
+                checkdata = SNdatabyTest[sn]['data'][SNdatabyTest[sn]['list'][c]]
+                checkresult = checkdata['FINALRESULT']
+                errorlist = list()
+                #print(json.dumps(checkdata,indent=4))
+                for eachstep in checkdata["TESTSTEPLIST"]:
+                    for keystep in eachstep:
+                        if not 'PASS' in eachstep[keystep]:
+                            errorlist.append("{} <{}>".format(keystep,eachstep[keystep]))
+                
+                if not checkresult == 'PASS':
+                    if len(errorlist):
+                        checkresult = errorlist[0]
+                    else:
+                        checkresult = "UNKNOWN"
+                wirtedata.append(checkresult)
+            else:
+                wirtedata.append('NO TEST')
+        ws2.append(wirtedata)
+
+    fixcolumnssize(ws2)
+    highlightinyellow(ws2,'NO TEST')
+    highlightingreen(ws2,'PASS')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    highlightinred(ws2, 'UNKNOWN')
+    highlightinred(ws2,'TIMEOUT')
+    freezePosition(ws2,'C2')
+    return 0
+
 def generateexeclerrdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
 
     teststeperrortitle = "{}_ERROR".format(teststep)
@@ -4702,7 +4777,7 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wirtedata.append('SLOT')
 
     #wirtedata.append('RESULT')
-    wirtedata.append('SNAKE_TEST_RESULT')
+    #wirtedata.append('SNAKE_TEST_RESULT')
     wirtedata.append('SNAKE_LOG_CHECK')
     wirtedata.append('SNAKE_LOG_ERROR')
     #DDR_BIST
@@ -4794,7 +4869,7 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                             if 'No errors + Snake done --> SNAKE_ELBA might actually passed' in eachline:
                                                 SNAKERESULT = "PASS"
 
-                                    wirtedata.append(SNAKERESULT)
+                                    #wirtedata.append(SNAKERESULT)
                                     
                                     if "SNAKELOGCOMPLETECHECK" in DATA["SN"][sn][chassis][testdate][testetime]:
                                         wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]["SNAKELOGCOMPLETECHECK"])
