@@ -178,6 +178,9 @@ EOF
 
 fi
 
+cd /data/nic_util/
+tar xf edma_test.tar.gz
+echo "EDMA setup done"
 
 echo "nic_config done"
 

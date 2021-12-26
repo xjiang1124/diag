@@ -117,14 +117,16 @@ do
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil       $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/emmcutil      $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/asicutil      $NIC_UTIL_DIR
-        cp $TOP_DIR/tools/bin/arm64/gb_25nrz_cfg                $NIC_UTIL_DIR
         cp $TOP_DIR/diag/python/regression/update_mac.py        $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/clear_nic_config.sh            $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh                  $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_acc.sh                     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_stub.sh                    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_link.sh                    $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/run_edma.sh                    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/xcvr_phy_intf.sh               $NIC_UTIL_DIR
+        cp $TOP_DIR/tools/bin/arm64/gb_25nrz_cfg                $NIC_UTIL_DIR
+        cp $TOP_DIR/tools/edma/edma_test.tar.gz                 $NIC_UTIL_DIR
         cp $TEMP_DIR/scripts/version.txt                        $NIC_UTIL_DIR
         cp $TEMP_DIR/scripts/pre_ltc3888                        $NIC_UTIL_DIR
         cp $TEMP_DIR/scripts/pre_ltc3888_1                      $NIC_UTIL_DIR
@@ -149,6 +151,7 @@ do
     DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$asic/$arch
     #SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
     ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
+    #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.11.17/$asic/$arch
     
     if [[ $arch == "amd64" ]]
     then
