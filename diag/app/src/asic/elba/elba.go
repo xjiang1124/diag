@@ -163,7 +163,7 @@ func SnakeAndPrbsCheck(testType string) (err int) {
     return
 }
 
-func Snake(mode string, duration int, intLpbk int, verbose bool) (err int) {
+func Snake(mode string, duration int, intLpbk int, verbose bool, snakeNum int) (err int) {
     var filename string
     var errGo error
 
@@ -192,7 +192,7 @@ func Snake(mode string, duration int, intLpbk int, verbose bool) (err int) {
         verboseStr = "1"
     }
 
-    err = runCmd.Run(passSign, failSign, cmdStr, "../elba/elb_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk), verboseStr)
+    err = runCmd.Run(passSign, failSign, cmdStr, "../elba/elb_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk), verboseStr, strconv.Itoa(snakeNum))
 
     if err != errType.SUCCESS {
         dcli.Println("e", "Snake Test Failed!")

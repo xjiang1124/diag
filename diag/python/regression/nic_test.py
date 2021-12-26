@@ -505,7 +505,7 @@ class nic_test:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
-    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off", dura=120, in_lpbk=False):
+    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off", dura=120, in_lpbk=False, snake_num=6):
         print "=== Starting {} on slot {} ===".format(test_type, slot)
 
         ret = 0
@@ -522,7 +522,7 @@ class nic_test:
         elif test_type == "snake" and mode == "pcie":
             test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > /data/nic_util/asicutil_pcie.log &"
         elif (test_type == "snake" and ("nod" in mode)) or (test_type == "snake" and ("hod" in mode) ):
-            test_cmd = "/data/nic_util/asicutil -snake -mode {} -dura {} {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode, dura, int_lpbk_str)
+            test_cmd = "/data/nic_util/asicutil -snake -mode {} -dura {} {} -snake_num {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode, dura, int_lpbk_str, snake_num)
             print("test_cmd", test_cmd)
         elif test_type == "prbs" and mode == "eth":
             test_cmd = "/data/nic_util/asicutil -prbs -mode ETH -dura {} {} 2>&1 > /data/nic_util/asicutil_elba_prbs_eth.log &".format(dura, int_lpbk_str)
@@ -587,6 +587,7 @@ class nic_test:
         else:
             cmd = "/data/nic_util/asicutil -snake_chk"
 
+        session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_elba.log")
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
         self.nic_con.uart_session_stop(session)
 
@@ -594,6 +595,35 @@ class nic_test:
 
         print "check_result:", ret
         print "=== Checing {} result on slot {} Done ===".format(test_type, slot)
+        return ret
+
+    def test_check_ddr(self, slot=0):
+        print "=== Checking {} on slot {} ===".format("DDR setting", slot)
+
+        ret = 0
+        if slot == 0 or slot > 10:
+            print "Invalid slot number:", slot
+            sys.exit(0)
+
+        self.nic_con.switch_console(slot)
+        session = common.session_start()
+        ret = self.nic_con.uart_session_start(session)
+        if ret != 0:
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+            return -1
+
+        try:
+            self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
+            self.nic_con.uart_session_cmd(session, "./diag.exe ../elba/elb_arm_check_ddr.tcl")
+        except:
+            print("Failed to retrieve DDR info")
+
+        self.nic_con.uart_session_stop(session)
+
+        common.session_stop(session)
+
+        print "=== Checking {} on slot {} Done ===".format("DDR setting", slot)
         return ret
 
     def mtp_sts(self, wait_time, interval=15):
@@ -605,7 +635,7 @@ class nic_test:
             time.sleep(interval)
             
 
-    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0, duration=120, int_lpbk=False):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0, duration=120, int_lpbk=False, snake_num=6, disp_si=False):
         print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -619,7 +649,7 @@ class nic_test:
         test_result = OrderedDict()
         # Start snake
         for slot in nic_list:
-            ret = self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off", dura=duration, in_lpbk=int_lpbk)
+            ret = self.test_start(int(slot), test_type, mode, vmarg=vmargin, pc="off", dura=duration, in_lpbk=int_lpbk, snake_num=snake_num)
             if ret != 0:
                 test_result[slot] = "FAIL"
             else:
@@ -649,12 +679,39 @@ class nic_test:
                 break
             time.sleep(20)
 
+        if disp_si == True:
+            for slot in nic_list:
+                print("======================================")
+                print("Checking DDR setting")
+                print("======================================")
+                ret = self.test_check_ddr(int(slot))
+
         # Print result
         print "\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper())
         result_fmt = "Slot {:<2}: {:<5}"
         for slot, sts in test_result.items():
             print result_fmt.format(slot, sts)
         print "======================================"
+
+    def disp_ecc(self, nic_list=[]):
+        print("=== Collect ECC info ===")
+        slot_list = ",".join(nic_list)
+        print("slot_list:", slot_list)
+
+        session = common.session_start()
+        try:
+            ret, output = common.session_cmd_w_ot(session, "tclsh /home/diag/diag/scripts/asic/read_ecc_reg.tcl "+slot_list, 60, ending="ECC COLLECTION DONE")
+            p = re.compile(r'.*ECC COLLECTION RESULT (.*) Done.*', re.DOTALL)
+            m = p.match(output)
+            if m:
+                rets = m.group(1)
+            else:
+                print("Failed to retrief ECC result!")
+                return
+            print(rets)
+        except pexpect.TIMEOUT:
+            print("Failed to connect ECC info")
+        common.session_stop(session)
 
     def ena_dis_uboot_pcie(self, nic_list=[], enable=True):
         if len(nic_list) == 0:
@@ -669,6 +726,20 @@ class nic_test:
                 ret = self.nic_con.enable_pcie_uboot(int(slot))
             else:
                 ret = self.nic_con.disable_pcie_uboot(int(slot))
+
+            if ret != 0:
+                print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
+
+    def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        slot_list = ",".join(nic_list)
+        print "slot_list:", slot_list
+
+        for slot in nic_list:
+            ret = self.nic_con.config_ddr(int(slot), hardcode, speed)
 
             if ret != 0:
                 print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
@@ -1099,6 +1170,101 @@ class nic_test:
 
             common.session_stop(session)
 
+    def ddr_test(self, nic_list=[], num_ite=1):
+        print "=== NIC DDR Test ==="
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            for slot in nic_list:
+                con_session = common.session_start()
+
+                for i in range(5):
+                    common.session_cmd(con_session, "killall picocom", 20)
+
+                    self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
+                    ret = self.nic_con.uart_session_start(con_session)
+                    if ret == 0:
+                        break
+
+                    self.nic_con.uart_session_stop(con_session)
+
+                if ret != 0:
+                    print("Fail to connect uboot")
+                    return
+
+                j2c_session = common.session_start()
+                common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
+
+                # TCL command
+                common.session_cmd(j2c_session, "tclsh", 20, False, "%")
+                common.session_cmd(j2c_session, "source .tclrc.diag.elb", 60, False, "tclsh]")
+
+                try:
+                    common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "diag_close_j2c_if $port $slot1", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "run_ddr 3200", 120, False, "tclsh]")
+                    common.session_cmd(j2c_session, "elb_nx_cache_enable", 30, False, "tclsh]")
+                    #common.session_cmd(session, "", 30, False, "tclsh]")
+                    #common.session_cmd(session, "", 30, False, "tclsh]")
+                    #common.session_cmd(session, "", 30, False, "tclsh]")
+                    #common.session_cmd(session, "get_freq", 30, False, "tclsh]")
+                    #common.session_cmd(session, "get_freq", 30, False, "tclsh]")
+                    #common.session_cmd(session, "get_freq", 30, False, "tclsh]")
+                    #common.session_cmd(session, "diag_close_j2c_if 10 "+slot, 10, False, "tclsh]")
+
+                except pexpect.TIMEOUT:
+                    print(slot, "DDR test failed")
+                    common.session_stop(j2c_session)
+                    return
+
+                self.nic_con.uart_session_cmd(con_session, "g", 10, ending="Loading Environment from Flash")
+                time.sleep(1)
+                self.nic_con.uart_session_stop(con_session)
+
+                print("Sleep 45 sec")
+                time.sleep(45)
+                ret = self.nic_con.uart_session_start(con_session)
+                if ret != 0:
+                    self.nic_con.uart_session_stop(con_session)
+                    return
+
+                #self.nic_con.uart_session_stop(con_session)
+
+                common.session_cmd(j2c_session, "elb_load_die_id", 30, False, "tclsh]")
+
+                #ret = self.nic_con.uart_session_start(con_session)
+                self.nic_con.uart_session_cmd(con_session, "fsck -y /dev/mmcblk0p10")
+                self.nic_con.uart_session_cmd(con_session, "mount /dev/mmcblk0p10 /data")
+                self.nic_con.uart_session_cmd(con_session, "source /data/nic_arm/nic_setup_env.sh")
+                self.nic_con.uart_session_cmd(con_session, "source /etc/profile")
+                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/xo3dcpld -w 1 0x0")
+                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/xo3dcpld -r 1")
+                self.nic_con.uart_session_cmd(con_session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+                self.nic_con.uart_session_cmd(con_session, "export PCIE_ENABLED_PORTS=0")
+                self.nic_con.uart_session_cmd(con_session, "export MTP_REV=REV_4")
+                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/asicutil -snake -mode hod -dura 120 -verbose -int_lpbk -snake_num 4", 600, "SNAKE DONE")
+                #self.nic_con.uart_session_cmd(session, "sync")
+                self.nic_con.uart_session_stop(con_session)
+
+                common.session_cmd(j2c_session, "check_ecc_intr", 10, False, "tclsh]")
+                common.session_cmd(j2c_session, "exit", 10)
+
+                common.session_stop(j2c_session)
+                common.session_stop(con_session)
+                return
+
+            common.session_stop(session)
+
     def enter_tclsh(self, slot):
         session = common.session_start()
         self.nic_con.switch_console(slot)
@@ -1143,8 +1309,11 @@ if __name__ == "__main__":
     group.add_argument("-skew", "--skew", help="Run nic skew test on multile nics", action='store_true')
     group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
     group.add_argument("-emmc", "--emmc", help="Run nic emmc test on multile nics", action='store_true')
+    group.add_argument("-ddr_test", "--ddr_test", help="DDR test", action='store_true')
     group.add_argument("-enter_tclsh", "--enter_tclsh", help="Enter ARM tclsh", action='store_true')
     group.add_argument("-fix_bx", "--fix_bx", help="UART cpl file", action='store_true')
+    group.add_argument("-config_ddr", "--config_ddr", help="configure DDR", action='store_true')
+    group.add_argument("-disp_ecc", "--disp_ecc", help="Display ECC syndrom", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -1154,6 +1323,7 @@ if __name__ == "__main__":
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
     parser.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback", action='store_true')
     parser.add_argument("-dura", "--dura", help="Duration", type=int, default=120)
+    parser.add_argument("-snake_num", "--snake_num", help="Snake number 4/6", type=int, default=6)
     parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
     parser.add_argument("-ite", "--iteration", help="Number of power cycle test iterations", type=int, default=1)
     parser.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
@@ -1166,6 +1336,9 @@ if __name__ == "__main__":
     parser.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
     parser.add_argument("-num_ite", "--num_ite", help="Number of iterations", type=int, default=1)
     parser.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
+    parser.add_argument("-disp_si", "--disp_si", help="Display ECC info", action='store_true')
+    parser.add_argument("-hardcode", "--hardcode", help="DDR hardcode setting", action='store_true')
+    parser.add_argument("-ddr_speed", "--ddr_speed", help="DDR speed", type=int, default=3200)
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -1184,7 +1357,7 @@ if __name__ == "__main__":
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si)
         sys.exit()
 
     if args.prbs == True and args.asic_type == "elba":
@@ -1238,6 +1411,16 @@ if __name__ == "__main__":
         test.ena_dis_uboot_pcie(slot_list, ena_dis)
         sys.exit()
 
+    if args.config_ddr == True:
+        slot_list = args.slot_list.split(',')
+        test.config_ddr(slot_list, args.hardcode, args.ddr_speed)
+        sys.exit()
+
+    if args.disp_ecc == True:
+        slot_list = args.slot_list.split(',')
+        test.disp_ecc(slot_list)
+        sys.exit()
+
     if args.setup_uboot_env == True:
         slot_list = args.slot_list.split(',')
 
@@ -1263,7 +1446,12 @@ if __name__ == "__main__":
 
     if args.emmc == True:
         slot_list = args.slot_list.split(',')
-        test.emmc_test(slot_list, args.num_ite)
+        test.ddr_test(slot_list, args.num_ite)
+        sys.exit()
+
+    if args.ddr_test == True:
+        slot_list = args.slot_list.split(',')
+        test.ddr_test(slot_list, args.num_ite)
         sys.exit()
 
     if args.enter_tclsh == True:

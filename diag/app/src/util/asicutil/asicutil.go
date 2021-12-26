@@ -32,6 +32,7 @@ func main() {
 
     duraPtr := flag.Int("dura", 120, "PRBS duration")
     intLpbkPtr := flag.Bool("int_lpbk", false, "Internal loopback")
+    snakeNumPtr := flag.Int("snake_num", 6, "Snake number: 4/6")
 
     verbosePtr    := flag.Bool("verbose", false, "Turn on verbose")
     //------------------------
@@ -69,7 +70,7 @@ func main() {
     cli.Println("d", "intLpbk:", intLpbk)
     if *snakePtr == true {
         if asicType == "ELBA" {
-            elba.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr)
+            elba.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr, *snakeNumPtr)
         } else if asicType == "CAPRI"{
             capri.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr)
         } else {

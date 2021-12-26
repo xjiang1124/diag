@@ -22,9 +22,9 @@ class nic_con:
     def uart_session_start(self, session, baud=115200):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
-        expstr = ["capri login:", "elba-gold login:", "elba-haps login:", "elba login:", "\#"]
+        expstr = ["capri login:", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
-        for ite in range(2):
+        for ite in range(4):
             print "ite: ", ite
             timeout = 1
 
@@ -176,6 +176,7 @@ class nic_con:
 
         cmd = "turn_on_slot.sh off {}".format(slot_list)
         common.session_cmd(session, cmd)
+        time.sleep(1)
         cmd = "turn_on_slot.sh on {}".format(slot_list)
         if swm_lp == True:
             cmd = "".join((cmd, " 1"))
@@ -800,6 +801,34 @@ class nic_con:
         common.session_stop(session)
         return ret
 
+    def config_ddr(self, slot, hardcode, speed):
+        expstr = ["Capri# ", "DSC# "]
+        ret = 0
+        session = common.session_start()
+        ret = self.enter_uboot(session, slot)
+        if ret != 0:
+            print "Failed to enter uboot"
+            return ret
+        ret = self.conn_uboot(session)
+        if ret != 0:
+            print "Failed to connect uboot"
+            return ret
+
+        if hardcode == True:
+            self.uart_session_cmd(session, "env set ddr_use_hardcoded_training 1", 30, expstr)
+        else:
+            self.uart_session_cmd(session, "env set ddr_use_hardcoded_training 0", 30, expstr)
+
+        if speed == 2400:
+            self.uart_session_cmd(session, "env set ddr_freq 2400", 30, expstr)
+        else:
+            self.uart_session_cmd(session, "env set ddr_freq 3200", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
     def disable_pcie_uboot(self, slot):
         expstr = ["Capri# ", "DSC# "]
         ret = 0
@@ -887,11 +916,14 @@ if __name__ == "__main__":
     group.add_argument("-mtest", "--mtest", help="Change baud rate", action='store_true')
     group.add_argument("-dis_pcie", "--dis_pcie", help="Disable PCIe", action='store_true')
     group.add_argument("-ena_pcie", "--ena_pcie", help="Enable PCIe", action='store_true')
+    group.add_argument("-config_ddr", "--config_ddr", help="configure DDR", action='store_true')
 
     parser.add_argument("-br", "--baud_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-ping", "--ping", help="Ping test before enable management port", action='store_true')
     parser.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser.add_argument("-hardcode", "--hardcode", help="DDR hardcode setting", action='store_true')
+    parser.add_argument("-ddr_speed", "--ddr_speed", help="DDR speed", type=int, default=3200)
     args = parser.parse_args()
     
     con = nic_con()
@@ -910,4 +942,8 @@ if __name__ == "__main__":
 
     if args.ena_pcie == True:
         con.enable_pcie_uboot(args.slot)
+        sys.exit()
+
+    if args.config_ddr == True:
+        con.config_ddr(args.slot, args.hardcode, args.ddr_speed)
         sys.exit()
