@@ -23,6 +23,7 @@ import (
     "device/tempsensor/tmp42123"
     "device/tempsensor/tmp451"
     "device/tempsensor/tmpadicom"
+    "device/tempsensor/max6657"
     "device/tempsensor/lm75a"
     "device/psu/dps800"
     "device/fpga/taorfpga"
@@ -119,7 +120,7 @@ func testTmpAdiCom(devName string) (err int) {
         dcli.Println("f", devName, " Read status failed!")
         return
     }
-    if mfgId != tmpadicom.MFG_ID_V {
+    if mfgId != max6657.MFG_ID_V {
         dcli.Println("F", devName, " Invalid MFG ID: expected", tmpadicom.MFG_ID_V, "read", mfgId)
         return errType.FAIL
     }
