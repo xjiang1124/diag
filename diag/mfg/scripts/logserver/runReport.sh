@@ -62,6 +62,11 @@ START=$(date +%s);
 
 echo Script: runReport.sh
 
+#ORTANO2_EDMA_1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_1_input.json specreport2=1
+
 cd $_mydir
 python3 $_mydir/process_log.py ORTANO2_SNAKE2_2_input.json specreport=1
 

@@ -117,6 +117,11 @@ def main():
             createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
         elif "report" in ARGV:
             createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
+    elif "specreport2" in ARGV:
+        if DATA['NEWFILECOUNT']:
+            createspecialsnakereport2(pr,DATA,inputconfig,startdate=None)
+        elif "report" in ARGV:
+            createspecialsnakereport2(pr,DATA,inputconfig,startdate=None)
     else:
         if DATA['NEWFILECOUNT']:
             processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
@@ -295,6 +300,75 @@ def createfailureteststatusreport(pr,DATA,inputconfig,startdate=None):
     print("OUTPUT FILE: {}".format(dest_filename))
 
     return None    
+
+def createspecialsnakereport2(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
+    
+    #workingonSNlist = DATA['SN']['LIST']
+    
+    print("START DATE: {}".format(startdate))
+    workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    if len(listofsn):
+        workingonSNlist = listofsn
+    workingonSNlist.sort(reverse=True)
+    print("COUNT SN: {}".format(len(workingonSNlist)))
+    #sys.exit()    
+    wb = Workbook()
+    
+    reportdir = inputconfig['DIR']["reportpath"]
+
+    dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
+    if "NAME" in inputconfig:
+        dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
+    if startdate:
+        dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
+
+    dest_chartfilename = dest_filename.replace('DATA','CHART')
+    print('OUTPUT FILE NAME: ' + dest_filename)
+    print('OUTPUT CHART FILE NAME: ' + dest_chartfilename)
+    
+    #sys.exit()
+    chartdata = dict()
+
+    generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
+
+    #sys.exit()
+    TempHVLVdata = dict()
+
+    generateexeclsnstatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
+    generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
+    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+
+    generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
+
+    workingonSNlist2 = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    workingonSNlist2.sort(reverse=True)
+
+    for eachteststep in DATA['SN']['TEST']:
+        generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexecltestbytesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        # if "4C" in eachteststep:
+        #     generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
+        # else:
+        #     generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
+        generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        #L1 Sub Test only passed
+        generateexeclerrdata2(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexeclerrdata3(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexeclerrdata5(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+
+    wb.save(filename = dest_filename)
+
+    copyallfailurelogfolder(pr,DATA,workingonSNlist,inputconfig)
+    
+    print("OUTPUT FILE: {}".format(dest_filename))
+
+    return None 
 
 def createspecialsnakereport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
     
@@ -1367,10 +1441,16 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                         f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
 
                                         ecctemperrormessagelist = list()
+                                        failinformationdatalist = list()
                                         ecctemperrormessagedata = ''
                                         eccstarttocatcherrormessage = False
                                         temploginfo = ''
                                         for x in f:
+                                            if 'FAIL' in x:
+                                                if 'RTC' in x:
+                                                    pass 
+                                                else:
+                                                    failinformationdatalist.append(x)
                                             temploginfo += x
                                             sub_match = re.findall(KEY_WORD.GETERROR, x)
                                             if sub_match:
@@ -1394,7 +1474,10 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                                     #print(x)
                                                     #sys.exit()
                                         #print(temploginfo)
-
+                                        if len(failinformationdatalist):
+                                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["FAILINFOMATION"] = failinformationdatalist
+                                            #print(failinformationdatalist)
+                                            #sys.exit()
                                         if len(ecctemperrormessagelist):
                                             DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ECC_STATUS"] = ecctemperrormessagelist
                                             #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
@@ -4762,6 +4845,184 @@ def generateexeclerrdata2(workingonSNlist,DATA,teststep,wb,FULLDATA):
     wraptest(ws2)
     return 0
 
+def generateexeclerrdata5(workingonSNlist,DATA,teststep,wb,FULLDATA):
+
+    teststeperrortitle = "{}_EDMA".format(teststep)
+    print("{}: {}".format("generateexeclerrdata", teststeperrortitle))
+    ws2 = wb.create_sheet(title=teststeperrortitle)
+    wirtedata = list()
+    wirtedata.append('TEST')
+    wirtedata.append('SN')
+    wirtedata.append('CHASSIS')
+    wirtedata.append('DATE')
+    wirtedata.append('TIME')
+    wirtedata.append('CARDTYPE')
+    wirtedata.append('SLOT')
+    wirtedata.append('Vmarh')
+    wirtedata.append('ECC_RESULT')
+    wirtedata.append('ECC_DATA')
+    wirtedata.append('MEM EDMA_CHECK')
+    wirtedata.append('MEM EDMA_ERROR')
+    ws2.append(wirtedata)
+
+    summarydict = dict()
+    summarydict['DATA'] = dict()
+    summarydict['LIST'] = list()
+    summarydict['VM'] = list()
+
+    for sn in workingonSNlist:
+        if sn in DATA["SN"]:
+            if not sn in summarydict['LIST']:
+                summarydict['DATA'][sn] = list()
+                summarydict['LIST'].append(sn)
+            for chassis in DATA["SN"][sn]:
+                for testdate in sorted(DATA["SN"][sn][chassis]):
+                    for testetime in sorted(DATA["SN"][sn][chassis][testdate]):
+                        eachstepdata = dict()
+                        FAILURE_STEPS = list()
+                        FAILURE_DICT = dict()
+                        for eacherror in DATA["SN"][sn][chassis][testdate][testetime]['ERRORDETAIL']:
+                            if "ERR MSG ==" in eacherror:
+                                failurestep = None
+                                if "L1 Sub Test only passed" in eacherror:
+                                    continue
+                                if "DIAG TEST" in eacherror:
+                                    Needworkonlist = eacherror.split('DIAG TEST')
+                                    match = re.findall(r"(\w.*\w),\s+ERR MSG ==\s?(.*)",Needworkonlist[-1])
+                                    #print(match)
+                                    if match:
+                                        failurestep = match[0][0]
+                                        failurestep = failurestep.strip() 
+                                else:
+                                    match = re.findall(r"(\w.*\w),\s+ERR MSG ==\s?(.*)",eacherror)
+                                    #print(match)
+                                    if match:
+                                        failurestep = match[0][0]
+                                        failurestep = failurestep.strip()                                   
+                                eacherrorlist = eacherror.split('\n')
+                                neweacherror = ''
+                                for checkeacherror in eacherrorlist:
+                                    checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                    neweacherror += checkeacherror
+                                    neweacherror += "\r"
+                                if not failurestep in FAILURE_STEPS:
+                                    FAILURE_STEPS.append(failurestep)
+                                if not failurestep in FAILURE_DICT:
+                                    FAILURE_DICT[failurestep] = neweacherror
+                                else:
+                                    FAILURE_DICT[failurestep] += neweacherror 
+                        slot = DATA["SN"][sn][chassis][testdate][testetime]['SLOT']
+                        if "ECCDUMP" in DATA["SN"][sn][chassis][testdate][testetime]:
+                            for eachvmarh in DATA["SN"][sn][chassis][testdate][testetime]["ECCDUMP"]:
+                                EDMA_RESULT = ''
+                                if not eachvmarh in summarydict['VM']:
+                                    summarydict['VM'].append(eachvmarh)
+                                if not eachvmarh in eachstepdata:
+                                    eachstepdata[eachvmarh] = dict()
+                                eachstepdata[eachvmarh]['RESULT'] = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                                for eacheccdump in DATA["SN"][sn][chassis][testdate][testetime]["ECCDUMP"][eachvmarh]:
+                                    #print(json.dumps(DATA["SN"][sn][chassis][testdate][testetime], indent = 4))   
+                                    #sys.exit()
+                                    keyofvmarh = 'NV'
+                                    if eachvmarh == 'high':
+                                        keyofvmarh = 'HV'
+                                    elif eachvmarh == 'low':
+                                        keyofvmarh = 'LV'
+
+                                    wirtedata = list()
+                                    wirtedata.append(teststep)
+                                    wirtedata.append(sn)
+                                    wirtedata.append(chassis)
+                                    wirtedata.append(testdate)
+                                    wirtedata.append(testetime)
+                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'])
+                                    wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['SLOT'])
+                                    #wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                                    #MEM EDMA
+                                    MEM_EDMA_RESULT = 'NO DATA'
+                                    for eachstep in DATA["SN"][sn][chassis][testdate][testetime]["TESTSTEPLIST"]:
+                                        for keystep in eachstep:
+                                            if keystep == 'MEM EDMA':
+                                                MEM_EDMA_RESULT = eachstep[keystep]
+
+                                    wirtedata.append(eachvmarh)
+                                    checkdone = False
+                                    saveECCdata = ''
+                                    saveECCstart = False
+                                    ECC_RESULT = 'NO RESULT'
+                                    for eachline in eacheccdump.split("\r"):
+                                        match = re.findall(KEY_WORD.ECC_ENCHECK,eachline)
+                                        if match:
+                                            saveECCdata += eachline
+                                            saveECCdata += "\r"
+                                            if int(match[0][0] + match[0][1]) > 0:
+                                                checkdone = True
+                                                ECC_RESULT = 'FAIL'
+                                            else:
+                                                checkdone = True
+                                                ECC_RESULT = 'PASS'
+                                        match = re.findall(KEY_WORD.ECC_ENCHECK2,eachline)
+                                        if match:
+                                            saveECCdata += eachline
+                                            saveECCdata += "\r"
+                                            checkdone = True
+                                            ECC_RESULT = 'FAIL'
+
+                                        if 'MSG :: MC0: CORE0: read syndrome' in eachline:
+                                            saveECCdata += eachline
+                                            saveECCdata += "\r"
+                                        if 'Multi-bit Uncorrectable ECC Syndrome' in eachline:
+                                            saveECCdata += eachline
+                                            saveECCdata += "\r"
+                                            ECC_RESULT = 'FAIL'
+                                            checkdone = True
+
+                                    wirtedata.append(ECC_RESULT)
+                                    eachstepdata[eachvmarh]['ECC_RESULT'] = ECC_RESULT
+                                    if not checkdone:
+                                        wirtedata.append(eacheccdump)
+                                    else:
+                                        wirtedata.append(saveECCdata[:-2])
+
+                                    wirtedata.append(MEM_EDMA_RESULT)
+                                    neweacherror = ''
+                                    if 'FAILINFOMATION' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                        for checkeacherror in DATA["SN"][sn][chassis][testdate][testetime]['FAILINFOMATION']:
+                                            checkeacherror = _removeIllegalCharacterError(checkeacherror)
+                                            neweacherror += checkeacherror
+                                            neweacherror += "\r"
+                                    #print(wirtedata)
+                                    wirtedata.append(neweacherror)
+                                    eachstepdata[eachvmarh]['MEM_EDMA'] = MEM_EDMA_RESULT
+                                    ws2.append(wirtedata)
+
+                        if len(eachstepdata) == 0:
+                            eachstepdata['normal'] = dict()
+                            eachstepdata['normal']['RESULT'] = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        summarydict['DATA'][sn].append(eachstepdata)
+                                        
+
+
+    
+    fixcolumnssize2(ws2)
+    highlightinyellow(ws2,'TIMEOUT')
+    highlightinyellow(ws2,'NO TEST DATA')
+    highlightingreen(ws2,'PASS')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    highlightinred(ws2, 'HAVE ERROR')
+    highlightinred(ws2, 'INCOMPLETE')
+    freezePosition(ws2,'H2')
+    wraptest(ws2)
+
+    #print(json.dumps(summarydict, indent = 4)) 
+
+    #generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytype="RESULT")
+    keytypelist = ["ECC_RESULT","MEM_EDMA"]
+    generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytypelist)
+
+    return 0
+
 def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
 
     teststeperrortitle = "{}_SNAKE".format(teststep)
@@ -4998,10 +5259,11 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
     generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict)
 
     return 0
-
-def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict):
+#MEM_EDMA
+def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytypelist=None):
     teststeperrortitle = "{}_SNAKE_SUMMARY".format(teststep)
-    keytypelist = ["ECC_RESULT","SNAKE_ECC"]
+    if not keytypelist:
+        keytypelist = ["ECC_RESULT","SNAKE_ECC"]
     print("{}: {}".format("generateexeclerrdata", teststeperrortitle))
     ws3 = wb.create_sheet(title=teststeperrortitle)
     getmaxtestnumber = 0
