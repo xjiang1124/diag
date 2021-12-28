@@ -1145,6 +1145,7 @@ def main():
                 sw_test_list = ["DIAG_BOOT", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
+                    sw_test_list.insert(-1, "SW_MGMT_INIT")
                     sw_test_list.insert(-1, "SW_PROFILE")
 
             for skipped_test in args.skip_test:
@@ -1157,6 +1158,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
                 elif test == "DIAG_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(slot)
+                elif test == "SW_MGMT_INIT" and nic_profile:
+                    ret = mtp_mgmt_ctrl.mtp_nic_sw_mgmt_init(slot)
                 elif test == "SW_PROFILE" and nic_profile:
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
                 elif test == "SW_MODE_SWITCH":

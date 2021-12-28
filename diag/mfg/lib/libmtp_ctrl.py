@@ -3881,9 +3881,11 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_nic_mgmt_mac_refresh(self):
+    def mtp_nic_mgmt_mac_refresh(self, slot_list=[]):
         # delete the arp entry
         for slot in range(self._slots):
+            if slot_list and slot not in slot_list:
+                continue
             if self._nic_prsnt_list[slot]:
                 ipaddr = libmfg_utils.get_nic_ip_addr(slot)
                 cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
@@ -5664,3 +5666,19 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         return True
+
+    def mtp_nic_sw_mgmt_init(self, slot):
+        if not self.mtp_nic_mgmt_reinit(slot):
+            self.cli_log_slot_err(slot, "Failed to init mgmt port in production FW")
+            return False
+
+        if not self.mtp_nic_mgmt_mac_refresh([slot]):
+            self.cli_log_slot_err(slot, "MTP mac address refresh failed")
+            return False
+
+        if not self.mtp_mgmt_nic_mac_validate():
+            self.cli_log_slot_err(slot, "MTP detect duplicate mac address")
+            return False
+
+        return True
+
