@@ -339,6 +339,9 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     else:
         sub_test_list = [()]
 
+    if nic_type in ELBA_NIC_TYPE_LIST:
+        sub_test_list.append(("MEM", "EDMA"))
+
     for skipped_test in skip_testlist:
         sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
         sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
@@ -349,13 +352,16 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         return []
 
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Bash Test Start".format(nic_type), level=0)
 
     if True in ["MVL" in (s,t) for (s,t) in sub_test_list]:
         if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
             return nic_list
     if True in ["PHY" in (s,t) for (s,t) in sub_test_list]:
         if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(False, stop_on_err=False):
+            return nic_list
+    if True in ["MEM" in (s,t) for (s,t) in sub_test_list]:
+        if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
             return nic_list
 
     for slot in nic_list:
@@ -384,6 +390,8 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
             elif dsp == "PHY" and test == "XCVR":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_test(slot)
+            elif dsp == "MEM" and test == "EDMA":
+                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_edma_test(slot)
             else:
                 ret, err_msg_list = "FAIL", ["Not the right function for this kind of test"]
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
@@ -412,12 +420,16 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                 raise Exception
     
+    if True in ["MEM" in (s,t) for (s,t) in sub_test_list]:
+        mtp_mgmt_ctrl.mtp_power_on_nic()
+        mtp_mgmt_ctrl.mtp_nic_disp_ecc(vmarg)
+
     if GLB_CFG_MFG_TEST_MODE:
         mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     else:
         mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel MVL DSP Test Complete\n".format(nic_type), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Bash Test Complete\n".format(nic_type), level=0)
     return fail_list
 
 def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
@@ -474,9 +486,9 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
             ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
             
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+            duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
             for slot in nic_test_list[:]:
-                duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, mtp_start_ts)
 
             # failed nic display
             for slot in test_fail_list:
@@ -506,6 +518,8 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
             raise Exception
         elif nic_test_list:
+            mtp_mgmt_ctrl.mtp_power_on_nic()
+            mtp_mgmt_ctrl.mtp_nic_disp_ecc(vmarg)
             naples_get_nic_logfile(mtp_mgmt_ctrl, nic_test_list, para_test_list, stop_on_err)
             # extract error message if test fail
             for slot, test in fail_slot_test_list:

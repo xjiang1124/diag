@@ -3625,6 +3625,50 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    def nic_edma_test(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
+        nic_cmd_list.append("tar xf edma_test.tar.gz")
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EDMA_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        if MFG_DIAG_SIG.NIC_EDMA_TEST_SIG in cmd_buf:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return True
+        else:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
     def nic_check_rebooted(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)

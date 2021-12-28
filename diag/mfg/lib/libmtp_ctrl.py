@@ -5350,6 +5350,20 @@ class mtp_ctrl():
 
         return retval, err_msg_list
 
+    def mtp_nic_edma_test(self, slot):
+        test = "EDMA"
+
+        retval = ""
+        err_msg_list = list()
+        if self._nic_ctrl_list[slot].nic_edma_test():
+            retval = "SUCCESS"
+        else:
+            retval = "FAIL"
+        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
+
+        return retval, err_msg_list
+
     def mtp_check_nic_rebooted(self, slot):
         self.cli_log_slot_inf(slot, "Init new NIC connection")
         ret = self.mtp_nic_para_session_init(slot_list=[slot], fpo=False)
@@ -5575,3 +5589,78 @@ class mtp_ctrl():
         else:
             return False
 
+    def mtp_nic_disp_ecc(self, vmarg, stop_on_err=False):
+        nic_list = list()
+        for slot in range(self._slots):
+            if self._nic_prsnt_list[slot]:
+                nic_list.append(slot)
+
+        if not nic_list:
+            self.cli_log_err("No NICs passed")
+            return False
+
+        # parallel init mgmt/aapl
+        dsp = "FA"
+        if vmarg < 0:
+            dsp = "LV_FA"
+        elif vmarg > 0:
+            dsp = "HV_FA"
+        sn = ""
+        test = "ECC_DISP"
+        start_ts = libmfg_utils.timestamp_snapshot()
+
+        mtp_start_ts = self.log_test_start(test)
+        for slot in nic_list:
+            sn = self.mtp_get_nic_sn(int(slot))
+            slot_start_ts = self.log_slot_test_start(slot, test)
+            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
+        cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(nic_list_param)
+
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            duration = self.log_test_stop(test, start_ts)
+            for slot in nic_list:
+                self.log_slot_test_stop(slot, test, start_ts)
+                sn = self.mtp_get_nic_sn(int(slot))
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                self.mtp_set_nic_status_fail(slot)
+            return False
+
+        cmd_buf = self.mtp_get_cmd_buf()
+        ecc_fail_list = list()
+
+        slot_bufs = cmd_buf.split("=== Slot ")
+        for slot_buf in slot_bufs[1:]: #skip first element
+            slot = int(slot_buf[0:2])
+            ecc_regs = re.findall(r"Reg 0x(.*): 0x(.*)", slot_buf)
+            if ecc_regs:
+                errors_found = False
+                for reg, val in ecc_regs:
+                    if int(val.strip(),16) != 0:
+                        self.cli_log_slot_err(slot, "ECC errors found")
+                        self.cli_log_slot_err(slot, "Reg 0x{:s}: 0x{:s}".format(reg,val))
+                        errors_found = True
+                        if slot not in ecc_fail_list:
+                            ecc_fail_list.append(slot)
+
+                if not errors_found:
+                    self.cli_log_slot_inf(slot, "No ECC errors found")
+
+        duration = self.log_test_stop(test, start_ts)
+        for slot in nic_list:
+            self.log_slot_test_stop(slot, test, start_ts)
+            sn = self.mtp_get_nic_sn(int(slot))
+            if slot in ecc_fail_list:
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            else:
+                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        return True
