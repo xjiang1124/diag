@@ -333,7 +333,10 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
-        sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
+        if loopback:
+            sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
+        else:
+            sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
     elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == 0:
         sub_test_list = [("PHY", "XCVR")]
     else:
@@ -518,8 +521,6 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
             raise Exception
         elif nic_test_list:
-            mtp_mgmt_ctrl.mtp_power_on_nic()
-            mtp_mgmt_ctrl.mtp_nic_disp_ecc(vmarg)
             naples_get_nic_logfile(mtp_mgmt_ctrl, nic_test_list, para_test_list, stop_on_err)
             # extract error message if test fail
             for slot, test in fail_slot_test_list:
@@ -949,6 +950,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     if cpld_prog_list or qspi_prog_list:
+        mtp_mgmt_ctrl.cli_log_inf("Programmable updates needed... starting", level=0)
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True, stop_on_err=stop_on_err):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             for nic_list in nic_test_full_list:
@@ -1539,9 +1541,6 @@ def main():
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
                 mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
 
-        # Disable PCIe poll
-        diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
-
         programmables_checked = False
 
         for vmarg_idx, vmarg in enumerate(vmarg_list):
@@ -1584,6 +1583,9 @@ def main():
                             fail_nic_list.append(slot)
                         if slot in pass_nic_list:
                             pass_nic_list.remove(slot)
+
+                # Disable PCIe poll
+                diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)
 
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
                     mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
@@ -2077,20 +2079,6 @@ def main():
             cmd = "cleanup.sh"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-            # if not stop_on_err and pass_nic_list:
-            #     # Re-init EMMC for Elba cards after L1's destructive emmc test
-            #     nic_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-            #     mtp_mgmt_ctrl.mtp_power_off_nic()
-            #     mtp_mgmt_ctrl.mtp_power_on_nic()
-            #     mtp_mgmt_ctrl.mtp_nic_emmc_reformat(nic_rslt_list=nic_rslt_list, nic_list=pass_nic_list)
-
-            #     for slot in range(MTP_Const.MTP_SLOT_NUM):
-            #         if not nic_rslt_list[slot]:
-            #             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to re-initialize EMMC")
-            #             if slot not in fail_nic_list:
-            #                 fail_nic_list.append(slot)
-            #             if slot in pass_nic_list:
-            #                 pass_nic_list.remove(slot)
 
         # Enable PCIe poll
         #ADD - Bypass shutting down slot right now for debug

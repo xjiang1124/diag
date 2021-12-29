@@ -488,6 +488,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:d} -mode=nod"
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
+    MTP_DISP_ECC_FMT = "nic_test.py -disp_ecc -slot_list {:s}"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
@@ -540,6 +541,7 @@ class MFG_DIAG_CMDS:
     NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh {:s}"
     NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
     NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh"
+    NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
@@ -589,6 +591,7 @@ class MFG_DIAG_SIG:
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
     NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
+    NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"
