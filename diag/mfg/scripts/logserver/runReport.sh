@@ -64,6 +64,22 @@ echo Script: runReport.sh
 
 #ORTANO2_EDMA_1
 
+#Unknown_EDMA_3200
+#ORTANO2_EDMA_3200
+#ORTANO2_EDMA_3200_loop
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_loop_input.json specreport3=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_loop_w_pwrcycle_input.json specreport3=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_loop_input.json specreport3=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_input.json specreport2=1
+
 cd $_mydir
 python3 $_mydir/process_log.py ORTANO2_EDMA_1_input.json specreport2=1
 
