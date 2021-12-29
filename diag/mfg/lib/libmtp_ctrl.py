@@ -1893,16 +1893,19 @@ class mtp_ctrl():
         io_version = MTP_IMAGES.mtp_io_cpld_ver[self._asic_support]
         jtag_version = MTP_IMAGES.mtp_jtag_cpld_ver[self._asic_support]
 
-        if int(cpld_ver_list[0],16) < int(io_version,16):
-            self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], io_version))
-            self.cli_log_err("MTP CPLD test failed")
-            return False
+        if self._mtp_rev is not None and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 2:
+            if int(cpld_ver_list[0],16) < int(io_version,16):
+                self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], io_version))
+                self.cli_log_err("MTP CPLD test failed")
+                return False
 
-        if cpld_ver_list[1] != jtag_version:
-            self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1], jtag_version))
-            self.cli_log_err("MTP CPLD test failed")
-            return False
-        self.cli_log_inf("MTP CPLD test passed")
+            if cpld_ver_list[1] != jtag_version:
+                self.cli_log_err("MTP JTAG CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[1], jtag_version))
+                self.cli_log_err("MTP CPLD test failed")
+                return False
+            self.cli_log_inf("MTP CPLD test passed")
+        else:
+            self.cli_log_inf("MTP CPLD test skipped for REV_{:s}".format(self._mtp_rev))
         return True
 
 
