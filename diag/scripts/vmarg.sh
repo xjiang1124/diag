@@ -31,8 +31,11 @@ set_vmarg()
         then
             /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
             /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=$1
-            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-            /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
+            if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+            then
+                /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
+                /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
+            fi
             return
         fi
         echo "Skipping $1%"
