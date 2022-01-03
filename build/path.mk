@@ -61,7 +61,6 @@ ARM64_C_SRC_DIR=		\
 	util/capricpld		\
 	util/xo3dcpld		\
 	util/artix7fpgaNew	\
-	util/ddrstress  	\
 	lib/capricpld		\
 	lib/xo3dcpld
 
