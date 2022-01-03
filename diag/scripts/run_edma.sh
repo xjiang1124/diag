@@ -14,7 +14,9 @@ echo "pass_cnt $pass_cnt"
 if [[ $pass_cnt == "21" ]]
 then
     echo "EDMA TEST PASSED"
+    echo "EDMA TEST PASSED"
 else
+    echo "EDMA TEST FAILED"
     echo "EDMA TEST FAILED"
 fi
 
