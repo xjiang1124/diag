@@ -38,16 +38,18 @@ scriptname = os.path.basename(__file__)
 scriptname = scriptname.replace('.py','')
 
 def main():
+    ARGV = dict()
+    inputconfig = checkconfigfile(ARGV)
 
-    get_lock(scriptname)
+    if not "skiplock" in ARGV:
+        get_lock(scriptname)
 
     start=datetime.now()
     pr = dict()
     pr['modules'] = modules.modules()
 
     startdate = checkstartdate()
-    ARGV = dict()
-    inputconfig = checkconfigfile(ARGV)
+    
     print("FIND startdate input: {}".format(startdate))
     print(json.dumps(ARGV, indent = 4 ))
     #sys.exit()

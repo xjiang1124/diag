@@ -62,48 +62,21 @@ START=$(date +%s);
 
 echo Script: runReport.sh
 
-#ORTANO2_EDMA_1
+for name in "${configNames[@]}";
+do 
+        runReportModule $name $_mydir
+done
 
-#Unknown_EDMA_3200
-#ORTANO2_EDMA_3200
-#ORTANO2_EDMA_3200_loop
+
 
 cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_loop_input.json specreport3=1
+python3 $_mydir/all_mtp_report.py
 
 cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_loop_w_pwrcycle_input.json specreport3=1
+python3 $_mydir/zip_old_json_file.py
 
 cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_loop_input.json specreport3=1
-
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_input.json specreport2=1
-
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_1_input.json specreport2=1
-
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_SNAKE2_2_input.json specreport=1
-
-# cd $_mydir
-# python3 $_mydir/process_log.py ORTANO2_SNAKE_input.json specreport=1
-
-# for name in "${configNames[@]}";
-# do 
-#         runReportModule $name $_mydir
-# done
-
-
-
-# cd $_mydir
-# python3 $_mydir/all_mtp_report.py
-
-# cd $_mydir
-# python3 $_mydir/zip_old_json_file.py
-
-# cd $_mydir
-# python3 $_mydir/move_old_log_file_to_one_folder.py
+python3 $_mydir/move_old_log_file_to_one_folder.py
 
 END=$(date +%s);
 echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'

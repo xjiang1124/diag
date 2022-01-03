@@ -1,0 +1,88 @@
+#!/bin/bash
+set -x 
+
+DATE=`date +%d-%m-%y` 
+now=$(date +"%b%d-%Y-%H%M%S")
+#_mydir="`pwd`"
+_mydir="/home/mfg"
+echo "My Currently Dir ($DATE): $_mydir"
+
+SCRIPTLOG=$_mydir/LOG/log_$now.log
+exec > >(tee -i $SCRIPTLOG)
+exec 2>&1
+
+echo "Log Location should be: [ $SCRIPTLOG ]"
+echo "My Currently Dir ($DATE): $_mydir"
+
+#exit 0
+
+SNlist=(
+FPN213901EE
+FPN2139029E
+FPN21390348
+FPN213900A0
+FPN213806D7
+FPN213805B9
+FPN21380530
+FPN21390637
+FPN213302A6
+FPN213800F5
+FPN2142033B
+FPN21400084
+FPN2140008B
+FPN2140008D
+FPN213800AC
+FPN214000CD
+FPN214000DD
+FPN21400140
+FPN21400143
+FPN214001FB
+FPN21400200
+FPN214002A7
+FPN21410A59
+FPN214109BF
+FPN21410919
+FPN21410854
+FPN214106CF
+FPN214106CE
+FPN214106CA
+FPN2140038D
+FPN21400406
+FPN2140046A
+FPN214004F8
+FPN2141059D
+FPN214104C4
+FPN21410490
+FPN21400754
+FPN2140078B
+FPN214102FB
+FPN214008AD
+FPN214008B8
+FPN214008C5
+FPN21410057
+FPN2141005D
+FPN21410098
+FPN214100A1
+FPN214100D1
+FPN21410117
+)
+
+runlocateModule()
+{
+echo "Run locate function in SN: $1"
+locate $1 
+}
+
+START=$(date +%s);
+
+echo Script: runlocateModule.sh
+
+
+
+for sn in "${SNlist[@]}";
+do 
+        runlocateModule $sn 
+done
+
+END=$(date +%s);
+echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'
