@@ -1,5 +1,5 @@
 #! /bin/bash
-tar xf /data/nic_util/edma_test.tar.gz -C /data/nic_util/
+
 cd /data/nic_util/edma_test/
 
 ./edma_test.sh | tee /data/nic_util/edma_test.log
