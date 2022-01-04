@@ -89,6 +89,8 @@ do
         cp $TOP_DIR/diag/python/regression/scripts/start_diag_tor.sh $TEMP_DIR/..
         cp -r $TOP_DIR/tools/pki/ $TEMP_DIR/tools/
         cp -r $TOP_DIR/tools/barco/ $TEMP_DIR/tools/
+        # Copy this for Taormina.  Need it in amd64 pkgt. Bringup doesn't pull in the arm64 pkg.  
+        cp $TOP_DIR/tools/bin/arm64/stressapptest_arm           $TEMP_DIR/tools/
     else
         cp $TOP_DIR/diag/python/regression/scripts/start_diag.arm64.sh $TEMP_DIR/..
     fi
