@@ -53,8 +53,7 @@ ARM64_SRC_DIR=			\
 	dsp/qsfp    		\
 	dsp/rtc				\
 	dsp/sfp				\
-	dsp/edma			\
-	dsp/ddr_stress
+	dsp/mem
 
 ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\

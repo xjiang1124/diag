@@ -39,8 +39,8 @@
 
 ---
 DSP:
-    NAME: EDMA
-    INFO: EDMA test on NIC
+    NAME: MEM
+    INFO: MEM test on NIC
 
     # Properties apply to all platforms
     # Do not remove ite/timeout/dshid which are needed for all DSPs
@@ -56,11 +56,42 @@ DSP:
                 VALUE: 0
                 INFO: Diag shell ID index
 
+    TEST#DDR_STRESS:
+        INFO: DDR Stress test
+        PLATFORM:
+            NIC: ALL
+        PRIORITY: NORMAL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 400
+                INFO: Test timeout setting
+            seconds:
+                VALUE:
+                    ALL: 60
+                INFO: number of seconds to run
+            mbytes:
+                VALUE:
+                    ALL: 20000
+                INFO: megabytes of ram to test
+            copy_threads:
+                VALUE:
+                    ALL: 16
+                INFO: number of memory copy threads to run
+            logfile:
+                VALUE:
+                    ALL: stressapptest.log
+                INFO: log output to file 'logfile'
+
     TEST#EDMA:
         INFO: EDMA test
         PLATFORM:
             NIC: ALL
         PRIORITY: NORMAL
         PARAM:
+            timeout:
+                VALUE:
+                    ALL: 240
+                INFO: Test timeout setting
 
 ...

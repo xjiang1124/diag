@@ -6,6 +6,7 @@ import (
 
     "common/diagEngine"
     "common/dcli"
+    "common/errType"
     "common/runCmd"
     "config"
 )
@@ -14,10 +15,10 @@ import (
 // Constant definition
 const (
     // Each DSP should know it own name
-    dspName = "DDR_STRESS"
+    dspName = "MEM"
 )
 
-func Ddr_StressDdr_StressHdl(argList []string) {
+func MemDdr_StressHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     secondsPtr := fs.Int("seconds", 60, "number of seconds to run")
     mbytesPtr := fs.Int("mbytes", 20000, "megabytes of ram to test")
@@ -42,9 +43,33 @@ func Ddr_StressDdr_StressHdl(argList []string) {
     return
 }
 
+func MemEdmaHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    cmdStr := "/data/nic_util/run_edma.sh"
+    passSign := "EDMA TEST PASSED"
+    failSign := "EDMA TEST FAILED"
+    err := runCmd.Run(passSign, failSign, cmdStr)
+
+    if err != errType.SUCCESS {
+         dcli.Println("e", "EDMA Test Failed!")
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
-    diagEngine.FuncMap["DDR_STRESS"] = Ddr_StressDdr_StressHdl
+    diagEngine.FuncMap["DDR_STRESS"] = MemDdr_StressHdl
+    diagEngine.FuncMap["EDMA"] = MemEdmaHdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)
