@@ -70,6 +70,16 @@ echo Script: runReport_special.sh
 
 #ORTANO2_EDMA_3200_lv6
 
+#ORTANO2_EDMA_3200_lv5
+
+#ORTANO2_EDMA_3200_lv4
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv4_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv5_input.json specreport3=1 skiplock=1
+
 cd $_mydir
 python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv12_input.json specreport3=1 skiplock=1
 

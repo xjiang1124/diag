@@ -116,18 +116,30 @@ def main():
 
     if "specreport" in ARGV:
         if DATA['NEWFILECOUNT']:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
             createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
         elif "report" in ARGV:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
             createspecialsnakereport(pr,DATA,inputconfig,startdate=None)
     elif "specreport2" in ARGV:
         if DATA['NEWFILECOUNT']:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
             createspecialsnakereport2(pr,DATA,inputconfig,startdate=None)
         elif "report" in ARGV:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
             createspecialsnakereport2(pr,DATA,inputconfig,startdate=None)
     elif "specreport3" in ARGV:
         if DATA['NEWFILECOUNT']:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
             createspecialsnakereport3(pr,DATA,inputconfig,startdate=None)
         elif "report" in ARGV:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
             createspecialsnakereport3(pr,DATA,inputconfig,startdate=None)
     else:
         if DATA['NEWFILECOUNT']:
