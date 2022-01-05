@@ -75,7 +75,7 @@ elba_delay() {
     if [ $mtp_id == "0x42" ]
     then
         echo "Elba delay enabled"
-        sleep 1
+        #sleep 1
     fi
 }
 
