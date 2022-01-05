@@ -3,7 +3,7 @@ package adt7462
 import (
     "os"
     "fmt"
-
+    "time"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -264,16 +264,22 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
     }
 
     tachLsb, err = smbus.ReadByte(devName, tachLsbReg)
+    if err != errType.SUCCESS {
+        cli.Println("f", "Failed to get tach LSB", devName)
+    }
     tachMsb, err = smbus.ReadByte(devName, tachMsbReg)
+    if err != errType.SUCCESS {
+        cli.Println("f", "Failed to get tach MSB", devName)
+    }
 
     // Calculate rpm
     // 9k*60/tach
     temp = (uint64(tachMsb) << 8) | uint64(tachLsb)
     if temp != 0 {
         rpm = 90000*60/temp 
-        if rpm < 100 {
-            rpm = 0
-        }
+        // if rpm < 100 {
+        //    rpm = 0
+        // }
     } else {
         rpm = 0
     }
@@ -298,6 +304,7 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
 
     var pwmReg uint64
     var pwmVal uint64
+    var pwmVal_rd byte 
 
     if pwmIdx > FAN_4_PWM {
         err = errType.SUCCESS
@@ -316,7 +323,22 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
     }
 
     //cli.Printf("i", "Reg: 0x%x, value0x%x\n", pwmReg, byte(pwmVal))
-    err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
+    for i:=0; i < 3; i++ {
+        err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
+        if err != errType.SUCCESS {
+            cli.Println("e", "failed to set pwm register")
+        }
+        time.Sleep(time.Duration(50) * time.Millisecond)
+        pwmVal_rd, err = smbus.ReadByte(devName, pwmReg)
+        if err != errType.SUCCESS {
+            cli.Println("e", "failed to read pwm register")
+        }
+        if pwmVal_rd == byte(pwmVal) {
+            return
+        }
+        time.Sleep(time.Duration(500) * time.Millisecond)
+    }
+    cli.Printf("e", "%d: pwm reg value is not expected, read: 0x%x expected: 0x%x\n", pwmIdx, pwmVal_rd, byte(pwmVal))
     return
 }
 

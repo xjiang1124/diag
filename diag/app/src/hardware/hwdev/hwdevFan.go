@@ -127,7 +127,11 @@ func FanSpeedGet(devName string, fanIdx uint64) (rpm uint64, err int) {
     }
     defer dmutex.Unlock(lockName)
 
-    hwinfo.EnableHubChannelExclusive(devName)
+    err = hwinfo.EnableHubChannelExclusive(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to enable hub channel", i2cif.Comp)
+        return
+    }
     if i2cif.Comp == "ADT7462" {
         rpm, err = adt7462.GetFanSpeed(devName, fanIdx)
     } else {

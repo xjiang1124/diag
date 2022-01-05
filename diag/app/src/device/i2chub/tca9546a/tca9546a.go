@@ -2,7 +2,7 @@ package tca9546a
 
 import (
     "common/errType"
-
+    "common/cli"
     "protocol/smbus"
 )
 
@@ -21,6 +21,7 @@ func EnableChan(devName string, channel byte) (err int) {
     defer smbus.Close()
 
     var data byte
+    var data_rd byte
 
     if channel > 3 {
         err = errType.INVALID_PARAM
@@ -29,6 +30,19 @@ func EnableChan(devName string, channel byte) (err int) {
 
     data = 1 << channel
     err = smbus.SendByte(devName, data)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to send hub value")
+    }
+
+    data_rd, err = smbus.ReceiveByte(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read hub value")
+    }
+
+    if data != data_rd {
+        cli.Println("e", "hub value is not expected read: 0x%x expected: 0x%x", data_rd, data)
+        err = errType.INVALID_PARAM
+    }
     return
 }
 
