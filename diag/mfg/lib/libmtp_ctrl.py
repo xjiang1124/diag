@@ -3145,6 +3145,16 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
             return False
 
+        # additional: check has diag uboot
+        if nic_type in (NIC_Type.ORTANO2):
+            if not self._nic_ctrl_list[slot].nic_console_read_uboot():
+                self.cli_log_slot_inf(slot, self.mtp_get_nic_err_msg(slot))
+                self.cli_log_slot_inf(slot, "Uboot update needed")
+                if not GLB_CFG_MFG_TEST_MODE:
+                    self.cli_log_slot_err(slot, self.mtp_dump_nic_err_msg(slot))
+                return False
+            self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
+
         return True
 
     def mtp_copy_nic_emmc(self, slot, emmc_img):

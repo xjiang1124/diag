@@ -75,6 +75,7 @@ class nic_ctrl():
         self._alom_pn = None
         self._assettagnumber = None
         self._kernel_timestamp = None
+        self._fw_json = None
         
         self._nic_type = None
         self._nic_handle = None
@@ -670,7 +671,7 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         dev_profile_match = re.findall(MFG_DIAG_SIG.NIC_SW_DEVICE_CHK_SIG1, cmd_buf)
         if dev_profile_match:
             pass
@@ -1472,6 +1473,12 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        cmd_buf = self._nic_handle.before
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+
         return True
 
     def nic_copy_gold(self, gold_img):
@@ -1555,10 +1562,18 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+        import json
+        nic_cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        nic_cmd_buf = self.nic_get_info(nic_cmd)
+        if not nic_cmd_buf:
             return False
+
+        try:
+            fw_info = json.loads(nic_cmd_buf.split("/")[1].strip())
+            if fw_info:
+                self._fw_json = fw_info
+        except:
+            pass
 
         return True
             
@@ -2591,7 +2606,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_console_detach()
             return False
-        cpld_buf = self._nic_handle.before
+        cpld_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cpld_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -2704,7 +2719,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cpld_buf = self._nic_handle.before
+        cpld_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cpld_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3487,7 +3502,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3528,7 +3543,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3565,7 +3580,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3611,7 +3626,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3655,7 +3670,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3686,7 +3701,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3778,7 +3793,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cpld_buf = self._nic_handle.before
+        cpld_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cpld_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3925,7 +3940,7 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
-        cmd_buf = self._nic_handle.before
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
@@ -3940,4 +3955,57 @@ class nic_ctrl():
         self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
         return False
+
+    def nic_console_read_uboot(self):
+        import json
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        for loop in range(0,2):
+            nic_cmd = "fwupdate -l"
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                self.nic_console_detach()
+                return False
+        
+            try:
+                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+
+                if 'boot0' in fw_info or 'uboot' not in fw_info:
+                    self.nic_set_err_msg("Incorrect uboot type")
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+
+                if fw_info['uboot']['image']['software_version'] != "lacona_0.2-1-g9feba69":
+                    self.nic_set_err_msg("Incorrect uboot version")
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+
+                break
+
+            except Exception as e:
+                if loop == 1:
+                    # weird characters read
+                    self.nic_set_err_msg("Couldn't read uboot version")
+                    self.nic_set_err_msg(str(e))
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+                else:
+                    continue
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
+        return True
 
