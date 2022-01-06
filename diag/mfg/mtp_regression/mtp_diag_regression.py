@@ -257,7 +257,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
     if aapl:
         if nic_type in ELBA_NIC_TYPE_LIST:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","L1")]
+            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","L1"), ("MEM", "EDMA")]
         else:
             sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
     else:
@@ -267,6 +267,8 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
             sub_test_list.remove(("NIC_ASIC","ETH_PRBS"))
         if ("NIC_ASIC","L1") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","L1"))
+        if ("MEM", "EDMA") in sub_test_list:
+            sub_test_list.remove(("MEM", "EDMA"))
 
     # Remove QSFP loopbacks in chamber
     if vmarg != 0 and nic_type == NIC_Type.ORTANO2:
@@ -312,6 +314,12 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
             if slot not in fail_list:
                 fail_list.append(slot)
 
+    if ("MEM", "EDMA") in sub_test_list:
+        ecc_fail_list = mtp_mgmt_ctrl.mtp_nic_disp_ecc(vmarg, stop_on_err)
+        for slot in ecc_fail_list:
+            if slot not in fail_list:
+                fail_list.append(slot)
+
     if GLB_CFG_MFG_TEST_MODE:
         mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     else:
@@ -342,9 +350,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     else:
         sub_test_list = [()]
 
-    if nic_type in ELBA_NIC_TYPE_LIST:
-        sub_test_list.append(("MEM", "EDMA"))
-
     for skipped_test in skip_testlist:
         sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
         sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
@@ -362,9 +367,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             return nic_list
     if True in ["PHY" in (s,t) for (s,t) in sub_test_list]:
         if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(False, stop_on_err=False):
-            return nic_list
-    if True in ["MEM" in (s,t) for (s,t) in sub_test_list]:
-        if not mtp_mgmt_ctrl.mtp_nic_para_init(stop_on_err=False):
             return nic_list
 
     for slot in nic_list:
@@ -393,8 +395,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
             elif dsp == "PHY" and test == "XCVR":
                 ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_test(slot)
-            elif dsp == "MEM" and test == "EDMA":
-                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_edma_test(slot)
             else:
                 ret, err_msg_list = "FAIL", ["Not the right function for this kind of test"]
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
@@ -422,10 +422,6 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             if ret != "SUCCESS" and stop_on_err:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                 raise Exception
-    
-    if True in ["MEM" in (s,t) for (s,t) in sub_test_list]:
-        mtp_mgmt_ctrl.mtp_power_on_nic()
-        mtp_mgmt_ctrl.mtp_nic_disp_ecc(vmarg)
 
     if GLB_CFG_MFG_TEST_MODE:
         mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))

@@ -5653,7 +5653,7 @@ class mtp_ctrl():
 
         if not nic_list:
             self.cli_log_err("No NICs passed")
-            return False
+            return nic_list[:]
 
         # parallel init mgmt/aapl
         dsp = "FA"
@@ -5674,7 +5674,7 @@ class mtp_ctrl():
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
+            return nic_list[:]
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
@@ -5688,7 +5688,7 @@ class mtp_ctrl():
                 sn = self.mtp_get_nic_sn(int(slot))
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 self.mtp_set_nic_status_fail(slot)
-            return False
+            return nic_list[:]
 
         cmd_buf = self.mtp_get_cmd_buf()
         ecc_fail_list = list()
@@ -5719,7 +5719,7 @@ class mtp_ctrl():
             else:
                 self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        return True
+        return ecc_fail_list[:]
 
     def mtp_nic_sw_mgmt_init(self, slot):
         if not self.mtp_nic_mgmt_reinit(slot):

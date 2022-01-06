@@ -60,6 +60,21 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    MEM:
+        DDR_STRESS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        EDMA:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
     NIC_ASIC:
         PCIE_PRBS:
             INIT: ""
