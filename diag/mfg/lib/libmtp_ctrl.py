@@ -2661,7 +2661,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P46653":    # NAPLES25 SWM HPE TAA
-            if software_pn != "90-0013-0001":
+            if software_pn != "90-0014-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):    #NAPLES25 SWM PENSANDO & TAA
@@ -4487,7 +4487,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
-        isRelC = True if software_pn == "90-0013-0001" else False
+        isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001") else False
         if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, isRelC=isRelC):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             self.mtp_dump_nic_err_msg(slot)
