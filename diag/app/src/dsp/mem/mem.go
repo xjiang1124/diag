@@ -1,6 +1,7 @@
 package main
 
 import (
+    "os"
     "flag"
     "strconv"
 
@@ -54,6 +55,14 @@ func MemEdmaHdl(argList []string) {
     cmdStr := "/data/nic_util/run_edma.sh"
     passSign := "EDMA TEST PASSED"
     failSign := "EDMA TEST FAILED"
+    _, errOs := os.Stat("/nic/bin/ddr_test.sh")
+    if errOs == nil {
+        dcli.Println("i", "ddr_test.sh exists")
+        cmdStr = "/nic/bin/ddr_test.sh"
+        passSign = "Test PASSED"
+        failSign = "Test FAILED"
+    }
+
     err := runCmd.Run(passSign, failSign, cmdStr)
 
     if err != errType.SUCCESS {
