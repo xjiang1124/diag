@@ -59,6 +59,8 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || $MTP_TYPE ==
         set val [regrd 0 $ecc_reg]
         puts "Reg $ecc_reg; value: $val"
     }
+    check_ecc_intr
+    elb_ddr_rst_ecc_intr_counter
 }
 
 rst_arm0_set 0

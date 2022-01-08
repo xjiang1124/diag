@@ -39,8 +39,8 @@ foreach slot $slot_list {
         }
         plog_msg "Reg $reg: $val"
     }
-    elb_ddr_rst_ecc_intr_counter
     check_ecc_intr
+    elb_ddr_rst_ecc_intr_counter
     diag_close_j2c_if $port $slot1
 
     #if {$idx == 0} {
