@@ -702,7 +702,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
 
         if dsp == "MVL" and test == "STUB":
-            mtp_mgmt_ctrl.mtp_run_diag_test_seq_lock()
+            mtp_mgmt_ctrl.mtp_nic_console_lock()
 
         # quick hack for parameter ETH_PRBS. need to move into yaml config
         if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type == NIC_Type.ORTANO2:
@@ -770,7 +770,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp_disp, test, err_msg))
 
         if dsp == "MVL" and test == "STUB":
-            mtp_mgmt_ctrl.mtp_run_diag_test_seq_unlock()
+            mtp_mgmt_ctrl.mtp_nic_console_unlock()
 
         if ret != "SUCCESS" and stop_on_err:
             break
@@ -797,7 +797,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
 
 def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, swmtestmode):
     if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_run_diag_test_para_lock(slot)
+        mtp_mgmt_ctrl.mtp_turbo_j2c_lock(slot)
     else:
         lock.acquire()
         
@@ -869,7 +869,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 break;
 
     if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock(slot)
+        mtp_mgmt_ctrl.mtp_turbo_j2c_unlock(slot)
 
         # wait for all slots to complete
         while True in [x.locked() for x in mtp_mgmt_ctrl._para_test_lock]:
@@ -1103,7 +1103,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
         # program QSPI
         elif test == "QSPI_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file, force_update=False)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)

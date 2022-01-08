@@ -683,7 +683,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
 
         if dsp == "MVL" and test == "STUB":
-            mtp_mgmt_ctrl.mtp_run_diag_test_seq_lock()
+            mtp_mgmt_ctrl.mtp_nic_console_lock()
 
         # quick hack for parameter ETH_PRBS. need to move into yaml config
         if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type == NIC_Type.ORTANO2:
@@ -752,7 +752,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp_disp, test, err_msg))
 
         if dsp == "MVL" and test == "STUB":
-            mtp_mgmt_ctrl.mtp_run_diag_test_seq_unlock()
+            mtp_mgmt_ctrl.mtp_nic_console_unlock()
 
         if ret != "SUCCESS" and stop_on_err:
             break

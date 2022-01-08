@@ -859,12 +859,16 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC not powered on")
     else:
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
-        mtp_mgmt_ctrl._lock.acquire()
+        mtp_mgmt_ctrl.mtp_nic_console_lock()
         mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
         mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
         mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
+        mtp_mgmt_ctrl.mtp_nic_console_unlock()
+
+        mtp_mgmt_ctrl.mtp_single_j2c_lock()
+        mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot)
         mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
-        mtp_mgmt_ctrl._lock.release()
+        mtp_mgmt_ctrl.mtp_single_j2c_unlock()
     # in case nic hung up the bus:
     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
     mtp_mgmt_ctrl.mtp_reset_hub(slot)
