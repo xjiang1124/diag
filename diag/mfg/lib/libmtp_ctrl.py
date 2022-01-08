@@ -5651,7 +5651,7 @@ class mtp_ctrl():
         else:
             return False
 
-    def mtp_nic_disp_ecc(self, vmarg, stop_on_err=False):
+    def mtp_nic_para_disp_ecc(self, vmarg, stop_on_err=False):
         nic_list = list()
         for slot in range(self._slots):
             if self._nic_prsnt_list[slot]:
@@ -5741,4 +5741,46 @@ class mtp_ctrl():
             return False
 
         return True
+
+    def mtp_nic_disp_ecc(self, slot):
+        err_msg_list = list()
+        errors_found = False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False, err_msg_list
+            
+        cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(str(slot+1))
+
+        self.mtp_single_j2c_lock()
+        ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY)
+        self.mtp_single_j2c_unlock()
+
+        if not ret:
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False, err_msg_list
+
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+
+        slot_bufs = cmd_buf.split("=== Slot ")
+        for slot_buf in slot_bufs[1:]: #skip first element
+            slot = int(slot_buf[0:2])-1
+            ecc_regs = re.findall(r"Reg 0x(.*): 0x(.*)", slot_buf)
+            if ecc_regs:
+                errors_found = False
+                for reg, val in ecc_regs:
+                    if int(val.strip(),16) != 0:
+                        self.cli_log_slot_err(slot, "ECC errors found")
+                        self.cli_log_slot_err(slot, "Reg 0x{:s}: 0x{:s}".format(reg,val))
+                        errors_found = True
+                    err_msg_list.append(slot_buf.split())
+
+                if not errors_found:
+                    self.cli_log_slot_inf(slot, "No ECC errors found")
+
+        if errors_found:
+            return False, err_msg_list
+        else:
+            return True, err_msg_list
 

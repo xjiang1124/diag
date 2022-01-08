@@ -256,10 +256,22 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     sub_test_list = test_list[:]
 
     if aapl:
+        new_sub_test_list = list()
         if nic_type in ELBA_NIC_TYPE_LIST:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","L1"), ("MEM", "EDMA")]
+            if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
+                new_sub_test_list.append(("NIC_ASIC","PCIE_PRBS"))
+            if ("NIC_ASIC","L1") in sub_test_list:
+                new_sub_test_list.append(("NIC_ASIC","L1"))
+            if ("MEM", "EDMA") in sub_test_list:
+                for loop in range(1,11):   # 10 iterations
+                    new_sub_test_list.append(("MEM", "EDMA"))
+                    new_sub_test_list.append(("MEM", "DISP_ECC_{:d}".format(loop)))
         else:
-            sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS")]
+            if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
+                new_sub_test_list.append(("NIC_ASIC","PCIE_PRBS"))
+            if ("NIC_ASIC","ETH_PRBS") in sub_test_list:
+                new_sub_test_list.append(("NIC_ASIC","ETH_PRBS"))
+        sub_test_list = new_sub_test_list[:]
     else:
         if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
             sub_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
@@ -311,12 +323,6 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
     for slot in nic_list:
         if not nic_test_rslt_list[slot]:
-            if slot not in fail_list:
-                fail_list.append(slot)
-
-    if ("MEM", "EDMA") in sub_test_list:
-        ecc_fail_list = mtp_mgmt_ctrl.mtp_nic_disp_ecc(vmarg, stop_on_err)
-        for slot in ecc_fail_list:
             if slot not in fail_list:
                 fail_list.append(slot)
 
@@ -664,6 +670,20 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             dsp_disp = "LV_" + dsp
         else:
             dsp_disp = dsp
+
+        # special test, not dsp-based
+        if test.startswith("DISP_ECC"):
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+            ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
+                nic_test_rslt_list[slot] = False
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
+            continue
 
         test_cfg = diag_test_db.get_diag_para_test(dsp, test)
         init_cmd = None
