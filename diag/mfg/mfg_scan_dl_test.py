@@ -481,6 +481,11 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if nic_prsnt_list[slot]:
+            mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+            mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
         if not nic_prsnt_list[slot]:
