@@ -86,9 +86,9 @@ proc read_pub_ek { sn slot fn } {
     }
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
 
     set pub_ek [elb_chlng_read_pub_ek_str]
@@ -110,15 +110,15 @@ proc puf_enroll { sn slot fn } {
     }
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $turbo_slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
-    elb_power_cycle_chk 25 10 $slot
+    elb_power_cycle_chk 25 $port $turbo_slot
     
     set err_cnt [elb_get_myerr_cnt elb_chlng_enroll_puf_str 0 1 1]
 
@@ -141,9 +141,9 @@ proc otp_init { sn slot cm_file sm_file } {
     }
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
 
     set cmd_cm [list elb_chlng_init_otpf_str 0 0 0 0 439 $cm_file]
@@ -161,11 +161,14 @@ proc otp_init { sn slot cm_file sm_file } {
 proc post_check { sn slot } {
     plog_start post_check_${sn}_slot${slot}.log
 
-    elb_open_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $turbo_slot
     _msrd
 
-    set ret [elb_secure_post_check 10 10 $slot]
-    elb_close_if 10 $slot
+    set ret [elb_secure_post_check 10 $port $turbo_slot]
+    elb_close_if port $turbo_slot
     plog_stop
     return $ret
 }
@@ -173,14 +176,18 @@ proc post_check { sn slot } {
 proc show_status { sn slot } {
     plog_start show_status_${sn}_slot${slot}.log
 
-    elb_open_if 10 $slot
+    set port [mtp_get_j2c_port $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
+
+    diag_open_j2c_if $port $turbo_slot
     _msrd
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     elb_show_esec_pins
     elb_dump_cpld_sts_spi
     elb_dump_cpld_sts_smb $slot
 
-    elb_close_if 10 $slot
+    elb_close_if $port $turbo_slot
     plog_stop
     return 0
 }
@@ -189,11 +196,11 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     plog_start puf_enroll_slot${slot}.log
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     set ret [elb_prog_qspi $fw_ptr 0x70010000]
     if {$ret != 0} {
@@ -233,13 +240,13 @@ proc efuse_prog {slot sn} {
     plog_start efuse_prog_slot${slot}_sn_${sn}.log
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
-    set ret [elb_prog_efuse rand_sn_${sn}.txt 10 $slot]
+    set ret [elb_prog_efuse rand_sn_${sn}.txt $port $turbo_slot]
 
     plog_stop
     return $ret
@@ -250,9 +257,9 @@ proc efuse_test {slot} {
     set bit_loc 127
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
     
     #Set to 417 for now.  With CPLD's where EFUSE VDDQ can be disabled/enabled.  On a SWM it will not set an efuse bit at 833Mhz if we enable EFUSE VDDQ after asic reset
@@ -261,19 +268,19 @@ proc efuse_test {slot} {
     set cpld_rev [ssi_cpld_read 0x00]
     set cpld_ver [ssi_cpld_read 0x80]
     
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
 
     cpu_force_global_flags 1
 
     elb_efuse_vddq_enable
 
-    set bit_read_back [elb_efuse_get_bit $bit_loc 10 $slot]
+    set bit_read_back [elb_efuse_get_bit $bit_loc $port $turbo_slot]
     if {$bit_read_back == 1} {
         plog_msg "Efuse bit $bit_loc is already programmed; read back $bit_read_back"
     }
 
-    elb_efuse_set_bit $bit_loc 10 $slot
-    set bit_read_back [elb_efuse_get_bit $bit_loc 10 $slot]
+    elb_efuse_set_bit $bit_loc $port $turbo_slot
+    set bit_read_back [elb_efuse_get_bit $bit_loc $port $turbo_slot]
     if {$bit_read_back != 1} {
         plog_err "Failed to valid efuse bit; read back $bit_read_back"
         set return -1
@@ -458,15 +465,15 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     plog_start esec_all_${sn}_slot${slot}.log
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
 
-    set ret [esec_prog_optimal_pac $sn $usb_port $slot $PN $MAC $MTP $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL $pac_cnt]
+    set ret [esec_prog_optimal_pac $sn $usb_port $turbo_slot $PN $MAC $MTP $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL $pac_cnt]
 
     if { $ret == 0 } {
         plog_msg "ESEC Optimal PAC passed"
@@ -479,7 +486,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
 
     #============================
     # Boot Test
-    set ret [elb_secure_post_check 10 10 $slot]
+    set ret [elb_secure_post_check 10 $port $turbo_slot]
 
     if { $ret == 0 } {
         plog_msg "ESEC boot test passed"
@@ -489,7 +496,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     }
 
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
     elb_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
     plog_msg "CSP recorded"
 
@@ -501,7 +508,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     plog_msg "Key Prog Time: $time_key_prog"
     plog_msg "Boot Test Time: $time_boot_test"
 
-    #diag_close_j2c_if 10 $slot
+    #diag_close_j2c_if $port $turbo_slot
     plog_stop
 
     set err1 [plog_get_err_count]
@@ -526,15 +533,15 @@ proc esec_all {sn usb_port slot PN MAC MTP
     plog_start esec_all_${sn}_slot${slot}.log
 
     set port [mtp_get_j2c_port $slot]
-    set slot [mtp_get_j2c_slot $slot]
+    set turbo_slot [mtp_get_j2c_slot $slot]
 
-    diag_open_j2c_if $port $slot
+    diag_open_j2c_if $port $turbo_slot
     _msrd
-    elb_card_rst $port $slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
     set card_type [elb_get_card_type]
     ssi_cpld_write 0x29 0x80
     elb_set_esec_enable_pin
-    elb_power_cycle_chk 25 10 $slot
+    elb_power_cycle_chk 25 $port $turbo_slot
     
     set timestamp_pre [clock seconds]
     #============================
@@ -626,7 +633,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
 
     #============================
     # Boot Test
-    set ret [elb_secure_post_check 10 10 $slot]
+    set ret [elb_secure_post_check 10 $port $turbo_slot]
 
     if { $ret == 0 } {
         plog_msg "ESEC boot test passed"
@@ -634,6 +641,8 @@ proc esec_all {sn usb_port slot PN MAC MTP
         plog_err "ESEC boot test failed"
         return -1
     }
+
+    elb_card_rst $port $turbo_slot nod_550 3000 3200 0 0 "127" 0 1 normal 0 0
 
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
     elb_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
@@ -647,16 +656,16 @@ proc esec_all {sn usb_port slot PN MAC MTP
     plog_msg "Key Prog Time: $time_key_prog"
     plog_msg "Boot Test Time: $time_boot_test"
 
-    #diag_close_j2c_if 10 $slot
+    #diag_close_j2c_if $port $turbo_slot
     plog_stop
 
     return $ret
 }
 
 set port [mtp_get_j2c_port $slot]
-set slot [mtp_get_j2c_slot $slot]
+set turbo_slot [mtp_get_j2c_slot $slot]
 
-diag_open_j2c_if $port $slot
+diag_open_j2c_if $port $turbo_slot
 
 set stage [string toupper $stage]
 plog_msg "stage: $stage"
@@ -697,7 +706,7 @@ switch $stage {
     }
 }
 
-mtp_close_j2c_if $slot
+mtp_close_j2c_if $turbo_slot
 
 # Print twice for DSP to capture signature
 if {$ret == 0} {

@@ -247,7 +247,7 @@ PRIVEK <ek.sk>"""
             if pn == "UNKNOWN":
                 return -1
 
-            if pn == "68-0015-02":
+            if pn == "68-0015-02" or pn == "68-0026-01":
                 output1 = list(output)
                 print("Adding Oracle signature")
                 output1[15] = 'O'
@@ -403,6 +403,7 @@ PRIVEK <ek.sk>"""
         return ret
 
     def get_asic_type(self, card_type):
+        asic_type = "CAPRI"
         if card_type == "ORTANO2"       or \
            card_type == "ORTANO2A"      or \
            card_type == "LACONA32"      or \
@@ -410,9 +411,9 @@ PRIVEK <ek.sk>"""
            card_type == "POMONTE"       or \
            card_type == "POMONTEDELL"   or \
            card_type == "PENSANDO":      # dummy condition
-            return "ELBA"
-        else:
-            return "CAPRI"
+            asic_type =  "ELBA"
+        print("ASIC_TYPE:", asic_type)
+        return asic_type
 
     def check_fpga_card(self, card_type):
         if card_type == "LACONA32"      or \
