@@ -482,8 +482,10 @@ def main():
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if nic_prsnt_list[slot]:
+            key = libmfg_utils.nic_key(slot)
+            pn = nic_fru_cfg[mtp_id][key]["PN"]
             mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
-            mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
+            mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
