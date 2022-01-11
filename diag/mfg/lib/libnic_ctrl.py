@@ -4009,3 +4009,71 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
+    def nic_set_ddr_defaults(self):
+        nic_cmd_list = list()
+        nic_cmd_list.append("i2cset -y 0 0x1c 0xd4 0x10")
+        nic_cmd_list.append("i2cset -y 0 0x1c 0xd3 0xb2")
+        nic_cmd_list.append("i2cset -y 0 0x1c 0x11 c")
+        if not self.nic_exec_cmds(nic_cmd_list):
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
+        nic_cmd_list.append("fwenv -d ddr_freq")
+        nic_cmd_list.append("fwenv -n gold -d ddr_use_hardcoded_training")
+        nic_cmd_list.append("fwenv -n gold -d ddr_freq")
+
+        if not self.nic_exec_cmds(nic_cmd_list):
+            return False
+
+        nic_cmd = "fwenv"
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+
+        if "ddr_freq" in cmd_buf or "ddr_use_hardcoded_training" in cmd_buf:
+            self.nic_set_err_msg("Unable to clear DDR fwenv setting")
+            return False
+    
+        return True
+
+    def nic_check_ddr_defaults(self):
+        """
+        check ddr settings are at default
+        """
+        nic_cmd = "i2cget -y 0 0x1c 0xd3"
+        cmd_buf = self.nic_get_info(nic_cmd)
+
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+
+        if "0xb2" not in cmd_buf:
+            self.nic_set_err_msg("Incorrect VDD_DDR switching freq, expecting 0xb2, got {:s}".format(cmd_buf))
+            return False
+
+
+
+        nic_cmd = "i2cget -y 0 0x1c 0xd4"
+        cmd_buf = self.nic_get_info(nic_cmd)
+
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+
+        if "0x10" not in cmd_buf:
+            self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format("0x10", cmd_buf))
+            return False
+
+        nic_cmd = "fwenv"
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+
+        if "ddr_freq" in cmd_buf or "ddr_use_hardcoded_training" in cmd_buf:
+            self.nic_set_err_msg("DDR fwenv setting not cleared")
+            return False
+
+        return True

@@ -5786,11 +5786,33 @@ class mtp_ctrl():
                         errors_found = True
                     err_msg_list.append(slot_buf.split())
 
-                if not errors_found:
-                    self.cli_log_slot_inf(slot, "No ECC errors found")
+            ecc_intr = re.findall(r"MSG(.*FAIL.*$)", slot_buf)
+            if ecc_intr:
+                errors_found = True
+                err_msg_list += ecc_intr[:]
+
+            ecc_errs = re.findall(r"(^.*orrectable.*$)", slot_buf)
+            if ecc_errs:
+                errors_found = True
+                err_msg_list += ecc_errs[:]
+
+            if not errors_found:
+                self.cli_log_slot_inf(slot, "No ECC errors found")
 
         if errors_found:
             return False, err_msg_list
         else:
             return True, err_msg_list
+
+    def mtp_nic_set_ddr_defaults(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_ddr_defaults():
+            return False
+
+        return True
+
+    def mtp_nic_check_ddr_defaults(self, slot):
+        if not self._nic_ctrl_list[slot].nic_check_ddr_defaults():
+            return False
+
+        return True
 
