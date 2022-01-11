@@ -1,17 +1,17 @@
 {
-	"NAME": "NAPLES25SWMDELL",
+	"NAME": "TAA_NAPLES25SWM",
 	"TYPE": "NIC",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_NAPLES25SWMDELL_05",
-		"TEMPDATABASE": "/samba/public/tmp_database/NAPLES25SWMDELL",
-		"testlogpath": "/mnt/hw-mftg-data/NAPLES25SWMDELL",
-		"reportpath":"/samba/public/REPORT/NAPLES25SWMDELL/",
-		"historypath":"/samba/public/HISTORY/NAPLES25SWMDELL"
+		"TEMPDIR": "/tmp/tmp_unzip_TAA_NAPLES25SWM_01",
+		"TEMPDATABASE": "/samba/public/tmp_database/TAA_NAPLES25SWM",
+		"testlogpath": "/mnt/hw-mftg-data/NAPLES25SWM",
+		"reportpath":"/samba/public/REPORT/TAA_NAPLES25SWM/",
+		"historypath":"/samba/public/HISTORY/TAA_NAPLES25SWM"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/NAPLES25SWMDELL_DB3_TEST.json",
+		"datebasesjsonfile" : "/samba/public/tmp_database/TAA_NAPLES25SWM_DB3_TEST.json",
 		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
 		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
 	},
@@ -27,7 +27,7 @@
 					"09",
 					"10"
 	],
-	"KEEPLASTPASS" : 1,
+	"onlyPrefix" : "5UP20",
 	"TESTSUB" : {
 		"NT" : "P2C",
 		"2C-L" : "2C_4C-L",
@@ -37,9 +37,6 @@
 	},
 	"TESTLIST" :[
 					"DL",
-					"P2C",
-					"2C_4C-L",
-					"2C_4C-H",
 					"SWI",
 					"FST"
 					

@@ -74,6 +74,46 @@ echo Script: runReport_special.sh
 
 #ORTANO2_EDMA_3200_lv4
 
+#ORTANO2_EDMA_3200_1M
+
+#ORTANO2_EDMA_3200_1M_3-75
+
+#ORTANO2_EDMA_3200_1M_hv3
+
+#ORTANO2_EDMA_3200_1M_hv5-251
+
+#ORTANO2_EDMA_3200_1M_lv3-75_round2
+
+#ORTANO2_EDMA_3200_1M_lv3-75_round3
+
+#ORTANO2_EDMA_3200_1M_lv6_round2
+
+#ORTANO2_EDMA_3200_1M_lv3-75_round4
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round4_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv6_round2_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round3_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round2_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_hv5-25_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_hv3_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_3-75_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_input.json specreport3=1 skiplock=1
+
 cd $_mydir
 python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv4_input.json specreport3=1 skiplock=1
 

@@ -1078,6 +1078,10 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
         #     print("COUNT: {} Will save to database FILES: {}".format(count,inputconfig['FILE']['datebasesjsonfile']))
         #     mpu.io.write(inputconfig['FILE']['datebasesjsonfile'], DATA)
 
+        if "onlyPrefix" in inputconfig:
+            if not sn[:len(inputconfig["onlyPrefix"])] == inputconfig["onlyPrefix"]:
+                continue
+
         if not len(eachfolder) == len(read_dir_path):
           
             getallfilelist = getallfilebyfolder(eachfolder, keyword=".tar.gz")
@@ -5319,6 +5323,8 @@ def generateexeclerrdata6(workingonSNlist,DATA,teststep,wb,FULLDATA):
     keytypelist = ["ECC_RESULT","MEM_EDMA"]
     generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytypelist)
 
+    generateexespecialsummaryforexperiment2(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytypelist)
+
     return 0
 
 def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
@@ -5559,7 +5565,7 @@ def generateexeclerrdata4(workingonSNlist,DATA,teststep,wb,FULLDATA):
     return 0
 #MEM_EDMA
 def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytypelist=None):
-    teststeperrortitle = "{}_SNAKE_SUMMARY".format(teststep)
+    teststeperrortitle = "{}_EDMA_SUMMARY".format(teststep)
     if not keytypelist:
         keytypelist = ["ECC_RESULT","SNAKE_ECC"]
     print("{}: {}".format("generateexeclerrdata", teststeperrortitle))
@@ -5619,6 +5625,78 @@ def generateexespecialsummaryforexperiment(workingonSNlist,DATA,teststep,wb,FULL
     highlightinred(ws3, 'FAILED')
     highlightinred(ws3, 'EC_SNAKE')
     freezePosition(ws3,'C2')
+    wraptest(ws3)
+
+#MEM_EDMA
+def generateexespecialsummaryforexperiment2(workingonSNlist,DATA,teststep,wb,FULLDATA,summarydict,keytypelist=None):
+    teststeperrortitle = "{}_EDMA_SUMMARY_2".format(teststep)
+    if not keytypelist:
+        keytypelist = ["ECC_RESULT","SNAKE_ECC"]
+    print("{}: {}".format("generateexeclerrdata", teststeperrortitle))
+    ws3 = wb.create_sheet(title=teststeperrortitle)
+    getmaxtestnumber = 0
+    for sn in summarydict['DATA']:
+        if len(summarydict['DATA'][sn]) > getmaxtestnumber:
+            getmaxtestnumber = len(summarydict['DATA'][sn])
+    wirtedata = list()
+    wirtedata.append('SN')
+    wirtedata.append('Vmarh')
+
+    for keytype in keytypelist:
+        wirtedata.append(keytype)
+        wirtedata.append('PASS_RATE')
+        wirtedata.append('in percentile')
+        #for b in range(getmaxtestnumber):
+            #wirtedata.append("TEST #{}".format(b+1))
+    #wirtedata.append('OVERALL RESULT')
+    ws3.append(wirtedata)
+
+    for sn in sorted(summarydict['LIST']):
+        for Vmarh in summarydict['VM']:
+            
+            gettestnumber = len(summarydict['DATA'][sn])
+            wirtedata = list()
+            wirtedata.append(sn)
+            wirtedata.append(Vmarh)
+            for keytype in keytypelist:
+                overallresult = list()
+                wirtedata.append(keytype)
+                for b in range(getmaxtestnumber):
+                    if b < gettestnumber:
+                        eachdata = summarydict['DATA'][sn][b]
+                        print(eachdata)
+                        if not Vmarh in eachdata:
+                            #wirtedata.append('NO DATA')
+                            continue
+                        if keytype in eachdata[Vmarh]:
+                            #wirtedata.append(eachdata[Vmarh][keytype])
+                            overallresult.append(eachdata[Vmarh][keytype])
+                        else:
+                            #wirtedata.append('NO DATA')
+                            pass
+                    else:
+                        #wirtedata.append('NO TEST')
+                        pass
+                # if overallresult.count('PASS') == gettestnumber:
+                #     wirtedata.append('PASS')
+                # elif overallresult.count('FAIL') == gettestnumber:
+                #     wirtedata.append('FAIL')
+                # else:
+                #     wirtedata.append('OTHERS')
+                wirtedata.append("{}/{}".format(overallresult.count('PASS'),gettestnumber))
+                wirtedata.append(calculePass_rate(gettestnumber,overallresult.count('PASS')))
+            ws3.append(wirtedata)
+
+    fixcolumnssize2(ws3)
+    highlightinyellow(ws3,'NO TEST')
+    highlightinyellow(ws3,'NO DATA')
+    highlightinyellow(ws3,'OTHERS')
+    ##highlightingreen(ws3,'PASS')
+    ##highlightinred(ws3, 'FAIL')
+    ##highlightinred(ws3, 'FAILED')
+    ##highlightinred(ws3, 'EC_SNAKE')
+    freezePosition(ws3,'C2')
+    converttoPERCENTAGEnumber2(ws3)
     wraptest(ws3)
 
 def generateexeclerrdata3(workingonSNlist,DATA,teststep,wb,FULLDATA):
@@ -5854,6 +5932,25 @@ def converttoPERCENTAGEnumber(ws):
                 else:
                     #Orange
                     ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type = 'solid')
+
+def converttoPERCENTAGEnumber2(ws):
+    from openpyxl.styles import Color, PatternFill, Font, Border
+    maxRow = ws.max_row
+    maxCol = ws.max_column
+    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+    for rowNum in range(1, maxRow + 1):
+        for colNum in range(1, maxCol + 1):
+            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+            if '%' in checkvalue:
+                checkvalue = float(checkvalue[:-1])/100
+                ws.cell(row=rowNum, column=colNum).value = checkvalue
+                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+                if checkvalue == 1:
+                    #Green
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66f86a', end_color='66f86a', fill_type = 'solid')
+                elif checkvalue != 1:
+                    #Red
+                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
 
 def converttoPERCENTAGEnumberbyFailurerange(ws):
     from openpyxl.styles import Color, PatternFill, Font, Border
