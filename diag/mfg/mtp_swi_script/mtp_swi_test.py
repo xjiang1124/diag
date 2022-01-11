@@ -231,7 +231,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         test_list = ["FPGA_PROG", "GOLD_FPGA_PROG"]
     if nic_type == NIC_Type.POMONTEDELL:
         test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG"]
-    if nic_type == NIC_Type.ORTANO2:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
         test_list = []
     for skip_test in skip_testlist:
         if skip_test in test_list:
@@ -274,7 +274,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
         test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]        
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["NIC_INIT"]
-    if nic_type == NIC_Type.ORTANO2:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
         test_list = ["NIC_INIT"]
 
     for skip_test in skip_testlist:
@@ -509,7 +509,7 @@ def main():
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type not in (NIC_Type.ORTANO2):
+            if nic_type not in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
                 continue
 
             test_list = ["DDR_DEFAULT_SET"]
@@ -548,7 +548,7 @@ def main():
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type not in (NIC_Type.ORTANO2):
+            if nic_type not in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
                 continue
 
             test_list = ["DDR_DEFAULT_CHECK"]
@@ -640,6 +640,8 @@ def main():
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
             if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0015"]
+            if nic_type == NIC_Type.ORTANO2ADI and mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0026"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
@@ -954,6 +956,8 @@ def main():
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
             if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0015"]
+            if nic_type == NIC_Type.ORTANO2ADI and mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0026"] 
             if nic_type == NIC_Type.NAPLES25SWM:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
 
@@ -1041,6 +1045,8 @@ def main():
             gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
             if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0015"]
+            if nic_type == NIC_Type.ORTANO2ADI and mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0026"] 
             if nic_type == NIC_Type.NAPLES25SWM:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
 
@@ -1181,9 +1187,11 @@ def main():
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2:
+            if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI:
                 continue
-            if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot) :
+                continue
+            if nic_type == NIC_Type.ORTANO2ADI and mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
                 continue
 
             test_list = ["UBOOT_ENV"]
@@ -1232,6 +1240,8 @@ def main():
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
+            if nic_type == NIC_Type.ORTANO2ADI and not mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
+                sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]     
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["DIAG_BOOT", "SW_SHUTDOWN"]
             if nic_profile:

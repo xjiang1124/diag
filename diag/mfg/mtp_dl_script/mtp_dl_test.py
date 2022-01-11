@@ -150,7 +150,7 @@ def hpe_rework_verify(mtp_mgmt_ctrl, slot):
         ret2 = True
     return ret1 and ret2
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, fea_cpld_img_file, qspi_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, fea_cpld_img_file, qspi_img_file, qspi_gold_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -165,6 +165,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2:
         testlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+    if nic_type == NIC_Type.ORTANO2ADI:
+        testlist = ["FIX_VRM", "FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["FRU_PROG", "QSPI_PROG"]#, "FPGA_PROG", "GOLD_FPGA_PROG"]
     if nic_type == NIC_Type.NAPLES100DELL:
@@ -200,6 +202,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
+        elif test == "QSPI_GOLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_gold_img_file, True)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
@@ -280,6 +284,110 @@ def main():
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
         dsp = FF_Stage.FF_DL
+
+        # pp_ortano_adi_build = False
+        # #for ORTANO ADI PP build only
+        # for slot in range(MTP_Const.MTP_SLOT_NUM):
+        #     if slot in fail_nic_list:
+        #         continue
+        #     if not nic_prsnt_list[slot]:
+        #         continue
+        #     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        #     if nic_type == NIC_Type.ORTANO2ADI:
+        #         pp_ortano_adi_build = True
+
+        # if pp_ortano_adi_build:
+        #     # init nic diag env.
+        #     if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
+        #         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+
+        #     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        #         if slot in fail_nic_list:
+        #             continue
+        #         if not nic_prsnt_list[slot]:
+        #             continue
+        #         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        #         dsp = "ORTANO_ADI"
+        #         test = "LTE_3888_1"
+        #         if nic_type == NIC_Type.ORTANO2ADI:
+        #             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        #             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        #             if not mtp_mgmt_ctrl.mtp_exec_nic_ltc3888(slot, test_type="1"):
+        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        #                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+        #                 if slot not in fail_nic_list:
+        #                     fail_nic_list.append(slot)
+        #                 if slot in pass_nic_list:
+        #                     pass_nic_list.remove(slot)
+        #                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+        #             else:
+        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        #                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        #     #nic power cycle
+        #     mtp_mgmt_ctrl.mtp_power_off_nic()
+        #     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        #     # init nic diag env.
+        #     if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
+        #         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+
+        #     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        #         if slot in fail_nic_list:
+        #             continue
+        #         if not nic_prsnt_list[slot]:
+        #             continue
+        #         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        #         dsp = "ORTANO_ADI"
+        #         test = "LTE_3888_2"
+        #         if nic_type == NIC_Type.ORTANO2ADI:
+        #             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        #             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        #             if not mtp_mgmt_ctrl.mtp_exec_nic_ltc3888(slot, test_type="2"):
+        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        #                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+        #                 if slot not in fail_nic_list:
+        #                     fail_nic_list.append(slot)
+        #                 if slot in pass_nic_list:
+        #                     pass_nic_list.remove(slot)
+        #                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+        #             else:
+        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        #                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        #     #nic power cycle
+        #     mtp_mgmt_ctrl.mtp_power_off_nic()
+        #     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        #     # init nic diag env.
+        #     if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
+        #         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+
+        #     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        #         if slot in fail_nic_list:
+        #             continue
+        #         if not nic_prsnt_list[slot]:
+        #             continue
+        #         dsp = "ORTANO_ADI"
+        #         test = "LTE_3888_3"
+        #         if nic_type == NIC_Type.ORTANO2ADI:
+        #             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        #             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        #             if not mtp_mgmt_ctrl.mtp_exec_nic_ltc3888(slot, test_type="3"):
+        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        #                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+        #                 if slot not in fail_nic_list:
+        #                     fail_nic_list.append(slot)
+        #                 if slot in pass_nic_list:
+        #                     pass_nic_list.remove(slot)
+        #                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+        #             else:
+        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        #                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        #     #nic power cycle
+        #     mtp_mgmt_ctrl.mtp_power_off_nic()
+        #     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
@@ -538,12 +646,17 @@ def main():
             elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
+            qspi_gold_img_file = ""
+            if nic_type == NIC_Type.ORTANO2ADI:
+                qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
+
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   nic_fru_cfg[mtp_id][key],
                                                                                   cpld_img_file,
                                                                                   failsafe_cpld_img_file,
                                                                                   fea_cpld_img_file,
                                                                                   qspi_img_file,
+                                                                                  qspi_gold_img_file,
                                                                                   slot,
                                                                                   swmtestmode,
                                                                                   args.skip_test,
@@ -579,7 +692,7 @@ def main():
             sn = nic_fru_cfg[mtp_id][key]["SN"]
             dsp = FF_Stage.FF_DL
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.ORTANO2:
+            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
                 testlist = ["CPLD_BOOT_CHECK"]
             else:
                 continue
@@ -660,6 +773,8 @@ def main():
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
             if nic_type == NIC_Type.ORTANO2:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY"]
             if nic_type == NIC_Type.POMONTEDELL:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
             for skip_test in args.skip_test:

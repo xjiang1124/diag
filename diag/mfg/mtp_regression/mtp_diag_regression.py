@@ -137,6 +137,11 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
             mode = "hod"
         else:
             mode = "hod_1100"
+    elif nic_type == NIC_Type.ORTANO2ADI and test == "L1":
+        if mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
+            mode = "hod"
+        else:
+            mode = "hod_1100"
     elif nic_type == NIC_Type.POMONTEDELL:
         mode = "nod"
     elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -283,7 +288,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
             sub_test_list.remove(("MEM", "EDMA"))
 
     # Remove QSFP loopbacks in chamber
-    if vmarg != 0 and nic_type == NIC_Type.ORTANO2:
+    if vmarg != 0 and (nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI):
         if ("QSFP","I2C") in sub_test_list:
             sub_test_list.remove(("QSFP","I2C"))
 
@@ -460,6 +465,17 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         orc_list, pen_list = [], []
         for slot in nic_list:
             if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+                orc_list.append(slot)
+            else:
+                pen_list.append(slot)
+        nic_top_test_list = orc_list[:]
+        nic_bot_test_list = pen_list[:]
+
+    # separate lists for ORC ortano and PEN ortano 
+    if nic_type == NIC_Type.ORTANO2ADI:
+        orc_list, pen_list = [], []
+        for slot in nic_list:
+            if mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
                 orc_list.append(slot)
             else:
                 pen_list.append(slot)
@@ -706,7 +722,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             mtp_mgmt_ctrl.mtp_nic_console_lock()
 
         # quick hack for parameter ETH_PRBS. need to move into yaml config
-        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type == NIC_Type.ORTANO2:
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and (card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.ORTANO2ADI):
             # external loopback for P2C
             if vmarg == 0:
                 diag_cmd += " -p 'int_lpbk=0'"
@@ -1018,7 +1034,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
         dsp = FF_Stage.FF_DL
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
             testlist = ["CPLD_BOOT_CHECK", "NIC_PWRCYC"]
         else:
             continue
@@ -1404,6 +1420,7 @@ def main():
         pomontedell_nic_list = list()
         lacona32dell_nic_list = list()
         lacona32_nic_list = list()
+        ortano2adi_nic_list = list()
         pass_nic_list = list()
         fail_nic_list = list()
         skip_nic_list = list()
@@ -1462,12 +1479,15 @@ def main():
                 elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.LACONA32:
                     lacona32_nic_list.append(slot)
                     pass_nic_list.append(slot)
+                elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                    ortano2adi_nic_list.append(slot)
+                    pass_nic_list.append(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown NIC Type")
                     continue
 
-        nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
-        nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples100dell_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, naples25swm833_nic_list, ortano_nic_list, ortano2_nic_list, pomontedell_nic_list, lacona32dell_nic_list, lacona32_nic_list]
+        nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI]
+        nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples100dell_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, naples25swm833_nic_list, ortano_nic_list, ortano2_nic_list, pomontedell_nic_list, lacona32dell_nic_list, lacona32_nic_list, ortano2adi_nic_list]
 
         nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
         for slot in range(len(nic_skipped_list)):
@@ -1537,6 +1557,9 @@ def main():
             elif nic_type == NIC_Type.LACONA32:
                 mtp_exp_capability = 0x2
                 test_db = lacona32_test_db
+            elif nic_type == NIC_Type.ORTANO2ADI:
+                mtp_exp_capability = 0x2
+                test_db = ortano_test_db
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                 continue
@@ -1698,6 +1721,8 @@ def main():
                     pre_test_check_list = lacona32dell_pre_test_check_list
                 elif nic_type == NIC_Type.LACONA32:
                     pre_test_check_list = lacona32_pre_test_check_list
+                elif nic_type == NIC_Type.ORTANO2ADI:
+                    pre_test_check_list = ortano_pre_test_check_list
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                     continue
@@ -1773,6 +1798,9 @@ def main():
                 elif nic_type == NIC_Type.LACONA32:
                     nic_para_test_list = lacona32_para_test_list[:]
                     test_db = lacona32_test_db
+                elif nic_type == NIC_Type.ORTANO2ADI:
+                    nic_para_test_list = ortano_para_test_list[:]
+                    test_db = ortano_test_db
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                     continue
@@ -1850,6 +1878,9 @@ def main():
                 elif nic_type == NIC_Type.LACONA32:
                     nic_para_test_list = pomontedell_para_test_list[:]
                     test_db = lacona32_test_db
+                elif nic_type == NIC_Type.ORTANO2ADI:
+                    nic_para_test_list = ortano_para_test_list[:]
+                    test_db = ortano_test_db
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                     continue
@@ -1904,6 +1935,9 @@ def main():
                 elif nic_type == NIC_Type.LACONA32:
                     nic_para_test_list = pomontedell_para_test_list[:]
                     test_db = lacona32_test_db
+                elif nic_type == NIC_Type.ORTANO2ADI:
+                    nic_para_test_list = ortano_para_test_list[:]
+                    test_db = ortano_test_db
                 else:
                     continue
 
@@ -1966,6 +2000,8 @@ def main():
                     mtp_para_test_list = lacona32dell_mtp_para_test_list
                 elif nic_type == NIC_Type.LACONA32:
                     mtp_para_test_list = lacona32_mtp_para_test_list
+                elif nic_type == NIC_Type.ORTANO2ADI:
+                    mtp_para_test_list = ortano_mtp_para_test_list
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
 
@@ -2040,6 +2076,9 @@ def main():
                 elif nic_type == NIC_Type.LACONA32:
                     nic_seq_test_list = lacona32_seq_test_list[:]
                     test_db = lacona32_test_db
+                elif nic_type == NIC_Type.ORTANO2ADI:
+                    nic_seq_test_list = ortano_seq_test_list[:]
+                    test_db = ortano_test_db
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
                     continue
