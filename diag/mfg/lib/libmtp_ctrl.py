@@ -2327,19 +2327,24 @@ class mtp_ctrl():
 
 # 3. Routines that need spi bus, can not be run in parallel
     def mtp_power_on_single_nic(self, slot):
+        self.mtp_nic_lock()
         self.cli_log_slot_inf(slot, "Power on NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
         if not self._nic_ctrl_list[slot].nic_power_on():
+            self.mtp_nic_unlock()
             self.cli_log_slot_err(slot, "Failed to power on NIC")
             return False
-
+        self.mtp_nic_unlock()
         return True
 
 
     def mtp_power_off_single_nic(self, slot):
+        self.mtp_nic_lock()
         self.cli_log_slot_inf(slot, "Power off NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY))
         if not self._nic_ctrl_list[slot].nic_power_off():
+            self.mtp_nic_unlock()
             self.cli_log_slot_err(slot, "Failed to power off NIC")
             return False
+        self.mtp_nic_unlock()
         return True
 
 
@@ -4099,11 +4104,14 @@ class mtp_ctrl():
 
 
     def mtp_power_on_nic(self, slot_list=[]):
+        self.mtp_nic_lock()
+
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
         if not slot_list_param:
             slot_list_param = "all"
         cmd = MFG_DIAG_CMDS.MTP_POWER_ON_NIC_FMT.format(slot_list_param)
         if not self.mtp_mgmt_exec_cmd(cmd):
+            self.mtp_nic_unlock()
             self.cli_log_err("Failed to power on NIC")
             return False
 
@@ -4114,15 +4122,18 @@ class mtp_ctrl():
 
         self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+        self.mtp_nic_unlock()
         return True
 
 
     def mtp_power_off_nic(self, slot_list=[]):
+        self.mtp_nic_lock()
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
         if not slot_list_param:
             slot_list_param = "all"
         cmd = MFG_DIAG_CMDS.MTP_POWER_OFF_NIC_FMT.format(slot_list_param)
         if not self.mtp_mgmt_exec_cmd(cmd):
+            self.mtp_nic_unlock()
             self.cli_log_err("Failed to power off NIC")
             return False
 
@@ -4133,6 +4144,7 @@ class mtp_ctrl():
 
         self.cli_log_inf("Power off all NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_OFF_DELAY)
+        self.mtp_nic_unlock()
         return True
 
 
@@ -5031,6 +5043,8 @@ class mtp_ctrl():
         cpldutil -cpld-wr -addr=0x2 -data=0xf
         cpldutil -cpld-wr -addr=0x2 -data=0x0
         """
+        self.mtp_nic_lock()
+
         # on mtp_diag.log
         if slot is None:
             ts = libmfg_utils.timestamp_snapshot()
@@ -5069,6 +5083,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
+        self.mtp_nic_unlock()
         return True
 
 
@@ -5089,6 +5104,14 @@ class mtp_ctrl():
 
     def mtp_turbo_j2c_unlock(self, slot):
         self._turbo_j2c_lock[slot].release()
+
+    def mtp_nic_lock(self):
+        self.mtp_single_j2c_lock()
+        self.mtp_nic_console_lock()
+
+    def mtp_nic_unlock(self):
+        self.mtp_single_j2c_unlock()
+        self.mtp_nic_console_unlock()
 
 
     def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):
@@ -5763,9 +5786,7 @@ class mtp_ctrl():
             
         cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(str(slot+1))
 
-        self.mtp_single_j2c_lock()
         ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY)
-        self.mtp_single_j2c_unlock()
 
         if not ret:
             self.cli_log_err("Execute command {:s} failed".format(cmd))
