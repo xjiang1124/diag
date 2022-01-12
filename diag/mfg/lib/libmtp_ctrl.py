@@ -3175,7 +3175,7 @@ class mtp_ctrl():
             return False
 
         # additional: check has diag uboot
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
+        if nic_type in (NIC_Type.ORTANO2):
             if not self._nic_ctrl_list[slot].nic_console_read_uboot():
                 self.cli_log_slot_inf(slot, self.mtp_get_nic_err_msg(slot))
                 self.cli_log_slot_inf(slot, "Uboot update needed")
