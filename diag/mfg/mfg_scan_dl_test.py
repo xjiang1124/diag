@@ -167,7 +167,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO2:
         test_list = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2ADI:
-        test_list = ["FIX_VRM", "FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
+        test_list = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_GOLD_PROG"]
     dsp = FF_Stage.FF_DL
@@ -455,6 +455,7 @@ def main():
 
     mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
     nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+
     if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
         mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
         mtpid_list.remove(mtp_id)
