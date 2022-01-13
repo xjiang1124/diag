@@ -142,15 +142,6 @@ echo "export CARD_ENV=\"ARM\"" >> /etc/profile
 export CARD_TYPE=$type
 export CARD_ENV="ARM"
 
-if [[ $type == "ORTANO2A" ]]
-then
-    echo "i2cset -f -y 0 0x4c 0x19 0x7d"
-    i2cset -f -y 0 0x4c 0x19 0x7d
-    reg12=$(/data/nic_util/xo3dcpld -r 0x12)
-    $reg12=$(( $reg12 | 0x40 ))
-    /data/nic_util/xo3dcpld -w 0x12 $reg12 
-fi
-
 ASIC_LIB_BUNDLE="/data/nic_arm/nic"
 ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src
 ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib
@@ -185,6 +176,15 @@ secure on
 fset ms_cfg_clk__S pll_select_core=0x0
 EOF
 
+fi
+
+if [[ $type == "ORTANO2A" ]]
+then
+    echo "i2cset -f -y 0 0x4c 0x19 0x7d"
+    i2cset -f -y 0 0x4c 0x19 0x7d
+    reg12=$(/data/nic_util/xo3dcpld -r 0x12)
+    $reg12=$(( $reg12 | 0x40 ))
+    /data/nic_util/xo3dcpld -w 0x12 $reg12 
 fi
 
 cd /data/nic_util/
