@@ -5,8 +5,8 @@ set -x
 
 DATE=`date +%d-%m-%y` 
 now=$(date +"%b%d-%Y-%H%M%S")
-#_mydir="`pwd`"
-_mydir="/home/mfg/logserver"
+_mydir="`pwd`"
+#_mydir="/home/mfg/logserver"
 echo "My Currently Dir ($DATE): $_mydir"
 
 SCRIPTLOG=$_mydir/LOG/log_$now.log
@@ -93,16 +93,6 @@ echo Script: runReport_special.sh
 #ORTANO2_EDMA_3200_1M_lv3-75_pwrcycle
 
 #ORTANO2_EDMA_3200_1M_lv3-75_round5
-
-#ORTANO2_EDMA_3200_400k_lv0
-
-#ORTANO2_EDMA_3200_400k_lv0_vmarg
-
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_vmarg_input.json specreport3=1 skiplock=1
-
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_input.json specreport3=1 skiplock=1
 
 cd $_mydir
 python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round5_input.json specreport3=1 skiplock=1

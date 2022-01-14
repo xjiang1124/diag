@@ -37,7 +37,7 @@ MTPS-404:
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.1.111"
+    IP: "192.168.1.87"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps404"
