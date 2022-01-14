@@ -183,7 +183,7 @@ then
     echo "i2cset -f -y 0 0x4c 0x19 0x7d"
     i2cset -f -y 0 0x4c 0x19 0x7d
     reg12=$(/data/nic_util/xo3dcpld -r 0x12)
-    $reg12=$(( $reg12 | 0x40 ))
+    reg12=$(( $reg12 | 0x40 ))
     /data/nic_util/xo3dcpld -w 0x12 $reg12 
 fi
 
