@@ -104,7 +104,7 @@ enable_nic_mtp_r3() {
         echo "MTP Rev $mtp_rev detected, set bit 0"
         reg1=$(( $reg1 | 0x1 ))
     fi
-    reg1=$(( $reg1 | 0x4 ))
+    reg1=$(( $reg1 | 0x25 ))
     reg1=$(( $reg1 & 0xBF ))
     smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
 }
