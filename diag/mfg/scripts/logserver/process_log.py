@@ -1649,90 +1649,92 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG'] = dict()
                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'] = list()
                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'] = dict()
-                getallunzipfilelist = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_diag.log')
-
-                #pr['modules'].print_anyinformation(getallunzipfilelist)
-
+                getallunzipfilelist1 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_diag.log')
+                getallunzipfilelist2 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_j2c_diag.log')
+                getallunzipfilelist = getallunzipfilelist1 + getallunzipfilelist2
+                pr['modules'].print_anyinformation(getallunzipfilelist)
+                #sys.exit()
                 lookforslot = None
                 cardslot = None
                 if "SLOT" in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]:
                     if DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]:
                         lookforslot = "slot {}" .format(int(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]))
                         cardslot = "NIC-{}" .format(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"])
-                #print("lookforslot: {}".format(lookforslot))
-                eccdumpstatus = dict()
-                for eachniccardlog in getallunzipfilelist:
-                    f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
-                    #pr['modules'].print_anyinformation(f)
-                    temploglist = list()
-                    nicdatalist = list()
-                    tempgrouplog = ''
-                    startrecordtemplog = False
-                    startrecorddumpecc = False
-                    tempecclog = ''
-                    Vmarh = 'normal'
-                    count = 0
-                    for x in f:
+                print("SN: {} lookforslot: {}".format(sn, lookforslot))
+                if lookforslot:
+                    eccdumpstatus = dict()
+                    for eachniccardlog in getallunzipfilelist:
+                        f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
+                        #pr['modules'].print_anyinformation(f)
+                        temploglist = list()
+                        nicdatalist = list()
+                        tempgrouplog = ''
+                        startrecordtemplog = False
+                        startrecorddumpecc = False
+                        tempecclog = ''
+                        Vmarh = 'normal'
+                        count = 0
+                        for x in f:
 
 
 
-                        sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGSTART, x)
-                        if sub_match:
-                            startrecordtemplog = True
-
-                        if startrecordtemplog:
-                            tempgrouplog += x 
-                            if count > 1:
-                                sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGEND, x)
-                                if sub_match:
-                                    startrecordtemplog = False
-                                    temploglist.append(tempgrouplog)
-                                    tempgrouplog = ''
-                                    count = 0
-                            count += 1
-
-                        sub_match = re.findall(KEY_WORD.VMARGSTATUS, x)
-                        if sub_match:
-                            Vmarh = sub_match[0]
-                        sub_match = re.findall(KEY_WORD.DUMPECCERRORSTART, x)
-                        if sub_match:
-                            startrecorddumpecc = True
-                            #print(sub_match)
-                            #sys.exit()
-
-                        if startrecorddumpecc:
-                            tempecclog += x 
-                            sub_match = re.findall(KEY_WORD.DUMPECCERROREND, x)
+                            sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGSTART, x)
                             if sub_match:
-                                startrecorddumpecc = False
-                                lookforslotinformation = KEY_WORD.SLOTECCERROREND.format(lookforslot)
-                                #print(lookforslotinformation)
-                                teamtoecclog = ''
-                                enablecatch = False
-                                for eachline in tempecclog.split("\n"):
-                                    #print(eachline)
-                                    sub_match2 = re.findall(lookforslotinformation, eachline.lower())
-                                    if sub_match2:
-                                        if enablecatch:
-                                            enablecatch = False
-                                        if len(teamtoecclog) == 0:
-                                            enablecatch = True
+                                startrecordtemplog = True
 
-                                    if enablecatch:
-                                        teamtoecclog += "{}\r".format(eachline)
-                                #print(teamtoecclog)
-                                if not Vmarh in eccdumpstatus:
-                                    eccdumpstatus[Vmarh] = list()
-                                if len(teamtoecclog):
-                                    eccdumpstatus[Vmarh].append(teamtoecclog)
+                            if startrecordtemplog:
+                                tempgrouplog += x 
+                                if count > 1:
+                                    sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGEND, x)
+                                    if sub_match:
+                                        startrecordtemplog = False
+                                        temploglist.append(tempgrouplog)
+                                        tempgrouplog = ''
+                                        count = 0
+                                count += 1
+
+                            sub_match = re.findall(KEY_WORD.VMARGSTATUS, x)
+                            if sub_match:
+                                Vmarh = sub_match[0]
+                            sub_match = re.findall(KEY_WORD.DUMPECCERRORSTART, x)
+                            if sub_match:
+                                startrecorddumpecc = True
+                                #print(sub_match)
                                 #sys.exit()
-                                    #temploglist.append(tempecclog)
-                                tempecclog = ''
 
-                    f.close()
+                            if startrecorddumpecc:
+                                tempecclog += x 
+                                sub_match = re.findall(KEY_WORD.DUMPECCERROREND, x)
+                                if sub_match:
+                                    startrecorddumpecc = False
+                                    lookforslotinformation = KEY_WORD.SLOTECCERROREND.format(lookforslot)
+                                    #print(lookforslotinformation)
+                                    teamtoecclog = ''
+                                    enablecatch = False
+                                    for eachline in tempecclog.split("\n"):
+                                        #print(eachline)
+                                        sub_match2 = re.findall(lookforslotinformation, eachline.lower())
+                                        if sub_match2:
+                                            if enablecatch:
+                                                enablecatch = False
+                                            if len(teamtoecclog) == 0:
+                                                enablecatch = True
 
-                    
-                    
+                                        if enablecatch:
+                                            teamtoecclog += "{}\r".format(eachline)
+                                    #print(teamtoecclog)
+                                    if not Vmarh in eccdumpstatus:
+                                        eccdumpstatus[Vmarh] = list()
+                                    if len(teamtoecclog):
+                                        eccdumpstatus[Vmarh].append(teamtoecclog)
+                                    #sys.exit()
+                                        #temploglist.append(tempecclog)
+                                    tempecclog = ''
+
+                        f.close()
+
+                        
+                        
                     #pr['modules'].print_anyinformation(eccdumpstatus)
                     DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ECCDUMP"] = eccdumpstatus
                     #sys.exit()
@@ -5208,7 +5210,7 @@ def generateexeclerrdata6(workingonSNlist,DATA,teststep,wb,FULLDATA):
                         FindEDMAeachresult = list()
                         for eachstep in DATA["SN"][sn][chassis][testdate][testetime]["TESTSTEPLIST"]:
                                         for keystep in eachstep:
-                                            if keystep == 'MEM EDMA':
+                                            if 'MEM EDMA' in keystep:
                                                 FindEDMAeachresult.append(eachstep[keystep])
                         if "ECCDUMP" in DATA["SN"][sn][chassis][testdate][testetime]:
                             for eachvmarh in DATA["SN"][sn][chassis][testdate][testetime]["ECCDUMP"]:

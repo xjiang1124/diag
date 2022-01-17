@@ -98,6 +98,40 @@ echo Script: runReport_special.sh
 
 #ORTANO2_EDMA_3200_400k_lv0_vmarg
 
+#ORTANO2_EDMA_3200_400k_lv0_to_1M_lv3-75
+
+#ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-25C
+#ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-50C
+#ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C
+
+#ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_actual
+
+#ORTANO2_baseline_round2_400k_lv0-25C
+#ORTANO2_baseline_round2_400k_lv0-50C
+#ORTANO2_baseline_round2_1M_lv3-75-50C
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_baseline_round2_400k_lv0-25C_input.json specreport3=1 skiplock=1
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_baseline_round2_400k_lv0-50C_input.json specreport3=1 skiplock=1
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_baseline_round2_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_actual_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-25C_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-50C_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_to_1M_lv3-75_input.json specreport3=1 skiplock=1
+
 cd $_mydir
 python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_vmarg_input.json specreport3=1 skiplock=1
 

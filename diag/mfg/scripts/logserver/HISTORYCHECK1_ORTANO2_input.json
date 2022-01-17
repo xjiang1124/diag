@@ -1,18 +1,18 @@
 {
-	"NAME": "ORTANO2_EDMA_3200_400k_lv0",
+	"NAME": "HISTORYCHECK1_ORTANO2",
 	"TYPE": "NIC",
-	"SNLIST": "experiment.xlsx",
+	"SNLIST": "HistoryCheck_01172022.xlsx",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_EDMA_3200_400k_lv0_02",
-		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2_EDMA_3200_400k_lv0",
-		"testlogpath": "/mnt/hw-mftg-data/ORTANO2_EDMA_3200_400k_lv0",
-		"reportpath":"/samba/public/REPORT/ORTANO2_EDMA_3200_400k_lv0/",
-		"historypath":"/samba/public/HISTORY/ORTANO2_EDMA_3200_400k_lv0"
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_02_HISTORYCHECK1_ORTANO2",
+		"TEMPDATABASE": "/samba/public/tmp_database/HISTORYCHECK1_ORTANO2",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
+		"reportpath":"/samba/public/REPORT/HISTORYCHECK1_ORTANO2/",
+		"historypath":"/samba/public/HISTORY/HISTORYCHECK1_ORTANO2"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_EDMA_3200_400k_lv0_DB_TEST21.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
@@ -34,6 +34,8 @@
 					"10"
 	],
 	"DISPLAYINDO" : [
+		"CPLD image1",
+		"QSPI image",
 		"MTP Diag Version"
 	],
 	"CHECKKEYS" : [
@@ -51,14 +53,18 @@
 				"4C-H (HV)"
 				],
 	"TESTLIST" :[
+					"DL",
+					"P2C",
 					"4C-L",
-					"4C-H"					
+					"4C-H",
+					"SWI",
+					"FST"
+					
 					],
 	"TESTFOLDER":[
 					"DL",
 					"P2C",
 					"4C/4C-L",
-					"4C/4C-N",
 					"4C/4C-H",
 					"SWI",
 					"FST"
