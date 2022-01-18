@@ -691,6 +691,63 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
+    def nic_set_i2c_after_pw_cycle(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_I2C_SET_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+        
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r".*(0x44).*", cmd_buf)
+        if match:
+            pass
+        else:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self.nic_console_detach()
+        return True
 
     def nic_boot_info_init(self):
         # get boot image info
@@ -1840,24 +1897,25 @@ class nic_ctrl():
 
             time.sleep(5)
 
-    def nic_start_diag(self, aapl):
+    def nic_start_diag(self, aapl, dis_hal=False):
         # setup diag env on nic
         nic_cmd_list = list()
 
         time_str = str(libmfg_utils.timestamp_snapshot())
         nic_cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(time_str)
         nic_cmd_list.append(nic_cmd)
-        if not aapl:
-            self.nic_kill_hal()
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
-            nic_cmd_list.append(nic_cmd)
-            # prevent cpldapp lock getting stuck which depends on hal
-            nic_cmd = "rm /var/lock/cpldapp_lock"
-            nic_cmd_list.append(nic_cmd)
-            nic_cmd = "rm /dev/shm/cpld_lock"
-            nic_cmd_list.append(nic_cmd)
-            nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_CONFIG_FMT
-            nic_cmd_list.append(nic_cmd)
+        if not dis_hal:
+            if not aapl:
+                self.nic_kill_hal()
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
+                nic_cmd_list.append(nic_cmd)
+                # prevent cpldapp lock getting stuck which depends on hal
+                nic_cmd = "rm /var/lock/cpldapp_lock"
+                nic_cmd_list.append(nic_cmd)
+                nic_cmd = "rm /dev/shm/cpld_lock"
+                nic_cmd_list.append(nic_cmd)
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_CONFIG_FMT
+                nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_INIT_FMT.format(self._slot+1)
         nic_cmd_list.append(nic_cmd)
         nic_cmd = "source /etc/profile"
@@ -1924,9 +1982,14 @@ class nic_ctrl():
             hal_running = False
 
         # aapl and hal_running should be both True or both False
-        if hal_running != aapl:
-            self.nic_set_err_msg("AAPL or HAL not running")
-            return False
+        if not dis_hal:
+            if hal_running != aapl:
+                self.nic_set_err_msg("AAPL or HAL not running")
+                return False
+        else:
+            if hal_running == False:
+                self.nic_set_err_msg("AAPL or HAL not running")
+                return False
 
         return True
 

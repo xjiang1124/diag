@@ -277,7 +277,7 @@ def main():
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
         mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
@@ -427,7 +427,7 @@ def main():
                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
         if "CONSOLE_BOOT" not in args.skip_test:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
+            mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
@@ -480,7 +480,7 @@ def main():
             # power cycle only the cards that went through set_pslc
             if slot not in fail_nic_list:
                 mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)

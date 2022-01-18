@@ -143,7 +143,7 @@ class MTP_Const:
     NIC_AVS_SET_DELAY = 600
     NIC_ESEC_PROG_DELAY = 1800
     NIC_EFUSE_PROG_DELAY = 1800
-    NIC_POWER_ON_DELAY = 180
+    NIC_POWER_ON_DELAY = 80
     NIC_POWER_OFF_DELAY = 10
     NIC_SYSRESET_DELAY = 180
     NIC_FW_SET_DELAY = 90
@@ -413,6 +413,10 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_FMT             = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
     NIC_ESEC_PROG_ELBA_FMT        = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s} -fast"
     NIC_ESEC_PROG_DUMP_FMT        = "./esec_ctrl.py -show_sts -sn {:s} -slot {:d} -brd_name {:s}"
+    NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
+    NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
+    NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
+
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
