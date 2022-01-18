@@ -4152,7 +4152,7 @@ class mtp_ctrl():
             return False
 
 
-    def mtp_power_on_nic(self, slot_list=[]):
+    def mtp_power_on_nic(self, slot_list=[], dl=False):
         self.mtp_nic_lock()
 
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
