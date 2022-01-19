@@ -3364,6 +3364,15 @@ class mtp_ctrl():
             self.mtp_nic_console_unlock()
 
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in ELBA_NIC_TYPE_LIST:
+            self.mtp_single_j2c_lock()
+            self.mtp_nic_console_lock()
+            ret, _ = self.mtp_nic_disp_ecc(slot)
+            self.mtp_nic_console_unlock()
+            self.mtp_single_j2c_unlock()
+
         return ret
 
     def mtp_mgmt_nic_diag_sys_clean(self, slot):
@@ -5903,7 +5912,7 @@ class mtp_ctrl():
             
         cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(str(slot+1))
 
-        ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY)
+        ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=5*60)
 
         if not ret:
             self.cli_log_err("Execute command {:s} failed".format(cmd))

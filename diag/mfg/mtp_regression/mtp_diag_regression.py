@@ -266,7 +266,6 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
             if ("MEM", "EDMA") in sub_test_list:
                 for loop in range(1,51):   # 10 iterations
                     new_sub_test_list.append(("MEM", "EDMA"))
-                    new_sub_test_list.append(("MEM", "DISP_ECC_{:d}".format(loop)))
             if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
                 new_sub_test_list.append(("NIC_ASIC","PCIE_PRBS"))
             if ("NIC_ASIC","L1") in sub_test_list:
