@@ -1980,8 +1980,10 @@ def main():
                     test_db = ortano_test_db
                 else:
                     continue
-
-                loopback = False
+                if corner in (Env_Cond.MFG_LT, Env_Cond.MFG_HT):
+                    loopback = False
+                else:
+                    loopback = True
                 if nic_list:
                     diag_para_fail_list = naples_diag_mvl_test(mtp_mgmt_ctrl,
                                                                nic_type,
