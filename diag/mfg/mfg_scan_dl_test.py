@@ -417,6 +417,8 @@ def main():
         for nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
+                if nic_type == NIC_Type.NAPLES100HPE:
+                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
             try:
@@ -428,6 +430,8 @@ def main():
         for nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.cpld_img[nic_type])
+                if nic_type == NIC_Type.NAPLES100HPE:
+                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
             try:
