@@ -121,9 +121,7 @@ def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
         if not nic_prsnt_list[slot]:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
             continue
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
-            continue
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in ELBA_NIC_TYPE_LIST:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
             continue
         if slot in fail_nic_list:
             continue
@@ -639,7 +637,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-        # ping_test_fail_list = ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, args.skip_test)
+        ping_test_fail_list = ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, args.skip_test)
 
         # program the NIC firmware
         nic_thread_list = list()
