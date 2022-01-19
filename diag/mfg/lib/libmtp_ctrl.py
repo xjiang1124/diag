@@ -2045,7 +2045,9 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             filename = "{:s}_snake_pcie.log".format(sn)
         elif test == "SNAKE_ELBA":
-            filename = "{:s}_snake_elba.log".format(sn)
+            filename = "{:s}_num_6_snake_elba.log".format(sn)
+        elif test == "SNAKE_EDMA":
+            filename = "{:s}_num_4_snake_elba.log".format(sn)
         elif test == "ETH_PRBS":
             filename = "{:s}_elba_PRBS_MX.log".format(sn)
         else:
@@ -4755,7 +4757,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_PCIE":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_ELBA":
+        elif test == "SNAKE_ELBA" or test == "SNAKE_EDMA":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
 
@@ -4778,6 +4780,14 @@ class mtp_ctrl():
             # 2C/4C = internal loopback
             if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
+
+            if test == "SNAKE_EDMA":
+                cmd += " -wtime=610"
+            else:
+                cmd += " -wtime=300"
+
+            if test == "SNAKE_EDMA":
+                cmd += " -snake_num=4 -dura=15"
 
         elif test == "ETH_PRBS":
             slot = nic_list[0]
