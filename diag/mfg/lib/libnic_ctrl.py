@@ -2735,64 +2735,6 @@ class nic_ctrl():
 
         return [reg26_data, reg28_data]
 
-    def nic_console_exec_ltc3888(self, test_type="1"):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-        nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CARD_TYPE_SET_FMT.format("ORTANO2A"))
-        nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
-
-        if test_type == "1" or test_type == "2":
-            for nic_cmd in nic_cmd_list:
-                self._nic_handle.sendline(nic_cmd)
-                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-                if idx < 0:
-                    self.nic_set_cmd_buf(self._nic_handle.before)
-                    self.nic_console_detach()
-                    return False
-
-            if test_type == "1":
-                self._nic_handle.sendline(MFG_DIAG_CMDS.MTP_PRE_LTC3888_FMT)          
-            else:
-                self._nic_handle.sendline(MFG_DIAG_CMDS.MTP_PRE_LTC3888_1_FMT)
-
-            time.sleep(5)
-
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_console_detach()
-            return True
-            
-        elif test_type == "3":
-            nic_cmd_list.append(MFG_DIAG_CMDS.MTP_PRE_LTC3888_LAST_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.MTP_PRE_LTC3888_LAST_1_FMT)
-
-            for nic_cmd in nic_cmd_list:
-                self._nic_handle.sendline(nic_cmd)
-                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-                if idx < 0:
-                    self.nic_set_cmd_buf(self._nic_handle.before)
-                    self.nic_console_detach()
-                    return False
-            buf = self._nic_handle.before
-            if not buf:
-                self.nic_set_err_msg("Buffer empty")
-                self.nic_console_detach()
-                return False
-            match = re.findall(r"(PROGRAM Done)", buf)
-      
-            if len(match) == 0:
-                self.nic_console_detach()
-                self.nic_set_cmd_buf(buf)
-                return False
-
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_console_detach()
-            return True
-
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         if self._nic_type in ELBA_NIC_TYPE_LIST:

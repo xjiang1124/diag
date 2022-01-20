@@ -305,10 +305,6 @@ class MFG_DIAG_CMDS:
     MTP_FAN_PRSNT_FMT = "mtptest -present"
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
-    MTP_PRE_LTC3888_FMT = "./pre_ltc3888 -dev=elb0_arm -program -file=ltc3888.txt"
-    MTP_PRE_LTC3888_1_FMT = "./pre_ltc3888_1 -dev=elb0_arm -program -file=ltc3888_1.txt"
-    MTP_PRE_LTC3888_LAST_FMT = "./devmgr -dev=elb0_arm -program -file=ltc3888.txt -verbose=1"
-    MTP_PRE_LTC3888_LAST_1_FMT = "./devmgr -dev=elb0_arm -program -file=ltc3888_1.txt -verbose=1"
 
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
     MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"

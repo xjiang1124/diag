@@ -2983,19 +2983,6 @@ class mtp_ctrl():
         self.cli_log_slot_err_lock(slot, "Unable to dump feature row.")
         return False
 
-    def mtp_exec_nic_ltc3888(self, slot, test_type="1"):
-        nic_type = self.mtp_get_nic_type(slot)
-        if nic_type != NIC_Type.ORTANO2ADI:
-            # No cpld partition bit
-            return True
-
-        self.cli_log_slot_inf(slot, "Execute LTC 3888")
-        if not self._nic_ctrl_list[slot].nic_console_exec_ltc3888(test_type):
-            self.mtp_dump_nic_err_msg(slot)
-            return False
-
-        return True
-
     def mtp_check_nic_cpld_partition(self, slot, console=False):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
