@@ -1673,12 +1673,13 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                         lookforslot = "slot {}" .format(int(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]))
                         cardslot = "NIC-{}" .format(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"])
                 print("SN: {} lookforslot: {}".format(sn, lookforslot))
+                temploglist = list()
                 if lookforslot:
                     eccdumpstatus = dict()
                     for eachniccardlog in getallunzipfilelist:
                         f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
                         #pr['modules'].print_anyinformation(f)
-                        temploglist = list()
+                        
                         nicdatalist = list()
                         tempgrouplog = ''
                         startrecordtemplog = False
@@ -1751,39 +1752,40 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                     DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ECCDUMP"] = eccdumpstatus
                     #sys.exit()
                     #pr['modules'].print_anyinformation(temploglist)
-                    for eachstr in temploglist:
-                        #print(eachstr)
-                        sub_match = re.findall(KEY_WORD.GETEMPINFORMATION, eachstr)
-                        if sub_match:
-                            #print(sub_match)
-                            listofname = list()
-                            listofdata = list()
-                            recorddate = None 
-                            recordtime = None 
+                    if len(temploglist):
+                        for eachstr in temploglist:
+                            #print(eachstr)
+                            sub_match = re.findall(KEY_WORD.GETEMPINFORMATION, eachstr)
+                            if sub_match:
+                                #print(sub_match)
+                                listofname = list()
+                                listofdata = list()
+                                recorddate = None 
+                                recordtime = None 
 
-                            for eachmatch in sub_match:
-                                if not recorddate:
-                                    recorddate = eachmatch[0]
-                                if not recordtime:
-                                    recordtime = eachmatch[1].replace(':','-')
+                                for eachmatch in sub_match:
+                                    if not recorddate:
+                                        recorddate = eachmatch[0]
+                                    if not recordtime:
+                                        recordtime = eachmatch[1].replace(':','-')
 
-                                if eachmatch[2] == 'NAME':
-                                    for eachkey in eachmatch[3].split():
-                                        listofname.append(eachkey)
-                                if eachmatch[2] == 'FAN':
-                                    for eachvalue in eachmatch[3].split():
-                                        listofdata.append(eachvalue)
+                                    if eachmatch[2] == 'NAME':
+                                        for eachkey in eachmatch[3].split():
+                                            listofname.append(eachkey)
+                                    if eachmatch[2] == 'FAN':
+                                        for eachvalue in eachmatch[3].split():
+                                            listofdata.append(eachvalue)
 
-                            recorddateandtime = "{}_{}".format(recorddate,recordtime)
-                            #print(recorddateandtime)
-                            #print(listofname)
-                            #print(listofdata)
-                            if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST']:
-                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'].append(recorddateandtime)
-                            if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT']:
-                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime] = dict()
-                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['NAME'] = listofname
-                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['VALUE'] = listofdata
+                                recorddateandtime = "{}_{}".format(recorddate,recordtime)
+                                #print(recorddateandtime)
+                                #print(listofname)
+                                #print(listofdata)
+                                if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST']:
+                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'].append(recorddateandtime)
+                                if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT']:
+                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime] = dict()
+                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['NAME'] = listofname
+                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['VALUE'] = listofdata
 
                         #sys.exit()
 
