@@ -1796,6 +1796,7 @@ uint8_t bit_swap_byte(uint8_t input_byte) {
         output_byte |= ((input_byte >> i) & 1) << (7-i);
         //printf("i=%d; input_byte=0x%x; output_byte=0x%x\n", i, input_byte, output_byte);
     }
+    //printf("input_byte=0x%02x, output_byte: 0x%02x\n", input_byte, output_byte);
     return output_byte;
 
 }
@@ -1819,7 +1820,7 @@ void fpga_reload(void) {
     0xAA, 0x99, 0x55, 0x66,
     0x20, 0x00, 0x00, 0x00,
     0x30, 0x02, 0x00, 0x01,
-    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,//wbstar
     0x30, 0x00, 0x80, 0x01,
     0x00, 0x00, 0x00, 0x0F,
     0x20, 0x00, 0x00, 0x00,
@@ -1827,7 +1828,8 @@ void fpga_reload(void) {
 
     uint8_t *bit_swap_buf = malloc(sizeof(reload_seq));
     for(int i = 0; i < sizeof(reload_seq); i++) {
-        bit_swap_buf[i] = bit_swap_byte(reload_seq[i]);
+        //bit_swap_buf[i] = bit_swap_byte(reload_seq[i]);
+        bit_swap_buf[i] = reload_seq[i];//reload takes place without bitswap
     }
     disp_buf(bit_swap_buf, sizeof(reload_seq));
 
