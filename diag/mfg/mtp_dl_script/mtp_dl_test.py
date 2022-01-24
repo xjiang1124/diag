@@ -277,117 +277,13 @@ def main():
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
         mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
         dsp = FF_Stage.FF_DL
-
-        # pp_ortano_adi_build = False
-        # #for ORTANO ADI PP build only
-        # for slot in range(MTP_Const.MTP_SLOT_NUM):
-        #     if slot in fail_nic_list:
-        #         continue
-        #     if not nic_prsnt_list[slot]:
-        #         continue
-        #     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        #     if nic_type == NIC_Type.ORTANO2ADI:
-        #         pp_ortano_adi_build = True
-
-        # if pp_ortano_adi_build:
-        #     # init nic diag env.
-        #     if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
-        #         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
-        #     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        #         if slot in fail_nic_list:
-        #             continue
-        #         if not nic_prsnt_list[slot]:
-        #             continue
-        #         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        #         dsp = "ORTANO_ADI"
-        #         test = "LTE_3888_1"
-        #         if nic_type == NIC_Type.ORTANO2ADI:
-        #             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        #             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        #             if not mtp_mgmt_ctrl.mtp_exec_nic_ltc3888(slot, test_type="1"):
-        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        #                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-        #                 if slot not in fail_nic_list:
-        #                     fail_nic_list.append(slot)
-        #                 if slot in pass_nic_list:
-        #                     pass_nic_list.remove(slot)
-        #                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-        #             else:
-        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        #                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        #     #nic power cycle
-        #     mtp_mgmt_ctrl.mtp_power_off_nic()
-        #     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
-        #     # init nic diag env.
-        #     if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
-        #         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
-        #     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        #         if slot in fail_nic_list:
-        #             continue
-        #         if not nic_prsnt_list[slot]:
-        #             continue
-        #         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        #         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        #         dsp = "ORTANO_ADI"
-        #         test = "LTE_3888_2"
-        #         if nic_type == NIC_Type.ORTANO2ADI:
-        #             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        #             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        #             if not mtp_mgmt_ctrl.mtp_exec_nic_ltc3888(slot, test_type="2"):
-        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        #                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-        #                 if slot not in fail_nic_list:
-        #                     fail_nic_list.append(slot)
-        #                 if slot in pass_nic_list:
-        #                     pass_nic_list.remove(slot)
-        #                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-        #             else:
-        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        #                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        #     #nic power cycle
-        #     mtp_mgmt_ctrl.mtp_power_off_nic()
-        #     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
-        #     # init nic diag env.
-        #     if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
-        #         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
-        #     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        #         if slot in fail_nic_list:
-        #             continue
-        #         if not nic_prsnt_list[slot]:
-        #             continue
-        #         dsp = "ORTANO_ADI"
-        #         test = "LTE_3888_3"
-        #         if nic_type == NIC_Type.ORTANO2ADI:
-        #             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        #             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        #             if not mtp_mgmt_ctrl.mtp_exec_nic_ltc3888(slot, test_type="3"):
-        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        #                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-        #                 if slot not in fail_nic_list:
-        #                     fail_nic_list.append(slot)
-        #                 if slot in pass_nic_list:
-        #                     pass_nic_list.remove(slot)
-        #                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-        #             else:
-        #                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        #                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        #     #nic power cycle
-        #     mtp_mgmt_ctrl.mtp_power_off_nic()
-        #     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
@@ -427,7 +323,7 @@ def main():
                        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
         if "CONSOLE_BOOT" not in args.skip_test:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
+            mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
@@ -480,7 +376,7 @@ def main():
             # power cycle only the cards that went through set_pslc
             if slot not in fail_nic_list:
                 mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)

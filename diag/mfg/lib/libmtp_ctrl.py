@@ -2045,7 +2045,9 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             filename = "{:s}_snake_pcie.log".format(sn)
         elif test == "SNAKE_ELBA":
-            filename = "{:s}_snake_elba.log".format(sn)
+            filename = "{:s}_num_6_snake_elba.log".format(sn)
+        elif test == "SNAKE_EDMA":
+            filename = "{:s}_num_4_snake_elba.log".format(sn)
         elif test == "ETH_PRBS":
             filename = "{:s}_elba_PRBS_MX.log".format(sn)
         else:
@@ -2328,7 +2330,7 @@ class mtp_ctrl():
 
 
 # 3. Routines that need spi bus, can not be run in parallel
-    def mtp_power_on_single_nic(self, slot):
+    def mtp_power_on_single_nic(self, slot, dl=False):
         self.mtp_nic_lock()
         self.cli_log_slot_inf(slot, "Power on NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY))
         if not self._nic_ctrl_list[slot].nic_power_on():
@@ -2336,6 +2338,15 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Failed to power on NIC")
             return False
         self.mtp_nic_unlock()
+
+        self.mtp_nic_lock()
+        if self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
+            if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                self.mtp_nic_unlock()
+                self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
+                return False
+        self.mtp_nic_unlock() 
+
         return True
 
 
@@ -2972,19 +2983,6 @@ class mtp_ctrl():
         self.cli_log_slot_err_lock(slot, "Unable to dump feature row.")
         return False
 
-    def mtp_exec_nic_ltc3888(self, slot, test_type="1"):
-        nic_type = self.mtp_get_nic_type(slot)
-        if nic_type != NIC_Type.ORTANO2ADI:
-            # No cpld partition bit
-            return True
-
-        self.cli_log_slot_inf(slot, "Execute LTC 3888")
-        if not self._nic_ctrl_list[slot].nic_console_exec_ltc3888(test_type):
-            self.mtp_dump_nic_err_msg(slot)
-            return False
-
-        return True
-
     def mtp_check_nic_cpld_partition(self, slot, console=False):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
@@ -3353,6 +3351,15 @@ class mtp_ctrl():
             self.mtp_nic_console_unlock()
 
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in ELBA_NIC_TYPE_LIST:
+            self.mtp_single_j2c_lock()
+            self.mtp_nic_console_lock()
+            ret, _ = self.mtp_nic_disp_ecc(slot)
+            self.mtp_nic_console_unlock()
+            self.mtp_single_j2c_unlock()
+
         return ret
 
     def mtp_mgmt_nic_diag_sys_clean(self, slot):
@@ -3375,13 +3382,16 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_start_nic_diag(self, slot, aapl):
-        if aapl:
+    def mtp_mgmt_start_nic_diag(self, slot, aapl, dis_hal=False):
+        if dis_hal:
             msg = "Start NIC Diag with HAL"
         else:
-            msg = "Start NIC Diag without HAL"
+            if aapl:
+                msg = "Start NIC Diag with HAL"
+            else:
+                msg = "Start NIC Diag without HAL"
         self.cli_log_slot_inf_lock(slot, msg)
-        if not self._nic_ctrl_list[slot].nic_start_diag(aapl):
+        if not self._nic_ctrl_list[slot].nic_start_diag(aapl, dis_hal):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
@@ -3628,7 +3638,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl, stop_on_err):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl, dis_hal, stop_on_err):
         ret = True
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -3651,7 +3661,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
 
-        if ret and not self.mtp_mgmt_start_nic_diag(slot, aapl):
+        if ret and not self.mtp_mgmt_start_nic_diag(slot, aapl, dis_hal):
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
@@ -3981,7 +3991,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False, stop_on_err=False):
+    def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False):
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -4019,6 +4029,7 @@ class mtp_ctrl():
                                                   fru_valid,
                                                   vmargin,
                                                   aapl,
+                                                  dis_hal,
                                                   stop_on_err))
             nic_thread.daemon = True
             nic_thread.start()
@@ -4139,7 +4150,7 @@ class mtp_ctrl():
             return False
 
 
-    def mtp_power_on_nic(self, slot_list=[]):
+    def mtp_power_on_nic(self, slot_list=[], dl=False):
         self.mtp_nic_lock()
 
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
@@ -4159,6 +4170,16 @@ class mtp_ctrl():
         self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
         self.mtp_nic_unlock()
+
+        self.mtp_nic_lock()
+        for slot in range(self._slots):
+            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
+                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                    self.mtp_nic_unlock()
+                    self.cli_log_err("Failed to set I2C on NIC")
+                    return False                   
+        self.mtp_nic_unlock()
+
         return True
 
 
@@ -4184,12 +4205,12 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_power_cycle_nic(self, slot_list=[]):
+    def mtp_power_cycle_nic(self, slot_list=[], dl=False):
         rc = self.mtp_power_off_nic(slot_list)
         if not rc:
             return rc
 
-        rc = self.mtp_power_on_nic(slot_list)
+        rc = self.mtp_power_on_nic(slot_list, dl)
         if not rc:
             return rc
 
@@ -4732,7 +4753,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_PCIE":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_ELBA":
+        elif test == "SNAKE_ELBA" or test == "SNAKE_EDMA":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
 
@@ -4755,6 +4776,14 @@ class mtp_ctrl():
             # 2C/4C = internal loopback
             if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
+
+            if test == "SNAKE_EDMA":
+                cmd += " -wtime=610"
+            else:
+                cmd += " -wtime=300"
+
+            if test == "SNAKE_EDMA":
+                cmd += " -snake_num=4 -dura=15"
 
         elif test == "ETH_PRBS":
             slot = nic_list[0]
@@ -5870,7 +5899,7 @@ class mtp_ctrl():
             
         cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(str(slot+1))
 
-        ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY)
+        ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=5*60)
 
         if not ret:
             self.cli_log_err("Execute command {:s} failed".format(cmd))

@@ -97,6 +97,7 @@ NIC_PARA:
 MTP_PARA:
     ETH_PRBS: True
     SNAKE_ELBA: True
+    SNAKE_EDMA: True
 
 MTP_SEQ:
     ASIC:

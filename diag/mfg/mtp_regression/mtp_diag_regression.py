@@ -263,14 +263,13 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     if aapl:
         new_sub_test_list = list()
         if nic_type in ELBA_NIC_TYPE_LIST:
+            if ("MEM", "EDMA") in sub_test_list:
+                for loop in range(1,51):   # 10 iterations
+                    new_sub_test_list.append(("MEM", "EDMA"))
             if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
                 new_sub_test_list.append(("NIC_ASIC","PCIE_PRBS"))
             if ("NIC_ASIC","L1") in sub_test_list:
                 new_sub_test_list.append(("NIC_ASIC","L1"))
-            if ("MEM", "EDMA") in sub_test_list:
-                for loop in range(1,11):   # 10 iterations
-                    new_sub_test_list.append(("MEM", "EDMA"))
-                    new_sub_test_list.append(("MEM", "DISP_ECC_{:d}".format(loop)))
         else:
             if ("NIC_ASIC","PCIE_PRBS") in sub_test_list:
                 new_sub_test_list.append(("NIC_ASIC","PCIE_PRBS"))
@@ -695,7 +694,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
             if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, "FAILED", duration))
                 nic_test_rslt_list[slot] = False
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
@@ -1887,12 +1886,13 @@ def main():
 
                 if nic_list:
                     # second round, aapl tests
-                    if nic_type in ELBA_NIC_TYPE_LIST:
-                        aapl = False
-                    else:
-                        aapl = True
-                    if do_once == 0:
-                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl, nic_util=False, stop_on_err=stop_on_err):
+                    if ("MEM", "EDMA") in nic_para_test_list:
+                        if nic_type in ELBA_NIC_TYPE_LIST:
+                            aapl = False
+                        else:
+                            aapl = True
+
+                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl, nic_util=False, dis_hal=True, stop_on_err=stop_on_err):
                             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                             for nic_list in nic_test_full_list:
                                 for slot in nic_list:
@@ -1901,25 +1901,65 @@ def main():
                                         if stop_on_err:
                                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                             return
-                        do_once = 1
 
-                    diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
-                                                                nic_type,
-                                                                nic_list,
-                                                                test_db,
-                                                                nic_para_test_list,
-                                                                stop_on_err,
-                                                                vmarg,
-                                                                True,
-                                                                swmtestmode,
-                                                                args.skip_test)
-                    for slot in diag_para_fail_list:
-                        if slot in nic_list and stop_on_err:
-                            nic_list.remove(slot)
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        if slot in pass_nic_list:
-                            pass_nic_list.remove(slot)
+                        new_nic_para_test_list = list()
+                        new_nic_para_test_list.append(("MEM", "EDMA"))
+                        diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                                    nic_type,
+                                                                    nic_list,
+                                                                    test_db,
+                                                                    new_nic_para_test_list,
+                                                                    stop_on_err,
+                                                                    vmarg,
+                                                                    True,
+                                                                    swmtestmode,
+                                                                    args.skip_test)
+                        for slot in diag_para_fail_list:
+                            if slot in nic_list and stop_on_err:
+                                nic_list.remove(slot)
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    
+
+                    if nic_type in ELBA_NIC_TYPE_LIST:
+                        aapl = False
+                    else:
+                        aapl = True
+                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, aapl=aapl, nic_util=False, dis_hal=False, stop_on_err=stop_on_err):
+                        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                        for nic_list in nic_test_full_list:
+                            for slot in nic_list:
+                                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                    fail_nic_list.append(slot)
+                                    if stop_on_err:
+                                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                                        return
+    
+                    new_nic_para_test_list = list()
+                    new_nic_para_test_list = nic_para_test_list[:]
+                    if ("MEM", "EDMA") in nic_para_test_list:
+                        new_nic_para_test_list.remove(("MEM", "EDMA"))
+
+                    if len(new_nic_para_test_list) > 0:
+                        diag_para_fail_list = naples_diag_para_test(mtp_mgmt_ctrl,
+                                                                    nic_type,
+                                                                    nic_list,
+                                                                    test_db,
+                                                                    new_nic_para_test_list,
+                                                                    stop_on_err,
+                                                                    vmarg,
+                                                                    True,
+                                                                    swmtestmode,
+                                                                    args.skip_test)
+                        for slot in diag_para_fail_list:
+                            if slot in nic_list and stop_on_err:
+                                nic_list.remove(slot)
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
 
             # NIC Parallel test for MVL only
             for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
@@ -1940,8 +1980,10 @@ def main():
                     test_db = ortano_test_db
                 else:
                     continue
-
-                loopback = False
+                if corner in (Env_Cond.MFG_LT, Env_Cond.MFG_HT):
+                    loopback = False
+                else:
+                    loopback = True
                 if nic_list:
                     diag_para_fail_list = naples_diag_mvl_test(mtp_mgmt_ctrl,
                                                                nic_type,
