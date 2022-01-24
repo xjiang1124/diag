@@ -56,6 +56,7 @@ def main():
     print(json.dumps(inputconfig, indent = 4))
     print(inputconfig['FILE']['datebasesjsonfile'])
     pr['modules'].checkDirectoryexist(inputconfig['DIR'])
+    pr['ARGV'] = ARGV
 
     datebase_DB = pr['modules'].readjsonfile(inputconfig['FILE']['datebasesjsonfile'])
     # if os.path.exists(inputconfig['FILE']['datebasesjsonfile']):
@@ -168,24 +169,26 @@ def processFailureSNFlexFlowCheck(DATA,inputconfig,pr):
     pr['modules'].print_anyinformation(FailureSNlist)
 
     if "FLEXFLOW" in inputconfig:
-        mkssh = ssh_modules.ssh_modules(inputconfig["FLEXFLOW"])
-        mkssh.ssh_login()
-        mkssh.getuptimeinfo()
-        for teststep in FailureSNlist["DATA"]:
-            FailureSNlist["DATA"][teststep]["FLEXFLOW"] = dict()
-            FailureSNlist["DATA"][teststep]["FlexflowType"] = dict()
-            for sn in FailureSNlist["DATA"][teststep]["SN"]:
-                FailureSNlist["FailureSN"].append(sn)
-                FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] = mkssh.getflowflex(sn)
-                FailureSNlist["FailureSNFlexflow"][sn] = FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]
-                if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["DATA"][teststep]["FlexflowType"]:
-                    FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
-                if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["FlexflowType"]:
-                    FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
-                FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
-                FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
-        mkssh.ssh_logout()
-
+        try:
+            mkssh = ssh_modules.ssh_modules(inputconfig["FLEXFLOW"])
+            mkssh.ssh_login()
+            mkssh.getuptimeinfo()
+            for teststep in FailureSNlist["DATA"]:
+                FailureSNlist["DATA"][teststep]["FLEXFLOW"] = dict()
+                FailureSNlist["DATA"][teststep]["FlexflowType"] = dict()
+                for sn in FailureSNlist["DATA"][teststep]["SN"]:
+                    FailureSNlist["FailureSN"].append(sn)
+                    FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] = mkssh.getflowflex(sn)
+                    FailureSNlist["FailureSNFlexflow"][sn] = FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]
+                    if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["DATA"][teststep]["FlexflowType"]:
+                        FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
+                    if not FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn] in FailureSNlist["FlexflowType"]:
+                        FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]] = list()
+                    FailureSNlist["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
+                    FailureSNlist["DATA"][teststep]["FlexflowType"][FailureSNlist["DATA"][teststep]["FLEXFLOW"][sn]].append(sn)
+            mkssh.ssh_logout()
+        except:
+            return None
     else:
         return None
 
@@ -559,7 +562,12 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
         workingonSNlist = listofsn
     workingonSNlist.sort(reverse=True)
     print("COUNT SN: {}".format(len(workingonSNlist)))
-    #sys.exit()    
+    #sys.exit()
+
+    if "snlist" in pr['ARGV']:
+        if pr['ARGV']["snlist"]:
+            if "SNLIST" in inputconfig:
+                workingonSNlist = pr['modules'].get_snlist_from_xlsx(inputconfig["SNLIST"])    
     wb = Workbook()
     
     reportdir = inputconfig['DIR']["reportpath"]
@@ -613,6 +621,10 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
         workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
         if len(listofsn):
             workingonSNlist = listofsn
+        if "snlist" in pr['ARGV']:
+            if pr['ARGV']["snlist"]:
+                if "SNLIST" in inputconfig:
+                    workingonSNlist = pr['modules'].get_snlist_from_xlsx(inputconfig["SNLIST"])   
         workingonSNlist.sort(reverse=True)
         print("COUNT SN: {}".format(len(workingonSNlist)))
 

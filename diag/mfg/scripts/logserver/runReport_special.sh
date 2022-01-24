@@ -110,102 +110,123 @@ echo Script: runReport_special.sh
 #ORTANO2_baseline_round2_400k_lv0-50C
 #ORTANO2_baseline_round2_1M_lv3-75-50C
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_baseline_round2_400k_lv0-25C_input.json specreport3=1 skiplock=1
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_baseline_round2_400k_lv0-50C_input.json specreport3=1 skiplock=1
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_baseline_round2_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
+#ORTANO2_EDMA_2400_400k_lv0-25C
+#ORTANO2_EDMA_2400_1M_lv3-75-50C
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_actual_input.json specreport3=1 skiplock=1
+#ORTANO2_EDMA_3200_0C-trained_400k_lv0-0C
+#ORTANO2_EDMA_3200_0C-trained_400k_lv0-50C
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-25C_input.json specreport3=1 skiplock=1
+#ORTANO2_EDMA_3200_25C-trained_400k_lv0-25C
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-50C_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_25C-trained_400k_lv0-25C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_0C-trained_400k_lv0-0C_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_0C-trained_400k_lv0-50C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_to_1M_lv3-75_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_2400_400k_lv0-25C_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_2400_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_vmarg_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_baseline_round2_400k_lv0-25C_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_baseline_round2_400k_lv0-50C_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_baseline_round2_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_actual_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round5_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-25C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_pwrcycle_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_400k_lv0-50C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round4_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_samepwrcycle_1M_lv3-75-50C_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv6_round2_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_to_1M_lv3-75_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round3_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_vmarg_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round2_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_400k_lv0_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_hv5-25_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round5_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_hv3_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_pwrcycle_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_3-75_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round4_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv6_round2_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv4_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round3_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv5_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_lv3-75_round2_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv12_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_hv5-25_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv9_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_hv3_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv6_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_3-75_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_2800_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_1M_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_loop_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv4_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_loop_w_pwrcycle_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv5_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_loop_input.json specreport3=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv12_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_3200_input.json specreport2=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv9_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_EDMA_1_input.json specreport2=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_lv6_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_SNAKE2_2_input.json specreport=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_2800_input.json specreport3=1 skiplock=1
 
-cd $_mydir
-python3 $_mydir/process_log.py ORTANO2_SNAKE_input.json specreport=1 skiplock=1
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_loop_input.json specreport3=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_loop_w_pwrcycle_input.json specreport3=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_loop_input.json specreport3=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_input.json specreport2=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_1_input.json specreport2=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_SNAKE2_2_input.json specreport=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_SNAKE_input.json specreport=1 skiplock=1
 
 # for name in "${configNames[@]}";
 # do 
