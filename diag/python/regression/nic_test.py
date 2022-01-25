@@ -173,7 +173,7 @@ class nic_test:
         print "timestamp", datetime.datetime.now().time()
         return ret, nic_list_remain
 
-    def setup_env_multi_mainfw(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True):
+    def setup_env_multi_mainfw(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, dis_net_port=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
@@ -1385,7 +1385,7 @@ if __name__ == "__main__":
     if args.setup_multi == True:
         slot_list = args.slot_list.split(',')
         if args.mainfw == True:
-            test.setup_env_multi_mainfw(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle)
+            test.setup_env_multi_mainfw(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.dis_net_port)
         elif args.goldfw == True:
             test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
