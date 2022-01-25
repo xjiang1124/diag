@@ -937,6 +937,10 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             dsp = FF_Stage.FF_DL
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             testlist = ["CPLD_INIT", "NIC_BOOT_INIT", "CPLD_VERIFY", "QSPI_VERIFY"]
+
+            if nic_type in (NIC_Type.ORTANO2):
+                testlist.insert(0, "VDD_DDR_VERIFY")
+
             for skip_test in skip_testlist:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -967,6 +971,8 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                     if not ret:
                         qspi_prog_list.append(slot)
                         ret = True
+                elif test == "VDD_DDR_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix(slot, console=True)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue

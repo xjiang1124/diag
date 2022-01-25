@@ -164,7 +164,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO:
         testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2:
-        testlist = ["FIX_VRM", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2ADI:
         testlist = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -209,6 +209,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
         elif test == "FIX_VRM":
             ret = mtp_mgmt_ctrl.mtp_nic_fix_vrm(slot)
+        elif test == "VDD_DDR_FIX":
+            ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue

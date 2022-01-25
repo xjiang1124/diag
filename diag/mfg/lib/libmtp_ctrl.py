@@ -5938,15 +5938,28 @@ class mtp_ctrl():
         else:
             return True, err_msg_list
 
-    def mtp_nic_set_ddr_defaults(self, slot):
-        if not self._nic_ctrl_list[slot].nic_set_ddr_defaults():
-            return False
+    def mtp_nic_vdd_ddr_fix(self, slot, console=False):
+        if console:
+            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check():
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix():
+                    self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check():
+                    self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
+                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                    return False
+        else:
+            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check():
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix():
+                    self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check():
+                    self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
+                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                    return False
 
         return True
 
-    def mtp_nic_check_ddr_defaults(self, slot):
-        if not self._nic_ctrl_list[slot].nic_check_ddr_defaults():
-            return False
-
-        return True
 
