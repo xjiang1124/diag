@@ -450,6 +450,7 @@ def main():
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(nic_type))
 
+    mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
         mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
