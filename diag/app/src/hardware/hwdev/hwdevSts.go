@@ -85,6 +85,7 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
     if lockFlag == true {
         lockName, _, err = hwinfo.LockDev(devName)
         if err != errType.SUCCESS {
+            cli.Println("f", "failed to lock the device: ", devName)
             return
         }
         defer hwinfo.UnlockDev(lockName)

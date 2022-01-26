@@ -1,7 +1,8 @@
 package max6657
 
 const (
-    MFG_ID_V byte = 0xA1
+    MFG_ID_V byte = 0x4d
+    MFG_ID_V_1 byte = 0xA1
 )
 
 const (

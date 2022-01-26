@@ -14,7 +14,6 @@ func ReadMfgId(devName string) (id byte, err int) {
     defer smbus.Close()
 
     id, err = smbus.ReadByte(devName, MFG_ID)
-    MFG_ID_V = id
     return
 }
 
@@ -38,6 +37,8 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
     }
     if id == max6657.MFG_ID_V {
         integer, dec, err = max6657.ReadTemp(devName, channel)
+    } else if id == max6657.MFG_ID_V_1 {
+        integer, dec, err = max6657.ReadTemp(devName, channel)
     } else {
         err = errType.INVALID_PARAM
     }
@@ -53,6 +54,8 @@ func DispStatus(devName string) (err int) {
         return
     }
     if id == max6657.MFG_ID_V {
+        err = max6657.DispStatus(devName)
+    } else if id == max6657.MFG_ID_V_1 {
         err = max6657.DispStatus(devName)
     } else {
         err = errType.INVALID_PARAM
