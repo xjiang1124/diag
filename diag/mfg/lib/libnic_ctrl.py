@@ -4157,6 +4157,7 @@ class nic_ctrl():
                 self.nic_console_detach()
                 return False
 
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         # nic_cmd_list = list()
         # nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
         # nic_cmd_list.append("fwenv -d ddr_freq")
