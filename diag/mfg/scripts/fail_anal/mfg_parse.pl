@@ -8,8 +8,16 @@ use Cwd;
 use File::Find;
 use Excel::Writer::XLSX;
 
-my $fa_option = shift;
+my $fa_opt = shift;
+my $test_name_opt = shift;
+my $mfg_err_code_opt = shift;
 
+if ($test_name_opt ne "") {
+    print "test name: $test_name_opt\n";
+}
+if ($mfg_err_code_opt ne "") {
+    print "mfg err code: $mfg_err_code_opt\n";
+}
 my $file_logs_all = "testresult.txt";
 my $failure_logs = "logs_fail.txt";
 my $pass_logs = "logs_pass.txt";
@@ -25,6 +33,20 @@ my $worksheet_name = "";
 system("rm $failure_logs $pass_logs $result_file");
 
 my $num_failures = 0;
+
+sub convert_ts {
+    my ($ts) = @_;
+    #format: 2021-11-27_16-44-31
+    my ($date, $time) = split('_', $ts);
+    if ($debug_msgs) { print "date: $date, time: $time\n"};
+    my ($year, $mon, $mday) = split('-', $date);
+    if ($debug_msgs) { print "year: $year, mon: $mon, mday: $mday\n"};
+    my ($hour, $min, $sec) = split('-', $time);
+    if ($debug_msgs) { print "hour: $hour, min: $min, sec: $sec\n"};
+    my $unixts = timelocal($sec, $min, $hour, $mday, $mon-1, $year);
+    if ($debug_msgs) { print "unixts: $unixts\n"};
+    return $unixts;
+}
 
 sub count_num_of_failures {
     my ($fa_opt) = @_;
@@ -59,15 +81,8 @@ sub count_num_of_failures {
                     $curr_sn = $sn2;
                     if ($debug_msgs) { print "first new SN: $curr_sn\n"};
                 }
-                #format: 2021-11-27_16-44-31
-                my ($date, $time) = split('_', $ts);
-                if ($debug_msgs) { print "date: $date, time: $time\n"};
-                my ($year, $mon, $mday) = split('-', $date);
-                if ($debug_msgs) { print "year: $year, mon: $mon, mday: $mday\n"};
-                my ($hour, $min, $sec) = split('-', $time);
-                if ($debug_msgs) { print "hour: $hour, min: $min, sec: $sec\n"};
-                my $unixts = timelocal($sec, $min, $hour, $mday, $mon-1, $year);
-                if ($debug_msgs) { print "unixts: $unixts\n"};
+
+                my $unixts = convert_ts($ts);
 
                 if ($fa_opt ne "ALL") {
                     if ($curr_sn ne $sn2)
@@ -118,19 +133,19 @@ sub count_num_of_failures {
     close(TR2);
 }
 
-if($fa_option eq "LAST") {
+if($fa_opt eq "LAST") {
     $worksheet_name = "Last failures";
     $curr_unixts = 0;
-    count_num_of_failures($fa_option);
-} elsif($fa_option eq "FIRST") {
+    count_num_of_failures($fa_opt);
+} elsif($fa_opt eq "FIRST") {
     $worksheet_name = "First failures";
     $curr_unixts = time();
-    count_num_of_failures($fa_option);
-} elsif($fa_option eq "ALL") {
+    count_num_of_failures($fa_opt);
+} elsif($fa_opt eq "ALL") {
     $worksheet_name = "All failures";
-    count_num_of_failures($fa_option);
+    count_num_of_failures($fa_opt);
 } else {
-    print "unexpected fa_option $fa_option\n";
+    print "unexpected fa_opt $fa_opt\n";
     exit(1);
 }
 
@@ -216,11 +231,11 @@ $worksheet->set_column($mtp_col, $mtp_col, undef, $default_fmt);
 $worksheet->set_column($slot_col, $slot_col, 6, $default_fmt);
 $worksheet->set_column($test_name_col, $test_name_col, 15, $default_fmt);
 $worksheet->set_column($failure_code_col, $failure_code_col, 22, $default_fmt);
-$worksheet->set_column($top_diag_fa_col, $top_diag_fa_col, 47, $default_fmt);
+$worksheet->set_column($top_diag_fa_col, $top_diag_fa_col, 32, $default_fmt);
 $worksheet->set_column($cpld_sts_col, $cpld_sts_col, 55, $default_fmt);
 $worksheet->set_column($ecc_sts_col, $ecc_sts_col, 48, $default_fmt);
 $worksheet->set_column($err_msg_col, $err_msg_col, 60, $default_fmt);
-$worksheet->set_column($full_diag_fa_col, $full_diag_fa_col, 47, $default_fmt);
+$worksheet->set_column($full_diag_fa_col, $full_diag_fa_col, 32, $default_fmt);
 
 my %diag_fa_code;
 my $top_diag_fa_code = "";
@@ -255,7 +270,7 @@ while(my $line = <TR2>)
         %diag_fa_code = ();
         $all_test_msg = "";
         find_failure_code($fulllogpath, $sn2, $toppath);
-        parse_fpga_and_ecc($slotlogfile, $sn2);
+        parse_fpga_and_ecc($slotlogfile, $sn2, $ts);
 
         my $diag_fa_code_str = "";
         foreach my $diag_fa_code (keys %diag_fa_code) {
@@ -265,6 +280,7 @@ while(my $line = <TR2>)
             chomp($diag_fa_code_str);
             $worksheet->write($curr_row, $full_diag_fa_col, $diag_fa_code_str);
         }
+
         pick_top_diag_fa();
         $worksheet->write($curr_row, $top_diag_fa_col, $top_diag_fa_code);
         $worksheet->write($curr_row, $err_msg_col, $all_test_msg);
@@ -276,6 +292,11 @@ close(TR2);
 sub pick_top_diag_fa {
     if (%diag_fa_code == 0) {
         $top_diag_fa_code = "UNKNOWN";
+        return;
+    }
+    if (exists $diag_fa_code{"TEST_IGNORED"}) {
+        $top_diag_fa_code = "TEST_IGNORED";
+        delete $diag_fa_code{"TEST_IGNORED"};
         return;
     }
 
@@ -297,12 +318,6 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"}) {
-        $top_diag_fa_code = "TEMP_TRIP_FAILURE(0x50)";
-        delete $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"};
-        return;
-    }
-
     if (exists $diag_fa_code{"CORE_PLL_FAILURE(0x2b)"}) {
         $top_diag_fa_code = "CORE_PLL_FAILURE(0x2b)";
         delete $diag_fa_code{"CORE_PLL_FAILURE(0x2b)"};
@@ -321,15 +336,21 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"}) {
-        $top_diag_fa_code = "ASIC_PIN_STATUS_2_FAILURE(0x28)";
-        delete $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"};
+    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
+        $top_diag_fa_code = "L1_DDR_BIST";
+        delete $diag_fa_code{"L1_DDR_BIST"};
         return;
     }
 
-    if (exists $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"}) {
-        $top_diag_fa_code = "CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR";
-        delete $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"};
+    if (exists $diag_fa_code{"PCIE_PRBS_FAILURE"}) {
+        $top_diag_fa_code = "PCIE_PRBS_FAILURE";
+        delete $diag_fa_code{"PCIE_PRBS_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"ETH_PRBS_FAILURE"}) {
+        $top_diag_fa_code = "ETH_PRBS_FAILURE";
+        delete $diag_fa_code{"ETH_PRBS_FAILURE"};
         return;
     }
 
@@ -339,9 +360,33 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_DDR_FAILURE"}) {
-        $top_diag_fa_code = "SNAKE_DDR_FAILURE";
-        delete $diag_fa_code{"SNAKE_DDR_FAILURE"};
+    if (exists $diag_fa_code{"SNAKE_ECC_FAILURE"}) {
+        $top_diag_fa_code = "SNAKE_ECC_FAILURE";
+        delete $diag_fa_code{"SNAKE_ECC_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"RETEST_NEEDED"}) {
+        $top_diag_fa_code = "RETEST_NEEDED";
+        delete $diag_fa_code{"RETEST_NEEDED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"}) {
+        $top_diag_fa_code = "TEMP_TRIP_FAILURE(0x50)";
+        delete $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"}) {
+        $top_diag_fa_code = "ASIC_PIN_STATUS_2_FAILURE(0x28)";
+        delete $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"}) {
+        $top_diag_fa_code = "CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR";
+        delete $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"};
         return;
     }
 
@@ -368,11 +413,7 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"L1_CORE_DUMPED"};
         return;
     }
-    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
-        $top_diag_fa_code = "L1_DDR_BIST";
-        delete $diag_fa_code{"L1_DDR_BIST"};
-        return;
-    }
+
     if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
         $top_diag_fa_code = "SNAKE_LOG_INCOMPLETE";
         delete $diag_fa_code{"SNAKE_LOG_INCOMPLETE"};
@@ -410,14 +451,14 @@ sub parse_snake_log {
     }
     my $test_err_msg = "";
     my $test_name = substr($test_and_failure_code, 0, index($test_and_failure_code, ' '));
-    q {
-    my $fa_prefix = "";
-    if ($test_name eq "LV_ASIC") {
-        $fa_prefix = "LV_";
-    } elsif ($test_name eq "HV_ASIC") {
-        $fa_prefix = "HV_";
-    }
-    }
+    q{
+        my $fa_prefix = "";
+        if ($test_name eq "LV_ASIC") {
+            $fa_prefix = "LV_";
+        } elsif ($test_name eq "HV_ASIC") {
+            $fa_prefix = "HV_";
+        }
+    };
     my $err_found = 0;
     while(my $line = <TR3>)
     {
@@ -430,7 +471,7 @@ sub parse_snake_log {
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc|_mc)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_DDR_FAILURE"} = 1;
+            $diag_fa_code{"SNAKE_ECC_FAILURE"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb_mx_sync_rst :(.*)sync failed/) {
@@ -454,7 +495,7 @@ sub parse_snake_log {
         if ($err_found == 0 && $line =~ m/(.*)ERROR :: (.*)/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_UNKNOWN"} = 1;
+            $diag_fa_code{"SNAKE_OTHER"} = 1;
             $err_found = 1;
         }
         if ($line =~ m/MSG :: Snake Done/) {
@@ -559,8 +600,12 @@ sub parse_nic_test_logs {
         $diag_fa_code{"NIC_LOGFILE_NOT_EXIST"} = 1;
     } else {
 	    my $log_complete = 0;
+        my $prev_line = "";
         while(my $line = <TR3>)
         {
+            if($line =~ m/elb_aapl_prbs_check :: sbus_addr/) {
+                $test_err_msg .= $prev_line;
+            }
             if($line =~ m/(#FAILED#|ERROR)/)
             {
                 if ($debug_msgs) { print "line: $line"};
@@ -569,6 +614,7 @@ sub parse_nic_test_logs {
             if($logend ne "" && $line =~ m/$logend/) {
                 $log_complete = 1;
             }
+            $prev_line = $line;
         }
         close(TR3);
 	    if ($log_complete == 0) {
@@ -621,11 +667,18 @@ sub find_failure_code {
             }
         }
     }
+
     chomp($all_test_names);
     chomp($all_failure_codes);
     $worksheet->write($curr_row, $test_name_col, $all_test_names);
     $worksheet->write($curr_row, $failure_code_col, $all_failure_codes);
     close(TR3);
+
+    # filter on the test_name/mfg_err_code
+    if ((index($all_test_names, $test_name_opt) == -1) ||
+        (index($all_failure_codes, $mfg_err_code_opt) == -1)) {
+        $diag_fa_code{"TEST_IGNORED"} = 1;
+    }
 
     my $test_and_failure_code = "";
     foreach $test_and_failure_code (@tests_and_failure_codes) {
@@ -655,8 +708,7 @@ sub find_failure_code {
             my $snake_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_snake_elba.log";
             print "#### snake_log_file: $snake_log_file\n";
             parse_snake_log($snake_log_file, $sn, $test_and_failure_code);
-        }
-        if ($asic_log_dir ne "" && $failure_code eq "L1") {
+        } elsif ($asic_log_dir ne "" && $failure_code eq "L1") {
             if (index($test_name, "NIC") == -1) {
                 my $l1_path = $log_path."/".$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir;
                 my @l1_log_files = glob("${l1_path}elb_l1_screen_board_${sn}_*");
@@ -674,23 +726,27 @@ sub find_failure_code {
                 print "#### NIC_l1_log_file: $nic_l1_log_file\n";
                 parse_nic_test_logs("L1", $nic_l1_txt_file, $nic_l1_log_file, $sn, $test_and_failure_code);
             }
-        }
-        if ($asic_log_dir ne "" && $failure_code eq "PCIE_PRBS") {
+        } elsif ($asic_log_dir ne "" && $failure_code eq "PCIE_PRBS") {
             my $pcie_prbs_txt_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
             my $pcie_prbs_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_elba_PRBS_PCIE.log";
             print "#### PCIE_PRBS_txt_file: $pcie_prbs_txt_file\n";
             print "#### PCIE_PRBS_log_file: $pcie_prbs_log_file\n";
+            $diag_fa_code{"PCIE_PRBS_FAILURE"} = 1;
             parse_nic_test_logs("PCIE_PRBS", $pcie_prbs_txt_file, $pcie_prbs_log_file, $sn, $test_and_failure_code);
-        }
-        if ($asic_log_dir ne "" && $failure_code eq "ETH_PRBS") {
+        } elsif ($asic_log_dir ne "" && $failure_code eq "ETH_PRBS") {
             my $eth_prbs_txt_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
             my $eth_prbs_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_elba_PRBS_MX.log";
             print "#### ETH_PRBS_txt_file: $eth_prbs_txt_file\n";
             print "#### ETH_PRBS_log_file: $eth_prbs_log_file\n";
+            $diag_fa_code{"ETH_PRBS_FAILURE"} = 1;
             parse_nic_test_logs("ETH_PRBS", $eth_prbs_txt_file, $eth_prbs_log_file, $sn, $test_and_failure_code);
+        } else {
+            if ($failure_code eq "NIC_STATUS" || $failure_code eq "CONSOLE_BOOT" || $failure_code eq "NIC_MGMT_INIT" || $failure_code eq "NIC_CPLD" || $failure_code eq "NIC_DIAG_BOOT") {
+                parse_mtp_and_slot_log($fulllogpath, $slot, $test_and_failure_code);
+            }
         }
-        if ($failure_code eq "NIC_STATUS" || $failure_code eq "CONSOLE_BOOT" || $failure_code eq "NIC_MGMT_INIT" || $failure_code eq "NIC_CPLD" || $failure_code eq "NIC_DIAG_BOOT") {
-            parse_mtp_and_slot_log($fulllogpath, $slot, $test_and_failure_code);
+        if ($all_test_msg eq "") {
+            $all_test_msg = "log path: ".$fulllogpath."\n";
         }
     }
 }
@@ -718,7 +774,7 @@ sub parse_mtp_and_slot_log {
         }
         close(TR3);
     };
-    $all_test_msg .= "############### $test_and_failure_code ###############\n"."log path: ".$fulllogpath."\n\n";
+
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";
         return;
@@ -732,14 +788,14 @@ sub parse_mtp_and_slot_log {
         }
     }
     if ($test_err_msg ne "") {
-        #$all_test_msg .= "slot log: ".$log_path."/".$slotlogfile."\n\n";
+        $all_test_msg .= "############### $test_and_failure_code ###############\n"."slot log: ".$log_path."/".$slotlogfile."\n\n";
         $all_test_msg .= $test_err_msg;
     }
     close(TR3);
 }
 
 sub parse_fpga_and_ecc {
-    my ($logfile, $sn) = @_;
+    my ($logfile, $sn, $ts) = @_;
     my $test_err_msg = "";
     print "#### parse_fpga_and_ecc logfile: $logfile\n";
 
@@ -761,7 +817,7 @@ sub parse_fpga_and_ecc {
         if($line1 =~ m/(.*)(Addr: 0x21; Value:)\s(\w+)/) {
             my $line2 = <TR3>;
             if ($line2 =~ m/smbus\.go/) {
-                $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"} = 1;
+                $diag_fa_code{"SMBUS_ERR"} = 1;
                 $smbus_err = 1;
                 last;
             }
@@ -940,6 +996,24 @@ sub parse_fpga_and_ecc {
     if ($ecc_dump_exist == 0) {
         print "ECC not dumped\n";
         $worksheet->write($curr_row, $ecc_sts_col, "ECC not dumped");
+        my $retest_ts = "2021-11-24_00-00-00";
+        my $unixts = convert_ts($ts);
+        my $unixts_retest = convert_ts($retest_ts);
+        if ($unixts < $unixts_retest) {
+            $diag_fa_code{"RETEST_NEEDED"} = 1;
+        }
+        if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"} ||
+            exists $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} ||
+            exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} ||
+            exists $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} ||
+            exists $diag_fa_code{"L1_LOG_INCOMPLETE"} ||
+            exists $diag_fa_code{"NIC_TXTFILE_NOT_EXIST"} ||
+            exists $diag_fa_code{"NIC_TXT_INCOMPLETE"} ||
+            exists $diag_fa_code{"NIC_LOGFILE_NOT_EXIST"} ||
+            exists $diag_fa_code{"NIC_LOG_INCOMPLETE"} ||
+            exists $diag_fa_code{"L1_LOGFILE_NOT_EXIST"}) {
+            $diag_fa_code{"RETEST_NEEDED"} = 1;
+        }
     } elsif ($num_ecc_sts_errors == 0) {
         print "ECC status OK\n";
         $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");

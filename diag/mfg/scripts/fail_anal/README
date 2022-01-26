@@ -15,7 +15,7 @@
 # 4. Run the mfg_parse.sh script with the syntax below:
 #    Syntax: mfg_parse.sh [-c|s|f|l|h]
 #            options:
-#            c     card_type
+#            c     card type
 #            s     stage
 #            f     FA option: first/last/all
 #            l     SN file

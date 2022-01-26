@@ -5,20 +5,24 @@ Help()
    echo
    echo "Syntax: mfg_parse.sh [-c|s|f|l|h]"
    echo "options:"
-   echo "c     card_type"
+   echo "c     card type"
    echo "s     stage"
    echo "f     FA option: first/last/all"
    echo "l     SN file"
+   echo "t     test name"
+   echo "m     mfg err code"
    echo "h     print this help"
    echo
 }
 card_type=
 stage=
-fa_option=
+fa_opt=
 sn_file=
+test_name=
+mfg_err_code=
 cwd=$(pwd)
 
-while getopts c:s:f:l:h name
+while getopts c:s:f:l:t:m:h name
 do
     case $name in
     c)
@@ -26,9 +30,13 @@ do
     s)
         stage="$OPTARG";;
     f)
-        fa_option="$OPTARG";;
+        fa_opt="$OPTARG";;
     l)
         sn_file="$OPTARG";;
+    t)
+        test_name="$OPTARG";;
+    m)
+        mfg_err_code="$OPTARG";;
     h)
         Help
         exit
@@ -59,8 +67,8 @@ if [ -z "$stage" ]; then
     Help
     exit
 fi
-echo $fa_option
-if [ -z "$fa_option" ]; then
+echo $fa_opt
+if [ -z "$fa_opt" ]; then
     echo "Option -f not specified"
     Help
     exit
@@ -70,8 +78,8 @@ card_type=$(echo $card_type | awk '{print toupper($0)}')
 echo $card_type
 stage=$(echo $stage | awk '{print toupper($0)}')
 echo $stage
-fa_option=$(echo $fa_option | awk '{print toupper($0)}')
-echo $fa_option
+fa_opt=$(echo $fa_opt | awk '{print toupper($0)}')
+echo $fa_opt
 to_location_top="/home/mfg/mfg_diag_fa/scripts/"
 to_location=$to_location_top
 cd $to_location
@@ -107,7 +115,7 @@ find ./ -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Com
 echo "runnning the parse script"
 cp $to_location_top/mfg_parse.pl $to_location
 cd $to_location
-./mfg_parse.pl $fa_option
+./mfg_parse.pl $fa_opt $test_name $mfg_err_code
 
 cp $to_location/parse_result.xlsx $to_location_top/../
 echo the temporary dir: $to_location_top$dir_name can be removed
