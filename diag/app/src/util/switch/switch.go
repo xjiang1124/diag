@@ -17,12 +17,18 @@ const errhelp = "\nswitch:\n" +
         "switch fantest\n" +
         "\n" +
         "switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>\n" +
-        "switch td3 snake <elbPortMask> <time> <phy/ext> [pktsize] [32-bit pattern]\n" +
-        "switch td3 snakeforward <elbPortMask> <time> <phy/ext>\n" +
+        "switch td3 snake <elbPortMask> <time> <phy/ext> [pktsize] [32-bit pattern] -temp\n" +
+        "switch td3 snakeforward <elbPortMask> <time> <phy/ext> -temp\n" +
+        "switch td3 snakecompliance <elbPortMask> <time> <phy/ext> -temp\n" +
         "switch td3 vrmfix\n" +
         "\n" + 
         "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
         "switch elba rtctest <elba mask 0x1/0x2/0x3>\n" +
+        "switch elba checkecc <elba#>\n" +
+        "\n" +
+        "switch cpu usbtest <file size in MB> <# of files to generate>\n" +
+        "switch cpu memtest <# test threads> <percent of mem to test 1-100> <time>\n" +
+        "switch cpu ecc\n" +
         "\n" +
         "switch show power/temp/link\n" +
         "switch voltage margin <+/-percent>\n" +
@@ -56,20 +62,50 @@ func main() {
             fmt.Printf(" %s \n", errhelp)
             return
         }
-        if os.Args[2] == "vrmfix" {
+        if os.Args[2] == "tl" {
+            testnumber, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            loop, runcnt, passcnt, failcnt, _ := td3.BCMshell_Test_Results(int(testnumber))
+            fmt.Printf(" LoopCnt=%d\n", loop)
+            fmt.Printf(" runcnt=%d\n", runcnt)
+            fmt.Printf(" passcnt=%d\n", passcnt)
+            fmt.Printf(" failcnt=%d\n", failcnt)
+            return
+        } else if os.Args[2] == "flashtest" {
+            cycles, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            err := td3.TD3FlashTest(int(cycles)) 
+            if err != errType.SUCCESS { os.Exit(-1) }
+        } else if os.Args[2] == "avscheck" {
+            taormina.TD3_Check_AVS_Programming("TDNT_PDVDD")
+            return
+        } else if os.Args[2] == "regread" {
+            data32, _ := td3.ReadReg("TD3", os.Args[3])
+            fmt.Printf(" Reg Value = 0x%x\n", data32)
+            return
+        } else if os.Args[2] == "retimer_temperatures" {
+            fmt.Printf("IN RETIMER TEMP\n")
+            temps, _ := td3.RetimerGetTemperatures()
+            for i:=0;i<len(temps);i++ {
+                fmt.Printf("Retimer-%d  Temp=%fC\n", i, temps[i])
+            }
+        } else if os.Args[2] == "gearbox_temperatures" {
+            fmt.Printf("IN GEARBOX TEMP\n")
+            temps, _ := td3.GearboxGetTemperatures()
+            for i:=0;i<len(temps);i++ {
+                fmt.Printf("Gearbox-%d  Temp=%fC\n", i, temps[i])
+            }
+        } else if os.Args[2] == "vrmfix" {
 
             rc := taormina.TD3_VRM_FIX("TDNT_PDVDD")
             fmt.Printf(" VRM FIX RC=%d\n", rc);
-        }
-        if os.Args[2] == "prbs" {
+        } else if os.Args[2] == "prbs" {
             if argc < 4 { fmt.Printf(" Not enough args... prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>"); return; }
             time, err := strconv.ParseUint(os.Args[3], 0, 32)
             if err != nil {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
             td3.Prbs(int(time), os.Args[4])
-        }
-        if os.Args[2] == "snakeforward" {
+        } else if os.Args[2] == "snakeforward" {
+            var dumptemperature uint32
             if argc < 6 { fmt.Printf(" Not enough args..."); return; }
             mask, err := strconv.ParseUint(os.Args[3], 0, 32)
             if err != nil {
@@ -79,9 +115,27 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
-            td3.Snake_All_Ports_Forward_Next_Port(uint32(mask), uint32(duration), os.Args[5])
-        }
-        if os.Args[2] == "snake" {
+            if contains(os.Args, "-temp") {
+                dumptemperature = 1
+            }
+            taormina.System_Snake_Test(td3.SNAKE_TEST_NEXT_PORT_FORWARDING , uint32(mask), uint32(duration), os.Args[5], 0, 0, dumptemperature)
+        } else if os.Args[2] == "snakecompliance" {
+            var dumptemperature uint32
+            if argc < 6 { fmt.Printf(" Not enough args..."); return; }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            duration, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            if contains(os.Args, "-temp") {
+                dumptemperature = 1
+            }
+            taormina.System_Snake_Test(td3.SNAKE_TEST_ENVIRONMENT , uint32(mask), uint32(duration), os.Args[5], 0, 0, dumptemperature)
+        } else if os.Args[2] == "snake" {
+            var dumptemperature uint32
             var pkt_length, pkt_pattern uint64 
             if argc < 6 { fmt.Printf(" Not enough args..."); return; }
             mask, err := strconv.ParseUint(os.Args[3], 0, 32)
@@ -103,17 +157,30 @@ func main() {
                     fmt.Printf(" Args[7] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
                 }
             }
-            td3.Snake_Line_Rate(uint32(mask), uint32(duration), os.Args[5], pkt_length, pkt_pattern)
-        }
-        if os.Args[2] == "checkgb" {
+            if contains(os.Args, "-temp") {
+                dumptemperature = 1
+            }
+            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], pkt_length, pkt_pattern, dumptemperature)
+        } else if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
-        }
-        if os.Args[2] == "printvlan" {
+        } else if os.Args[2] == "printvlan" {
             td3.PrintBCMShellVLANcmd()
         }
     } else if os.Args[1] == "elba" {
         if os.Args[2] == "vrmfix" {
             taormina.ElbaVRMfix()
+        } else if os.Args[2] == "checkecc" {
+            elba, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            fmt.Printf(" Checkking for ECC Errors:\n"); 
+            e := taormina.ElbaCheckECC(uint32(elba),0, 1, 0) 
+            if e == 0 {
+                fmt.Printf(" passed\n")
+            } else {
+                fmt.Printf(" failed\n")
+            }
         } else if os.Args[2][0] == 'm' || os.Args[2][0] == 'M' {  //memtest
             if argc < 5 {
                 fmt.Printf(" %s \n", errhelp)
@@ -141,6 +208,65 @@ func main() {
             }
             taormina.ElbaRTCtest(uint32(mask), 1) 
             return
+        } else {
+            fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
+            return
+        }
+    } else if os.Args[1] == "cpu" {
+        if os.Args[2][0] == 'u' || os.Args[2][0] == 'U' {  //usbtest
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                os.Exit(-1)
+            }
+            mb, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            }
+            itterations, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            }
+            err1 := taormina.USBtest(int(mb), int(itterations)) 
+            if err1 != errType.SUCCESS {
+                os.Exit(-1)
+            } else { 
+                os.Exit(0)
+            }
+        } else if os.Args[2][0] == 'm' || os.Args[2][0] == 'M' {  //memtest
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelp)
+                os.Exit(-1)
+            }
+            threads, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            }
+            percent, err := strconv.ParseUint(os.Args[4], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            }
+            if percent > 100 {
+                fmt.Printf(" Percent of memory to test cannot be more than 100%.  You entered %d percent\n", percent); os.Exit(-1)
+            }
+            time, err := strconv.ParseUint(os.Args[5], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+            }
+            err1 := taormina.Taor_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
+            if err1 != errType.SUCCESS {
+                os.Exit(-1)
+            } else { 
+                os.Exit(0)
+            }
+        } else if os.Args[2][0] == 'e' || os.Args[2][0] == 'E' {  //ecctest
+            err1 := taormina.X86_DDR_Check_ECC(1)
+            if err1 != errType.SUCCESS {
+                fmt.Printf(" Errors Detected\n")
+                os.Exit(-1)
+            } else { 
+                fmt.Printf(" No Errors Detected\n")
+                os.Exit(0)
+            }
         } else {
             fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
             return
@@ -195,6 +321,20 @@ func main() {
     }
     return
 }
+
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
+
+
 
 
  

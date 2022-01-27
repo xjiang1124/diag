@@ -37,10 +37,20 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
     }
     if { $slot == 1 } {
         set port $ELBA0_ID
-        exec echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove
+        if { [file exists /sys/bus/pci/devices/0000:0b:00.0/remove] == 1} {
+            exec echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove
+        }
+        set val [exec /fs/nos/home_diag/diag/util/fpgautil r32 1 0x414]
+        puts "ELB_PWR_STAT_REG=$val \n"
+        return
     } else {
-        set port $ELBA1_ID
-        exec echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove
+        if { [file exists /sys/bus/pci/devices/0000:05:00.0/remove] == 1} {
+            set port $ELBA1_ID
+            exec echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove
+        }
+        set val [exec /fs/nos/home_diag/diag/util/fpgautil r32 1 0x41C]
+        puts "ELB_PWR_STAT_REG=$val \n"
+        return
     }
     set slot 10
     source .tclrc.diag.elb.new

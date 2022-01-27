@@ -100,106 +100,12 @@ func main() {
 
     if argc ==2 {
         if os.Args[1] == "inventory" {
-            err1 := taormina.ShowInventory()
+            err1 := taormina.ShowInventory(0)
             if err1 != errType.SUCCESS {
                 os.Exit(-1)
             } else { 
                 os.Exit(0)
             }
-            /*
-            //fmt.Printf("===================================================================================================\n")
-            fmt.Printf("\n")
-
-            systemSN, boardSN, err1 := taormina.GetSerialNumbers() 
-            if err1 != errType.SUCCESS { 
-                fmt.Printf("System SN: [ERROR RETREIVING DATA]\n")
-                fmt.Printf("Board  SN: [ERROR RETREIVING DATA]\n\n")
-            } else {
-                fmt.Printf("System SN: %s\n", systemSN)
-                fmt.Printf("Board  SN: %s\n\n", boardSN)
-            }
-
-            dps800.DisplayManufacturingInfo("PSU_1")
-            dps800.DisplayManufacturingInfo("PSU_2")
-            for i:=0; i<int(taorfpga.MAXFAN);i++ {
-                present, _ := taorfpga.FAN_Module_present(uint32(i))
-                if present == true {
-                    fmt.Printf("FAN-%d: PRESENT\n", i+1)
-                } else {
-                    fmt.Printf("FAN-%d: NOT PRESENT\n", i+1)
-                }
-            }
-            fan_air_direction, _ := taorfpga.FAN_AirFlow_Direction()
-            if fan_air_direction == taorfpga.AIRFLOW_FRONT_TO_BACK {
-                fmt.Printf("FAN AIRFLOW:  FRONT TO BACK\n")
-            } else {
-                fmt.Printf("FAN AIRFLOW:  BACK TO FRONT\n")
-            }
-            fmt.Printf("\n")
-            ucode, _ := taorfpga.Spi_cpldXO3_read_usercode(uint32(1)) 
-            fmt.Printf("CPLD-E0 REVISION: 0x%.08x\n", ucode)
-            ucode, _ = taorfpga.Spi_cpldXO3_read_usercode(uint32(2)) 
-            fmt.Printf("CPLD-E1 REVISION: 0x%.08x\n", ucode)
-            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(0)) 
-            fmt.Printf("CPLD-C  REVISION: 0x%.08x\n", ucode)
-            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(3)) 
-            fmt.Printf("CPLD-G0 REVISION: 0x%.08x\n", ucode)
-            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(4)) 
-            fmt.Printf("CPLD-G1 REVISION: 0x%.08x\n", ucode)
-            ucode, _ = taorfpga.Spi_cpld_read_usercode(uint32(5)) 
-            fmt.Printf("CPLD-G2 REVISION: 0x%.08x\n", ucode)
-            data32, _ = taorfpga.TaorReadU32(taorfpga.DEVREGION0, taorfpga.D0_FPGA_REV_ID_REG)
-            fmt.Printf("FPGA    REVISION: 0x%.08x\n", data32)
-            fmt.Printf("\n")
-            taormina.SSD_Display_Info()
-            taormina.DDR_Display_Info()
-            fmt.Printf("\n")
-            taormina.BIOS_Display_Version()
-            taormina.HALON_OS_Display_Version()
-            fmt.Printf("\n")
-            taormina.Elba_Check_Pci_Link(taorfpga.ELBA0)
-            taormina.Elba_Check_Pci_Link(taorfpga.ELBA1)
-            taormina.Elba_Show_Firmware(taorfpga.ELBA0)
-            taormina.Elba_Show_Firmware(taorfpga.ELBA1)
-            
-            fmt.Printf("\n")
-            //fmt.Printf("===================================================================================================\n")
-            for i:=0; i<taorfpga.MAXSFP; i++ {
-                var devName string 
-                devName = fmt.Sprintf("SFP_%d", i+1)
-                present, _ := taorfpga.SFP_present(uint32(i)) 
-                if present == true {
-                    pn, _ := sfp.ReadPN(devName)
-                    pn = strings.TrimSpace(pn)
-                    sn, _ := sfp.ReadSerialNumber(devName)
-                    vendor, _ := sfp.ReadVendorName(devName)
-                    vendor = strings.TrimSpace(vendor)
-                    baudrate, _ := sfp.GetBitSpeed(devName)
-                    fmt.Printf("SFP-%.2d   %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
-                } else {
-                    fmt.Printf("SFP-%.2d   NOT PRESENT\n", i+1)
-                }
-            }
-            fmt.Printf("\n")
-            for i:=0; i<taorfpga.MAXQSFP; i++ {
-                var devName string 
-                devName = fmt.Sprintf("QSFP_%d", i+1)
-                present, _ := taorfpga.QSFP_present(uint32(i)) 
-                if present == true {
-                    pn, _ := qsfp.ReadPN(devName)
-                    pn = strings.TrimSpace(pn)
-                    sn, _ := qsfp.ReadSerialNumber(devName)
-                    vendor, _ := qsfp.ReadVendorName(devName)
-                    vendor = strings.TrimSpace(vendor)
-                    baudrate, _ := qsfp.GetBitSpeed(devName)
-                    fmt.Printf("QSFP-%.2d  %-12s  PN: %-12s  SN: %-16s    BITRATE: %.01f Gb/s\n", i+1, vendor, pn, sn, baudrate)
-                } else {
-                    fmt.Printf("QSFP-%.2d  NOT PRESENT\n", i+1)
-                }
-            }
-
-            return 
-            */ 
         } else {
            fmt.Printf(" %s \n", errhelp); return;
         }
@@ -253,7 +159,7 @@ func main() {
         if os.Args[2] == "snake" {
             mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
             duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
-            td3.Snake_Line_Rate(uint32(mask), uint32(duration), os.Args[5], 0, 0)
+            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], 0, 0, 0)
         }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
@@ -502,22 +408,66 @@ func main() {
             wr32, _ := strconv.ParseUint(os.Args[3], 0, 32)
             taorfpga.FlashWriteStatusReg(uint32(wr32))
             fmt.Printf("WROTE %.02x to SR\n", wr32 & 0xFF)
-        } else if os.Args[2] == "verify" || os.Args[2] == "generateimage" || os.Args[2] == "program"  {
+        } else if os.Args[2] == "fileformatconvertright" {
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            taorfpga.FlashConvertImageRight(os.Args[3], os.Args[4])
+            return
+        } else if os.Args[2] == "fileformatconvertleft" {
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            taorfpga.FlashConvertImageLeft(os.Args[3], os.Args[4])
+            return
+        } else if os.Args[2] == "verify" || os.Args[2] == "generateimage" || os.Args[2] == "program" || os.Args[2] == "test" {
             //"fpgautil flash program/verify/generateimage <gold/main/allflash> <filename>\n" +
             if argc < 5 {
                 fmt.Printf(" %s \n", errhelp)
                 return
             }
+            if os.Args[2] == "test" {
+                if argc < 6 {
+                    fmt.Printf(" %s \n", errhelp)
+                    return
+                }
+                var err error = nil
+                loopcnt, _ := strconv.ParseUint(os.Args[5], 0, 32)
+                for i:=0; i<int(loopcnt);i++ {
+                    fmt.Printf("Loop-%d\n", i)
+                    t1 := time.Now()
+                    err = taorfpga.FlashWriteImage(os.Args[3], os.Args[4])
+                    if err != nil {
+                        os.Exit(-1)
+                    }
+                    t2 := time.Now()
+                    fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
+                    err = taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
+                    if err != nil {
+                        os.Exit(-1)
+                    }
+                    t3 := time.Now()
+                    fmt.Println(" Verifyring the image took ", t3.Sub(t2), " time")
+                }
+                return
+            }
             if os.Args[2] == "program" {
+                var err error = nil
                 t1 := time.Now()
-                taorfpga.FlashWriteImage(os.Args[3], os.Args[4])
+                err = taorfpga.FlashWriteImage(os.Args[3], os.Args[4])
+                if err != nil {
+                    os.Exit(-1)
+                }
                 t2 := time.Now()
                 fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
-                taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
+                err = taorfpga.FlashVerifyImage(os.Args[3], os.Args[4])
+                if err != nil {
+                    os.Exit(-1)
+                }
                 t3 := time.Now()
                 fmt.Println(" Verifyring the image took ", t3.Sub(t2), " time")
-
-                
                 return
             }
             if os.Args[2] == "verify" {

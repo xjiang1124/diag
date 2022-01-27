@@ -266,7 +266,7 @@ func Fpga_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint
         for i:=1; i<int(rdLength); i++ {
             data32, err = Spi_Read_Data(spiNumber) 
             if err != nil {
-                fmt.Printf("[ERROR] Fpga_spi_generic_transaction -> Spi_Read_Data Failed.  i=%d\n", i)
+                fmt.Printf("e", "Fpga_spi_generic_transaction -> Spi_Read_Data Failed.  i=%d\n", i)
                 goto SPI_TRANSACTION_END
             }
             rdData = append(rdData, byte(data32))

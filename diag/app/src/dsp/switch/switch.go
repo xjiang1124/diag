@@ -24,7 +24,7 @@ func SwitchInventoryHdl(argList []string) {
 
     dcli.Println("i", "Inventory Test")
 
-    err = taormina.ShowInventory()
+    err = taormina.ShowInventory(1)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -92,7 +92,7 @@ func SwitchSnakeHdl(argList []string) {
     duration:=*durationPtr
     loopback:=*loopbackPtr
     
-    err = td3.Snake_Line_Rate(uint32(mask), uint32(duration), loopback, 0, 0)
+    err = taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -192,6 +192,8 @@ func SwitchVrm_FixHdl(argList []string) {
     err = taormina.TD3_VRM_FIX("TDNT_PDVDD")
     cli.Printf("i", "\n")
     err |= taormina.ElbaVRMfix()
+    cli.Printf("i", "\n")
+    err |= taormina.TD3_Check_AVS_Programming("TDNT_PDVDD")
 
     // Inform diag engine that test handler is done
     // Use chan to return error code

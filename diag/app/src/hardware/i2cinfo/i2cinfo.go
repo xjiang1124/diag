@@ -360,7 +360,7 @@ var TaorTbl = []I2cInfo {
     I2cInfo {"CPLD_ELBA1",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_3",  3,    I2C_TEST_ENABLE},
     //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
     I2cInfo {"TSENSOR-CPU",      "XeonD",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
-    I2cInfo {"TSENSOR-TD3",      "TD3",       2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-BCM",      "TD3",       2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"TSENSOR-ASIC0",    "ELBA0",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"TSENSOR-ASIC1",    "ELBA1",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
     //END NON EXISTENT I2C DEVICES

@@ -2,7 +2,9 @@ package td3
 
 import (
     "bufio"
+    "bytes"
     "fmt"
+    "io/ioutil"
     "os"
     "regexp"
     "strconv"
@@ -82,12 +84,16 @@ const BCM_SCRIPT_FILE_NAME  =  "/bcm_shell_execute_cmd.py"
 
 const TD3_MAX_TEMP = 100
 
-// EEPROM entry data structure
+// Port Map Data Structure
 type PortMap struct {
     SwitchPort      int
     PhysicalPort    int
     Name            string
     ElbaNumber      int
+    Pre             int
+    Main            int
+    Post            int
+
 }
 
 const (
@@ -98,76 +104,87 @@ const (
     TAOR_INTERNAL_PORTS = 8
     TAOR_TOTAL_PORTS = (TAOR_EXTERNAL_25G_PORTS + TAOR_EXTERNAL_100G_PORTS + TAOR_INTERNAL_PORTS)
 )
+
+const (
+    SNAKE_TEST_NEXT_PORT_FORWARDING = 1
+    SNAKE_TEST_LINE_RATE = 2
+    SNAKE_TEST_ENVIRONMENT = 3
+)
+
+
 //GB + RETIEMR PHY ADDRESS FOR MDIO ACCESS
+const GEARBOX_START = 0
+const RETIMER_START = 4
 var mdio_phy_addr_rev0 = []uint32{0x00, 0x20, 0x40, 0x60, 0x100, 0x120, 0x140}
 var mdio_phy_addr_rev1 = []uint32{0x00, 0x02, 0x04, 0x06, 0x100, 0x102, 0x104}
 
 var TaorPortMap = []PortMap {
-    PortMap{0, 23, "xe8", 0},   //Front Panel Port 0
-    PortMap{1, 24, "xe9", 0},   //Front Panel Port 1
-    PortMap{2, 21, "xe6", 0},   //Front Panel Port 2
-    PortMap{3, 22, "xe7", 0},   //Front Panel Port 3
-    PortMap{4, 27, "xe12", 0},   //Front Panel Port 4
-    PortMap{5, 28, "xe13", 0},   //Front Panel Port 5
-    PortMap{6, 25, "xe10", 0},   //Front Panel Port 6
-    PortMap{7, 26, "xe11", 0},   //Front Panel Port 7
-    PortMap{8, 31, "xe16", 0},   //Front Panel Port 8
-    PortMap{9, 32, "xe17", 0},   //Front Panel Port 9
-    PortMap{10, 29, "xe14", 0},  //Front Panel Port 10
-    PortMap{11, 30, "xe15", 0},  //Front Panel Port 11
-    PortMap{12, 47, "xe26", 0},  //Front Panel Port 12
-    PortMap{13, 48, "xe27", 0},  //Front Panel Port 13
-    PortMap{14, 45, "xe24", 0},  //Front Panel Port 14
-    PortMap{15, 46, "xe25", 0},  //Front Panel Port 15
-    PortMap{16, 51, "xe30", 0},  //Front Panel Port 16
-    PortMap{17, 52, "xe31", 0},  //Front Panel Port 17
-    PortMap{18, 49, "xe28", 0},  //Front Panel Port 18
-    PortMap{19, 50, "xe29", 0},  //Front Panel Port 19
-    PortMap{20, 55, "xe34", 0},  //Front Panel Port 20
-    PortMap{21, 56, "xe35", 0},  //Front Panel Port 21
-    PortMap{22, 53, "xe32", 0},  //Front Panel Port 22
-    PortMap{23, 54, "xe33", 0},  //Front Panel Port 23
-    PortMap{24, 68, "xe37", 0},  //Front Panel Port 24
-    PortMap{25, 67, "xe36", 0},  //Front Panel Port 25
-    PortMap{26, 70, "xe39", 0},  //Front Panel Port 26
-    PortMap{27, 69, "xe38", 0},  //Front Panel Port 27
-    PortMap{28, 72, "xe41", 0},  //Front Panel Port 28
-    PortMap{29, 71, "xe40", 0},  //Front Panel Port 29
-    PortMap{30, 74, "xe43", 0},  //Front Panel Port 30
-    PortMap{31, 73, "xe42", 0},  //Front Panel Port 31
-    PortMap{32, 76, "xe45", 0},  //Front Panel Port 32
-    PortMap{33, 75, "xe44", 0},  //Front Panel Port 33
-    PortMap{34, 78, "xe47", 0},  //Front Panel Port 34
-    PortMap{35, 77, "xe46", 0},  //Front Panel Port 35
-    PortMap{36, 100, "xe55", 0}, //Front Panel Port 36
-    PortMap{37, 99 , "xe54", 0}, //Front Panel Port 37
-    PortMap{38, 102, "xe57", 0}, //Front Panel Port 38
-    PortMap{39, 101, "xe56", 0}, //Front Panel Port 39
-    PortMap{40, 104, "xe59", 0}, //Front Panel Port 40
-    PortMap{41, 103, "xe58", 0}, //Front Panel Port 41
-    PortMap{42, 106, "xe61", 0}, //Front Panel Port 42
-    PortMap{43, 105, "xe60", 0}, //Front Panel Port 43
-    PortMap{44, 108, "xe63", 0}, //Front Panel Port 44
-    PortMap{45, 107, "xe62", 0}, //Front Panel Port 45
-    PortMap{46, 110, "xe65", 0}, //Front Panel Port 46
-    PortMap{47, 109, "xe64", 0}, //Front Panel Port 47
+    PortMap{0, 23, "xe8", 0, 6, 60, 0},   //Front Panel Port 0
+    PortMap{1, 24, "xe9", 0, 6, 60, 0},   //Front Panel Port 1
+    PortMap{2, 21, "xe6", 0, 6, 60, 0},   //Front Panel Port 2
+    PortMap{3, 22, "xe7", 0, 6, 60, 0},   //Front Panel Port 3
+    PortMap{4, 27, "xe12", 0, 6, 60, 0},   //Front Panel Port 4
+    PortMap{5, 28, "xe13", 0, 6, 60, 0},   //Front Panel Port 5
+    PortMap{6, 25, "xe10", 0, 6, 60, 0},   //Front Panel Port 6
+    PortMap{7, 26, "xe11", 0, 6, 60, 0},   //Front Panel Port 7
+    PortMap{8, 31, "xe16", 0, 6, 60, 0},   //Front Panel Port 8
+    PortMap{9, 32, "xe17", 0, 6, 60, 0},   //Front Panel Port 9
+    PortMap{10, 29, "xe14", 0, 6, 60, 0},  //Front Panel Port 10
+    PortMap{11, 30, "xe15", 0, 6, 60, 0},  //Front Panel Port 11
+    PortMap{12, 47, "xe26", 0, 6, 60, 0},  //Front Panel Port 12
+    PortMap{13, 48, "xe27", 0, 6, 60, 0},  //Front Panel Port 13
+    PortMap{14, 45, "xe24", 0, 6, 60, 0},  //Front Panel Port 14
+    PortMap{15, 46, "xe25", 0, 6, 60, 0},  //Front Panel Port 15
+    PortMap{16, 51, "xe30", 0, 6, 60, 0},  //Front Panel Port 16
+    PortMap{17, 52, "xe31", 0, 6, 60, 0},  //Front Panel Port 17
+    PortMap{18, 49, "xe28", 0, 6, 60, 0},  //Front Panel Port 18
+    PortMap{19, 50, "xe29", 0, 6, 60, 0},  //Front Panel Port 19
+    PortMap{20, 55, "xe34", 0, 6, 60, 0},  //Front Panel Port 20
+    PortMap{21, 56, "xe35", 0, 6, 60, 0},  //Front Panel Port 21
+    PortMap{22, 53, "xe32", 0, 6, 60, 0},  //Front Panel Port 22
+    PortMap{23, 54, "xe33", 0, 6, 60, 0},  //Front Panel Port 23
+    PortMap{24, 68, "xe37", 0, 6, 60, 0},  //Front Panel Port 24
+    PortMap{25, 67, "xe36", 0, 6, 60, 0},  //Front Panel Port 25
+    PortMap{26, 70, "xe39", 0, 6, 60, 0},  //Front Panel Port 26
+    PortMap{27, 69, "xe38", 0, 6, 60, 0},  //Front Panel Port 27
+    PortMap{28, 72, "xe41", 0, 6, 60, 0},  //Front Panel Port 28
+    PortMap{29, 71, "xe40", 0, 6, 60, 0},  //Front Panel Port 29
+    PortMap{30, 74, "xe43", 0, 6, 60, 0},  //Front Panel Port 30
+    PortMap{31, 73, "xe42", 0, 6, 60, 0},  //Front Panel Port 31
+    PortMap{32, 76, "xe45", 0, 6, 60, 0},  //Front Panel Port 32
+    PortMap{33, 75, "xe44", 0, 6, 60, 0},  //Front Panel Port 33
+    PortMap{34, 78, "xe47", 0, 6, 60, 0},  //Front Panel Port 34
+    PortMap{35, 77, "xe46", 0, 6, 60, 0},  //Front Panel Port 35
+    PortMap{36, 100, "xe55", 0, 6, 60, 0}, //Front Panel Port 36
+    PortMap{37, 99 , "xe54", 0, 6, 60, 0}, //Front Panel Port 37
+    PortMap{38, 102, "xe57", 0, 6, 60, 0}, //Front Panel Port 38
+    PortMap{39, 101, "xe56", 0, 6, 60, 0}, //Front Panel Port 39
+    PortMap{40, 104, "xe59", 0, 6, 60, 0}, //Front Panel Port 40
+    PortMap{41, 103, "xe58", 0, 6, 60, 0}, //Front Panel Port 41
+    PortMap{42, 106, "xe61", 0, 6, 60, 0}, //Front Panel Port 42
+    PortMap{43, 105, "xe60", 0, 6, 60, 0}, //Front Panel Port 43
+    PortMap{44, 108, "xe63", 0, 6, 60, 0}, //Front Panel Port 44
+    PortMap{45, 107, "xe62", 0, 6, 60, 0}, //Front Panel Port 45
+    PortMap{46, 110, "xe65", 0, 6, 60, 0}, //Front Panel Port 46
+    PortMap{47, 109, "xe64", 0, 6, 60, 0}, //Front Panel Port 47
 
-    PortMap{48, 57, "ce5", 0},   //Front Panel Port 48 100G
-    PortMap{49, 61, "ce6", 0},   //Front Panel Port 49 100G
-    PortMap{50, 83, "ce7", 0},   //Front Panel Port 50 100G
-    PortMap{51, 87, "ce8", 0},   //Front Panel Port 51 100G
-    PortMap{52, 115, "ce11", 0}, //Front Panel Port 52 100G
-    PortMap{53, 1  , "ce0", 0},  //Front Panel Port 53 100G
+    PortMap{48, 57, "ce5", 0, -6, 73, 0},   //Front Panel Port 48 100G
+    PortMap{49, 61, "ce6", 0, -6, 73, 0},   //Front Panel Port 49 100G
+    PortMap{50, 83, "ce7", 0, -6, 73, 0},   //Front Panel Port 50 100G
+    PortMap{51, 87, "ce8", 0, -6, 73, 0},   //Front Panel Port 51 100G
+    PortMap{52, 115, "ce11", 0, -6, 73, 0}, //Front Panel Port 52 100G
+    PortMap{53, 1  , "ce0", 0, -6, 73, 0},  //Front Panel Port 53 100G
  
-    PortMap{54, 9  , "ce1",  0},  //Internal Port to ELBA0.3 100G   PHY U1_G0
-    PortMap{55, 91 , "ce9",  0},  //Internal Port to ELBA0.2 100G   PHY U1_G0
-    PortMap{56, 95 , "ce10", 1}, //Internal Port to ELBA1.3 100G   PHY U1_G2 
-    PortMap{57, 13 , "ce2",  1},  //Internal Port to ELBA1.2 100G   PHY U1_G2 
-    PortMap{58, 123, "ce12", 0}, //Internal Port to ELBA0.0 100G   PHY U1_G1 
-    PortMap{59, 127, "ce13", 1}, //Internal Port to ELBA1.1 100G   PHY U1_G3
-    PortMap{60, 33,  "ce3",  0},  //Internal Port to ELBA0.1 100G   PHY U1_G1 
-    PortMap{61, 37,  "ce4",  1},  //Internal Port to ELBA1.0 100G   PHY U1_G3
+    PortMap{54, 9  , "ce1",  0, 0, 60, 0},  //Internal Port to ELBA0.3 100G   PHY U1_G0
+    PortMap{55, 91 , "ce9",  0, 0, 60, 0},  //Internal Port to ELBA0.2 100G   PHY U1_G0
+    PortMap{56, 95 , "ce10", 1, 0, 60, 0}, //Internal Port to ELBA1.3 100G   PHY U1_G2 
+    PortMap{57, 13 , "ce2",  1, 0, 60, 0},  //Internal Port to ELBA1.2 100G   PHY U1_G2 
+    PortMap{58, 123, "ce12", 0, 0, 60, 0}, //Internal Port to ELBA0.0 100G   PHY U1_G1 
+    PortMap{59, 127, "ce13", 1, 0, 60, 0}, //Internal Port to ELBA1.1 100G   PHY U1_G3
+    PortMap{60, 33,  "ce3",  0, 0, 60, 0},  //Internal Port to ELBA0.1 100G   PHY U1_G1 
+    PortMap{61, 37,  "ce4",  1, 0, 60, 0},  //Internal Port to ELBA1.0 100G   PHY U1_G3
 }
+
 
 
 /* 
@@ -332,6 +349,31 @@ func ExecBCMshellCMD(commands string) (command_output string, err int) {
     return
 }
 
+
+
+/******************************************************************************** 
+* 
+* Execute a command in the bcm shell.
+* Search the output for the string results.  Pass/Fail on match to the results
+*                                                                                 
+*  
+*********************************************************************************/ 
+func BCMShellExecuteCmdCheckResults(command string, results string) (output string, err int) {
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    scanner := bufio.NewScanner(strings.NewReader(output))
+    for scanner.Scan() {
+        if strings.Contains(scanner.Text(), results) {
+            return
+        }
+    }
+    err = errType.FAIL
+    return
+}
+
+
 /*************************************************************************************************** 
  This function needs the output of ps passed to it.   The idea is to run "ps" once and take that output
  and check the link on whatever ports are under test and avoid calling into the bcm shell
@@ -373,6 +415,35 @@ func LinkCheck(portname string, bcm_shell_ps_output string) (err int) {
 
     return
 }
+/*************************************************************************************************** 
+  BCM.0> g TOP_AVS_SEL_REG
+  TOP_AVS_SEL_REG.top0[7][0x2009800]=0x7e: <RESERVED_0=0,AVS_SEL=0x7e>
+***************************************************************************************************/
+func ReadReg(devName string, regName string) (data32 uint32, err int) {
+    var output string
+    command := "g " + regName
+
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    /* Match substring between = and :  */
+    re := regexp.MustCompile(`=(.*):`)
+    match := re.FindStringSubmatch(string(output))
+    if len(match) > 1 {
+            data64, errGo := strconv.ParseUint(match[1], 0, 32)
+            if errGo != nil {
+                cli.Println("e", "TD3 Readreg failed.")
+                err = errType.FAIL
+            }
+            data32 = uint32(data64)
+    } else {
+            cli.Println("e", "TD3 Readreg failed.")
+            err = errType.FAIL
+    }
+    return
+}
 
 
 func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) {
@@ -397,6 +468,7 @@ func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) 
         }
         
     }
+
     return
 }
 
@@ -440,6 +512,8 @@ func GetPeakTemperature(devName string) (temperatures []float64, err int) {
 func DispStatus(devName string) (err int) {
     cTemp := []float64{}
     pTemp := []float64{}
+    gbTemp := []float64{}
+    retTemp := []float64{}
     err = errType.SUCCESS
     
 
@@ -451,17 +525,40 @@ func DispStatus(devName string) (err int) {
     }
 
     degSym := fmt.Sprintf("(%cC)",0xB0)
-    tmpStr := fmt.Sprintf("%-10s Current Temp %s", devName, degSym)
+    tmpStr := fmt.Sprintf("%-10s TD3 Current Temp %s", devName, degSym)
     for _, temp := range cTemp {
         tmpStr = fmt.Sprintf("%s %0.1f", tmpStr, temp)
     }
     cli.Println("i", tmpStr)
     degSym = fmt.Sprintf("(%cC)",0xB0)
-    tmpStr = fmt.Sprintf("%-10s Peak Temp    %s", devName, degSym)
+    tmpStr = fmt.Sprintf("%-10s TD3 Peak Temp    %s", devName, degSym)
     for _, temp := range pTemp {
         tmpStr = fmt.Sprintf("%s %0.1f", tmpStr, temp)
     }
     cli.Println("i", tmpStr)
+   
+    gbTemp, err = GearboxGetTemperatures()
+    if err != errType.SUCCESS {
+        return err
+    }
+    degSym = fmt.Sprintf("(%cC)",0xB0)
+    tmpStr = fmt.Sprintf("%-10s GearBox Temp     %s", devName, degSym)
+    for _, temp := range gbTemp {
+        tmpStr = fmt.Sprintf("%s %0.1f", tmpStr, temp)
+    }
+    cli.Println("i", tmpStr)
+
+    retTemp, err = RetimerGetTemperatures()
+    if err != errType.SUCCESS {
+        return err
+    }
+    degSym = fmt.Sprintf("(%cC)",0xB0)
+    tmpStr = fmt.Sprintf("%-10s Retimer Temp     %s", devName, degSym)
+    for _, temp := range retTemp {
+        tmpStr = fmt.Sprintf("%s %0.1f", tmpStr, temp)
+    }
+    cli.Println("i", tmpStr)
+
     return
 }
 
@@ -735,6 +832,11 @@ func Prbs(sleep int, prbs string) (err int) {
         port100G_s = port100G_s + tmp_s
     }
     
+    err = Set_Pre_Main_Post()
+    if err != errType.SUCCESS {
+        return
+    }
+
     //No return output to check on this command
     cli.Printf("i", "Enabling all 25G Ports\n")
     command = "port " + port25G_s +" enable=true"
@@ -910,458 +1012,58 @@ func Prbs(sleep int, prbs string) (err int) {
 }
 
 
+/* Only set the external ports.   Production software will set the internal ports,
+   but don't know what to set for the sfp and qsfp loopbacks.
+   FOR QSFP Loopbacks we need to set it on the RETIMER.  NEED CODE FOR THAT
+ 
+   --> POST1=0x17(23), MAIN=0x3d(61), PRE=0x10(16) 
+   phy control xe11 Preemphasis=0x173D10
+*/
+func Set_Pre_Main_Post() (err int) {
 
-func Snake_All_Ports_Forward_Next_Port(elba_port_mask uint32, duration uint32, loopback_level string) (err int) {
-    var rc int = errType.SUCCESS
-    var errGo error
-    var data32 uint32
-    var addr uint64
-    var SFPnumber, QSFPnumber, bitcompare uint32
-    var port25G_s string
-    var port100G_s string
-    var tmp_s string
     var command string
-    var output string
-    var loopbackPhy uint32 = 0
-    var VlanStart int = 10
-    var ElbaVLANcreatScript = "/fs/nos/home_diag/dssman/run.sh"
 
-    cli.Printf("i", "Starting Snake Test.. Forward to the Next Port.  Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
-
-    if loopback_level == "phy" {
-        loopbackPhy = 1
-        cli.Printf("i", "Phy Loopback Selected\n")
-    } else {
-        cli.Printf("i", "External Loopback Selected\n")
-        /* Check SFP's are present */
-        cli.Printf("i", "Checking for SFP Presence\n")
-        addr = taorfpga.D0_FP_SFP_STAT_3_0_REG;
-        for SFPnumber=0;SFPnumber<taorfpga.MAXSFP;SFPnumber++ {
-            addr = addr + ((uint64(SFPnumber)/4) * 4)
-            bitcompare = (1 << ((SFPnumber%4)*8))
-            data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
-            if errGo != nil {
-                err = errType.FAIL
-                return
-            }
-
-            //1 = NOT PRESENT
-            if (data32 & bitcompare) == bitcompare {
-                cli.Printf("e", "SFP-%d is not detecting presence.  Check SFP-%d is present\n", SFPnumber+1, SFPnumber+1)
-                err = errType.FAIL
-                return
-            } 
-        }
-
-
-        /* Check QSFP's are present */
-        cli.Printf("i", "Checking for QSFP Presence\n")
-        addr = taorfpga.D0_FP_QSFP_STAT_51_48_REG;
-        for QSFPnumber=0;QSFPnumber<taorfpga.MAXSFP;QSFPnumber++ {
-            addr = addr + ((uint64(QSFPnumber)/4) * 4)
-            bitcompare = (1 << ((QSFPnumber%4)*8))
-            data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
-            if errGo != nil {
-                err = errType.FAIL
-                return
-            }
-
-            //1 = NOT PRESENT
-            if (data32 & bitcompare) == bitcompare {
-                cli.Printf("e", "QSFP-%d is not detecting presence.  Check QSFP-%d is present\n", QSFPnumber+1, QSFPnumber+1)
-                err = errType.FAIL
-                return
-            } 
-        }
-
-        /* Enable SFP's */
-        cli.Printf("i", "Enabling SFP's\n")
-        addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
-        for i:=0;i<taorfpga.MAXSFP;i++ {
-            addr = addr + ((uint64(i)/4) * 4)
-            errGo = taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, 0x06060606)
-            if errGo != nil {
-                err = errType.FAIL
-                return
-            }
-        }
-
-        /* Enable QSFP's */
-        cli.Printf("i", "Enabling QSFP's\n")
-        addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
-        for i:=0;i<taorfpga.MAXQSFP;i++ {
-            addr = addr + ((uint64(i)/4) * 4)
-            data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
-            data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
-            taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
-        }
-    }
-
-
-    //Temperature Check.. return if failed.  Had some issue's with heatsinks.. return if temp to high 
-    if err = CheckTemperatures("TD3", TD3_MAX_TEMP); err != errType.SUCCESS {
-        err = errType.FAIL
-        return
-    }
-
-
-    for i:=0; i<TAOR_EXTERNAL_25G_PORTS; i++ {
-        if i == (TAOR_EXTERNAL_25G_PORTS - 1) {
-            tmp_s = fmt.Sprintf("%s", TaorPortMap[i].Name)
-        } else {
-            tmp_s = fmt.Sprintf("%s,", TaorPortMap[i].Name)
-        }
-        port25G_s = port25G_s + tmp_s
-    }
-    for i:=TAOR_EXTERNAL_25G_PORTS; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
-        if i == (TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS - 1) {
-            tmp_s = fmt.Sprintf("%s", TaorPortMap[i].Name)
-        } else {
-            tmp_s = fmt.Sprintf("%s,", TaorPortMap[i].Name)
-        }
-        port100G_s = port100G_s + tmp_s
-    }
-    
-    if loopbackPhy > 0 {
-        cli.Printf("i", "Setting Phy Loopback on 25G Ports\n")
-        command = "port " + port25G_s +" lb=phy"
-        output, err = ExecBCMshellCMD(command)
-        if err != errType.SUCCESS {
-            return
-        }
-
-        //No return output to check on this command
-        cli.Printf("i", "Setting Phy Loopback on 100G Ports\n")
-        command = "port " + port100G_s +" lb=phy"
-        output, err = ExecBCMshellCMD(command)
-        if err != errType.SUCCESS {
-            return
-        }
-    }
-
-    //quick sanity check to make sure the file exists
-
-    currDir, _ := os.Getwd()
-    os.Chdir("/fs/nos/home_diag/dssman")
-    
-    cli.Printf("i", "Executing dssman setup\n")
-    exists, _ := taorfpga.Path_exists(ElbaVLANcreatScript)
-    if exists == false {
-        cli.Printf("e", "Script is missing --> \n", ElbaVLANcreatScript)
-        err = errType.FAIL
-        return
-    }
-    {
-    
-        execOutput, errGo := exec.Command("/bin/bash", ElbaVLANcreatScript).Output()
-        if errGo != nil {
-            cli.Println(string(execOutput))
-            cli.Println("e", errGo)
-            err = errType.FAIL
-            //return
-        }
-        cli.Println("i", string(execOutput))
-    }
-    os.Chdir(currDir)
-    
-    //set pvlan
-    for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+    //for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+    for i:=0; i<(TAOR_EXTERNAL_25G_PORTS); i++ {
         //pvlan set xe8 10
-        command = fmt.Sprintf("pvlan set %s %d", TaorPortMap[i].Name, (VlanStart + i))
+        preemphasis:= TaorPortMap[i].Pre | (TaorPortMap[i].Main << 8) | (TaorPortMap[i].Post << 16)
+        command = fmt.Sprintf("phy control %s Preemphasis=0x%x", TaorPortMap[i].Name, preemphasis)
         cli.Printf("i", command)
-        output, err = ExecBCMshellCMD(command)
+        _ , err = ExecBCMshellCMD(command)
         if err != errType.SUCCESS {
             return
         }
         cli.Printf("i", "%s\n", command)
     }
-
-    //set vlans 10-63 for the elba front panel ports
-    //vlan 10-36 will go to lag521 (Elba0)
-    //vlan 37-63 will go to lag522 (Elba1)
-    //All front panel ingress packets get forwarded to an Elba
-    for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
-        //vlan add 10 pbm=xe8,xe9 ubm=xe8,xe9
-        if i == (((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)-1) {  //port 27 needs to vlan with port 0 to create the vlan snake for lag521 (elba0)
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", (VlanStart + i), TaorPortMap[i].Name, TaorPortMap[0].Name, TaorPortMap[i].Name, TaorPortMap[0].Name )
-        } else if i == ((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)-1) { //Last entry needs to map back to port 28 to creat the vlan snake for lag522 (elba1)
-            entry := ((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", (VlanStart + i), TaorPortMap[i].Name, TaorPortMap[entry].Name, TaorPortMap[i].Name, TaorPortMap[entry].Name )
-        } else {  
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", (VlanStart + i), TaorPortMap[i].Name, TaorPortMap[i+1].Name, TaorPortMap[i].Name, TaorPortMap[i+1].Name )
-        }
-        cli.Printf("i", "%s\n", command)
-        output, err = ExecBCMshellCMD(command)
-        if err != errType.SUCCESS {
-            return
-        }
-    }
-
-
-
-
-
-    //No return output to check on this command
-    cli.Printf("i", "Enabling Vlan Translate\n")
-    command = "vlan translate on"
-    output, err = ExecBCMshellCMD(command)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    //No return output to check on this command
-    cli.Printf("i", "Enabling Forwarding on 25G ports\n")
-    command = "stg stp 1 " + port25G_s +" forward"
-    output, err = ExecBCMshellCMD(command)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    //No return output to check on this command
-    cli.Printf("i", "Enabling Forwarding on 100G ports\n")
-    command = "stg stp 1 " + port100G_s +" forward"
-    output, err = ExecBCMshellCMD(command)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    //No return output to check on this command
-    cli.Printf("i", "Enabling all 25G Ports\n")
-    command = "port " + port25G_s +" enable=true"
-    output, err = ExecBCMshellCMD(command)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    //No return output to check on this command
-    cli.Printf("i", "Enabling all 100G Ports\n")
-    command = "port " + port100G_s +" enable=true"
-    output, err = ExecBCMshellCMD(command)
-    if err != errType.SUCCESS {
-        return
-    }
-
-    //Check Link
-    cli.Printf("i", "Checking Link\n")
-    time.Sleep(time.Duration(1) * time.Second)
-    ps_output, err := ExecBCMshellCMD("ps")
-    if err != errType.SUCCESS {
-        return
-    }
-    for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
-        link_rc := LinkCheck(TaorPortMap[i].Name, ps_output) 
-        if link_rc == errType.LINK_UP {
-            cli.Printf("i", "Port-%.02d  %4s: LINK UP\n", i+1, TaorPortMap[i].Name)
-        } else if link_rc == errType.LINK_DOWN {
-            cli.Printf("e", "Port-%.02d  %4s: LINK DOWN\n", i+1, TaorPortMap[i].Name)
-            rc = -1
-        } else if link_rc == errType.LINK_DISABLED {
-            cli.Printf("e", "Port-%.02d  %4s: LINK DISABLED\n", i+1, TaorPortMap[i].Name)
-            rc = -1
-        } else {
-            cli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, TaorPortMap[i].Name)
-            rc = -1
-        }
-    }
-    fmt.Printf("\n")
-    if rc != 0 {
-        err = errType.FAIL
-        return
-    }
-
-    //Clear stat counters
-    cli.Printf("i", "clear c\n")
-    command = "clear c\n"
-    output, err = ExecBCMshellCMD(command)
-    if err != errType.SUCCESS {
-        return
-    }
-    time.Sleep(time.Duration(5) * time.Second)
-
-    for j:=0;j<1;j++ {
-        var internal_port uint32 = 0
-        for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
-            if (elba_port_mask & (1<<internal_port)) == 0 {
-                //fmt.Printf("[ERROR] Elba Port Mask = 0x%x...  mask=%x\n", elba_port_mask, (1<<internal_port))
-                internal_port++
-                continue;
-            }
-            internal_port++
-
-            //First half of VLANS go to Elba 0 (lag521).    Elba 1 (lag 522) VLANS need t start on port27 which starts the 2nd half of the vlans   
-            if TaorPortMap[i].ElbaNumber == 0 {
-                command = fmt.Sprintf("tx 60 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
-            } else {
-                entry := ((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)
-                command = fmt.Sprintf("tx 60 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[entry].Name, TaorPortMap[i].Name)
-            }
-            cli.Printf("i", "%s\n", command)
-            output, err = ExecBCMshellCMD(command)
-            if err != errType.SUCCESS {
-                return
-            }
-            time.Sleep(time.Duration(4) * time.Second)
-        }
-    }
-    
-
-
-    //CHECK STATS & TEMPERATURE
-    {
-        t1 := time.Now()
-        var ElbaPortminBandwidth uint64 = 11250000000//12000000000
-        var Elba0bw, Elba1bw uint64
-        var Lag521ExtPortminBandWidth uint64 = 0
-        var Lag522ExtPortminBandWidth uint64 = 0
-        var rc int = 0
-        var printRxBandwidth = 1
-
-        for i:=0; i<TAOR_INTERNAL_PORTS; i++ {
-            var port uint32 = uint32(i)
-            if (elba_port_mask & (1<<port)) ==  (1<<port) {
-                if TaorPortMap[(i + TAOR_INTERNAL_PORT_START)].ElbaNumber == 0 {
-                    Elba0bw = Elba0bw + ElbaPortminBandwidth
-                } else {
-                    Elba1bw = Elba1bw + ElbaPortminBandwidth
-                }
-            }
-        }
-        Lag521ExtPortminBandWidth = Elba0bw / (TAOR_NUMB_EXT_PORT / 2)
-        Lag522ExtPortminBandWidth = Elba1bw / (TAOR_NUMB_EXT_PORT / 2)
-        fmt.Printf(" Elba0bw bandwidth = %d\n", Elba0bw)
-        fmt.Printf(" Elba1bw bandwidth = %d\n", Elba1bw)
-        fmt.Printf(" Lag521 min bandwidth = %d\n", Lag521ExtPortminBandWidth)
-        fmt.Printf(" Lag522 min bandwidth = %d\n", Lag522ExtPortminBandWidth)
-        /*
-         Elba0bw bandwidth = 24000000000
-         Elba1bw bandwidth = 24000000000
-         Lag521 min bandwidth = 222222222
-         Lag522 min bandwidth = 222222222
-         */
-        for {
-            var StatRxBytes string
-            var StatFCS string
-
-            // Get rx bytes for all ports and check them below 
-            StatRxBytes, err = GetRmonStat_AllPorts("CLMIB_RBYT") 
-            if err != errType.SUCCESS {
-                return
-            }
-            // Get FCS error for all ports 
-            StatFCS, err = GetRmonStat_AllPorts("CLMIB_RFCS") 
-            if err != errType.SUCCESS {
-                return
-            }
-
-            for i:=0; i < TAOR_TOTAL_PORTS; i++ {
-                var RxBytes uint64
-                var FCSerror uint64
-                
-                RxBytes, err = MacStatRxByteSecond(StatRxBytes, i)
-                if err != errType.SUCCESS {
-                    return
-                }
-                if printRxBandwidth == 1 {
-                    fmt.Printf("Port-%d %d/s\n", i, RxBytes)
-                }
-                //lag521
-                if (i < (TAOR_NUMB_EXT_PORT/2)) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
-                    cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
-                    rc = errType.FAIL
-                }
-                //lag522
-                if (i >= (TAOR_NUMB_EXT_PORT/2)) && (i < TAOR_NUMB_EXT_PORT) {
-                    if RxBytes < Lag522ExtPortminBandWidth { 
-                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
-                        rc = errType.FAIL
-                    }
-                }
-                //Internal Port going to Elba
-                if i >= TAOR_INTERNAL_PORT_START {
-                    var port uint32 = uint32(i - TAOR_INTERNAL_PORT_START)
-                    if (elba_port_mask & (1<<port)) > 0 {
-                        if RxBytes < ElbaPortminBandwidth { 
-                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, ElbaPortminBandwidth)
-                            rc = errType.FAIL
-                        }
-                    }
-                }
-
-                FCSerror, err = MacStatFCSerror(StatFCS, i)
-                if err != errType.SUCCESS {
-                    return
-                }
-                if FCSerror > 0 {
-                    cli.Printf("e", "Port-%d (%s) has %d FCS Errors\n", i , TaorPortMap[i].Name, FCSerror)
-                    rc = errType.FAIL
-                }
-            }
-            printRxBandwidth = 0
-
-            //Temperature Check
-            if err = CheckTemperatures("TD3", TD3_MAX_TEMP); err != errType.SUCCESS {
-                rc = errType.FAIL
-            }
-
-            if rc == errType.FAIL {
-                fmt.Printf(" ERR BREAK\n")
-                err = errType.FAIL
-                break
-            }
-
-            t2 := time.Now()
-            diff := t2.Sub(t1)
-            fmt.Println(" Elapsed Time=",diff," Duration=",duration)
-            if uint32(diff.Seconds()) > duration {
-                fmt.Printf(" DUATION BREAK\n")
-                break
-            }
-
-        }
-    }
-
-    //No return output to check on this command
-    cli.Printf("i", "Disabling all 25G Ports\n")
-    command = "port " + port25G_s +" enable=false"
-    ExecBCMshellCMD(command)
-
-    //No return output to check on this command
-    cli.Printf("i", "Disabling all 100G Ports\n")
-    command = "port " + port100G_s +" enable=false"
-    ExecBCMshellCMD(command)
-
-    /* For compile error that var is not used */
-    if TaorPortMap[0].ElbaNumber > 100000 {
-            fmt.Printf("%s\n", output)
-    }
-
-    if err == errType.SUCCESS && rc == errType.SUCCESS {
-        cli.Printf("i", "Snake Test PASSED\n\n")
-    } else {
-        cli.Printf("e", "Snake Test FAILED\n\n")
-    }
-
     return
-
-
 }
 
 
+
+
 /*********************************************************************************************************** 
-* 
-* CURRENTLY WITH DSC MANAGER IT ALLOCATES VLAN[36:10] TO LAG521/ELBA0, AND VLAN[56:37] TO LAG521/ELBA1
-* 
-* In This test there are 4 vlan loops. 
-* 1) ELBA0 on ports 0-15 
-* 2) ELBA1 on ports 16-31 
-* 3) TD3 25G ports 32-47 
-* 4) TD3 100G ports 48-53 
 *  
-* The VLAN setup is a bit messy since the vlans are not contiguous due to how the VLANS are 
-* allocated in DSC MANAGER. 
+* LINE RATE: 
+*     CURRENTLY WITH DSC MANAGER IT ALLOCATES VLAN[36:10] TO LAG521/ELBA0, AND VLAN[56:37] TO LAG521/ELBA1
+* 
+*     In This test there are 4 vlan loops. 
+*     1) ELBA0 on ports 0-15 
+*     2) ELBA1 on ports 16-31 
+*     3) TD3 25G ports 32-47 
+*     4) TD3 100G ports 48-53 
+*  
+*     The VLAN setup is a bit messy since the vlans are not contiguous due to how the VLANS are 
+*     allocated in DSC MANAGER. 
+*  
+* FORWARDING SNAKE TEST: 
+*     FORWARD TO THE NEXT PORT. SPLIT INTO TWO PORT SEGMENTS.
+*     1) VLAN 10-36 GO TO ELBA0 (LAG521)
+*     2) VLAN 37-64 GO TO ELBA1 (LAG522)
+*  
+*  
 *  
 ***********************************************************************************************************/ 
-func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64) (err int) {
+func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64) (err int) {
     var rc int = errType.SUCCESS
     var errGo error
     var data32 uint32
@@ -1375,9 +1077,20 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
     var loopbackPhy uint32 = 0
     var ElbaVLANcreatScript = "/fs/nos/home_diag/dssman/run.sh"
 
+    var VlanStart int = 10
     var vlanMap = []int{10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85}
 
-    cli.Printf("i", "Starting Snake Test.  Line Rate.   Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+    if test_type == SNAKE_TEST_LINE_RATE {
+        cli.Printf("i", "Starting Snake Test.  Line Rate.   Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+    } else if test_type == SNAKE_TEST_NEXT_PORT_FORWARDING  {
+        cli.Printf("i", "Starting Snake Test.. Forward to the Next Port.  Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+    } else if test_type == SNAKE_TEST_ENVIRONMENT  {
+        cli.Printf("i", "Starting Snake Test for Environmental Testing. Line Rate/512 Byte Packets.  Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+    } else {
+        cli.Printf("e", "ERROR: INVALID TEST TYPE PASSED TO SNAKE TEST.  TEST TYPE PASSSED=%d", test_type)
+        err = errType.FAIL
+        return
+    }
 
     if loopback_level == "phy" {
         loopbackPhy = 1
@@ -1516,7 +1229,11 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
     //set pvlan
     for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
         //pvlan set xe8 10
-        command = fmt.Sprintf("pvlan set %s %d", TaorPortMap[i].Name, vlanMap[i])
+        if test_type == SNAKE_TEST_NEXT_PORT_FORWARDING  {
+            command = fmt.Sprintf("pvlan set %s %d", TaorPortMap[i].Name, (VlanStart + i))
+        } else {
+            command = fmt.Sprintf("pvlan set %s %d", TaorPortMap[i].Name, vlanMap[i])
+        }
         cli.Printf("i", command)
         output, err = ExecBCMshellCMD(command)
         if err != errType.SUCCESS {
@@ -1525,24 +1242,45 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
         cli.Printf("i", "%s\n", command)
     }
 
-    //VLAN SETUP
-    //vlan 10-25 will go to lag521 (Elba0)  FP Port 0-15
-    //vlan 37-52 will go to lag522 (Elba1)  FP port 16 - 31
-    //vlan 64-79 to front panel ports 32-47 (ones based)
-    //vlan 80-85 to 100G ports 48-53
-    //All front panel ingress packets get forwarded to an Elba
+    /*
+      VLAN SETUP
+      FORWARDING TEST:
+        set vlans 10-63 for the elba front panel ports
+        vlan 10-36 will go to lag521 (Elba0)
+        vlan 37-63 will go to lag522 (Elba1)
+        All front panel ingress packets get forwarded to an Elba
+      LINE_RATE_TEST:
+        vlan 10-25 will go to lag521 (Elba0)  FP Port 0-15
+        vlan 37-52 will go to lag522 (Elba1)  FP port 16 - 31
+        vlan 64-79 to front panel ports 32-47 (ones based, bypasses ELBA)
+        vlan 80-85 to 100G ports 48-53 (bypasses ELBA)
+      
+    */
     for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+
+        if test_type == SNAKE_TEST_NEXT_PORT_FORWARDING  {
+            //vlan add 10 pbm=xe8,xe9 ubm=xe8,xe9
+            if i == (((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)-1) {  //port 27 needs to vlan with port 0 to create the vlan snake for lag521 (elba0)
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", (VlanStart + i), TaorPortMap[i].Name, TaorPortMap[0].Name, TaorPortMap[i].Name, TaorPortMap[0].Name )
+            } else if i == ((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)-1) { //Last entry needs to map back to port 28 to creat the vlan snake for lag522 (elba1)
+                entry := ((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", (VlanStart + i), TaorPortMap[i].Name, TaorPortMap[entry].Name, TaorPortMap[i].Name, TaorPortMap[entry].Name )
+            } else {  
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", (VlanStart + i), TaorPortMap[i].Name, TaorPortMap[i+1].Name, TaorPortMap[i].Name, TaorPortMap[i+1].Name )
+            }
+        } else {
         //vlan add 10 pbm=xe8,xe9 ubm=xe8,xe9
-        if i == 15 {  //port 15 needs to vlan with port 0 to create the vlan snake for lag521 (elba0)
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[0].Name, TaorPortMap[i].Name, TaorPortMap[0].Name )
-        } else if i == 31 { //31 back to 16 for lag522 (elba1)
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[16].Name, TaorPortMap[i].Name, TaorPortMap[16].Name )
-        } else if i == 47 { //47 back to 32
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[32].Name, TaorPortMap[i].Name, TaorPortMap[32].Name )
-        } else if i == 53 { //53 back to 48
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[48].Name, TaorPortMap[i].Name, TaorPortMap[48].Name )
-        } else {  
-            command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[i+1].Name, TaorPortMap[i].Name, TaorPortMap[i+1].Name )
+            if i == 15 {  //port 15 needs to vlan with port 0 to create the vlan snake for lag521 (elba0)
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[0].Name, TaorPortMap[i].Name, TaorPortMap[0].Name )
+            } else if i == 31 { //31 back to 16 for lag522 (elba1)
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[16].Name, TaorPortMap[i].Name, TaorPortMap[16].Name )
+            } else if i == 47 { //47 back to 32
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[32].Name, TaorPortMap[i].Name, TaorPortMap[32].Name )
+            } else if i == 53 { //53 back to 48
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[48].Name, TaorPortMap[i].Name, TaorPortMap[48].Name )
+            } else {  
+                command = fmt.Sprintf("vlan add %d pbm=%s,%s ubm=%s,%s", vlanMap[i], TaorPortMap[i].Name, TaorPortMap[i+1].Name, TaorPortMap[i].Name, TaorPortMap[i+1].Name )
+            }
         }
         cli.Printf("i", "%s\n", command)
         output, err = ExecBCMshellCMD(command)
@@ -1551,21 +1289,25 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
         }
     }
 
-    //VLAN SETUP
-    //NEED TO REMOVE ELBA PORTS FROM FRONT PANEL PORTS 32-53.   THESE PORTS WILL NOT FORWARD TO ELBA, AND WILL VLAN SNAKE JUST ON TD3
-    //vlan remove 64 pbm=ce1-ce4,ce9-ce10,ce12-ce13
-    for i:=32; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
-        command = fmt.Sprintf("vlan remove %d pbm=ce1-ce4,ce9-ce10,ce12-ce13", vlanMap[i])
-        cli.Printf("i", "%s\n", command)
-        output, err = ExecBCMshellCMD(command)
-        if err != errType.SUCCESS {
-            return
+    if test_type == SNAKE_TEST_LINE_RATE || test_type == SNAKE_TEST_ENVIRONMENT{
+        //VLAN SETUP
+        //NEED TO REMOVE ELBA PORTS FROM FRONT PANEL PORTS 32-53.   THESE PORTS WILL NOT FORWARD TO ELBA, AND WILL VLAN SNAKE JUST ON TD3
+        //vlan remove 64 pbm=ce1-ce4,ce9-ce10,ce12-ce13
+        for i:=32; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+            command = fmt.Sprintf("vlan remove %d pbm=ce1-ce4,ce9-ce10,ce12-ce13", vlanMap[i])
+            cli.Printf("i", "%s\n", command)
+            output, err = ExecBCMshellCMD(command)
+            if err != errType.SUCCESS {
+                return
+            }
         }
     }
 
 
-
-
+    err = Set_Pre_Main_Post()
+    if err != errType.SUCCESS {
+        return
+    }
 
     //No return output to check on this command
     cli.Printf("i", "Enabling Vlan Translate\n")
@@ -1688,40 +1430,99 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                 outF.WriteString(string(fileData[:]))
                 outF.Close()
             }
-            
-            //pkt_size uint64, pkt_pattern uint64
         }
-        for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
-            if (elba_port_mask & (1<<internal_port)) == 0 {
-                internal_port++
-                continue;
-            }
-            internal_port++
 
-            if TaorPortMap[i].ElbaNumber == 0 {
-                command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
-            } else {
-                command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[16].Name, TaorPortMap[i].Name)
+        if test_type == SNAKE_TEST_LINE_RATE {
+            for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
+                if (elba_port_mask & (1<<internal_port)) == 0 {
+                    internal_port++
+                    continue;
+                }
+                internal_port++
+
+                if TaorPortMap[i].ElbaNumber == 0 {
+                    command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
+                } else {
+                    command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[16].Name, TaorPortMap[i].Name)
+                }
+                cli.Printf("i", "%s\n", command)
+                output, err = ExecBCMshellCMD(command)
+                if err != errType.SUCCESS {
+                    return
+                }
+                time.Sleep(time.Duration(4) * time.Second)
             }
-            cli.Printf("i", "%s\n", command)
-            output, err = ExecBCMshellCMD(command)
-            if err != errType.SUCCESS {
-                return
+            for i:=0; i<2; i++ {
+                if i == 0 {
+                    command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[32].Name, TaorPortMap[55].Name)
+                } else {
+                    command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[48].Name, TaorPortMap[55].Name)
+                }
+                cli.Printf("i", "%s\n", command)
+                output, err = ExecBCMshellCMD(command)
+                if err != errType.SUCCESS {
+                    return
+                }
+                time.Sleep(time.Duration(5) * time.Second)
             }
-            time.Sleep(time.Duration(4) * time.Second)
-        }
-        for i:=0; i<2; i++ {
-            if i == 0 {
-                command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[32].Name, TaorPortMap[55].Name)
-            } else {
-                command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[48].Name, TaorPortMap[55].Name)
+        } else if test_type == SNAKE_TEST_ENVIRONMENT {
+            for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
+                if (elba_port_mask & (1<<internal_port)) == 0 {
+                    internal_port++
+                    continue;
+                }
+                internal_port++
+
+                if TaorPortMap[i].ElbaNumber == 0 {
+                    command = fmt.Sprintf("tx 16 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
+                } else {
+                    command = fmt.Sprintf("tx 16 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[16].Name, TaorPortMap[i].Name)
+                }
+                cli.Printf("i", "%s\n", command)
+                output, err = ExecBCMshellCMD(command)
+                if err != errType.SUCCESS {
+                    return
+                }
+                time.Sleep(time.Duration(4) * time.Second)
             }
-            cli.Printf("i", "%s\n", command)
-            output, err = ExecBCMshellCMD(command)
-            if err != errType.SUCCESS {
-                return
+            for i:=0; i<2; i++ {
+                if i == 0 {
+                    command = fmt.Sprintf("tx 14 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[32].Name, TaorPortMap[55].Name)
+                } else {
+                    command = fmt.Sprintf("tx 26 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", TaorPortMap[48].Name, TaorPortMap[55].Name)
+                }
+                cli.Printf("i", "%s\n", command)
+                output, err = ExecBCMshellCMD(command)
+                if err != errType.SUCCESS {
+                    return
+                }
+                time.Sleep(time.Duration(5) * time.Second)
             }
-            time.Sleep(time.Duration(5) * time.Second)
+
+        } else {
+            var internal_port uint32 = 0
+            for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
+                if (elba_port_mask & (1<<internal_port)) == 0 {
+                    //fmt.Printf("[ERROR] Elba Port Mask = 0x%x...  mask=%x\n", elba_port_mask, (1<<internal_port))
+                    internal_port++
+                    continue;
+                }
+                internal_port++
+
+                //First half of VLANS go to Elba 0 (lag521).    Elba 1 (lag 522) VLANS need t start on port27 which starts the 2nd half of the vlans   
+                if TaorPortMap[i].ElbaNumber == 0 {
+                    command = fmt.Sprintf("tx 60 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[0].Name, TaorPortMap[i].Name)
+                } else {
+                    entry := ((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)
+                    command = fmt.Sprintf("tx 60 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.%s", TaorPortMap[entry].Name, TaorPortMap[i].Name)
+                }
+                cli.Printf("i", "%s\n", command)
+                output, err = ExecBCMshellCMD(command)
+                if err != errType.SUCCESS {
+                    return
+                }
+                time.Sleep(time.Duration(4) * time.Second)
+            }
         }
     }
 
@@ -1737,6 +1538,10 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
         var printRxBandwidth = 1
         printRxBwTime := time.Now()
 
+        if test_type == SNAKE_TEST_ENVIRONMENT {
+            ElbaPortminBandwidth = 3000000000
+        }
+
         for i:=0; i<TAOR_INTERNAL_PORTS; i++ {
             var port uint32 = uint32(i)
             if (elba_port_mask & (1<<port)) ==  (1<<port) {
@@ -1747,8 +1552,18 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                 }
             }
         }
-        Lag521ExtPortminBandWidth = Elba0bw / (16)
-        Lag522ExtPortminBandWidth = Elba1bw / (16)
+
+        
+        if test_type == SNAKE_TEST_LINE_RATE  {
+            Lag521ExtPortminBandWidth = Elba0bw / (16)
+            Lag522ExtPortminBandWidth = Elba1bw / (16)
+        } else if test_type == SNAKE_TEST_ENVIRONMENT {
+            Lag521ExtPortminBandWidth = Elba0bw / (16)
+            Lag522ExtPortminBandWidth = Elba1bw / (16)
+        } else {
+            Lag521ExtPortminBandWidth = Elba0bw / (TAOR_NUMB_EXT_PORT / 2)
+            Lag522ExtPortminBandWidth = Elba1bw / (TAOR_NUMB_EXT_PORT / 2)
+        }
         fmt.Printf(" Elba0bw bandwidth = %d\n", Elba0bw)
         fmt.Printf(" Elba1bw bandwidth = %d\n", Elba1bw)
         fmt.Printf(" Lag521 min bandwidth = %d\n", Lag521ExtPortminBandWidth)
@@ -1774,8 +1589,13 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
             for i:=0; i < TAOR_TOTAL_PORTS; i++ {
                 var RxBytes uint64
                 var FCSerror uint64
-                var MinBandWidth25G uint64 = 2900000000
-                var MinBandWidth100G uint64 =11500000000
+                var MinBandWidth25G uint64  =  2900000000
+                var MinBandWidth100G uint64 = 11500000000
+
+                if test_type == SNAKE_TEST_ENVIRONMENT {
+                    MinBandWidth25G  =  900000000
+                    MinBandWidth100G = 3400000000
+                }
                 
                 RxBytes, err = MacStatRxByteSecond(StatRxBytes, i)
                 if err != errType.SUCCESS {
@@ -1785,39 +1605,56 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
                     fmt.Printf("Port-%d %d/s\n", i, RxBytes)
                     
                 }
-                //lag521
-                if (i < 16) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
-                    cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
-                    rc = errType.FAIL
-                }
-                //lag522
-                if (i >= 16) && (i < 31) {
-                    if RxBytes < Lag522ExtPortminBandWidth { 
-                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
-                        rc = errType.FAIL
-                    }
-                }
-                //TD3 25G Snake ports
-                if (i >= 32) && (i < 48) {
-                    if RxBytes < MinBandWidth25G { 
-                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, MinBandWidth25G)
-                        rc = errType.FAIL
-                    }
-                }
 
-                //TD3 25G Snake ports
-                if (i >= 48) && (i < 54) {
-                    if RxBytes < MinBandWidth100G { 
-                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, MinBandWidth100G)
+
+                if test_type == SNAKE_TEST_LINE_RATE || test_type == SNAKE_TEST_ENVIRONMENT {
+                    //lag521
+                    if (i < 16) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
+                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
                         rc = errType.FAIL
                     }
-                }
-                //Internal Port going to Elba
-                if i >= TAOR_INTERNAL_PORT_START {
-                    var port uint32 = uint32(i - TAOR_INTERNAL_PORT_START)
-                    if (elba_port_mask & (1<<port)) > 0 {
-                        if RxBytes < ElbaPortminBandwidth { 
-                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, ElbaPortminBandwidth)
+                    //lag522
+                    if (i >= 16) && (i < 31) {
+                        if RxBytes < Lag522ExtPortminBandWidth { 
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
+                            rc = errType.FAIL
+                        }
+                    }
+                    //TD3 25G Snake ports
+                    if (i >= 32) && (i < 48) {
+                        if RxBytes < MinBandWidth25G { 
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, MinBandWidth25G)
+                            rc = errType.FAIL
+                        }
+                    }
+
+                    //TD3 25G Snake ports
+                    if (i >= 48) && (i < 54) {
+                        if RxBytes < MinBandWidth100G { 
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, MinBandWidth100G)
+                            rc = errType.FAIL
+                        }
+                    }
+                    //Internal Port going to Elba
+                    if i >= TAOR_INTERNAL_PORT_START {
+                        var port uint32 = uint32(i - TAOR_INTERNAL_PORT_START)
+                        if (elba_port_mask & (1<<port)) > 0 {
+                            if RxBytes < ElbaPortminBandwidth { 
+                                cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, ElbaPortminBandwidth)
+                                rc = errType.FAIL
+                            }
+                        }
+                    }
+                } else {
+                    //lag521
+                    if (i < (TAOR_NUMB_EXT_PORT/2)) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
+                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
+                        rc = errType.FAIL
+                    }
+                    //lag522
+                    if (i >= (TAOR_NUMB_EXT_PORT/2)) && (i < TAOR_NUMB_EXT_PORT) {
+                        if RxBytes < Lag522ExtPortminBandWidth { 
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
                             rc = errType.FAIL
                         }
                     }
@@ -1838,8 +1675,6 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
             if err = CheckTemperatures("TD3", TD3_MAX_TEMP); err != errType.SUCCESS {
                 rc = errType.FAIL
             }
-
-            
 
             if rc == errType.FAIL {
                 fmt.Printf(" ERR BREAK\n")
@@ -1869,14 +1704,17 @@ func Snake_Line_Rate(elba_port_mask uint32, duration uint32, loopback_level stri
         }
     }
 
-    command = "port " + TaorPortMap[0].Name +" enable=false"
-    ExecBCMshellCMD(command)
-    command = "port " + TaorPortMap[16].Name +" enable=false"
-    ExecBCMshellCMD(command)
-    command = "port " + TaorPortMap[32].Name +" enable=false"
-    ExecBCMshellCMD(command)
-    command = "port " + TaorPortMap[48].Name +" enable=false"
-    ExecBCMshellCMD(command)
+    if test_type == SNAKE_TEST_LINE_RATE || test_type == SNAKE_TEST_ENVIRONMENT{
+        command = "port " + TaorPortMap[0].Name +" enable=false"
+        command = command + ";port " + TaorPortMap[16].Name +" enable=false"
+        command = command + ";port " + TaorPortMap[32].Name +" enable=false"
+        command = command + ";port " + TaorPortMap[48].Name +" enable=false"
+        ExecBCMshellCMD(command)
+    } else {
+        command = "port " + TaorPortMap[0].Name +" enable=false"
+        command = command + ";port " + TaorPortMap[((TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS)/2)].Name +" enable=false"
+        ExecBCMshellCMD(command)
+    }
 
     //No return output to check on this command
     cli.Printf("i", "Disabling all 25G Ports\n")
@@ -1955,5 +1793,197 @@ func CheckForRevA_Gearbox() (err int) {
     return
 }
 
+//Return the temperature of all 3 retimers at once
+func GearboxGetTemperatures() (temperature []float64, err int) {
+    var output, command string
+    var strapping uint32
+    err = errType.SUCCESS
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
+
+    if strapping == 0 {
+        command = fmt.Sprintf("phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210", mdio_phy_addr_rev0[GEARBOX_START + 0], mdio_phy_addr_rev0[GEARBOX_START + 1], mdio_phy_addr_rev0[GEARBOX_START + 2], mdio_phy_addr_rev0[GEARBOX_START + 3])
+    } else {
+        command = fmt.Sprintf("phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210", mdio_phy_addr_rev1[GEARBOX_START + 0], mdio_phy_addr_rev1[GEARBOX_START + 1], mdio_phy_addr_rev1[GEARBOX_START + 2], mdio_phy_addr_rev1[GEARBOX_START + 3])
+    }
+    
+    //BCM.0> phy raw c45 0x100 0x1 0xd210
+    //      0xd210: 0x02d8
+
+
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    scanner := bufio.NewScanner(strings.NewReader(output))
+    for scanner.Scan() {
+        if strings.Contains(scanner.Text(), "0xd210:") {
+            out := strings.TrimSpace(scanner.Text())
+            data64, _ := strconv.ParseUint(out[8:], 0, 64)
+            tFloat := float64(data64)
+            tFloat = 434.10000 - 0.53504 * tFloat
+            temperature = append(temperature, tFloat)
+        }
+    }
+    return
+}
+
+
+//Return the temperature of all 3 retimers at once
+func RetimerGetTemperatures() (temperature []float64, err int) {
+    var output, command string
+    var strapping uint32
+    err = errType.SUCCESS
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
+
+    if strapping == 0 {
+        command = fmt.Sprintf("phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210", mdio_phy_addr_rev0[RETIMER_START + 0], mdio_phy_addr_rev0[RETIMER_START + 1], mdio_phy_addr_rev0[RETIMER_START + 2])
+    } else {
+        command = fmt.Sprintf("phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210; phy raw c45 0x%x 0x1 0xd210", mdio_phy_addr_rev1[RETIMER_START + 0], mdio_phy_addr_rev1[RETIMER_START + 1], mdio_phy_addr_rev1[RETIMER_START + 2])
+    }
+    
+    //BCM.0> phy raw c45 0x100 0x1 0xd210
+    //      0xd210: 0x02d8
+
+
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    scanner := bufio.NewScanner(strings.NewReader(output))
+    for scanner.Scan() {
+        if strings.Contains(scanner.Text(), "0xd210:") {
+            out := strings.TrimSpace(scanner.Text())
+            data64, _ := strconv.ParseUint(out[8:], 0, 64)
+            tFloat := float64(data64)
+            tFloat = 434.10000 - 0.53504 * tFloat
+            temperature = append(temperature, tFloat)
+        }
+    }
+    return
+}
+
+
+//Return the temperature of all 3 retimers at once
+func TD3FlashTest(cycles int) (err int) {
+    var output, command, results string
+    err = errType.SUCCESS
+
+    var s string
+
+    fmt.Printf("DO NOT POWER OFF THE SYSTEM.  IT WILL BRICK TD3's PCI FIRMWARE.   DO YOU WANT TO CONTINUE? (y/N): ")
+    _, errGo := fmt.Scan(&s)
+    if errGo != nil {
+            panic(errGo)
+    }
+
+    s = strings.TrimSpace(s)
+    s = strings.ToLower(s)
+
+    if s == "y" || s == "yes" {
+    } else {
+        return errType.FAIL
+    }
+
+    cli.Printf("i", "Backing up existing firmware to /tmp/td3pciefw.bin\n")
+    command = "pciephy fw extract /tmp/td3pciefw.bin"
+    results = "PCIE firmware extracted successfully"
+    output, err = BCMShellExecuteCmdCheckResults(command, results)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Executed bcm shell cmd='%s'.   Did not get expected results='%s'\n", command, results)
+        cli.Printf("e", "Output='%s'\n", output)
+        return
+    }    
+
+    for i:=0; i<cycles; i++ {
+        cli.Printf("i", "Loop-%d    Generating Random 1MB file /tmp/td3flash.bin\n", i)
+        cmd := exec.Command("dd", "if=/dev/urandom", "of=/tmp/td3flash.bin", "bs=1M", "count=1")
+        errGo = cmd.Run()
+        if errGo != nil {
+            cli.Printf("e", "dd failed.  err=%s\n", errGo)
+            err = errType.FAIL
+            return
+        }
+
+        //Have bcm shell program random generated image to flash
+        cli.Printf("i", "Programming TD3 Flash\n")
+        command = "pciephy fw load /tmp/td3flash.bin"
+        results = "PCIE firmware updated successfully"
+        output, err = BCMShellExecuteCmdCheckResults(command, results)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "Executed bcm shell cmd='%s'.   Did not get expected results='%s'\n", command, results)
+            cli.Printf("e", "Output='%s'\n", output)
+            return
+        }  
+
+        //Read Back Firmware to new file
+        cli.Printf("i", "Reading back random file from TD3 flash\n")
+        command = "pciephy fw extract /tmp/td3flash_readback.bin"
+        results = "PCIE firmware extracted successfully"
+        output, err = BCMShellExecuteCmdCheckResults(command, results)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "Executed bcm shell cmd='%s'.   Did not get expected results='%s'\n", command, results)
+            cli.Printf("e", "Output='%s'\n", output)
+            return
+        } 
+
+        //Compare data
+        // per comment, better to not read an entire file into memory
+        // this is simply a trivial example.
+        f1, err1 := ioutil.ReadFile("/tmp/td3flash.bin")
+        if err1 != nil {
+            cli.Printf("e", "Opening /tmp/td3flash.bin failed  err=%s\n", errGo)
+            err = errType.FAIL
+            return
+        }
+
+        f2, err2 := ioutil.ReadFile("/tmp/td3flash_readback.bin")
+        if err2 != nil {
+            cli.Printf("e", "Opening /tmp/td3flash_readback.bin failed  err=%s\n", errGo)
+            err = errType.FAIL
+            return
+        }
+
+        if bytes.Equal(f1, f2) == false { // Per comment, this is significantly more performant.
+            cli.Printf("e", "/tmp/td3flash.bin & /tmp/td3flash_readback.bin are not equal.  TD3 flash test failed\n")
+            err = errType.FAIL
+            return
+
+        }
+    }
+
+
+    //Have bcm shell program random generated image to flash
+    cli.Printf("i", "Programming original PCIe firmware to TD3 flash\n")
+    command = "pciephy fw load /tmp/td3pciefw.bin"
+    results = "PCIE firmware updated successfully"
+    output, err = BCMShellExecuteCmdCheckResults(command, results)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Executed bcm shell cmd='%s'.   Did not get expected results='%s'\n", command, results)
+        cli.Printf("e", "Output='%s'\n", output)
+        return
+    }  
+
+    return
+}
+
+
+
+/***************************************************************************************
+BCM.0> tl 50
+U/A/S|Test|            Test           |Loop | Run |Pass |Fail |  Arguments
+     | #  |            Name           |Count|Count|Count|Count|
+-----+----+---------------------------+-----+-----+-----+-----+-----------
+   S |  50| Memory Fill/Verify        |    1| 2469| 2469|    0| (none)
+BCM.0>
+****************************************************************************************/
+func BCMshell_Test_Results(testnumber int)(loop int, runcnt int, passcnt int, failcnt int, err int) {
+
+
+
+
+    return
+}
 
 

@@ -355,6 +355,12 @@ func Spi_elba_flash_get_partition_info(spiNumber uint32, partition string) (flas
     if partition == "uboot0" {
         flash_size = 0x80000
         start_addr = 0x00100000
+    } else if partition == "uboota" {
+        flash_size = 0x400000
+        start_addr = 0x04600000
+    } else if partition == "ubootb" {
+        flash_size = 0x400000
+        start_addr = 0x04200000
     } else if partition == "golduboot" {
         flash_size = 0x200000
         start_addr = 0x00180000

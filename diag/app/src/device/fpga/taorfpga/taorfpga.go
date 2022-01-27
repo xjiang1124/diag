@@ -135,10 +135,57 @@ func init () {
         }
     }
     if cardType == "TAORMINA" {
-        Glob_mmap0, Glob_fd0, _ = MMAP_Device(DEV0_BAR, MAP_SIZE)
-        Glob_mmap1, Glob_fd1, _ = MMAP_Device(DEV1_BAR, MAP_SIZE)
-        Glob_mmap2, Glob_fd2, _ = MMAP_Device(DEV2_BAR, MAP_SIZE)
-        Glob_mmap3, Glob_fd3, _ = MMAP_Device(DEV3_BAR, MAP_SIZE)
+        bar := []uint64 { 0,0,0,0 }
+        exists, _ := Path_exists("/tmp/fpgabars")
+        //TRY TO STORE THE BAR VALUES IN A FILE.  WE DONT WANT TO SCAN THE PCI AND GET THE BARS EVERYTIME WE USE ONE OF THE DIAG UTILITIES THAT CALLS THIS INIT
+        if exists == true {
+            var i int
+            file, errGo := os.Open("/tmp/fpgabars")
+            if errGo != nil {
+                cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
+                return
+            }
+            scanner := bufio.NewScanner(file)
+            for scanner.Scan() {
+                bar[i], _ = strconv.ParseUint(strings.TrimSuffix(scanner.Text(), "\n"), 0, 64)
+                i++
+            }
+            file.Close()
+        } else {
+            shcmds := []string{ "lspci -s 12:00.0 -v | grep Memory | awk '{print $3}'", 
+                                "lspci -s 12:00.1 -v | grep Memory | awk '{print $3}'", 
+                                "lspci -s 12:00.2 -v | grep Memory | awk '{print $3}'", 
+                                "lspci -s 12:00.3 -v | grep Memory | awk '{print $3}'" }
+            for i:=0;i<len(shcmds);i++ {
+                execOutput, errGo := exec.Command("sh", "-c", shcmds[i] ).Output()
+                if errGo != nil {
+                    cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
+                    return
+                }
+                tmp := "0x" + strings.TrimSuffix(string(execOutput), "\n")
+                if i==0        { bar[0], _ = strconv.ParseUint(tmp, 0, 64) 
+                } else if i==1 { bar[1], _ = strconv.ParseUint(tmp, 0, 64) 
+                } else if i==2 { bar[2], _ = strconv.ParseUint(tmp, 0, 64) 
+                } else if i==3 { bar[3], _ = strconv.ParseUint(tmp, 0, 64) }
+            }
+
+            file, errGo := os.OpenFile("/tmp/fpgabars", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+            if errGo != nil {
+                cli.Println("e", "ERROR: Failed to get open file /tmp/fpgabars.   GO ERROR=%v", errGo)
+                return
+            }
+            datawriter := bufio.NewWriter(file)
+            for i:=0;i<len(bar);i++ {
+                    _, _ = datawriter.WriteString(fmt.Sprintf("0x%x\n", bar[i]))
+            }
+     
+            datawriter.Flush()
+            file.Close()
+        }
+        Glob_mmap0, Glob_fd0, _ = MMAP_Device(int64(bar[0]), MAP_SIZE)
+        Glob_mmap1, Glob_fd1, _ = MMAP_Device(int64(bar[1]), MAP_SIZE)
+        Glob_mmap2, Glob_fd2, _ = MMAP_Device(int64(bar[2]), MAP_SIZE)
+        Glob_mmap3, Glob_fd3, _ = MMAP_Device(int64(bar[3]), MAP_SIZE)
         //How do we gracefully unmap?   OS should do it, but would be nice to do it in code 
         /*
         defer func() {

@@ -438,7 +438,7 @@ func init() {
     taorDispStaList["PSU_1"]            = dps800.DispStatus
     taorDispStaList["PSU_2"]            = dps800.DispStatus
     taorDispStaList["TSENSOR-CPU"]      = XeonD.DispStatus
-    taorDispStaList["TSENSOR-TD3"]      = td3.DispStatus
+    taorDispStaList["TSENSOR-BCM"]      = td3.DispStatus
     taorDispStaList["TSENSOR-ASIC0"]    = taorfpga.AsicCoreTemp
     taorDispStaList["TSENSOR-ASIC1"]    = taorfpga.AsicCoreTemp
     taorDispStaList["FAN_1"]   = adt7462.DispStatus

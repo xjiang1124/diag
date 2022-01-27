@@ -226,7 +226,7 @@ func StrIsAscii(s string ) bool {
 }
 
 
-func DisplayManufacturingInfo(devName string) (err int) {
+func DisplayManufacturingInfo(devName string, useCLI int) (err int) {
     var psuNumber uint32 = 0
     wrData := []byte{}
     mfgId := []byte{}
@@ -378,12 +378,17 @@ func DisplayManufacturingInfo(devName string) (err int) {
     }
 
 
+    if useCLI > 0 {
+        cli.Printf("i", "%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) )
+    } else { fmt.Printf("%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) ) }
 
-    fmt.Printf("%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) )
     if StrIsAscii(string(usercode00[1:])) == true {
-        fmt.Printf("%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) )
+        if useCLI > 0 { cli.Printf("i", "%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) )
+        } else {             fmt.Printf("%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) ) }
     } else {
-        fmt.Printf("%s: ...... ........................\n", devName)
+        if useCLI > 0 { cli.Printf("i", "%s: ...... ........................\n", devName)
+        } else {             fmt.Printf("%s: ...... ........................\n", devName) }
+        
     }
     return
 }

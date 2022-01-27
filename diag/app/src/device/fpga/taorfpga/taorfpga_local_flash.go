@@ -202,6 +202,198 @@ func FlashBitSwapImage(infile string, outfile string) (err error) {
     return
 }
 
+
+/***************************************************************************** 
+* 
+*  Convert from default Micron image ot winbond or macronix image format 
+* 
+******************************************************************************/ 
+func FlashConvertImageRight(infile string, outfile string) (err error) {
+    var i int
+    var data8 byte
+    inF_Data  := []byte{}
+
+    inF, err := os.Open(infile)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", infile, err)
+        return
+    }
+    outF, err := os.OpenFile(outfile, os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", outfile, err)
+        return
+    }
+    defer func() { 
+        inF.Close()
+        outF.Close()
+    } ()
+
+    scanner := bufio.NewScanner(inF)
+    scanner.Split(bufio.ScanBytes)
+
+    for scanner.Scan() {
+        b := scanner.Bytes()
+        data8 = data8 | (b[0] >> 4)
+        if i == 0 {
+            data8 = data8 | 0xF0
+        }
+        i++
+        inF_Data = append(inF_Data, data8)
+        data8 = (b[0] << 4)
+    }
+
+    if err = scanner.Err(); err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    outF.WriteString(string(inF_Data[:]))
+
+    return
+}
+
+/**************************************************************************************** 
+* 
+*  Convert from Winbond/Macronix to Micron format.
+*  Shift the entire file left by 4 bits and add 0xF at the end of the file
+* 
+****************************************************************************************/ 
+func FlashConvertImageLeft(infile string, outfile string) (err error) {
+    var i int
+    var length int
+    inF_Data  := []byte{}
+    data := []byte{}
+
+    inF, err := os.Open(infile)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", infile, err)
+        return
+    }
+    outF, err := os.OpenFile(outfile, os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", outfile, err)
+        return
+    }
+    defer func() { 
+        inF.Close()
+        outF.Close()
+    } ()
+
+    scanner := bufio.NewScanner(inF)
+    scanner.Split(bufio.ScanBytes)
+
+    for scanner.Scan() {
+        b := scanner.Bytes()
+        data = append(data, b[0])
+    }
+
+    length = len(data)
+    for i=0;i<length;i++ {
+        if i == (length - 1) {
+            inF_Data = append(inF_Data, (data[i]<<4) | 0xF)
+        } else {
+            inF_Data = append(inF_Data, (data[i]<<4) | (data[i+1]>>4))
+        }
+    }
+
+    if err = scanner.Err(); err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    outF.WriteString(string(inF_Data[:]))
+
+    return
+}
+
+/********************************************************************************************************************* 
+* 
+* Get the image into the correct format depending on what flash part the fpga has 
+*  
+* if the file name has 17-0055,    program as is for Micron part, shift 4 bits for others.
+* if the file name has 17-0089,  program other flashes as is.  and for Micron  1) shift back  or 2) do not program 
+* 
+*********************************************************************************************************************/ 
+func FlashConvertImageSlice(inData []byte, filename string) ( data []byte, err error ) {
+    var length, i int
+    var data8  uint8
+    var devID, ImageShiftRight, ImageShiftLeft uint32
+    var MiconFlashImage int
+    var WinBondFlashImage int
+
+    devID, err = FlashReadDevIDReg()
+    if err != nil {
+        fmt.Printf(" ERROR: Failed to read flash Device ID.   ERR=%s\n", err)
+        return
+    }
+
+    if strings.Contains(filename, "17-0055")==true {
+        MiconFlashImage = 1
+    } else if strings.Contains(filename, "17-0089")==true {
+        WinBondFlashImage = 1
+    } else {
+        //Check the file at byte 0x80 for it's format.  If the upper nibble is 0xF, it's a WinBond/Macronix image\
+        if (inData[0x80] & 0xF0) == 0xF0 {
+            WinBondFlashImage = 1
+        } else {
+            MiconFlashImage = 1
+        }
+
+    }
+
+
+    //MICRON FLASH DEV ID=0018ba20   
+    //WINBOND FLASH DEV ID=001840ef  
+    //MACRONIX FLASH DEV ID=001820c2
+    if ((devID & 0xFF) == 0xEF) {
+        fmt.Printf(" Winbond flash detected\n")
+        if MiconFlashImage > 0 {
+            ImageShiftRight = 1
+        }
+    } else if ((devID & 0xFF) == 0xC2) {
+        fmt.Printf(" Macronix flash detected\n")
+        if MiconFlashImage > 0 {
+            ImageShiftRight = 1
+        }
+    } else if ((devID & 0xFF) == 0x20) {
+        fmt.Printf(" Micron flash detected\n")
+        if WinBondFlashImage > 0 {
+            ImageShiftLeft = 1
+        }
+    } else {
+        err = fmt.Errorf(" [ERROR] Unable to identify the flash type (Micron, Winbond, Macronix).   Flash DevID=0x%x\n", devID)
+        fmt.Printf("%s", err)
+        return
+    }
+
+    if ImageShiftRight > 0 {
+        data8 = 0
+        for i:=0; i<len(inData); i++ {
+            tmp := inData[i]
+            data8 = data8 | (tmp >> 4)
+            if i == 0 {
+                data8 = data8 | 0xF0
+            }
+            
+            data = append(data, data8)
+            data8 = (tmp << 4)
+        }
+    } else if ImageShiftLeft > 0 {
+        length = len(inData)
+        for i=0;i<length;i++ {
+            if i == (length - 1) {
+                data = append(data, (inData[i]<<4) | 0xF)
+            } else {
+                data = append(data, (inData[i]<<4) | (inData[i+1]>>4))
+            }
+        }
+    } else {
+        data = inData[:]
+    }
+    return
+}
+
+
 func FlashWriteImage(region string, filename string) (err error) {
     var i int = 0
     var addr, maxSize uint32
@@ -264,6 +456,12 @@ func FlashWriteImage(region string, filename string) (err error) {
         return
     }
 
+    data, err = FlashConvertImageSlice(data, filename)
+    if err != nil {
+        return
+    }
+
+
     //Disable software WP in the status register
     if region == GOLDFW {
         err = FlashWriteStatusReg(0x00)   //Clear the software lock 
@@ -272,7 +470,6 @@ func FlashWriteImage(region string, filename string) (err error) {
         }
         time.Sleep(time.Duration(50) * time.Millisecond)  
     } 
-    
 
     fmt.Printf(" INFO: Flash Start Addr=0x%.06x\n", addr)
     fmt.Printf(" Erasing/Programming each Sector")
@@ -372,6 +569,11 @@ func FlashVerifyImage(region string, filename string) (err error) {
     if len(data) > int(maxSize) {
         err = fmt.Errorf(" ERROR.  File Size is greater than flash programmable region size.  Bytes Scanned from file=%d.  Flash region size=%d\n", len(data), maxSize)
         fmt.Printf("%s", err)
+        return
+    }
+
+    data, err = FlashConvertImageSlice(data, filename)
+    if err != nil {
         return
     }
 
