@@ -45,9 +45,10 @@ def get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst):
 
     if len(bus_list_match):
         bus_list = list()
-        for bus in bus_list_match:
+        for bus_idx, bus in enumerate(bus_list_match):
             bus_list.append(bus)
-        slot_bus_list = decode_pci_slot(bus_list, fst)
+            slot_bus_list.append((bus_idx, bus))
+        # slot_bus_list = decode_pci_slot(bus_list, fst)
     else:
         mtp_mgmt_ctrl.cli_log_err("No devices found")
         slot_bus_list = []
