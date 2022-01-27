@@ -27,6 +27,15 @@ set_vmarg()
     echo $CARD_TYPE
     if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" ]]
     then
+        if [[ "$1" -lt 5 && "$1" -ge -2 ]] 
+        then
+            if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
+            then
+                /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
+            fi
+        else
+            echo "Skipping $1% on VDD_DDR"
+        fi
         if [[ "$1" -lt 3 && "$1" -ge -2 ]] 
         then
             /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
@@ -34,11 +43,11 @@ set_vmarg()
             if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
             then
                 /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-                /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
             fi
-            return
+        else
+            echo "Skipping $1% ELB0_ARM, ELB0_CORE, VDDQ_DDR"
         fi
-        echo "Skipping $1%"
+        return
     elif [[ $CARD_TYPE == "LACONA32"        || \
             $CARD_TYPE == "LACONA32DELL"    || \
             $CARD_TYPE == "POMONTE"         || \
