@@ -2711,7 +2711,10 @@ def copyalllogfolder(pr,DATA,workingonSNlist,inputconfig):
                     if sn.upper() in eachfile.upper():
                         shutil.copy2(eachfile, copyfolder)
                         countforcreateunzipfile += 1
+                        if "UNZIP" in inputconfig:
+                            shutil.unpack_archive(eachfile, copyfolder)
                 change_permissions_recursive(copyfolder, 0o777)
+
     linux_cmd_change_permissions = "chmod -R 777 {}".format(lastfailurefolder)
     os.system(linux_cmd_change_permissions)
 

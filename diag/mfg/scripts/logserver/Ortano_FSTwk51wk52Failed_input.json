@@ -1,29 +1,25 @@
 {
-	"NAME": "ORTANO2",
+	"NAME": "Ortano_FSTwk51wk52Failed",
 	"TYPE": "NIC",
-	"FLEXFLOW": "192.168.3.11",
+	"SNLIST": "FSTwk51wk52Failed.xlsx",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_03",
-		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2",
+		"TEMPDIR": "/tmp/tmp_unzip_Ortano_FSTwk51wk52Failed_ORTANO2",
+		"TEMPDATABASE": "/samba/public/tmp_database/Ortano_FSTwk51wk52Failed",
 		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
-		"reportpath":"/samba/public/REPORT/ORTANO2/",
-		"historypath":"/samba/public/HISTORY/ORTANO2"
+		"reportpath":"/samba/public/REPORT/Ortano_FSTwk51wk52Failed/",
+		"historypath":"/samba/public/HISTORY/Ortano_FSTwk51wk52Failed"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json",
-		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
-		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
 	},
 	"IMAGESUB" : {
 		"CPLD1 image" : "CPLD image1",
-		"CPLD2 image" : "CPLD image2",
-		"Main image" : "MainFW image",
-		"Gold image" : "GoldFW image"
+		"CPLD2 image" : "CPLD image2"
 	},
 	"MTP_STATUS" : [
 					"01",
@@ -48,7 +44,7 @@
 		"NICINFO"
 	],
 	"DIE_ID" : 1,
-	"KEEPLASTPASS" : 1,
+	"UNZIP" : 1,
 	"SKIPPrefix" : "FLM",
 	"STARTCountSN" : "FPN21200001",
 	"4CFLOW" : [
@@ -58,20 +54,10 @@
 				"4C-H (HV)"
 				],
 	"TESTLIST" :[
-					"DL",
-					"P2C",
-					"4C-L",
-					"4C-H",
-					"SWI",
 					"FST"
 					
 					],
 	"TESTFOLDER":[
-					"DL",
-					"P2C",
-					"4C/4C-L",
-					"4C/4C-H",
-					"SWI",
 					"FST"
 				]
 	

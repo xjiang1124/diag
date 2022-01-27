@@ -118,6 +118,21 @@ echo Script: runReport_special.sh
 
 #ORTANO2_EDMA_3200_25C-trained_400k_lv0-25C
 
+#ORTANO2_EDMA_3200_margin
+
+#ORTANO2_EDMA_3200_margin_0x42
+
+#ORTANO2_EDMA_3200_periodictraining
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_EDMA_3200_periodictraining_input.json specreport3=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_margin_0x42_input.json specreport3=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_EDMA_3200_margin_input.json specreport3=1 skiplock=1
+
 # cd $_mydir
 # python3 $_mydir/process_log.py ORTANO2_EDMA_3200_25C-trained_400k_lv0-25C_input.json specreport3=1 skiplock=1
 

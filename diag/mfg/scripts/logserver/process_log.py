@@ -1304,6 +1304,48 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                             #print(tempnicinformation)
                             #sys.exit()
 
+                        sub_match = re.findall(KEY_WORD.GETFSTNICINFORMATION, x)
+                        if sub_match:
+                            #print(x)
+                            #print(sub_match)
+                            mtpnumber = sub_match[0][0]
+                            nicnumber = sub_match[0][1]
+                            nickey = sub_match[0][2]
+                            nicdata = sub_match[0][3]
+                            if not nicnumber in tempnicinformation:
+                                tempnicinformation[nicnumber] = dict()
+                            tempnicinformation[nicnumber][nickey] = nicdata
+                            #print(tempnicinformation)
+                            #sys.exit()
+
+                        sub_match = re.findall(KEY_WORD.GETFSTNICFRUINFORMATION, x)
+                        if sub_match:
+                            #print(x)
+                            #print(sub_match)
+                            mtpnumber = sub_match[0][0]
+                            nicnumber = sub_match[0][1]
+                            #nickey = sub_match[0][2]
+                            nicdata = sub_match[0][2]
+                            if not nicnumber in tempnicinformation:
+                                tempnicinformation[nicnumber] = dict()
+                            tempnicinformation[nicnumber]['FRUINFO'] = nicdata
+                            #print(tempnicinformation)
+                            #sys.exit()
+
+                        sub_match = re.findall(KEY_WORD.GETFSTNICPCIEINFORMATION, x)
+                        if sub_match:
+                            #print(x)
+                            #print(sub_match)
+                            mtpnumber = sub_match[0][0]
+                            nicnumber = sub_match[0][1]
+                            #nickey = sub_match[0][2]
+                            nicdata = sub_match[0][2]
+                            if not nicnumber in tempnicinformation:
+                                tempnicinformation[nicnumber] = dict()
+                            tempnicinformation[nicnumber]['PCIE'] = nicdata
+                            #print(tempnicinformation)
+                            #sys.exit()
+
                         sub_match = re.findall(KEY_WORD.GETMTPINFORMATION, x)
                         if sub_match:
                             #print(x)
@@ -1497,6 +1539,8 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
 
                     DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['MTPINFO'] = tempmtpinformation
                     #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
+                    #WINSON
+                    #sys.exit()
                     DATA['MTPCHASSIS'][TESTCHASSIS][teststep][CHECKTESTTIME]['MTPINFO'] = tempmtpinformation
                     DATA['MTPCHASSIS'][TESTCHASSIS][teststep][CHECKTESTTIME]['NICINFO'] = tempnicinformation
                     DATA['MTPCHASSIS'][TESTCHASSIS][teststep][CHECKTESTTIME]['NICRESULT'] = tempnicresult
@@ -1658,140 +1702,170 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['ALLERROR'] = allerrormessage
 
 
-                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG'] = dict()
-                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'] = list()
-                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'] = dict()
-                getallunzipfilelist1 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_diag.log')
-                getallunzipfilelist2 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_j2c_diag.log')
-                getallunzipfilelist = getallunzipfilelist1 + getallunzipfilelist2
-                pr['modules'].print_anyinformation(getallunzipfilelist)
-                #sys.exit()
-                lookforslot = None
-                cardslot = None
-                if "SLOT" in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]:
-                    if DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]:
-                        lookforslot = "slot {}" .format(int(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]))
-                        cardslot = "NIC-{}" .format(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"])
-                print("SN: {} lookforslot: {}".format(sn, lookforslot))
-                temploglist = list()
-                if lookforslot:
-                    eccdumpstatus = dict()
-                    for eachniccardlog in getallunzipfilelist:
-                        f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
-                        #pr['modules'].print_anyinformation(f)
-                        
-                        nicdatalist = list()
-                        tempgrouplog = ''
-                        startrecordtemplog = False
-                        startrecorddumpecc = False
-                        tempecclog = ''
-                        Vmarh = 'normal'
-                        count = 0
-                        for x in f:
+                        DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG'] = dict()
+                        DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'] = list()
+                        DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'] = dict()
+                        getallunzipfilelist1 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_diag.log')
+                        getallunzipfilelist2 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'mtp_j2c_diag.log')
+                        getallunzipfilelist = getallunzipfilelist1 + getallunzipfilelist2
+                        #pr['modules'].print_anyinformation(getallunzipfilelist)
+                        #sys.exit()
+                        lookforslot = None
+                        cardslot = None
+                        if "SLOT" in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]:
+                            if DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]:
+                                lookforslot = "slot {}" .format(int(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"]))
+                                cardslot = "NIC-{}" .format(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["SLOT"])
+                        #print("SN: {} lookforslot: {}".format(sn, lookforslot))
+
+                        if lookforslot:
+                            temploglist = list()
+                            eccdumpstatus = dict()                    
+                            for eachniccardlog in getallunzipfilelist:
+                                f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
+                                #pr['modules'].print_anyinformation(f)
+                                
+                                nicdatalist = list()
+                                tempgrouplog = ''
+                                startrecordtemplog = False
+                                startrecorddumpecc = False
+                                tempecclog = ''
+                                Vmarh = 'normal'
+                                count = 0
+                                for x in f:
 
 
 
-                            sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGSTART, x)
-                            if sub_match:
-                                startrecordtemplog = True
-
-                            if startrecordtemplog:
-                                tempgrouplog += x 
-                                if count > 1:
-                                    sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGEND, x)
+                                    sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGSTART, x)
                                     if sub_match:
-                                        startrecordtemplog = False
-                                        temploglist.append(tempgrouplog)
-                                        tempgrouplog = ''
-                                        count = 0
-                                count += 1
+                                        startrecordtemplog = True
 
-                            sub_match = re.findall(KEY_WORD.VMARGSTATUS, x)
-                            if sub_match:
-                                Vmarh = sub_match[0]
-                            sub_match = re.findall(KEY_WORD.DUMPECCERRORSTART, x)
-                            if sub_match:
-                                startrecorddumpecc = True
-                                #print(sub_match)
+                                    if startrecordtemplog:
+                                        tempgrouplog += x 
+                                        if count > 1:
+                                            sub_match = re.findall(KEY_WORD.TEMPGROUPFROMMFGLOGEND, x)
+                                            if sub_match:
+                                                startrecordtemplog = False
+                                                temploglist.append(tempgrouplog)
+                                                tempgrouplog = ''
+                                                count = 0
+                                        count += 1
+
+                                    sub_match = re.findall(KEY_WORD.VMARGSTATUS, x)
+                                    if sub_match:
+                                        Vmarh = sub_match[0]
+                                    sub_match = re.findall(KEY_WORD.DUMPECCERRORSTART, x)
+                                    if sub_match:
+                                        startrecorddumpecc = True
+                                        #print(sub_match)
+                                        #sys.exit()
+
+                                    if startrecorddumpecc:
+                                        tempecclog += x 
+                                        sub_match = re.findall(KEY_WORD.DUMPECCERROREND, x)
+                                        if sub_match:
+                                            startrecorddumpecc = False
+                                            lookforslotinformation = KEY_WORD.SLOTECCERROREND.format(lookforslot)
+                                            #print(lookforslotinformation)
+                                            teamtoecclog = ''
+                                            enablecatch = False
+                                            for eachline in tempecclog.split("\n"):
+                                                #print(eachline)
+                                                sub_match2 = re.findall(lookforslotinformation, eachline.lower())
+                                                if sub_match2:
+                                                    if enablecatch:
+                                                        enablecatch = False
+                                                    if len(teamtoecclog) == 0:
+                                                        enablecatch = True
+
+                                                if enablecatch:
+                                                    teamtoecclog += "{}\r".format(eachline)
+                                            #print(teamtoecclog)
+                                            if not Vmarh in eccdumpstatus:
+                                                eccdumpstatus[Vmarh] = list()
+                                            if len(teamtoecclog):
+                                                eccdumpstatus[Vmarh].append(teamtoecclog)
+                                            #sys.exit()
+                                                #temploglist.append(tempecclog)
+                                            tempecclog = ''
+
+                                f.close()
+
+                                
+                                
+                            #pr['modules'].print_anyinformation(eccdumpstatus)
+                            if len(eccdumpstatus):
+                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ECCDUMP"] = eccdumpstatus
+                            #sys.exit()
+                            #pr['modules'].print_anyinformation(temploglist)
+                            if len(temploglist):
+                                for eachstr in temploglist:
+                                    #print(eachstr)
+                                    sub_match = re.findall(KEY_WORD.GETEMPINFORMATION, eachstr)
+                                    if sub_match:
+                                        #print(sub_match)
+                                        listofname = list()
+                                        listofdata = list()
+                                        recorddate = None 
+                                        recordtime = None 
+
+                                        for eachmatch in sub_match:
+                                            if not recorddate:
+                                                recorddate = eachmatch[0]
+                                            if not recordtime:
+                                                recordtime = eachmatch[1].replace(':','-')
+
+                                            if eachmatch[2] == 'NAME':
+                                                for eachkey in eachmatch[3].split():
+                                                    listofname.append(eachkey)
+                                            if eachmatch[2] == 'FAN':
+                                                for eachvalue in eachmatch[3].split():
+                                                    listofdata.append(eachvalue)
+
+                                        recorddateandtime = "{}_{}".format(recorddate,recordtime)
+                                        #print(recorddateandtime)
+                                        #print(listofname)
+                                        #print(listofdata)
+                                        if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST']:
+                                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'].append(recorddateandtime)
+                                        if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT']:
+                                            DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime] = dict()
+                                        DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['NAME'] = listofname
+                                        DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['VALUE'] = listofdata
+
                                 #sys.exit()
 
-                            if startrecorddumpecc:
-                                tempecclog += x 
-                                sub_match = re.findall(KEY_WORD.DUMPECCERROREND, x)
-                                if sub_match:
-                                    startrecorddumpecc = False
-                                    lookforslotinformation = KEY_WORD.SLOTECCERROREND.format(lookforslot)
-                                    #print(lookforslotinformation)
-                                    teamtoecclog = ''
-                                    enablecatch = False
-                                    for eachline in tempecclog.split("\n"):
-                                        #print(eachline)
-                                        sub_match2 = re.findall(lookforslotinformation, eachline.lower())
-                                        if sub_match2:
-                                            if enablecatch:
-                                                enablecatch = False
-                                            if len(teamtoecclog) == 0:
-                                                enablecatch = True
-
-                                        if enablecatch:
-                                            teamtoecclog += "{}\r".format(eachline)
-                                    #print(teamtoecclog)
-                                    if not Vmarh in eccdumpstatus:
-                                        eccdumpstatus[Vmarh] = list()
-                                    if len(teamtoecclog):
-                                        eccdumpstatus[Vmarh].append(teamtoecclog)
-                                    #sys.exit()
-                                        #temploglist.append(tempecclog)
-                                    tempecclog = ''
-
-                        f.close()
-
-                        
-                        
-                    #pr['modules'].print_anyinformation(eccdumpstatus)
-                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["ECCDUMP"] = eccdumpstatus
-                    #sys.exit()
-                    #pr['modules'].print_anyinformation(temploglist)
-                    if len(temploglist):
-                        for eachstr in temploglist:
-                            #print(eachstr)
-                            sub_match = re.findall(KEY_WORD.GETEMPINFORMATION, eachstr)
-                            if sub_match:
-                                #print(sub_match)
-                                listofname = list()
-                                listofdata = list()
-                                recorddate = None 
-                                recordtime = None 
-
-                                for eachmatch in sub_match:
-                                    if not recorddate:
-                                        recorddate = eachmatch[0]
-                                    if not recordtime:
-                                        recordtime = eachmatch[1].replace(':','-')
-
-                                    if eachmatch[2] == 'NAME':
-                                        for eachkey in eachmatch[3].split():
-                                            listofname.append(eachkey)
-                                    if eachmatch[2] == 'FAN':
-                                        for eachvalue in eachmatch[3].split():
-                                            listofdata.append(eachvalue)
-
-                                recorddateandtime = "{}_{}".format(recorddate,recordtime)
-                                #print(recorddateandtime)
-                                #print(listofname)
-                                #print(listofdata)
-                                if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST']:
-                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'].append(recorddateandtime)
-                                if not recorddateandtime in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT']:
-                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime] = dict()
-                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['NAME'] = listofname
-                                DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['DICT'][recorddateandtime]['VALUE'] = listofdata
-
+                        #pr['modules'].print_anyinformation(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME])
                         #sys.exit()
+                        getallunzipfilelist5 = getallfilebyfolder(inputconfig['DIR']['TEMPDIR'], 'diag_fst.log')
+                        if "NICINFO" in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]:
+                            if DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["NICINFO"]:
+                                if "PCIE" in DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["NICINFO"]:
+                                    pcie_id = DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["NICINFO"]["PCIE"]
+                                    #print("PCIE: {}".format(pcie_id))
+                                    #print(getallunzipfilelist5)
+                                    for eachniccardlog in getallunzipfilelist5:
+                                        f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
+                                        newlist = list()
+                                        oneline = ''
+                                        for x in f:
+                                            #print(x)
+                                            if 'diag@MTP:#' in x:
+                                                newlist.append(oneline)
+                                                oneline = ''
+                                            oneline += x.strip()
 
-                #pr['modules'].print_anyinformation(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME])
-                #sys.exit()
-
+                                        for y in newlist:
+                                            #print(y)
+                                            if pcie_id in y:
+                                                sub_match = re.findall(KEY_WORD.GETFSTNICPCIEWIDTHINFORMATION, y)
+                                                if sub_match:
+                                                    Speed = sub_match[0][0]
+                                                    Width = sub_match[0][1]                                            
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["NICINFO"]["PCIE_Speed"] = Speed
+                                                    DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]["NICINFO"]["PCIE_Width"] = Width
+                        #pr['modules'].print_anyinformation(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME])
+                        #sys.exit()
                 try:
                     shutil.rmtree(inputconfig['DIR']['TEMPDIR'])
                 except OSError as e:
