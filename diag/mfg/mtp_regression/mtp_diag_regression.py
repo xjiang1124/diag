@@ -817,7 +817,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
 
 def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, swmtestmode):
     if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_run_diag_test_para_lock(slot)
+        mtp_mgmt_ctrl.mtp_turbo_j2c_lock(slot)
     else:
         lock.acquire()
         
@@ -892,10 +892,10 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 break;
 
     if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_run_diag_test_para_unlock(slot)
+        mtp_mgmt_ctrl.mtp_turbo_j2c_unlock(slot)
 
         # wait for all slots to complete
-        while True in [x.locked() for x in mtp_mgmt_ctrl._para_test_lock]:
+        while True in [x.locked() for x in mtp_mgmt_ctrl._turbo_j2c_lock]:
             continue
 
         if not stop_on_err:
