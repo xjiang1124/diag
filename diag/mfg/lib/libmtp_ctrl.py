@@ -2045,8 +2045,6 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             filename = "{:s}_snake_pcie.log".format(sn)
         elif test == "SNAKE_ELBA":
-            filename = "{:s}_num_6_snake_elba.log".format(sn)
-        elif test == "SNAKE_EDMA":
             filename = "{:s}_num_4_snake_elba.log".format(sn)
         elif test == "ETH_PRBS":
             filename = "{:s}_elba_PRBS_MX.log".format(sn)
@@ -4753,7 +4751,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
         elif test == "SNAKE_PCIE":
             cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_ELBA" or test == "SNAKE_EDMA":
+        elif test == "SNAKE_ELBA":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
 
@@ -4776,14 +4774,6 @@ class mtp_ctrl():
             # 2C/4C = internal loopback
             if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
-
-            if test == "SNAKE_EDMA":
-                cmd += " -wtime=610"
-            else:
-                cmd += " -wtime=300"
-
-            if test == "SNAKE_EDMA":
-                cmd += " -snake_num=4 -dura=15"
 
         elif test == "ETH_PRBS":
             slot = nic_list[0]
@@ -5853,7 +5843,6 @@ class mtp_ctrl():
                 errors_found = False
                 for reg, val in ecc_regs:
                     if int(val.strip(),16) != 0:
-                        self.cli_log_slot_err(slot, "ECC errors found")
                         self.cli_log_slot_err(slot, "Reg 0x{:s}: 0x{:s}".format(reg,val))
                         errors_found = True
                         if slot not in ecc_fail_list:
@@ -5861,6 +5850,8 @@ class mtp_ctrl():
 
                 if not errors_found:
                     self.cli_log_slot_inf(slot, "No ECC errors found")
+                else:
+                    self.cli_log_slot_err(slot, "ECC errors found")
 
         duration = self.log_test_stop(test, start_ts)
         for slot in nic_list:
@@ -5915,7 +5906,6 @@ class mtp_ctrl():
                 errors_found = False
                 for reg, val in ecc_regs:
                     if int(val.strip(),16) != 0:
-                        self.cli_log_slot_err(slot, "ECC errors found")
                         self.cli_log_slot_err(slot, "Reg 0x{:s}: 0x{:s}".format(reg,val))
                         errors_found = True
                     err_msg_list.append(slot_buf.split())
@@ -5932,6 +5922,8 @@ class mtp_ctrl():
 
             if not errors_found:
                 self.cli_log_slot_inf(slot, "No ECC errors found")
+            else:
+                self.cli_log_slot_err(slot, "ECC errors found")
 
         if errors_found:
             return False, err_msg_list

@@ -3596,7 +3596,7 @@ class nic_ctrl():
             external_loopback = "1"
         else:
             external_loopback = "0"
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", external_loopback))
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
