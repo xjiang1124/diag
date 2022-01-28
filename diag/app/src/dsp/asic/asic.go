@@ -158,9 +158,14 @@ func AsicL1_TestHdl(argList []string) {
         //Override offload for now.  Taormina needs offload set
         //offload=1
         //Run on SLOT=1 (elba0)
-        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+        go func() {
+            err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+        }()
+
         //Run on SLOT+1 (elba1)
-        err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot) + 1), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+        go func() {
+            err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot) + 1), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+        }()
     } else {
         err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)), strconv.Itoa(int(simplified)))
     }
