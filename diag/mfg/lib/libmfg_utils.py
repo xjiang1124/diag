@@ -866,10 +866,13 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
         mtp_mgmt_ctrl.mtp_nic_console_unlock()
 
         mtp_mgmt_ctrl.mtp_single_j2c_lock()
-        mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot)
+        mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot) # needed separately in case j2c is unavailable
         mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
+        if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
+            mtp_mgmt_ctrl.mtp_nic_l1_health_check(slot) # for a CONSOLE_BOOT failure ONLY: do a mini L1
         mtp_mgmt_ctrl.mtp_single_j2c_unlock()
     mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
+
     # in case nic hung up the bus:
     mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
     mtp_mgmt_ctrl.mtp_reset_hub(slot)

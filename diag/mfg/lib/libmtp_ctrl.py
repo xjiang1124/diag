@@ -5622,12 +5622,13 @@ class mtp_ctrl():
             errors_found = False
             for reg, val in ecc_regs:
                 if int(val.strip(),16) != 0:
-                    self.cli_log_slot_err(slot, "ECC errors found")
                     self.cli_log_slot_err(slot, "Reg 0x{:s}; value: 0x{:s}".format(reg,val))
                     errors_found = True
 
             if not errors_found:
                 self.cli_log_slot_inf(slot, "No ECC errors found")
+            else:
+                self.cli_log_slot_err(slot, "ECC errors found")
 
         return True
 
@@ -5901,7 +5902,7 @@ class mtp_ctrl():
         slot_bufs = cmd_buf.split("=== Slot ")
         for slot_buf in slot_bufs[1:]: #skip first element
             slot = int(slot_buf[0:2])-1
-            ecc_regs = re.findall(r"Reg 0x(.*): 0x(.*)", slot_buf)
+            ecc_regs = re.findall(r": Reg 0x(.*): 0x(.*)", slot_buf)
             if ecc_regs:
                 errors_found = False
                 for reg, val in ecc_regs:
@@ -5953,5 +5954,17 @@ class mtp_ctrl():
                     return False
 
         return True
+
+    def mtp_nic_failed_boot(self, slot):
+        return self._nic_ctrl_list[slot].nic_failed_boot()
+
+    def mtp_set_nic_failed_boot(self, slot):
+        return self._nic_ctrl_list[slot].set_nic_failed_boot()
+
+    def mtp_nic_l1_health_check(self, slot):
+        self.cli_log_slot_inf(slot, "Running L1 health check")
+        sn = self.mtp_get_nic_sn(slot)
+        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1))
+        ## check for 3 tests with "PASS" result in elb_l1_screen*.log
 
 

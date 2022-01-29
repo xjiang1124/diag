@@ -534,6 +534,8 @@ def main():
                     pass_nic_list.remove(slot)
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 if test == "CONSOLE_BOOT":
+                    # rough way to track failure
+                    mtp_mgmt_ctrl.mtp_set_nic_failed_boot(slot)
                     # since post_fail won't be triggered for this, do it ourselves
                     libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
                 break

@@ -86,6 +86,7 @@ class nic_ctrl():
         self._asic_type = None
 
         self._refresh_required = True
+        self._failed_console_boot = False
 
     def nic_handle_init(self, handle, prompt):
         self._nic_handle = handle
@@ -4256,5 +4257,13 @@ class nic_ctrl():
 
         self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
-        return True    
+        return True
+
+    def nic_failed_boot(self):
+        ## replace this with a general test history lookup
+        return self._failed_console_boot
+
+    def set_nic_failed_boot(self):
+        self._failed_console_boot = True
+
 

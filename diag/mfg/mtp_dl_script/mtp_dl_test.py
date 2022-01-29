@@ -316,6 +316,9 @@ def main():
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
+                    if test == "CONSOLE_BOOT":
+                        # rough way to track failure
+                        mtp_mgmt_ctrl.mtp_set_nic_failed_boot(slot)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     break
                 else:

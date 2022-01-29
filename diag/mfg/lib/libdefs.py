@@ -544,6 +544,8 @@ class MFG_DIAG_CMDS:
     NIC_SW_MODE_SWITCH_FMT = "device_conf_gen.sh switch"
     NIC_SW_DEVICE_CHK_FMT = "pdsctl show device"
 
+    NIC_L1_HEALTH_CHECK = "tclsh /home/diag/diag/scripts/asic/l1_test.tcl {:s} {:d} hod 1 normal 0 1 0 1"
+
     NIC_MVL_ACC_FMT = "{:s}mvl_acc.sh"
     NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh 0"
     NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
