@@ -43,6 +43,7 @@ def get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst):
     bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
     mtp_mgmt_ctrl.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
 
+    slot_bus_list = []
     if len(bus_list_match):
         bus_list = list()
         for bus_idx, bus in enumerate(bus_list_match):
@@ -343,7 +344,11 @@ def check_rot(mtp_mgmt_ctrl, card_type, nic_list):
     if card_type == "ORTANO":
         serial_ports = load_mtp_usb_serial_port(mtp_mgmt_ctrl)
     else:
-        return
+        return [], nic_list
+
+    if len(serial_ports) == 0:
+        mtp_mgmt_ctrl.cli_log_err("No NICs connected to ROT - maybe USB hub not connected?")
+        return [], nic_list
 
     result = ""
     for port in serial_ports:
@@ -351,6 +356,9 @@ def check_rot(mtp_mgmt_ctrl, card_type, nic_list):
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
         result += mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        if "FAIL" in result:
+            mtp_mgmt_ctrl.cli_log_err("NIC at serial port {:s} failed".format(port), level=0)
+            mtp_mgmt_ctrl.cli_log_err(result)
     pass_reg_exp_rot = re.compile("ROT test PASSED ([A-Za-z0-9]*)")
     fail_reg_exp_rot = re.compile("ROT test FAILED ([A-Za-z0-9]*)")
     pass_match_rot = pass_reg_exp_rot.findall(result)
