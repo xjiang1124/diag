@@ -4080,26 +4080,28 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
 
-        # nic_cmd_list = list()
-        # nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
-        # nic_cmd_list.append("fwenv -d ddr_freq")
-        # nic_cmd_list.append("fwenv -d ddr_vdd_margin")
-        # nic_cmd_list.append("fwenv -n gold -d ddr_use_hardcoded_training")
-        # nic_cmd_list.append("fwenv -n gold -d ddr_freq")
-        # nic_cmd_list.append("fwenv -n gold -d ddr_vdd_margin")
+        nic_cmd_list = list()
+        nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
+        nic_cmd_list.append("fwenv -d ddr_freq")
+        nic_cmd_list.append("fwenv -d ddr_vdd_margin")
+        nic_cmd_list.append("fwenv -d ddr_periodic_trg_en")
+        nic_cmd_list.append("fwenv -d ddr_ecc_writeback")
+        nic_cmd_list.append("fwenv -n gold -d ddr_use_hardcoded_training")
+        nic_cmd_list.append("fwenv -n gold -d ddr_freq")
+        nic_cmd_list.append("fwenv -n gold -d ddr_vdd_margin")
 
-        # if not self.nic_exec_cmds(nic_cmd_list):
-        #     return False
+        if not self.nic_exec_cmds(nic_cmd_list):
+            return False
 
-        # nic_cmd = "fwenv"
-        # cmd_buf = self.nic_get_info(nic_cmd)
-        # if not cmd_buf:
-        #     self.nic_set_err_msg("Buffer empty")
-        #     return False
+        nic_cmd = "fwenv"
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
 
-        # if "ddr_freq" in cmd_buf or "ddr_use_hardcoded_training" in cmd_buf:
-        #     self.nic_set_err_msg("Unable to clear DDR fwenv setting")
-        #     return False
+        if "ddr_freq" in cmd_buf or "ddr_use_hardcoded_training" in cmd_buf:
+            self.nic_set_err_msg("Unable to clear DDR fwenv setting")
+            return False
     
         return True
 
@@ -4128,16 +4130,15 @@ class nic_ctrl():
             self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format("0x10", cmd_buf))
             return False
 
-        # nic_cmd = "fwenv"
-        # cmd_buf = self.nic_get_info(nic_cmd)
-        # if not cmd_buf:
-        #     self.nic_set_err_msg("Buffer empty")
-        #     return False
+        nic_cmd = "fwenv"
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
 
-        # if "ddr_freq" in cmd_buf or "ddr_use_hardcoded_training" in cmd_buf or "ddr_vdd_margin" in cmd_buf:
-        #     self.nic_set_err_msg("DDR fwenv setting not cleared")
-        #     return False
-
+        if any(x in cmd_buf for x in ["ddr_freq", "ddr_use_hardcoded_training", "ddr_vdd_margin", "ddr_ecc_writeback", "ddr_periodic_trg_en"]):
+            self.nic_set_err_msg("DDR fwenv setting not cleared")
+            return False
         return True
 
     def nic_console_vdd_ddr_fix(self):
@@ -4159,21 +4160,23 @@ class nic_ctrl():
                 return False
 
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        # nic_cmd_list = list()
-        # nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
-        # nic_cmd_list.append("fwenv -d ddr_freq")
-        # nic_cmd_list.append("fwenv -d ddr_vdd_margin")
-        # nic_cmd_list.append("fwenv -n gold -d ddr_use_hardcoded_training")
-        # nic_cmd_list.append("fwenv -n gold -d ddr_freq")
-        # nic_cmd_list.append("fwenv -n gold -d ddr_vdd_margin")
-        # nic_cmd_list.append("fwenv")
-        # for nic_cmd in nic_cmd_list:
-        #     self._nic_handle.sendline(nic_cmd)
-        #     idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
-        #     if idx < 0:
-        #         self.nic_set_cmd_buf(self._nic_handle.before)
-        #         self.nic_console_detach()
-        #         return False
+        nic_cmd_list = list()
+        nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
+        nic_cmd_list.append("fwenv -d ddr_freq")
+        nic_cmd_list.append("fwenv -d ddr_vdd_margin")
+        nic_cmd_list.append("fwenv -d ddr_periodic_trg_en")
+        nic_cmd_list.append("fwenv -d ddr_ecc_writeback")
+        nic_cmd_list.append("fwenv -n gold -d ddr_use_hardcoded_training")
+        nic_cmd_list.append("fwenv -n gold -d ddr_freq")
+        nic_cmd_list.append("fwenv -n gold -d ddr_vdd_margin")
+        nic_cmd_list.append("fwenv")
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
     
         self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
@@ -4232,26 +4235,26 @@ class nic_ctrl():
 
 
 
-        # ### check fwenvs cleared ###
-        # nic_cmd_list = list()
-        # nic_cmd_list.append("fwenv")
-        # for nic_cmd in nic_cmd_list:
-        #     self._nic_handle.sendline(nic_cmd)
-        #     idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
-        #     if idx < 0:
-        #         self.nic_set_cmd_buf(self._nic_handle.before)
-        #         self.nic_console_detach()
-        #         return False
-        # cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        # if not cmd_buf:
-        #     self.nic_set_err_msg("Buffer empty")
-        #     self.nic_console_detach()
-        #     return False
-        # if "ddr_freq" in cmd_buf or "ddr_use_hardcoded_training" in cmd_buf or "ddr_vdd_margin" in cmd_buf:
-        #     self.nic_console_detach()
-        #     self.nic_set_cmd_buf(cmd_buf)
-        #     self.nic_set_err_msg("DDR fwenv setting not cleared")
-        #     return False
+        ### check fwenvs cleared ###
+        nic_cmd_list = list()
+        nic_cmd_list.append("fwenv")
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        if any(x in cmd_buf for x in ["ddr_freq", "ddr_use_hardcoded_training", "ddr_vdd_margin", "ddr_ecc_writeback", "ddr_periodic_trg_en"]):
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("DDR fwenv setting not cleared")
+            return False
 
 
 
