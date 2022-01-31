@@ -14,9 +14,14 @@ set use_zmq  [lindex $argv 5]
 set offload  [lindex $argv 6]
 set esecEn   [lindex $argv 7]
 set simplified [lindex $argv 8]
+set logEn    [lindex $argv 9]
 set port 10
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified"
+if {$logEn == ""} {
+    set logEn 1
+}
+
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn"
 set err_cnt 0
 
 set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
@@ -68,7 +73,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
             set ddr_freq 2400
         }
 
-        set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn 1 $simplified"
+        set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn $logEn $simplified"
         source .tclrc.diag.elb.new
     }
     if {$MTP_TYPE == "MTP_CAPRI"} {
@@ -93,13 +98,13 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
         if { $ELBA0_ID == "" } {
         } else {
             set port $ELBA0_ID
-            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
+            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn $logEn" 
         }
     } else {
         if { $ELBA1_ID == "" } {
         } else {
             set port $ELBA1_ID
-            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn" 
+            set l1_cmd "elb_l1_screen_diag $sn $port 10 $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn $logEn" 
         }
     }
     source .tclrc.diag.elb.new

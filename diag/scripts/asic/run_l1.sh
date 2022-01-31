@@ -1,35 +1,82 @@
-# !/bin/bash
+#!/bin/bash
 
-#set -e
-#declare -a slot_list=("1" "2" "3" "8" "9")
-#declare -a card_no_list=("OT31" "OT32" "OT33" "OT38" "OT39")
+# Default values
+INT_LPBK=0
+VMARG="normal"
+OFFLOAD=1
+ESEC_EN=1
+SIMPLIFY=0
 
-declare -a slot_list=("2" "4")
-declare -a sn_list=("USFLUPK19G0034" "USFLUPK19G0022")
-
-# 0: external loopback; 1: internal loopback
-int_lpbk=1
-
-turn_on_slot.sh off all
-
-for slot_idx in "${!slot_list[@]}"
+POSITIONAL=()
+while [[ $# -gt 0 ]]
 do
-    SLOT=${slot_list[$slot_idx]}
-    SN=${sn_list[$slot_idx]}
+key="$1"
+case $key in
+    #-------------
+    -sn|--sn)
+    SN=${2^^}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -slot|--slot)
+    SLOT=${2^^}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -m|--mode)
+    MODE=${2,,}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -i|--int_lpbk)
+    INT_LPBK="${2}"
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -v|--vmarg)
+    VMARG=${2,,:-normal}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -o|--offload)
+    OFFLOAD=${2}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -e|--esec_en)
+    ESEC_EN=${2}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -s|--simplify)
+    SIMPLIFY=${2}
+    shift # past argument
+    shift # past value
+    ;;
 
-    mode="nod_550"
-    int_lpbk=0
-    offload=1
-    esecEn=1
-
-    turn_on_slot.sh on $SLOT
-
-    echo "=== Slot $SLOT ==="
-    #l1_test.sh $CARD_NO $SLOT 0 normal 0 0 1
-    #tclsh ./l1_test.tcl $CARD_NO $SLOT $int_lpbk normal 0 0 1
-    stdbuf_tclsh.sh /home/diag/diag/scripts/asic/l1_test.tcl $SN $SLOT $mode $int_lpbk normal 0 $offload $esecEn
-    inventory -sts -slot $SLOT
-
-    turn_on_slot.sh off $SLOT
+    #-------------
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
 done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+echo "sn: $SN; slot: $SLOT; MODE: $MODE; INT_LPBK: $INT_LPBK; VMARG: $VMARG; OFFLOAD: $OFFLOAD; ESEC_EN: $ESEC_EN; SIMPLIfY: $SIMPLIFY"
+
+
+time_stamp=$(date "+%m%d%y_%H%M%S")
+
+fn="l1_screen_board_${SN}_${time_stamp}.log"
+echo $fn
+
+script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY 0"
 
