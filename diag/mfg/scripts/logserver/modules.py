@@ -290,8 +290,45 @@ class modules(object):
 	    return None
 
 
-	def getallfilebyfolder(self,rootdir,keyword=None,level=None):
+	def movereporttohistorydir(self,reportpath,historyreportpath):
+	    filelisttowork = self.getallfilebyfolder(reportpath,keyword=None,level=1)
+	    foldlisttowork = self.getallfolder(reportpath,level=2)
 
+	    #print(json.dumps(filelisttowork, indent = 4))
+	    #print(json.dumps(foldlisttowork, indent = 4))
+
+	    workingfileandfoldermovinglist = list()
+	    for eachfolder in foldlisttowork:
+	        if eachfolder != reportpath: 
+	            if eachfolder != historyreportpath:
+	                workingfileandfoldermovinglist.append(eachfolder)
+
+	    for eachfile in filelisttowork:
+	        workingfileandfoldermovinglist.append(eachfile)
+	    #print(json.dumps(workingfileandfoldermovinglist, indent = 4))
+	    try:
+	        for eachworkitem in workingfileandfoldermovinglist:
+	            if os.path.isdir(eachworkitem):
+	                smallitemslist = eachworkitem.split('/')
+	                #print(smallitemslist)
+	                movetopath = "{}/{}".format(historyreportpath,smallitemslist[-1])
+	                #print(movetopath)
+	                dest = shutil.move(eachworkitem, movetopath, copy_function = shutil.copytree)
+	                #print(dest)
+	            else:
+	                smallitemslist = eachworkitem.split('/')
+	                #print(smallitemslist)
+	                movetopath = "{}/{}".format(historyreportpath,smallitemslist[-1])
+	                #print(movetopath)
+	                dest = shutil.move(eachworkitem, movetopath)
+	                #print(dest)    
+	    except:
+	        print("Something else went wrong")        
+	    #sys.exit()
+	    return None
+
+	def getallfilebyfolder(self,rootdir,keyword=None,level=None):
+	    start=datetime.now()
 	    listofdirs = self.getallfolder(rootdir,keyword=keyword,level=level)
 
 	    listoffiles = list()
@@ -310,29 +347,31 @@ class modules(object):
 	    listoffiles.sort()
 
 	    #print(json.dumps(listoffiles, indent = 4))
-
+	    difftime = datetime.now()-start
+	    #self.debug_print("DIR: {} have {} files and running {} seconds".format(rootdir,len(listoffiles),difftime.total_seconds()))
 	    return listoffiles
 
 	def getallfolder(self,rootdir,keyword=None,level=None):
+		start=datetime.now()
 
-	    listofdirs = list()
+		listofdirs = list()
 
-	    listofdirs.append(rootdir)
+		listofdirs.append(rootdir)
 
-	    stillhavedir = True
+		stillhavedir = True
 
-	    count = 1
-	    #print(level)
+		count = 1
+		#print(level)
 
-	    if not level:
-	        for checkdir in listofdirs:
-	            somelists = glob.glob(checkdir + '/*')
-	            for something in somelists:
-	                if os.path.isdir(something):
-	                    if not something in listofdirs:
-	                        stillhavedir = True
-	                        listofdirs.append(something)
-	    else:
+		if not level:
+		    for checkdir in listofdirs:
+		        somelists = glob.glob(checkdir + '/*')
+		        for something in somelists:
+		            if os.path.isdir(something):
+		                if not something in listofdirs:
+		                    stillhavedir = True
+		                    listofdirs.append(something)
+		else:
 		    while stillhavedir:
 		        
 		        if level:
@@ -358,10 +397,12 @@ class modules(object):
 		        #print("COUNT: {} TOTAL listofdirs: {} STILLHAVE: {}".format(count,len(listofdirs), stillhavedir))
 		        count += 1
 
-	    #print("LEVEL: {}".format(level))
-	    self.print_anyinformation(listofdirs)
+		#print("LEVEL: {}".format(level))
+		#self.print_anyinformation(listofdirs)
+		difftime = datetime.now()-start
+		self.debug_print("DIR: {} have {} folder and running {} seconds".format(rootdir,len(listofdirs),difftime.total_seconds()))
 
-	    return listofdirs
+		return listofdirs
 
 	def getallfileinfolderbyoswalk(self,rootdir,keyword=None,level=None):
 	    listOfFiles = list()
@@ -415,8 +456,56 @@ class modules(object):
 	            if fillcolor:
 	                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFCCCB', end_color='FFCCCB', fill_type = 'solid')   
 
+	def highlightinlightgreenrow(self,ws,keyword):
+	    from openpyxl.styles import Color, PatternFill, Font, Border
+	    maxRow = ws.max_row
+	    maxCol = ws.max_column
+	    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+	    for rowNum in range(1, maxRow + 1):
+	        fillcolor = 0
+	        for colNum in range(1, maxCol + 1):
+	            #print(str(rowNum) + ' ' + str(colNum) + ' ' + str(ws.cell(row=rowNum, column=colNum).value))
+	            if keyword in str(ws.cell(row=rowNum, column=colNum).value):
+	                fillcolor = 1
+	            if fillcolor:
+	                ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66FF00', end_color='66FF00', fill_type = 'solid')   
+
 	def freezePosition(self,ws,keyword):
 	    ws.freeze_panes = keyword
+
+	def converttoPERCENTAGEnumberbyFailurerange(self,ws):
+	    from openpyxl.styles import Color, PatternFill, Font, Border
+	    maxRow = ws.max_row
+	    maxCol = ws.max_column
+	    #print('highlightinyellow: ' + keyword + ' ' + str(maxRow) + ' ' + str(maxCol))
+	    for rowNum in range(1, maxRow + 1):
+	        for colNum in range(1, maxCol + 1):
+	            checkvalue = str(ws.cell(row=rowNum, column=colNum).value)
+	            if '%' in checkvalue:
+	                checkvalue = float(checkvalue[:-1])/100
+	                ws.cell(row=rowNum, column=colNum).value = checkvalue
+	                ws.cell(row=rowNum, column=colNum).number_format = '0.00%'
+	                if checkvalue < 0.005:
+	                    #Green
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type = 'solid')
+	                elif checkvalue < 0.01:
+	                    #Sap Green
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='66FF00', end_color='66FF00', fill_type = 'solid')
+	                elif checkvalue < 0.02:
+	                    #Antique Bronze
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='BBFF00', end_color='BBFF00', fill_type = 'solid')
+	                elif checkvalue < 0.03:
+	                    #Chestnut
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type = 'solid')
+	                elif checkvalue < 0.04:
+	                    #Sweet Brown
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FFAA00', end_color='FFAA00', fill_type = 'solid')
+	                elif checkvalue < 0.05:
+	                    #Cardinal
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF5500', end_color='FF5500', fill_type = 'solid')
+	                else:
+	                    #Red
+	                    ws.cell(row=rowNum, column=colNum).fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type = 'solid')
 
 	def converttoPERCENTAGEnumber(self,ws):
 	    from openpyxl.styles import Color, PatternFill, Font, Border
@@ -494,6 +583,16 @@ class modules(object):
 	def calculePass_rate(self,totalnumber,passnumber):
 
 	    calcule_yeild = 1
+	    if totalnumber:
+	        calcule_yeild = passnumber / totalnumber
+
+	    yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
+
+	    return yeilddisplay
+
+	def calculeFail_rate(self,totalnumber,passnumber):
+
+	    calcule_yeild = 0
 	    if totalnumber:
 	        calcule_yeild = passnumber / totalnumber
 

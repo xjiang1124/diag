@@ -69,8 +69,6 @@ do
         runReportModule $name $_mydir
 done
 
-
-
 cd $_mydir
 python3 $_mydir/all_mtp_report.py
 

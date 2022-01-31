@@ -1050,13 +1050,21 @@ def CreateNeedDict(DATA,teststep):
 
 def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
 
+    checkstarttestdata = None
+    workingonSNlist = list()
+    if "snlist" in pr['ARGV']:
+        if pr['ARGV']["snlist"]:
+            if "SNLIST" in inputconfig:
+                workingonSNlist = pr['modules'].get_snlist_from_xlsx(inputconfig["SNLIST"])
+            if "STARTDATE" in inputconfig:
+                checkstarttestdata = inputconfig["STARTDATE"]
     takecareteststepDICT(inputconfig,DATA)
     #print(json.dumps(DATA, indent = 4))
 
     read_dir_path = "{}/{}".format(inputconfig['DIR']['testlogpath'],testfolder)
     print("FOLDER: {}".format(read_dir_path))
 
-    allfolder = getallfolder(read_dir_path)
+    allfolder = pr['modules'].getallfolder(read_dir_path)
     #print(json.dumps(allfolder, indent = 4))
     
     teststeplist = list()
@@ -1072,6 +1080,9 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
         #print(len(read_dir_path))
         sn = os.path.basename(eachfolder)
         
+        if len(workingonSNlist):
+            if sn not in workingonSNlist:
+                continue
         
         if 'unknown' in sn.lower():
             continue
@@ -1111,6 +1122,9 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                         teststep = inputconfig['TESTSUB'][teststep]
                 TESTCHASSIS = filearray[1]
                 TESTDATE = filearray[2]
+                if checkstarttestdata:
+                    if checkstarttestdata > TESTDATE:
+                        continue
                 if not teststep in teststeplist:
                     teststeplist.append(teststep)
                     CreateNeedDict(DATA,teststep)
