@@ -3351,7 +3351,7 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
 
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in ELBA_NIC_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST and "L1" not in test:
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
             ret, _ = self.mtp_nic_disp_ecc(slot)
