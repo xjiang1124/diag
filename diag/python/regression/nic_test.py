@@ -587,7 +587,9 @@ class nic_test:
         else:
             cmd = "/data/nic_util/asicutil -snake_chk"
 
-        session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_elba.log")
+        if test_type == "snake":
+            session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_elba.log")
+
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
         self.nic_con.uart_session_stop(session)
 
