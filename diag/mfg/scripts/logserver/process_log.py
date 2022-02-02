@@ -4834,7 +4834,9 @@ def generateexecltestbytesttime(workingonSNlist,DATA,teststep,wb,FULLDATA):
         for c in range(MaxTestTime):
             if len(SNdatabyTest[sn]['list']) > c:
                 checkdata = SNdatabyTest[sn]['data'][SNdatabyTest[sn]['list'][c]]
-                checkresult = checkdata['FINALRESULT']
+                checkresult = "NO DATA"
+                if 'FINALRESULT' in checkdata:
+                    checkresult = checkdata['FINALRESULT']
                 errorlist = list()
                 #print(json.dumps(checkdata,indent=4))
                 for eachstep in checkdata["TESTSTEPLIST"]:
