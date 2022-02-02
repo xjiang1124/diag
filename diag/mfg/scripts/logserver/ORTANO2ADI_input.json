@@ -1,26 +1,29 @@
 {
-	"NAME": "Ortano_V1_39",
+	"NAME": "ORTANO2ADI",
 	"TYPE": "NIC",
-	"SNLIST": "SNJAN2022.xlsx",
-	"STARTDATE": "2022-01-27",
+	"FLEXFLOW": "192.168.3.11",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_Ortano_V1_39_ORTANO2",
-		"TEMPDATABASE": "/samba/public/tmp_database/Ortano_V1_39",
-		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
-		"reportpath":"/samba/public/REPORT/Ortano_V1_39/",
-		"historypath":"/samba/public/HISTORY/Ortano_V1_39"
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2ADI_03",
+		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2ADI",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2ADI",
+		"reportpath":"/samba/public/REPORT/ORTANO2ADI/",
+		"historypath":"/samba/public/HISTORY/ORTANO2ADI"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/Ortano_V1_39_DB_TEST27.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2ADI_DB_TEST18.json",
+		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
+		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
 	},
 	"IMAGESUB" : {
 		"CPLD1 image" : "CPLD image1",
-		"CPLD2 image" : "CPLD image2"
+		"CPLD2 image" : "CPLD image2",
+		"Main image" : "MainFW image",
+		"Gold image" : "GoldFW image"
 	},
 	"MTP_STATUS" : [
 					"01",
@@ -45,8 +48,7 @@
 		"NICINFO"
 	],
 	"DIE_ID" : 1,
-	"SKIPPrefix" : "FLM",
-	"STARTCountSN" : "FPN21200001",
+	"KEEPLASTPASS" : 1,
 	"4CFLOW" : [
 				"4C-L (HV)",
 				"4C-L (LV)",

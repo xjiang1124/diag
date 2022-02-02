@@ -27,6 +27,7 @@ sleep 1
 [ "x$(cat /tmp/runReportlock.file)" == "x"$$ ] || exit
 
 configNames=(
+ORTANO2ADI_input.json
 ORTANO2_RESTORE_input.json
 TAA_NAPLES25SWM_input.json
 NAPLES100DELL_input.json

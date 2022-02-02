@@ -695,6 +695,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
 
         for eachteststep in DATA['SN']['TEST']:
             generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+            generateexecltestbytesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
             if "4C" in eachteststep:
                 generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
             else:
