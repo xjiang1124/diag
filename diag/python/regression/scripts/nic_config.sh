@@ -187,6 +187,10 @@ then
     /data/nic_util/xo3dcpld -w 0x12 $reg12 
 fi
 
+# WA for the logic SW added for NCSI where it doesn’t send unicast packets until BMC MAC is registered
+cd /nic/conf/
+find . -name "catalog*.json" | xargs sed -i 's/"num_local_passthru_channel": 1/"num_local_passthru_channel": 0/g'
+
 cd /data/nic_util/
 tar xf edma_test.tar.gz
 echo "EDMA setup done"
