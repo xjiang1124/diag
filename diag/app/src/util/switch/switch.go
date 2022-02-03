@@ -28,6 +28,7 @@ const errhelp = "\nswitch:\n" +
         "\n" +
         "switch cpu usbtest <file size in MB> <# of files to generate>\n" +
         "switch cpu memtest <# test threads> <percent of mem to test 1-100> <time>\n" +
+        "switch cpu pciscan -noelba\n" +
         "switch cpu ecc\n" +
         "\n" +
         "switch show power/temp/link\n" +
@@ -252,7 +253,7 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
             }
-            err1 := taormina.Taor_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
+            err1 := taormina.X86_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
             if err1 != errType.SUCCESS {
                 os.Exit(-1)
             } else { 
@@ -265,6 +266,22 @@ func main() {
                 os.Exit(-1)
             } else { 
                 fmt.Printf(" No Errors Detected\n")
+                os.Exit(0)
+            }
+        } else if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {  //pci scan
+            var skipelba uint32 
+            if contains(os.Args, "-noelba") {
+                skipelba = 1
+            }
+
+
+            err1 := taormina.Pci_scan(skipelba)
+
+            if err1 != errType.SUCCESS {
+                fmt.Printf(" PCI Scan Failed\n")
+                os.Exit(-1)
+            } else { 
+                fmt.Printf(" PCI Scan Passed\n")
                 os.Exit(0)
             }
         } else {

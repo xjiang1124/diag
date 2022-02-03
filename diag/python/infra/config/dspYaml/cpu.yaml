@@ -91,7 +91,7 @@ DSP:
                     ALL: 32
                 INFO: Total Memory
 
-    TEST#PCIE:
+    TEST#PCISCAN:
         INFO: Check PCI Devices and Link Speed
         PLATFORM:
             TOR: ALL
@@ -101,6 +101,10 @@ DSP:
                 VALUE: 
                     ALL: 30
                 INFO: Test timeout setting
+            skipelba:
+                VALUE:
+                    ALL: 0
+                INFO: Skip scanning Elbas PCI buses
 
     TEST#MEMORY:
         INFO: CPU Memory Test

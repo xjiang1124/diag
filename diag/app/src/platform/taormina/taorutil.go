@@ -719,7 +719,7 @@ func USBtest(FileSizeMB int, FileCopies int) (err int) {
 * 
 * 
 *********************************************************************************/ 
-func Taor_CPU_MemoryTest(threads uint32, percent_of_free_mem uint32, time uint32, calledFromCLI int) (err int) {
+func X86_CPU_MemoryTest(threads uint32, percent_of_free_mem uint32, time uint32, calledFromCLI int) (err int) {
     var cmdStr string
     var freemem, i uint32
     var percent float64 = (float64(percent_of_free_mem)/100)

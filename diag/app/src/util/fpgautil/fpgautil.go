@@ -627,6 +627,19 @@ func main() {
         if err != nil {
             fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
         }
+
+        if os.Args[5] == "b" || os.Args[5] == "b" {
+            fmt.Printf(" Attempting to wipe secure key from the eeprom\n")
+            wrData = append(wrData, 0xFF)
+            for i:=0x100;i<0x1000;i++ {
+                fmt.Printf(".")
+                rdData, err = taorfpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, 0 )
+                if err != nil {
+                    os.Exit(-1)
+                }
+            }
+            os.Exit(0)
+        }
         if os.Args[5] == "w" || os.Args[5] == "W" {
             for i=6; i<argc; i++ {
                 if os.Args[i] == "r" || os.Args[i] == "R" {

@@ -59,13 +59,17 @@ func CpuDramsizeHdl(argList []string) {
 func CpuPcieHdl(argList []string) {
     var err int = 0
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    skipelbaPtr := fs.Int("skipelba", 0, "Skip scanning Elbas PCI buses")
 
     errFs := fs.Parse(argList)
     if errFs != nil {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    dcli.Println("e", "CpuPcieHdl Test\n\n")
+    dcli.Println("i", "CpuPcieHdl Test\n\n")
+
+    skipelba := *skipelbaPtr
+    err = taormina.Pci_scan(uint32(skipelba))
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -94,7 +98,7 @@ func CpuMemoryHdl(argList []string) {
     dcli.Println("i", "TIME=", time)
     dcli.Println("i", "threads=", threads)
     dcli.Println("i", "percent=", percent)
-    err = taormina.Taor_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 0) 
+    err = taormina.X86_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 0) 
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -108,7 +112,7 @@ func main() {
 
     diagEngine.FuncMap["USB"] = CpuUsbHdl
     diagEngine.FuncMap["DRAMSIZE"] = CpuDramsizeHdl
-    diagEngine.FuncMap["PCIE"] = CpuPcieHdl
+    diagEngine.FuncMap["PCISCAN"] = CpuPcieHdl
     diagEngine.FuncMap["MEMORY"] = CpuMemoryHdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
