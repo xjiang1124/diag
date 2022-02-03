@@ -2078,6 +2078,10 @@ class mtp_ctrl():
 
 # 1. Routines that need console, can not be run in parallel
     def mtp_nic_boot_info_init(self, slot):
+        if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None:
+            # no need to do this
+            self.cli_log_slot_inf(slot, "NIC boot info already present")
+            return True
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init():
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
@@ -3317,7 +3321,7 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        self.mtp_mgmt_nic_diag_sys_clean(slot)
+        # self.mtp_mgmt_nic_diag_sys_clean()
 
         return True
 
@@ -3355,8 +3359,6 @@ class mtp_ctrl():
                 ret = False
             self.mtp_nic_console_unlock()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
-
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in ELBA_NIC_TYPE_LIST and "L1" not in test:
             self.mtp_single_j2c_lock()
@@ -3365,16 +3367,44 @@ class mtp_ctrl():
             self.mtp_nic_console_unlock()
             self.mtp_single_j2c_unlock()
 
+        mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean()
+
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
+
         return ret
 
-    def mtp_mgmt_nic_diag_sys_clean(self, slot):
-        self.cli_log_slot_inf_lock(slot, "NIC Diag Sys Clean")
-        if not self._nic_ctrl_list[slot].nic_diag_clean():
-            self.cli_log_slot_err_lock(slot, "NIC Diag Sys Clean failed")
-            self.mtp_dump_nic_err_msg(slot)
+    def mtp_mgmt_nic_diag_sys_clean(self):
+        cmd = "diag -csys"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
             return False
-
         return True
+        # self.mtp_nic_console_lock()
+        # self.mtp_single_j2c_lock()
+        # self.cli_log_inf("NIC Diag Sys Clean", level=0)
+
+        # cmd = MFG_DIAG_CMDS.NIC_SYS_CLEAN_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_MTP_DIAG_PATH)
+
+        # if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        #     ret = False
+
+        # cmd_buf = self._cmd_buf
+        # if ret and not cmd_buf:
+        #     self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+        #     ret = False
+
+        # if ret:
+        #     # wait for completion sig to avoid interfering with other tests
+        #     if self._asic_support != "capri":
+        #     # issue with capri diag image... 
+        #         if "sys_clean done" in cmd_buf:
+        #             ret = True
+        #         else:
+        #             ret = False
+            
+        # self.mtp_single_j2c_unlock()
+        # self.mtp_nic_console_unlock()
+        # return ret
 
     def mtp_mgmt_killall_tclsh_picocom(self):
         cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT

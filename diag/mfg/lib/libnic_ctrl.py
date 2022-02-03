@@ -751,7 +751,7 @@ class nic_ctrl():
         return True
 
     def nic_boot_info_init(self):
-        # get boot image info
+        # save boot image info into self._boot_image and self._kernel_timestamp
         loop = 0
         while loop < MTP_Const.NIC_CON_CMD_RETRY:
             if not self.nic_console_attach():
@@ -1536,6 +1536,9 @@ class nic_ctrl():
             self.nic_set_err_msg("Buffer empty")
             self.nic_console_detach()
             return False
+
+        self._boot_image = None
+        self._kernel_timestamp = None
 
         return True
 
