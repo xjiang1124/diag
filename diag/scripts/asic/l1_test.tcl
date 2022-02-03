@@ -108,6 +108,11 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
         }
     }
     source .tclrc.diag.elb.new
+    puts "Resetting Elba"
+    diag_open_j2c_if $port 10
+    elb_card_rst $port $slot hod 3200 3000 0 0 "127" 0 1 normal 0 0
+    diag_close_j2c_if $port $slot
+    
 } else {
    puts "[ERROR] l1_test.tcl INVALID PLATFORM/MTP TYPE\n"
    return -1
