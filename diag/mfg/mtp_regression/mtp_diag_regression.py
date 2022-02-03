@@ -2027,7 +2027,17 @@ def main():
                         if slot in pass_nic_list:
                             pass_nic_list.remove(slot)
 
-            # EDMA test section only
+            # EDMA test section
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, nic_util=False, dis_hal=True, stop_on_err=stop_on_err):
+                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                for nic_list in nic_test_full_list:
+                    for slot in nic_list:
+                        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                            fail_nic_list.append(slot)
+                            if stop_on_err:
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                                return
+
             for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                 if nic_type == NIC_Type.NAPLES100:
                     nic_para_test_list = naples100_para_test_list[:]

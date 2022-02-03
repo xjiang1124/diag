@@ -3367,7 +3367,7 @@ class mtp_ctrl():
             self.mtp_nic_console_unlock()
             self.mtp_single_j2c_unlock()
 
-        mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean()
+        self.mtp_mgmt_nic_diag_sys_clean()
 
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
 
