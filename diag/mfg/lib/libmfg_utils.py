@@ -763,6 +763,9 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
 
 
 def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, force_update=False):
+    mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(mtp_image), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(nic_image), level=0)
+
     if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
         mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
         return True

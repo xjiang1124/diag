@@ -254,6 +254,13 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
+        if self._asic_ver in MFG_IMAGE_FILES.MTP_AMD64_IMAGE:
+            # do some string kung fu to get release name
+            script_ver = MFG_IMAGE_FILES.MTP_AMD64_IMAGE.split(".tar")[0].split("image_amd64_{:s}".format(self._asic_ver+"_"))[1]
+        else:
+            script_ver = ""
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
+
         self.cli_log_inf("MTP System Info Dump End\n", level=0)
         return True
 
