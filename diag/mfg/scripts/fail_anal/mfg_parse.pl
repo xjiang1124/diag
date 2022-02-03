@@ -9,6 +9,7 @@ use File::Find;
 use Excel::Writer::XLSX;
 
 my $fa_opt = shift;
+my $result_file = shift;
 my $test_name_opt = shift;
 my $mfg_err_code_opt = shift;
 
@@ -21,7 +22,9 @@ if ($mfg_err_code_opt ne "") {
 my $file_logs_all = "testresult.txt";
 my $failure_logs = "logs_fail.txt";
 my $pass_logs = "logs_pass.txt";
-my $result_file = "parse_result.xlsx";
+if ($result_file eq "") {
+    my $result_file = "parse_result.xlsx";
+}
 my $log_path = cwd();
 
 my $curr_sn = "";
@@ -269,8 +272,8 @@ while(my $line = <TR2>)
         $worksheet->write($curr_row, $slot_col, $slot);
         %diag_fa_code = ();
         $all_test_msg = "";
-        find_failure_code($fulllogpath, $sn2, $toppath);
-        parse_fpga_and_ecc($slotlogfile, $sn2, $ts);
+        my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts);
+        parse_fpga_and_ecc($slotlogfile, $sn2, $ts, $l1_failed);
 
         my $diag_fa_code_str = "";
         foreach my $diag_fa_code (keys %diag_fa_code) {
@@ -294,11 +297,6 @@ sub pick_top_diag_fa {
         $top_diag_fa_code = "UNKNOWN";
         return;
     }
-    if (exists $diag_fa_code{"TEST_IGNORED"}) {
-        $top_diag_fa_code = "TEST_IGNORED";
-        delete $diag_fa_code{"TEST_IGNORED"};
-        return;
-    }
 
     if (exists $diag_fa_code{"NIC_POWER_FAILURE"}) {
         $top_diag_fa_code = "NIC_POWER_FAILURE";
@@ -309,6 +307,24 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"DDR_ECC_FAILURE"}) {
         $top_diag_fa_code = "DDR_ECC_FAILURE";
         delete $diag_fa_code{"DDR_ECC_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
+        $top_diag_fa_code = "RETEST_NEEDED";
+        delete $diag_fa_code{"RETEST_NEEDED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_OTHER"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
+        $top_diag_fa_code = "RETEST_NEEDED";
+        delete $diag_fa_code{"RETEST_NEEDED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"TEST_IGNORED"}) {
+        $top_diag_fa_code = "TEST_IGNORED";
+        delete $diag_fa_code{"TEST_IGNORED"};
         return;
     }
 
@@ -342,6 +358,35 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
+        $top_diag_fa_code = "EDMA_FAILURE";
+        delete $diag_fa_code{"EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
+        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            delete $diag_fa_code{"LV_EDMA_FAILURE"};
+            return;
+        }
+    }
+
+    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+        $top_diag_fa_code = "LV_EDMA_FAILURE";
+        delete $diag_fa_code{"LV_EDMA_FAILURE"};
+        return;
+    }
+
+    for (keys %diag_fa_code) {
+        if ($_ =~ "L1_TST_") {
+            $top_diag_fa_code = "$_";
+            delete $diag_fa_code{"$_"};
+            return;
+        }
+    }
+
     if (exists $diag_fa_code{"PCIE_PRBS_FAILURE"}) {
         $top_diag_fa_code = "PCIE_PRBS_FAILURE";
         delete $diag_fa_code{"PCIE_PRBS_FAILURE"};
@@ -354,9 +399,9 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"PCIe_LINKUP_FAILURE"}) {
-        $top_diag_fa_code = "PCIe_LINKUP_FAILURE";
-        delete $diag_fa_code{"PCIe_LINKUP_FAILURE"};
+    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
+        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
+        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
         return;
     }
 
@@ -390,15 +435,15 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"MX_LINKUP_FAIL"}) {
-        $top_diag_fa_code = "MX_LINKUP_FAIL";
-        delete $diag_fa_code{"MX_LINKUP_FAIL"};
+    if (exists $diag_fa_code{"SNAKE_MX_LINKUP"}) {
+        $top_diag_fa_code = "SNAKE_MX_LINKUP";
+        delete $diag_fa_code{"SNAKE_MX_LINKUP"};
         return;
     }
 
-    if (exists $diag_fa_code{"THROUGHPUT_LOW"}) {
-        $top_diag_fa_code = "THROUGHPUT_LOW";
-        delete $diag_fa_code{"THROUGHPUT_LOW"};
+    if (exists $diag_fa_code{"SNAKE_THROUGHPUT_LOW"}) {
+        $top_diag_fa_code = "SNAKE_THROUGHPUT_LOW";
+        delete $diag_fa_code{"SNAKE_THROUGHPUT_LOW"};
         return;
     }
 
@@ -465,7 +510,7 @@ sub parse_snake_log {
         if($err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"PCIe_LINKUP_FAILURE"} = 1;
+            $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc|_mc)(.*)interrupt/) {
@@ -477,13 +522,13 @@ sub parse_snake_log {
         if ($err_found == 0 && $line =~ m/ERROR :: elb_mx_sync_rst :(.*)sync failed/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"MX_LINKUP_FAIL"} = 1;
+            $diag_fa_code{"SNAKE_MX_LINKUP"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/At \w+ interface :: current BW : (\d+) is less than min expected BW/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"THROUGHPUT_LOW"} = 1;
+            $diag_fa_code{"SNAKE_THROUGHPUT_LOW"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb_top_dump_cntrs_compare: (.*)!=expected/) {
@@ -515,7 +560,7 @@ sub parse_snake_log {
 }
 
 sub parse_l1_log {
-    my ($logfile, $sn, $test_and_failure_code) = @_;
+    my ($logfile, $sn, $test_and_failure_code, $all_l1_fails) = @_;
     my $log_complete = 0;
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
@@ -528,8 +573,12 @@ sub parse_l1_log {
         {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            if ($line =~ m/#FAIL#                    elb_l1_ddr_bist/) {
-                $diag_fa_code{"L1_DDR_BIST"} = 1;
+            if ($line =~ m/#FAIL#\s+(\w+)\s+\d+:\d+/) {
+                if ($1 eq "elb_l1_ddr_bist") {
+                    $diag_fa_code{"L1_DDR_BIST"} = 1;
+                } else {
+                    $all_l1_fails .= "_".uc($1);
+                }
             }
         }
         if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/)
@@ -537,10 +586,10 @@ sub parse_l1_log {
             $log_complete = 1;
         }
     }
-    if ($test_err_msg ne "") {
-        $all_test_msg .= "############### $test_and_failure_code ###############\n"."log file: ".$logfile."\n\n";
+    #if ($test_err_msg ne "") {
+        $all_test_msg .= "############### $test_and_failure_code ###############\n"."L1 log file: ".$logfile."\n\n";
         $all_test_msg .= $test_err_msg;
-    }
+    #}
     if ($log_complete == 0) {
         $diag_fa_code{"L1_LOG_INCOMPLETE"} = 1;
     }
@@ -555,11 +604,11 @@ sub parse_nic_test_logs {
     my $testdone = qr/=== TEST DONE === testID: \d+ testName: $testname/;
     my $logend = "";
     if ($testname eq "ETH_PRBS") {
-        $logend = qr/MSG :: MX PRBS (PASSED|FAILED)/;
+        $logend = qr/:: MX PRBS (PASSED|FAILED)/;
     } elsif ($testname eq "PCIE_PRBS") {
-        $logend = qr/MSG :: PCIE PRBS (PASSED|FAILED)/;
+        $logend = qr/:: PCIE PRBS (PASSED|FAILED)/;
     } elsif ($testname eq "L1") {
-        $logend = qr/MSG :: ARM L1 TESTS (PASSED|FAILED)/;
+        $logend = qr/:: ARM L1 TESTS (PASSED|FAILED)/;
     }
     if (!open(TR3, '<', $txtfile)) {
         $diag_fa_code{"NIC_TXTFILE_NOT_EXIST"} = 1;
@@ -603,13 +652,21 @@ sub parse_nic_test_logs {
         my $prev_line = "";
         while(my $line = <TR3>)
         {
-            if($line =~ m/elb_aapl_prbs_check :: sbus_addr/) {
+            if($line =~ m/ERROR :: elb_aapl_prbs_check :: sbus_addr/) {
                 $test_err_msg .= $prev_line;
-            }
-            if($line =~ m/(#FAILED#|ERROR)/)
+                $test_err_msg .= $line;
+            } elsif($line =~ m/ERROR/)
             {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
+            }
+            if(($line =~ m/\s+(\w+)\s+#FAILED#/) && ($testname eq "L1"))
+            {
+                if ($debug_msgs) { print "line: $line"};
+                $test_err_msg .= $line;
+                my $arm_l1_failed_test = uc($1);
+                print "arm l1 failed: $arm_l1_failed_test\n";
+                $diag_fa_code{"ARM_L1_$arm_l1_failed_test"} = 1;
             }
             if($logend ne "" && $line =~ m/$logend/) {
                 $log_complete = 1;
@@ -621,14 +678,43 @@ sub parse_nic_test_logs {
             $diag_fa_code{"NIC_LOG_INCOMPLETE"} = 1;
         }
     }
-    if ($test_err_msg ne "") {
-        $all_test_msg .= "############### $test_and_failure_code ###############\n"."txt file: ".$log_path."/".$txtfile."\nlog file: ".$log_path."/".$logfile."\n\n";
+    #if ($test_err_msg ne "") {
+        $all_test_msg .= "############### $test_and_failure_code ###############\n"."txt file: ".$log_path."/".$txtfile."\n".$testname." log file: ".$log_path."/".$logfile."\n\n";
         $all_test_msg .= $test_err_msg;
+    #}
+}
+
+sub parse_eth_prbs_log {
+    my ($logfile, $sn, $test_and_failure_code) = @_;
+    my $test_err_msg = "";
+
+    if (!open(TR3, '<', $logfile)) {
+        $diag_fa_code{"ETH_PRBS_LOGFILE_NOT_EXIST"} = 1;
+    } else {
+	    my $log_complete = 0;
+        while(my $line = <TR3>)
+        {
+            if($line =~ m/ERROR/) {
+                if ($debug_msgs) { print "line: $line"};
+                $test_err_msg .= $line;
+            }
+            if($line =~ m/:: MX PRBS (PASSED|FAILED)/) {
+                $log_complete = 1;
+            }
+        }
+        close(TR3);
+	    if ($log_complete == 0) {
+            $diag_fa_code{"ETH_PRBS_LOG_INCOMPLETE"} = 1;
+        }
     }
+    #if ($test_err_msg ne "") {
+        $all_test_msg .= "############### $test_and_failure_code ###############\n"."eth_prbs log file: ".$log_path."/".$logfile."\n\n";
+        $all_test_msg .= $test_err_msg;
+    #}
 }
 
 sub find_failure_code {
-    my ($fulllogpath, $sn, $toppath) = @_;
+    my ($fulllogpath, $sn, $toppath, $stage, $ts) = @_;
     my $mtp;
     my $slot;
     my $testname;
@@ -638,13 +724,14 @@ sub find_failure_code {
     my $all_test_names = "";
     my $num_test_names = 0;
     my $all_failure_codes = "";
+    my $asic_l1_failed = 0;
     my @tests_and_failure_codes;
 
     my $logfile=$fulllogpath."/"."mtp_test.log";
 
     if (!open(TR3, '<', $logfile)) {
         print "Cannot open file $logfile\n";
-        return;
+        return 0;
     }
     while(my $line = <TR3>)
     {
@@ -661,6 +748,11 @@ sub find_failure_code {
 
                 printf "%-30s %-40s\n", "testname: ".$testname, "failurecode: ".$failurecode;
                 $all_test_names .= $testname."\n";
+                if ($testname =~ "LV_") {
+                    $failurecode = "LV_".$failurecode;
+                } elsif ($testname =~ "HV_") {
+                    $failurecode = "HV_".$failurecode;
+                }
                 $all_failure_codes .= $failurecode."\n";
                 push @tests_and_failure_codes, $testname." ".$failurecode;
                 $num_test_names++;
@@ -681,6 +773,7 @@ sub find_failure_code {
     }
 
     my $test_and_failure_code = "";
+    my $all_l1_fails = "L1_TST";
     foreach $test_and_failure_code (@tests_and_failure_codes) {
         print "test_and_failure_code: $test_and_failure_code\n";
         my $asic_log_dir = "";
@@ -688,60 +781,58 @@ sub find_failure_code {
         my $test_name = substr($test_and_failure_code, 0, index($test_and_failure_code, ' '));
         my $failure_code = substr($test_and_failure_code, index($test_and_failure_code, ' ') + 1);
 
-        if ($test_name eq "ASIC") {
-            $asic_log_dir = "/asic_logs/";
-        } elsif ($test_name eq "NIC_ASIC") {
-            $asic_txt_dir = "/nic_logs/";
-            $asic_log_dir = "/asic_logs/";
-        } elsif ($test_name eq "LV_ASIC") {
-            $asic_log_dir = "/lv_asic_logs/";
-        } elsif ($test_name eq "LV_NIC_ASIC") {
+        if ($test_name =~ "LV_") {
             $asic_txt_dir = "/lv_nic_logs/";
             $asic_log_dir = "/lv_asic_logs/";
-        } elsif ($test_name eq "HV_ASIC") {
-            $asic_log_dir = "/hv_asic_logs/";
-        } elsif ($test_name eq "HV_NIC_ASIC") {
+        } elsif ($test_name =~ "HV_") {
             $asic_txt_dir = "/hv_nic_logs/";
             $asic_log_dir = "/hv_asic_logs/";
+        } else {
+            $asic_txt_dir = "/nic_logs/";
+            $asic_log_dir = "/asic_logs/";
         }
-        if ($asic_log_dir ne "" && $failure_code eq "SNAKE_ELBA") {
-            my $snake_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_snake_elba.log";
+
+        if ($asic_log_dir ne "" && $failure_code =~ "SNAKE_ELBA") {
+            my $snake_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_snake_elba.log";
             print "#### snake_log_file: $snake_log_file\n";
             parse_snake_log($snake_log_file, $sn, $test_and_failure_code);
-        } elsif ($asic_log_dir ne "" && $failure_code eq "L1") {
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "L1") {
             if (index($test_name, "NIC") == -1) {
-                my $l1_path = $log_path."/".$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir;
+                $asic_l1_failed = 1;
+                my $l1_path = $log_path."/".$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir;
                 my @l1_log_files = glob("${l1_path}elb_l1_screen_board_${sn}_*");
                 if (@l1_log_files) {
                     my $l1_log_file= $l1_log_files[0];
                     print "#### l1_log_file: $l1_log_file\n";
-                    parse_l1_log($l1_log_file, $sn, $test_and_failure_code);
+                    parse_l1_log($l1_log_file, $sn, $test_and_failure_code, $all_l1_fails);
                 } else {
                     $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
                 }
             } else {
-                my $nic_l1_txt_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
-                my $nic_l1_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_elba_arm_l1_test.log";
+                my $nic_l1_txt_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+                my $nic_l1_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_arm_l1_test.log";
                 print "#### NIC_l1_txt_file: $nic_l1_txt_file\n";
                 print "#### NIC_l1_log_file: $nic_l1_log_file\n";
                 parse_nic_test_logs("L1", $nic_l1_txt_file, $nic_l1_log_file, $sn, $test_and_failure_code);
             }
-        } elsif ($asic_log_dir ne "" && $failure_code eq "PCIE_PRBS") {
-            my $pcie_prbs_txt_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
-            my $pcie_prbs_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_elba_PRBS_PCIE.log";
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "PCIE_PRBS") {
+            my $pcie_prbs_txt_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+            my $pcie_prbs_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_PRBS_PCIE.log";
             print "#### PCIE_PRBS_txt_file: $pcie_prbs_txt_file\n";
             print "#### PCIE_PRBS_log_file: $pcie_prbs_log_file\n";
             $diag_fa_code{"PCIE_PRBS_FAILURE"} = 1;
             parse_nic_test_logs("PCIE_PRBS", $pcie_prbs_txt_file, $pcie_prbs_log_file, $sn, $test_and_failure_code);
-        } elsif ($asic_log_dir ne "" && $failure_code eq "ETH_PRBS") {
-            my $eth_prbs_txt_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
-            my $eth_prbs_log_file=$toppath."/".$sn."/".$3."_".$mtp."_".$5.$asic_log_dir.$sn."_elba_PRBS_MX.log";
-            print "#### ETH_PRBS_txt_file: $eth_prbs_txt_file\n";
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "ETH_PRBS") {
+            #my $eth_prbs_txt_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+            my $eth_prbs_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_PRBS_MX.log";
+            #print "#### ETH_PRBS_txt_file: $eth_prbs_txt_file\n";
             print "#### ETH_PRBS_log_file: $eth_prbs_log_file\n";
             $diag_fa_code{"ETH_PRBS_FAILURE"} = 1;
-            parse_nic_test_logs("ETH_PRBS", $eth_prbs_txt_file, $eth_prbs_log_file, $sn, $test_and_failure_code);
+            parse_eth_prbs_log($eth_prbs_log_file, $sn, $test_and_failure_code);
+        } elsif ($failure_code =~ "EDMA") {
+            $diag_fa_code{"${failure_code}_FAILURE"} = 1;
         } else {
-            if ($failure_code eq "NIC_STATUS" || $failure_code eq "CONSOLE_BOOT" || $failure_code eq "NIC_MGMT_INIT" || $failure_code eq "NIC_CPLD" || $failure_code eq "NIC_DIAG_BOOT") {
+            if ($failure_code =~ "NIC_STATUS" || $failure_code =~ "CONSOLE_BOOT" || $failure_code =~ "NIC_MGMT_INIT" || $failure_code =~ "NIC_CPLD" || $failure_code =~ "NIC_DIAG_BOOT") {
                 parse_mtp_and_slot_log($fulllogpath, $slot, $test_and_failure_code);
             }
         }
@@ -749,6 +840,10 @@ sub find_failure_code {
             $all_test_msg = "log path: ".$fulllogpath."\n";
         }
     }
+    if ($all_l1_fails ne "L1_TST") {
+        $diag_fa_code{$all_l1_fails} = 1;
+    }
+    return $asic_l1_failed;
 }
 
 sub parse_mtp_and_slot_log {
@@ -795,12 +890,17 @@ sub parse_mtp_and_slot_log {
 }
 
 sub parse_fpga_and_ecc {
-    my ($logfile, $sn, $ts) = @_;
+    my ($logfile, $sn, $ts, $l1_failed) = @_;
     my $test_err_msg = "";
-    print "#### parse_fpga_and_ecc logfile: $logfile\n";
+    print "#### parse_fpga_and_ecc logfile: $logfile, l1_failed: $l1_failed\n";
 
     my $sts_dump_exist = 0;
-    my $ecc_dump_exist = 0;
+    my $old_ecc_dump_exist = 0;
+    my $new_ecc_dump_exist = 0;
+    my $corr_syn = 0;
+    my $multi_corr_syn = 0;
+    my $uncorr_syn = 0;
+    my $multi_uncorr_syn = 0;
     my $cpld_sts = "";
     my $num_cpld_sts_errors = 0;
     my $ecc_sts = "";
@@ -920,14 +1020,16 @@ sub parse_fpga_and_ecc {
             }
             if($line =~ m/(.*)(Addr: 0x50; Value:)\s(\w+)/) {
                 if ($smbus_err == 0 && $3 ne "0x80") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x50, expected: 0x80, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    if (hex($3) & 0x8) {
-                        $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"} = 1;
-                    } elsif (hex($3) & 0x1) {
-                        $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
-                    } else {
-                        $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
+                    if (!($l1_failed && ($3 eq "0x81"))) { #expected
+                        $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x50, expected: 0x80, actual: $3\n";
+                        $num_cpld_sts_errors++;
+                        if (hex($3) & 0x8) {
+                            $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"} = 1;
+                        } elsif (hex($3) & 0x1) {
+                            $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
+                        } else {
+                            $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
+                        }
                     }
                 }
                 $sts_dump_exist = 1;
@@ -936,7 +1038,7 @@ sub parse_fpga_and_ecc {
                 $test_err_msg .= $line;
             }
         }
-        if ($ecc_dump_exist == 0) {
+        if ($old_ecc_dump_exist == 0) {
             if($line =~ m/(.*)(Reg 0x305305e4; value:)\s(\w+)/) {
                 if ($3 ne "0x00000000") {
                     $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $3\n";
@@ -978,7 +1080,81 @@ sub parse_fpga_and_ecc {
                     $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $3\n";
                     $num_ecc_sts_errors++;
                 }
-                $ecc_dump_exist = 1;
+                $old_ecc_dump_exist = 1;
+            }
+        }
+        if ($new_ecc_dump_exist == 0) {
+            if($line !~ m/P000/ && $line =~ m/Reg 0x305305e4:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+            }
+            if($line !~ m/P000/ && $line =~ m/Reg 0x30530454:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+            }
+            if($line !~ m/P000/ && $line =~ m/Reg 0x30530458:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+            }
+            if($line !~ m/P000/ && $line =~ m/Reg 0x30530464:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+            }
+            if($line !~ m/P000/ && $line =~ m/Reg 0x30530468:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+            }
+            if($line !~ m/P000/ && $line =~ m/Reg 0x3053046c:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+            }
+            if($line !~ m/P000/ && $line =~ m/Reg 0x30530470:\s+(\w+)/) {
+                if ($1 ne "0x00000000") {
+                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $1\n";
+                    $num_ecc_sts_errors++;
+                }
+                $new_ecc_dump_exist = 1;
+            }
+        }
+
+        if ($corr_syn == 0) {
+            if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
+                $ecc_sts = $ecc_sts."$1\n";
+                $num_ecc_sts_errors++;
+                $corr_syn = 1;
+            }
+        }
+        if ($multi_corr_syn == 0) {
+            if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
+                $ecc_sts = $ecc_sts."$1\n";
+                $num_ecc_sts_errors++;
+                $multi_corr_syn = 1;
+            }
+        }
+        if ($uncorr_syn == 0) {
+            if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
+                $ecc_sts = $ecc_sts."$1\n";
+                $num_ecc_sts_errors++;
+                $uncorr_syn = 1;
+            }
+        }
+        if ($multi_uncorr_syn == 0) {
+            if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
+                $ecc_sts = $ecc_sts."$1\n";
+                $num_ecc_sts_errors++;
+                $multi_uncorr_syn = 1;
             }
         }
 
@@ -993,10 +1169,10 @@ sub parse_fpga_and_ecc {
     }
     close(TR3);
 
-    if ($ecc_dump_exist == 0) {
+    if (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0)) {
         print "ECC not dumped\n";
         $worksheet->write($curr_row, $ecc_sts_col, "ECC not dumped");
-        my $retest_ts = "2021-11-24_00-00-00";
+        my $retest_ts = "2021-11-23_00-00-00";
         my $unixts = convert_ts($ts);
         my $unixts_retest = convert_ts($retest_ts);
         if ($unixts < $unixts_retest) {
@@ -1004,21 +1180,13 @@ sub parse_fpga_and_ecc {
         }
         if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"} ||
             exists $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} ||
-            exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} ||
-            exists $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} ||
-            exists $diag_fa_code{"L1_LOG_INCOMPLETE"} ||
-            exists $diag_fa_code{"NIC_TXTFILE_NOT_EXIST"} ||
-            exists $diag_fa_code{"NIC_TXT_INCOMPLETE"} ||
-            exists $diag_fa_code{"NIC_LOGFILE_NOT_EXIST"} ||
-            exists $diag_fa_code{"NIC_LOG_INCOMPLETE"} ||
-            exists $diag_fa_code{"L1_LOGFILE_NOT_EXIST"}) {
+            exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
             $diag_fa_code{"RETEST_NEEDED"} = 1;
         }
     } elsif ($num_ecc_sts_errors == 0) {
         print "ECC status OK\n";
         $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");
     } else {
-        print "!!!!! Bad ECC\n";
         chomp($ecc_sts);
         $worksheet->write($curr_row, $ecc_sts_col, $ecc_sts);
         $diag_fa_code{"DDR_ECC_FAILURE"} = 1;
@@ -1032,7 +1200,6 @@ sub parse_fpga_and_ecc {
             print "CPLD registers status OK\n";
             $worksheet->write($curr_row, $cpld_sts_col, "CPLD registers status OK");
         } else {
-            print "!!!!! Bad CPLD status\n";
             chomp($cpld_sts);
             $worksheet->write($curr_row, $cpld_sts_col, $cpld_sts);
         }
