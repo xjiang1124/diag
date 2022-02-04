@@ -158,6 +158,8 @@ class MTP_Const:
     DIAG_PARA_TEST_TIMEOUT = 8*60
     # para/snake test, 30 min
     MTP_PARA_TEST_TIMEOUT = 30*60
+    # para/asic l1 test, 30 min
+    MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
 
     # more than 12 hours
     MFG_P2C_TEST_TIMEOUT = 48000
@@ -412,7 +414,7 @@ class MFG_DIAG_CMDS:
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
-
+    NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -601,6 +603,7 @@ class MFG_DIAG_SIG:
     NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"
+    NIC_PARA_ASIC_L1_OK_SIG = "L1 TEST PASSED"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

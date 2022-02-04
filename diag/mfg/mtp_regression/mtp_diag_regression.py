@@ -820,7 +820,13 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        if dsp == "ASIC" and test == "L1":
+            if not mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, vmarg):
+                ret = "FAIL"
+            else:
+                ret = "SUCCESS"
+        else:
+            ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
         # double check the L1 test even it pass

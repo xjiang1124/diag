@@ -1996,7 +1996,8 @@ class mtp_ctrl():
         err_msg_list = list()
         pass_count = 0
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
-        logfile_exp = r"(cap|elb)_l1_screen_board_{:s}.*log".format(sn)
+        #logfile_exp = r"(cap|elb)_l1_screen_board_{:s}.*log".format(sn)
+        logfile_exp = r"l1_screen_board_{:s}.*log".format(sn)
         for filename in os.listdir(path):
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
@@ -5177,6 +5178,34 @@ class mtp_ctrl():
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     self.mtp_dump_nic_err_msg(slot)
                     continue
+
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=None):
+        """
+        cd ~diag/scripts/asic/
+        ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
+        """
+        rs = False
+
+        vmarg_str = ""
+        if vmarg > 0:
+            vmarg_str = 'high'
+        elif vmarg < 0:
+            vmarg_str = 'low'
+        else:
+            vmarg_str = 'normal'
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        self.mtp_mgmt_exec_cmd_para(slot, cmd)
+
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg_str)
+        self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT)
+
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+
+        if MFG_DIAG_SIG.NIC_PARA_ASIC_L1_OK_SIG in cmd_buf:
+            rs = True
+
+        return rs
 
     def mtp_reset_hub(self, slot=None):
         """
