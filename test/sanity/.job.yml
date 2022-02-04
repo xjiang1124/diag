@@ -1,0 +1,8 @@
+---
+version: 2.0
+targets: 
+  build-c-amd64:
+    commands: [ "sh", "-c", "echo hello world" ]
+    owners: ["email:xin@pensando.io"]
+image:
+  bind_dir: "/psdiag"

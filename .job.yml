@@ -1,0 +1,13 @@
+---
+version: 2.0
+targets: 
+  build-amd64-elba:
+    commands: [ "sh", "-c", "cd build; make amd64_elba" ]
+    owners: ["email:xin@pensando.io"]
+  build-arm64-elba:
+    commands: [ "sh", "-c", "cd build; make arm64_elba" ]
+    owners: ["email:xin@pensando.io"]
+image:
+  bind_dir: "/psdiag"
+jobs:
+  test/sanity:
