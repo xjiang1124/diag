@@ -21,6 +21,7 @@ GO_TEST_DIR=						\
 	common/dmutex
 
 AMD64_SRC_DIR=			\
+	dsp/cpu 			\
 	dsp/i2cspi 			\
 	dsp/i2c 			\
 	dsp/sfp 			\
