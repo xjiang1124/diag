@@ -1821,7 +1821,14 @@ def main():
 
                 # copy logfiles out
                 if nic_list and not stop_on_err:
-                    mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=False, stop_on_err=stop_on_err)
+                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=False, stop_on_err=stop_on_err):
+                        for nic_list in nic_test_full_list:
+                            for slot in nic_list:
+                                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                    fail_nic_list.append(slot)
+                                    if stop_on_err:
+                                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                                        return
                     naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_err)
                     parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg)
 
