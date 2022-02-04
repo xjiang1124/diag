@@ -1,4 +1,4 @@
-from "registry.test.pensando.io:5000/pensando/nic:1.55"
+from "registry.test.pensando.io:5000/pensando/nic:1.56"
 
 workdir "/psdiag"
 
