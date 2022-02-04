@@ -14,7 +14,8 @@
 	"FILE": {
 		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json",
 		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
-		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
+		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json",
+		"softwarejsonfile" : "/samba/public/tmp_database/SW_DB_01.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"

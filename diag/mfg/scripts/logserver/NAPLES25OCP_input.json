@@ -14,7 +14,8 @@
 	"FILE": {
 		"datebasesjsonfile" : "/samba/public/tmp_database/NAPLES25OCP_DB1_TEST.json",
 		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
-		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json"
+		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json",
+		"softwarejsonfile" : "/samba/public/tmp_database/SW_DB_01.json"
 	},
 	"MTP_STATUS" : [
 					"01",

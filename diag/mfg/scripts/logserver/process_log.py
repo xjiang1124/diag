@@ -666,6 +666,23 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
 
                     print("SAVE {} File!".format(dest_softwarefilename))
                     wssw.save(filename = dest_softwarefilename)
+                    try:
+                        if "softwarejsonfile" in inputconfig["FILE"]:
+                            swdatabase = pr['modules'].readjsonfile(inputconfig["FILE"]["softwarejsonfile"])
+                            if not "status" in swdatabase:
+                                snmacdatabase["status"] = dict()
+                            if not "family" in snmacdatabase["status"]:
+                                snmacdatabase["status"]["family"] = list()
+                            if not "data" in swdatabase:
+                                snmacdatabase["data"] = dict()
+                            if not inputconfig["NAME"] in snmacdatabase["status"]["family"]:
+                                snmacdatabase["status"]["family"].append(inputconfig["NAME"])
+                            snmacdatabase["status"]["update"] = 1
+                            swdatabase["data"][inputconfig["NAME"]] = DATA['SN']['LAST']['SWI']
+                            pr['modules'].wirtejsonfile(inputconfig["FILE"]["softwarejsonfile"],snmacdatabase)
+                    except:
+                        print("softwarejsonfile issue!")
+
         #sys.exit()
         TempHVLVdata = dict()
 
