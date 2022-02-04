@@ -109,6 +109,17 @@ enable_nic_mtp_r3() {
     smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
 }
 
+reset_hub() {
+    echo "Reset hub"
+    cpldutil -cpld-wr -addr=0x2 -data=0xf
+    sleep 0.2
+    cpldutil -cpld-rd -addr=0x2
+    cpldutil -cpld-wr -addr=0x2 -data=0x0
+    sleep 0.2
+    cpldutil -cpld-rd -addr=0x2
+    echo "Reset hub done"
+}
+
 control_slot() {
     v12_addr="0x10"
     v3v3_addr="0x12"
@@ -194,6 +205,7 @@ control_all() {
 
         for i in {1..10}
         do
+            reset_hub
             turn_on_hub.sh $i
             power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
             enable_nic_mtp_r3 $i
@@ -314,6 +326,7 @@ else
 
     for slot in $slot_list
     do
+        reset_hub
         turn_on_hub.sh $slot
         power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
         enable_nic_mtp_r3 $slot
