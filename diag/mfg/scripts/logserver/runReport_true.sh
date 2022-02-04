@@ -11,16 +11,17 @@ exec 2>&1
 echo "Log Location should be: [ $SCRIPTLOG ]"
 
 # Exit if /tmp/lock.file exists
-[ -f /tmp/runReport_truelock.file ] && exit
+[ -f /tmp/runReportlock.file ] && exit
 
 # Create lock file, sleep 1 sec and verify lock
-echo $$ > /tmp/runReport_truelock.file
+echo $$ > /tmp/runReportlock.file
 sleep 1
-[ "x$(cat /tmp/runReport_truelock.file)" == "x"$$ ] || exit
+[ "x$(cat /tmp/runReportlock.file)" == "x"$$ ] || exit
 
 configNames=(
+ORTANO2ADI_input.json
+ORTANO2_RESTORE_input.json
 TAA_NAPLES25SWM_input.json
-ORTANO2_SNAKE_input.json
 NAPLES100DELL_input.json
 POMONTE_test_input.json
 ORTANO2_input.json
@@ -76,4 +77,4 @@ END=$(date +%s);
 echo $((END-START)) | awk '{print int($1/60)":"int($1%60)}'
 
 # Remove lock file
-rm /tmp/runReport_truelock.file
+rm /tmp/runReportlock.file

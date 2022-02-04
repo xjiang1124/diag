@@ -717,13 +717,15 @@ def mtp_common_setup2(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_
         mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
-
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     # PSU/FAN absent, powerdown MTP
     if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd):
         mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         #sys.exit()
         return False
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     #sys.exit()
     # init all the nic.
     # if not mtp_mgmt_ctrl.mtp_nic_init():
