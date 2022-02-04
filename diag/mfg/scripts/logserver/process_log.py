@@ -94,6 +94,7 @@ def main():
             #pass
             #workingoneachtest(pr,inputconfig,DATA,testfolder)
 
+    connectImageNameinOne(DATA,inputconfig)
     workingonLastdata(DATA,inputconfig)
     #sys.exit()
     DATA['SN']['LIST'].sort()
@@ -584,6 +585,7 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
         dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
 
     dest_chartfilename = dest_filename.replace('DATA','CHART')
+    
     print('OUTPUT FILE NAME: ' + dest_filename)
     print('OUTPUT CHART FILE NAME: ' + dest_chartfilename)
     
@@ -654,6 +656,16 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
                         pr['modules'].wirtejsonfile(inputconfig["FILE"]["snandmacjsonfile"],snmacdatabase)
                 except:
                     print("snandmacjsonfile issue!")
+
+        if not startdate:
+            if "SWI" in DATA['SN']['LAST']:
+                if len(DATA['SN']['LAST']['SWI']):
+                    dest_softwarefilename = dest_filename.replace('DATA','SW')
+                    wssw = Workbook()
+                    generateexeclswreport(DATA,wssw,DATA['SN']['LAST']['SWI'])
+
+                    print("SAVE {} File!".format(dest_softwarefilename))
+                    wssw.save(filename = dest_softwarefilename)
         #sys.exit()
         TempHVLVdata = dict()
 
@@ -760,8 +772,32 @@ def movereporttohistorydir(inputconfig):
     #sys.exit()
     return None
 
-def workingonLastdata(DATA,inputconfig):
+def connectImageNameinOne(DATA,inputconfig):
+    start=datetime.now()
+    for test in DATA['SN']['TEST']:
+        if not test in DATA['teststep']:
+            continue
+        for SN in DATA['teststep'][test]['SN']:
+            for chassis in DATA['teststep'][test]['SN'][SN]:
+                for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
+                    for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
+                        if "IMAGE" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
 
+                            #Gold image  Main image
+                            #GoldFW image    MainFW image
+                            if DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]:
+                                if "Gold image" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]:
+                                    #a_dict[new_key] = a_dict.pop(old_key)
+                                    DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]["GoldFW image"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"].pop("Gold image")
+                                if "Main image" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]:
+                                    #a_dict[new_key] = a_dict.pop(old_key)
+                                    DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]["MainFW image"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"].pop("Main image")
+    difftime = datetime.now()-start
+    print("connectImageNameinOne: RUNNING TIME: {} seconds".format(difftime))
+    return None
+
+def workingonLastdata(DATA,inputconfig):
+    start=datetime.now()
     DATA['SN']["KEEPLASTPASS"] = dict()
     DATA['SN']['LAST'] = dict()
 
@@ -873,6 +909,8 @@ def workingonLastdata(DATA,inputconfig):
     if "KEEPLASTPASS" in inputconfig:
         DATA['SN']['ORGLAST'] = DATA['SN']['LAST']
         DATA['SN']['LAST'] = DATA['SN']["KEEPLASTPASS"]
+    difftime = datetime.now()-start
+    print("workingonLastdata: RUNNING TIME: {} seconds".format(difftime))
 
     return None
 
@@ -6335,6 +6373,59 @@ def calculePass_rate(totalnumber,passnumber):
     yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
 
     return yeilddisplay
+
+def generateexeclswreport(DATA,wb,lastdata):
+    ws1 = wb.active
+    ws1.title = "SW_SUMMARY"
+
+    imagenamelist = list()
+    for SN in sorted(lastdata,reverse=True):
+        result = ''
+        if "result" in lastdata[SN]:
+            result = lastdata[SN]["result"]
+        if not "PASS" in result.upper():
+            continue
+        if "IMAGE" in lastdata[SN]:
+            for imagename in lastdata[SN]["IMAGE"]:
+                if not imagename in imagenamelist:
+                    imagenamelist.append(imagename)
+    wirtedata = list()
+    wirtedata.append('SN')
+    wirtedata.append('PN')
+    wirtedata.append('MAC')
+    for imagename in imagenamelist:
+        wirtedata.append(imagename)
+    ws1.append(wirtedata)
+
+    for SN in sorted(lastdata,reverse=True):
+        result = ''
+        if "result" in lastdata[SN]:
+            result = lastdata[SN]["result"]
+        if not "PASS" in result.upper():
+            continue
+        FRU = lastdata[SN]["NICINFO"]["FRU"]
+        #FRU = FRU.replace(' ','')
+        #print(FRU)
+        frulist = FRU.split(', ')
+        #print(frulist)
+        #sys.exit()
+        wirtedata = list()
+        wirtedata.append(SN)
+        wirtedata.append(frulist[2])
+        wirtedata.append(frulist[1])
+        if "IMAGE" in lastdata[SN]:
+            for imagename in imagenamelist:
+                if imagename in lastdata[SN]["IMAGE"]:
+                    wirtedata.append(lastdata[SN]["IMAGE"][imagename])
+                else:
+                    wirtedata.append("NO DATA")
+
+        ws1.append(wirtedata)
+
+    fixcolumnssize2(ws1)
+    freezePosition(ws1, "B2")
+
+    return True
 
 def generateexeclmacandsnreport(DATA,wb,snmaclist):
     ws1 = wb.active
