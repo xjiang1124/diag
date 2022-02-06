@@ -439,6 +439,8 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        self.nic_boot_info_reset()
+
         # sync
         self._nic_handle.sendline("sync")
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -467,6 +469,8 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        self.nic_boot_info_reset()
+
         # sync
         self._nic_handle.sendline("sync")
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -493,6 +497,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
+
+        self.nic_boot_info_reset()
 
         # sync
         self._nic_handle.sendline("sync")
@@ -521,6 +527,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
+
+        self.nic_boot_info_reset()
 
         # sync
         self._nic_handle.sendline("sync")
@@ -828,6 +836,10 @@ class nic_ctrl():
             return False
 
         return True
+
+    def nic_boot_info_reset(self):
+        self._boot_image = None
+        self._kernel_timestamp = None
 
 
     def nic_pcie_poll_enable(self, enable):
@@ -1539,8 +1551,7 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        self._boot_image = None
-        self._kernel_timestamp = None
+        self.nic_boot_info_reset()
 
         return True
 
@@ -1562,6 +1573,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        self.nic_boot_info_reset()
+
         return True
     def nic_program_gold_naples100(self, gold_img):
         #if not self.nic_copy_image(gold_img):
@@ -1575,6 +1588,8 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
+        self.nic_boot_info_reset()
 
         return True
 
@@ -1594,6 +1609,8 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
+        self.nic_boot_info_reset()
 
         return True
 
@@ -1697,6 +1714,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        self.nic_boot_info_reset()
+
         return True
       
     def nic_program_emmc_ibm(self, emmc_img):
@@ -1716,6 +1735,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        self.nic_boot_info_reset()
+
         return True
     def nic_program_emmc_naples100(self, emmc_img):
         if not self.nic_copy_image(emmc_img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
@@ -1731,6 +1752,8 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
+        self.nic_boot_info_reset()
 
         return True
 
