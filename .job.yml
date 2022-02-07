@@ -7,7 +7,10 @@ targets:
   build-arm64-elba:
     commands: [ "sh", "-c", "cd build; make arm64" ]
     owners: ["email:xin@pensando.io"]
+queue_name: asic
 image:
   bind_dir: "/psdiag"
+host_mounts:
+  "/hw": "/vol/hw"
 jobs:
   test/sanity:
