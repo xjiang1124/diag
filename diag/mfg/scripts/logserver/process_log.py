@@ -669,20 +669,21 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
                     try:
                         if "softwarejsonfile" in inputconfig["FILE"]:
                             swdatabase = pr['modules'].readjsonfile(inputconfig["FILE"]["softwarejsonfile"])
+                            
                             if not "status" in swdatabase:
-                                snmacdatabase["status"] = dict()
-                            if not "family" in snmacdatabase["status"]:
-                                snmacdatabase["status"]["family"] = list()
+                                swdatabase["status"] = dict()
+                            if not "family" in swdatabase["status"]:
+                                swdatabase["status"]["family"] = list()
                             if not "data" in swdatabase:
-                                snmacdatabase["data"] = dict()
-                            if not inputconfig["NAME"] in snmacdatabase["status"]["family"]:
-                                snmacdatabase["status"]["family"].append(inputconfig["NAME"])
-                            snmacdatabase["status"]["update"] = 1
+                                swdatabase["data"] = dict()
+                            if not inputconfig["NAME"] in swdatabase["status"]["family"]:
+                                swdatabase["status"]["family"].append(inputconfig["NAME"])
+                            swdatabase["status"]["update"] = 1
                             swdatabase["data"][inputconfig["NAME"]] = DATA['SN']['LAST']['SWI']
-                            pr['modules'].wirtejsonfile(inputconfig["FILE"]["softwarejsonfile"],snmacdatabase)
+                            pr['modules'].wirtejsonfile(inputconfig["FILE"]["softwarejsonfile"],swdatabase)
+                            sys.exit()
                     except:
                         print("softwarejsonfile issue!")
-
         #sys.exit()
         TempHVLVdata = dict()
 
@@ -6403,9 +6404,10 @@ def generateexeclswreport(DATA,wb,lastdata):
         if not "PASS" in result.upper():
             continue
         if "IMAGE" in lastdata[SN]:
-            for imagename in lastdata[SN]["IMAGE"]:
-                if not imagename in imagenamelist:
-                    imagenamelist.append(imagename)
+            if lastdata[SN]["IMAGE"]:
+                for imagename in lastdata[SN]["IMAGE"]:
+                    if not imagename in imagenamelist:
+                        imagenamelist.append(imagename)
     wirtedata = list()
     wirtedata.append('SN')
     wirtedata.append('PN')
@@ -6420,6 +6422,10 @@ def generateexeclswreport(DATA,wb,lastdata):
             result = lastdata[SN]["result"]
         if not "PASS" in result.upper():
             continue
+        if not "NICINFO" in lastdata[SN]:
+            continue
+        if not lastdata[SN]["NICINFO"]:
+            continue
         FRU = lastdata[SN]["NICINFO"]["FRU"]
         #FRU = FRU.replace(' ','')
         #print(FRU)
@@ -6431,11 +6437,12 @@ def generateexeclswreport(DATA,wb,lastdata):
         wirtedata.append(frulist[2])
         wirtedata.append(frulist[1])
         if "IMAGE" in lastdata[SN]:
-            for imagename in imagenamelist:
-                if imagename in lastdata[SN]["IMAGE"]:
-                    wirtedata.append(lastdata[SN]["IMAGE"][imagename])
-                else:
-                    wirtedata.append("NO DATA")
+            if lastdata[SN]["IMAGE"]:
+                for imagename in imagenamelist:
+                    if imagename in lastdata[SN]["IMAGE"]:
+                        wirtedata.append(lastdata[SN]["IMAGE"][imagename])
+                    else:
+                        wirtedata.append("NO DATA")
 
         ws1.append(wirtedata)
 

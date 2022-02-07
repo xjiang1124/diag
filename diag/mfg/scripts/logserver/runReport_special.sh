@@ -127,6 +127,9 @@ echo Script: runReport_special.sh
 #ORTANO2_EDMA_3200_periodictraining_0C-trained
 
 cd $_mydir
+python3 $_mydir/process_log.py Ortano_Script_verify2_input.json snlist=1 skiplock=1
+
+cd $_mydir
 python3 $_mydir/process_log.py Ortano_Script_verify_input.json snlist=1 skiplock=1
 
 # cd $_mydir

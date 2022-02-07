@@ -65,6 +65,9 @@ do
 done
 
 cd $_mydir
+python3 $_mydir/all_sw_report.py
+
+cd $_mydir
 python3 $_mydir/all_mtp_report.py
 
 cd $_mydir

@@ -1,19 +1,19 @@
 {
-	"NAME": "Ortano_V1_39",
+	"NAME": "Ortano_V1_40",
 	"TYPE": "NIC",
 	"SNLIST": "SNJAN2022.xlsx",
-	"STARTDATE": "2022-01-27",
+	"STARTDATE": "2022-02-04",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_Ortano_V1_39_ORTANO2",
-		"TEMPDATABASE": "/samba/public/tmp_database/Ortano_V1_39",
+		"TEMPDIR": "/tmp/tmp_unzip_Ortano_V1_40_ORTANO2",
+		"TEMPDATABASE": "/samba/public/tmp_database/Ortano_V1_40",
 		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
-		"reportpath":"/samba/public/REPORT/Ortano_V1_39/",
-		"historypath":"/samba/public/HISTORY/Ortano_V1_39"
+		"reportpath":"/samba/public/REPORT/Ortano_V1_40/",
+		"historypath":"/samba/public/HISTORY/Ortano_V1_40"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/Ortano_V1_39_DB_TEST28.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/Ortano_V1_40_DB_TEST28.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
