@@ -22,14 +22,14 @@ power_on_naples25_swm_ocp() {
             echo "Already powered up"
         else
             i2cset -y 0 0x4b 0x1 0x14 #enable alom pwr (5V upconverted to 12V to card)
-            sleep 0.2
+            #sleep 0.2
             if [[ $swm_lp_mode -ne 1 ]]
             then
                 #enable high power mode on SWM CPLD
                 reg1=$(i2cget -y 0 0x4a 0x21)
                 reg1=$(( $reg1 | 0x6 ))
                 i2cset -y 0 0x4a 0x21 $reg1
-                sleep 0.2
+                #sleep 0.2
                 i2cset -y 0 0x4b 0x1 0x1C #enable alom + 12V PCIE Edge power
                 echo "Power on done (12V PCIe)"
             else
@@ -45,7 +45,7 @@ power_on_naples25_swm_ocp() {
         reg1=$(i2cget -y 0 0x4b 0x40)
         reg1=$(( $reg1 | 0x1 ))
         i2cset -y 0 0x4b 0x40 $reg1
-        sleep 0.5
+        #sleep 0.5
         reg1=$(( $reg1 | 0x3 ))
         i2cset -y 0 0x4b 0x40 $reg1
     fi
@@ -112,10 +112,10 @@ enable_nic_mtp_r3() {
 reset_hub() {
     echo "Reset hub"
     cpldutil -cpld-wr -addr=0x2 -data=0xf
-    sleep 0.2
+    #sleep 0.2
     cpldutil -cpld-rd -addr=0x2
     cpldutil -cpld-wr -addr=0x2 -data=0x0
-    sleep 0.2
+    #sleep 0.2
     cpldutil -cpld-rd -addr=0x2
     echo "Reset hub done"
 }
@@ -163,9 +163,9 @@ control_slot() {
         perst=$(( $perst & $wValue ))
     
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 0.2
+        #sleep 0.2
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        sleep 0.2
+        #sleep 0.2
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
  
         elba_delay
@@ -175,11 +175,11 @@ control_slot() {
         perst=$(( $perst | $wValue ))
     
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        sleep 0.2
+        #sleep 0.2
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        sleep 0.2
+        #sleep 0.2
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 0.2
+        #sleep 0.2
     fi
     
     cpldutil -cpld-rd -addr=$v12_addr
@@ -193,13 +193,13 @@ control_all() {
         echo "Turning on all slots"
         cpldutil -cpld-wr -addr=0x12 -data=0
         cpldutil -cpld-wr -addr=0x13 -data=0
-        sleep 0.5
+        #sleep 0.5
         cpldutil -cpld-wr -addr=0x10 -data=0
         cpldutil -cpld-wr -addr=0x11 -data=0
-        sleep 0.5
+        #sleep 0.5
         cpldutil -cpld-wr -addr=0x16 -data=0
         cpldutil -cpld-wr -addr=0x17 -data=0
-        sleep 0.5
+        #sleep 0.5
         
         elba_delay
 
@@ -218,13 +218,13 @@ control_all() {
         echo "Turning off all slots"
         cpldutil -cpld-wr -addr=0x16 -data=0xff
         cpldutil -cpld-wr -addr=0x17 -data=0xff
-        sleep 0.5
+        #sleep 0.5
         cpldutil -cpld-wr -addr=0x10 -data=0xff
         cpldutil -cpld-wr -addr=0x11 -data=0xff
-        sleep 0.5
+        #sleep 0.5
         cpldutil -cpld-wr -addr=0x12 -data=0xff
         cpldutil -cpld-wr -addr=0x13 -data=0xff
-        sleep 0.5
+        #sleep 0.5
     
         echo "All slots turned off"
     fi
