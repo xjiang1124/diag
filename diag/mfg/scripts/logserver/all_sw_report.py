@@ -63,7 +63,10 @@ def main():
     SWDATA = pr['modules'].readjsonfile(listofcurrentusingdatabase[0])
     #pr['modules'].print_anyinformation(MTPDATA)
 
-    generateSWallreport(pr,SWDATA,startdate=None)
+    if SWDATA["status"]["update"]:
+        SWDATA["status"]["update"] = 0
+        pr['modules'].wirtejsonfile(listofcurrentusingdatabase[0],SWDATA)
+        generateSWallreport(pr,SWDATA,startdate=None)
 
     difftime = datetime.now()-start
     print('Done Time: ', difftime)       
