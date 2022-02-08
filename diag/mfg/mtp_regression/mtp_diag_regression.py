@@ -791,7 +791,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
     else:
         lock.acquire()
         
-
+    err_msg_list = list()
     for dsp, test in diag_seq_test_list:
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
