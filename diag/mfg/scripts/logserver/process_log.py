@@ -78,23 +78,28 @@ def main():
     #print(testfolderlist)
 
     if "skipfoldercheck" in ARGV:
-        pass 
+        pass
+    elif "testlogpaths" in inputconfig:
+        for eachtestlogpath in inputconfig["testlogpaths"]:
+            for testfolder in testfolderlist:
+                workingoneachtest(pr,inputconfig,DATA,eachtestlogpath,testfolder)
     else:
         for testfolder in testfolderlist:
             if "rerun" in ARGV:
                 pr['modules'].print_anyinformation(ARGV)
                 if ARGV["rerun"] in testfolder:
                     pr['modules'].print_anyinformation(ARGV["rerun"])
-                    workingoneachtest(pr,inputconfig,DATA,testfolder,redo=True)
+                    workingoneachtest(pr,inputconfig,DATA,inputconfig['DIR']['testlogpath'],testfolder,redo=True)
                 else:
-                    #workingoneachtest(pr,inputconfig,DATA,testfolder)
+                    #workingoneachtest(pr,inputconfig,DATA,inputconfig['DIR']['testlogpath'],testfolder)
                     pass
             else:
-                workingoneachtest(pr,inputconfig,DATA,testfolder)
+                workingoneachtest(pr,inputconfig,DATA,inputconfig['DIR']['testlogpath'],testfolder)
             #pass
             #workingoneachtest(pr,inputconfig,DATA,testfolder)
 
     connectImageNameinOne(DATA,inputconfig)
+    takecareErrinformationdidnotinERRORDETAIL(DATA,inputconfig)
     workingonLastdata(DATA,inputconfig)
     #sys.exit()
     DATA['SN']['LIST'].sort()
@@ -814,6 +819,28 @@ def connectImageNameinOne(DATA,inputconfig):
     print("connectImageNameinOne: RUNNING TIME: {} seconds".format(difftime))
     return None
 
+def takecareErrinformationdidnotinERRORDETAIL(DATA,inputconfig):
+    start=datetime.now()
+    for test in DATA['SN']['TEST']:
+        if not test in DATA['teststep']:
+            continue
+        for SN in DATA['teststep'][test]['SN']:
+            for chassis in DATA['teststep'][test]['SN'][SN]:
+                for testdate in DATA['teststep'][test]['SN'][SN][chassis]:
+                    for testtime in DATA['teststep'][test]['SN'][SN][chassis][testdate]:
+                        if not "NICDATA" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                            continue
+                        if not "ERRORDETAIL" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                            continue
+                        for eachline in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["NICDATA"]:
+                            if "ERR:" in eachline:
+                                if not eachline in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["ERRORDETAIL"]:
+                                    DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["ERRORDETAIL"].append(eachline)
+
+    difftime = datetime.now()-start
+    print("takecareErrinformationdidnotinERRORDETAIL: RUNNING TIME: {} seconds".format(difftime))
+    return None
+
 def workingonLastdata(DATA,inputconfig):
     start=datetime.now()
     DATA['SN']["KEEPLASTPASS"] = dict()
@@ -1105,7 +1132,7 @@ def CreateNeedDict(DATA,teststep):
         DATA['SN']['ERROR'][teststep] = dict()
     return None
 
-def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
+def workingoneachtest(pr,inputconfig,DATA,testlogpath,testfolder,redo=False):
 
     checkstarttestdata = None
     workingonSNlist = list()
@@ -1117,8 +1144,8 @@ def workingoneachtest(pr,inputconfig,DATA,testfolder,redo=False):
                 checkstarttestdata = inputconfig["STARTDATE"]
     takecareteststepDICT(inputconfig,DATA)
     #print(json.dumps(DATA, indent = 4))
-
-    read_dir_path = "{}/{}".format(inputconfig['DIR']['testlogpath'],testfolder)
+    #inputconfig['DIR']['testlogpath']
+    read_dir_path = "{}/{}".format(testlogpath,testfolder)
     print("FOLDER: {}".format(read_dir_path))
 
     allfolder = pr['modules'].getallfolder(read_dir_path)
@@ -4973,6 +5000,7 @@ def generateexeclerrdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
                                         #print(wirtedata)
                                         ws2.append(wirtedata)
                                         #print(wirtedata)
+
     
     fixcolumnssize2(ws2)
     highlightinyellow(ws2,'TIMEOUT')
