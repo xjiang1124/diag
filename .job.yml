@@ -1,11 +1,21 @@
 ---
 version: 2.0
-targets: 
+builds:
   build-amd64-elba:
     commands: [ "sh", "-c", "cd build; make amd64" ]
     owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_amd64_elba.tar
+    - /psdiag/build/images/image_amd64_capri.tar
   build-arm64-elba:
     commands: [ "sh", "-c", "cd build; make arm64" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_arm64_elba.tar
+    - /psdiag/build/images/image_arm64_capri.tar
+targets:
+  dummy:
+    commands: [ "sh", "-c", "echo hello world" ]
     owners: ["email:xin@pensando.io"]
 queue_name: asic
 image:
