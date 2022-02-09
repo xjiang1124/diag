@@ -37,12 +37,12 @@ MTPS-404:
     APC2_PORT: ""
     APC2_USERID: ""
     APC2_PASSWORD: ""
-    IP: "192.168.1.87"
+    IP: "192.168.1.187"
     USERID: "diag"
     PASSWORD: "lab123"
     ALIAS: "mtps404"
     SLOTS: 5
-    CAPABILITY: 0x4
+    CAPABILITY: 0x5
 #############################
 ##### Flex Penang setup #####
 #############################
