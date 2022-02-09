@@ -163,7 +163,7 @@ control_slot() {
         perst=$(( $perst & $wValue ))
     
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        #sleep 0.2
+        sleep 0.2
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
         #sleep 0.2
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
@@ -175,11 +175,11 @@ control_slot() {
         perst=$(( $perst | $wValue ))
     
         cpldutil -cpld-wr -addr=$perst_addr -data=$perst
-        #sleep 0.2
+        sleep 0.2
         cpldutil -cpld-wr -addr=$v12_addr -data=$v12
-        #sleep 0.2
+        sleep 0.2
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        #sleep 0.2
+        sleep 0.2
     fi
     
     cpldutil -cpld-rd -addr=$v12_addr
@@ -193,7 +193,7 @@ control_all() {
         echo "Turning on all slots"
         cpldutil -cpld-wr -addr=0x12 -data=0
         cpldutil -cpld-wr -addr=0x13 -data=0
-        #sleep 0.5
+        sleep 0.2
         cpldutil -cpld-wr -addr=0x10 -data=0
         cpldutil -cpld-wr -addr=0x11 -data=0
         #sleep 0.5
