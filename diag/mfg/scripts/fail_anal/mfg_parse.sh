@@ -256,31 +256,31 @@ do
     case $stage in
         "DL")
         if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP DL Test Complete" > ./$stage/testresult.txt
+            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP DL Test Complete" > ./$stage/testresult.txt
             run_parse $stage $to_loc/$card_type/$stage
         fi
         ;;
         "SWI")
         if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Software Install Test Complete" > ./$stage/testresult.txt
+            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Software Install Test Complete" > ./$stage/testresult.txt
             run_parse $stage $to_loc/$card_type/$stage
         fi
         ;;
         "P2C")
         if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
+            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
             run_parse $stage $to_loc/$card_type/$stage
         fi
         ;;
         "4C-L")
         if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
+            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
             run_parse $stage $to_loc/$card_type/$stage
         fi
         ;;
         "4C-H")
         if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
+            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
             run_parse $stage $to_loc/$card_type/$stage
         fi
         ;;
