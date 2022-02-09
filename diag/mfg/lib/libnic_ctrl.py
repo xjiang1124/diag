@@ -708,6 +708,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Unable to get expected prompt")
             self.nic_console_detach()
             return False
 
@@ -715,6 +716,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_I2C_SET_FMT))
             self.nic_console_detach()
             return False
 
@@ -722,6 +724,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT))
             self.nic_console_detach()
             return False
 
@@ -729,6 +732,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT))
             self.nic_console_detach()
             return False
 
@@ -736,6 +740,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT))
             self.nic_console_detach()
             return False
 
@@ -743,6 +748,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT))
             self.nic_console_detach()
             return False
         
@@ -752,6 +758,7 @@ class nic_ctrl():
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Incorrect I2C value, expecting {:s}, got {:s}".format("0x44", cmd_buf.strip()))
             self.nic_console_detach()
             return False
 

@@ -2353,8 +2353,10 @@ class mtp_ctrl():
         if self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
             if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
                 self.mtp_nic_unlock()
-                self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                # self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
                 return False
+            self.cli_log_slot_inf(slot, "I2C value setting complete")
         self.mtp_nic_unlock() 
 
         return True
@@ -4212,8 +4214,10 @@ class mtp_ctrl():
             if self._nic_ctrl_list[slot] and self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
                 if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
                     self.mtp_nic_unlock()
-                    self.cli_log_err("Failed to set I2C on NIC")
-                    return False                   
+                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                    # self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
+                    return False
+                self.cli_log_slot_inf(slot, "I2C value setting complete")               
         self.mtp_nic_unlock()
 
         return True
