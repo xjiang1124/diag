@@ -10,21 +10,23 @@ use Excel::Writer::XLSX;
 
 my $fa_opt = shift;
 my $result_file = shift;
+my $failure_txt_path = shift;
 my $test_name_opt = shift;
 my $mfg_err_code_opt = shift;
 
-if ($test_name_opt ne "") {
+if (defined $test_name_opt) {
     print "test name: $test_name_opt\n";
+} else {
+    $test_name_opt = "";
 }
-if ($mfg_err_code_opt ne "") {
+if (defined $mfg_err_code_opt) {
     print "mfg err code: $mfg_err_code_opt\n";
+} else {
+    $mfg_err_code_opt = "";
 }
-my $file_logs_all = "testresult.txt";
-my $failure_logs = "logs_fail.txt";
-my $pass_logs = "logs_pass.txt";
-if ($result_file eq "") {
-    my $result_file = "parse_result.xlsx";
-}
+my $file_logs_all = $failure_txt_path."/testresult.txt";
+my $failure_logs = $failure_txt_path."/logs_fail.txt";
+my $pass_logs = $failure_txt_path."/logs_pass.txt";
 my $log_path = cwd();
 
 my $curr_sn = "";
@@ -33,7 +35,7 @@ my $lastline = "";
 my $debug_msgs = 0;
 my $worksheet_name = "";
 
-system("rm $failure_logs $pass_logs $result_file");
+#system("rm $failure_logs $pass_logs $result_file");
 
 my $num_failures = 0;
 
@@ -153,6 +155,7 @@ if($fa_opt eq "LAST") {
 }
 
 my $workbook = Excel::Writer::XLSX->new($result_file);
+
 my $worksheet = $workbook->add_worksheet($worksheet_name);
 my $format = $workbook->add_format(text_wrap => 1);
 my @colDefs = (
@@ -243,6 +246,7 @@ $worksheet->set_column($full_diag_fa_col, $full_diag_fa_col, 32, $default_fmt);
 my %diag_fa_code;
 my $top_diag_fa_code = "";
 my $all_test_msg = "";
+my $all_l1_fails = "";
 while(my $line = <TR2>)
 {
     if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP-[0-9]+)_(.*)\/mtp_test.log(.*)(\]:\s)NIC-(\d+)(\s\w+\s)(\w+)(\s)NIC_DIAG_REGRESSION_TEST_FAIL/)
@@ -496,14 +500,7 @@ sub parse_snake_log {
     }
     my $test_err_msg = "";
     my $test_name = substr($test_and_failure_code, 0, index($test_and_failure_code, ' '));
-    q{
-        my $fa_prefix = "";
-        if ($test_name eq "LV_ASIC") {
-            $fa_prefix = "LV_";
-        } elsif ($test_name eq "HV_ASIC") {
-            $fa_prefix = "HV_";
-        }
-    };
+
     my $err_found = 0;
     while(my $line = <TR3>)
     {
@@ -560,7 +557,7 @@ sub parse_snake_log {
 }
 
 sub parse_l1_log {
-    my ($logfile, $sn, $test_and_failure_code, $all_l1_fails) = @_;
+    my ($logfile, $sn, $test_and_failure_code) = @_;
     my $log_complete = 0;
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
@@ -569,17 +566,14 @@ sub parse_l1_log {
     my $test_err_msg = "";
     while(my $line = <TR3>)
     {
-        if($line =~ m/(.*)MSG ::     #FAIL#/)
-        {
+        if($line =~ m/#FAIL#\s+(\w+)\s+\d+:\d+/) {
+            if ($1 eq "elb_l1_ddr_bist") {
+                $diag_fa_code{"L1_DDR_BIST"} = 1;
+            } else {
+                $all_l1_fails .= "_".uc($1);
+            }
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            if ($line =~ m/#FAIL#\s+(\w+)\s+\d+:\d+/) {
-                if ($1 eq "elb_l1_ddr_bist") {
-                    $diag_fa_code{"L1_DDR_BIST"} = 1;
-                } else {
-                    $all_l1_fails .= "_".uc($1);
-                }
-            }
         }
         if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/)
         {
@@ -773,7 +767,7 @@ sub find_failure_code {
     }
 
     my $test_and_failure_code = "";
-    my $all_l1_fails = "L1_TST";
+    $all_l1_fails = "L1_TST";
     foreach $test_and_failure_code (@tests_and_failure_codes) {
         print "test_and_failure_code: $test_and_failure_code\n";
         my $asic_log_dir = "";
@@ -850,25 +844,6 @@ sub parse_mtp_and_slot_log {
     my ($fulllogpath, $slot, $test_and_failure_code) = @_;
     my $slotlogfile=$fulllogpath."/"."mtp_NIC-".$slot."_diag.log";
     my $test_err_msg = "";
-    q{
-        if (!open(TR3, '<', $mtp_logfile)) {
-            print "Cannot open file $mtp_logfile\n";
-            return;
-        }
-        my $re = qr/ERR:(.*)\[NIC-$slot\]:\s+\w+\s+(?!DIAG\sTEST)/;
-        while(my $line = <TR3>)
-        {
-            if($line =~ m/$re/) {
-                if ($debug_msgs) { print "line: $line"};
-                $test_err_msg .= $line;
-            }
-        }
-        if ($test_err_msg ne "") {
-            $all_test_msg .= "############### $test_and_failure_code ###############\n"."mtp log: ".$log_path."/".$mtp_logfile."\n\n";
-            $all_test_msg .= $test_err_msg;
-        }
-        close(TR3);
-    };
 
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";

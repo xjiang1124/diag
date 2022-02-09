@@ -121,54 +121,176 @@ card_type=$(echo $card_type | awk '{print toupper($0)}')
 echo $card_type
 stage=$(echo $stage | awk '{print toupper($0)}')
 echo $stage
+stages=(`echo $stage | sed 's/,/\n/g'`)
+for i in "${stages[@]}"
+do
+    echo "stage=$i"
+done
+
 fa_opt=$(echo $fa_opt | awk '{print toupper($0)}')
 echo $fa_opt
 
-to_location_top="/home/mfg/mfg_diag_fa/scripts/"
-to_location=$to_location_top
-cd $to_location
-#dir_name=$(date +%Y%m%d_%H%M%S)
-dir_name=$log_dir
-rm -rf $to_location_top/$dir_name
-mkdir -p $dir_name
-to_location+=$dir_name
-cd $dir_name
-mkdir -p "$card_type"/"$stage"
-to_location+="/$card_type/"
-# copy logs one by one
-if [[ "$stage" == "4C-H" ]] || [[ "$stage" == "4C-L" ]]; then
-    stage_dir="4C/$stage"
-    echo $stage_dir
-else
-    stage_dir=$stage
-fi
-from_location="/mfg_log/$card_type/$stage_dir"
+timestamp=$(date +%m%d%Y_%H%M%S)
+missing_log_file="${cwd}/sn_list_missing_log${timestamp}.txt"
+rm -f $missing_log_file
 
+to_loc_top="${cwd}/scripts/"
+to_loc=$to_loc_top
+dir_name=$log_dir
+rm -rf ${to_loc_top}${dir_name}
+mkdir -p ${to_loc_top}${dir_name}
+to_loc+=$dir_name
+
+# generate a file to list SNs with no log
 # copy logs
 while read -r sn; do
     echo "SN is $sn"
-    if [ -d $from_location/$sn ]; then
-        cp -r $from_location/$sn $to_location/$stage/
-    else
-        echo "log for SN $sn stage $stage does not exist"
+    #declare -A sn_paths
+    sn_path_exists=0
+    for i in "${stages[@]}"
+    do
+        echo "stage=$i"
+        case $i in
+            "DL")
+            from_loc="/mfg_log/$card_type/DL/${sn}"
+            if [ -d ${from_loc} ]; then
+                echo "$from_loc exists"
+                #sn_paths[$i] = 1
+                sn_path_exists=1
+                mkdir -p $to_loc/$card_type/$i
+                cp -r $from_loc $to_loc/$card_type/$i/
+            else
+                echo "$from_loc does not exist"
+            fi
+            ;;
+            "SWI")
+            from_loc="/mfg_log/$card_type/SWI/${sn}"
+            if [ -d ${from_loc} ]; then
+                echo "$from_loc exists"
+                #sn_paths[$i] = 1
+                sn_path_exists=1
+                mkdir -p $to_loc/$card_type/$i
+                cp -r $from_loc $to_loc/$card_type/$i/
+            else
+                echo "$from_loc does not exist"
+            fi
+            ;;
+            "P2C")
+            from_loc="/mfg_log/$card_type/P2C/${sn}"
+            if [ -d ${from_loc} ]; then
+                echo "$from_loc exists"
+                #sn_paths[$i] = 1
+                sn_path_exists=1
+                mkdir -p $to_loc/$card_type/$i
+                cp -r $from_loc $to_loc/$card_type/$i/
+            else
+                echo "$from_loc does not exist"
+            fi
+            ;;
+            "4C-L")
+            from_loc="/mfg_log/$card_type/4C/4C-L/${sn}"
+            if [ -d ${from_loc} ]; then
+                echo "$from_loc exists"
+                #sn_paths[$i] = 1
+                sn_path_exists=1
+                mkdir -p $to_loc/$card_type/$i
+                cp -r $from_loc $to_loc/$card_type/$i/
+            else
+                echo "$from_loc does not exist"
+            fi
+            ;;
+            "4C-H")
+            from_loc="/mfg_log/$card_type/4C/4C-H/${sn}"
+            if [ -d ${from_loc} ]; then
+                echo "$from_loc exists"
+                #sn_paths[$i] = 1
+                sn_path_exists=1
+                mkdir -p $to_loc/$card_type/$i
+                cp -r $from_loc $to_loc/$card_type/$i/
+            else
+                echo "$from_loc does not exist"
+            fi
+            ;;
+            *)
+            echo "Invalid stage $i"
+            exit
+            ;;
+        esac
+    done
+
+    if [ ! $sn_path_exists ]; then
+        echo "any log for SN $sn does not exist"
+        echo $sn >> $missing_log_file
     fi
 done < "${cwd}/${sn_file}"
-echo $to_location
+
+function run_parse {
+    stage=$1
+    txt_path=$2
+    parse_result="${cwd}/parse_result_${stage}_${timestamp}.xlsx"
+    echo "runnning the parse script for stage $stage, output is $parse_result"
+    cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
+    cd $to_loc/$card_type
+    ./mfg_parse.pl $fa_opt $parse_result $txt_path $test_name $mfg_err_code
+
+    # grep each SN in logs_fail.txt
+    while read -r sn; do
+        echo "SN is $sn"
+        if grep -q $sn $to_loc/$card_type/$stage/logs_fail.txt; then
+            echo "failure log for SN $sn exists in stage $stage"
+        else
+            echo "failure log for SN $sn does not exist in stage $stage"
+            echo $sn >> $missing_log_file
+        fi
+    done < "${cwd}/${sn_file}"
+}
+
 echo "untar the log files"
 # untar
-cd $card_type
+cd $to_loc/$card_type
 find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
-#grep
-find ./ -name "mtp_test.log" | xargs grep -an -A11 "MTP DL Test Complete" > $to_location/testresult.txt
-find ./ -name "mtp_test.log" | xargs grep -an -A11 "MTP Software Install Test Complete" >> $to_location/testresult.txt
-find ./ -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" >> $to_location/testresult.txt
+cd $to_loc/$card_type
+for stage in "${stages[@]}"
+do
+    echo "stage=$stage"
+    case $stage in
+        "DL")
+        if [ -d ./$stage ]; then
+            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP DL Test Complete" > ./$stage/testresult.txt
+            run_parse $stage $to_loc/$card_type/$stage
+        fi
+        ;;
+        "SWI")
+        if [ -d ./$stage ]; then
+            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Software Install Test Complete" > ./$stage/testresult.txt
+            run_parse $stage $to_loc/$card_type/$stage
+        fi
+        ;;
+        "P2C")
+        if [ -d ./$stage ]; then
+            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
+            run_parse $stage $to_loc/$card_type/$stage
+        fi
+        ;;
+        "4C-L")
+        if [ -d ./$stage ]; then
+            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
+            run_parse $stage $to_loc/$card_type/$stage
+        fi
+        ;;
+        "4C-H")
+        if [ -d ./$stage ]; then
+            find ./$stage -name "mtp_test.log" | xargs grep -an -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
+            run_parse $stage $to_loc/$card_type/$stage
+        fi
+        ;;
+        *)
+        echo "Invalid stage $stage"
+        exit
+        ;;
+    esac
+done
 
-parse_result="parse_result_$(date +%m%d%Y_%H%M%S).xlsx"
-echo "runnning the parse script, output is $parse_result"
-cp $to_location_top/mfg_parse.pl $to_location
-cd $to_location
-./mfg_parse.pl $fa_opt $parse_result $test_name $mfg_err_code
-
-cp $to_location/$parse_result $to_location_top/../
-echo the temporary dir: $to_location_top$dir_name can be removed
-#rm -rf $to_location_top/$dir_name
+#cp $parse_result $to_loc_top/../
+echo the temporary dir: $to_loc_top$dir_name can be removed
+#rm -rf $to_loc_top/$dir_name
