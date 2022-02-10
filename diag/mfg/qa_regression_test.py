@@ -133,7 +133,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     qa_log_dir = args.logdir
     cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(qa_log_dir)
     os.system(cmd)
-    qa_log_pkg_file = qa_log_dir + os.path.basename(log_pkg_file)
+    qa_log_pkg_file = qa_log_dir + "/" + os.path.basename(log_pkg_file)
 
     if not libmfg_utils.network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file):
         mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test summary file {:}".format(test_log_file), level=0)
