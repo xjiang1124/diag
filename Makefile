@@ -2,13 +2,13 @@
 ################### DOCKER ######################
 #################################################
 CUR_DIR:=$(shell pwd)
-SW_DIR:=$(shell dirname ${CUR_DIR})
 CUR_USER:=$(shell whoami)
 CUR_TIME:=$(shell date +%Y-%m-%d_%H.%M.%S)
 CONTAINER_NAME:=${CUR_USER}_${CUR_TIME}
 REGISTRY = registry.test.pensando.io:5000
 DIAG_CONTAINER_VERSION:=1.0
 DIAG_CONTAINER:=${REGISTRY}/pensando/diag:${DIAG_CONTAINER_VERSION}
+
 
 # get a shell with the dependencies image loaded, with the host filesystem mounted.
 docker/shell: docker/install_box
