@@ -4,6 +4,7 @@ test_argparse
 *.[ao]
 *.dylib
 *.so
+*.tar
 *rdb
 *swp
 bin/

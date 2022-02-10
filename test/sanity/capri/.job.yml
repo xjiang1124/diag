@@ -1,0 +1,43 @@
+---
+version: 2.0
+meta:
+  asic: capri
+    
+queue_name: asic
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+e2e-targets:
+  capri-mfg-diag-sanity:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_sanity.sh --testbed /warmd.json --asic capri"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    max-duration: 12h
+    build-dependencies:
+     - build-amd64-capri
+     - build-arm64-capri
+    deployment:
+      skip-pxe-install: true
+    resources:
+      - bm:
+        - vendor: Pensando
+          count: 1
+          image: build-17
+          props:
+          - name: sanity-group
+            value: diag
+          - name: mtp-nic-processor
+            value: capri
+          nics:
+          - vendor: Intel
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+logfiles:
+ - /psdiag/diag_detailed_log.tgz

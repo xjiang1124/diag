@@ -61,7 +61,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
 
         # init MTP diag environment
-        if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
+        if not mtp_mgmt_ctrl.mtp_diag_pre_init():
             mtp_mgmt_ctrl.cli_log_err("MTP Diag Pre Init failed", level=0)
             return
 

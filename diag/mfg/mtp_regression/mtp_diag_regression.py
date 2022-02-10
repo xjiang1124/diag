@@ -1107,6 +1107,7 @@ def main():
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
@@ -1187,6 +1188,8 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    if args.mtpcfg:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(args.mtpcfg))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     # find the mtp management config based on the mtpid

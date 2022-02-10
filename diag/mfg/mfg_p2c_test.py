@@ -30,12 +30,14 @@ from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfg_yaml = None):
     # DL/P2C MTP Chassis
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
@@ -115,7 +117,7 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
 
     return fail_nic_list
 
-def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[]):
+def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[], mtp_cfg_file = None):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
     else:
@@ -138,6 +140,10 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
         cmd += skipped_testlist
     if fail_slots:
         cmd += fail_slots
+    if mtp_cfg_file:
+        mtp_cfg_file_opt = " --mtpcfg " + mtp_cfg_file
+        cmd += mtp_cfg_file_opt
+
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_P2C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
@@ -160,6 +166,7 @@ def main():
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -169,12 +176,14 @@ def main():
     if args.swm:
         swmtestmode = args.swm
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()
 
+    mtp_diag_image = os.getenv("DIAG_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+    nic_diag_image = os.getenv("DIAG_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_ARM64_IMAGE)
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
         if verbosity:
@@ -252,8 +261,6 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
         if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
@@ -310,7 +317,8 @@ def main():
                                                                             fail_nic_list[mtp_id],
                                                                             mfg_p2c_summary[mtp_id],
                                                                             swmtestmode,
-                                                                            args.skip_test))
+                                                                            args.skip_test,
+                                                                            args.mtpcfg))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

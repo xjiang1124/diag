@@ -60,7 +60,10 @@ class mtp_db():
             if "SKIP_SLOTS" in mtp_cfg[mtpid].keys(): # for backward compatability with configs without SKIP_SLOTS field
                 for slot in libmfg_utils.expand_range_of_numbers(mtp_cfg[mtpid]["SKIP_SLOTS"], range_min=1, range_max=self._max_slots[mtpid], dev=mtpid):
                     self._slots_to_skip[mtpid][slot-1] = True
-            self._capability[mtpid] = mtp_cfg[mtpid]["CAPABILITY"]
+            if isinstance(mtp_cfg[mtpid]["CAPABILITY"], str):
+                self._capability[mtpid] = int(mtp_cfg[mtpid]["CAPABILITY"], 16)
+            else:
+                self._capability[mtpid] = mtp_cfg[mtpid]["CAPABILITY"]
 
             self._mtpid_list.append(mtpid)
 

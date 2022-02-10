@@ -572,17 +572,18 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
         return False
 
 
-def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir="/dev/null", extra_script=None):
+def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None):
     if extra_script:
         cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
-    cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
-    os.system(cmd)
-    if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
-        cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
+    if logfile_dir:
+        cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
         os.system(cmd)
+        if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
+            cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
+            os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
     os.system(cmd)
     # remove the lib config for the next run
@@ -590,11 +591,14 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
         cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
         os.system(cmd)
     os.system("sync")
-    if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
-        cmd = "rm -rf {:s}/{:s}".format(mtp_script_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+    if logfile_dir:
+        if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
+            cmd = "rm -rf {:s}/{:s}".format(mtp_script_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            os.system(cmd)
+        cmd = "rm -rf {:s}".format(logfile_dir)
         os.system(cmd)
     # cmd = "rm -rf {:s}/lib {:s}/config ".format(mtp_script_dir, mtp_script_dir)
-    cmd = "rm -rf {:s}/lib {:s}/config {:s}/*.log {:s}".format(mtp_script_dir, mtp_script_dir, mtp_script_dir, logfile_dir)
+    cmd = "rm -rf {:s}/lib {:s}/config {:s}/*.log".format(mtp_script_dir, mtp_script_dir, mtp_script_dir)
     os.system(cmd)
 
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
@@ -783,11 +787,18 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, for
         mtp_mgmt_ctrl.cli_log_err("Wrong NIC image: {:s}".format(nic_image), level=0)
         return False
 
-    mtp_image_file = "release/{:s}".format(mtp_image)
+    if os.path.isabs(mtp_image):
+        mtp_image_file = mtp_image
+    else:
+        mtp_image_file = "release/{:s}".format(mtp_image)
     if not file_exist(mtp_image_file):
         mtp_mgmt_ctrl.cli_log_err("MTP Diag image {:s} doesn't exist... Abort".format(mtp_image_file), level=0)
         return False
-    nic_image_file = "release/{:s}".format(nic_image)
+
+    if os.path.isabs(nic_image):
+        nic_image_file = nic_image
+    else:
+        nic_image_file = "release/{:s}".format(nic_image)
     if not file_exist(nic_image_file):
         mtp_mgmt_ctrl.cli_log_err("NIC Diag image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
         return False
@@ -837,11 +848,18 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl TOKEN image: {:s}".format(nic_image), level=0)
         return False
 
-    mtp_image_file = "release/{:s}".format(mtp_image)
+    if os.path.isabs(mtp_image):
+        mtp_image_file = mtp_image
+    else:
+        mtp_image_file = "release/{:s}".format(mtp_image)
     if not file_exist(mtp_image_file):
         mtp_mgmt_ctrl.cli_log_err("MTP Penctl image {:s} doesn't exist... Abort".format(mtp_image_file), level=0)
         return False
-    nic_image_file = "release/{:s}".format(nic_image)
+
+    if os.path.isabs(nic_image):
+        nic_image_file = nic_image
+    else:
+        nic_image_file = "release/{:s}".format(nic_image)
     if not file_exist(nic_image_file):
         mtp_mgmt_ctrl.cli_log_err("NIC Penctl_TOKEN image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
         return False
@@ -1053,7 +1071,7 @@ def soap_post_report(xml, factory=FLX_Factory.PENANG):
         return match[0]
     else:
         print("################## SAVE UUT RSLT #######################")
-        print resp
+        print(resp)
         print("################## SAVE UUT RSLT #######################")
         return "500"
 
@@ -1082,7 +1100,7 @@ def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
         return match[0]
     else:
         print("################## GET UUT INF #######################")
-        print resp
+        print(resp)
         print("################## GET UUT INF #######################")
         return "500"
 
@@ -1920,7 +1938,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     if run_from_mtp:
         mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
     else:
-        mtp_diagmgr_log_file = "/dev/null"
+        mtp_diagmgr_log_file = "/tmp/mtp_diagmgr.log"
     mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)

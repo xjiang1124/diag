@@ -24,6 +24,22 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 
+parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
+parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=True)
+parser.add_argument("--email", help="Send report to email address")
+parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
+parser.add_argument("--pwr-cycle", help="Power cycle MTP before test", action='store_true')
+parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
+parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond))
+parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+parser.add_argument("--logdir", help="Log dir", default=MTP_DIAG_Logfile.DIAG_QA_LOG_DIR)
+parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+
+args = parser.parse_args()
+
 
 def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
@@ -114,7 +130,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, corner):
         return None
 
     # create the log dir if not exist
-    qa_log_dir = MTP_DIAG_Logfile.DIAG_QA_LOG_DIR + libmfg_utils.get_date() + "/"
+    qa_log_dir = args.logdir
     cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(qa_log_dir)
     os.system(cmd)
     qa_log_pkg_file = qa_log_dir + os.path.basename(log_pkg_file)
@@ -211,18 +227,20 @@ def test_report(email_to, mtp_id, loop, test_log_file, qa_log_pkg, corner, durat
     report_body += "    {:s}\n".format(qa_log_pkg)
     if email_to:
         libmfg_utils.email_report(email_to, report_title, report_body)
-
-    # clean the logfile
-    os.system("rm -f {:s}".format(test_log_file))
+        # clean the logfile
+        os.system("rm -f {:s}".format(test_log_file))
     return ret
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfg_yaml = None):
     # Pensando Lab/Debug MTP Chassis
     mtp_chassis_cfg_file_list = list()
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
+    else:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     return mtp_cfg_db
@@ -247,7 +265,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner, swm_test_mode):
+def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, skip_test, email_to, corner, swm_test_mode, results, mtpcfg_file = None):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
     else:
@@ -260,11 +278,14 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
         #cmd += " --psu-check"
 
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, corner, swm_test_mode)
+        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s} ".format(mtp_id, corner, swm_test_mode)
         if stop_on_err:
             cmd += " --stop-on-error"
         if skip_test:
             cmd += skipped_testlist
+        if mtpcfg_file:
+            mtp_cfg_file_opt = " --mtpcfg " + mtpcfg_file
+            cmd += mtp_cfg_file_opt
 
         mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
         mtp_start_ts = libmfg_utils.timestamp_snapshot()
@@ -280,19 +301,22 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
         cmd = "rm -rf {:s}".format(test_log_file)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
+        results[mtp_id + "-iteration-" + str(loop)] = result
+
         if not result and stop_on_err:
             return
 
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        # Issue in power-cycling the MTP box. (TODO)
+        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
 
-        mtp_mgmt_ctrl.mtp_apc_pwr_on()
-        mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-            return
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+        #mtp_mgmt_ctrl.mtp_apc_pwr_on()
+        #mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+        #libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+        #if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+        #    mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        #    return
+        #else:
+        #    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} complete".format(loop), level=0)
         mtp_mgmt_ctrl.cli_log_inf("Regression Test Iteration-{:03d} Duration:{:s}".format(loop, mtp_test_time), level=0)
@@ -301,23 +325,10 @@ def single_mtp_diag_regression(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, iteration,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
-    parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=True)
-    parser.add_argument("--email", help="Send report to email address")
-    parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
-    parser.add_argument("--pwr-cycle", help="Power cycle MTP before test", action='store_true')
-    parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
-    parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond))
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-
-    args = parser.parse_args()
-
     verbosity = False
     stop_on_err = False
     apc = False
-    email_to = DIAG_NIGHTLY_REPORT_RECEIPIENT
+    email_to = None
     pwr_cycle = False
     corner = Env_Cond.MFG_QA
     swmtestmode = Swm_Test_Mode.SW_DETECT 
@@ -339,8 +350,15 @@ def main():
     if args.swm:
         swmtestmode = args.swm
 
-    mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = get_mtpid_list(mtp_cfg_db)
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+    mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    if args.mtpid:
+        mtpid_list = []
+        mtpid_list.extend(args.mtpid)
+    else:
+        mtpid_list = get_mtpid_list(mtp_cfg_db)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 
@@ -358,6 +376,8 @@ def main():
     # power on the mtp chassis, if --apc is set
     if apc:
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    mtp_diag_image = os.getenv("DIAG_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+    nic_diag_image = os.getenv("DIAG_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_ARM64_IMAGE)
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
@@ -369,8 +389,6 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
         if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
@@ -419,8 +437,15 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP Regression Test script complete", level=0)
 
     mtp_thread_list = list()
+
+    # Init mutable result-dict
+    results = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_regression_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, args.skip_test, email_to, corner, swmtestmode))
+        for loop in range(1, iteration+1):
+            results[mtp_id + "-iteration-" + str(loop)] = False
+
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_thread = threading.Thread(target = single_mtp_diag_regression, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_regression_script_dir, mtp_mgmt_ctrl, mtp_id, iteration, stop_on_err, args.skip_test, email_to, corner, swmtestmode, results, mtpcfg_file))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -438,6 +463,13 @@ def main():
     regression_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("Regression Test Duration:{:s}".format(regression_stop_ts - regression_start_ts))
 
+    test_result = 0
+    print("Results")
+    for run_id in results.keys():
+        print("Run-ID: {0}: Result: {1}".format(run_id, results[run_id]))
+        if results[run_id] == False:
+            test_result = 1
+    sys.exit(test_result)
 
 if __name__ == "__main__":
     main()
