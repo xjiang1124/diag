@@ -1,7 +1,5 @@
 #!/bin/sh
 
-curl -o /usr/bin/asset-pull http://pm.test.pensando.io/tools/asset-pull && chmod +x /usr/bin/asset-pull
-
 # prepare env
 # TODO: is it the final location?
 mkdir -p /psdiag/lib/third-party
