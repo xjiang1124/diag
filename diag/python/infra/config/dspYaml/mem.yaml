@@ -70,10 +70,6 @@ DSP:
                 VALUE:
                     ALL: 60
                 INFO: number of seconds to run
-            mbytes:
-                VALUE:
-                    ALL: 20000
-                INFO: megabytes of ram to test
             copy_threads:
                 VALUE:
                     ALL: 16
