@@ -16,7 +16,7 @@ e2e-targets:
     area:
     sub-area:
     feature:
-    max-duration: 12h
+    max-duration: 24h
     build-dependencies:
      - build-amd64-elba
      - build-arm64-elba
