@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import datetime
+import errno
+import os
 import pexpect
 import sys
 import time
@@ -26,7 +28,7 @@ def load_yaml(filename):
             #config_dict = yaml.load(stream)
             config = ordered_load(stream, yaml.SafeLoader)
         except yaml.YAMLError as exc:
-            print exc
+            print(exc)
     return config
 
 #=========================================================
@@ -39,6 +41,18 @@ def create_folder(path):
             raise
 
 #=========================================================
+# Constant class
+class Const():
+    def __init__(self):
+        self.BASH_PROMPP = "\$ "
+        self.PWD_PROMPT = ": "
+        self.SUDO_PW = "lab123"
+        self.RET_VAL = "echo $?"
+        self.EXI = "exit"
+        self.DIAG_USR = "diag"
+        self.DIAG_PW = "lab123"
+        self.EOF = pexpect.EOF
+
 # Constant
 def constant(f):
     def fset(self, value):
@@ -86,7 +100,7 @@ def runcmd(cmd, timeout=30, sudo=False):
                 session.sendline(CONST.SUDO_PWD)
                 session.expect(pexpect.EOF, timeout=timeout)
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         return -1
     return 0
 
@@ -108,7 +122,7 @@ def run_cmd(cmd, timeout=30, sudo=False):
         return 0
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         session.close()
         return -2
 
@@ -141,11 +155,41 @@ def bash_cmd(cmd, timeout=30, sudo=False):
         return retval
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
         session.close()
         return -2
 
-#=============================
+
+
+
+    #=============================
+# Run command with provided session 
+def session_cmd_no_rc(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
+    session.timeout = timeout
+    expstr = [pwd_prompt, ending]
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = ["password for diag: "] + expstr
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        #print session.before
+        if i < (len(expstr) - 1):
+            session.sendline(sudo_pwd)
+            time.sleep(0.1)
+            session.expect(bash_prompt)
+            return 0
+
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT:", cmd, "===")
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return -2
+
+##=============================
 # Run command with provided session and get return value
 def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
     session.timeout = timeout
@@ -163,16 +207,107 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
             time.sleep(0.1)
             session.expect(bash_prompt)
             #print session.before
-        session.sendline("echo $?")
-        time.sleep(0.05)
-        session.expect(bash_prompt)
+        #session.sendline("echo $?")
+        #time.sleep(0.05)
+        #session.expect(bash_prompt)
         if session.before == "0":
             return 0
         else:
             return -1
 
     except pexpect.TIMEOUT:
-        print "=== TIMEOUT:", cmd, "==="
+        print("=== TIMEOUT:", cmd, "===")
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return -2
+
+#=============================
+# Run command with provided session and get return value, return with output
+def session_cmd_w_ot(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
+    session.timeout = timeout
+    expstr = [pwd_prompt, ending]
+    output = ""
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = expstr + ["password for diag: "] 
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        output = session.before
+        #print session.before
+        if i ==len(expstr) and sudo == True:
+            session.sendline(sudo_pwd)
+            time.sleep(0.1)
+            j = session.expect(bash_prompt)
+        return [0, output]
+
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT:", cmd, "===")
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return [-2, output]
+
+#=============================
+# Run command with provided session and get return value
+def session_cmd_pass(session, cmd, pass_sign="", timeout=30, ending=bash_prompt, sudo=False):
+    session.timeout = timeout
+    expstr = [pwd_prompt, ending]
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = ["password for diag: "] + expstr
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        #print session.before
+        if i < (len(expstr) - 1):
+            session.sendline(sudo_pwd)
+            time.sleep(0.1)
+            session.expect(bash_prompt)
+            #print session.before
+        if pass_sign in session.before:
+            return 0
+        else:
+            return -1
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT:", cmd, "===")
+        # Send CTRL+C
+        session.send(chr(3))
+        time.sleep(0.05)
+        session.expect(bash_prompt)
+        return -2
+
+#=============================
+# Run command with provided session and get return value
+def session_cmd_pass_multi(session, cmd, pass_sign_list=["NO PASS SIGN"], timeout=30, ending=bash_prompt, sudo=False):
+    session.timeout = timeout
+    expstr = [pwd_prompt, ending]
+    if sudo == True:
+        cmd = "sudo "+cmd
+        expstr = ["password for diag: "] + expstr
+    try:
+        session.sendline(cmd)
+        time.sleep(0.05)
+        i = session.expect(expstr)
+        #print session.before
+        if i < (len(expstr) - 1):
+            session.sendline(sudo_pwd)
+            time.sleep(0.1)
+            session.expect(bash_prompt)
+            #print session.before
+        
+        for pass_sign in pass_sign_list:
+            if pass_sign not in session.before:
+                return -1
+        return 0
+
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT:", cmd, "===")
         # Send CTRL+C
         session.send(chr(3))
         time.sleep(0.05)
@@ -188,7 +323,7 @@ def session_start(timeout=30):
         session.expect(bash_prompt) 
         return session
     except pexpect.TIMEOUT:
-        print "=== Faled to spawn bash session ==="
+        print("=== Faled to spawn bash session ===")
         return None
 
 #=============================
@@ -200,6 +335,66 @@ def session_stop(session, timeout=30):
         session.expect(pexpect.EOF) 
         return 0
     except pexpect.TIMEOUT:
-        print "=== Faled to stop bash session ==="
+        print("=== Faled to stop bash session ===")
         return -1
 
+#=============================
+# mkdir -p
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    # Python 2.5
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            print("mkdir_p failed")
+            raise
+
+#=============================
+# untar
+def untar(fname):
+    if (fname.endswith("tar.gz")):
+        tar = tarfile.open(fname, "r:gz")
+        tar.extractall()
+        tar.close()
+    elif (fname.endswith("tar")):
+        tar = tarfile.open(fname, "r:")
+        tar.extractall()
+        tar.close()
+
+#=============================
+def find_file(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    if result == []:
+        print("Can not find file!", pattern, path)
+    return result
+
+#=============================
+def find_dir(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for dir_name in dirs:
+            if fnmatch.fnmatch(dir_name, pattern):
+                result.append(os.path.join(root, dir_name))
+    if result == []:
+        print("Can not find file!", pattern, path)
+
+    return result
+
+#=============================
+def find_first_dir(path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        #print path, root, dirs
+        for dir_name in dirs:
+            result.append(os.path.join(root, dir_name))
+
+    if result == []:
+        print("Can not find file!", path)
+
+    return result

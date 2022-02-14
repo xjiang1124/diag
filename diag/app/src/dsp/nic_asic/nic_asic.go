@@ -1,0 +1,131 @@
+package main
+
+import (
+    "flag"
+    "os"
+
+    "asic/capri"
+    "asic/elba"
+    "common/diagEngine"
+    "common/dcli"
+    "common/errType"
+    "config"
+    "cardinfo"
+)
+
+//========================================================
+// Constant definition
+const (
+    // Each DSP should know it own name
+    dspName = "NIC_ASIC"
+)
+
+func Nic_AsicPcie_PrbsHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 60, "test time")
+    polyPtr := fs.String("poly", "PRBS31", "PRBS polynomial")
+    intLpbkPtr := fs.Int("int_lpbk", 0, "Internal loopback")
+    var cardType string
+    var err int
+
+    cardType = os.Getenv("CARD_TYPE")
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    if ( asicType == "ELBA" ) {
+        err = elba.Prbs("PCIE", *polyPtr, *durationPtr, *intLpbkPtr)
+    } else {
+        err = capri.Prbs("PCIE", *polyPtr, *durationPtr)
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+func Nic_AsicEth_PrbsHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 60, "test time")
+    polyPtr := fs.String("poly", "PRBS31", "PRBS polynomial")
+    intLpbkPtr := fs.Int("int_lpbk", 0, "Internal loopback")
+    var cardType string
+    var err int
+
+    cardType = os.Getenv("CARD_TYPE")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    if ( asicType == "ELBA" ) {
+        err = elba.Prbs("ETH", *polyPtr, *durationPtr, *intLpbkPtr)
+    } else {
+        err = capri.Prbs("ETH", *polyPtr, *durationPtr)
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+func Nic_Asic_L1Hdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    modePtr := fs.String("mode", "hod", "L1 mode")
+    snPtr := fs.String("sn", "SN00000000", "board serial number")
+    var cardType string
+    var err int
+
+    cardType = os.Getenv("CARD_TYPE")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    err, asicType := cardinfo.GetAsicType(cardType)
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+
+    if ( asicType == "ELBA" ) {
+        err = elba.L1(*modePtr, *snPtr)
+    } else {
+        dcli.Println("i", "Unsupported ASIC type", asicType)
+        err = errType.FAIL
+    }
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+func main() {
+    diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
+    diagEngine.FuncMap["PCIE_PRBS"] = Nic_AsicPcie_PrbsHdl
+    diagEngine.FuncMap["ETH_PRBS"] = Nic_AsicEth_PrbsHdl //remove this later
+    diagEngine.FuncMap["L1"] = Nic_Asic_L1Hdl
+
+    dcli.Init("log_"+dspName+".txt", config.OutputMode)
+    diagEngine.CardInfoInit(dspName)
+    diagEngine.DspInfraInit()
+    diagEngine.DspInfraMainLoop()
+}

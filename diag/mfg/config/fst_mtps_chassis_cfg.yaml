@@ -1,0 +1,191 @@
+###############################
+##### Flex Milpitas setup #####
+###############################
+
+MTPS-402:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.125"
+    APC1_PORT: "21"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.1.186"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps402"
+    SLOTS: 5
+    CAPABILITY: 0x4
+
+MTPS-404:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.1.125"
+    APC1_PORT: "22"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.1.187"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps404"
+    SLOTS: 5
+    CAPABILITY: 0x5
+#############################
+##### Flex Penang setup #####
+#############################
+
+MTPS-900:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.10"
+    APC1_PORT: "9"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.10"
+    APC2_PORT: "10"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.156"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps900"
+    SLOTS: 5
+    CAPABILITY: 0x4
+
+MTPS-902:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.10"
+    APC1_PORT: "11"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.10"
+    APC2_PORT: "12"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.135"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps902"
+    SLOTS: 5
+    CAPABILITY: 0x4
+
+MTPS-903:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.10"
+    APC1_PORT: "13"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.10"
+    APC2_PORT: "14"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.132"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps903"
+    SLOTS: 5
+    CAPABILITY: 0x4
+
+MTPS-904:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.10"
+    APC1_PORT: "6"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.10"
+    APC2_PORT: "7"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.130"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps904"
+    SLOTS: 5 
+    CAPABILITY: 0x4
+
+
+MTPS-905:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.150"
+    APC1_PORT: "4"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.150"
+    APC2_PORT: "5"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.253"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps905"
+    SLOTS: 5
+    CAPABILITY: 0x4
+
+MTPS-906:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.3.150"
+    APC1_PORT: "6"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.3.150"
+    APC2_PORT: "7"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: "192.168.3.12"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtps906"
+    SLOTS: 5
+    CAPABILITY: 0x4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

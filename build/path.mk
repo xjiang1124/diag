@@ -1,11 +1,11 @@
-COMMON_SRC_DIR=				\
+COMMON_SRC_DIR=			\
 	diagmgr 			\
-	dsp/pcieh   		\
-	dsp/pmbus   		\
-	dsp/qsfp    		\
-	dsp/rtc     		\
-	dsp/tempsensor     	\
+	dsp/asic			\
+	dsp/pcie_h   		\
 	util/devmgr			\
+	util/eeutil			\
+	util/i2cutil 		\
+	util/rtcutil 		\
 	util/smbutil 		\
 	util/sysmon
 
@@ -21,15 +21,48 @@ GO_TEST_DIR=						\
 	common/dmutex
 
 AMD64_SRC_DIR=			\
+	dsp/cpu 			\
+	dsp/i2cspi 			\
+	dsp/i2c 			\
+	dsp/sfp 			\
+	dsp/switch 			\
+	dsp/qsfp 			\
+	dsp/bcm 			\
 	util/cpldutil		\
-	util/mtptest
+	util/mctputil		\
+	util/fanutil        \
+	util/fpgautil       \
+	util/inventory		\
+	util/mtptest		\
+	util/swmadaputil	\
+	util/switch			\
+	util/pcieswutil
 
 AMD64_C_SRC_DIR=		\
-	lib/cpld
+	lib/cpld			\
+	util/jtag
 
+ARM64_SRC_DIR=			\
+	util/asicutil 		\
+	util/ledutil 		\
+	util/emmcutil		\
+	dsp/i2c 			\
+	dsp/emmc 			\
+	dsp/led  			\
+	dsp/mvl    			\
+	dsp/nic_asic		\
+	dsp/qsfp    		\
+	dsp/rtc				\
+	dsp/sfp				\
+	dsp/mem
 
-ARM64_SRC_DIR=
-ARM64_C_SRC_DIR=
+ARM64_C_SRC_DIR=		\
+	lib/spi_userspace	\
+	util/capricpld		\
+	util/xo3dcpld		\
+	util/artix7fpgaNew	\
+	lib/capricpld		\
+	lib/xo3dcpld
 
 
 

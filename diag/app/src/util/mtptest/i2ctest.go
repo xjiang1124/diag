@@ -5,8 +5,8 @@ import (
     "common/misc"
     "common/errType"
 
+    "device/cpld/mtpCpld"
     "device/fanctrl/adt7462"
-    "device/cpld"
 
     "hardware/hwdev"
     "hardware/hwinfo"
@@ -54,41 +54,44 @@ func fanTest() (err int) {
 
 func fanSpeedTest() (err int) {
     var rpm uint64
+    var err1 int
     fan := "FAN"
 
     var fanSpeedList = []FanSpeedConfig {
         FanSpeedConfig{
-            pct: 50,
+            pct: 60,
             rpmMin: 4000,
-            rpmMax: 6000,
+            rpmMax: 9000,
         },
     }
     for _, fanSpeed := range(fanSpeedList) {
-        err = hwdev.FanSpeedSet(fan, fanSpeed.pct, 7)
+        err1 = hwdev.FanSpeedSet(fan, fanSpeed.pct, 7)
         if err != errType.SUCCESS {
-            cli.Println("e", "#####", fan, "TEST FAILED! #####")
-            return
+            err = err1
+            cli.Println("e", fan, "access failed")
         }
 
         // Wait for speed to settle down
         misc.SleepInSec(10)
 
         for i := 0; i < 6; i++ {
-            rpm, err = hwdev.FanSpeedGet(fan, uint64(i))
-            if err != errType.SUCCESS {
-                cli.Println("e", "#####", fan, "TEST FAILED! #####")
-                return
+            rpm, err1 = hwdev.FanSpeedGet(fan, uint64(i))
+            if err1 != errType.SUCCESS {
+                err = err1
+                cli.Println("e", fan, "access failed")
             }
             if rpm < fanSpeed.rpmMin || rpm > fanSpeed.rpmMax {
                 cli.Printf("e", "Speed out of range, idx=%d, pct=%d, min=%d, max=%d, read rpm=%d\n",
                     i, fanSpeed.pct, fanSpeed.rpmMin, fanSpeed.rpmMax, rpm)
-                cli.Println("e", "#####", "Fan Speed", "TEST FAILED! #####")
                 err = errType.FAIL
-                return
             }
         }
     }
-    cli.Println("i", "#####", "Fan Speed", "TEST PASSED! #####")
+    if (err == errType.SUCCESS) {
+        cli.Println("i", "#####", "Fan Speed", "TEST PASSED! #####")
+    } else {
+        cli.Println("i", "#####", "Fan Speed", "TEST FAILED! #####")
+    }
     return
 }
 
@@ -126,7 +129,7 @@ func fanAlertTest() (err int) {
     fan := "FAN"
 
     // Read Fan controller alert status
-    value, err := cpld.CpldRead(0x5)
+    value, err := mtpCpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
         return
@@ -161,7 +164,7 @@ func fanAlertTest() (err int) {
 
     misc.SleepInSec(1)
 
-    value, err = cpld.CpldRead(0x5)
+    value, err = mtpCpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("i", "#####", "Fan Alert", "TEST FAILED! #####")
         return
@@ -184,18 +187,25 @@ func fanAlertTest() (err int) {
 
 
 func vrmTest() (err int) {
-    vrm := "DC"
+    vrm := "DC_1"
+    err = hwdev.DispStatus(vrm, "UUT_NONE")
+    if err != errType.SUCCESS {
+        cli.Println("e", "#####", vrm, "TEST FAILED! #####")
+        return
+    }    
+    vrm = "DC_2"
     err = hwdev.DispStatus(vrm, "UUT_NONE")
     if err != errType.SUCCESS {
         cli.Println("e", "#####", vrm, "TEST FAILED! #####")
     } else {
         cli.Println("i", "#####", vrm, "TEST PASSED! #####")
     }
+
     return
 }
 
 func stsCheck(psumask uint) (err int) {
-    value, err := cpld.CpldRead(0x3)
+    value, err := mtpCpld.CpldRead(0x3)
     if err != errType.SUCCESS {
         cli.Println("e", "#####", "Status Check", "TEST FAILED! #####")
         return

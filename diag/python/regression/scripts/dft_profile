@@ -18,5 +18,16 @@ fi
 
 # set PATH so it includes user's private bin directories
 PATH="$HOME/bin:$HOME/.local/bin:$PATH"
-CARD_NAME="MTP1"
-CARD_TYPE="MTP"
+export CARD_NAME="MTP1"
+export CARD_TYPE="MTP"
+export UUT_TYPE="NAPLES_MTP"
+export UUT_1="NAPLES_MTP"
+export UUT_2="NAPLES_MTP"
+export UUT_3="NAPLES_MTP"
+export UUT_4="NAPLES_MTP"
+export UUT_5="NAPLES_MTP"
+export UUT_6="NAPLES_MTP"
+export UUT_7="NAPLES_MTP"
+export UUT_8="NAPLES_MTP"
+export UUT_9="NAPLES_MTP"
+export UUT_10="NAPLES_MTP"

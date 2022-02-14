@@ -9,6 +9,7 @@ import (
     "common/misc"
     "device/rtc/pcf85263a"
     "config"
+    "protocol/smbus"
 )
 
 //========================================================
@@ -43,20 +44,36 @@ func RtcI2CHdl(argList []string) {
     if secondPost < secondPre {
         secondPost = secondPost + 60
     }
+    misc.SleepInSec(3)
+
+    err = smbus.Open("RTC")
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    data, err := smbus.ReadByte("RTC", 0x2E)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "failed to read RTC data")
+    }
+    dcli.Printf("d", "Stop_en: 0x%x\n", data)
 
     diff := secondPost - secondPre
-    if (diff > 2 && diff < 4) {
+    if (diff >= 2 && diff <= 4) {
+        dcli.Println("i", "RTC test passed")
         diagEngine.FuncMsgChan <- errType.SUCCESS
     } else {
         dcli.Println("e", "time difference is", diff, ";expected: 3")
         diagEngine.FuncMsgChan <- errType.FAIL
     }
+
+
     return
 }
 
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
-    diagEngine.FuncMap["I2C"] = RtcI2CHdl
+    diagEngine.FuncMap["RTC"] = RtcI2CHdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)

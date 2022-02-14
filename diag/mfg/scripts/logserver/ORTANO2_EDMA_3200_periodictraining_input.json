@@ -1,0 +1,66 @@
+{
+	"NAME": "ORTANO2_EDMA_3200_periodictraining",
+	"TYPE": "NIC",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_EDMA_3200_periodictraining_02",
+		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2_EDMA_3200_periodictraining",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2_EDMA_3200_periodictraining",
+		"reportpath":"/samba/public/REPORT/ORTANO2_EDMA_3200_periodictraining/",
+		"historypath":"/samba/public/HISTORY/ORTANO2_EDMA_3200_periodictraining"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_EDMA_3200_periodictraining_DB_TEST25.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"IMAGESUB" : {
+		"CPLD1 image" : "CPLD image1",
+		"CPLD2 image" : "CPLD image2"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"DISPLAYINDO" : [
+		"MTP Diag Version"
+	],
+	"CHECKKEYS" : [
+		"IMAGE",
+		"MTPINFO",
+		"NICINFO"
+	],
+	"DIE_ID" : 1,
+	"SKIPPrefix" : "FLM",
+	"STARTCountSN" : "FPN21200001",
+	"4CFLOW" : [
+				"4C-L (HV)",
+				"4C-L (LV)",
+				"4C-H (LV)",
+				"4C-H (HV)"
+				],
+	"TESTLIST" :[
+					"4C-L",
+					"4C-N",
+					"4C-H"					
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"4C/4C-L",
+					"4C/4C-N",
+					"4C/4C-H",
+					"SWI",
+					"FST"
+				]
+}

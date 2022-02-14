@@ -1,0 +1,23 @@
+{
+    "DocVersion" : "1.0",
+    "MfgDiagImages" : [
+        {
+            "Release" : "latest",
+            "Asic" : "elba",
+            "Board" : "ortano",
+            "Images" : {
+                "AMD64" : "image_amd64_elba.tar",
+                "ARM64" : "image_arm64_elba.tar"
+            }
+        },
+        {
+            "Release" : "latest",
+            "Asic" : "capri",
+            "Board" : "naples",
+            "Images" : {
+                "AMD64" : "image_amd64_capri.tar",
+                "ARM64" : "image_arm64_capri.tar"
+            }
+        }
+    ]
+}

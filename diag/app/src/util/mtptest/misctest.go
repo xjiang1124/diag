@@ -2,10 +2,14 @@ package main
 
 import (
     "common/cli"
+    "device/cpld/mtpCpld"
     "common/misc"
     "common/errType"
-    "device/cpld"
     "hardware/hwdev"
+    "util/utillib"
+    "hardware/i2cinfo"
+//    "device/mtpCpld"
+//    "util/utillib"
 )
 
 func mvlIntTest() (err int) {
@@ -13,12 +17,12 @@ func mvlIntTest() (err int) {
     var i uint
     for i = 0; i < 2; i++ {
         //clear int
-        _, err = cpld.MvlRead(i, 0x1b, 0x0);
+        _, err = mtpCpld.MvlRead(i, 0x1b, 0x0);
         if err != errType.SUCCESS {
             cli.Println("e", "Mvl swtich ", i, "mdio read failed!")
             return
         }
-        data, err = cpld.CpldRead(0x5)
+        data, err = mtpCpld.CpldRead(0x5)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
@@ -26,28 +30,28 @@ func mvlIntTest() (err int) {
         if data & (1 << i) != 0 {
             cli.Println("e", "Marvell switch ", i, "interrup is not cleaed!")
         }
-        
+
         //test
-        data, err = cpld.CpldRead(0x1)
+        data, err = mtpCpld.CpldRead(0x1)
         if err != errType.SUCCESS {
-            cli.Println("e", "CPLD read failed!")
+            cli.Println("e", "CPLD read 0x1 failed!")
             return
         }
         data |= 1 << (i+1)
-        err = cpld.CpldWrite(0x1, data)
+        err = mtpCpld.CpldWrite(0x1, data)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         misc.SleepInSec(1)
         data &= ^(1 << (i+1))
-        err = cpld.CpldWrite(0x1, data)
+        err = mtpCpld.CpldWrite(0x1, data)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         misc.SleepInSec(1)
-        data, err = cpld.CpldRead(0x5)
+        data, err = mtpCpld.CpldRead(0x5)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
@@ -57,9 +61,9 @@ func mvlIntTest() (err int) {
         } else {
             cli.Println("i", "##### Marvell switch", i, "TEST PASSED! #####")
         }
-        
+
         //clear on source again
-        _, err = cpld.MvlRead(i, 0x1b, 0x0);
+        _, err = mtpCpld.MvlRead(i, 0x1b, 0x0);
         if err != errType.SUCCESS {
             cli.Println("e", "Mvl swtich ", i, "mdio read failed!")
             return
@@ -71,7 +75,7 @@ func mvlIntTest() (err int) {
 
 func wdtIntTest() (err int) {
     var data uint8
-    data, err = cpld.CpldRead(0x5)
+    data, err = mtpCpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
         return
@@ -80,22 +84,22 @@ func wdtIntTest() (err int) {
         cli.Println("e", "Watch dog interrup is not cleaed!")
         return
     }
-    
-    data, err = cpld.CpldRead(0xe)
+
+    data, err = mtpCpld.CpldRead(0xe)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
         return
     }
     data |= 0x8
-    err = cpld.CpldWrite(0xe, data)
+    err = mtpCpld.CpldWrite(0xe, data)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD write failed!")
         return
     }
 
     misc.SleepInSec(35)
-    
-    data, err = cpld.CpldRead(0x5)
+
+    data, err = mtpCpld.CpldRead(0x5)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
         return
@@ -105,19 +109,19 @@ func wdtIntTest() (err int) {
     } else {
         cli.Println("i", "##### Watch dog TEST PASSED! #####")
     }
-    
-    data, err = cpld.CpldRead(0xe)
+
+    data, err = mtpCpld.CpldRead(0xe)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD read failed!")
         return
     }
     data &= ^uint8(0x8)
-    err = cpld.CpldWrite(0xe, data)
+    err = mtpCpld.CpldWrite(0xe, data)
     if err != errType.SUCCESS {
         cli.Println("e", "CPLD write failed!")
         return
     }
-    
+
     return
 }
 
@@ -130,31 +134,31 @@ func uutPowTest(uutMask uint) (err int) {
             continue;
         }
         //enable P3V3 and P12V
-        p12vData, err = cpld.CpldRead(p12vReg + i/8)
+        p12vData, err = mtpCpld.CpldRead(p12vReg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
         }
         p12vData |= 1 << (i % 8)
-        err = cpld.CpldWrite(p12vReg + i/8, p12vData)
+        err = mtpCpld.CpldWrite(p12vReg + i/8, p12vData)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
-        p3v3Data, err = cpld.CpldRead(p3v3Reg + i/8)
+        p3v3Data, err = mtpCpld.CpldRead(p3v3Reg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
         }
         p3v3Data |= 1 << (i % 8)
-        err = cpld.CpldWrite(p3v3Reg + i/8, p3v3Data)
+        err = mtpCpld.CpldWrite(p3v3Reg + i/8, p3v3Data)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         misc.SleepInUSec(500)
         //check present bit
-        present, err = cpld.CpldRead(pretReg + i/8)
+        present, err = mtpCpld.CpldRead(pretReg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
@@ -163,17 +167,17 @@ func uutPowTest(uutMask uint) (err int) {
             errMask |= 1 << i
             cli.Println("e", "12V was off, 3V3 was on, no present bit, inst", i, "failed!")
         }
-        
+
         //turn off 12V
         p12vData &= ^(1 << (i % 8))
-        err = cpld.CpldWrite(p12vReg + i/8, p12vData)
+        err = mtpCpld.CpldWrite(p12vReg + i/8, p12vData)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         misc.SleepInUSec(500)
         //check present bit
-        present, err = cpld.CpldRead(pretReg + i/8)
+        present, err = mtpCpld.CpldRead(pretReg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
@@ -182,23 +186,23 @@ func uutPowTest(uutMask uint) (err int) {
             errMask |= 1 << i
             cli.Println("e", "12V was off, 3V3 was on, still hold present bit, inst", i, "failed!")
         }
-        
+
         //turn on 12V, turn off 3.3V
         p12vData |= 1 << (i % 8)
-        err = cpld.CpldWrite(p12vReg + i/8, p12vData)
+        err = mtpCpld.CpldWrite(p12vReg + i/8, p12vData)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         p3v3Data &= ^(1 << (i % 8))
-        err = cpld.CpldWrite(p3v3Reg + i/8, p3v3Data)
+        err = mtpCpld.CpldWrite(p3v3Reg + i/8, p3v3Data)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         misc.SleepInUSec(500)
         //check present bit
-        present, err = cpld.CpldRead(pretReg + i/8)
+        present, err = mtpCpld.CpldRead(pretReg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
@@ -207,17 +211,17 @@ func uutPowTest(uutMask uint) (err int) {
             errMask |= 1 << i
             cli.Println("e", "12V was on, 3V3 was off, still hold present bit, inst", i, "failed!")
         }
-        
+
         //turn off 12V, turn off 3.3V
         p12vData &= ^(1 << (i % 8))
-        err = cpld.CpldWrite(p12vReg + i/8, p12vData)
+        err = mtpCpld.CpldWrite(p12vReg + i/8, p12vData)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
         misc.SleepInUSec(500)
         //check present bit
-        present, err = cpld.CpldRead(pretReg + i/8)
+        present, err = mtpCpld.CpldRead(pretReg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
@@ -227,7 +231,7 @@ func uutPowTest(uutMask uint) (err int) {
             cli.Println("e", "12V was off, 3V3 was off, still hold present bit, inst", i, "failed!")
         }
     }
-    
+
     if errMask > 0 {
         cli.Println("e", "##### UUT Power TEST FAILED! #####")
         err = int(errMask)
@@ -245,26 +249,26 @@ func peRstTest(uutMask uint) (err int) {
         if uutMask & (1 << i) == 0 {
             continue;
         }
-        peRstData, err = cpld.CpldRead(peRstReg + i/8)
+        peRstData, err = mtpCpld.CpldRead(peRstReg + i/8)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD read failed!")
             return
         }
         peRstData |= 1 << (i % 8)
-        err = cpld.CpldWrite(peRstReg + i/8, peRstData)
+        err = mtpCpld.CpldWrite(peRstReg + i/8, peRstData)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
         }
-        err = hwdev.DispStatus("NPL_MTP", "UUT_NONE")
+        err = hwdev.DispStatus("NAPLES_MTP", "UUT_NONE")
         if err == errType.SUCCESS {
             errMask |= 1 << i
             cli.Println("e", "I2C is accessible when PeRst is set, inst", i, "failed")
         }
-        
+
         //unreset peRst
         peRstData &= ^(1 << (i % 8))
-        err = cpld.CpldWrite(peRstReg + i/8, peRstData)
+        err = mtpCpld.CpldWrite(peRstReg + i/8, peRstData)
         if err != errType.SUCCESS {
             cli.Println("e", "CPLD write failed!")
             return
@@ -276,6 +280,94 @@ func peRstTest(uutMask uint) (err int) {
         return
     }
     cli.Println("i", "#####", "PERST", "TEST PASSED! #####")
+    return
+}
+
+func pcsTest(index uint) (err int) {
+    var inst, phy, addr, data uint
+    // nic -> MTP
+    inst = index / 5
+    phy = (index % 5) + 0x10
+    addr = 0x1
+    data, _ = mtpCpld.MvlRead(inst, phy, uint(addr))
+    if (data >> 14 == 0x3) && (data != 0xffff) {
+        cli.Println("i", "NIC to MTP PCS is sync'd!")
+    } else {
+        cli.Printf("e", "NIC to MTP PCS is NOT sync'd! PCS control register is 0x%x\n", data)
+        err = 1
+    }
+    // MTP -> nic
+    i2cinfo.SwitchI2cTblByIndex(index)
+    phy = 0xD
+    addr = 0x11
+    data, _ = utillib.ReadWriteSmi("READ", uint64(phy), uint64(addr), uint16(data), "b")
+    if (data & 0x400 > 0) && (data != 0xffff) {
+        cli.Println("i", "MTP to NIC PCS is sync'd!")
+    } else {
+        cli.Printf("e", "MTP to NIC PCS is NOT sync'd! Status register is 0x%x\n", data)
+        err = 1
+    }
+    if err > 0 {
+        cli.Println("e", "##### PCS TEST FAILED! #####")
+    } else {
+        cli.Println("i", "##### PCS TEST PASSED! #####")
+    }
+    return
+}
+
+func prstTest() (err int) {
+    var data, fan, psu, i uint8
+    absent := 0
+    data, err = mtpCpld.CpldRead(0x3)
+    fan = data & 0x7
+    for i = 0; i < 3; i++ {
+        if fan & uint8(1 << i) > 0 {
+            cli.Println("i", "Fan", i, "is present")
+        } else {
+            cli.Println("i", "Fan", i, "is NOT present")
+            absent = 1
+        }
+    }
+    psu = (data >> 0x3) & 0x3
+    for i = 0; i < 2; i++ {
+        if psu & uint8(1 << i) > 0 {
+            cli.Println("i", "PSU", i, "is present")
+        } else {
+            cli.Println("i", "PSU", i, "is NOT present")
+            absent = 1
+        }
+    }
+
+//    //turn on all nic
+//    err = mtpCpld.CpldWrite(0x10, 0x0)
+//    err = mtpCpld.CpldWrite(0x11, 0x0)
+//    
+//    misc.SleepInUSec(500000)
+//    nic, err = mtpCpld.CpldRead(0x14)
+//    for i = 0; i < 8; i++ {
+//        if nic & uint8(1 << i) > 0 {
+//            cli.Println("i", "NIC", i, "is present")
+//        } else {
+//            cli.Println("i", "NIC", i, "is NOT present")
+//            absent = 1
+//        }
+//    }
+//    nic, err = mtpCpld.CpldRead(0x15)
+//    for i = 0; i < 2; i++ {
+//        if nic & uint8(1 << i) > 0 {
+//            cli.Println("i", "NIC", i+8, "is present")
+//        } else {
+//            cli.Println("i", "NIC", i+8, "is NOT present")
+//            absent = 1
+//        }
+//    }
+
+    if absent == 1 {
+        cli.Println("e", "##### Present TEST FAILED! #####")
+    } else {
+        cli.Println("i", "##### Present TEST PASSED! #####")
+    }
+    
     return
 }
 

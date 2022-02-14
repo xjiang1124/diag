@@ -1,0 +1,24 @@
+# !/bin/bash
+
+if [[ $CARD_TYPE == "TAORMINA" ]]
+then
+    if [ "x$1" == "x0" ] ; then
+        #./setConsole.bash
+        i2cset -y -a 3 1 1 2
+        i2cset -y 3 0x4a 0x22 0xA0
+        i2cset -y 3 0x4a 0x21 0x61
+        picocom -b 115200 -f h /dev/ttyS2
+    elif [ "x$1" == "x1" ] ; then
+        #./setConsole.bash
+        i2cset -y -a 3 1 1 3
+        i2cset -y 3 0x4a 0x22 0xA0
+        i2cset -y 3 0x4a 0x21 0x61
+        picocom -b 115200 -f h /dev/ttyS3
+    fi
+
+else
+cpldutil -cpld-wr -addr=0x18 -data=0
+cpldutil -cpld-wr -addr=0x18 -data=$1
+
+picocom -b 115200 -f h /dev/ttyS1
+fi

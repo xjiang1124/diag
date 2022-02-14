@@ -1,0 +1,31 @@
+#=======================================================================
+#
+# README
+#
+# The script to do failure analysis is mfg_parse.pl
+# The bash script mfg_parse.sh copies logs from /mfg_log/
+# on MFG server (192.168.3.2) and calls mfg_parse.pl
+# 
+# 1. Copy the latest mfg_parse.sh to /home/mfg/mfg_diag_fa/
+# directory on MFG server
+# 2. Copy the latest mfg_parse.pl to /home/mfg/mfg_diag_fa/scripts/
+# directory on MFG server
+# 3. Then in /home/mfg/mfg_diag_fa/, put all the SNs that need
+# parsing into a file, one SN per line
+# 4. Run the mfg_parse.sh script with the syntax below:
+#    Usage: ./mfg_parse.sh [options]
+#    options:
+#    -c, --card        Card type
+#    -s, --stage       Stage(s), comma separated
+#    -f, --faopt       FA option: first/last/all
+#    -l, --snfile      SN file
+#    -d, --logdir      Directory to store logs
+#    -t, --testname    Test name (optional parameter to only parse this particular test name)
+#    -m, --mfgerrcode  Mfg err code (optional parameter to only parse this particular MFG err code)
+#    -h, --help        Print this help
+
+#    Example:
+#    ./mfg_parse.sh -c ORTANO2 -s 4c-h -f last -l ./sn_list.txt -d debug
+# 5. The output is parse_rersult_<stage>_<timestamp>.xlsx in the same directory
+#=======================================================================
+

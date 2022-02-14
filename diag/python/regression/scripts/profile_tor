@@ -1,0 +1,5 @@
+DIAG_HOME=/home/diag/
+source $DIAG_HOME/diag/scripts/taormina/taor_init.sh 
+source $DIAG_HOME/diag/python/infra/config/scripts/pre_dsp_tor
+
+export MTP_TYPE=MTP_TOR

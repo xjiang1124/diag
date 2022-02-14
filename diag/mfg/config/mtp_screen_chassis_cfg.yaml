@@ -1,0 +1,29 @@
+###############################
+##### Flex Milpitas setup #####
+###############################
+
+MTP-063:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: "192.168.71.103"
+    APC1_PORT: "11"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.68.117"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp063"
+    SLOTS: 10
+    SKIP_SLOTS:
+    CAPABILITY: 0x3
+
+
+
+

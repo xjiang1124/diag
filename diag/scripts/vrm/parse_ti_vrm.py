@@ -74,7 +74,7 @@ for item in param:
 with open('naples_53659_pre.img') as f:
     lines = f.readlines()
 
-img = open('naples_53659.img', 'w')
+img = open(outfile, 'w')
 
 for line in lines:
     if 'SendByte,0x11' in line:

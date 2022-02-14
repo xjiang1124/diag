@@ -1,0 +1,64 @@
+{
+	"NAME": "Ortano_FSTwk51wk52Failed",
+	"TYPE": "NIC",
+	"SNLIST": "FSTwk51wk52Failed.xlsx",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_Ortano_FSTwk51wk52Failed_ORTANO2",
+		"TEMPDATABASE": "/samba/public/tmp_database/Ortano_FSTwk51wk52Failed",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
+		"reportpath":"/samba/public/REPORT/Ortano_FSTwk51wk52Failed/",
+		"historypath":"/samba/public/HISTORY/Ortano_FSTwk51wk52Failed"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"IMAGESUB" : {
+		"CPLD1 image" : "CPLD image1",
+		"CPLD2 image" : "CPLD image2"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"DISPLAYINDO" : [
+		"CPLD image1",
+		"QSPI image",
+		"MTP Diag Version"
+	],
+	"CHECKKEYS" : [
+		"IMAGE",
+		"MTPINFO",
+		"NICINFO"
+	],
+	"DIE_ID" : 1,
+	"UNZIP" : 1,
+	"SKIPPrefix" : "FLM",
+	"STARTCountSN" : "FPN21200001",
+	"4CFLOW" : [
+				"4C-L (HV)",
+				"4C-L (LV)",
+				"4C-H (LV)",
+				"4C-H (HV)"
+				],
+	"TESTLIST" :[
+					"FST"
+					
+					],
+	"TESTFOLDER":[
+					"FST"
+				]
+	
+}

@@ -1,0 +1,100 @@
+# global init command beore diag run
+INIT:
+    - "Initialize command 1"
+
+SKIP:
+    # skip whole dsp
+    # - "DSP1#ALL"
+    # skip single test of a dsp
+    - "DSP2#TEST1"
+    # skip multiple tests of a dsp, seperate with '#'
+    # - "DSP3#TEST1#TEST2"
+
+PARAMS:
+    P2C:
+        - "MTP1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "MTP1#ASIC#L1#offload=1"
+    4C:
+        - "MTP1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "MTP1#ASIC#L1#offload=1"
+
+MTP_PRE:
+    NIC_POWER: True
+    NIC_JTAG: True
+    NIC_STATUS: True
+    NIC_DIAG_BOOT: True
+    NIC_FPGA: True
+
+NIC_PARA:
+    RTC:
+        RTC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    EMMC:
+        EMMC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    I2C:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    SFP:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+    NIC_ASIC:
+        PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: Yes
+                SLOT: No
+                VMARG: Yes
+                MODE: Yes
+
+
+MTP_PARA:
+    ETH_PRBS: True
+    SNAKE_ELBA: True
+
+MTP_SEQ:
+    ASIC:
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+                VMARG: Yes
+                MODE: Yes
+
+
+MTP_POST:
+    NIC_MEM:  False

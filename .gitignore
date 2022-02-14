@@ -4,6 +4,7 @@ test_argparse
 *.[ao]
 *.dylib
 *.so
+*.tar
 *rdb
 *swp
 bin/
@@ -19,3 +20,11 @@ diag/util/jtag/jtag_cpurd
 diag/util/cpld/cpld_program
 diag/util/spi/spi_acc
 diag/util/mdio/mdio_acc
+asic_repo/
+*bin
+*jed
+*csv
+test_logs
+*xlsx
+*DS_Store
+*txt

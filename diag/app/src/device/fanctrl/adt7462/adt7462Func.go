@@ -1,12 +1,14 @@
 package adt7462
 
 import (
+    "os"
     "fmt"
-
+    "time"
     "common/cli"
     "common/errType"
     "common/misc"
     "protocol/smbus"
+    //"hardware/hwinfo"
 )
 
 const (
@@ -62,6 +64,96 @@ var pwmConfigTbl = []config {
     {PWM2_DUTY_CYCLE, 0, 8, 0x80}, // PWM2 initial duty cycle
     {PWM3_DUTY_CYCLE, 0, 8, 0x80}, // PWM3 initial duty cycle
 }
+
+
+func I2cTest(devName string) (err int) {
+    var backup, data8 uint8
+    patterns := []uint8{ 0xAA, 0x55 }
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    backup, err = smbus.ReadByte(devName, PWM1_MIN)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    for i:=0; i<len(patterns); i++ {
+        err = smbus.WriteByte(devName, PWM1_MIN, patterns[i])
+        if err != errType.SUCCESS {
+            return
+        }
+
+        data8, err = smbus.ReadByte(devName, PWM1_MIN)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        if patterns[i] != data8 {
+            err = errType.FAIL
+            cli.Printf("e", "Device-%s Register 0x%x:  Wrote 0x%.04x   Read 0x%.04x\n", devName, PWM1_MIN, (patterns[i]), data8)
+            return
+        }
+    }
+
+    err = smbus.WriteByte(devName, PWM1_MIN, backup)
+    if err != errType.SUCCESS {
+        return
+    }
+    
+    return
+}
+
+
+func ReadReg(devName string, addr uint32) (data byte, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    data, err = smbus.ReadByte(devName, uint64(addr))
+    if err != errType.SUCCESS {
+        return
+    }
+    return
+}
+
+func WriteReg(devName string, addr uint32, data byte) (err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    err = smbus.WriteByte(devName, uint64(addr), data)
+    if err != errType.SUCCESS {
+        return
+    }
+    return
+}
+
+func DumpReg(devName string) (err int) {
+    var data byte
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    for _, entry := range(FAN_REGISTERS) {
+        data, err = smbus.ReadByte(devName, entry.Address)
+        if err != errType.SUCCESS {
+            return
+        }
+        fmt.Printf("%-20s [%.02x] = %.02x\n", entry.Name, entry.Address, data)
+    }
+    return
+}
+
 
 func Setup(devName string) (err int) {
     err = smbus.Open(devName)
@@ -172,13 +264,23 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
     }
 
     tachLsb, err = smbus.ReadByte(devName, tachLsbReg)
+    if err != errType.SUCCESS {
+        cli.Println("f", "Failed to get tach LSB", devName)
+    }
     tachMsb, err = smbus.ReadByte(devName, tachMsbReg)
+    if err != errType.SUCCESS {
+        cli.Println("f", "Failed to get tach MSB", devName)
+    }
 
     // Calculate rpm
     // 9k*60/tach
     temp = (uint64(tachMsb) << 8) | uint64(tachLsb)
-    rpm = 90000*60/temp
-    if rpm < 100 {
+    if temp != 0 {
+        rpm = 90000*60/temp 
+        // if rpm < 100 {
+        //    rpm = 0
+        // }
+    } else {
         rpm = 0
     }
     return
@@ -202,6 +304,7 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
 
     var pwmReg uint64
     var pwmVal uint64
+    var pwmVal_rd byte 
 
     if pwmIdx > FAN_4_PWM {
         err = errType.SUCCESS
@@ -214,13 +317,28 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
     }
 
     pwmReg = PWM1_DUTY_CYCLE + pwmIdx
-    pwmVal = pct * 100 / 39
+    pwmVal = (pct * 255) / 100
     if pct > 0 && byte(pwmVal) == 0 {
         pwmVal = 0xFF
     }
 
     //cli.Printf("i", "Reg: 0x%x, value0x%x\n", pwmReg, byte(pwmVal))
-    err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
+    for i:=0; i < 3; i++ {
+        err = smbus.WriteByte(devName, pwmReg, byte(pwmVal))
+        if err != errType.SUCCESS {
+            cli.Println("e", "failed to set pwm register")
+        }
+        time.Sleep(time.Duration(50) * time.Millisecond)
+        pwmVal_rd, err = smbus.ReadByte(devName, pwmReg)
+        if err != errType.SUCCESS {
+            cli.Println("e", "failed to read pwm register")
+        }
+        if pwmVal_rd == byte(pwmVal) {
+            return
+        }
+        time.Sleep(time.Duration(500) * time.Millisecond)
+    }
+    cli.Printf("e", "%d: pwm reg value is not expected, read: 0x%x expected: 0x%x\n", pwmIdx, pwmVal_rd, byte(pwmVal))
     return
 }
 
@@ -256,64 +374,132 @@ func GetTemp(devName string, tempIdx uint64) (integer int, frac int,  err int) {
     return
 }
 
+func GetTemperature(devName string) (temperatures []float64, err int) {
+    dig, frac, err := GetTemp(devName, 0)
+    temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+    return
+}
+
 func DispStatus(devName string) (err int) {
-    var fmtDig string = "%d"
-    var fmtDigFrac string = "%d.%02d"
-    var fmtStr = "%-15s"
-    var fmtNameStr = "%-20s"
-    var outStr string
-    var outStrTemp string
-    var rpm uint64
-    var integer int
-    var frac int
 
-    // Fan speed
-    titles := []string {"FAN1-Inlet", "FAN1-Outlet", "FAN2-Inlet", "FAN2-Outlet",
-                          "FAN3-Inlet", "FAN3-Outlet", "FAN4-Inlet", "FAN4-Outlet"}
-    outStr = fmt.Sprintf(fmtNameStr, "NAME")
-    for _, title := range(titles) {
-        outStr = outStr + fmt.Sprintf(fmtStr, title)
-    }
-    cli.Println("i", "=================================")
-    cli.Println("i", outStr)
 
-    outStr = fmt.Sprintf(fmtNameStr, devName)
+    cardType := os.Getenv("CARD_TYPE")
+        if cardType == "TAORMINA" {
+        var fmtStr = "%-19s"
+        var fmtNameStr = "%-20s"
+        var outStr string
+        var outStrTemp string
+        var integer int
+        var frac int
+        var data byte
+        var rpm [8]uint64
 
-    for i := 0; i < NUM_FAN; i++ {
-        rpm, err = GetFanSpeed(devName, uint64(i))
+        //TACH_ENABLE            [07] = 3f
+        data, err = ReadReg(devName, TACH_ENABLE) 
         if err != errType.SUCCESS {
-            cli.Println("f", "Failed to get fan speed!", i, err)
+            cli.Println("f", "Failed register read to device ", devName)
             return
         }
-        if rpm == 65535 {
-            rpm = 0
+        //If tach enable is zero, part isn't initialized...   
+        if data == 0x00 {
+            err = Setup(devName)
+            if err != errType.SUCCESS {
+                cli.Println("f", "Setup of ", devName, " Failed")
+                return
+            }
+            misc.SleepInSec(2)
         }
-        outStrTemp = fmt.Sprintf(fmtDig, rpm)
-        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-    }
-    cli.Println("i", outStr)
+        // Fan speed
+        titles := []string {"FAN1 Inlet/Outlet", "FAN2 Inlet/Outlet", "FAN3 Inlet/Outlet", "Local Temp"}
+        outStr = fmt.Sprintf(fmtNameStr, "NAME")
+        for _, title := range(titles) {
+            outStr = outStr + fmt.Sprintf(fmtStr, title)
+        }
+        cli.Println("i", "=================================")
+        cli.Println("i", outStr)
 
-    // Temp
-    vrmTitle := []string {"Local", "Remote-1", "Remote-2", "Remote-3"}
-    outStr = fmt.Sprintf(fmtNameStr, "NAME")
-    for _, title := range(vrmTitle) {
-        outStr = outStr + fmt.Sprintf(fmtStr, title)
-    }
-    cli.Println("i", "--------------------")
-    cli.Println("i", outStr)
+        outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    outStr = fmt.Sprintf(fmtNameStr, devName)
-
-    for i := 0; i < NUM_TEMP; i++ {
-        integer, frac, err = GetTemp(devName, uint64(i))
+        for i := 0; i < NUM_FAN; i++ {
+            rpm[i], err = GetFanSpeed(devName, uint64(i))
+            if err != errType.SUCCESS {
+                cli.Println("f", "Failed to get fan speed!", i, err)
+                return
+            }
+        }
+        for i := 0; i < 6; i+=2 {
+            outStrTemp = fmt.Sprintf("%d / %d", rpm[i], rpm[i+1])
+            outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        }
+        // Temp
+        integer, frac, err = GetTemp(devName, 0)
         if err != errType.SUCCESS {
-            cli.Println("f", "Failed to get temp!", i, err)
+            cli.Println("f", "Failed to get temp!", err)
             return
         }
-        outStrTemp = fmt.Sprintf(fmtDigFrac, integer, frac)
+        outStrTemp = fmt.Sprintf("%d.%02d", integer, frac)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        cli.Println("i", outStr)
+
+
+    } else {
+        var fmtDig string = "%d"
+        var fmtDigFrac string = "%d.%02d"
+        var fmtStr = "%-15s"
+        var fmtNameStr = "%-20s"
+        var outStr string
+        var outStrTemp string
+        var rpm uint64
+        var integer int
+        var frac int
+        // Fan speed
+        titles := []string {"FAN1-Inlet", "FAN1-Outlet", "FAN2-Inlet", "FAN2-Outlet",
+                              "FAN3-Inlet", "FAN3-Outlet", "FAN4-Inlet", "FAN4-Outlet"}
+        outStr = fmt.Sprintf(fmtNameStr, "NAME")
+        for _, title := range(titles) {
+            outStr = outStr + fmt.Sprintf(fmtStr, title)
+        }
+        cli.Println("i", "=================================")
+        cli.Println("i", outStr)
+
+        outStr = fmt.Sprintf(fmtNameStr, devName)
+
+        for i := 0; i < NUM_FAN; i++ {
+            rpm, err = GetFanSpeed(devName, uint64(i))
+            if err != errType.SUCCESS {
+                cli.Println("f", "Failed to get fan speed!", i, err)
+                return
+            }
+            if rpm == 65535 {
+                rpm = 0
+            }
+            outStrTemp = fmt.Sprintf(fmtDig, rpm)
+            outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        }
+        cli.Println("i", outStr)
+
+        // Temp
+        vrmTitle := []string {"Local", "Outlet", "Inlet-1", "Inlet-2"}
+        outStr = fmt.Sprintf(fmtNameStr, "NAME")
+        for _, title := range(vrmTitle) {
+            outStr = outStr + fmt.Sprintf(fmtStr, title)
+        }
+        cli.Println("i", "--------------------")
+        cli.Println("i", outStr)
+
+        outStr = fmt.Sprintf(fmtNameStr, devName)
+
+        for i := 0; i < NUM_TEMP; i++ {
+            integer, frac, err = GetTemp(devName, uint64(i))
+            if err != errType.SUCCESS {
+                cli.Println("f", "Failed to get temp!", i, err)
+                return
+            }
+            outStrTemp = fmt.Sprintf(fmtDigFrac, integer, frac)
+            outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+        }
+        cli.Println("i", outStr+"\n")
     }
-    cli.Println("i", outStr+"\n")
     return
 }
 

@@ -40,6 +40,10 @@ var initStatus int = INIT_NONE
 
 var OutputMode int
 
+var verbose int = misc.ENABLE
+
+var timeStampEnable int = misc.ENABLE
+
 func Init(fileName string, mode int) {
     OutputMode = mode
 
@@ -56,11 +60,12 @@ func Init(fileName string, mode int) {
 	multi := io.MultiWriter(os.Stdout)
     if fileName != "" {
         //file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_SYNC|os.O_APPEND, 0666)
-        file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY|os.O_SYNC, 0666)
+        os.Remove(path+fileName)
+        file, err := os.OpenFile(path+fileName, os.O_CREATE|os.O_WRONLY|os.O_SYNC|os.O_APPEND, 0666)
         if err != nil {
             log.Fatal("Open file failed!", path, fileName)
         }
-        multi = io.MultiWriter(os.Stdout, file)
+        multi = io.MultiWriter(os.Stdout, os.Stderr, file)
     }
 
 	var debugHandle io.Writer = multi
@@ -87,6 +92,15 @@ func makeTimestampMilli() int64 {
         return unixMilli(time.Now())
 }
 
+func TimeStampEnable (enable int) {
+    if enable == misc.DISABLE {
+        timeStampEnable = misc.DISABLE
+    } else {
+        timeStampEnable = misc.ENABLE
+    }
+}
+
+
 func TStamp() string {
 	m := makeTimestampMilli()
     timeStr := fmt.Sprintln(time.Unix(m/1e3, (m%1e3)*int64(time.Millisecond)/int64(time.Nanosecond)))
@@ -110,7 +124,15 @@ func FmtJsonOut(outStr string) string {
     return jsonOut
 }
 
-func formatOutput(lvl string, pOutStr string) string {
+func EnableVerbose() {
+    verbose = misc.ENABLE
+}
+
+func DisableVerbose() {
+    verbose = misc.DISABLE
+}
+
+func FormatOutput(lvl string, pOutStr string) string {
     var outStr string
     // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
     // Remove the extra stuff
@@ -145,9 +167,12 @@ func formatOutput(lvl string, pOutStr string) string {
 
 // Println outputs per desired log level
 func Println(lvl string, a...interface{}) (err error) {
+    if verbose == misc.DISABLE {
+        return
+    }
 
     outStr := fmt.Sprintln(a)
-    outStr = formatOutput(lvl, outStr)
+    outStr = FormatOutput(lvl, outStr)
 
     if initStatus == INIT_DONE {
         switch lvl {
@@ -179,7 +204,7 @@ func Println(lvl string, a...interface{}) (err error) {
     return nil
 }
 
-func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
+func FormatOutput1Pre(lvl string, format string, a []interface{}) (outStr string) {
     outStr = fmt.Sprintf(format, a...)
     switch lvl {
     case "debug", "d", "error", "e":
@@ -195,21 +220,30 @@ func formatOutput1(lvl string, format string, a []interface{}) (outStr string) {
         outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
     default:
     }
+    return
+}
 
+func FormatOutput1(lvl string, format string, a []interface{}) (outStr string) {
+    outStr = FormatOutput1Pre(lvl, format, a)
     timeStr := TStamp()
 
     // Control output for special format
     if (OutputMode == 1) {
         outStr = FmtJsonOut(outStr)
     } else {
-        outStr = "["+timeStr+"]"+" "+outStr
+        if timeStampEnable == misc.ENABLE {
+            outStr = "["+timeStr+"]"+" "+outStr
+        }
     }
     return
 }
 
 func Printf(lvl string, format string, a ...interface{}) error {
+    if verbose == misc.DISABLE {
+        return nil
+    }
 
-    outStr := formatOutput1(lvl, format, a)
+    outStr := FormatOutput1(lvl, format, a)
     if initStatus == INIT_DONE {
         switch lvl {
         case "debug", "d":
@@ -239,5 +273,4 @@ func Printf(lvl string, format string, a ...interface{}) error {
     }
 
     return nil
-
 }

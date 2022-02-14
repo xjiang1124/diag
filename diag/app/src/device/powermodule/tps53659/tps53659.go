@@ -4,6 +4,7 @@ import (
     "bufio"
     "encoding/hex"
     "fmt"
+    //"math"
     "os"
     "reflect"
     "sort"
@@ -11,8 +12,9 @@ import (
 
     "common/cli"
     "common/errType"
+    "common/misc"
     "hardware/i2cinfo"
-    "hardware/pmbusCmd"
+    //"hardware/pmbus"
     "protocol/pmbus"
 )
 
@@ -31,13 +33,13 @@ var devInfoMap map[string]DEV_INFO
 
 func init() {
     devInfoMap = make(map[string]DEV_INFO)
-    devInfoMap["MFR_ID"]        = DEV_INFO{MFR_ID, 2, "BLOCK"}
-    devInfoMap["MFR_MODEL"]     = DEV_INFO{MFR_MODEL, 2, "BLOCK"}
-    devInfoMap["MFR_REVISION"]  = DEV_INFO{MFR_REVISION, 2, "BLOCK"}
-    devInfoMap["MFR_DATE"]      = DEV_INFO{MFR_DATE, 2, "BLOCK"}
-    devInfoMap["MFR_SERIAL"]    = DEV_INFO{MFR_SERIAL, 4, "BLOCK"}
-    devInfoMap["IC_DEVICE_ID"]  = DEV_INFO{IC_DEVICE_ID, 1, "BLOCK"}
-    devInfoMap["IC_DEVICE_REV"] = DEV_INFO{IC_DEVICE_REV, 1, "BLOCK"}
+    devInfoMap["MFR_ID"]        = DEV_INFO{pmbus.MFR_ID, 2, "BLOCK"}
+    devInfoMap["MFR_MODEL"]     = DEV_INFO{pmbus.MFR_MODEL, 2, "BLOCK"}
+    devInfoMap["MFR_REVISION"]  = DEV_INFO{pmbus.MFR_REVISION, 2, "BLOCK"}
+    devInfoMap["MFR_DATE"]      = DEV_INFO{pmbus.MFR_DATE, 2, "BLOCK"}
+    devInfoMap["MFR_SERIAL"]    = DEV_INFO{pmbus.MFR_SERIAL, 4, "BLOCK"}
+    devInfoMap["IC_DEVICE_ID"]  = DEV_INFO{pmbus.IC_DEVICE_ID, 1, "BLOCK"}
+    devInfoMap["IC_DEVICE_REV"] = DEV_INFO{pmbus.IC_DEVICE_REV, 1, "BLOCK"}
 }
 
 /*
@@ -119,7 +121,7 @@ func ReadStatus(devName string) (status uint16, err int) {
         return
     }
 
-    status, err = pmbusCmd.ReadStatusWord(devName, page)
+    status, err = pmbus.ReadStatusWord(devName, page)
     return
 }
 
@@ -141,11 +143,11 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     }
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
 
-    data, err = pmbus.ReadWord(devName, READ_VOUT)
+    data, err = pmbus.ReadWord(devName, pmbus.READ_VOUT)
 
-    dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
 
     if dacStepRegVal == DAC_STEP_5MV {
         dacStep = 5
@@ -175,12 +177,12 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     }
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
 
     // Read Vboot
     data, err = pmbus.ReadWord(devName, MFR_SPECIFIC_11)
 
-    dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
 
     if dacStepRegVal == DAC_STEP_5MV {
         dacStep = 5
@@ -208,13 +210,13 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     }
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
 
     // Write phase register: all phases
-    pmbus.WriteByte(devName, PHASE, 0x80)
+    pmbus.WriteByte(devName, pmbus.PHASE, 0x80)
 
-    data, err = pmbus.ReadWord(devName, READ_IOUT)
-    integer, dec, err = pmbusCmd.Linear11(data)
+    data, err = pmbus.ReadWord(devName, pmbus.READ_IOUT)
+    integer, dec, err = pmbus.Linear11(data)
     return
 }
 
@@ -227,13 +229,13 @@ func ReadIoutPhase(devName string, phase byte) (integer uint64, dec uint64, err 
     }
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
 
     // Write phase register: all phases
-    pmbus.WriteByte(devName, PHASE, phase)
+    pmbus.WriteByte(devName, pmbus.PHASE, phase)
 
-    data, err = pmbus.ReadWord(devName, READ_IOUT)
-    integer, dec, err = pmbusCmd.Linear11(data)
+    data, err = pmbus.ReadWord(devName, pmbus.READ_IOUT)
+    integer, dec, err = pmbus.Linear11(data)
     return
 }
 
@@ -252,33 +254,50 @@ func ReadRegLnr11(devName string, cmd uint64) (integer uint64, dec uint64, err i
         return
     }
 
-    integer, dec, err = pmbusCmd.ReadLnr11(devName, page, cmd)
+    integer, dec, err = pmbus.ReadLnr11(devName, page, cmd)
 
     return
 }
 
 func ReadVin(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_VIN)
+    integer, dec, err = ReadRegLnr11(devName, pmbus.READ_VIN)
     return
 }
 
 func ReadIin(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_IIN)
+    integer, dec, err = ReadRegLnr11(devName, pmbus.READ_IIN)
     return
 }
 
 func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_TEMPERATURE_1)
+    integer, dec, err = ReadRegLnr11(devName, pmbus.READ_TEMPERATURE_1)
     return
 }
 
 func ReadPout(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_POUT)
+    integer, dec, err = ReadRegLnr11(devName, pmbus.READ_POUT)
     return
 }
 
 func ReadPin(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadRegLnr11(devName, READ_PIN)
+    integer, dec, err = ReadRegLnr11(devName, pmbus.READ_PIN)
+    return
+}
+
+func ReadPinMax10(devName string) (integer uint64, dec uint64, err int) {
+    integer = 0
+    dec = 0
+    for i := 0; i < 10; i++ {
+        integer1, dec1, _ := ReadRegLnr11(devName, pmbus.READ_PIN)
+        if integer1 > integer {
+            integer = integer1
+            dec = dec1
+        } else if integer1 == integer {
+            if dec1 > dec {
+                dec = dec1
+            }
+        }
+    }
     return
 }
 
@@ -288,17 +307,116 @@ func ReadVoutLn(devName string) (integer uint64, dec uint64, err int) {
 }
 
 func ReadDeviceID(devName string) (devID byte, err int) {
+    var readData uint16
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer pmbus.Close()
 
-    devID, err = pmbus.ReadByte(devName, IC_DEVICE_ID)
+    readData, err = pmbus.ReadWord(devName, pmbus.IC_DEVICE_ID)
+    devID = (uint8)(readData & 0xff00 >> 8)
     return devID, err
 }
 
-func SetVMargin(devName string, pct int) (err int) {
+func findVid(devName string, voutMv uint64) (vid byte, err int) {
+    var dacStepRegVal byte
+    var dacStep uint64
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+    vid, err = calcVidFromVolt(voutMv, dacStep)
+    return
+}
+
+func FindVid(devName string, voutMv uint64) (vid byte, err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    vid, err = findVid(devName, voutMv)
+    return
+}
+
+func UpdateVboot(devName string, tgtVoutMv uint64) (err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to write Page")
+        return
+    }
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+
+    // Set to PMBus control
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Can not set to PMBus control!")
+        return
+    }
+
+    // Set VOUT_MAX
+    voutMaxVid, err := findVid(devName, VOUT_MAX_MV)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+    err = pmbus.WriteWord(devName, pmbus.VOUT_MAX, uint16(voutMaxVid))
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VOUT_MAX")
+        return
+    }
+
+    // Update VBoot
+    vbootVid, err := findVid(devName, tgtVoutMv)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+
+    err = pmbus.WriteByte(devName, pmbus.VOUT_COMMAND, vbootVid)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VBOOT")
+        return
+    }
+
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_11, vbootVid)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VBOOT")
+        return
+    }
+
+    // Store to NVM
+    err = pmbus.SendByte(devName, pmbus.STORE_DEFAULT_ALL)
+
+    return
+}
+func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var marginReg uint64
     var marginCmd byte
     var data uint16
@@ -316,20 +434,10 @@ func SetVMargin(devName string, pct int) (err int) {
         return
     }
 
-    if pct == 0 {
-        marginCmd = MARGIN_NONE_CMD
-    } else if pct > 0 {
-        marginCmd = MARGIN_HIGH_CMD
-        marginReg = VOUT_MARGIN_HIGH
-    } else {
-        marginCmd = MARGIN_LOW_CMD
-        marginReg = VOUT_MARGIN_LOW
-    }
-
+    // Get current VOUT
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
-
-    dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE)
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
 
     if dacStepRegVal == DAC_STEP_5MV {
         dacStep = 5
@@ -337,23 +445,138 @@ func SetVMargin(devName string, pct int) (err int) {
         dacStep = 10
     }
 
-    data, err = pmbus.ReadWord(devName, VOUT_COMMAND)
+    data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
+    integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
+
+    curVoutMv := integer *1000 + dec
+    cli.Println("d", "curVoutMv:", curVoutMv)
+
+    if tgtVoutMv == curVoutMv {
+        marginCmd = MARGIN_NONE_CMD
+    } else if tgtVoutMv > curVoutMv {
+        marginCmd = MARGIN_HIGH_CMD
+        marginReg = pmbus.VOUT_MARGIN_HIGH
+    } else {
+        marginCmd = MARGIN_LOW_CMD
+        marginReg = pmbus.VOUT_MARGIN_LOW
+    }
+
+    // Update VOUT_MARGIN_HIGH/HOW with target VID
+    vidTgt, _ := calcVidFromVolt(tgtVoutMv, dacStep)
+
+    if marginCmd != MARGIN_NONE_CMD {
+        err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+        if err != errType.SUCCESS {
+            cli.Println("e", "VMargin failed!")
+            return
+        }
+    }
+    // Set to PMBus control
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    // Enable Vmargin
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    return
+}
+
+func SetVMargin(devName string, pct int) (err int) {
+    var marginReg uint64
+    var marginCmd byte
+    var data uint16
+    var dacStepRegVal byte
+    var dacStep uint64
+    //var sign int
+    //pctList := make([]int, 0, 2)
+
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+
+    // Disable Vmargin
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, MARGIN_NONE_CMD)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+
+    if pct == 0 {
+        marginCmd = MARGIN_NONE_CMD
+    } else if pct > 0 {
+        marginCmd = MARGIN_HIGH_CMD
+        marginReg = pmbus.VOUT_MARGIN_HIGH
+    } else {
+        marginCmd = MARGIN_LOW_CMD
+        marginReg = pmbus.VOUT_MARGIN_LOW
+    }
+
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+
+    data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
 
     integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
     voltMv := integer *1000 + dec
     voltMvTemp := voltMv * uint64(100+pct)
     voltMvTgt := voltMvTemp / 100
 
+    cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
+    if (voltMv < 650 || voltMv > 1000) {
+        cli.Printf("e", "Invalid VOUT!! VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
+        err = errType.FAIL
+        return
+    }
+
     // Update VOUT_MARGIN_HIGH/HOW with target VID
     vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
-    //cli.Println("d", "voltMvTgt:", voltMvTgt, "vidTgt:", vidTgt, "reg:", marginReg)
-    pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+    cli.Printf("i", "Target VID: 0x%x\n", vidTgt)
 
+    if pct != 0 {
+        err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+        if err != errType.SUCCESS {
+            cli.Println("e", "VMargin failed!")
+            return
+        }
+    }
     // Set to PMBus control
-    pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    err = pmbus.WriteByte(devName, MFR_SPECIFIC_02, CTRL_PMBUS)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
 
     // Enable Vmargin
-    pmbus.WriteByte(devName, OPERATION, marginCmd)
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    } else {
+        cli.Println("i", "New vmargin enabled")
+    }
+    misc.SleepInSec(1)
 
     return
 }
@@ -371,74 +594,42 @@ func DispStatus(devName string) (err int) {
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    //cli.Println("i", "--------------------")
+    //cli.Println("i", "0.00.00.00.00.00.0--")
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
     dig, frac, _ := ReadVboot(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadPout(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVout(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadIout(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadPin(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadVin(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadIin(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, _ = ReadTemp(devName)
-    if dig == 0 && frac == 0 {
-        outStrTemp = "-.-"
-    } else {
-        outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     status, _ := ReadStatus(devName)
@@ -518,6 +709,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
             if readData != data[0] {
@@ -537,6 +729,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read word data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
             if readData != data {
@@ -560,6 +753,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to read block data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
             if byteCnt != int(dataLen) {
                 cli.Println("e", "Read block data length mismatch! expected", dataLen, "received", byteCnt)
@@ -582,6 +776,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         case "WriteWord":
@@ -596,6 +791,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write word data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         case "BlockWrite":
@@ -611,6 +807,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to write block data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         case "SendByte":
@@ -622,6 +819,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             if err != errType.SUCCESS {
                 cli.Printf("e", "Failed to send byte data! addr=0x%x", regAddr[0])
                 errCnt = errCnt + 1
+                return
             }
 
         default:
@@ -629,6 +827,7 @@ func ProgramVerifyNvm(devName string, fileName string, mode string, verbose bool
             errCnt = errCnt + 1
             break
         }
+        misc.SleepInUSec(50000)
     }
 
     if errgo = scanner.Err(); errgo != nil {
@@ -665,7 +864,7 @@ func Info(devName string) (err int) {
     }
     sort.Strings(keys)
 
-    cli.Println("i", "--------------------")
+    cli.Println("i", "0.00.00.00.00.00.0--")
     outKey = fmt.Sprintf("%-14s ", "Device")
     outValue = fmt.Sprintf("%-14s ", devName)
     for _, k := range(keys) {

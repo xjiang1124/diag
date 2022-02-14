@@ -59,7 +59,7 @@ DSP:
     TEST#PCIE:
         INFO: Test PCIe interface
         PLATFORM:
-            HOST: HOST
+            HOST: MTP
         PRIORITY: NORMAL 
         PARAM:
             timeout: 

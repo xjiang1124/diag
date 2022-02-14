@@ -1,0 +1,2 @@
+#!/bin/csh -f
+hexdump -v -e '/4 "%08X\n"' $1

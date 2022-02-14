@@ -1,0 +1,54 @@
+# global init command beore diag run
+INIT:
+    - "Initialize command 1"
+
+SKIP:
+    # skip whole dsp
+    # - "DSP1#ALL"
+    # skip single test of a dsp
+    - "DSP2#TEST1"
+    # skip multiple tests of a dsp, seperate with '#'
+    # - "DSP3#TEST1#TEST2"
+
+PARAMS:
+    P2C:
+        - "MTP1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "MTP1#ASIC#L1#offload=1"
+    4C:
+        - "MTP1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "MTP1#ASIC#L1#offload=1"
+
+MTP_PRE:
+    NIC_POWER: True
+    NIC_JTAG: False
+    NIC_STATUS: False
+    NIC_DIAG_BOOT: False
+    NIC_CPLD: False
+
+NIC_PARA:
+    NIC_ASIC:
+        PCIE_PRBS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+
+MTP_SEQ:
+    ASIC:
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: Yes
+                VMARG: Yes
+                MODE: Yes
+                SIMPLIFIED: Yes
+
+MTP_POST:
+    NIC_MEM:  False

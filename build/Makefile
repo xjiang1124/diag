@@ -78,7 +78,7 @@ amd64:
 		$(MAKE) ARCH=amd64  || exit 1; \
 	done
 	cd $(BUILD_DIR)
-	scripts/packaging.sh
+	scripts/packaging.sh amd64 ${asic}
 
 arm64:
 	$(MKDIR_P) -p $(GOPATH)/pkg/linux_arm64/clib/
@@ -102,7 +102,7 @@ arm64:
 		$(MAKE) ARCH=arm64  || exit 1; \
 	done
 	cd $(BUILD_DIR)
-	scripts/packaging.sh arm64
+	scripts/packaging.sh arm64 ${asic}
 
 test:
 	@for p in $(GO_TEST_DIR); do \

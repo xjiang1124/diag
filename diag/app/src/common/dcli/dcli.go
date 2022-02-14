@@ -4,15 +4,15 @@
 package dcli
 
 import (
-    "encoding/json"
+    //"encoding/json"
     "fmt"
     "os"
-    "runtime"
-    "strings"
+    //"runtime"
+    //"strings"
     "strconv"
 
     "common/cli"
-    "common/misc"
+    //"common/misc"
     "common/diagEngine"
 
     "github.com/go-redis/redis"
@@ -31,6 +31,12 @@ var r *redis.Client
 // Output mode
 var outputMode int
 
+var cardPre string
+
+func TimeStampEnable (enaDis int) {
+    cli.TimeStampEnable(enaDis)
+}
+
 func Init(fileName string, mode int) {
     cli.Init(fileName, mode)
 
@@ -42,6 +48,10 @@ func Init(fileName string, mode int) {
     })
     outputMode = mode
     initStatus = INIT_DONE
+
+    cardInfo := diagEngine.GetCardInfo()
+    cardPre = cardInfo.CardType+"#"+cardInfo.CardName
+
 }
 
 func Println(lvl string, a...interface{}) (err error) {
@@ -52,35 +62,50 @@ func Println(lvl string, a...interface{}) (err error) {
     }
 
     outStr := fmt.Sprintln(a)
-    // fmt.Sprintln add "[ ]\n" at begining and end of the string. 
-    // Remove the extra stuff
-    outStr = misc.TrimSuffix(outStr, "]\n")
-    outStr = misc.TrimPrefix(outStr, "[")
+    outStr = cli.FormatOutput(lvl, outStr)
 
     switch lvl {
     case "debug", "d":
-        // Debug print, give file and line number
-        _, fn, line, _ := runtime.Caller(1)
-        fnArr := strings.Split(fn, "/")
-        fnOnly := fnArr[len(fnArr)-1]
-        outStr = fmt.Sprintln("("+fnOnly, strconv.Itoa(line)+")", outStr)
+        outStr = fmt.Sprintf("[DEBUG]   %s", outStr)
+    case "info", "i":
+        outStr = fmt.Sprintf("[INFO]    %s", outStr)
+    case "warn", "w":
+        outStr = fmt.Sprintf("[WARNING] %s", outStr)
+    case "error", "e", "f":
+        outStr = fmt.Sprintf("[ERROR]   %s", outStr)
+    //default:
+        // Do nothing
+	}
+    outStr = "["+cardPre+"]" + outStr
+
+    r.LPush("dshbuf:"+strconv.Itoa(diagEngine.DshID), outStr)
+
+    return nil
+}
+
+func Printf(lvl string, format string, a ...interface{}) error {
+    outStr := cli.FormatOutput1Pre(lvl, format, a)
+    cli.Printf(lvl, "%s", outStr)
+
+    switch lvl {
+    case "debug", "d":
+        outStr = fmt.Sprintf("[DEBUG]   %s", outStr)
+    case "info", "i":
+        outStr = fmt.Sprintf("[INFO]    %s", outStr)
+    case "warn", "w":
+        outStr = fmt.Sprintf("[WARNING] %s", outStr)
+    case "error", "e", "f":
+        outStr = fmt.Sprintf("[ERROR]   %s", outStr)
     default:
+        outStr = fmt.Sprintf("[DEBUG]   %s", outStr)
+	}
+
+    if initStatus != INIT_NONE {
+        outStr = "["+cardPre+"]" + outStr
     }
 
-    cardInfo := diagEngine.GetCardInfo()
-    cardPre := cardInfo.CardType+"#"+cardInfo.CardName
-    // Structural output
-    if (outputMode == 1) {
-        var dat map[string]interface{}
-        outStr = cli.FmtJsonOut(outStr)
-        outStrByte := []byte(outStr)
-        json.Unmarshal(outStrByte, &dat)
-        //dat["CARD"] = diagEngine.CardInfo.CardType+"#"+diagEngine.CardInfo.CardName
-        dat["CARD"] = cardInfo.CardType+"#"+cardInfo.CardName
-        b, _ := json.Marshal(dat)
-        outStr = fmt.Sprintln(string(b))
-    } else {
-        outStr = "["+cardPre+"]"+" ["+cli.TStamp()+"] " + outStr
+    if initStatus == INIT_NONE {
+        return nil
     }
 
     r.LPush("dshbuf:"+strconv.Itoa(diagEngine.DshID), outStr)

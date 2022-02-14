@@ -39,9 +39,8 @@
 
 ---
 DSP: 
-    NAME: RTC
-    INFO: DSP to test RTC chip
-    #TYPE: HOST
+    NAME: RTC 
+    INFO: RTC device test
 
     # Properties apply to all platforms
     # Do not remove ite/timeout/dshid which are needed for all DSPs
@@ -57,15 +56,10 @@ DSP:
                 VALUE: 0
                 INFO: Diag shell ID index
 
-    TEST#I2C:
-        INFO: Test RTC I2C bus
+    TEST#RTC:
+        INFO: Test RTC device
         PLATFORM:
-            NIC: NAPLES
-        PRIORITY: NORMAL 
+            NIC: ALL
+        PRIORITY: NORMAL
         PARAM:
-            timeout: 
-                VALUE:
-                    ALL: 60
-                INFO: Timeout setting for the test
 
-...

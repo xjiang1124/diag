@@ -1,0 +1,36 @@
+---
+version: 2.0
+meta:
+  asic: capri
+    
+queue_name: asic
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+e2e-targets:
+  capri-mfg-diag-sanity:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_sanity.sh"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+    resources:
+      - bm:
+        - vendor: Pensando
+          count: 1
+          image: build-17
+          props:
+          - name: sanity-group
+            value: diag
+          nics:
+          - vendor: Intel
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+
+

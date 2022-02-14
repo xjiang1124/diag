@@ -1,0 +1,181 @@
+# Cleanup
+rm -fr $ASIC_GEN
+
+-------------------
+# Upstream
+git remote add upstream git@github.com:pensando/asic.git
+git fetch upstream master
+#git pull upstream, git branch -vv
+git merge FETCH_HEAD
+# Or
+git merge upstream/master
+
+# push back to owner/git repo
+git push
+
+# X86 Compilation
+tcsh
+
+setenv AWS /home/$USER
+setenv AWSD /vol/dump/$USER
+
+setenv ASIC_SRC $AWS/workspace/asic
+setenv ASIC_GEN $AWSD/workspace/asic
+setenv ASIC_COMMON /home/asic
+source $ASIC_COMMON/templates/cshrc_include
+setenv ASIC_GEN_X86_64 $AWSD/workspace/asic/
+
+cd $ASIC_SRC/ip/cosim/tclsh
+source $ASIC_SRC/ip/cosim/diag/setup_diag.csh
+#pushd $ASIC_SRC/ip/cosim/tclsh
+gen_rtl -j`nproc` -n -v diag=1 x86=1 sam=1
+cd ../capri
+python gen_snake_stream_dirs.py
+cd ../diag
+python gen_asic_lib_bundle.py --arch=x86_64 --strip=1 --tar=1 --mtp_snake_dir=$ASIC_GEN/ip/cosim/capri/mtp
+
+cd $ASIC_GEN_X86_64/ip/cosim/diag/nic/
+
+#---------------------
+# ARM Compilation
+setenv ASIC_GEN_X86_64 $AWSD/workspace/asic/
+setenv ASIC_GEN $ASIC_GEN_FOR_X86_64
+
+setenv ASIC_GEN_ARM64 $AWSD/workspace/asic_arm64
+setenv ASIC_GEN $AWSD/workspace/asic_arm64
+cd $ASIC_SRC/ip/cosim/tclsh
+source $ASIC_SRC/ip/cosim/diag/setup_diag_arm.csh
+gen_rtl -j`nproc` -n -v diag=1 arm=1
+cd $ASIC_SRC/ip/cosim/diag
+python gen_asic_lib_bundle.py --arch=aarch64 --strip=1 --tar=1 --mtp_snake_dir=$ASIC_GEN_X86_64/ip/cosim/capri/mtp
+
+cd $ASIC_GEN_ARM64/ip/cosim/diag/nic/
+
+-------------------
+#Compilation
+tcsh
+
+setenv AWS /home/$USER
+setenv AWSD /vol/dump/$USER
+
+setenv ASIC_SRC $AWS/workspace/asic
+setenv ASIC_GEN $AWSD/workspace/asic
+setenv ASIC_COMMON /home/asic
+source $ASIC_COMMON/templates/cshrc_include
+
+cd $ASIC_SRC/ip/cosim/tclsh
+source ../diag/setup_diag.csh
+gen_rtl -n -j32 diag=1 x86=1
+
+cd $ASIC_SRC/ip/cosim/diag
+python gen_asic_lib_bundle.py --arch=x86_64
+
+-------------------
+#Bundle
+# The entire dependency is available @
+cd $ASIC_GEN/ip/cosim/diag/
+tar zcvf nic.tar.gz nic/
+
+#You need to copy over to the target device. 
+
+-------------------
+#Run
+# To run on target device (x86)
+
+#export ASIC_LIB_TOP=<SOME_WRITABLE_LOCATION>
+
+# SERVER/HAPS
+export ASIC_LIB_TOP=/home/xguo2/
+# # MTP
+export ASIC_LIB_TOP=/home/diag/diag/
+
+export ASIC_LIB_BUNDLE=$ASIC_LIB_TOP/asic/
+export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src
+export ASIC_GEN=$ASIC_SRC
+
+cd $ASIC_LIB_TOP
+tar -zxvf nic.tar.gz
+mv nic/* $ASIC_LIB_BUNDLE
+cd $ASIC_LIB_BUNDLE/asic_lib
+source source_env_path
+
+#start tclsh:
+------------
+
+cd $ASIC_SRC/ip/cosim/tclsh
+$ASIC_LIB_BUNDLE/nic/asic_lib/diag.exe
+source .tclrc.diag
+
+# OR
+$ASIC_LIB_BUNDLE/nic/asic_lib/diag.exe
+cd $::env(ASIC_SRC)/ip/cosim/tclsh
+source .tclrc.diag
+
+#-------------------
+# Copy to Diag repo
+# For amd64
+export DIAG_REPO=/vol/hw/diag/diag_repo/asic/amd64
+export ASIC_REPO=/home/xguo2/workspace/asic/
+export ASIC_GEN=/vol/dump/xguo2/workspace/asic
+cd $DIAG_REPO
+rm -rf *
+#cp -r /vol/dump/xguo2/workspace/asic/ip/cosim/diag/nic/* .
+cp -rf $ASIC_GEN/ip/cosim/diag/nic/* .
+# Get ASIC version
+cd $ASIC_REPO
+#git log --name-status HEAD^..HEAD > $DIAG_REPO/asic_version.txt
+git rev-parse --verify HEAD
+
+# For arm64
+
+# Fix diag.exe loading error
+-------------------
+# MTP: Comment out two lines in source_env_path
+#  1 export LD_LIBRARY_PATH=""
+#  2 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/depend_libs/lib64
+#  3 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/depend_libs/tool/lib64
+#  4 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/depend_libs/home/xiaodhu/ftdi
+#  5 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/asic_lib
+#  6 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/asic_lib/
+-------------------
+# HAPS: Comment out one lines in source_env_path
+#  1 export LD_LIBRARY_PATH=""
+#  2 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/depend_libs/lib64
+#  3 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/depend_libs/tool/lib64
+#  4 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/depend_libs/home/xiaodhu/ftdi
+#  5 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/asic_lib
+#  6 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ASIC_LIB_BUNDLE/asic_lib/
+
+# Fix "source .tclrc.diag" errors
+cd $ASIC_SRC/ip/cosim/common/
+ln -s $ASIC_LIB_BUNDLE/asic/asic_lib/_sknobs_swig.so .
+ln -s $ASIC_LIB_BUNDLE/asic/asic_lib/_cap_csr_py_if.so .
+cd $ASIC_SRC/ip/cosim/capri/
+ln -s $ASIC_LIB_BUNDLE/asic/asic_lib/_asic_capri.so .
+mkdir -p $ASIC_SRC/ip/cosim/diag/
+cd $ASIC_SRC/ip/cosim/diag/
+ln -s /$ASIC_LIB_BUNDLE/asic/asic_lib/_asic_diag.so .
+
+-------------------
+# Start ASIC environment
+# pen-hwlab-pc-01
+source .tclrc.diag
+# diag_open_j2c_if <usb_NO> <slot_no>
+# HAPS1
+diag_open_j2c_if 1 10
+sknobs_load_file ../haps/cfg/haps_default_sknobs.out
+capri_setup 0
+# comment to reduce output
+#plog_add_scope csr 
+cap_top_soft_reset 0
+
+cap_top_init_start 0
+cap_top_init_done  0
+cap_top_load_from_cfg 0
+
+-------------------
+# Copy file in/out HAPS
+# On confprosh
+copyout /home/xiaodhu/cpld_wr
+# On Linux
+/mnt/bin/copyin cpld_wr

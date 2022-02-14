@@ -24,6 +24,7 @@ import (
 
 const (
 	i2c_SLAVE = 0x0703
+	i2c_SLAVE_FORCE = 0x0706
 )
 
 // Base type. Wraps a bus device and an address
@@ -96,7 +97,7 @@ func (smb *SMBus) Bus_close() error {
 // Set the device bus address to a value between 0x00 and 0x77
 func (smb *SMBus) Set_addr(addr byte) error {
 	if smb.addr != addr {
-		if err := ioctl(smb.Bus.Fd(), i2c_SLAVE, uintptr(addr)); err != nil {
+		if err := ioctl(smb.Bus.Fd(), i2c_SLAVE_FORCE, uintptr(addr)); err != nil {
             fmt.Println(err, addr)
 			return err
 		}

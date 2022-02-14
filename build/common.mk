@@ -20,11 +20,15 @@ LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
 ARCH ?= amd64
 
 CC_ARM_64=aarch64-linux-gnu-gcc
+#CC_ARM_64_PATH=$(GOPATH)/../../tools/toolchain/arm64/bin
+#CC_ARM_64=$(CC_ARM_64_PATH)/aarch64-linux-gnu-gcc
 CC_X86=gcc
 
 ifeq (${ARCH}, amd64)
     CMPL=$(CC_X86)
+    PREFIX=
 else
     CMPL=$(CC_ARM_64)
+    PREFIX=aarch64-linux-gnu-
 endif
 											

@@ -17,7 +17,7 @@ func main() {
     flag.Usage = myUsage
 
     psuPtr		:= flag.Bool("psu",     false, "PSU test")
-    psumaskPtr	:= flag.Uint("psumask",     2, "PSU mask")
+    psumaskPtr	:= flag.Uint("psumask",     3, "PSU mask")
     fanPtr		:= flag.Bool("fan",     false, "Fan test")
     fanSpdPtr	:= flag.Bool("fanspd",     false, "Fan speed test")
     fanAltPtr	:= flag.Bool("fanalt",     false, "Fan alert test")
@@ -29,9 +29,13 @@ func main() {
     wdtIntPtr	:= flag.Bool("wdt",		false, "Watch dog interrupt test")
     uutPowPtr	:= flag.Bool("uut",		false, "UUT power test")
     peRstPtr	:= flag.Bool("perst",	false, "UUT pe reset test")
+    pcsPtr		:= flag.Bool("pcs",		false, "SGMII PCS sync test")
+    uutIndexPtr := flag.Uint("index",	0,		"UUT index, zero based")
+    prstPtr		:= flag.Bool("present", false, "Present test for fan/psu/nic")
     flag.Parse()
 
     tmpmode := strings.ToUpper(*tmpmodePtr)
+    index	:= *uutIndexPtr
 
     if *psuPtr == true {
         psuTest(*psumaskPtr)
@@ -67,24 +71,34 @@ func main() {
         stsCheck(*psumaskPtr)
         return
     }
-    
+
     if *mvlIntPtr == true {
         mvlIntTest()
         return
     }
-    
+
     if *wdtIntPtr == true {
         wdtIntTest()
         return
     }
-    
+
     if *uutPowPtr == true {
         uutPowTest(*psumaskPtr)
         return
     }
-    
+
     if *peRstPtr == true {
         peRstTest(*psumaskPtr)
+        return
+    }
+
+    if *pcsPtr == true {
+        pcsTest(index)
+        return
+    }
+    
+    if *prstPtr == true {
+        prstTest()
         return
     }
 

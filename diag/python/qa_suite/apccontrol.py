@@ -180,6 +180,7 @@ class apcControlSch:
         cmd = "olon "+aports
         child.sendline(cmd)
         child.expect("apc>")
+        time.sleep(1)
         cmd = "olstatus "+aports
         child.sendline(cmd)
         child.expect("apc>")

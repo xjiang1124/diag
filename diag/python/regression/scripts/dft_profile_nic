@@ -1,0 +1,18 @@
+
+DIAG_DIR=/home/diag/diag
+
+PATH=$PATH:$DIAG_DIR
+PATH=$PATH:$DIAG_DIR/util/
+PATH=$PATH:$DIAG_DIR/dsp/
+PATH=$PATH:$DIAG_DIR/python/regression
+PATH=$PATH:$DIAG_DIR/python/infra
+PATH=$PATH:$DIAG_DIR/python/infra/dshell
+PATH=$PATH:$DIAG_DIR/python/qa_suite
+PATH=$PATH:$DIAG_DIR/scripts
+PATH=$PATH:$DIAG_DIR/scripts/asic
+PATH=$PATH:$DIAG_DIR/tools
+PATH=$PATH:/root
+
+export CARD_TYPE="NAPLES100"
+export REDIS_IP=10.1.1.100
+

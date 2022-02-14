@@ -1,0 +1,32 @@
+{
+	"NAME": "TAORMINA_P2",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_TAORMINA",
+		"TEMPDATABASE": "/home/mfg/tmp_database",
+		"testlogpath": "/mnt/hw-mftg-data/TAORMINA",
+		"reportpath":"/samba/public/REPORT/TAORMINA_P2/",
+		"historypath":"/samba/public/HISTORY/TAORMINA_P2"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/TAORMINA_DB_TEST_P2_1_01.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"STARTCountSN" : "FSJ21320001",
+	"KEY": "UUT",
+	"SPECIAL" : "FSJ2132000A",
+	"TESTLIST" :[
+					"DL1",
+					"DL2",
+					"DL3",
+					"P2C"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C"
+				]
+	
+}

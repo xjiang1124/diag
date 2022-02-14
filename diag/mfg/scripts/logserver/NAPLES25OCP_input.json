@@ -1,0 +1,59 @@
+{
+	"NAME": "NAPLES25OCP",
+	"TYPE": "NIC",
+	"FLEXFLOW": "192.168.3.11",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_NAPLES25OCP_01",
+		"TEMPDATABASE": "/samba/public/tmp_database/NAPLES25OCP",
+		"testlogpath": "/mnt/hw-mftg-data/NAPLES25OCP",
+		"reportpath":"/samba/public/REPORT/NAPLES25OCP/",
+		"historypath":"/samba/public/HISTORY/NAPLES25OCP"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/NAPLES25OCP_DB1_TEST.json",
+		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
+		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json",
+		"softwarejsonfile" : "/samba/public/tmp_database/SW_DB_01.json"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"TESTSUB" : {
+		"NT" : "P2C",
+		"2C-L" : "2C_4C-L",
+		"2C-H" : "2C_4C-H",
+		"4C-L" : "2C_4C-L",
+		"4C-H" : "2C_4C-H"
+	},
+	"TESTLIST" :[
+					"DL",
+					"P2C",
+					"2C_4C-L",
+					"2C_4C-H",
+					"SWI",
+					"FST"
+					
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"2C/2C-L",
+					"2C/2C-H",
+					"4C/4C-L",
+					"4C/4C-H",
+					"SWI",
+					"FST"
+				]
+	
+}

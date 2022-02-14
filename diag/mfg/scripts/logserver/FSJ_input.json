@@ -1,0 +1,31 @@
+{
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_FSJ_TAORMINA",
+		"TEMPDATABASE": "/samba/public/tmp_database_FSJ",
+		"testlogpath": "/mfg_log/TAORMINA",
+		"reportpath":"/samba/public/FSJ_TAORMINA/",
+		"historypath":"/samba/public/FSJ_TAORMINA/HISTORY"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database_FSJ/TAORMINA_DB_FSJ8.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"TESTLIST" :[
+					"DL1",
+					"DL2",
+					"P2C",
+					"SWI"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"SWI"
+				],
+	"STARTCountSN" : "FSJ21440001",
+	"CM": "FSJ"
+	
+}

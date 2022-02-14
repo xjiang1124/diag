@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import time
+import pexpect
+import re
+import argparse
+
+sys.path.append(os.path.relpath("lib"))
+import libmfg_utils
+from libdefs import NIC_Type
+from libdefs import MTP_Const
+from libmtp_db import mtp_db
+from libmtp_ctrl import mtp_ctrl
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Diag MTP Poweroff", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    args = parser.parse_args()
+
+    mtp_chassis_cfg_file_list = list()
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/swi_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
+    mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
+    sub_mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+    mtp_mgmt_ctrl_list = list()
+
+    for mtp_id in sub_mtpid_list:
+        mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
+
+        # find the mtp management config based on the mtpid
+        mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
+        if not mtp_mgmt_cfg:
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find management config")
+
+        # find the apc config based on the mtpid
+        mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
+        if not mtp_apc_cfg:
+            libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
+
+        mtp_mgmt_ctrl = mtp_ctrl(mtp_id, None, None, [None]*10, mgmt_cfg = mtp_mgmt_cfg, apc_cfg = mtp_apc_cfg)
+        mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+
+    for mtp_mgmt_ctrl in mtp_mgmt_ctrl_list:
+        mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected", level=0)
+
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+
+if __name__ == "__main__":
+    main()

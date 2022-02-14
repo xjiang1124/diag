@@ -75,7 +75,7 @@ func ReadByte(devName string, regAddr uint64) (data byte, err int) {
     }
     data, errgo := smbInfo.smb.Read_byte_data(byte(regAddr))
     if errgo != nil {
-        cli.Println("e", errgo)
+        cli.Println("e", "I2C ERROR Dev=", smbInfo.devName," @ Offset=", regAddr, "  Errno=", errgo)
         err = errType.SMB_READ_FAIL
         return
     }
@@ -90,7 +90,7 @@ func WriteByte(devName string, regAddr uint64, data byte) (err int) {
     }
     errgo := smbInfo.smb.Write_byte_data(byte(regAddr), data)
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C ERROR Dev=", smbInfo.devName," @ Offset=", regAddr, "  Errno=", errgo)
         err = errType.SMB_WRITE_FAIL
         return
     }
@@ -104,7 +104,7 @@ func ReadWord(devName string, regAddr uint64) (data uint16, err int) {
     }
     data, errgo := smbInfo.smb.Read_word_data(byte(regAddr))
     if errgo != nil {
-        cli.Println("f", errgo)
+        cli.Println("f", "I2C ERROR Dev=", smbInfo.devName," @ Offset=", regAddr, "  Errno=", errgo)
         err = errType.SMB_READ_FAIL
         return
     }
@@ -187,4 +187,21 @@ func WriteBlock(devName string, regAddr uint64, buf []byte) (byteCnt int, err in
         return
     }
     return byteCnt, err
+}
+/**
+ * WriteBlock
+ * Write block smbus command. LSB is at highest byte. MSB is at byte[0]
+ */
+func ProcessCall(devName string, cmd uint64, buf []byte) (data []byte, err int) {
+    if smbInfo.devName != devName {
+        err = errType.SMB_INF_INVALID
+        return
+    }
+    data, errgo := smbInfo.smb.Block_process_call(byte(cmd), buf)
+    if errgo != nil {
+        cli.Println("f", errgo)
+        err = errType.SMB_READ_FAIL
+        return
+    }
+    return
 }
