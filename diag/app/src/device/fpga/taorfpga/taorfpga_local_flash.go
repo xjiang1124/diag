@@ -8,6 +8,7 @@ package taorfpga
 
 import (
     "fmt"
+    "common/cli"
     "os"
     "bufio"
     "strings"
@@ -91,7 +92,7 @@ func AddrDecipher(region string) (addr uint32, maxSize uint32, err error) {
         maxSize = 0x1000000
     } else {
         err = fmt.Errorf(" ERROR.  Flash Partition is invalid.  You entered %s.  It needs to be primary, secondary, or allflash\n", region)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
 
     }
@@ -362,7 +363,7 @@ func FlashConvertImageSlice(inData []byte, filename string) ( data []byte, err e
         }
     } else {
         err = fmt.Errorf(" [ERROR] Unable to identify the flash type (Micron, Winbond, Macronix).   Flash DevID=0x%x\n", devID)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -447,12 +448,12 @@ func FlashWriteImage(region string, filename string) (err error) {
     }
     if len(data) > int(maxSize) {
         err = fmt.Errorf(" ERROR.  File Size is greater than flash programmable region size.  Bytes Scanned from file=%d.  Flash region size=%d\n", len(data), maxSize)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     if len(data) % 8 != 0 {
         err = fmt.Errorf(" ERROR.  File Size must be a multiple of 8 (i.e. 8388608, 4194304, etc)\n")
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -536,7 +537,7 @@ func FlashVerifyImage(region string, filename string) (err error) {
 
     if (addr % flag_region_info.sector_size) != 0 {
         err = fmt.Errorf(" ERROR.  Address must be 64K aligned.  You entered addr\n", addr)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -568,7 +569,7 @@ func FlashVerifyImage(region string, filename string) (err error) {
     }
     if len(data) > int(maxSize) {
         err = fmt.Errorf(" ERROR.  File Size is greater than flash programmable region size.  Bytes Scanned from file=%d.  Flash region size=%d\n", len(data), maxSize)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -585,7 +586,7 @@ func FlashVerifyImage(region string, filename string) (err error) {
         rd_data64, err = FlashReadEightBytes((uint32(i) + addr)) 
         if err != nil {
             err = fmt.Errorf(" ERROR: Flash Read Failed\n")
-            fmt.Printf("%s", err)
+            cli.Printf("e", "%s", err)
             return
         }
         wr_data64 = wr_data64 + uint64(data[i])
@@ -599,7 +600,7 @@ func FlashVerifyImage(region string, filename string) (err error) {
 
         if rd_data64 != wr_data64 {
             err = fmt.Errorf(" Error: Flash Miscompare at address 0x%x:  WR 0x%.08x%.08x   RD 0x%.08x%.08x\n", (uint32(i) + addr), uint32(wr_data64>>32), uint32(wr_data64 & 0xFFFFFFFF), uint32(rd_data64>>32), uint32(rd_data64 & 0xFFFFFFFF))
-            fmt.Printf("%s", err)
+            cli.Printf("e", "%s", err)
             fmt.Printf("Verification failed\n")
             return
         }
@@ -660,7 +661,7 @@ func FlashCheckWriteEnable() (err error) {
         time.Sleep(time.Duration(1) * time.Millisecond)  //Sleep 1ms
     }
     err = fmt.Errorf("ERROR: FlashCheckWriteEnable.  Write Enable is not set: Status Reg=%.02x\n", sr_reg)
-    fmt.Printf("%s", err)
+    cli.Printf("e", "%s", err)
     return 
 }
 
@@ -675,7 +676,7 @@ func FlashPollCmdComplete() (err error) {
         time.Sleep(time.Duration(1) * time.Millisecond)  //Sleep 1ms
     }
     err = fmt.Errorf("ERROR: Polling flash cmd complete failed.  CMD REG=%x\n", data32)
-    fmt.Printf("%s", err)
+    cli.Printf("e", "%s", err)
     return 
 }
 
@@ -704,7 +705,7 @@ func FlashPollCmdCompleteForReads() (err error) {
         }
     }
     err = fmt.Errorf("ERROR: Polling flash cmd complete failed.  CMD REG=%x\n", data32)
-    fmt.Printf("%s", err)
+    cli.Printf("e", "%s", err)
     return 
 }
 
@@ -771,7 +772,7 @@ func FlashWriteStatusReg(data32 uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(WRITE_SR_DEALY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashWriteStatusReg.  Timeout Waiting Write to complete.  Delay = %d.   Status Reg=%.02x\n", WRITE_SR_DEALY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
 
     return
@@ -796,7 +797,7 @@ func FlashErase4kSubSector(addr uint32) (err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashEraseSector.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -817,7 +818,7 @@ func FlashErase4kSubSector(addr uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(SUBSECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Secor Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", SUBSECTOR_ERASE_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
 
     return
@@ -828,7 +829,7 @@ func FlashEraseHalfSector(addr uint32) (err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashEraseHalfSector.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -849,7 +850,7 @@ func FlashEraseHalfSector(addr uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Half Sector Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", SECTOR_ERASE_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
     return
 }
@@ -859,7 +860,7 @@ func FlashEraseSector(addr uint32) (err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashEraseSector.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -880,7 +881,7 @@ func FlashEraseSector(addr uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Sector Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", SECTOR_ERASE_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
     return
 }
@@ -892,7 +893,7 @@ func FlashReadByte(addr uint32) (data32 uint32, err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashReadByte.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -913,7 +914,7 @@ func FlashReadFourBytes(addr uint32) (data32 uint32, err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashReadFourBytes.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_SET_REG, 0x00004B03)  //Op Code 0x03, 3 ADDR BYTES[10:8], DATA READ BIT[11], READ 4 BYTES[12:15]
@@ -932,7 +933,7 @@ func FlashReadEightBytes(addr uint32) (data64 uint64, err error) {
     var data32 uint32
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashReadFourBytes.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     err = TaorWriteU32(1, D1_CFG_FLASH_CMD_SET_REG, 0x00008B03)  //Op Code 0x03, 3 ADDR BYTES[10:8], DATA READ BIT[11], READ 8 BYTES[12:15]
@@ -954,7 +955,7 @@ func FlashWriteByte(data32 uint32, addr uint32) (err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashWriteByte.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -977,7 +978,7 @@ func FlashWriteByte(data32 uint32, addr uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Secor Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", PAGE_WR_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
 
     return
@@ -988,7 +989,7 @@ func FlashWriteFourBytes(data32 uint32, addr uint32) (err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashWriteFourBytes.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -1011,7 +1012,7 @@ func FlashWriteFourBytes(data32 uint32, addr uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Secor Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", PAGE_WR_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
 
     return
@@ -1021,7 +1022,7 @@ func FlashWriteEightBytes(data64 uint64, addr uint32) (err error) {
 
     if addr > flag_region_info.region_size {
         err = fmt.Errorf("ERROR: FlashWriteFourBytes.  Address passed (0x%x) is greather than flash size - %x\n", addr, flag_region_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -1045,7 +1046,7 @@ func FlashWriteEightBytes(data64 uint64, addr uint32) (err error) {
     sr_reg, rc := FlashPollBusyMicroSec(PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: FlashEraseSector.  Timeout Waiting for Secor Erase to Compelte.  Delay = %d.   Status Reg=%.02x\n", PAGE_WR_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
 
     return

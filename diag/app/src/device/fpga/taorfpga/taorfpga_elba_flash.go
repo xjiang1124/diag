@@ -3,6 +3,7 @@ package taorfpga
 
 import (
     //"errors"
+    "common/cli"
     "fmt"
     "os"
     "bufio"
@@ -139,7 +140,7 @@ func Spi_elba_flash_set_extended_addr_register(spiNumber uint32, addr uint32) (e
         WRITE_EXTENDED_ADDR_REG_OP[1] = 0x0F
     } else {
         err = fmt.Errorf("ERROR: Spi_elba_flash_set_extended_addr_register.  Passed Address if to greater than the flash size.  Addr=%.08x\n", addr)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -328,7 +329,7 @@ func Spi_elba_flash_CheckWriteEnable() (spiNumber uint32, err error) {
         time.Sleep(time.Duration(1) * time.Microsecond)  //Sleep ums
     }
     err = fmt.Errorf("ERROR: FlashCheckWriteEnable.  Write Enable is not set: Status Reg=%.02x\n", sr_reg)
-    fmt.Printf("%s", err)
+    cli.Printf("e", "%s", err)
     return 
 }
 
@@ -337,7 +338,7 @@ func Spi_elba_flash_WriteEnable(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, WRITE_ENABLE_OP, WRITE_ENABLE_RDLNG) 
     if err != nil {
         err = fmt.Errorf("ERROR: Spi_elba_flash_WriteEnable Failed\n")
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
     }
     return
 }
@@ -346,7 +347,7 @@ func Spi_elba_flash_WriteDisable(spiNumber uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, WRITE_DISABLE_OP, WRITE_DISABLE_RDLNG) 
     if err != nil {
         err = fmt.Errorf("ERROR: Spi_elba_flash_WriteEnable Failed\n")
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
     }
     return
 }
@@ -372,7 +373,7 @@ func Spi_elba_flash_get_partition_info(spiNumber uint32, partition string) (flas
         start_addr = 0
     } else {
         err = fmt.Errorf(" ERROR: parition '%s' is not a valid partition\n", partition)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -475,7 +476,7 @@ func Spi_elba_flash_VerifyImage(spiNumber uint32, partition string, filename str
 
     if len(data) > flash_size {
         err = fmt.Errorf(" Error: Filesize is bigger than flash partition size. %d vs %d\n", len(data), flash_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -514,7 +515,7 @@ func Spi_elba_flash_VerifyImage(spiNumber uint32, partition string, filename str
     for i=0; i<len(data); i++ {
         if flashData[i] != data[i] {
             err = fmt.Errorf(" Error: Flash Miscompare at flash address 0x%x:  Flash Read %.02x   File Read %.02x\n", i+start_addr, flashData[i], data[i])
-            fmt.Printf("%s", err)
+            cli.Printf("e", "%s", err)
             fmt.Printf("Verification failed\n")
             return
         }
@@ -547,7 +548,7 @@ func Spi_elba_flash_WriteImage(spiNumber uint32, partition string, filename stri
 
     if len(data) > flash_size {
         err = fmt.Errorf(" Error: Filesize is bigger than flash partition size. %d vs %d\n", len(data), flash_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     fmt.Printf(" Writing Image %s starting at addr=0x%x\n", filename, start_addr)
@@ -696,14 +697,14 @@ func Spi_elba_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
     _ , err = Fpga_spi_generic_transaction(spiNumber, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG) 
     if err != nil {
         err = fmt.Errorf("ERROR: Spi_elba_flash_erase_sector Failed.  Erase Addr=%.08x\n", addr)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
     sr_reg, rc := Spi_elba_flash_PollBusyMicroSec(spiNumber,  ELB_SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_elba_flash_erase_sector.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
     }
     return
 
@@ -720,12 +721,12 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
 
     if addr > elba_flash_info.region_size {
         err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Address passed (0x%x) is greather than flash size - %x\n", addr, elba_flash_info.region_size)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     if len(data) > FLASH_PAGE_WRITE_SIZE {
         err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Number of bytes passed is to many to program with one page write.  Max=%d.  You passed %d bytes\n", FLASH_PAGE_WRITE_SIZE, len(data))
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -758,7 +759,7 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
     sr_reg, rc := Spi_elba_flash_PollBusyMicroSec(spiNumber,  ELB_PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
-       fmt.Printf("%s", err)
+       cli.Printf("e", "%s", err)
        return
     }
 
