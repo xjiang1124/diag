@@ -512,7 +512,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
     return fail_list, fail_slot_test_list
 
-def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
+def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err, swmtestmode, l1_sequence, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     
     for skipped_test in skip_testlist:
@@ -534,6 +534,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_CAPRI):
         nic_top_test_list    = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots
         nic_bottom_test_list = [x for x in nic_list if x in [1,3,5,7,9]] # even slots
+    else:
+        l1_sequence = True
 
     nic_thread_list = list()
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
@@ -546,6 +548,14 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         pass
     else:
         # top half of the NICs
+        if len(nic_top_test_list) > 0:
+            adi_nic_list = list()
+            for slot in nic_top_test_list:
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                    adi_nic_list.append(slot)
+            if len(adi_nic_list) > 0:
+                mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
+
         for slot in nic_top_test_list[:]:
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 nic_test_rslt_list[slot] = False
@@ -559,6 +569,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                                                   stop_on_err,
                                                   vmarg,
                                                   lock,
+                                                  l1_sequence,
                                                   swmtestmode))
             nic_thread.daemon = True
             nic_thread.start()
@@ -580,6 +591,14 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     if False:
         pass
     else:
+        if len(nic_bottom_test_list) > 0:
+            adi_nic_list = list()
+            for slot in nic_bottom_test_list:
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                    adi_nic_list.append(slot)
+            if len(adi_nic_list) > 0:
+                mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
+
         # bottom half of the NICs
         for slot in nic_bottom_test_list[:]:
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -594,6 +613,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                                                   stop_on_err,
                                                   vmarg,
                                                   lock,
+                                                  l1_sequence,
                                                   swmtestmode))
             nic_thread.daemon = True
             nic_thread.start()
@@ -785,11 +805,11 @@ def parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg):
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp, test, err_msg))
     return
 
-def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, swmtestmode):
-    if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_turbo_j2c_lock(slot)
-    else:
+def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, l1_sequence, swmtestmode):
+    if l1_sequence:
         lock.acquire()
+    else: # turbo-parallel l1
+        mtp_mgmt_ctrl.mtp_turbo_j2c_lock(slot)        
         
     err_msg_list = list()
     for dsp, test in diag_seq_test_list:
@@ -867,7 +887,18 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             if stop_on_err:
                 break;
 
-    if False: # turbo-parallel l1
+    if l1_sequence:
+        if not stop_on_err:
+            for dsp, test in diag_seq_test_list:
+                if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
+                    mtp_mgmt_ctrl._lock.acquire()
+                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                    mtp_mgmt_ctrl._lock.release()
+
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
+        lock.release()
+
+    else: # turbo-parallel l1
         mtp_mgmt_ctrl.mtp_turbo_j2c_unlock(slot)
 
         # wait for all slots to complete
@@ -882,16 +913,6 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                     mtp_mgmt_ctrl._lock.release()
 
                     mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-    else:
-        if not stop_on_err:
-            for dsp, test in diag_seq_test_list:
-                if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
-                    mtp_mgmt_ctrl._lock.acquire()
-                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                    mtp_mgmt_ctrl._lock.release()
-
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-        lock.release()
 
 
 def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, stop_on_err):
@@ -1108,11 +1129,13 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
     stop_on_err = False
     verbosity = False
+    l1_sequence = False
     corner = Env_Cond.MFG_NT
     swm_lp_boot_mode = False
     if args.mtpid:
@@ -1124,6 +1147,8 @@ def main():
         verbosity = True
     if args.corner:
         corner = args.corner
+    if args.l1_seq:
+        l1_sequence = True
     if args.swm:
         swmtestmode = args.swm
         print(" SWMTESTMODE=" + str(swmtestmode))
@@ -2212,6 +2237,7 @@ def main():
                                                               vmarg,
                                                               stop_on_err,
                                                               swmtestmode,
+                                                              l1_sequence,
                                                               args.skip_test)
                     for slot in diag_seq_fail_list:
                         if slot in nic_list and stop_on_err:

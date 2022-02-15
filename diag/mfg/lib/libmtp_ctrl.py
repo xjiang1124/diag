@@ -4188,7 +4188,7 @@ class mtp_ctrl():
             return False
 
 
-    def mtp_power_on_nic(self, slot_list=[], dl=False):
+    def mtp_power_on_nic(self, slot_list=[], dl=False, count_down=True):
         self.mtp_nic_lock()
 
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
@@ -4205,8 +4205,10 @@ class mtp_ctrl():
             if self._nic_ctrl_list[slot]:
                 self._nic_ctrl_list[slot].mtp_exec_cmd("#####  Power on NIC at {:s} #####".format(str(ts_record)))
 
-        self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
-        libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+        if count_down:
+            self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
+            libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+
         self.mtp_nic_unlock()
 
         self.mtp_nic_lock()
@@ -4245,12 +4247,12 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_power_cycle_nic(self, slot_list=[], dl=False):
+    def mtp_power_cycle_nic(self, slot_list=[], dl=False, count_down=True):
         rc = self.mtp_power_off_nic(slot_list)
         if not rc:
             return rc
 
-        rc = self.mtp_power_on_nic(slot_list, dl)
+        rc = self.mtp_power_on_nic(slot_list, dl, count_down)
         if not rc:
             return rc
 
