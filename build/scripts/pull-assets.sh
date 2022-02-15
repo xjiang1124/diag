@@ -3,7 +3,7 @@
 set -e
 #set -x
 
-MINIO_DIR=build/minio
+MINIO_DIR=/psdiag/build/minio
 
 if cmp ${MINIO_DIR}/VERSIONS ${MINIO_DIR}/.VERSIONS.orig
 then
@@ -28,7 +28,7 @@ do
   name=$(basename $fname .txt)
   version=$(grep "${name}" ${MINIO_DIR}/VERSIONS | awk '{ print $2 }')
   echo asset-pull ${name} ${version}
-  asset-pull --bucket hw-repository ${name} ${version} /dev/stdout | tar xz --owner=`id -u` --group=`id -g`
+  asset-pull --bucket hw-repository --asset-name releases.tar.gz ${name} ${version} /dev/stdout | tar xz --owner=`id -u` --group=`id -g`
   echo
 done
 cp ${MINIO_DIR}/VERSIONS ${MINIO_DIR}/.VERSIONS.orig
