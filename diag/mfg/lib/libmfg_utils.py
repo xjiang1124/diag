@@ -767,6 +767,52 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
 
     return True
 
+def mtp_update_asic_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, force_update=False):
+    mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(mtp_image), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(nic_image), level=0)
+
+    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
+        mtp_mgmt_ctrl.cli_log_inf("ASIC images on MTP is up-to-date", level=0)
+        return True
+
+    # cleanup the stale asic images
+    cmd = "rm -f /home/diag/" + mtp_image
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    if os.path.isabs(mtp_image):
+        mtp_image_file = mtp_image
+    else:
+        mtp_image_file = "release/{:s}".format(mtp_image)
+
+    if not file_exist(mtp_image_file):
+        mtp_mgmt_ctrl.cli_log_err("ASIC image {:s} doesn't exist... Abort".format(mtp_image_file), level=0)
+        return False
+
+    if os.path.isabs(nic_image):
+        nic_image_file = nic_image
+    else:
+        nic_image_file = "release/{:s}".format(nic_image)
+
+    if not file_exist(nic_image_file):
+        mtp_mgmt_ctrl.cli_log_err("ASIC image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
+        return False
+
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    mtp_ip_addr = mtp_mgmt_cfg[0]
+    mtp_usrid = mtp_mgmt_cfg[1]
+    mtp_passwd = mtp_mgmt_cfg[2]
+    remote_dir = "/home/diag/"
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy ASIC image: {:s}".format(mtp_image_file), level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy MTP ASIC image failed... Abort", level=0)
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy ASIC image: {:s}".format(nic_image_file), level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy NIC ASIC image failed... Abort", level=0)
+        return False
+    return True
 
 def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, force_update=False):
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(mtp_image), level=0)

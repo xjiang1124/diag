@@ -19,5 +19,16 @@
                 "ARM64" : "image_arm64_capri.tar"
             }
         }
+    ],
+    "AsicLibraries" : [
+        {
+            "Release" : "latest",
+            "Asic" : "elba",
+            "Board" : "ortano",
+            "Images" : {
+                "AMD64" : "nic_x86_64.tar.gz",
+                "ARM64" : "nic_aarch64.tar.gz"
+            }
+        }
     ]
 }
