@@ -378,6 +378,8 @@ def main():
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
     mtp_diag_image = os.getenv("DIAG_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
     nic_diag_image = os.getenv("DIAG_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_ARM64_IMAGE)
+    mtp_asic_image = os.getenv("ASIC_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.ASIC_AMD64_IMAGE)
+    nic_asic_image = os.getenv("ASIC_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.ASIC_ARM64_IMAGE)
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
@@ -389,13 +391,21 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files, force_update=True):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
+        if not libmfg_utils.mtp_update_asic_image(mtp_mgmt_ctrl, mtp_asic_image, nic_asic_image, onboard_image_files, force_update=True):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis ASIC image", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP ASIC Image is updated", level=0)
 
     if pwr_cycle:
         libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)

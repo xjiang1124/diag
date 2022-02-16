@@ -9,8 +9,7 @@ import subprocess
 import pdb
 
 
-topdir = os.path.dirname(sys.argv[0]) + '/../../'
-topdir = os.path.abspath(topdir)
+topdir = os.path.abspath(os.getcwd())
 sys.path.insert(0, topdir)
 
 # This import will parse all the command line options.
@@ -114,29 +113,29 @@ def __gen_mtp_env(var_values):
 
     return defs.Result.SUCCESS
 
-def __download_assets(version, tmp_folder):
-    ret = defs.Result.SUCCESS
-
-    out_file = f"{os.path.join(tmp_folder, 'asset.tgz')}"
-    try:
-        download_cmd = f"/usr/bin/asset-pull --bucket hw-repository  released-diag-sw {version} {out_file}"
-        process = subprocess.Popen(download_cmd.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        Logger.info(output)
-    except Exception as e:
-        Logger.error(e)
-        ret = defs.Result.INFRA_FAILURE
-
-    try:
-        extract_cmd = f"tar --directory {tmp_folder} -zxf {out_file}"
-        process = subprocess.Popen(extract_cmd.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        Logger.info(output)
-    except Exception as e:
-        Logger.error(e)
-        ret = defs.Result.INFRA_FAILURE
-
-    return ret
+#def __download_assets(version, tmp_folder):
+#    ret = defs.Result.SUCCESS
+#
+#    out_file = f"{os.path.join(tmp_folder, 'asset.tgz')}"
+#    try:
+#        download_cmd = f"/usr/bin/asset-pull --bucket hw-repository  released-diag-sw {version} {out_file}"
+#        process = subprocess.Popen(download_cmd.split(), stdout=subprocess.PIPE)
+#        output, error = process.communicate()
+#        Logger.info(output)
+#    except Exception as e:
+#        Logger.error(e)
+#        ret = defs.Result.INFRA_FAILURE
+#
+#    try:
+#        extract_cmd = f"tar --directory {tmp_folder} -zxf {out_file}"
+#        process = subprocess.Popen(extract_cmd.split(), stdout=subprocess.PIPE)
+#        output, error = process.communicate()
+#        Logger.info(output)
+#    except Exception as e:
+#        Logger.error(e)
+#        ret = defs.Result.INFRA_FAILURE
+#
+#    return ret
 
 def __launch_mfg_test(mtp_yaml_file):
     if os.path.exists(mtp_yaml_file):
@@ -155,35 +154,32 @@ def Main():
     var_values['MTP_CFG_YML'] = mtp_yaml_file
     var_values['MTP_ID'] = mtp_id
 
-    if GlobalOptions.version:
-        var_values['DIAG_VERSION'] = GlobalOptions.version
-        if GlobalOptions.version != "latest":
-            ret = __download_assets(GlobalOptions.version, GlobalOptions.tmp_folder)
-            if ret == defs.Result.INFRA_FAILURE:
-                Logger.error(f"Failed to download mtp diag-sw from minio/assets - ABORT")
-                return defs.Result.INFRA_FAILURE
+    manifest_file = os.path.join(GlobalOptions.image_manifest)
 
-            # Load MANIFEST-file
-            asset_folder = os.path.join(GlobalOptions.tmp_folder, "asset")
-            manifest_file = os.path.join(asset_folder, "manifest.json")
+    with open(manifest_file, "r") as fh:
+        manifest = json.load(fh)
+        diag_images = list(filter(lambda x:
+                                  x.get("Release", None) == GlobalOptions.diag_tool_version and
+                                  x.get("Asic", None) == GlobalOptions.asic, manifest.get("MfgDiagImages", [])))
+
+        if diag_images and diag_images[0].get("Images", None):
+            imgs = diag_images[0].get("Images")
+            var_values['DIAG_AMD64_IMAGE_PATH'] = os.path.join(GlobalOptions.diag_images, imgs.get("AMD64"))
+            var_values['DIAG_ARM64_IMAGE_PATH'] = os.path.join(GlobalOptions.diag_images, imgs.get("ARM64"))
+            var_values['DIAG_IMAGE_FOLDER'] = GlobalOptions.diag_images
         else:
-            manifest_file = os.path.join(GlobalOptions.topdir, "test", "infra", "manifests", "latest.json")
-            asset_folder = os.path.join(GlobalOptions.topdir, "build", "images")
-        try:
-            with open(manifest_file, "r") as fh:
-                manifest = json.load(fh)
-            diag_images = list(filter(lambda x:
-                                      x.get("Release", None) == GlobalOptions.version and
-                                      x.get("Asic", None) == GlobalOptions.asic, manifest.get("MfgDiagImages", [])))
+            return defs.Result.INFRA_FAILURE
 
-            if diag_images and diag_images[0].get("Images", None):
-                imgs = diag_images[0].get("Images")
-                var_values['DIAG_AMD64_IMAGE_PATH'] = os.path.join(asset_folder, imgs.get("AMD64"))
-                var_values['DIAG_ARM64_IMAGE_PATH'] = os.path.join(asset_folder, imgs.get("ARM64"))
-                var_values['DIAG_IMAGE_FOLDER'] = asset_folder
-            else:
-                return defs.Result.INFRA_FAILURE
-        except Exception as e:
+        asic_images = list(filter(lambda x:
+                                  x.get("Release", None) == GlobalOptions.asic_lib_version and
+                                  x.get("Asic", None) == GlobalOptions.asic, manifest.get("AsicLibraries", [])))
+
+        if asic_images and asic_images[0].get("Images", None):
+            imgs = asic_images[0].get("Images")
+            var_values['ASIC_AMD64_IMAGE_PATH'] = os.path.join(GlobalOptions.asic_images, imgs.get("AMD64"))
+            var_values['ASIC_ARM64_IMAGE_PATH'] = os.path.join(GlobalOptions.asic_images, imgs.get("ARM64"))
+            var_values['ASIC_IMAGE_FOLDER'] = GlobalOptions.asic_images
+        else:
             return defs.Result.INFRA_FAILURE
 
     ret = __gen_mtp_env(var_values)

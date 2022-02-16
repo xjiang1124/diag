@@ -23,5 +23,6 @@ cp /psdiag/diag/mfg/mtp_regression/*.py /releases/diag/mfg/mtp_regression/
 cp /psdiag/diag/mfg/lib/*.py /releases/diag/mfg/lib/
 cp /psdiag/diag/mfg/config/*.yaml /releases/diag/mfg/config/
 cp -r /psdiag/tools/python_packets/ /releases/tools/
+cp -r /psdiag/infra/ /releases/
 cd /; asset-push --remote-name releases.tar.gz builds hourly-diag ${RELEASE} releases
 

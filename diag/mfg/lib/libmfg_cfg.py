@@ -363,6 +363,8 @@ class MTP_IMAGES:
 class MFG_IMAGE_FILES:
     MTP_AMD64_IMAGE = "image_amd64_elba_ortano_pilot_v1.39.1-release.tar"
     MTP_ARM64_IMAGE = "image_arm64_elba_ortano_pilot_v1.39.1-release.tar"
+    ASIC_AMD64_IMAGE_PATH = "nic_x86_64.tar.gz"
+    ASIC_ARM64_IMAGE_PATH = "nic_aarch64.tar.gz"
     
     MTP_PENCTL_IMAGE = "penctl.linux.0915"
     MTP_PENCTL_TOKEN = "penctl.token"
