@@ -26,7 +26,7 @@ VERSION=$1
 
 echo "Promoting ${VERSION} as stable build"
 
-curl http://fs2.pensando.io/builds/hourly-diag/1.0-1/releases.tar.gz --output releases.tar.gz
+curl http://fs2.pensando.io/builds/hourly-diag/${VERSION}/releases.tar.gz --output releases.tar.gz
 asset-push  -ac assets-colo.pensando.io:9000 hw-repository diag ${VERSION} releases.tar.gz
 ret=$?
 rm -f releases.tar.gz
