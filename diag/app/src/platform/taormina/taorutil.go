@@ -209,6 +209,12 @@ func Fan_RPM_test(tollerance int)(err int) {
         err = errType.FAIL
     }
 
+    if err == errType.SUCCESS {
+        dcli.Printf("i","Fan Test PASSED\n")
+    } else {
+        dcli.Printf("e","Fan Test FAILED\n")
+    }
+
     return
 }
 

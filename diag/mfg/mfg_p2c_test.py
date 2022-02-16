@@ -117,7 +117,7 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
 
     return fail_nic_list
 
-def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[], mtp_cfg_file = None):
+def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], mtp_cfg_file = None):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
     else:
@@ -143,6 +143,8 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     if mtp_cfg_file:
         mtp_cfg_file_opt = " --mtpcfg " + mtp_cfg_file
         cmd += mtp_cfg_file_opt
+    if l1_sequence:
+        cmd += " --l1-seq "
 
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_P2C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
@@ -167,14 +169,18 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
 
     verbosity = False
+    l1_sequence = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
     if args.swm:
         swmtestmode = args.swm
+    if args.l1_seq:
+        l1_sequence = True
 
     mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
@@ -317,6 +323,7 @@ def main():
                                                                             fail_nic_list[mtp_id],
                                                                             mfg_p2c_summary[mtp_id],
                                                                             swmtestmode,
+                                                                            l1_sequence,
                                                                             args.skip_test,
                                                                             args.mtpcfg))
         mtp_thread.daemon = True

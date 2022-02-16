@@ -703,6 +703,7 @@ class nic_ctrl():
     def nic_set_i2c_after_pw_cycle(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_err_msg("Unable to connect to NIC console")
             return False
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)

@@ -4,8 +4,8 @@ set_vmarg_elba()
 {
     /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
     /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=$1
-    /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-    /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
+    #/data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
+    #/data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
     return
 }
 
@@ -14,8 +14,8 @@ set_vmarg_ddr()
 {
     /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
     /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=$1
-    /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-    /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
+    #/data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
+    #/data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
     return
 }
 

@@ -572,12 +572,12 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
 
     if device > ALL {
             err = fmt.Errorf(" Error: Asic_PowerCycle.  Device number passed (%d) is not valid", device)
-            fmt.Printf("%s", err)
+            cli.Printf("e", "%s", err)
             return
     }
     if state != POWER_STATE_CYCLE && state != POWER_STATE_OFF && state != POWER_STATE_ON {
             err = fmt.Errorf(" Error: Asic_PowerCycle.  Power Stated passed (%d) is not valid", state)
-            fmt.Printf("%s", err)
+            cli.Printf("e", "%s", err)
             return
     }
 
@@ -648,7 +648,7 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
                 data32, err = TaorReadU32(DEVREGION1, stat_reg)
                 if (data32 & 0x2) != 0x2 {
                     err = fmt.Errorf(" Error: Asic_PowerCycle.  FPGA status indicates Device did not power up ok")
-                    fmt.Printf("%s", err)
+                    cli.Printf("e", "%s", err)
                     return
                 }
             }
@@ -677,7 +677,7 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
             data32, err = TaorReadU32(DEVREGION1, stat_reg)
             if (data32 & 0x2) != 0x2 {
                 err = fmt.Errorf(" Error: Asic_PowerCycle.  FPGA status indicates Device did not power up ok")
-                fmt.Printf("%s", err)
+                cli.Printf("e", "%s", err)
                 return
             }
         }
@@ -718,7 +718,7 @@ func FAN_Module_present(FANnumber uint32) (present bool, err error) {
 
     if FANnumber > FAN5 {
         err = fmt.Errorf(" Error: FAN_Module_present.  FAN NUMBER PASSED (%d) IS NOT VALID!", FANnumber)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     data32, err = TaorReadU32(DEVREGION1, D1_FAN_STAT_REG)
@@ -738,7 +738,7 @@ func PSU_present(PSUnumber uint32) (present bool, err error) {
 
     if PSUnumber > PSU1 {
         err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     data32, err = TaorReadU32(DEVREGION1, D1_PSU_STAT_REG)
@@ -761,7 +761,7 @@ func PSU_pwrok(PSUnumber uint32) (pwrok bool, err error) {
 
     if PSUnumber > PSU1 {
         err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
     data32, err = TaorReadU32(DEVREGION1, D1_PSU_STAT_REG)
@@ -788,7 +788,7 @@ func SFP_present(SFPnumber uint32) (present bool, err error) {
 
     if SFPnumber > (MAXSFP - 1) {
         err = fmt.Errorf(" Error: SFP_present.  SFP NUMBER PASSED (%d) IS NOT VALID!", SFPnumber)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 
@@ -816,7 +816,7 @@ func QSFP_present(QSFPnumber uint32) (present bool, err error) {
 
     if QSFPnumber > (MAXSFP - 1) {
         err = fmt.Errorf(" Error: SFP_present.  SFP NUMBER PASSED (%d) IS NOT VALID!", QSFPnumber)
-        fmt.Printf("%s", err)
+        cli.Printf("e", "%s", err)
         return
     }
 

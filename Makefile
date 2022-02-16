@@ -33,3 +33,6 @@ docker/build: docker/install_box
 
 docker/push-build:
 	docker push ${DIAG_CONTAINER}
+
+pull-assets:
+	bash build/scripts/pull-assets.sh

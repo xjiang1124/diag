@@ -378,6 +378,7 @@ func SetVMargin(devName string, pct int) (err int) {
             cli.Println("e", "VMargin failed!")
             return
         }
+        misc.SleepInSec(1)
         // Enable Vmargin
         err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
         if err != errType.SUCCESS {
