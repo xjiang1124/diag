@@ -1267,6 +1267,71 @@ class nic_test:
 
             common.session_stop(session)
 
+    def edma_test(self, nic_list=[], num_ite=1):
+        print "=== NIC DDR Test ==="
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+
+        for ite in range(num_ite):
+            print("=== Iteration:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            self.setup_env_multi_top(nic_list=nic_list, asic_type="elba", timeout=30)
+
+            for slot in nic_list:
+                session = common.session_start()
+                common.session_cmd(session, "killall picocom", 20)
+
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    print "Failed to start UART session"
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    break
+
+                try:
+                    self.nic_con.uart_session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
+
+                    # TCL commands
+                    self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
+                    self.nic_con.uart_session_cmd(session, "source .tclrc.diag.elb.arm", 60, "tclsh]")
+                    self.nic_con.uart_session_cmd(session, "source check_tdfi.tcl", 10, "tclsh]")
+
+                    [ret, buf] = self.nic_con.uart_session_cmd_w_ot(session, "check_tdfi", 10, "tclsh]")
+                    if "ERROR" in buf: 
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        print("BAD PI_TDFI_PHYUPD_RESP! skip this round")
+                        break;
+                    else:
+                        self.nic_con.uart_session_cmd(session, "exit")
+                except pexpect.TIMEOUT:
+                    print(slot, "Failed to config tdfi")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+                try:
+                    self.nic_con.uart_session_cmd(session, "cd /data/")
+                    #[ret, buf] = self.nic_con.uart_session_cmd_w_ot(session, "./run_edma.sh 1", 90)
+                    [ret, buf] = self.nic_con.uart_session_cmd_w_ot(session, "./run_edma.sh 20", 1500)
+                    if "FAIL" in buf:
+                        print("EDMA failed!")
+                        #self.nic_con.uart_session_stop(session)
+                        #common.session_stop(session)
+                        #return
+
+                except pexpect.TIMEOUT:
+                    print(slot, "Failed to run edma")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+
     def enter_tclsh(self, slot):
         session = common.session_start()
         self.nic_con.switch_console(slot)
@@ -1311,6 +1376,7 @@ if __name__ == "__main__":
     group.add_argument("-skew", "--skew", help="Run nic skew test on multile nics", action='store_true')
     group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
     group.add_argument("-emmc", "--emmc", help="Run nic emmc test on multile nics", action='store_true')
+    group.add_argument("-edma", "--edma", help="Run nic edma test on multile nics", action='store_true')
     group.add_argument("-ddr_test", "--ddr_test", help="DDR test", action='store_true')
     group.add_argument("-enter_tclsh", "--enter_tclsh", help="Enter ARM tclsh", action='store_true')
     group.add_argument("-fix_bx", "--fix_bx", help="UART cpl file", action='store_true')
@@ -1449,6 +1515,11 @@ if __name__ == "__main__":
     if args.emmc == True:
         slot_list = args.slot_list.split(',')
         test.ddr_test(slot_list, args.num_ite)
+        sys.exit()
+
+    if args.edma == True:
+        slot_list = args.slot_list.split(',')
+        test.edma_test(slot_list, args.num_ite)
         sys.exit()
 
     if args.ddr_test == True:
