@@ -389,6 +389,54 @@ class nic_ctrl():
         else:
             return True
 
+    def nic_console_attach_fast(self):
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=3)
+
+        con_ts = libmfg_utils.timestamp_snapshot()
+        ts_record_cmd = "######## {:s} ########".format(str(con_ts))
+        self._nic_handle.sendline(ts_record_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=4)
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=2)
+        if idx < 0:
+            return False
+        time.sleep(2)
+        # send return
+        self._nic_handle.sendline("")
+        # TODO: Forio need another enter to connect console
+        if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
+            self._nic_handle.sendline("")
+
+        exp_list = [self._nic_con_prompt, "login:", "assword:"]
+        while True:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=2)
+            if idx == 0:
+                break
+            elif idx == 1:
+                self._nic_handle.sendline(NIC_MGMT_USERNAME)
+                continue
+            elif idx == 2:
+                self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+                continue
+            else:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach_fast()
+                return False
+
+        return True
+
+
+    def nic_console_detach_fast(self):
+        self._nic_handle.sendcontrol('a')
+        self._nic_handle.sendcontrol('x')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=2)
+        if idx < 0:
+            return False
+        else:
+            return True
+
     def nic_send_ctrl_c(self):
         self._nic_handle.sendcontrol('c')
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
@@ -701,56 +749,56 @@ class nic_ctrl():
         return True
 
     def nic_set_i2c_after_pw_cycle(self):
-        if not self.nic_console_attach():
+        if not self.nic_console_attach_fast():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_err_msg("Unable to connect to NIC console")
             return False
         self._nic_handle.sendline()
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Unable to get expected prompt")
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_I2C_SET_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_I2C_SET_FMT))
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT))
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT))
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT))
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT))
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
         
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -760,10 +808,10 @@ class nic_ctrl():
         else:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Incorrect I2C value, expecting {:s}, got {:s}".format("0x44", cmd_buf.strip()))
-            self.nic_console_detach()
+            self.nic_console_detach_fast()
             return False
 
-        self.nic_console_detach()
+        self.nic_console_detach_fast()
         return True
 
     def nic_boot_info_init(self):

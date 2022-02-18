@@ -684,7 +684,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         return False
 
     # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd):
+    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
         mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -723,7 +723,7 @@ def mtp_common_setup2(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd):
+    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
         mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         #sys.exit()

@@ -1153,6 +1153,7 @@ def main():
         swmtestmode = args.swm
         print(" SWMTESTMODE=" + str(swmtestmode))
 
+    stage = None
     # Normal temperature, no voltage corner
     if corner == Env_Cond.MFG_NT:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
@@ -1176,6 +1177,7 @@ def main():
             low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
         high_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        stage = FF_Stage.FF_2C_L
     # High temperature, two voltage corner
     # this is changed to single voltage corner after mtp setup step
     elif corner == Env_Cond.MFG_HT:
@@ -1187,24 +1189,28 @@ def main():
             high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
         low_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
+        stage = FF_Stage.FF_2C_H
     # RDT runs @high temperature, no voltage corner
     elif corner == Env_Cond.MFG_RDT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
         vmarg_list = [0]
+        stage = FF_Stage.FF_2C_H
     # EDVT, high temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_HT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
+        stage = FF_Stage.FF_4C_H
     # EDVT, low temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_LT:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
         low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
         high_temp_threshold = None
         vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
 
@@ -1378,7 +1384,7 @@ def main():
     mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     try:
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
+        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd, stage=stage):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
@@ -1616,7 +1622,12 @@ def main():
 
             if vmarg_idx == 0:
                 if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
-                    mtp_mgmt_ctrl.mtp_power_cycle_nic()
+                    curr_list = list()
+                    for slot in range(MTP_Const.MTP_SLOT_NUM):
+                        if nic_prsnt_list[slot]:
+                            curr_list.append(slot)
+
+                    mtp_mgmt_ctrl.  (slot_list=curr_list, dl=False)
                     # Add failed slots from sanity check
                     if args.fail_slots:
                         for slot in args.fail_slots:
@@ -1855,7 +1866,7 @@ def main():
 
                 # copy logfiles out
                 if nic_list and not stop_on_err:
-                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=False, stop_on_err=stop_on_err):
+                    if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, nic_util=False, stop_on_err=stop_on_err):
                         for nic_list in nic_test_full_list:
                             for slot in nic_list:
                                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):

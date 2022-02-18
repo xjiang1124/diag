@@ -1301,6 +1301,45 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_inlet_temp_test(self, stage=None):
+        rc = True
+        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+            self.cli_log_err("MTP get inlet temperature failed")
+            return False
+
+        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+        # FAN                 23.50          25.50          21.75          21.75
+        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
+        if match:
+            # validate the readings
+            inlet_1 = float(match.group(3))
+            inlet_2 = float(match.group(4))
+
+            if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_2C_L):
+                if (inlet_1 < -5 or inlet_1 > 15) or (inlet_2 < -5 or inlet_2 > 15):
+                    rc = False
+
+            elif stage in (FF_Stage.FF_4C_H, FF_Stage.FF_2C_H):
+                if (inlet_1 < 40 or inlet_1 > 60) or (inlet_2 < 40 or inlet_2 > 60):
+                    rc = False
+            else:
+                if (inlet_1 < 15 or inlet_1 > 40) or (inlet_2 < 15 or inlet_2 > 40):
+                    rc = False
+
+            if not rc:
+                self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
+            else:
+                self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test passed".format(str(inlet_1), str(inlet_2)))
+
+        else:
+            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+            self.cli_log_err("Unable to get inlet temperature")
+            return False
+
+        return rc
+
     def mtp_diag_dsp_restart(self):
         self.cli_log_inf("DSP Restart", level=0)
 
@@ -1804,7 +1843,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_hw_init(self, fan_spd):
+    def mtp_hw_init(self, fan_spd, stage=None):
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
@@ -1812,6 +1851,8 @@ class mtp_ctrl():
         rc &= self.mtp_cpld_test()
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
+        # mtp inlet temperature
+        rs &= self.mtp_inlet_temp_test(stage)
 
         # other platform init
         rc &= self.mtp_misc_init()
@@ -2351,12 +2392,15 @@ class mtp_ctrl():
 
         self.mtp_nic_lock()
         if self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
-            if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
-                self.mtp_nic_unlock()
-                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-                # self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
-                return False
-            self.cli_log_slot_inf(slot, "I2C value setting complete")
+            retry = 0
+            while retry < 4:
+                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                    if retry == 3:
+                        self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                else:
+                    self.cli_log_slot_inf(slot, "I2C value setting complete")
+                    break
+                retry += 1 
         self.mtp_nic_unlock() 
 
         return True
@@ -4208,18 +4252,29 @@ class mtp_ctrl():
         if count_down:
             self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
             libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+        else:
+            self.cli_log_inf("Power on all NIC, NIC power up", level=0)
 
         self.mtp_nic_unlock()
 
         self.mtp_nic_lock()
-        for slot in range(self._slots):
+        nic_list = list()
+        if slot_list_param == "all":
+            nic_list = [0,1,2,3,4,5,6,7,8,9]
+        else:
+            nic_list = slot_list[:]
+
+        for slot in nic_list:
             if self._nic_ctrl_list[slot] and self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
-                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
-                    self.mtp_nic_unlock()
-                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-                    # self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
-                    return False
-                self.cli_log_slot_inf(slot, "I2C value setting complete")               
+                retry = 0
+                while retry < 4:
+                    if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                        if retry == 3:
+                            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                    else:
+                        self.cli_log_slot_inf(slot, "I2C value setting complete")
+                        break
+                    retry += 1              
         self.mtp_nic_unlock()
 
         return True

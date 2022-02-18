@@ -1145,7 +1145,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         # power cycle NIC
-        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
+        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
 
         # Verify the NIC Software boot
