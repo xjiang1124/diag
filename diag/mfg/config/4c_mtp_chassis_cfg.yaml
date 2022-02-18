@@ -23,7 +23,7 @@ MTP-113:
     SLOTS: 10
     CAPABILITY: 0x3
 
-MTP-209:
+MTP-221:
     MODE: ""
     TS: ""
     TS_PORT: ""
@@ -37,10 +37,10 @@ MTP-209:
     APC2_PORT: "22"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.1.172"
+    IP: "192.168.1.179"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtp209"
+    ALIAS: "mtp221"
     SLOTS: 10
     CAPABILITY: 0x3
 
@@ -65,7 +65,7 @@ MTP-210:
     SLOTS: 10
     CAPABILITY: 0x3
 
-MTP-211:
+MTP-222:
     MODE: ""
     TS: ""
     TS_PORT: ""
@@ -79,10 +79,10 @@ MTP-211:
     APC2_PORT: "20"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "192.168.1.174"
+    IP: "192.168.1.182"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtp211"
+    ALIAS: "mtp222"
     SLOTS: 10
     CAPABILITY: 0x3
     
