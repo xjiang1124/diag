@@ -1627,7 +1627,8 @@ def main():
                         if nic_prsnt_list[slot]:
                             curr_list.append(slot)
 
-                    mtp_mgmt_ctrl.  (slot_list=curr_list, dl=False)
+                    mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=curr_list, dl=False)
+
                     # Add failed slots from sanity check
                     if args.fail_slots:
                         for slot in args.fail_slots:
