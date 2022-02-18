@@ -9,18 +9,15 @@ image:
   work_dir: "/psdiag"
 
 e2e-targets:
-  capri-mfg-diag-sanity:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_sanity.sh --testbed /warmd.json --asic capri"]
+  capri-mfg-diag-regression:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type regression --asic capri --testsuite /psdiag/test/spec/testsuites/diag.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
-    max-duration: 12h
     build-dependencies:
      - build-amd64-capri
      - build-arm64-capri
-    deployment:
-      skip-pxe-install: true
     resources:
       - bm:
         - vendor: Pensando
@@ -38,6 +35,7 @@ e2e-targets:
       password: lab123
       vars:
         BmOs: linux
+
 
 logfiles:
  - /psdiag/diag_detailed_log.tgz

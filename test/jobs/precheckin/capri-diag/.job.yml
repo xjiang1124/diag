@@ -9,13 +9,15 @@ image:
   work_dir: "/psdiag"
 
 e2e-targets:
-  capri-mfg-diag-sanity:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_sanity.sh"]
+  capri-mfg-diag-precheckin:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/diag.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
     build-dependencies:
+     - build-amd64-capri
+     - build-arm64-capri
     resources:
       - bm:
         - vendor: Pensando
@@ -24,6 +26,8 @@ e2e-targets:
           props:
           - name: sanity-group
             value: diag
+          - name: mtp-nic-processor
+            value: capri
           nics:
           - vendor: Intel
     provision:
@@ -33,4 +37,5 @@ e2e-targets:
         BmOs: linux
 
 
-
+logfiles:
+ - /psdiag/diag_detailed_log.tgz

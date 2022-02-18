@@ -23,12 +23,23 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import MFG_IMAGE_FILES
 
+parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
+parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
+parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+parser.add_argument("--logdir", help="Log dir", default=MTP_DIAG_Logfile.DIAG_QA_LOG_DIR)
 
-def load_mtp_cfg():
+args = parser.parse_args()
+
+def load_mtp_cfg(cfg_yaml):
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
+    else:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
@@ -77,19 +88,16 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
-    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
-
-    args = parser.parse_args()
     card_type = args.card_type.upper()
     if args.verbosity:
         verbosity = True
     else:
         verbosity = False
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+    mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()

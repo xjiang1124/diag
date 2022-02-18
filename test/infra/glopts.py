@@ -17,7 +17,11 @@ parser.add_argument('--diag-images', dest='diag_images', default=None,
 parser.add_argument('--asic-images', dest='asic_images', default=None,
                     required=True, help='ASIC Image Location')
 parser.add_argument('--cfg-folder', dest='cfgfolder', default=None,
-                    required=True, help='Temp folder for download assets')
+                    required=True, help='Folder to generate config-yaml')
+parser.add_argument('--testsuite', dest='testsuite', default=None,
+                    required=True, help='Testsuite to run')
+parser.add_argument('--test-type', dest='testtype', default='sanity',
+                    help='Test-type: sanity, precheckin, regression')
 parser.add_argument('--diag-version', dest='diag_tool_version', default='latest',
                     help='Diag tool version to use')
 parser.add_argument('--asic-version', dest='asic_lib_version', default='latest',

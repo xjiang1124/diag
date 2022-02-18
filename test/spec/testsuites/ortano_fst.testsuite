@@ -1,0 +1,18 @@
+---
+meta:
+  name: mfg_fst
+  description: Mfg FST
+
+config:
+  testbed       : MTPS
+  job           : FST
+
+test_types:
+  precheckin:
+    skip:
+
+  sanity:
+    skip:
+
+  regression:
+    skip:
