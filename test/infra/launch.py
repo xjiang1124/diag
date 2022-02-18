@@ -129,7 +129,7 @@ class LaunchApp(object):
         try:
             with open(os.path.join(GlobalOptions.topdir, "env.sh"), "w") as fh:
                 for var, value in self.__settings.items():
-                    fh.write(f"export {var}={value}\n")
+                    fh.write(f'export {var}="{value}"\n')
         except Exception as e:
             Logger.error("Failed write env.sh")
             return defs.Result.INFRA_FAILURE

@@ -15,9 +15,12 @@ e2e-targets:
     area:
     sub-area:
     feature:
+    max-duration: 12h
     build-dependencies:
      - build-amd64-elba
      - build-arm64-elba
+    deployment:
+      skip-pxe-install: true
     resources:
       - bm:
         - vendor: Pensando
@@ -25,7 +28,7 @@ e2e-targets:
           image: build-17
           props:
           - name: sanity-group
-            value: diag
+            value: diag-mtp
           - name: mtp-nic-processor
             value: elba
           nics:

@@ -13,7 +13,6 @@ sudo apt-get install -y vim
 sudo pip3 install -r ${PSDIAG_ROOT}/test/infra/requirements.txt
 
 echo "Generating MTP-CFGYML file and test-arguments..."
-cp /warmd.json ${PSDIAG_ROOT}/log
 python3 ${PSDIAG_ROOT}/test/infra/launch.py \
     --cfg-folder ${PSDIAG_ROOT}/diag/mfg/config \
     --image-manifest ${PSDIAG_ROOT}/test/manifests/latest.json \
@@ -21,6 +20,7 @@ python3 ${PSDIAG_ROOT}/test/infra/launch.py \
     --asic-images ${PSDIAG_ROOT}/releases $@
 ret=$?
 
+cp /warmd.json ${PSDIAG_ROOT}/log
 if [[ "$ret" != "0" ]];
 then
     echo "Launch script failed - ABORT"

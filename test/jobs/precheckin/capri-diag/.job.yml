@@ -18,6 +18,8 @@ e2e-targets:
     build-dependencies:
      - build-amd64-capri
      - build-arm64-capri
+    deployment:
+      skip-pxe-install: true
     resources:
       - bm:
         - vendor: Pensando
@@ -25,7 +27,7 @@ e2e-targets:
           image: build-17
           props:
           - name: sanity-group
-            value: diag
+            value: diag-mtp
           - name: mtp-nic-processor
             value: capri
           nics:
