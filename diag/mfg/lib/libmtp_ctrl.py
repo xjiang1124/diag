@@ -1852,7 +1852,7 @@ class mtp_ctrl():
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
         # mtp inlet temperature
-        rs &= self.mtp_inlet_temp_test(stage)
+        rc &= self.mtp_inlet_temp_test(stage)
 
         # other platform init
         rc &= self.mtp_misc_init()
