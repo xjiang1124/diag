@@ -672,16 +672,14 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
-            if nic_type == NIC_Type.NAPLES25SWM:
+            elif nic_type == NIC_Type.NAPLES25SWM:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
-            if nic_type == NIC_Type.ORTANO:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
-            if nic_type == NIC_Type.ORTANO2:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
-            if nic_type == NIC_Type.ORTANO2ADI:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY"]
-            if nic_type == NIC_Type.POMONTEDELL:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "AVS_SET"]
+            elif nic_type == NIC_Type.ORTANO2:
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+            elif nic_type == NIC_Type.ORTANO2ADI:
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "QSPI_VERIFY"]
+            elif nic_type in ELBA_NIC_TYPE_LIST:
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -726,6 +724,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
                 elif test == "BOARD_CONFIG":
                     ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
+                elif test == "L1_ESEC_PROG":
+                    ret = mtp_mgmt_ctrl.mtp_nic_l1_esecure_prog(slot)
                 # set avs
                 elif test == "AVS_SET":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)

@@ -3,38 +3,6 @@ import os
 import libmfg_utils
 import re
 from datetime import datetime
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
-from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
-from libmfg_cfg import NIC_MGMT_USERNAME
-from libmfg_cfg import NIC_MGMT_PASSWORD
-from libmfg_cfg import HP_SN_FMT
-from libmfg_cfg import HP_DISP_SN_FMT
-from libmfg_cfg import HP_DISP_PN_FMT
-from libmfg_cfg import HP_SWM_DISP_PN_FMT
-from libmfg_cfg import HP_SWN_PN_FMT
-from libmfg_cfg import NAPLES_SN_FMT
-from libmfg_cfg import NAPLES_DISP_SN_FMT
-from libmfg_cfg import NAPLES_DISP_PN_FMT
-from libmfg_cfg import NAPLES_DISP_MAC_FMT
-from libmfg_cfg import NAPLES_DISP_DATE_FMT
-from libmfg_cfg import DELL_PPID_SN_FMT
-from libmfg_cfg import DELL_PPID_PN_FMT
-from libmfg_cfg import DELL_PPID_DISP_SN_FMT
-from libmfg_cfg import MFG_VALID_FW_LIST
-from libmfg_cfg import ALOM_SN_FMT
-from libmfg_cfg import ALOM_DISP_BIA_PN_FMT
-from libmfg_cfg import ALOM_DISP_PIA_PN_FMT
-from libmfg_cfg import HPESWM_DISP_ASSET_FMT
-from libmfg_cfg import IBM_DISP_ASSEMBLY_FMT
-from libmfg_cfg import PEN_DISP_ASSEMBLY_FMT
-from libmfg_cfg import VOMERO2_DISP_ASSEMBLY_FMT
-from libmfg_cfg import ORTANO_DISP_ASSEMBLY_FMT
-from libmfg_cfg import OCP_DELL_DISP_PN_FMT
-from libmfg_cfg import PSLC_MODE_TYPE_LIST
-from libmfg_cfg import ELBA_NIC_TYPE_LIST
-from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import PART_NUMBERS_MATCH
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import NIC_Vendor
@@ -48,6 +16,8 @@ from libdefs import NIC_Port_Mask
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import Swm_Test_Mode
+
+from libmfg_cfg import *
 
 class nic_ctrl():
     def __init__(self, slot, diag_log_filep, diag_cmd_log_filep=None, dbg_mode = False):
@@ -2226,7 +2196,7 @@ class nic_ctrl():
             self._pn = match.group(1)
             return True
         # else:
-        match = re.search(DELL_PPID_PN_FMT, fru_buf)
+        match = re.search(DELL_PPID_DISP_PN_FMT, fru_buf)
         if match:
             self._pn = match.group(1)
             return True
@@ -4353,4 +4323,22 @@ class nic_ctrl():
     def set_nic_failed_boot(self):
         self._failed_console_boot = True
 
+    def nic_l1_esecure_prog(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
 
+        if self._nic_type not in ELBA_NIC_TYPE_LIST:
+            return False
+        
+        cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_L1_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_L1_ESEC_PROG_OK_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True

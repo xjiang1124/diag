@@ -148,6 +148,7 @@ class MTP_Const:
     NIC_SYSRESET_DELAY = 180
     NIC_FW_SET_DELAY = 90
     NIC_FPGA_PROG_DELAY = 5 * 60
+    NIC_L1_ESEC_PROG_DELAY = 5 * 60
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -293,6 +294,7 @@ class MTP_DIAG_Report:
     NIC_DIAG_REGRESSION_PN_BY_FRU_RE = r"FRU: {:s},\s.*,\s(\w.*\w)"
     NIC_DIAG_REGRESSION_PN_BY_FRU2_RE = r"SN = {:s},\sPN\s=\s(\w.*\w),\sTYPE\s=\s\w+"
     NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE = r"FRU: {:s},\s(\w.*\w),\s(\w.*\w)"
+    NIC_RETEST_BLOCKED_MSG = "--[ MOVE TO DEBUG DO NOT RETEST ]--"
 
 class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"
@@ -415,6 +417,7 @@ class MFG_DIAG_CMDS:
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s}"
+    NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -604,6 +607,7 @@ class MFG_DIAG_SIG:
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"
     NIC_PARA_ASIC_L1_OK_SIG = "L1 TEST PASSED"
+    NIC_L1_ESEC_PROG_OK_SIG = "L1 ESEC PROG PASSED"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

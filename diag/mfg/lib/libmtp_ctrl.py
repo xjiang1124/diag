@@ -6,31 +6,7 @@ import libmfg_utils
 import re
 import threading
 from datetime import datetime
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_BYPASS_PSU_CHECK
-from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
-from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
-from libmfg_cfg import NIC_MGMT_USERNAME
-from libmfg_cfg import NIC_MGMT_PASSWORD
-from libmfg_cfg import NAPLES_DISP_SN_FMT
-from libmfg_cfg import NAPLES_DISP_MAC_FMT
-from libmfg_cfg import NAPLES_DISP_PN_FMT
-from libmfg_cfg import NAPLES_DISP_DATE_FMT
-from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_IO_ELBA_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_JTAG_ELBA_VERSION
-from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
-from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import ELBA_NIC_TYPE_LIST
-from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_IMAGES
-from libmfg_cfg import PART_NUMBERS_MATCH
-from libmfg_cfg import PN_MINUS_REV_MASK
+from libmfg_cfg import *
 
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -6094,4 +6070,16 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1))
         ## check for 3 tests with "PASS" result in elb_l1_screen*.log
 
+    def mtp_nic_l1_esecure_prog(self, slot):
+        self.mtp_single_j2c_lock()
+        self.mtp_mgmt_exec_cmd_para(slot, "killall tclsh")
+
+        if not self._nic_ctrl_list[slot].nic_l1_esecure_prog():
+            self.mtp_single_j2c_unlock()
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        self.mtp_single_j2c_unlock()
+        return True
 

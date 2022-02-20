@@ -1554,28 +1554,30 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 continue
             mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(csp_log_file))
 
+    retest_block_default = False
+
     if stage != FF_Stage.FF_SRN:
         for slot in skip_match:
-            mtp_test_summary.append((slot, "SKIPPED", "SLOT", True))
+            mtp_test_summary.append([slot, "SKIPPED", "SLOT", True, retest_block_default])
 
         for slot, nic_type, sn in fail_match:
-            mtp_test_summary.append((slot, sn, nic_type, False))
+            mtp_test_summary.append([slot, sn, nic_type, False, retest_block_default])
 
         for slot, nic_type, sn in pass_match:
-            mtp_test_summary.append((slot, sn, nic_type, True))
+            mtp_test_summary.append([slot, sn, nic_type, True, retest_block_default])
 
     else:
         ret = True
         first_rcd = True
         for slot, nic_type, sn in fail_match:
             if first_rcd:
-                mtp_test_summary.append((slot, sn, nic_type, False))
+                mtp_test_summary.append([slot, sn, nic_type, False, retest_block_default])
                 first_rcd = False
                 ret = False
         if ret:
             for slot, nic_type, sn in pass_match:
                 if first_rcd:
-                    mtp_test_summary.append((slot, sn, nic_type, True))
+                    mtp_test_summary.append([slot, sn, nic_type, True, retest_block_default])
 
     # clear the onboard logs
     logfile_list.append(log_pkg_file)
@@ -1642,11 +1644,18 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
 
+            block_retest = False
+            for test in test_list:
+                block_retest |= is_retest_blocked(test, stage)
+
             ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
             if not ret:
                 cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
             else:
                 cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                if block_retest:
+                    cli_inf(mtp_cli_id_str + "[{:s}] {:s}".format(sn, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
+
 
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
         nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
@@ -1695,12 +1704,15 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     for mtp_id in summary_dict.keys():
         cli_inf("---------- {:s} Report: ----------".format(mtp_id))
-        for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+        for slot, sn, nic_type, rc, retest_blocked in summary_dict[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
             else:
-                cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+                if not retest_blocked:
+                    cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+                else:
+                    cli_err("{:s} {:s} {:s} FAIL {:s}".format(nic_cli_id_str, sn, nic_type, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
@@ -1714,7 +1726,7 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("---------- Report: ----------")
     # summary_dict[MTP_ID] = [MTP_ID, SN, MTP_TYPE, PASS/FAIL]  ### MTP_ID stored twice because reusing same func as nic (mtp_id in place of slot)
     for mtp_id in summary_dict.keys():
-        for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+        for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(slot, sn, nic_type))
             else:
@@ -1818,19 +1830,80 @@ def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctr
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 2 is missing")
 
     return
+
+def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list):
+    """
+    -------------------------------------------------
+    | MTP-XXX                                       |
+    |                                               |
+    |     o       o       o       X   o       o     |
+    |     o       o       o       X   o       X     |
+    |                                               |
+    |     1   2   3   4   5   6   7   8   9  10     |
+    |                                               |
+    |                                       MTP-XXX |
+    -------------------------------------------------
+
+    [MTP-XXX]: [NIC-07]: QSFP port 1
+    [MTP-XXX]: [NIC-07]: QSFP port 2
+    [MTP-XXX]: [NIC-10]: QSFP port 2
+
+    'o' = loopback present
+    'X' = loopback missing
+    ' ' = empty/failed slot
+
+    """
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        print("-------------------------------------------------")
+        print("| {:s}                                       |".format(mtp_id))
+        print("|                                               |")
+
+        # Ports row
+        pre="|     "
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
+                pre += "    "
+            elif loopback_fail_list[mtp_id][slot] > 0:
+                pre += "X   "
+            else:
+                pre += "o   "
+        pre += "  |"
+        print(pre)
+
+        print("|                                               |")
+
+        # Slots row
+        pre="|    "
+        for slot in range(len(nic_prsnt_list)):
+            pre+= "{:>2s}  ".format(str(slot+1))
+        pre += "   |"
+        print(pre)
+
+        print("|                                               |")
+        print("|                                       {:s} |".format(mtp_id))
+        print("-------------------------------------------------")
+
+
+
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(len(nic_prsnt_list)):
+            if nic_prsnt_list[slot] and loopback_fail_list[mtp_id][slot]:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "RJ45 module is missing")
+
+    return
     
 
-def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
+def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
     max_retries_per_slot = 3
 
     loopback_fail_list = dict()
     cur_fail_list = dict()
-    fail_nic_list = dict()
     length = MTP_Const.MTP_SLOT_NUM
     for mtp_id in mtpid_list:
         loopback_fail_list[mtp_id] = [0, 0] * length
         cur_fail_list[mtp_id] = [0, 0] * length
-        fail_nic_list[mtp_id] = list()
 
     start_ts = timestamp_snapshot()
 
@@ -1940,7 +2013,63 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list):
             nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
             fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", "SANITY_CHECK", "QSFP", "FAILED", duration))
-        cli_log_rslt("{:s} Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
+        cli_log_rslt("{:s} Eth Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
+
+    return fail_nic_list
+
+def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
+    max_retries_per_slot = 3
+
+    loopback_fail_list = dict()
+    cur_fail_list = dict()
+    length = MTP_Const.MTP_SLOT_NUM
+    for mtp_id in mtpid_list:
+        loopback_fail_list[mtp_id] = [0] * length
+        cur_fail_list[mtp_id] = [0] * length
+
+    start_ts = timestamp_snapshot()
+
+    while True:
+        failure_detected = False
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            
+            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+            for slot in range(len(nic_prsnt_list)):
+                if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
+                    cur_fail_list[mtp_id][slot] = 0
+                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if nic_type in ELBA_NIC_TYPE_LIST:
+                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                        if ret != "SUCCESS":
+                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot] = 1
+                                loopback_fail_list[mtp_id][slot] += 1
+                                failure_detected = True
+
+        display_rj45_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list)
+
+        if not failure_detected:
+            break
+
+        raw_input("Please re-insert the RJ45 modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
+
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
+
+    stop_ts = timestamp_snapshot()
+    duration = str(stop_ts - start_ts)
+
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        fail_rslt_list = list()
+        for slot in fail_nic_list[mtp_id]:
+            nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
+            fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", "SANITY_CHECK", "RJ45", "FAILED", duration))
+        cli_log_rslt("{:s} RJ45 Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
 
     return fail_nic_list
 
@@ -2057,4 +2186,72 @@ def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
 
+def is_retest_blocked(test, stage):
+    test = test.split("-")
+    test = test[len(test)-1]
+    if test in [
+                "NIC_POWER",
+                "SNAKE_ELBA",
+                "L1",
+                "EMMC",
+                "DDR_STRESS",
+                "I2C",
+                "RTC",
+                "EDMA"
+                ]:
+        return True
+    elif test in ["ETH_PRBS"] and stage in (FF_Stage.FF_4C_L, FF_Stage.FF_4C_H, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L):
+        return True 
+    else:
+        return False
 
+def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
+    with open(test_log_file, 'r') as fp:
+        buf = fp.read()
+
+    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
+        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
+        match = re.findall(nic_fail_reg_exp, buf)
+        for slot, sn_type, sn in match:
+            test_list = list()
+            test_rslt_list = list()
+            err_dsc_list = list()
+            nic_cli_id_str = id_str(nic=int(slot), base=0)
+            # find all test status
+            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
+            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
+            for dsp, test, result in sub_match:
+                test_list.append("{:s}-{:s}".format(dsp, test))
+                test_rslt_list.append(result)
+                err_dsc_list.append(nic_cli_id_str)
+
+            mac=None 
+            pn=None
+            nic_mac_pc_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE.format(sn)
+            matchsnformacpn = re.findall(nic_mac_pc_reg_exp, buf)
+            if matchsnformacpn:
+                mac=matchsnformacpn[0][0]
+                pn=matchsnformacpn[0][1]
+
+            if FindDellSN(sn):
+                nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
+                matchsn = re.findall(nic_pn_reg_exp, buf)
+                if matchsn:
+                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
+                else:
+                    nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
+                    matchsn2 = re.findall(nic_pn_reg_exp2, buf)
+                    if matchsn2:
+                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
+
+            block_retest = False
+            for test in test_list:
+                block_retest |= is_retest_blocked(test, stage)
+
+            # replace the 5th field in matrix
+            if block_retest:
+                for idx in range(len(mtp_test_summary)):
+                    # locate this SN's record
+                    if mtp_test_summary[idx][1] == sn:
+                        # block it
+                        mtp_test_summary[idx][4] = True

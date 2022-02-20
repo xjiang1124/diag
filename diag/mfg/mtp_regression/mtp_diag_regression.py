@@ -852,11 +852,9 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         # double check the L1 test even it pass
         if dsp == "ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-            # L1 sub test count is 11, err_msg_list should be empty
             number_of_l1_tests = 9
-            # But for Elba, there are 12 sub tests
             if nic_type in ELBA_NIC_TYPE_LIST:
-                number_of_l1_tests = 12
+                number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
@@ -1955,10 +1953,10 @@ def main():
                     # aapl tests
                     new_nic_para_test_list = list()
                     if nic_type in ELBA_NIC_TYPE_LIST:
-                        if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
-                            new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
                         if ("NIC_ASIC","L1") in nic_para_test_list:
                             new_nic_para_test_list.append(("NIC_ASIC","L1"))
+                        if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
+                            new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
                     else:
                         if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
                             new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
