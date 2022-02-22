@@ -1293,16 +1293,18 @@ class mtp_ctrl():
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
 
-            if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_2C_L):
-                if (inlet_1 < -5 or inlet_1 > 15) or (inlet_2 < -5 or inlet_2 > 15):
-                    rc = False
+            # if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_2C_L):
+            #     if (inlet_1 < -5 or inlet_1 > 15) or (inlet_2 < -5 or inlet_2 > 15):
+            #         rc = False
 
-            elif stage in (FF_Stage.FF_4C_H, FF_Stage.FF_2C_H):
-                if (inlet_1 < 40 or inlet_1 > 60) or (inlet_2 < 40 or inlet_2 > 60):
-                    rc = False
-            else:
-                if (inlet_1 < 15 or inlet_1 > 40) or (inlet_2 < 15 or inlet_2 > 40):
-                    rc = False
+            # elif stage in (FF_Stage.FF_4C_H, FF_Stage.FF_2C_H):
+            #     if (inlet_1 < 40 or inlet_1 > 60) or (inlet_2 < 40 or inlet_2 > 60):
+            #         rc = False
+            # else:
+            #     if (inlet_1 < 15 or inlet_1 > 40) or (inlet_2 < 15 or inlet_2 > 40):
+            #         rc = False
+            if (inlet_1 < -10 or inlet_1 > 70) or (inlet_2 < -10 or inlet_2 > 70):
+                rc = False
 
             if not rc:
                 self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
@@ -1843,12 +1845,16 @@ class mtp_ctrl():
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold != None:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
-            upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            # upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
+            # lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            upper_limit = 15
+            lower_limit = -5
         elif high_threshold != None:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
-            upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            # upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
+            # lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            upper_limit = 60
+            lower_limit = 40
         else:
             # in NT, just read the inlet temp
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
@@ -2848,6 +2854,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_version = NIC_IMAGES.cpld_ver["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -2857,6 +2865,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -2901,7 +2911,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip failsafe CPLD update for Proto NIC")
             return True
 
-        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type != NIC_Type.ORTANO2ADI:
             # can't check the version without loading backup partition into the running partition
             self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
 
@@ -3094,6 +3104,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_version = NIC_IMAGES.cpld_ver["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -3103,6 +3115,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3113,6 +3127,8 @@ class mtp_ctrl():
                     expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
                 if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                     expected_version = NIC_IMAGES.sec_cpld_ver["P41854"]
+                if nic_type == NIC_Type.ORTANO2ADI:
+                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0026"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
                 return False
@@ -3122,6 +3138,8 @@ class mtp_ctrl():
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
                 if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["P41854"]
+                if nic_type == NIC_Type.ORTANO2ADI:
+                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0026"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
                 return False

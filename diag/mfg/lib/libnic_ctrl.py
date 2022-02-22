@@ -771,15 +771,15 @@ class nic_ctrl():
             self.nic_console_detach_fast()
             return False
         
-        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r".*(0x44).*", cmd_buf)
-        if match:
-            pass
-        else:
-            self.nic_set_cmd_buf(cmd_buf)
-            self.nic_set_err_msg("Incorrect I2C value, expecting {:s}, got {:s}".format("0x44", cmd_buf.strip()))
-            self.nic_console_detach_fast()
-            return False
+        # cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        # match = re.findall(r".*(0x44).*", cmd_buf)
+        # if match:
+        #     pass
+        # else:
+        #     self.nic_set_cmd_buf(cmd_buf)
+        #     self.nic_set_err_msg("Incorrect I2C value, expecting {:s}, got {:s}".format("0x44", cmd_buf.strip()))
+        #     self.nic_console_detach_fast()
+        #     return False
 
         self.nic_console_detach_fast()
         return True

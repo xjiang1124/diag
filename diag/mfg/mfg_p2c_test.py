@@ -94,15 +94,18 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+    fail_nic_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         if not setup_rslt_list[mtp_id]:
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
+        else:
+            fail_nic_list[mtp_id] = list()
 
-    libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
-    libmfg_utils.rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
+    fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
+    fail_nic_list = libmfg_utils.rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
 
     # if all slots in an MTP fail, assert stop on failure here
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
