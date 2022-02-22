@@ -586,9 +586,9 @@ def main():
                 if fail_cpld_img_file:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Failsafe CPLD image: " + os.path.basename(fail_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + os.path.basename(emmc_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MD5 checksum: " + emmc_img_chksum)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + emmc_img_chksum)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "GoldFW image: " + os.path.basename(gold_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MD5 checksum: " + gold_img_chksum)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "GoldFW MD5 checksum: " + gold_img_chksum)
             if nic_profile:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")

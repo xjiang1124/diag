@@ -2206,6 +2206,10 @@ def is_retest_blocked(test, stage):
         return False
 
 def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
+    """
+        1. Open mtp_test.log to search for "<SN> NIC_DIAG_REGRESSION_TEST_FAIL" (usually at the end)
+        2. For those SN's failing, search for which test they failed "<SN> DIAG TEST <DSP> <TEST> <RESULT> "
+    """
     with open(test_log_file, 'r') as fp:
         buf = fp.read()
 
@@ -2221,6 +2225,10 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
             sub_match = re.findall(nic_test_rslt_reg_exp, buf)
             for dsp, test, result in sub_match:
+                # EXCLUDE PASSING TESTS
+                if result == "PASS":
+                    continue
+
                 test_list.append("{:s}-{:s}".format(dsp, test))
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
