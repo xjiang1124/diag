@@ -193,16 +193,22 @@ def session_cmd_no_rc(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
 # Run command with provided session and get return value
 def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
     session.timeout = timeout
-    expstr = [pwd_prompt, ending]
+    if type(ending) is str:
+        expstr = [pwd_prompt, ending]
+    elif type(ending) is list:
+        expstr = [pwd_prompt] + ending
+    else:
+        expstr = [pwd_prompt, ending]
+
     if sudo == True:
         cmd = "sudo "+cmd
-        expstr = ["password for diag: "] + expstr
+        expstr = expstr + ["password for diag: "]
     try:
         session.sendline(cmd)
         time.sleep(0.05)
         i = session.expect(expstr)
         #print session.before
-        if i < (len(expstr) - 1):
+        if i == (len(expstr) - 1) and sudo == True:
             session.sendline(sudo_pwd)
             time.sleep(0.1)
             session.expect(bash_prompt)
@@ -210,10 +216,11 @@ def session_cmd(session, cmd, timeout=30, sudo=False, ending=bash_prompt):
         #session.sendline("echo $?")
         #time.sleep(0.05)
         #session.expect(bash_prompt)
-        if session.before == "0":
-            return 0
-        else:
-            return -1
+        #if session.before == "0":
+        #    return i
+        #else:
+        #    return -1
+        return i
 
     except pexpect.TIMEOUT:
         print("=== TIMEOUT:", cmd, "===")
