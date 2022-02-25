@@ -44,48 +44,47 @@ class ddr_test:
             print("slot_list:", slot_list)
 
             for slot in nic_list:
-                con_session = common.session_start()
-
-                common.session_cmd(con_session, "killall picocom", 20)
-
-                if pc_mode == "board":
-                    self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
-                #ret = self.nic_con.uart_session_start(con_session)
-                con_session.sendline("picocom -q -b 115200 -f h /dev/ttyS1")
-
-                #self.nic_con.uart_session_stop(con_session)
-
-                #if ret != 0:
-                #    print("Fail to connect uboot")
-                #    return
-
-                j2c_session = common.session_start()
-
-                # Helen's procedure
-                print("=== Francis's setup ===")
-                common.session_cmd(j2c_session, "export ASIC_LIB_BUNDLE="+tcl_path)
-                common.session_cmd(j2c_session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-                common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
-                common.session_cmd(j2c_session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-                common.session_cmd(j2c_session, "source source_env_path")
-                common.session_cmd(j2c_session, "mkdir -p $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-                common.session_cmd(j2c_session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-                common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-                common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-                common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-                common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-                common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-                #common.session_cmd(j2c_session, "")
-
-                common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
-
-                # TCL command
-                common.session_cmd(j2c_session, "tclsh", 40, False, "tclsh]")
-                #common.session_cmd(j2c_session, "tclsh", 10, False, "%")
-                #common.session_cmd(j2c_session, "source .tclrc.diag.elb", 40, False, "tclsh]")
-                #common.session_cmd(j2c_session, "source .tclrc.diag.elb", 60, False, "tclsh]")
-
                 try:
+                    con_session = common.session_start()
+
+                    common.session_cmd(con_session, "killall picocom", 20)
+
+                    if pc_mode == "board":
+                        self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
+                    #ret = self.nic_con.uart_session_start(con_session)
+                    con_session.sendline("picocom -q -b 115200 -f h /dev/ttyS1")
+
+                    #self.nic_con.uart_session_stop(con_session)
+
+                    #if ret != 0:
+                    #    print("Fail to connect uboot")
+                    #    return
+
+                    j2c_session = common.session_start()
+
+                    # Helen's procedure
+                    print("=== TCL ENV setup ===")
+                    common.session_cmd(j2c_session, "export ASIC_LIB_BUNDLE="+tcl_path)
+                    common.session_cmd(j2c_session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+                    common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
+                    common.session_cmd(j2c_session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+                    common.session_cmd(j2c_session, "source source_env_path")
+                    common.session_cmd(j2c_session, "mkdir -p $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    #common.session_cmd(j2c_session, "")
+
+                    common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
+
+                    # TCL command
+                    ret = common.session_cmd(j2c_session, "tclsh", 40, False, ending=["%", "tclsh]"])
+                    if ret == 1:
+                        common.session_cmd(j2c_session, "source .tclrc.diag.elb", 40, False, "tclsh]")
+
                     common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
                     common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
                     common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
