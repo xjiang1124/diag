@@ -112,7 +112,7 @@ class nic_con:
         ret = 0
         try:
             session.sendline(cmd)
-            session.expect(ending)
+            ret = session.expect(ending)
         except:
             print "=== TIMEOUT:", cmd, "==="
             session.send(chr(3))
