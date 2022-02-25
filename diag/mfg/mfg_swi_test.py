@@ -56,6 +56,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, sw_pn, skip_testlist = []):
+    stage = FF_Stage.FF_SWI
+
     # go to mtp_swi_script and start the test
     cmd = "cd {:s}".format(mtp_swi_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -83,12 +85,13 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_SWI)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect SW Install Test result failed", level=0)
         return
+    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_SWI)
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
     return
@@ -179,12 +182,17 @@ def main():
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                     if card_type == NIC_Type.NAPLES100HPE:
                         mtp_swi_image_list.append(NIC_IMAGES.cpld_img["P41854"])
+                    if card_type == NIC_Type.ORTANO2ADI:
+                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0026"])
+                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0026"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                     if card_type == NIC_Type.NAPLES100HPE:
                         mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["P41854"])
+                    if card_type == NIC_Type.ORTANO2ADI:
+                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0026"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                 try:
@@ -197,12 +205,17 @@ def main():
                     mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
                     if card_type == NIC_Type.NAPLES100HPE:
                         mtp_swi_image_list.append(NIC_IMAGES.cpld_img["P41854"])
+                    if card_type == NIC_Type.ORTANO2ADI:
+                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0026"])
+                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0026"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                 try:
                     mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
                     if card_type == NIC_Type.NAPLES100HPE:
                         mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["P41854"])
+                    if card_type == NIC_Type.ORTANO2ADI:
+                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0026"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                 try:

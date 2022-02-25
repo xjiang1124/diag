@@ -93,6 +93,7 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
         return
+    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
     cmd = "rm -rf {:s}".format(test_log_file)
@@ -150,11 +151,11 @@ def main():
     # wait operator set chamber temperature
     if args.high_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
-        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE RISE TO {:d}".format(MTP_Const.MFG_EDVT_HIGH_TEMP), "STOP")
+        libmfg_utils.action_confirm("SCAN *STOP* TO START TEST", "STOP")
         stage = FF_Stage.FF_4C_H
     elif args.low_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_LOW_TEMP))
-        libmfg_utils.action_confirm("SCAN *STOP* AFTER TEMPERATURE DROP TO {:d}".format(MTP_Const.MFG_EDVT_LOW_TEMP), "STOP")
+        libmfg_utils.action_confirm("SCAN *STOP* TO START TEST", "STOP")
         stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit("Unknown 4C Corner... Abort")

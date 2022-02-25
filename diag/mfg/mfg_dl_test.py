@@ -61,6 +61,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 
 
 def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_testlist=[], rework=False):
+    stage = FF_Stage.FF_DL
 
     # go to mtp_dl_test and start the test
     cmd = "cd {:s}".format(mtp_dl_script_dir)
@@ -101,12 +102,13 @@ def single_mtp_dl_test(mtp_dl_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, 
     cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_dl_script_dir + asic_sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_DL)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_dl_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect DL Test result failed", level=0)
         return
+    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_DL)
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
 

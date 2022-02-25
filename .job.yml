@@ -2,23 +2,23 @@
 version: 2.0
 builds:
   build-amd64-elba:
-    commands: [ "sh", "-c", "cd build; make amd64" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=unpackaged" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_elba.tar
   build-arm64-elba:
-    commands: [ "sh", "-c", "cd build; make arm64" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=elba asiclib=unpackaged" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_elba.tar
     owners: ["email:xin@pensando.io"]
   build-amd64-capri:
-    commands: [ "sh", "-c", "cd build; make amd64" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=capri asiclib=unpackaged" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_capri.tar
   build-arm64-capri:
-    commands: [ "sh", "-c", "cd build; make arm64" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=capri asiclib=unpackaged" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_capri.tar
@@ -33,11 +33,23 @@ host_mounts:
 jobs:
   asset-build:
     labels: ["CI-DIAG-Build"]
-  test/sanity/capri:
-    labels: ["CI-DIAG-Build"]
-  test/sanity/elba:
-    labels: ["CI-DIAG-Build"]
-      #  test/precheckin/capri:
-      #test/precheckin/elba:
-      #test/regression/capri:
-      #test/regression/elba:
+  test/jobs/precheckin/capri-diag:
+    labels: ["CI-DIAG-Precheckin"]
+  test/jobs/precheckin/elba-diag:
+    labels: ["CI-DIAG-Precheckin"]
+  test/jobs/sanity/capri-diag:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity"]
+  test/jobs/sanity/elba-diag:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity"]
+  test/jobs/regression/capri-diag:
+    labels: ["CI-DIAG-Regression"]
+  test/jobs/regression/elba-diag:
+    labels: ["CI-DIAG-Regression"]
+  test/jobs/sanity/ortano-fst:
+    labels: ["CI-FST-Sanity"]
+
+dependencies:
+  test/infra:
+  - reference: test/jobs/precheckin/elba-diag
+  diag:
+  - reference: test/jobs/precheckin/elba-diag

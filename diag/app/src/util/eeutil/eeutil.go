@@ -305,136 +305,144 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
     } else {
         cardType = os.Getenv(uut)
     }
-    if (cardType != "MTP") {
-        if (eeprom.HpeSwm == 1 || (cardType == "NAPLES25SWM")) && eeprom.HpeAlom != true {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.HpeTblSWM
-                eeprom.EepromExtTbl = eeprom.HpeTblSWMext
-                eeprom.HpeSwm = 1
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E_TAA)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.HpeTblSWMTAA
-                eeprom.EepromExtTbl = eeprom.HpeTblSWMTAAext
-                eeprom.HpeSwm = 1
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_C)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
-                eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
-                eeprom.HpeSwm = 1
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_PEN[0:7])
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.PenTblSWM
-                eeprom.CustType = "PENSWM"
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_PEN_TAA[0:7])
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.PenTblSWMTAA
-                eeprom.CustType = "PENSWM"
-                return(0)
-            }
-            cli.Println("e", "Unable to determine naples25 SWM fru type.  Please program it with a valid part number")
-            return -1;
-        } else if (cardType == "NAPLES100HPE") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100_HPE_E)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.Naples100HPETbl
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100_HPE_C)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.Naples100HPECLOUDTbl
-                return(0)
-            }
 
-            cli.Println("e", "Unable to determine naples100 HPE fru type.  Please program it with a valid part number")
-            return -1;
-        } else if (cardType == "NAPLES25OCP") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_DELL)
-            if rc == errType.SUCCESS {
-                eeprom.CustType = "DELLOCP"
-                eeprom.EepromTbl = eeprom.DellTblOcp
-                eeprom.DellOcp = 1
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_HPE_E)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.HpeTblOCP
-                eeprom.EepromExtTbl = eeprom.HpeTblOCPext
-                eeprom.HpeOcp = 1
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_HPE_C)
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.HpeTblOCPcloud
-                eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
-                eeprom.HpeOcp = 1
-                return(0)
-            }
-            cli.Println("e", "Unable to determine Naples25 OCP fru type.  Please program it with a valid part number")
-            return -1;
-        } else if (cardType == "ORTANO2") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2[0:7])
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoTbl_V2
-                eeprom.CustType = "ORTANO"
-                return(0)
-            } 
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
-                eeprom.CustType = "PENORTANO"
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR[0:7])  //Taormina with Elba's
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
-                eeprom.CustType = "PENORTANO"
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
-                eeprom.CustType = "PENORTANO"
-                return(0)
-            }
-            cli.Println("e", "Unable to determine Ortano fru type.  Please program it with a valid part number")
-            return -1;
-        } else if (cardType == "ORTANO2A") {
-            rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2A[0:7])
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoATbl_V2
-                eeprom.CustType = "ORTANO"
-                return(0)
-            } 
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
-                eeprom.CustType = "PENORTANO"
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR[0:7])  //Taormina with Elba's
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
-                eeprom.CustType = "PENORTANO"
-                return(0)
-            }
-            rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
-            if rc == errType.SUCCESS {
-                eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
-                eeprom.CustType = "PENORTANO"
-                return(0)
-            }
-            cli.Println("e", "Unable to determine Ortano fru type.  Please program it with a valid part number")
-            return -1;
+    if (cardType == "MTP") {
+        cli.Println("i", "Display MTP EEPROM:")
+        return(0)
+    } else if (eeprom.HpeSwm == 1 || (cardType == "NAPLES25SWM")) && eeprom.HpeAlom != true {
+        rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.HpeTblSWM
+            eeprom.EepromExtTbl = eeprom.HpeTblSWMext
+            eeprom.HpeSwm = 1
+            return(0)
         }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_E_TAA)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.HpeTblSWMTAA
+            eeprom.EepromExtTbl = eeprom.HpeTblSWMTAAext
+            eeprom.HpeSwm = 1
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_HPE_C)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.HpeTblSWMCLOUD
+            eeprom.EepromExtTbl = eeprom.HpeTblSWMCLOUDext
+            eeprom.HpeSwm = 1
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_PEN[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.PenTblSWM
+            eeprom.CustType = "PENSWM"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25SWM_PEN_TAA[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.PenTblSWMTAA
+            eeprom.CustType = "PENSWM"
+            return(0)
+        }
+        cli.Println("e", "Unable to determine naples25 SWM fru type.  Please program it with a valid part number")
+        return -1;
+    } else if (cardType == "NAPLES100HPE") {
+        rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100_HPE_E)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.Naples100HPETbl
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES100_HPE_C)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.Naples100HPECLOUDTbl
+            return(0)
+        }
+
+        cli.Println("e", "Unable to determine naples100 HPE fru type.  Please program it with a valid part number")
+        return -1;
+    } else if (cardType == "NAPLES25OCP") {
+        rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_DELL)
+        if rc == errType.SUCCESS {
+            eeprom.CustType = "DELLOCP"
+            eeprom.EepromTbl = eeprom.DellTblOcp
+            eeprom.DellOcp = 1
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_HPE_E)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.HpeTblOCP
+            eeprom.EepromExtTbl = eeprom.HpeTblOCPext
+            eeprom.HpeOcp = 1
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES25OCP_HPE_C)
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.HpeTblOCPcloud
+            eeprom.EepromExtTbl = eeprom.HpeTblOCPcloudext
+            eeprom.HpeOcp = 1
+            return(0)
+        }
+        cli.Println("e", "Unable to determine Naples25 OCP fru type.  Please program it with a valid part number")
+        return -1;
+    } else if (cardType == "ORTANO2") {
+        rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoTbl_V2
+            eeprom.CustType = "ORTANO"
+            return(0)
+        } 
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR[0:7])  //Taormina with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        cli.Println("e", "Unable to determine Ortano fru type.  Please program it with a valid part number")
+        return -1;
+    } else if (cardType == "ORTANO2A") {
+        rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2A[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoATbl_V2
+            eeprom.CustType = "ORTANO"
+            return(0)
+        } 
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR[0:7])  //Taormina with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        cli.Println("e", "Unable to determine Ortano fru type.  Please program it with a valid part number")
+        return -1;
+    } else if (cardType == "UUT_NONE") {
+        cli.Println("e", "Empty slot!")
+        return(-1)
+    } else {
+        //Unsupported cardType
+        return(-1)
     }
 
     return(0)

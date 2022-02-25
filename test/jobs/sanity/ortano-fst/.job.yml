@@ -2,20 +2,26 @@
 version: 2.0
 meta:
   asic: elba
-    
+
+
 queue_name: asic
 image:
   bind_dir: "/psdiag"
   work_dir: "/psdiag"
 
 e2e-targets:
-  elba-mfg-diag-sanity:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_sanity.sh"]
+  ortano-fst:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic elba --testsuite /psdiag/test/spec/testsuites/ortano_fst.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+    deployment:
+      skip-pxe-install: true
     resources:
       - bm:
         - vendor: Pensando
@@ -23,7 +29,9 @@ e2e-targets:
           image: build-17
           props:
           - name: sanity-group
-            value: diag
+            value: diag-fst
+          - name: mtp-nic-processor
+            value: elba
           nics:
           - vendor: Intel
     provision:
@@ -32,5 +40,5 @@ e2e-targets:
       vars:
         BmOs: linux
 
-
-
+logfiles:
+ - /psdiag/diag_detailed_log.tgz

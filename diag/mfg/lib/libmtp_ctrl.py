@@ -6,31 +6,7 @@ import libmfg_utils
 import re
 import threading
 from datetime import datetime
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_BYPASS_PSU_CHECK
-from libmfg_cfg import MTP_INTERNAL_MGMT_IP_ADDR
-from libmfg_cfg import MTP_INTERNAL_MGMT_NETMASK
-from libmfg_cfg import NIC_MGMT_USERNAME
-from libmfg_cfg import NIC_MGMT_PASSWORD
-from libmfg_cfg import NAPLES_DISP_SN_FMT
-from libmfg_cfg import NAPLES_DISP_MAC_FMT
-from libmfg_cfg import NAPLES_DISP_PN_FMT
-from libmfg_cfg import NAPLES_DISP_DATE_FMT
-from libmfg_cfg import MFG_MTP_CPLD_IO_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_JTAG_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_IO_ELBA_VERSION
-from libmfg_cfg import MFG_MTP_CPLD_JTAG_ELBA_VERSION
-from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
-from libmfg_cfg import MFG_PROTO_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import ELBA_NIC_TYPE_LIST
-from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_IMAGES
-from libmfg_cfg import PART_NUMBERS_MATCH
-from libmfg_cfg import PN_MINUS_REV_MASK
+from libmfg_cfg import *
 
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -1301,6 +1277,47 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_inlet_temp_test(self, stage=None):
+        rc = True
+        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+            self.cli_log_err("MTP get inlet temperature failed")
+            return False
+
+        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+        # FAN                 23.50          25.50          21.75          21.75
+        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
+        if match:
+            # validate the readings
+            inlet_1 = float(match.group(3))
+            inlet_2 = float(match.group(4))
+
+            # if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_2C_L):
+            #     if (inlet_1 < -5 or inlet_1 > 15) or (inlet_2 < -5 or inlet_2 > 15):
+            #         rc = False
+
+            # elif stage in (FF_Stage.FF_4C_H, FF_Stage.FF_2C_H):
+            #     if (inlet_1 < 40 or inlet_1 > 60) or (inlet_2 < 40 or inlet_2 > 60):
+            #         rc = False
+            # else:
+            #     if (inlet_1 < 15 or inlet_1 > 40) or (inlet_2 < 15 or inlet_2 > 40):
+            #         rc = False
+            if (inlet_1 < -10 or inlet_1 > 70) or (inlet_2 < -10 or inlet_2 > 70):
+                rc = False
+
+            if not rc:
+                self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
+            else:
+                self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test passed".format(str(inlet_1), str(inlet_2)))
+
+        else:
+            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+            self.cli_log_err("Unable to get inlet temperature")
+            return False
+
+        return rc
+
     def mtp_diag_dsp_restart(self):
         self.cli_log_inf("DSP Restart", level=0)
 
@@ -1804,7 +1821,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_hw_init(self, fan_spd):
+    def mtp_hw_init(self, fan_spd, stage=None):
         rc = True
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
@@ -1812,6 +1829,8 @@ class mtp_ctrl():
         rc &= self.mtp_cpld_test()
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
+        # mtp inlet temperature
+        rc &= self.mtp_inlet_temp_test(stage)
 
         # other platform init
         rc &= self.mtp_misc_init()
@@ -1826,12 +1845,16 @@ class mtp_ctrl():
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold != None:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
-            upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            # upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
+            # lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            upper_limit = 15
+            lower_limit = -5
         elif high_threshold != None:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
-            upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            # upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
+            # lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
+            upper_limit = 60
+            lower_limit = 40
         else:
             # in NT, just read the inlet temp
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
@@ -2351,12 +2374,15 @@ class mtp_ctrl():
 
         self.mtp_nic_lock()
         if self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
-            if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
-                self.mtp_nic_unlock()
-                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-                # self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
-                return False
-            self.cli_log_slot_inf(slot, "I2C value setting complete")
+            retry = 0
+            while retry < 4:
+                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                    if retry == 3:
+                        self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                else:
+                    self.cli_log_slot_inf(slot, "I2C value setting complete")
+                    break
+                retry += 1 
         self.mtp_nic_unlock() 
 
         return True
@@ -2828,6 +2854,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_version = NIC_IMAGES.cpld_ver["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -2837,6 +2865,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -2881,7 +2911,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip failsafe CPLD update for Proto NIC")
             return True
 
-        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type != NIC_Type.ORTANO2ADI:
             # can't check the version without loading backup partition into the running partition
             self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
 
@@ -3074,6 +3104,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_version = NIC_IMAGES.cpld_ver["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -3083,6 +3115,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3093,6 +3127,8 @@ class mtp_ctrl():
                     expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
                 if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                     expected_version = NIC_IMAGES.sec_cpld_ver["P41854"]
+                if nic_type == NIC_Type.ORTANO2ADI:
+                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0026"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
                 return False
@@ -3102,6 +3138,8 @@ class mtp_ctrl():
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
                 if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["P41854"]
+                if nic_type == NIC_Type.ORTANO2ADI:
+                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0026"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
                 return False
@@ -4208,18 +4246,29 @@ class mtp_ctrl():
         if count_down:
             self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
             libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+        else:
+            self.cli_log_inf("Power on all NIC, NIC power up", level=0)
 
         self.mtp_nic_unlock()
 
         self.mtp_nic_lock()
-        for slot in range(self._slots):
+        nic_list = list()
+        if slot_list_param == "all":
+            nic_list = [0,1,2,3,4,5,6,7,8,9]
+        else:
+            nic_list = slot_list[:]
+
+        for slot in nic_list:
             if self._nic_ctrl_list[slot] and self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
-                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
-                    self.mtp_nic_unlock()
-                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-                    # self.cli_log_slot_err(slot, "Failed to set I2C on NIC")
-                    return False
-                self.cli_log_slot_inf(slot, "I2C value setting complete")               
+                retry = 0
+                while retry < 4:
+                    if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                        if retry == 3:
+                            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                    else:
+                        self.cli_log_slot_inf(slot, "I2C value setting complete")
+                        break
+                    retry += 1              
         self.mtp_nic_unlock()
 
         return True
@@ -6039,4 +6088,16 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1))
         ## check for 3 tests with "PASS" result in elb_l1_screen*.log
 
+    def mtp_nic_l1_esecure_prog(self, slot):
+        self.mtp_single_j2c_lock()
+        self.mtp_mgmt_exec_cmd_para(slot, "killall tclsh")
+
+        if not self._nic_ctrl_list[slot].nic_l1_esecure_prog():
+            self.mtp_single_j2c_unlock()
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        self.mtp_single_j2c_unlock()
+        return True
 

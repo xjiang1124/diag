@@ -1,0 +1,26 @@
+---
+meta:
+  name: mfg_diagnostics
+  description: Mfg Diagnostics
+
+config:
+  testbed       : MTP
+  job           : MFG_DIAG
+
+test_types:
+  precheckin:
+    iteration: 1
+    skip:
+      - L1 
+      - EDMA 
+      - SNAKE 
+      - PCIE_PRBS
+
+  sanity:
+    iteration: 1
+    skip:
+
+  regression:
+    iteration: 4
+    skip:
+

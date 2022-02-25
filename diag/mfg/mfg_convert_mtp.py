@@ -212,11 +212,11 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
             raise Exception
 
     except Exception as e:
-        mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), False))
+        mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), False, False))
         mtp_mgmt_ctrl.cli_log_err(str(e))
         return False
 
-    mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), True))
+    mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), True, False))
     return True
 
 def main():

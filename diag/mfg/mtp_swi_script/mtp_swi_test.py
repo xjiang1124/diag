@@ -229,7 +229,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         test_list = ["FPGA_PROG", "GOLD_FPGA_PROG"]
     if nic_type == NIC_Type.POMONTEDELL:
         test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG"]
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+    if nic_type == NIC_Type.ORTANO2:
         test_list = []
     for skip_test in skip_testlist:
         if skip_test in test_list:
@@ -272,7 +272,7 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
         test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]        
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["NIC_INIT"]
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+    if nic_type == NIC_Type.ORTANO2:
         test_list = ["NIC_INIT"]
 
     for skip_test in skip_testlist:
@@ -572,6 +572,10 @@ def main():
                 fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
             else:
                 fail_cpld_img_file = ""
+            if nic_type == NIC_Type.ORTANO2ADI:
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["68-0026"]
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0026"]
+                fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0026"]
 
             emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
             gold_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(gold_img_file)
@@ -586,9 +590,9 @@ def main():
                 if fail_cpld_img_file:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Failsafe CPLD image: " + os.path.basename(fail_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + os.path.basename(emmc_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MD5 checksum: " + emmc_img_chksum)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + emmc_img_chksum)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "GoldFW image: " + os.path.basename(gold_img_file))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MD5 checksum: " + gold_img_chksum)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "GoldFW MD5 checksum: " + gold_img_chksum)
             if nic_profile:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
@@ -660,6 +664,9 @@ def main():
             failsafe_cpld_img_file = ""
             if nic_type in ELBA_NIC_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["68-0026"]
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0026"]
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   cpld_img_file,
@@ -795,6 +802,8 @@ def main():
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["P41854"]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0026"]
 
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         sec_cpld_img_file,
@@ -1145,7 +1154,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         # power cycle NIC
-        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
+        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
 
         # Verify the NIC Software boot

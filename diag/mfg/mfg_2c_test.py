@@ -100,12 +100,15 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+    fail_nic_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         if not setup_rslt_list[mtp_id]:
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
+        else:
+            fail_nic_list[mtp_id] = list()            
 
     # No sanity check for elba cards in chamber
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):   
@@ -118,7 +121,7 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
                     mtp_mgmt_ctrl.mtp_nic_para_session_end()
                     return fail_nic_list
 
-    fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list)
+    fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
 
     # if all slots in an MTP fail, assert stop on failure here
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -168,6 +171,7 @@ def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
         return
+    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
     cmd = "rm -rf {:s}".format(test_log_file)
