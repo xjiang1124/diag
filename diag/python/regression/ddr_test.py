@@ -66,6 +66,11 @@ class ddr_test:
                     print("=== TCL ENV setup ===")
                     common.session_cmd(j2c_session, "export ASIC_LIB_BUNDLE="+tcl_path)
                     common.session_cmd(j2c_session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+                    common.session_cmd(j2c_session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+                    common.session_cmd(j2c_session, "export ASIC_GEN=$ASIC_SRC")
+                    common.session_cmd(j2c_session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/tool/lib64:$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$ASIC_LIB_BUNDLE/asic_lib:$ASIC_LIB_BUNDLE/depend_libs/usr/local/lib")
+                    common.session_cmd(j2c_session, "env | grep -e ASIC -e LD")
+
                     common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
                     common.session_cmd(j2c_session, "cd $ASIC_LIB_BUNDLE/asic_lib")
                     common.session_cmd(j2c_session, "source source_env_path")
