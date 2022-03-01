@@ -5096,13 +5096,13 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25SWM833:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
             """
              Separate freq by PN:
              - For 68-0015 (Oracle) use 1033
              - For 68-0021 (Pensando) use 1100
             """
-            if self.mtp_is_nic_ortano_oracle(slot) or self.mtp_is_nic_ortanoadi_oracle(slot):
+            if self.mtp_is_nic_ortano_oracle(slot):
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
             else:
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
