@@ -46,7 +46,7 @@ jobs:
   test/jobs/regression/elba-diag:
     labels: ["CI-DIAG-Regression"]
   test/jobs/sanity/ortano-fst:
-    labels: ["CI-FST-Sanity"]
+    labels: ["CI-DIAG-Build", "CI-FST-Sanity"]
 
 dependencies:
   test/infra:

@@ -391,11 +391,13 @@ def logfile_close(filep_list):
     os.system("sync")
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfgyml = None):
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
+    if cfgyml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfgyml))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
@@ -416,6 +418,7 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTPS-001, etc", required=True)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
     parser.add_argument("-stage", "--stage", help="stage", type=str, default="FETCH_SN")
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
 
     args = parser.parse_args()
     if args.mtpid:
@@ -426,7 +429,7 @@ def main():
     if card_type == "ELBA":
         card_type = "ORTANO"
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
 
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
     fst = 0

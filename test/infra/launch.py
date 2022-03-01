@@ -99,7 +99,7 @@ class LaunchApp(object):
             'APC2_PORT': "",
             'APC2_USERID': "",
             'APC2_PASSWORD': "",
-            'IP': mtp_instance.get("NodeCimcIP", ""),
+            'IP': mtp_instance.get("NodeMgmtIP", ""),
             'USERID': "diag",
             'PASSWORD': "lab123",
             'ALIAS': f"{self.__testsuite.config.testbed.lower()}{testbed_id}",
@@ -183,12 +183,16 @@ class LaunchApp(object):
         if hasattr(self.__testsuite.test_types, GlobalOptions.testtype):
             test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
             test_args = (f"--mtpcfg {self.__settings['MTP_CFG_YML']} " +
-                         f"--iteration {getattr(test_spec, 'iteration', 1)} " +
                          f"--mtpid {self.__settings['MTP_ID']} ")
+            if hasattr(test_spec, 'iteration'):
+                test_args += f"--iteration {getattr(test_spec, 'iteration', 1)} "
             if hasattr(test_spec, 'skip') and test_spec.skip != None:
                 skip_list = " ".join(test_spec.skip)
                 test_args += f" --skip-test {skip_list}"
             self.__settings["TEST_ARGS"] = test_args
+
+            if hasattr(self.__testsuite.config, 'card_type'):
+                self.__settings["CARD_TYPE"] = self.__testsuite.config.card_type
         else:
             ret = defs.Result.INFRA_FAILURE
 

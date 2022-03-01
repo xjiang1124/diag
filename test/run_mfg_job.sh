@@ -9,6 +9,7 @@ sudo apt-get install -y python3
 sudo apt-get install -y python3-pip
 sudo apt-get install -y iputils-ping
 sudo apt-get install -y vim
+sudo apt-get install -y telnet
 
 sudo pip3 install -r ${PSDIAG_ROOT}/test/infra/requirements.txt
 
@@ -79,7 +80,7 @@ then
     echo ""
 
     set -x
-    python ${PSDIAG_ROOT}/diag/mfg/mfg_fst_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python ${PSDIAG_ROOT}/diag/mfg/mfg_fst_test.py ${TEST_ARGS} --card_type ${CARD_TYPE} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
