@@ -1307,7 +1307,7 @@ class mtp_ctrl():
                 rc = False
 
             if not rc:
-                self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
+                self.cli_log_err("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
             else:
                 self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test passed".format(str(inlet_1), str(inlet_2)))
 
@@ -1884,16 +1884,18 @@ class mtp_ctrl():
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold != None:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
-            # upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            # lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
-            upper_limit = 15
-            lower_limit = -5
+            upper_limit = MTP_Const.LOW_CHAMBER_UPPER_LIMIT
+            lower_limit = MTP_Const.LOW_CHAMBER_LOWER_LIMIT
+            if not GLB_CFG_MFG_TEST_MODE:
+                upper_limit = MTP_Const.HIGH_CHAMBER_UPPER_LIMIT
+                lower_limit = MTP_Const.LOW_CHAMBER_LOWER_LIMIT
         elif high_threshold != None:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
-            # upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            # lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
-            upper_limit = 60
-            lower_limit = 40
+            upper_limit = MTP_Const.HIGH_CHAMBER_UPPER_LIMIT
+            lower_limit = MTP_Const.HIGH_CHAMBER_LOWER_LIMIT
+            if not GLB_CFG_MFG_TEST_MODE:
+                upper_limit = MTP_Const.HIGH_CHAMBER_UPPER_LIMIT
+                lower_limit = MTP_Const.LOW_CHAMBER_LOWER_LIMIT
         else:
             # in NT, just read the inlet temp
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
