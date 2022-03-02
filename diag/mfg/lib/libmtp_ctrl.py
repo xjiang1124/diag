@@ -1603,13 +1603,7 @@ class mtp_ctrl():
 
         if (mtp_capability & 0x2):
             for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                if stage in (
-                    FF_Stage.FF_DL,
-                    FF_Stage.FF_P2C,
-                    FF_Stage.FF_4C_L,
-                    FF_Stage.FF_4C_H,
-                    FF_Stage.FF_2C_L,
-                    FF_Stage.FF_2C_H):
+                if stage == FF_Stage.FF_DL:
                     # CPLD, failsafe, feature row and diagfw images
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
@@ -1676,7 +1670,52 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
                         pass
+                elif stage in (
+                    FF_Stage.FF_P2C,
+                    FF_Stage.FF_4C_L,
+                    FF_Stage.FF_4C_H,
+                    FF_Stage.FF_2C_L,
+                    FF_Stage.FF_2C_H):
+                    # CPLD, failsafe, feature row and diagfw images
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        img = NIC_IMAGES.diagfw_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                        pass
 
+                    # In addition to images, check the version & timestamp fields as well here
+                    try:
+                        expected_version = NIC_IMAGES.cpld_ver[card_type]
+                        if expected_version.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
+                        return False
+                    try:
+                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
+                        if expected_timestamp.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
+                        return False
+                    try:
+                        expected_timestamp = NIC_IMAGES.diagfw_dat[card_type]
+                        if expected_timestamp.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
+                        return False
                 elif stage == FF_Stage.FF_CFG:
                     # CPLD image
                     try:
