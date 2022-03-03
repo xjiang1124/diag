@@ -142,14 +142,52 @@ class ddr_test:
                 common.session_stop(j2c_session)
                 common.session_stop(con_session)
 
+    def edma(self, nic_list=[], num_ite=1, num_edma=20):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            for slot in nic_list:
+                try:
+                    session = common.session_start()
+                    common.session_cmd(session, "killall picocom", 20)
+                    self.nic_con.power_cycle_multi(self.baud_rate, slot, 30)
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        continue
+                    
+                    for edma_ite in range(num_edma):
+                        self.nic_con.uart_session_cmd(session, "export CARD_TYPE=ORTANO2", 10)
+                        self.nic_con.uart_session_cmd(session, "/nic/bin/ddr_test.sh", 70)
+                        self.nic_con.uart_session_cmd(session, "/data/nic_util/devmgr -status", 20)
+
+                    self.nic_con.uart_session_stop(session)
+
+                    common.session_cmd(session, "cd ~/diag/scripts/asic/; tclsh get_nic_sts.tcl "+slot, 120)
+                    common.session_stop(session)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "DDR test failed")
+                    common.session_stop(j2c_session)
+                    return
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-two_step_edma", "--two_step_edma", help="DDR test", action='store_true')
+    group.add_argument("-two_step_edma", "--two_step_edma", help="Two step EDMA test", action='store_true')
+    group.add_argument("-edma", "--edma", help="EDMA test", action='store_true')
 
-    parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser.add_argument("-num_ite", "--num_ite", help="Number of iterations", type=int, default=1)
+    parser.add_argument("-num_edma", "--num_edma", help="Number of edma iterations", type=int, default=1)
 
     parser.add_argument("-pc_mode", "--pc_mode", help="Power cycle mode; board: whole board PC; gpio3: GPIO3 PC", type=str, default="board")
     parser.add_argument("-tcl_dir", "--tcl_dir", help="TCL directory", type=str, default="/home/diag/diag/asic/")
@@ -168,6 +206,11 @@ if __name__ == "__main__":
     if args.two_step_edma == True:
         slot_list = args.slot_list.split(',')
         test.two_step_edma(slot_list, args.num_ite, args.tcl_dir, args.script_dir, args.start_tcl, args.stop_tcl, args.pc_mode)
+        sys.exit()
+
+    if args.edma == True:
+        slot_list = args.slot_list.split(',')
+        test.edma(slot_list, args.num_ite, args.num_edma)
         sys.exit()
 
     parser.print_help()
