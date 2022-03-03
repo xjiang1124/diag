@@ -6,6 +6,7 @@ meta:
 config:
   testbed       : MTPS
   job           : FST
+  card_type     : ORTANO
 
 test_types:
   precheckin:

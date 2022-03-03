@@ -24,7 +24,7 @@ e2e-targets:
       skip-pxe-install: true
     resources:
       - bm:
-        - vendor: Pensando
+        - vendor: Supermicro
           count: 1
           image: build-17
           props:

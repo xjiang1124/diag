@@ -1307,7 +1307,7 @@ class mtp_ctrl():
                 rc = False
 
             if not rc:
-                self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
+                self.cli_log_err("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
             else:
                 self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test passed".format(str(inlet_1), str(inlet_2)))
 
@@ -1603,13 +1603,7 @@ class mtp_ctrl():
 
         if (mtp_capability & 0x2):
             for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                if stage in (
-                    FF_Stage.FF_DL,
-                    FF_Stage.FF_P2C,
-                    FF_Stage.FF_4C_L,
-                    FF_Stage.FF_4C_H,
-                    FF_Stage.FF_2C_L,
-                    FF_Stage.FF_2C_H):
+                if stage == FF_Stage.FF_DL:
                     # CPLD, failsafe, feature row and diagfw images
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
@@ -1676,7 +1670,52 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
                         pass
+                elif stage in (
+                    FF_Stage.FF_P2C,
+                    FF_Stage.FF_4C_L,
+                    FF_Stage.FF_4C_H,
+                    FF_Stage.FF_2C_L,
+                    FF_Stage.FF_2C_H):
+                    # CPLD, failsafe, feature row and diagfw images
+                    try:
+                        img = NIC_IMAGES.cpld_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                        pass
+                    try:
+                        img = NIC_IMAGES.diagfw_img[card_type]
+                        if img.strip() == "":
+                            raise KeyError
+                        img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
+                        pass
 
+                    # In addition to images, check the version & timestamp fields as well here
+                    try:
+                        expected_version = NIC_IMAGES.cpld_ver[card_type]
+                        if expected_version.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
+                        return False
+                    try:
+                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
+                        if expected_timestamp.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
+                        return False
+                    try:
+                        expected_timestamp = NIC_IMAGES.diagfw_dat[card_type]
+                        if expected_timestamp.strip() == "":
+                            raise KeyError
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
+                        return False
                 elif stage == FF_Stage.FF_CFG:
                     # CPLD image
                     try:
@@ -1845,16 +1884,18 @@ class mtp_ctrl():
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold != None:
             self.cli_log_inf("Wait the environment temperature drop to {:2.2f}".format(low_threshold))
-            # upper_limit = low_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            # lower_limit = low_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
-            upper_limit = 15
-            lower_limit = -5
+            upper_limit = MTP_Const.LOW_CHAMBER_UPPER_LIMIT
+            lower_limit = MTP_Const.LOW_CHAMBER_LOWER_LIMIT
+            if not GLB_CFG_MFG_TEST_MODE:
+                upper_limit = MTP_Const.HIGH_CHAMBER_UPPER_LIMIT
+                lower_limit = MTP_Const.LOW_CHAMBER_LOWER_LIMIT
         elif high_threshold != None:
             self.cli_log_inf("Wait the environment temperature rise to {:2.2f}".format(high_threshold))
-            # upper_limit = high_threshold + MTP_Const.MFG_EDVT_TEMP_DIFF
-            # lower_limit = high_threshold - MTP_Const.MFG_EDVT_TEMP_DIFF
-            upper_limit = 60
-            lower_limit = 40
+            upper_limit = MTP_Const.HIGH_CHAMBER_UPPER_LIMIT
+            lower_limit = MTP_Const.HIGH_CHAMBER_LOWER_LIMIT
+            if not GLB_CFG_MFG_TEST_MODE:
+                upper_limit = MTP_Const.HIGH_CHAMBER_UPPER_LIMIT
+                lower_limit = MTP_Const.LOW_CHAMBER_LOWER_LIMIT
         else:
             # in NT, just read the inlet temp
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
@@ -5096,13 +5137,13 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.NAPLES25SWM833:
             vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
             arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
             """
              Separate freq by PN:
              - For 68-0015 (Oracle) use 1033
              - For 68-0021 (Pensando) use 1100
             """
-            if self.mtp_is_nic_ortano_oracle(slot) or self.mtp_is_nic_ortanoadi_oracle(slot):
+            if self.mtp_is_nic_ortano_oracle(slot):
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
             else:
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
