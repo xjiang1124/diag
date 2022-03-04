@@ -239,7 +239,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program CPLD
         if test == "CPLD_PROG" or test == "FPGA_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG" or test == "GOLD_FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
