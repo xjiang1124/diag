@@ -1123,54 +1123,62 @@ def soap_post_report(xml, factory=FLX_Factory.PENANG):
 
 
 def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
-    if factory == FLX_Factory.PENANG:
-        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
-        webservice.putrequest("POST", FLX_PENANG_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
-    else:
-        webservice = httplib.HTTP(FLX_WEBSERVER)
-        webservice.putrequest("POST", FLX_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
+    try:
+        if factory == FLX_Factory.PENANG:
+            webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+            webservice.putrequest("POST", FLX_PENANG_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
+        else:
+            webservice = httplib.HTTP(FLX_WEBSERVER)
+            webservice.putrequest("POST", FLX_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
 
-    webservice.putheader("Content-length", "%d" % len(xml))
-    webservice.endheaders()
+        webservice.putheader("Content-length", "%d" % len(xml))
+        webservice.endheaders()
 
-    webservice.send(xml)
+        webservice.send(xml)
 
-    statuscode, statusmessage, header = webservice.getreply()
-    resp = webservice.getfile().read()
-    match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
-    if match:
-        return match[0]
-    else:
-        print("################## GET UUT INF #######################")
-        print(resp)
-        print("################## GET UUT INF #######################")
+        statuscode, statusmessage, header = webservice.getreply()
+        resp = webservice.getfile().read()
+        match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
+        if match:
+            return match[0]
+        else:
+            print("################## GET UUT INF #######################")
+            print(resp)
+            print("################## GET UUT INF #######################")
+            return "500"
+    except:
+        print("Unable to connect to webserver")
         return "500"
 
 def soap_get_uut_resp(xml, factory=FLX_Factory.PENANG):
-    if factory == FLX_Factory.PENANG:
-        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
-        webservice.putrequest("POST", FLX_PENANG_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
-    else:
-        webservice = httplib.HTTP(FLX_WEBSERVER)
-        webservice.putrequest("POST", FLX_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
+    try:
+        if factory == FLX_Factory.PENANG:
+            webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+            webservice.putrequest("POST", FLX_PENANG_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
+        else:
+            webservice = httplib.HTTP(FLX_WEBSERVER)
+            webservice.putrequest("POST", FLX_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
 
-    webservice.putheader("Content-length", "%d" % len(xml))
-    webservice.endheaders()
+        webservice.putheader("Content-length", "%d" % len(xml))
+        webservice.endheaders()
 
-    webservice.send(xml)
+        webservice.send(xml)
 
-    statuscode, statusmessage, header = webservice.getreply()
-    resp = webservice.getfile().read()
-    
-    return resp
+        statuscode, statusmessage, header = webservice.getreply()
+        resp = webservice.getfile().read()
+        
+        return resp
+    except:
+        print("Unable to connect to webserver")
+        return "500"
 
 def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac=None, pn=None):
     factory = flx_sn_to_factory(sn)
