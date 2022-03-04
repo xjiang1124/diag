@@ -24,7 +24,7 @@ func main() {
     flag.Usage = myUsage
     //------------------------
     infoPtr    := flag.Bool(  "info", false, "Show I2C info table")
-    devNamePtr := flag.String("dev",  "",    "Device name")
+    devNamePtr := flag.String("dev",  "RTC",    "Device name")
     //------------------------
     yearPtr  := flag.Int("y",   0, "Year")
     monthPtr := flag.Int("m",   0, "Month")

@@ -232,6 +232,8 @@ func SetTime(devName string, year byte, month byte, day byte, hour byte, minute 
     }
     defer smbus.Close()
 
+    cli.Printf("i", "Setting time: Year %d, Month %d, Day %d, hour %d, min %d, sec %d\n", year, month, day, hour, minute, second)
+
     year = byte(misc.GetOnes(int(year)) | (misc.GetTens(int(year)) << 4))
     err = smbus.WriteByte(devName, YEARS, year)
     if err != errType.SUCCESS {
