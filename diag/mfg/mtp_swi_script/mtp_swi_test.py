@@ -313,7 +313,7 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if test == "SEC_CPLD_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True, dl_step=False)
         elif test == "COPY_GOLD":
             ret = mtp_mgmt_ctrl.mtp_copy_nic_gold(slot, gold_img_file)
         elif test == "NIC_INIT":
