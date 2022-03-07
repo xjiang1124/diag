@@ -441,8 +441,10 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         cli.Println("e", "Empty slot!")
         return(-1)
     } else {
-        //Unsupported cardType
-        return(-1)
+        //All not handled cardType leave to hwdev.EepromDisp to determine
+        //Since many cardType don't need to handle here,
+        //e.g.: LACONA, POMONTE, NAPLES25, NAPLES100DELL, etc.
+        return(0)
     }
 
     return(0)
