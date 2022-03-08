@@ -102,7 +102,9 @@ class ddr_test:
                     ret = common.session_cmd(j2c_session, "source "+script_path+"/"+start_tcl, 120, False, ["tclsh]", "j2c : read req error", "j2c : write req error"])
                     if ret != 0:
                         common.session_cmd(j2c_session, chr(3))
+                        common.session_cmd(j2c_session, "inventory -sts -slot "+str(slot), 30)
                         common.session_stop(j2c_session)
+
                         self.nic_con.uart_session_stop(con_session)
                         common.session_stop(con_session)
                         print("=== J2C failure happened! EXITING ===")
