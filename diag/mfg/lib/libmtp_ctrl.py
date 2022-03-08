@@ -2876,7 +2876,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
         return True
 
-    def mtp_program_nic_cpld(self, slot, cpld_img):
+    def mtp_program_nic_cpld(self, slot, cpld_img, dl_step=True):
         # check the current cpld version
         nic_type = self.mtp_get_nic_type(slot)
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
@@ -2895,7 +2895,7 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_version = NIC_IMAGES.cpld_ver["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_version = NIC_IMAGES.cpld_ver["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
@@ -2906,7 +2906,7 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
@@ -3128,7 +3128,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True):
+    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True):
         # cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
@@ -3145,7 +3145,7 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_version = NIC_IMAGES.cpld_ver["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_version = NIC_IMAGES.cpld_ver["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
@@ -3156,7 +3156,7 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
             if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                 expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
@@ -3168,7 +3168,7 @@ class mtp_ctrl():
                     expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
                 if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                     expected_version = NIC_IMAGES.sec_cpld_ver["P41854"]
-                if nic_type == NIC_Type.ORTANO2ADI:
+                if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                     expected_version = NIC_IMAGES.sec_cpld_ver["68-0026"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
@@ -3179,7 +3179,7 @@ class mtp_ctrl():
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
                 if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["P41854"]
-                if nic_type == NIC_Type.ORTANO2ADI:
+                if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0026"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))

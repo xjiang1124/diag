@@ -239,7 +239,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program CPLD
         if test == "CPLD_PROG" or test == "FPGA_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG" or test == "GOLD_FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
@@ -313,7 +313,7 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fa
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if test == "SEC_CPLD_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True, dl_step=False)
         elif test == "COPY_GOLD":
             ret = mtp_mgmt_ctrl.mtp_copy_nic_gold(slot, gold_img_file)
         elif test == "NIC_INIT":

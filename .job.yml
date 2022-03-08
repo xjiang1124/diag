@@ -38,7 +38,7 @@ jobs:
   test/jobs/precheckin/elba-diag:
     labels: ["CI-DIAG-Precheckin"]
   test/jobs/sanity/capri-diag:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity"]
+    labels: ["CI-DIAG-Build"]
   test/jobs/sanity/elba-diag:
     labels: ["CI-DIAG-Build", "CI-DIAG-Sanity"]
   test/jobs/regression/capri-diag:
@@ -46,7 +46,7 @@ jobs:
   test/jobs/regression/elba-diag:
     labels: ["CI-DIAG-Regression"]
   test/jobs/sanity/ortano-fst:
-    labels: ["CI-DIAG-Build", "CI-FST-Sanity"]
+    labels: ["CI-DIAG-Build", "CI-FST-Sanity", "CI-DIAG-Sanity"]
 
 dependencies:
   test/infra:
