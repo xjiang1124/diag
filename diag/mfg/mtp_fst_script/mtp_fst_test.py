@@ -355,10 +355,11 @@ def check_rot(mtp_mgmt_ctrl, card_type, nic_list):
         cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
-        result += mtp_mgmt_ctrl.mtp_get_cmd_buf()
-        if "FAIL" in result:
+        cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        if "FAIL" in cmd_buf:
             mtp_mgmt_ctrl.cli_log_err("NIC at serial port {:s} failed".format(port), level=0)
-            mtp_mgmt_ctrl.cli_log_err(result)
+            mtp_mgmt_ctrl.cli_log_err(cmd_buf)
+        result += cmd_buf
     pass_reg_exp_rot = re.compile("ROT test PASSED ([A-Za-z0-9]*)")
     fail_reg_exp_rot = re.compile("ROT test FAILED ([A-Za-z0-9]*)")
     pass_match_rot = pass_reg_exp_rot.findall(result)

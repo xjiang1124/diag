@@ -1181,7 +1181,7 @@ class mtp_ctrl():
         pass_sig_list = []
 
         # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
-        if self._mtp_rev is not None and len(self._mtp_rev) > 0:
+        if self._mtp_rev is not None and len(self._mtp_rev) > 0 and not MFG_BYPASS_PSU_CHECK:
             if int(self._mtp_rev) > 3:
                 apc1 = self._apc_cfg[0]
                 apc2 = self._apc_cfg[4]
@@ -1965,7 +1965,7 @@ class mtp_ctrl():
         io_version = MTP_IMAGES.mtp_io_cpld_ver[self._asic_support]
         jtag_version = MTP_IMAGES.mtp_jtag_cpld_ver[self._asic_support]
 
-        if self._mtp_rev is not None and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 2:
+        if self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 2:
             if int(cpld_ver_list[0],16) < int(io_version,16):
                 self.cli_log_err("MTP IO CPLD Version: {:s}, expect: {:s}".format(cpld_ver_list[0], io_version))
                 self.cli_log_err("MTP CPLD test failed")
