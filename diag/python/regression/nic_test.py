@@ -1172,176 +1172,6 @@ class nic_test:
 
             common.session_stop(session)
 
-    def ddr_test(self, nic_list=[], num_ite=1):
-        print "=== NIC DDR Test ==="
-        if len(nic_list) == 0:
-            print "No nic specified -- Exit"
-            sys.exit(0)
-
-        for ite in range(num_ite):
-            print("=== Ite:", ite, "===")
-            slot_list = ",".join(nic_list)
-            print("slot_list:", slot_list)
-
-            for slot in nic_list:
-                con_session = common.session_start()
-
-                for i in range(5):
-                    common.session_cmd(con_session, "killall picocom", 20)
-
-                    self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
-                    ret = self.nic_con.uart_session_start(con_session)
-                    if ret == 0:
-                        break
-
-                    self.nic_con.uart_session_stop(con_session)
-
-                if ret != 0:
-                    print("Fail to connect uboot")
-                    return
-
-                j2c_session = common.session_start()
-                common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
-
-                # TCL command
-                common.session_cmd(j2c_session, "tclsh", 20, False, "%")
-                common.session_cmd(j2c_session, "source .tclrc.diag.elb", 60, False, "tclsh]")
-
-                try:
-                    common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
-                    common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
-                    common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
-                    common.session_cmd(j2c_session, "diag_close_j2c_if $port $slot1", 30, False, "tclsh]")
-                    common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
-                    common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
-                    common.session_cmd(j2c_session, "run_ddr 3200", 120, False, "tclsh]")
-                    common.session_cmd(j2c_session, "elb_nx_cache_enable", 30, False, "tclsh]")
-                    #common.session_cmd(session, "", 30, False, "tclsh]")
-                    #common.session_cmd(session, "", 30, False, "tclsh]")
-                    #common.session_cmd(session, "", 30, False, "tclsh]")
-                    #common.session_cmd(session, "get_freq", 30, False, "tclsh]")
-                    #common.session_cmd(session, "get_freq", 30, False, "tclsh]")
-                    #common.session_cmd(session, "get_freq", 30, False, "tclsh]")
-                    #common.session_cmd(session, "diag_close_j2c_if 10 "+slot, 10, False, "tclsh]")
-
-                except pexpect.TIMEOUT:
-                    print(slot, "DDR test failed")
-                    common.session_stop(j2c_session)
-                    return
-
-                self.nic_con.uart_session_cmd(con_session, "g", 10, ending="Loading Environment from Flash")
-                time.sleep(1)
-                self.nic_con.uart_session_stop(con_session)
-
-                print("Sleep 45 sec")
-                time.sleep(45)
-                ret = self.nic_con.uart_session_start(con_session)
-                if ret != 0:
-                    self.nic_con.uart_session_stop(con_session)
-                    return
-
-                #self.nic_con.uart_session_stop(con_session)
-
-                common.session_cmd(j2c_session, "elb_load_die_id", 30, False, "tclsh]")
-
-                #ret = self.nic_con.uart_session_start(con_session)
-                self.nic_con.uart_session_cmd(con_session, "fsck -y /dev/mmcblk0p10")
-                self.nic_con.uart_session_cmd(con_session, "mount /dev/mmcblk0p10 /data")
-                self.nic_con.uart_session_cmd(con_session, "source /data/nic_arm/nic_setup_env.sh")
-                self.nic_con.uart_session_cmd(con_session, "source /etc/profile")
-                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/xo3dcpld -w 1 0x0")
-                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/xo3dcpld -r 1")
-                self.nic_con.uart_session_cmd(con_session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
-                self.nic_con.uart_session_cmd(con_session, "export PCIE_ENABLED_PORTS=0")
-                self.nic_con.uart_session_cmd(con_session, "export MTP_REV=REV_4")
-                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/asicutil -snake -mode hod -dura 120 -verbose -int_lpbk -snake_num 4", 600, "SNAKE DONE")
-                #self.nic_con.uart_session_cmd(session, "sync")
-                self.nic_con.uart_session_stop(con_session)
-
-                common.session_cmd(j2c_session, "check_ecc_intr", 10, False, "tclsh]")
-                common.session_cmd(j2c_session, "exit", 10)
-
-                common.session_stop(j2c_session)
-                common.session_stop(con_session)
-                return
-
-            common.session_stop(session)
-
-    def edma_test(self, nic_list=[], num_ite=1):
-        print "=== NIC DDR Test ==="
-        if len(nic_list) == 0:
-            print "No nic specified -- Exit"
-            sys.exit(0)
-
-
-        for ite in range(num_ite):
-            print("=== Iteration:", ite, "===")
-            slot_list = ",".join(nic_list)
-            print("slot_list:", slot_list)
-
-            self.setup_env_multi_top(nic_list=nic_list, asic_type="elba", timeout=30)
-
-            for slot in nic_list:
-                session = common.session_start()
-                common.session_cmd(session, "killall picocom", 20)
-
-                ret = self.nic_con.uart_session_start(session)
-                if ret != 0:
-                    print "Failed to start UART session"
-                    self.nic_con.uart_session_stop(session)
-                    common.session_stop(session)
-                    break
-
-                try:
-                    self.nic_con.uart_session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
-
-                    # TCL commands
-                    self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
-                    self.nic_con.uart_session_cmd(session, "source .tclrc.diag.elb.arm", 60, "tclsh]")
-                    self.nic_con.uart_session_cmd(session, "source check_tdfi.tcl", 10, "tclsh]")
-
-                    [ret, buf] = self.nic_con.uart_session_cmd_w_ot(session, "check_tdfi", 10, "tclsh]")
-                    if "ERROR" in buf: 
-                        self.nic_con.uart_session_stop(session)
-                        common.session_stop(session)
-                        print("BAD PI_TDFI_PHYUPD_RESP! skip this round")
-                        break;
-                    else:
-                        self.nic_con.uart_session_cmd(session, "exit")
-                except pexpect.TIMEOUT:
-                    print(slot, "Failed to config tdfi")
-                    self.nic_con.uart_session_stop(session)
-                    common.session_stop(session)
-                    return
-
-                try:
-                    self.nic_con.uart_session_cmd(session, "cd /data/")
-                    #[ret, buf] = self.nic_con.uart_session_cmd_w_ot(session, "./run_edma.sh 1", 90)
-                    [ret, buf] = self.nic_con.uart_session_cmd_w_ot(session, "./run_edma.sh 20", 1500)
-                    if "FAIL" in buf:
-                        print("EDMA failed!")
-                        #self.nic_con.uart_session_stop(session)
-                        #common.session_stop(session)
-                        #return
-
-                except pexpect.TIMEOUT:
-                    print(slot, "Failed to run edma")
-                    self.nic_con.uart_session_stop(session)
-                    common.session_stop(session)
-                    return
-                self.nic_con.uart_session_stop(session)
-                common.session_stop(session)
-
-    def enter_tclsh(self, slot):
-        session = common.session_start()
-        self.nic_con.switch_console(slot)
-        self.nic_con.uart_session_start(session)
-        self.nic_con.uart_session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
-        self.nic_con.uart_session_cmd(session, "$ASIC_LIB_BUNDLE/asic_lib/diag.exe", 60, "%")
-        self.nic_con.uart_session_cmd(session, "source .tclrc.diag.arm", 60, "%")
-        self.nic_con.uart_session_stop(session)
-        self.nic_con.session_stop(session)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
@@ -1376,9 +1206,6 @@ if __name__ == "__main__":
     group.add_argument("-skew", "--skew", help="Run nic skew test on multile nics", action='store_true')
     group.add_argument("-skew_exit", "--skew_exit", help="End nic skew test on multile nics", action='store_true')
     group.add_argument("-emmc", "--emmc", help="Run nic emmc test on multile nics", action='store_true')
-    group.add_argument("-edma", "--edma", help="Run nic edma test on multile nics", action='store_true')
-    group.add_argument("-ddr_test", "--ddr_test", help="DDR test", action='store_true')
-    group.add_argument("-enter_tclsh", "--enter_tclsh", help="Enter ARM tclsh", action='store_true')
     group.add_argument("-fix_bx", "--fix_bx", help="UART cpl file", action='store_true')
     group.add_argument("-config_ddr", "--config_ddr", help="configure DDR", action='store_true')
     group.add_argument("-disp_ecc", "--disp_ecc", help="Display ECC syndrom", action='store_true')
@@ -1515,20 +1342,6 @@ if __name__ == "__main__":
     if args.emmc == True:
         slot_list = args.slot_list.split(',')
         test.ddr_test(slot_list, args.num_ite)
-        sys.exit()
-
-    if args.edma == True:
-        slot_list = args.slot_list.split(',')
-        test.edma_test(slot_list, args.num_ite)
-        sys.exit()
-
-    if args.ddr_test == True:
-        slot_list = args.slot_list.split(',')
-        test.ddr_test(slot_list, args.num_ite)
-        sys.exit()
-
-    if args.enter_tclsh == True:
-        test.enter_tclsh(args.slot)
         sys.exit()
 
     if args.fix_bx == True:
