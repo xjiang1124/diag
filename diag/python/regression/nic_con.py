@@ -138,6 +138,13 @@ class nic_con:
         session.timeout = temp
         return[ret, session.before]
 
+    def uart_session_cmd_list(self, session, cmd_list=[], timeout=30, ending="\#"):
+        for cmd in cmd_list:
+            ret = self.uart_session_cmd(session, cmd, timeout, ending)
+            if ret == -1:
+                return ret
+        return 0
+
     def power_cycle_uart(self, baud_rate=115200, slot=0):
         if slot == 0 or slot > 10:
             print "Invalid slot number:", slot
@@ -236,22 +243,6 @@ class nic_con:
             print "=== Failed to enter uboot ==="
         return ret
 
-    def power_cycle_before_enter_uboot(self, slot):
-        ret = -1
-        if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
-            sys.exit(0)
-
-        session = common.session_start()
-        session.timeout = 30
-        cmd = "turn_on_slot.sh off {}".format(slot)
-        common.session_cmd(session, cmd)
-        cmd = "turn_on_slot.sh on {}".format(slot)
-        common.session_cmd(session, cmd)
-        cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
-        common.session_cmd(session, cmd)
-        common.session_stop(session)
-
     def enter_uboot_by_sysreset_after_pwr_cycle(self, session, slot=0, rate=115200, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
@@ -263,28 +254,25 @@ class nic_con:
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd)
         time.sleep(1)
-        for retry in range(3):
-            uartsession = common.session_start()
-            uartsession.timeout = timeout
-            self.uart_session_start(uartsession, rate)
-            cmd = "sysreset.sh\r"
-            uartsession.sendline(cmd)
-            time.sleep(1)
-            print "Trying break into uboot {}".format(retry)
-            for i in range(60):
-                uartsession.timeout = 0.5
-                try:
-                    print "C+C", i
-                    uartsession.send(chr(3))
-                    uartsession.expect(expstr)
-                    ret = 0
-                    break
-                except pexpect.TIMEOUT:
-                    print "timeout:", i
-                    ret = -1
-            self.uart_session_stop(uartsession)
-            if ret == 0:
+
+        uartsession = common.session_start()
+        uartsession.timeout = timeout
+        self.uart_session_start(uartsession, rate)
+        cmd = "sysreset.sh\r"
+        uartsession.sendline(cmd)
+        time.sleep(1)
+        for i in range(60):
+            uartsession.timeout = 0.5
+            try:
+                print "C+C", i
+                uartsession.send(chr(3))
+                uartsession.expect(expstr)
+                ret = 0
                 break
+            except pexpect.TIMEOUT:
+                print "timeout:", i
+                ret = -1
+        self.uart_session_stop(uartsession)
 
         if ret == -1:
             print "=== Failed to enter uboot ==="
@@ -897,11 +885,12 @@ class nic_con:
             print "Failed to connect uboot"
             return ret
 
-        self.uart_session_cmd(session, "setenv pcie_poll_disable 1", 30, expstr)
-        self.uart_session_cmd(session, "saveenv", 30, expstr)
-        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        pcie_config_cmds = ["setenv pcie_poll_disable 1", "saveenv", "saveenv"]
+        ret = self.uart_session_cmd_list(session, pcie_config_cmds, 30, expstr)
         self.uart_session_stop(session)
         common.session_stop(session)
+        if ret == -1:
+            print "Failed to set pcie_poll_disable"
         return ret
 
     def enable_pcie_uboot(self, slot):
@@ -917,11 +906,12 @@ class nic_con:
             print "Failed to connect uboot"
             return ret
 
-        self.uart_session_cmd(session, "setenv pcie_poll_disable", 30, expstr)
-        self.uart_session_cmd(session, "saveenv", 30, expstr)
-        self.uart_session_cmd(session, "saveenv", 30, expstr)
+        pcie_config_cmds = ["setenv pcie_poll_disable", "saveenv", "saveenv"]
+        ret = self.uart_session_cmd_list(session, pcie_config_cmds, 30, expstr)
         self.uart_session_stop(session)
         common.session_stop(session)
+        if ret == -1:
+            print "Failed to set pcie_poll_disable"
         return ret
 
     def setup_uboot_env(self, slot):
@@ -972,7 +962,6 @@ if __name__ == "__main__":
     group.add_argument("-dis_pcie", "--dis_pcie", help="Disable PCIe", action='store_true')
     group.add_argument("-ena_pcie", "--ena_pcie", help="Enable PCIe", action='store_true')
     group.add_argument("-config_ddr", "--config_ddr", help="configure DDR", action='store_true')
-    group.add_argument("-pwr_cycle_slot", "--pwr_cycle_slot", help="Power cycle slot before entering uboot", action='store_true')
 
     parser.add_argument("-br", "--baud_rate", help="Original baud rate", type=int, default=115200)
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
@@ -1002,8 +991,4 @@ if __name__ == "__main__":
 
     if args.config_ddr == True:
         con.config_ddr(args.slot, args.hardcode, args.ddr_speed)
-        sys.exit()
-
-    if args.pwr_cycle_slot == True:
-        con.power_cycle_before_enter_uboot(args.slot)
         sys.exit()

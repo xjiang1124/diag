@@ -716,24 +716,40 @@ class nic_test:
         common.session_stop(session)
 
     def ena_dis_uboot_pcie(self, nic_list=[], enable=True):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_list_remain = nic_list[:]
+
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
             sys.exit(0)
 
-        slot_list = ",".join(nic_list)
-        print "slot_list:", slot_list
+        for retry in range(self.num_retry):
+            print "Trying break into uboot {}".format(retry)
+            for slot in nic_list_remain:
+                self.nic_con.power_cycle_multi(self.baud_rate, int(slot), 0)
+            print "Wait for 60 seconds before entering uboot"
+            sleep(60)
+            for slot in nic_list_remain:
+                if enable == True:
+                    ret = self.nic_con.enable_pcie_uboot(int(slot))
+                else:
+                    ret = self.nic_con.disable_pcie_uboot(int(slot))
+                ret_list[int(slot)-1] = ret
 
-        for slot in nic_list:
-            self.nic_con.power_cycle_before_enter_uboot(int(slot))
-        sleep(60)
-        for slot in nic_list:
-            if enable == True:
-                ret = self.nic_con.enable_pcie_uboot(int(slot))
-            else:
-                ret = self.nic_con.disable_pcie_uboot(int(slot))
+            for slot in nic_list_remain:
+                if ret_list[int(slot)-1] == 0:
+                    nic_list.remove(slot)
 
-            if ret != 0:
-                print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
+            print "remaining slots: ", ",".join(nic_list)
+            nic_list_remain = nic_list[:]
+
+            if len(nic_list) == 0:
+                break
+
+        if len(nic_list) != 0:
+            print "=== ena_dis_uboot_pcie failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== ena_dis_uboot_pcie passed ==="
 
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
