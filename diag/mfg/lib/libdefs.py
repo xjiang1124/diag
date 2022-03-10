@@ -152,6 +152,7 @@ class MTP_Const:
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
+    MTP_PCIE_EN_DIS_DELAY = 60
 
     # single test, 1.5 hours
     DIAG_SEQ_TEST_TIMEOUT = 90*60
