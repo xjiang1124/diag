@@ -79,9 +79,12 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
             return
     
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, args.logdir, mtp_id, mtp_test_summary, FF_Stage.FF_FST)
+    mtp_mgmt_ctrl.cli_log_inf("Collect MTP Logfile {:s}".format(test_log_file), level=0)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect FST Test result failed", level=0)
         return
+    cmd = "cp {:s} {:s}".format(test_log_file, args.logdir)
+    os.system(cmd)
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_FST)
     cmd = "rm -rf {:s}".format(test_log_file)
@@ -249,9 +252,9 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_disp(FF_Stage.FF_FST, mfg_fst_summary, mtpid_fail_list)
+    final_result = libmfg_utils.mfg_summary_disp(FF_Stage.FF_FST, mfg_fst_summary, mtpid_fail_list)
 
-    return len(mtpid_fail_list) == 0
+    return final_result
 
 if __name__ == "__main__":
     if not main():
