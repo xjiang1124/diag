@@ -724,6 +724,9 @@ class nic_test:
         print "slot_list:", slot_list
 
         for slot in nic_list:
+            self.nic_con.power_cycle_before_enter_uboot(int(slot))
+        sleep(60)
+        for slot in nic_list:
             if enable == True:
                 ret = self.nic_con.enable_pcie_uboot(int(slot))
             else:
@@ -818,23 +821,6 @@ class nic_test:
         for slot, sts in test_result.items():
             print result_fmt.format(slot, sts)
         print "======================================"
-
-    def ena_dis_uboot_pcie(self, nic_list=[], enable=True):
-        if len(nic_list) == 0:
-            print "No nic specified -- Exit"
-            sys.exit(0)
-
-        slot_list = ",".join(nic_list)
-        print "slot_list:", slot_list
-
-        for slot in nic_list:
-            if enable == True:
-                ret = self.nic_con.enable_pcie_uboot(int(slot))
-            else:
-                ret = self.nic_con.disable_pcie_uboot(int(slot))
-
-            if ret != 0:
-                print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
 
 
     def timeout_test(self, timeout):
