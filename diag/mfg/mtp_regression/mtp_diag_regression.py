@@ -1643,7 +1643,7 @@ def main():
                         if slot in pass_nic_list:
                             pass_nic_list.remove(slot)
 
-                mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=curr_list, dl=False)
+                mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
 
@@ -2303,7 +2303,7 @@ def main():
         #ADD - Bypass shutting down slot right now for debug
         print("STOP ON ERR=" + str(stop_on_err))
         if not stop_on_err:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=curr_list, dl=False)
+            mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
             mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
             libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
             diag_post_fail_list = mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test)

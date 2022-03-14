@@ -1712,6 +1712,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
 
 
 def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
+    final_result = True
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     for mtp_id in summary_dict.keys():
         cli_inf("---------- {:s} Report: ----------".format(mtp_id))
@@ -1720,6 +1721,7 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
             else:
+                final_result = False
                 if not retest_blocked:
                     cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
                 else:
@@ -1727,6 +1729,8 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+        final_result = False
+    return final_result
 
 def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     """
