@@ -99,7 +99,16 @@ class ddr_test:
                     if pc_mode == "gpio3":
                         common.session_cmd(j2c_session, "elb_power_cycle_thro_gpio3 $port $slot1", 30, False, "tclsh]")
 
-                    common.session_cmd(j2c_session, "source "+script_path+"/"+start_tcl, 120, False, "tclsh]")
+                    ret = common.session_cmd(j2c_session, "source "+script_path+"/"+start_tcl, 120, False, ["tclsh]", "j2c : read req error", "j2c : write req error"])
+                    if ret != 0:
+                        common.session_cmd(j2c_session, chr(3))
+                        common.session_cmd(j2c_session, "inventory -sts -slot "+str(slot), 30)
+                        common.session_stop(j2c_session)
+
+                        self.nic_con.uart_session_stop(con_session)
+                        common.session_stop(con_session)
+                        print("=== J2C failure happened! EXITING ===")
+                        continue
 
                 except pexpect.TIMEOUT:
                     print(slot, "DDR test failed")
@@ -127,7 +136,7 @@ class ddr_test:
                     self.nic_con.uart_session_stop(con_session)
                     return
 
-                self.nic_con.uart_session_cmd(con_session, "export CARD_TYPE=ORTANO2", 10)
+                self.nic_con.uart_session_cmd(con_session, "export CARD_TYPE=ORTANO2A", 10)
                 self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
 
                 self.nic_con.uart_session_cmd(con_session, "/nic/bin/ddr_test.sh", 70)
@@ -197,7 +206,7 @@ if __name__ == "__main__":
     try:
         args = parser.parse_args()
     except:
-        parser.print_help()
+        #parser.print_help()
         sys.exit(0)
 
     test = ddr_test()
