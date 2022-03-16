@@ -104,6 +104,8 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session, "export PCIE_ENABLED_PORTS=0")
                 self.nic_con.uart_session_cmd(session, "export MTP_REV="+mtp_rev)
+                # if this file exists, it means the card is not rebooted
+                self.nic_con.uart_session_cmd(session, "touch /root/reboot_check")
 
                 try:
                     if cpldIDs == "0x17" or cpldIDs == "0x19":
