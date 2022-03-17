@@ -23,8 +23,115 @@ func ReadStatus(devName string) (status uint16, err int) {
     return
 }
 
+func ReadOperation(devName string) (data uint8, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    data, err = pmbus.ReadByte(devName, pmbus.OPERATION)
+    return
+}
+
+func ReadFreqConfig(devName string) (data uint8, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    data, err = pmbus.ReadByte(devName, FREQUENCY_CONFIG)
+    return
+}
+
+func ReadVoutMargin(devName string) (data uint8, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    data, err = pmbus.ReadByte(devName, VOUT_MARGIN)
+    return
+}
+
+func ReadVoutAdjustment(devName string) (status uint8, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadByte(devName, VOUT_ADJUSTMENT)
+    return
+}
+
+func GetOpMargin (devName string) (data string, err int) {
+    regVal, err := ReadOperation(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read Operaton", devName)
+        return
+    }
+
+    regVal = (regVal >> 2) & 0xF
+    data, ok := opMargin[regVal]
+    if !ok {
+        data = "Invalid"
+        err = errType.FAIL
+    }
+    return
+}
+
+func GetFreqConfig (devName string) (data string, err int) {
+    regVal, err := ReadFreqConfig(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read Freq Config", devName)
+        return
+    }
+    data = freqConfig[regVal & 0x7]
+    return
+}
+
+func GetVoutAdjPct (devName string) (data float64, err int) {
+    regVal, err := ReadVoutAdjustment(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read Freq Config", devName)
+        return
+    }
+    data = voutAdjPct[regVal & 0x1F]
+    return
+}
+
+func GetVoutMarginPct (devName string) (data float64, err int) {
+    regVal, err := ReadVoutMargin(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read VOUT Margin", devName)
+        return
+    }
+
+    opMargin, err := GetOpMargin(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if opMargin == "MarginOff" {
+        data = 0.0
+    } else if opMargin == "MarginLow" {
+        data = voutMarginLowhPct[regVal & 0xF]
+    } else {
+        data = voutMarginHighPct[(regVal>>4) & 0xF]
+    }
+
+    return
+}
+
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"STATUS"}
+    vrmTitle := []string {"FREQ", "VOUT_ADJ", "VOUT_VMG", "STATUS", "VOUT(850mv based)"}
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
 
@@ -38,15 +145,40 @@ func DispStatus(devName string) (err int) {
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    freq, err := GetFreqConfig(devName)
+    if err != errType.SUCCESS {
+        return err
+    }
+    outStrTemp = fmt.Sprintf("%s", freq)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    adj, err := GetVoutAdjPct(devName)
+    if err != errType.SUCCESS {
+        return err
+    }
+    outStrTemp = fmt.Sprintf("%.2f%%", adj)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    margin, err := GetVoutMarginPct(devName)
+    if err != errType.SUCCESS {
+        return err
+    }
+    outStrTemp = fmt.Sprintf("%.2f%%", margin)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
     status, err := ReadStatus(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to read status")
         return err
     }
-
-    outStr = fmt.Sprintf(fmtNameStr, devName)
     outStrTemp = fmt.Sprintf("0x%X", status)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)//+"\n"
+
+    vout := int(850.0 * (1.0 + adj/100.0) * (1.0 + margin/100.0))
+    outStrTemp = fmt.Sprintf("%d", vout)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     cli.Println("i", outStr)
 

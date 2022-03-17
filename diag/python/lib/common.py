@@ -309,9 +309,9 @@ def session_cmd_pass_multi(session, cmd, pass_sign_list=["NO PASS SIGN"], timeou
             #print session.before
         
         for pass_sign in pass_sign_list:
-            if pass_sign not in session.before:
-                return -1
-        return 0
+            if pass_sign in session.before:
+                return 0
+        return -1
 
     except pexpect.TIMEOUT:
         print("=== TIMEOUT:", cmd, "===")
