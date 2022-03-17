@@ -355,24 +355,28 @@ class nic_con:
 
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
-            #time.sleep(2)
-            cmd = self.fmt_con_cmd.format(rate)
-            session.sendline(cmd)
-            #session.expect("Terminal ready")
 
+            print "Wait for 60 seconds before entering uboot"
+            sleep(60)
+
+            uartsession = common.session_start()
+            uartsession.timeout = timeout
+            self.uart_session_start(uartsession, rate)
+            cmd = "sysreset.sh\r"
+            uartsession.sendline(cmd)
+            time.sleep(1)
             for i in range(60):
-                session.timeout = 0.5
+                uartsession.timeout = 0.5
                 try:
                     print "C+C", i
-                    session.send(chr(3))
-                    i = session.expect(expstr)
-                    #time.sleep(1)
+                    uartsession.send(chr(3))
+                    uartsession.expect(expstr)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
                     print "timeout:", i
                     ret = -1
-            self.uart_session_stop(session)
+            self.uart_session_stop(uartsession)
             if ret == 0:
                 break
 
