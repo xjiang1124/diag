@@ -217,6 +217,8 @@ def main():
 
     mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
 
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 

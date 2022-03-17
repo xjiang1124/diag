@@ -403,6 +403,10 @@ def main():
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
+    mtp_mgmt_ctrl.mtp_apc_pwr_off()
+    mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for system coming down\n".format(MTP_Const.MTP_POWER_OFF_DELAY), level=0)
+    libmfg_utils.count_down(MTP_Const.MTP_POWER_OFF_DELAY)
+
     mtp_mgmt_ctrl.mtp_apc_pwr_on()
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
