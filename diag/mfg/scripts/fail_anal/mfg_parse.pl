@@ -113,7 +113,7 @@ sub count_num_of_failures {
                     {
                         #sort on unixts
                         foreach my $ts (sort keys %failures_one_sn) {
-                            printf "%-8s %s\n", $ts, $failures_one_sn{$ts};
+                            if ($debug_msgs) { printf "%-8s %s\n", $ts, $failures_one_sn{$ts}};
                             print TR2 $failures_one_sn{$ts};
                         }
                         %failures_one_sn = ();
@@ -481,6 +481,11 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"NIC_TXT_INCOMPLETE"}) {
         $top_diag_fa_code = "NIC_TXT_INCOMPLETE";
         delete $diag_fa_code{"NIC_TXT_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C"}) {
+        $top_diag_fa_code = "Bad_J2C";
+        delete $diag_fa_code{"Bad_J2C"};
         return;
     }
     if (%diag_fa_code) {
@@ -852,9 +857,9 @@ sub parse_mtp_and_slot_log {
     while(my $line = <TR3>)
     {
         if($line =~ m/ERROR/ && $line !~ m/Unsupported device: CPLD_ADAP/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            last;
+	        #if ($debug_msgs) { print "line: $line"};
+	        # $test_err_msg .= $line;
+	        # last;
         }
     }
     if ($test_err_msg ne "") {
@@ -917,8 +922,8 @@ sub parse_fpga_and_ecc {
                 }
             }
             if($line =~ m/(.*)(Addr: 0x26; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x27") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x26, expected: 0x27, actual: $3\n";
+                if ($smbus_err == 0 && ((hex($3) | 0x20) != 0x27)) {
+                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x26, expected: 0x27 or 0x07, actual: $3\n";
                     $num_cpld_sts_errors++;
                     $diag_fa_code{"ASIC_PIN_STATUS_0_FAILURE(0x26)"} = 1;
                 }
