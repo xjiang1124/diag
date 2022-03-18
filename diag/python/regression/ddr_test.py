@@ -100,7 +100,7 @@ class ddr_test:
                         common.session_cmd(j2c_session, "elb_power_cycle_thro_gpio3 $port $slot1", 30, False, "tclsh]")
 
                     ret = common.session_cmd(j2c_session, "source "+script_path+"/"+start_tcl, 120, False, ["tclsh]", "j2c : read req error", "j2c : write req error"])
-                    if ret != 0:
+                    if ret != 1:
                         common.session_cmd(j2c_session, chr(3))
                         common.session_cmd(j2c_session, "inventory -sts -slot "+str(slot), 30)
                         common.session_stop(j2c_session)
