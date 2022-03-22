@@ -62,18 +62,12 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
 
 diag_open_j2c_if $port $slot
 
-if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || $MTP_TYPE == "MTP_TOR"} {
-    puts "Getting ECC status"
-    set ecc_reg_list [list 0x305305e4 0x30530454 0x30530458 0x30530464 0x30530468 0x3053046c 0x30530470]
-    foreach ecc_reg $ecc_reg_list {
-        set val [regrd 0 $ecc_reg]
-        puts "Reg $ecc_reg; value: $val"
-    }
-    check_ecc_intr
-    elb_ddr_rst_ecc_intr_counter
-}
+mc_int
+check_ecc_intr
+elb_ddr_rst_ecc_intr_counter
 
-rst_arm0_set 0
+#rst_arm0_set 0
+elb_assert_arm_rst 0 0xf
 ssi_cpld_write 0x20 0x0
 elb_print_voltage_temp
 

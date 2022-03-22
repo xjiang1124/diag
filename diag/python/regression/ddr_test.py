@@ -100,7 +100,7 @@ class ddr_test:
                         common.session_cmd(j2c_session, "elb_power_cycle_thro_gpio3 $port $slot1", 30, False, "tclsh]")
 
                     ret = common.session_cmd(j2c_session, "source "+script_path+"/"+start_tcl, 120, False, ["tclsh]", "j2c : read req error", "j2c : write req error"])
-                    if ret != 0:
+                    if ret != 1:
                         common.session_cmd(j2c_session, chr(3))
                         common.session_cmd(j2c_session, "inventory -sts -slot "+str(slot), 30)
                         common.session_stop(j2c_session)
@@ -133,15 +133,15 @@ class ddr_test:
                 time.sleep(30)
                 ret = self.nic_con.uart_session_start(con_session)
                 if ret != 0:
-                    self.nic_con.uart_session_stop(con_session)
-                    return
+                    print("Connecting to console failed!")
+                else:
+                    self.nic_con.uart_session_cmd(con_session, "export CARD_TYPE=ORTANO2A", 10)
+                    self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
 
-                self.nic_con.uart_session_cmd(con_session, "export CARD_TYPE=ORTANO2A", 10)
-                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
+                    self.nic_con.uart_session_cmd(con_session, "/nic/bin/ddr_test.sh", 70)
 
-                self.nic_con.uart_session_cmd(con_session, "/nic/bin/ddr_test.sh", 70)
+                    self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
 
-                self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
                 self.nic_con.uart_session_stop(con_session)
 
                 common.session_cmd(j2c_session, "source "+script_path+"/"+stop_tcl, 10, False, "tclsh]")
