@@ -149,7 +149,7 @@ func DumpReg(devName string) (err int) {
         if err != errType.SUCCESS {
             return
         }
-        fmt.Printf("%-20s [%.02x] = %.02x\n", entry.Name, entry.Address, data)
+        cli.Printf("i", "%-20s [%.02x] = %.02x\n", entry.Name, entry.Address, data)
     }
     return
 }
@@ -256,11 +256,11 @@ func GetFanSpeed(devName string, fanIdx uint64) (rpm uint64, err int) {
 
     // TACH 1- 4
     if fanIdx <= 3 {
-        tachLsbReg = TACH1_VALUE_LSB + fanIdx * 2
-        tachMsbReg = TACH1_VALUE_MSB + fanIdx * 2
+        tachLsbReg = TACH1_VALUE_LSB + (fanIdx * 2)
+        tachMsbReg = TACH1_VALUE_MSB + (fanIdx * 2)
     } else { // TACH 5-8
-        tachLsbReg = TACH1_VALUE_LSB + fanIdx * 2 + 2
-        tachMsbReg = TACH1_VALUE_MSB + fanIdx * 2 + 2
+        tachLsbReg = TACH1_VALUE_LSB + (fanIdx * 2) + 2
+        tachMsbReg = TACH1_VALUE_MSB + (fanIdx * 2) + 2
     }
 
     tachLsb, err = smbus.ReadByte(devName, tachLsbReg)
@@ -328,7 +328,7 @@ func SetFanSpeed(devName string, pwmIdx uint64, pct uint64) (err int) {
         if err != errType.SUCCESS {
             cli.Println("e", "failed to set pwm register")
         }
-        time.Sleep(time.Duration(50) * time.Millisecond)
+        time.Sleep(time.Duration(5) * time.Millisecond)
         pwmVal_rd, err = smbus.ReadByte(devName, pwmReg)
         if err != errType.SUCCESS {
             cli.Println("e", "failed to read pwm register")

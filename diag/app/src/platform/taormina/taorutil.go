@@ -79,15 +79,23 @@ const (
 
 var rpm_rear_MAP = map[int]int {
     100 : 29000,
-    75 : 19500,
-    50 : 11100,
+    90 : 24500, 
+    80 : 21500,
+    75 : 19800,
+    70 : 18000,
+    60 : 14900,
+    50 : 11300,
     40 : 7300,
     25 : 2100, 
 }
 
 var rpm_front_MAP = map[int]int {
-    100 : 25450,
+    100 : 25400,
+    90 : 21500,
+    80 : 18750,
     75 : 17200,
+    70 : 15800,
+    60 : 12900,
     50 : 10000,
     40 : 6500,
     25 : 1800, 
@@ -108,13 +116,188 @@ var fan_MAP = map[int]fanDevMap {
 }
 
 
-func Fan_RPM_test(tollerance int)(err int) {
-    var rpm [8]uint64
+
+func Fan_FIX_Stuck_Fan(fanNumber int, fanPWM int) (err int) {
+    var zeroPWM int = 0x00
+    var fanStopped [6]int
+    var rpm [2]uint64 
+    var pct [MAXFANMODULES]byte 
+    var changePWMstring string
+
+    cli.Printf("i", "Trying to unstick fan module %d.  PWM setting %d\n", fanNumber, fanPWM)
+
+    //disable all fans
+    for j:=0; j<MAXFANMODULES; j++ {
+        err = hwdev.FanSpeedSet(fan_MAP[j].dev, zeroPWM, (1<<fan_MAP[j].fanNum))
+        if err != errType.SUCCESS {
+           cli.Printf("e", "FanSpeedSet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+           return
+        }
+    }
+
+    for j:=0; j<MAXFANMODULES; j++ {
+        for i:=0; i<40; i++ {
+            if fanStopped[j] > 0 {
+                continue
+            }
+
+            for fanInModule:=0; fanInModule < FANPERMODULE; fanInModule++ {
+                rpm[fanInModule], err =  hwdev.FanSpeedGet(fan_MAP[j].dev, uint64((int(fan_MAP[j].fanNum) * FANPERMODULE) + fanInModule) ) 
+                if err != errType.SUCCESS {
+                    cli.Printf("e", "FanSpeedGet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+                    return
+                } 
+                
+            }
+            cli.Printf("i", "Waiting for fan to stop running.  Fan-%d RPM %d/%d\n", j, rpm[0], rpm[1])
+            if rpm[0] < 200 && rpm[1] < 200 {
+                fanStopped[j] = 1
+                continue
+            }
+            time.Sleep(time.Duration(500) * time.Millisecond) //give fan time to change rpm
+        }
+    }
+    for j:=0; j<MAXFANMODULES; j++ {
+        if fanStopped[j] > 0 {
+            cli.Printf("i", "Fan-%d Stopped RPM %d/%d\n", j, rpm[0], rpm[1])
+        }
+    }
+
+    // Set the fans to 60% PWM to start them back up
+    for j:=0; j<MAXFANMODULES; j++ {
+        pct[j] = 60
+        cli.Printf("i", "Fan-%d Setting PWM to %d percent\n", j, pct[j])
+        err = hwdev.FanSpeedSet(fan_MAP[j].dev, 60, (1<<fan_MAP[j].fanNum))
+        if err != errType.SUCCESS {
+           cli.Printf("e", "FanSpeedSet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+        }
+    }
+
+    misc.SleepInSec(10) //give fan time to change rpm
+
+    // Ramp up PWM if needed. Icnremenets of 5% at a time
+    for steps:=0;steps<20;steps++ {
+       for j:=0; j<MAXFANMODULES; j++ {
+           if pct[j] > byte(fanPWM) {  //fan speed going down, just break
+               continue
+           }
+           if (pct[j] + 5) < byte(fanPWM) {
+               pct[j] = pct[j]+5
+               s := fmt.Sprintf("%d ", pct[j])
+               changePWMstring = changePWMstring + s
+               hwdev.FanSpeedSet(fan_MAP[j].dev, int(pct[j]), (1<<fan_MAP[j].fanNum))
+           } else {
+               continue
+           }
+       }
+    }
+    if len(changePWMstring) > 0 {
+       cli.Printf("i","%s\n", changePWMstring)
+    }
+
+    // Set final PWM for test loop
+    for j:=0; j<MAXFANMODULES; j++ {
+        cli.Printf("i", "Fan-%d Setting Final PWM to %d percent\n", j, fanPWM)
+        err = hwdev.FanSpeedSet(fan_MAP[j].dev, fanPWM, (1<<fan_MAP[j].fanNum))
+        if err != errType.SUCCESS {
+           cli.Printf("e", "FanSpeedSet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+           return
+        }
+    }
+    misc.SleepInSec(1) //give fan time to change rpm
+
+    
+
+    return
+}
+
+//hwdev.FanDumpReg(devName)
+func Fan_Check_RPM(fanNumber int, fanPWM int, tollerance int) (err int) {
+    var fanInModule uint64
     var expRPM int
+    var rpm [8]uint64
+    var s string
+    var MaxRetry int = 3
+    var fanFail int = 0
+
+    for fanInModule=0; fanInModule < FANPERMODULE; fanInModule++ {
+        for retry:=0; retry < MaxRetry; retry++ {
+            rpm[fanNumber], fanFail =  hwdev.FanSpeedGet(fan_MAP[fanNumber].dev, ((fan_MAP[fanNumber].fanNum * FANPERMODULE) + fanInModule) ) 
+            if fanFail != errType.SUCCESS {
+                cli.Printf("e", "FanSpeedGet Failed on %s, fan-%d  \n", fan_MAP[fanNumber].dev, fan_MAP[fanNumber].fanNum)
+                err = errType.FAIL
+                break
+            } else {
+                if fanInModule == 0 {
+                    expRPM = rpm_rear_MAP[fanPWM]
+                } else {
+                    expRPM = rpm_front_MAP[fanPWM]
+                }
+
+                if fanInModule == 0 {
+                    s = fmt.Sprintf(" FanModule#=%d:Rear  Fan Tollerance=%d RPM=%d  expRPM=%d\n", fanNumber, tollerance, rpm[fanNumber], expRPM)
+                } else {
+                    s = fmt.Sprintf(" FanModule#=%d:Front Fan Tollerance=%d RPM=%d  expRPM=%d\n", fanNumber, tollerance, rpm[fanNumber], expRPM)
+                }
+                cli.Printf("i", "%s", s)
+                if int(rpm[fanNumber]) < expRPM - ((tollerance * expRPM)/100) {
+                    if fanInModule == 0 {
+                        cli.Printf("e", "Fan Module-%d Rear Fan RPM Test at %d PWM Failed.  Read RPM-%d below Threshold %d\n", fanNumber, fanPWM, rpm[fanNumber], expRPM - ((tollerance * expRPM)/100))
+                    } else {
+                        cli.Printf("e", "Fan Module-%d Front Fan RPM Test at %d PWM Failed.  Read RPM-%d below Threshold %d\n", fanNumber, fanPWM, rpm[fanNumber], expRPM - ((tollerance * expRPM)/100))
+                    }
+                    fanFail = errType.FAIL
+                }
+                if int(rpm[fanNumber]) > expRPM + ((tollerance * expRPM)/100) {
+                    if fanInModule == 0 {
+                        cli.Printf("e", "Fan Module-%d Rear Fan RPM Test at %d PWM Failed.  Read RPM-%d above Threshold %d\n", fanNumber, fanPWM, rpm[fanNumber], expRPM + ((tollerance * expRPM)/100) )
+                    } else {
+                        cli.Printf("e", "Fan Module-%d Front Fan RPM Test at %d PWM Failed.  Read RPM-%d above Threshold %d\n", fanNumber, fanPWM, rpm[fanNumber], expRPM + ((tollerance * expRPM)/100) )
+                    }
+                    fanFail = errType.FAIL
+                }
+
+                if (rpm[fanNumber] > 40000) { 
+                    Fan_FIX_Stuck_Fan(fanNumber, fanPWM)
+                }
+
+                if fanFail == errType.SUCCESS {
+                    break
+                }
+                if fanFail != errType.SUCCESS {
+                    hwdev.FanDumpReg(fan_MAP[fanNumber].dev)
+                    if(retry < (MaxRetry - 1 )) {
+                        time.Sleep(time.Duration(200) * time.Millisecond)
+                        fanFail = errType.SUCCESS
+                    }
+                }
+            }
+        }  //end retry
+
+        if fanFail != errType.SUCCESS {
+            fmt.Printf("DEBUG: SET ERR TO FAIL\n");
+            err = errType.FAIL
+        }
+        
+    }  //end fanInModule
+
+
+
+
+    return
+}
+
+
+func Fan_RPM_test(tollerance int)(err int) {
+    var pwm_backup [MAXFANMODULES]byte 
+    var start_pwm byte
+    var pwm_ramp_change byte
+    var pct [MAXFANMODULES]byte 
     process := "fand"
     var presenceFailMask uint32 = 0
-    var fanFail int = 0
-    fanspeed := []int{ 75, 50, 100, 75 }
+    var fanFail int = errType.SUCCESS
+    fanspeed := []int{ 75, 60, 100, 75 }
+    
 
     dcli.Printf("i", "Switch Fan Test: tollerance=%d%% \n", tollerance)
 
@@ -136,7 +319,7 @@ func Fan_RPM_test(tollerance int)(err int) {
 
     if running, _ := Process_Is_Running(process); running == true {
         cli.Printf("e", "HMM, fand is still running...\n")
-        err = errType.FAIL 
+        fanFail = errType.FAIL 
     }
 
     //check if fan is present
@@ -144,7 +327,7 @@ func Fan_RPM_test(tollerance int)(err int) {
         present, goerr := taorfpga.FAN_Module_present(uint32(j)) 
         if goerr != nil { 
             cli.Printf("e", "Reading Fan Presence Singals failed\n")
-            err = errType.FAIL 
+            fanFail = errType.FAIL 
         }
         if present == false {
             cli.Printf("e", "Fan Module-%d not present\n", j)
@@ -152,57 +335,87 @@ func Fan_RPM_test(tollerance int)(err int) {
         }
     }
 
-    for i:=0; i<len(fanspeed); i++ {
-       dcli.Printf("i","Testing Fans at PWM-%d\n", fanspeed[i])
-       for j:=0; j<MAXFANMODULES; j++ {
-           if (presenceFailMask & (1<<uint32(j))) > 0 {
-               continue
-           }
-           hwdev.FanSpeedSet(fan_MAP[j].dev, fanspeed[i], (1<<fan_MAP[j].fanNum))
-           if err != errType.SUCCESS {
-               cli.Printf("e", "FanSpeedSet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
-               return
-           }
-       }
-       misc.SleepInSec(10) //give fan time to change rpm
-       for j:=0; j<MAXFANMODULES; j++ {
-           var fanInModule uint64
-           if (presenceFailMask & (1<<uint32(j))) > 0 {
-               continue
-           }
-           for fanInModule=0; fanInModule < FANPERMODULE; fanInModule++ {
-               rpm[j], err =  hwdev.FanSpeedGet(fan_MAP[j].dev, ((fan_MAP[j].fanNum * FANPERMODULE) + fanInModule) ) 
-               if err != errType.SUCCESS {
-                   cli.Printf("e", "FanSpeedGet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
-                   return
-               }
-               if fanInModule == 0 {
-                   expRPM = rpm_rear_MAP[fanspeed[i]]
-               } else {
-                   expRPM = rpm_front_MAP[fanspeed[i]]
-               }
-               //fmt.Printf(" J=%d RPM=%d  expRPM=%d\n", j, rpm[j], expRPM)
-               if int(rpm[j]) < expRPM - ((tollerance * expRPM)/100) {
-                   if (j%2) == 0 {
-                       cli.Printf("e", "Fan Module-%d Rear Fan RPM Test at %d PWM Failed.  Read RPM-%d below Thredhold %d\n", j, fanspeed[i], rpm[j], expRPM - ((tollerance * expRPM)/100))
-                   } else {
-                       cli.Printf("e", "Fan Module-%d Front Fan RPM Test at %d PWM Failed.  Read RPM-%d below Thredhold %d\n", j, fanspeed[i], rpm[j], expRPM - ((tollerance * expRPM)/100))
-                   }
-                   fanFail = errType.FAIL
-               }
-               if int(rpm[j]) > expRPM + ((tollerance * expRPM)/100) {
-                   if (j%2) == 0 {
-                       cli.Printf("e", "Fan Module-%d Rear Fan RPM Test at %d PWM Failed.  Read RPM-%d above Thredhold %d\n", j, fanspeed[i], rpm[j], expRPM + ((tollerance * expRPM)/100) )
-                   } else {
-                       cli.Printf("e", "Fan Module-%d Front Fan RPM Test at %d PWM Failed.  Read RPM-%d above Thredhold %d\n", j, fanspeed[i], rpm[j], expRPM + ((tollerance * expRPM)/100) )
-                   }
-                   fanFail = errType.FAIL
-               }
-           }
-       }
+    //backup rpm values
+    for j:=0; j<MAXFANMODULES; j++ {
+        pwm_backup[j] , err = hwdev.FanReadReg(fan_MAP[j].dev, uint32(0xAA + fan_MAP[j].fanNum))
+        if err != errType.SUCCESS {
+           cli.Printf("e", "FanReadReg Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+           fanFail = errType.FAIL
+        }
     }
 
-    if fanFail != 0 {
+    if fanFail == errType.SUCCESS {
+        for i:=0; i<len(fanspeed); i++ {
+           dcli.Printf("i","Testing Fans at PWM-%d\n", fanspeed[i])
+           for j:=0; j<MAXFANMODULES; j++ {
+               if i == 0 {
+                   start_pwm = pwm_backup[j]     //start pwm is from the backup we read
+               } else {
+                   start_pwm = byte((fanspeed[i-1] * 255) / 100)     //get the start pwm from the list we use to set the pwm if not the first loop
+               }
+               pct[j] = byte(int((int(start_pwm) * 100)/255))
+           }
+           // Ramp up PWM if needed. Icnremenets of 5% at a time
+           for steps:=0;steps<20;steps++ {
+               var changeString string
+               pwm_ramp_change = 0
+               for j:=0; j<MAXFANMODULES; j++ {
+                   if (presenceFailMask & (1<<uint32(j))) > 0 {
+                       continue
+                   }
+                   if pct[j] > byte(fanspeed[i]) {  //fan speed going down, just break
+                       continue
+                   }
+                   if (pct[j] + 5) < byte(fanspeed[i]) {
+                       pct[j] = pct[j]+5
+                       s := fmt.Sprintf("%d ", pct[j])
+                       changeString = changeString + s
+                       hwdev.FanSpeedSet(fan_MAP[j].dev, int(pct[j]), (1<<fan_MAP[j].fanNum))
+                       pwm_ramp_change = 1
+                   } else {
+                       continue
+                   }
+               }
+               if pwm_ramp_change > 0 { 
+                   if len(changeString) > 0 {
+                       cli.Printf("i","%s\n", changeString)
+                   }
+               }
+           }
+           // Set final PWM for test loop
+           for j:=0; j<MAXFANMODULES; j++ {
+               if (presenceFailMask & (1<<uint32(j))) > 0 {
+                   continue
+               }
+               err = hwdev.FanSpeedSet(fan_MAP[j].dev, fanspeed[i], (1<<fan_MAP[j].fanNum))
+               if err != errType.SUCCESS {
+                   cli.Printf("e", "FanSpeedSet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+                   fanFail = errType.FAIL
+               }
+           }
+
+
+           misc.SleepInSec(9) //give fan time to change rpm
+           for j:=0; j<MAXFANMODULES; j++ {
+               if (presenceFailMask & (1<<uint32(j))) > 0 {
+                   continue
+               }
+
+               err = Fan_Check_RPM(j, fanspeed[i], tollerance)
+               if err != errType.SUCCESS {
+                   fanFail = errType.FAIL
+               }
+           }
+        }
+
+        //restore rpm values
+        for j:=0; j<MAXFANMODULES; j++ {
+            hwdev.FanWriteReg(fan_MAP[j].dev, uint32(0xAA + fan_MAP[j].fanNum), pwm_backup[j])
+        }
+    } else {
+        cli.Printf("e","Init in the fan test Failed.  Skipping Fan Test\n")
+    }
+    if fanFail != errType.SUCCESS {
         err = errType.FAIL
     }
     if presenceFailMask != 0 {
@@ -596,20 +809,6 @@ func USBtest(FileSizeMB int, FileCopies int) (err int) {
         }
     }
 
-    out, errGo = exec.Command("mkfs.vfat", "/dev/sdb1").Output()
-    if errGo != nil {
-        dcli.Printf("e", "mkfs.vfat failed.  Err = %s", errGo)
-        err = errType.FAIL
-        return
-    }
-
-    out, errGo = exec.Command("mount", "/dev/sdb1", "/mnt/usb").Output()
-    if errGo != nil {
-        dcli.Printf("e", "mount /dev/sdb1 /mnt/usb  Err = %s", errGo)
-        err = errType.FAIL
-        return
-    }
-
     //fall back to lsusb if nothing in dmesg in case the system has been in use a while and it's overflowed
     if FoundUSBdevice == 0 {
         cmdStr:="lsusb | wc -l"
@@ -631,8 +830,19 @@ func USBtest(FileSizeMB int, FileCopies int) (err int) {
         return
     }
 
+    out, errGo = exec.Command("mkfs.vfat", "/dev/sdb1").Output()
+    if errGo != nil {
+        dcli.Printf("e", "mkfs.vfat failed.  Err = %s", errGo)
+        err = errType.FAIL
+        return
+    }
 
-
+    out, errGo = exec.Command("mount", "/dev/sdb1", "/mnt/usb").Output()
+    if errGo != nil {
+        dcli.Printf("e", "mount /dev/sdb1 /mnt/usb  Err = %s", errGo)
+        err = errType.FAIL
+        return
+    }
 
     dcli.Printf("i", "Generating Copy File under /tmp\n")
     cmd := exec.Command("dd", "if=/dev/urandom", "of="+fileName, "bs=1M", "count="+strconv.Itoa(FileSizeMB))
@@ -871,11 +1081,12 @@ func ElbaPing(elba uint32) (err int) {
 * 
 * 
 *********************************************************************************/ 
-func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
+func ElbaMemoryTest(elbaMask uint32, time uint32, percent uint32, calledFromCLI int) (err int) {
     var cmdStr string
     var elbafailmask, i uint32
     err = errType.FAIL
     var forStart, forEnd uint32
+    var percentFloat float64 = float64(percent)/100
     freemem := []uint32{0, 0}
 
     if elbaMask == 1 {
@@ -893,8 +1104,7 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
         return
     }
 
-    dcli.Printf("i", "for start=%d   for end=%d\n", forStart, forEnd)
-
+   dcli.Printf("i", " Starting Elba Memory Test:  Mask=0x%x    Time=%d    Percent=%f\n", elbaMask, time, percentFloat)
 
     //Ping Elba to make sure the network is up
     for i=forStart; i < forEnd; i++ {
@@ -966,14 +1176,14 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
     }
 
     dcli.Printf("i","Creating cmd files\n")
-    cmdStr = fmt.Sprintf("pwd\ncd /data;./stressapptest_arm -s %d -M %d -m 12 -l stressapptest_arm.log\n", time, int(float64(freemem[0]) * .88)/1000)
+    cmdStr = fmt.Sprintf("pwd\ncd /data;./stressapptest_arm -s %d -M %d -m 12 -l stressapptest_arm.log\n", time, int(float64(freemem[0]) * percentFloat)/1000)
     errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     if errGo != nil {
         dcli.Printf("e", "Unable to write file: %v", errGo)
         err = errType.FAIL
         return
     }
-    cmdStr = fmt.Sprintf("pwd\ncd /data;./stressapptest_arm -s %d -M %d -m 12 -l stressapptest_arm.log\n", time, int(float64(freemem[1]) * .88)/1000)
+    cmdStr = fmt.Sprintf("pwd\ncd /data;./stressapptest_arm -s %d -M %d -m 12 -l stressapptest_arm.log\n", time, int(float64(freemem[1]) * percentFloat)/1000)
     errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
     if errGo != nil {
         dcli.Printf("e", "Unable to write file: %v", errGo)
@@ -1015,12 +1225,22 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
         if elbafailmask & (1<<i) == (1<<i) {
             continue
         }
+
         dcli.Printf("i", "Elba-%d Get Results\n", i)
+        dcli.Printf("i", "Elba-%d Copying back the log file\n", i)
         if  i == ELBA0 {
-            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /bin/cat /data/stressapptest_arm.log"
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1:/data/stressapptest_arm.log ."
         } else if i == ELBA1 {
-            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /bin/cat /data/stressapptest_arm.log"
-        }  
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1:/data/stressapptest_arm.log ."
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        cmdStr = "ls -l stressapptest_arm.log"
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -1028,9 +1248,45 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, calledFromCLI int) (err int) {
             return
         }
         dcli.Printf("i", "%s\n", string(output))
+
+
+        cmdStr = "cat stressapptest_arm.log"
+        output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", "%s\n", string(output))
+
+
+        //if  i == ELBA0 {
+        //    cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /bin/cat /data/stressapptest_arm.log"
+        //} else if i == ELBA1 {
+        //    cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /bin/cat /data/stressapptest_arm.log"
+        //}  
+        //output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        //if errGo != nil {
+        //    dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+        //    err = errType.FAIL
+        //    return
+        //}
+        //dcli.Printf("i", "%s\n", string(output))
         
         if strings.Contains(string(output), "Status: PASS")==false {
             dcli.Printf("e", "[ERROR] Elba-%d did not pass stressapptest\n", i)
+            if  i == ELBA0 {
+                cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 dmesg | tail -n 75"
+            } else if i == ELBA1 {
+                cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 dmesg | tail -n 75"
+            } 
+            output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            dcli.Printf("i", "%s\n", string(output))
             elbafailmask |= (1<<i)
         } else {
             dcli.Printf("i", "Elba-%d passed stressapptest\n", i)
@@ -1139,20 +1395,22 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
     var cmdStr string
     var line_number int 
     var errGo error
+    wrData := []uint8{ 0x00, 0x00 }
+    CPLDdevs := []string{ "CPLD_ELBA0", "CPLD_ELBA1" }
 
-    Elba0EccReg := []EccRegisters { 
+    MCC0EccReg := []EccRegisters { 
         {"ecc_dataout_corrected_1_interrupt", 0 },
         {"ecc_dataout_corrected_0_interrupt", 0 },
         {"MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] ", 0 },
         {"MC0-DATA[63:0]", 0 },
         {"MC0-ECC C ID[16]", 0 },
     }
-    Elba1EccReg := []EccRegisters { 
+    MCC1EccReg := []EccRegisters { 
         {"ecc_dataout_corrected_1_interrupt", 0 },
         {"ecc_dataout_corrected_0_interrupt", 0 },
-        {"MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] ", 0 },
-        {"MC0-DATA[63:0]", 0 },
-        {"MC0-ECC C ID[16] ", 0 },
+        {"MC1-SYNCD_ADDR[47:40] / MC1-ADDR[39:0] ", 0 },
+        {"MC1-DATA[63:0]", 0 },
+        {"MC1-ECC C ID[16] ", 0 },
     }
 
 
@@ -1161,7 +1419,6 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
         err = errType.FAIL
         return
     }
-
 
     //Check the network to Elba is up
     if SkipPing == 0 {
@@ -1172,6 +1429,31 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
             return
         }
     }
+
+
+    iInfo, rc := i2cinfo.GetI2cInfo(CPLDdevs[elba])
+    if rc != errType.SUCCESS {
+        dcli.Println("e", "Failed to obtain I2C info of", CPLDdevs[elba])
+        err = rc
+        return
+    }
+    wrData[0] = 0x22 
+    wrData[1] = 0xA0
+    _ , errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access Failed to", CPLDdevs[elba], " ERROR=",errGo); 
+        err = errType.FAIL; 
+        return
+    }
+    wrData[0] = 0x21 
+    wrData[1] = 0x61
+    _ , errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0 )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access Failed to", CPLDdevs[elba], " ERROR=",errGo); 
+        err = errType.FAIL; 
+        return
+    }
+
     // Create directory if it doesn't exist 
     if  elba == ELBA0 {
         cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 mkdir /data/nic_util"
@@ -1238,6 +1520,7 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
 
     //get a reference point in the output.  Needed to parse the data below
     dcli.Printf("i","Checking Registers\n")
+
     s := strings.Split(string(output), "\n")
     for i, temp := range s {
         if strings.Contains(temp, "mc0_mcc0_int_mcc_intreg")==true {
@@ -1260,63 +1543,63 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
     } else { 
         t := strings.TrimSpace(s[line_number+12][50:len(s[line_number+12])])
         x,_ :=  strconv.ParseUint(t, 0, 32)
-        Elba0EccReg[0].Val = x
+        MCC0EccReg[0].Val = x
         t = strings.TrimSpace(s[line_number+13][50:len(s[line_number+13])])
         x,_ =  strconv.ParseUint(t, 0, 32)
-        Elba0EccReg[1].Val = x
+        MCC0EccReg[1].Val = x
         t = strings.TrimSpace(s[line_number+29][6:len(s[line_number+29])])
         x,_ =  strconv.ParseUint(t, 0, 32)
         t = strings.TrimSpace(s[line_number+33][6:len(s[line_number+33])])
         z,_ :=  strconv.ParseUint(t, 0, 32)
-        Elba0EccReg[2].Val = x + (z<<32)
+        MCC0EccReg[2].Val = x + (z<<32)
         t = strings.TrimSpace(s[line_number+37][6:len(s[line_number+37])])
         x,_ =  strconv.ParseUint(t, 0, 32)
         t = strings.TrimSpace(s[line_number+41][6:len(s[line_number+41])])
         z,_ =  strconv.ParseUint(t, 0, 32)
-        Elba0EccReg[3].Val = x + (z<<32)
+        MCC0EccReg[3].Val = x + (z<<32)
         t = strings.TrimSpace(s[line_number+45][6:len(s[line_number+45])])
         x,_ =  strconv.ParseUint(t, 0, 32)
-        Elba0EccReg[4].Val = x
+        MCC0EccReg[4].Val = x
 
         t = strings.TrimSpace(s[line_number+26][50:len(s[line_number+26])])
         x,_ =  strconv.ParseUint(t, 0, 32)
-        Elba1EccReg[0].Val = x
+        MCC1EccReg[0].Val = x
         t = strings.TrimSpace(s[line_number+27][50:len(s[line_number+27])])
         x,_ =  strconv.ParseUint(t, 0, 32)
-        Elba1EccReg[1].Val = x
+        MCC1EccReg[1].Val = x
         t = strings.TrimSpace(s[line_number+49][6:len(s[line_number+49])])
         x,_ =  strconv.ParseUint(t, 0, 32)
         t = strings.TrimSpace(s[line_number+53][6:len(s[line_number+53])])
         z,_ =  strconv.ParseUint(t, 0, 32)
-        Elba1EccReg[2].Val = x + (z<<32)
+        MCC1EccReg[2].Val = x + (z<<32)
         t = strings.TrimSpace(s[line_number+57][6:len(s[line_number+57])])
         x,_ =  strconv.ParseUint(t, 0, 32)
         t = strings.TrimSpace(s[line_number+61][6:len(s[line_number+61])])
         z,_ =  strconv.ParseUint(t, 0, 32)
-        Elba1EccReg[3].Val = x + (z<<32)
+        MCC1EccReg[3].Val = x + (z<<32)
         t = strings.TrimSpace(s[line_number+65][6:len(s[line_number+65])])
         x,_ =  strconv.ParseUint(t, 0, 32)
-        Elba1EccReg[4].Val = x
+        MCC1EccReg[4].Val = x
 
-        if elba == 0 {
-            for i:=0; i< len(Elba0EccReg); i++ {
-                if Elba0EccReg[i].Val > 0 {
+        {
+            for i:=0; i< len(MCC0EccReg); i++ {
+                if MCC0EccReg[i].Val > 0 {
                     err = errType.FAIL
                     cli.Printf("e", "ECC ERROR DETECTED: ECC REGISTER SET\n")
-                    for j:=0; j< len(Elba0EccReg); j++ {
-                        cli.Printf("e", "%s : 0x%x", Elba0EccReg[j].Name, Elba0EccReg[j].Val)
+                    for j:=0; j< len(MCC0EccReg); j++ {
+                        cli.Printf("e", "%s : 0x%x", MCC0EccReg[j].Name, MCC0EccReg[j].Val)
                     }
                     return
                 }
             }
         }
-        if elba == 1 {
-            for i:=0; i< len(Elba1EccReg); i++ {
-                if Elba1EccReg[i].Val > 0 {
+        {
+            for i:=0; i< len(MCC1EccReg); i++ {
+                if MCC1EccReg[i].Val > 0 {
                     err = errType.FAIL
                     cli.Printf("e", "ECC ERROR DETECTED: ECC REGISTER SET\n")
-                    for j:=0; j< len(Elba1EccReg); j++ {
-                        cli.Printf("e", "%s : 0x%x", Elba1EccReg[j].Name, Elba1EccReg[j].Val)
+                    for j:=0; j< len(MCC1EccReg); j++ {
+                        cli.Printf("e", "%s : 0x%x", MCC1EccReg[j].Name, MCC1EccReg[j].Val)
                     }
                     return
                 }
@@ -1327,7 +1610,7 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
 }
 
 
-func Elba_Check_Pci_Link(elba int, useCLI int) (err int) {
+func Elba_Check_Pci_Link(elba int, warnOnLinkDownGrade int, useCLI int) (err int) {
     var elb_pci string
     var speed, width bool = false, false
     if elba == ELBA0 {
@@ -1373,9 +1656,14 @@ func Elba_Check_Pci_Link(elba int, useCLI int) (err int) {
                 s := fmt.Sprintf("ELBA-%d %s\n", elba, temp)
                 printf("i", s, useCLI)
             } else {
-                s := fmt.Sprintf("[ERROR] ELBA-%d LINK SPEED IS NOT 8GT/s x4 -->  %s\n", elba, temp)
-                printf("e", s, useCLI)
-                err = errType.FAIL
+                if warnOnLinkDownGrade > 0 {
+                    s := fmt.Sprintf("[WARN] ELBA-%d LINK SPEED IS NOT 8GT/s x4 -->  %s\n", elba, temp)
+                    printf("e", s, useCLI)
+                } else {
+                    s := fmt.Sprintf("[ERROR] ELBA-%d LINK SPEED IS NOT 8GT/s x4 -->  %s\n", elba, temp)
+                    printf("e", s, useCLI)
+                    err = errType.FAIL
+                }
             }
         }
     }
@@ -1656,6 +1944,7 @@ func ElbaVRMfix() (err int) {
     var elbafailmask, i uint32
     err = errType.FAIL
     var forStart, forEnd uint32 = 0,2
+    var retry, MaxRetry int = 0, 2
     register := []uint32{0xDA,   0xDA,   0x9A,   0x9B}
     expected := []uint32{0x5055, 0x2a19, 0x1702, 0x6402}
 
@@ -1672,9 +1961,10 @@ func ElbaVRMfix() (err int) {
         }
     }
 
+retrysettingVRM:
     dcli.Printf("i","Writing VRM\n")
     //This file will get executed by the script "exec_cmd_elba0_via_console.sh" below
-    cmdStr = fmt.Sprintf("pwd\ni2cset -y -f 0 0x62 0x00 0;i2cset -y -f 0 0x62 0xDA 0x55 0x50 i;i2cset -y -f 0 0x62 0x00 1;i2cset -y -f 0 0x62 0xDA 0x19 0x2A i;i2cset -y -f 0 0x62 0x9A 0x02 0x17 0x00 i;i2cset -y -f 0 0x62 0x9B 0x02 0x64 0x02 i;i2cset -y -f 0 0x62 0x00 0;i2cset -y -f 0 0x62 0x11\n")
+    cmdStr = fmt.Sprintf("pwd\ni2cset -y -f 0 0x62 0x00 0;i2cset -y -f 0 0x62 0xDA 0x55 0x50 i;i2cset -y -f 0 0x62 0x00 1;i2cset -y -f 0 0x62 0xDA 0x19 0x2A i;i2cset -y -f 0 0x62 0x9A 0x02 0x17 0x00 i;i2cset -y -f 0 0x62 0x9B 0x02 0x64 0x02 i;i2cset -y -f 0 0x62 0x00 0\n")
     errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     if errGo != nil {
         dcli.Printf("e", "Unable to write file: %v", errGo)
@@ -1691,7 +1981,7 @@ func ElbaVRMfix() (err int) {
         if elbafailmask & (1<<i) == (1<<i) {
             continue
         }
-        dcli.Printf("i", "Elba-%d Executing Script to Write VRM\n", i)
+        dcli.Printf("i", "Elba-%d Executing Script to Set Registers in VRM\n", i)
         if  i == ELBA0 {
             cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
@@ -1707,7 +1997,7 @@ func ElbaVRMfix() (err int) {
     }
 
 
-    dcli.Printf("i","Checking VRM\n")
+    dcli.Printf("i","Updating Check VRM Script\n")
     //This file will get executed by the script "exec_cmd_elba0_via_console.sh" below
     cmdStr = fmt.Sprintf("pwd\ni2cset -y -f 0 0x62 0x00 0;i2cget -y -f 0 0x62 0xDA w;i2cset -y -f 0 0x62 0x00 1;i2cget -y -f 0 0x62 0xDA w;i2cget -y -f 0 0x62 0x9A w;i2cget -y -f 0 0x62 0x9b w\n")
     errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
@@ -1722,8 +2012,6 @@ func ElbaVRMfix() (err int) {
         err = errType.FAIL
         return
     }
-
-
 
     for i=forStart; i < forEnd; i++ {
         read := []uint32{}
@@ -1742,7 +2030,7 @@ func ElbaVRMfix() (err int) {
             err = errType.FAIL
             return
         }
-        //dcli.Printf("i", "%s\n", string(output))
+        dcli.Printf("i", "%s\n", string(output))
         s := strings.Split(string(output), "\n")
         for _, temp := range s {
             if temp[0] == '0' && temp[1] == 'x' {
@@ -1756,17 +2044,61 @@ func ElbaVRMfix() (err int) {
             err = errType.FAIL
             return
         }
-        for i:=0; i<len(expected); i++ {
-            dcli.Printf("i"," %x  %x\n", expected[i], read[i])
-            if expected[i] != read[i] {
-                dcli.Printf("e","ERROR: VRM Register-%d  Read=%x.  Expected=%x", register[i], expected[i], read[i] )
-                err = errType.FAIL
-                return
+        for x:=0; x<len(expected); x++ {
+            dcli.Printf("i"," %x  %x\n", expected[x], read[x])
+            if expected[x] != read[x] {
+                if retry < MaxRetry {
+                    retry++
+                    dcli.Printf("i","WARN: Register Mismatch.  Will Try setting the registers again --> VRM Register-0x%x  Read=%x.  Expected=%x", register[x], expected[x], read[x] )
+                    goto retrysettingVRM
+                } else {
+                    dcli.Printf("e","ERROR: VRM Register-%d  Read=%x.  Expected=%x", register[x], expected[x], read[x] )
+                    err = errType.FAIL
+                    return
+                }
             }
         }
     }
 
-    dcli.Printf("i", "err = %d", err)
+    
+    //This file will get executed by the script "exec_cmd_elba0_via_console.sh" below
+    for i=forStart; i < forEnd; i++ {
+    dcli.Printf("i", "Elba-%d Executing Script to Write Changes to NVRAM in VRM\n", i)
+        for retry=0; retry<3; retry++ {
+            cmdStr = fmt.Sprintf("pwd\ni2cset -y -f 0 0x62 0x00 0;i2cset -y -f 0 0x62 0x11\n")
+            errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+            if errGo != nil {
+                dcli.Printf("e", "Unable to write file: %v", errGo)
+                err = errType.FAIL
+                return
+            }
+            errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+            if errGo != nil {
+                dcli.Printf("e", "Unable to write file: %v", errGo)
+                err = errType.FAIL
+                return
+            }
+            for i=forStart; i < forEnd; i++ {
+                if elbafailmask & (1<<i) == (1<<i) {
+                    continue
+                }
+                
+                if  i == ELBA0 {
+                    cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+                } else if i == ELBA1 {
+                    cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+                }
+                output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+                if errGo != nil {
+                    dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+                    err = errType.FAIL
+                    return
+                }
+                dcli.Printf("i", string(output))
+            }
+        }
+    }
+    //dcli.Printf("i", "err = %d", err)
     return
 }
 
@@ -1920,6 +2252,9 @@ func TD3_VRM_FIX(devName string) (err int) {
 ************************************************************************/
 func TD3_Check_AVS_Programming(devName string) (err int) {
     var errGo error
+    var retries int = 5
+    var data32 uint32
+    var rc int
     i2cCmds := [][]byte{  {0x00, 0x00},
                           {0x21, 0x74, 0x00},
                           {0xDB, 0x74} }
@@ -1935,12 +2270,46 @@ func TD3_Check_AVS_Programming(devName string) (err int) {
         return
     }
 
-    data32, rc := td3.ReadReg("TD3", "TOP_AVS_SEL_REG")
-     if rc != errType.SUCCESS {
-        dcli.Println("e", "Failed to read TOP_AVS_SEL_REG from the bcm shell")
-        err = rc
-        return
-    } 
+    for i:=0; i<retries; i++ {
+        data32, rc = td3.ReadReg("TD3", "TOP_AVS_SEL_REG")
+        if rc == errType.SUCCESS {
+            break
+        }
+        if i == (retries -1) {
+            if rc != errType.SUCCESS {
+                cmdStr := "dmesg | tail -n 150"
+                output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+                if errGo != nil {
+                    dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+                    err = errType.FAIL
+                    return
+                }
+                dcli.Printf("i", "%s\n", string(output))
+
+                cmdStr = "ps -A"
+                output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+                if errGo != nil {
+                    dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+                    err = errType.FAIL
+                    return
+                }
+                dcli.Printf("i", "%s\n", string(output))
+
+                cmdStr = "journalctl -u switchd"
+                output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+                if errGo != nil {
+                    dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+                    err = errType.FAIL
+                    return
+                }
+                dcli.Printf("i", "%s\n", string(output))
+
+                dcli.Println("e", "Failed to read TOP_AVS_SEL_REG from the bcm shell")
+                err = rc
+                return
+            } 
+        }
+    }
     cli.Printf("i", "TD3 TOP AVS SEL REG=0x%x\n", data32)
     {
         var fdata float64 = float64(data32)
@@ -2176,9 +2545,9 @@ func ShowInventory(useCLI int) (err int) {
     err = HALON_OS_Display_Version(useCLI)
     if err != errType.SUCCESS { rc = -1 }
     fmt.Printf("\n")
-    err = Elba_Check_Pci_Link(taorfpga.ELBA0, useCLI)
+    err = Elba_Check_Pci_Link(taorfpga.ELBA0, 1, useCLI)
     if err != errType.SUCCESS { rc = -1 }
-    err = Elba_Check_Pci_Link(taorfpga.ELBA1, useCLI)
+    err = Elba_Check_Pci_Link(taorfpga.ELBA1, 1, useCLI)
     if err != errType.SUCCESS { rc = -1 }
     Elba_Show_Firmware(taorfpga.ELBA0, useCLI)
     Elba_Show_Firmware(taorfpga.ELBA1, useCLI)
@@ -2451,7 +2820,8 @@ func ShowTemperature ()  (err int)  {
 *  
 *  
 ***********************************************************************************************************/ 
-func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64, dump_temperature uint32) (err int) {
+func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64, dump_temperature uint32, TD3MaxTemp int, ElbaMaxTemp int, Fanspeed int) (err int) {
+    var pwm_backup [MAXFANMODULES]byte
     var rc int = errType.SUCCESS
     var errGo error
     var data32 uint32
@@ -2463,22 +2833,77 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
     var command string
     var output string
     var loopbackPhy uint32 = 0
+    var pct [MAXFANMODULES]byte
+    var changePWMstring string
     var ElbaVLANcreatScript = "/fs/nos/home_diag/dssman/run.sh"
 
     var VlanStart int = 10
     var vlanMap = []int{10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85}
 
     if test_type == td3.SNAKE_TEST_LINE_RATE {
-        cli.Printf("i", "Starting Snake Test.  Line Rate.   Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+        cli.Printf("i", "Starting Snake Test.  Line Rate.   Elba Link Mask=%x,  Duration=%d\n", elba_port_mask, duration)
     } else if test_type == td3.SNAKE_TEST_NEXT_PORT_FORWARDING  {
-        cli.Printf("i", "Starting Snake Test.. Forward to the Next Port.  Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+        cli.Printf("i", "Starting Snake Test.. Forward to the Next Port.  Elba Link Mask=%x,  Duration=%d\n", elba_port_mask, duration)
     } else if test_type == td3.SNAKE_TEST_ENVIRONMENT  {
-        cli.Printf("i", "Starting Snake Test for Environmental Testing. Line Rate/512 Byte Packets.  Elba Link Mask=%x,  Duration=%d", elba_port_mask, duration)
+        cli.Printf("i", "Starting Snake Test for Environmental Testing. Line Rate/512 Byte Packets.  Elba Link Mask=%x,  Duration=%d\n", elba_port_mask, duration)
     } else {
-        cli.Printf("e", "ERROR: INVALID TEST TYPE PASSED TO SNAKE TEST.  TEST TYPE PASSSED=%d", test_type)
+        cli.Printf("e", "ERROR: INVALID TEST TYPE PASSED TO SNAKE TEST.  TEST TYPE PASSSED=%d\n", test_type)
         err = errType.FAIL
         return
     }
+    if (Fanspeed < 0 || Fanspeed > 100) {
+        cli.Printf("e", "ERROR: INVALID FAN SPPED.  PWM MUST BE 0-100.  PWM PASSED=%d\n", Fanspeed)
+        err = errType.FAIL
+        return
+    }
+    cli.Printf("i", "DumpSensors=%d  TD3 Max Temperature=%d   Elba Max Temperature=%d   Fan Speed PWM Percent = %d\n", dump_temperature, TD3MaxTemp, ElbaMaxTemp, Fanspeed)
+
+
+    if Fanspeed > 60 {
+        //backup rpm values
+        for j:=0; j<MAXFANMODULES; j++ {
+            pwm_backup[j] , err = hwdev.FanReadReg(fan_MAP[j].dev, uint32(0xAA + fan_MAP[j].fanNum))
+            if err != errType.SUCCESS {
+               cli.Printf("e", "FanReadReg Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+               return
+            }
+            pct[j] = byte(int((int(pwm_backup[j]) * 100)/255))
+        }
+        // Ramp up PWM if needed. Icnremenets of 5% at a time
+        for steps:=0;steps<20;steps++ {
+           for j:=0; j<MAXFANMODULES; j++ {
+               if pct[j] > byte(Fanspeed) {  //fan speed going down, just break
+                   continue
+               }
+               if (pct[j] + 5) < byte(Fanspeed) {
+                   pct[j] = pct[j]+5
+                   s := fmt.Sprintf("%d ", pct[j])
+                   changePWMstring = changePWMstring + s
+                   hwdev.FanSpeedSet(fan_MAP[j].dev, int(pct[j]), (1<<fan_MAP[j].fanNum))
+                   //time.Sleep(time.Duration(50) * time.Millisecond)
+               } else {
+                   continue
+               }
+           }
+        }
+        if len(changePWMstring) > 0 {
+           cli.Printf("i","%s\n", changePWMstring)
+        }
+
+        // Set final PWM for test loop
+        for j:=0; j<MAXFANMODULES; j++ {
+            err = hwdev.FanSpeedSet(fan_MAP[j].dev, Fanspeed, (1<<fan_MAP[j].fanNum))
+            if err != errType.SUCCESS {
+               cli.Printf("e", "FanSpeedSet Failed on %s, fan-%d  \n", fan_MAP[j].dev, fan_MAP[j].fanNum)
+               return
+            }
+        }
+    }
+
+
+    cli.Printf("i", "Allowing unsupported sfp/qsfp\n")
+    cmdString := "echo \"configure\nallow-unsupported-transceiver\nend\n\" | vtysh"
+    exec.Command("bash", "-c", cmdString).Output()
 
     if loopback_level == "phy" {
         loopbackPhy = 1
@@ -2549,13 +2974,25 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         }
     }
 
-
     //Temperature Check.. return if failed.  Had some issue's with heatsinks.. return if temp to high 
-    if err = td3.CheckTemperatures("TD3", td3.TD3_MAX_TEMP); err != errType.SUCCESS {
+    _ , _ , err = td3.CheckTemperatures("TD3", TD3MaxTemp)
+    if err != errType.SUCCESS {
         err = errType.FAIL
         return
     }
 
+    if Fanspeed > 60 {
+        misc.SleepInSec(7) //give fan time to change rpm
+        for j:=0; j<MAXFANMODULES; j++ {
+            rc = Fan_Check_RPM(j, Fanspeed, 25)
+            if rc != errType.SUCCESS {
+                err = errType.FAIL
+            }
+        }
+        if err != errType.SUCCESS {
+            return
+        }
+    }
 
     for i:=0; i<td3.TAOR_EXTERNAL_25G_PORTS; i++ {
         if i == (td3.TAOR_EXTERNAL_25G_PORTS - 1) {
@@ -2589,7 +3026,7 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         if err != errType.SUCCESS {
             return
         }
-    }
+    } 
 
     //quick sanity check to make sure the file exists
     currDir, _ := os.Getwd()
@@ -2613,6 +3050,61 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         cli.Println("i", string(execOutput))
     }
     os.Chdir(currDir)
+    time.Sleep(time.Duration(5) * time.Second)
+
+    {
+        //FLAP ELBA LINKS ONE TIME
+        cli.Printf("i", "Flapping the Elba Links enable=false\n")
+        command = "port ce1-ce4,ce9,ce10,ce12,ce13 enable=false"
+        output, err = td3.ExecBCMshellCMD(command)
+        if err != errType.SUCCESS {
+            return
+        }
+        time.Sleep(time.Duration(4) * time.Second)
+        //FLAP ELBA LINKS ONE TIME
+        cli.Printf("i", "Flapping the Elba Links enable=true\n")
+        command = "port ce1-ce4,ce9,ce10,ce12,ce13 enable=true"
+        output, err = td3.ExecBCMshellCMD(command)
+        if err != errType.SUCCESS {
+            return
+        }
+        time.Sleep(time.Duration(4) * time.Second)
+
+        //FLAP ELBA LINKS ONE TIME
+        cli.Printf("i", "Flapping the Elba Links enable=false\n")
+        command = "port ce1-ce4,ce9,ce10,ce12,ce13 enable=false"
+        output, err = td3.ExecBCMshellCMD(command)
+        if err != errType.SUCCESS {
+            return
+        }
+        time.Sleep(time.Duration(4) * time.Second)
+        //FLAP ELBA LINKS ONE TIME
+        cli.Printf("i", "Flapping the Elba Links enable=true\n")
+        command = "port ce1-ce4,ce9,ce10,ce12,ce13 enable=true"
+        output, err = td3.ExecBCMshellCMD(command)
+        if err != errType.SUCCESS {
+            return
+        }
+        time.Sleep(time.Duration(4) * time.Second)
+
+        //No return output to check on this command
+        cli.Printf("i", "Flapping the QSFP Links ENABLED=false\n")
+        command = "port " + port100G_s +" enable=false"
+        output, err = td3.ExecBCMshellCMD(command)
+        if err != errType.SUCCESS {
+            return
+        }
+        time.Sleep(time.Duration(4) * time.Second)
+
+        cli.Printf("i", "Flapping the QSFP Links ENABLED=true\n")
+        command = "port " + port100G_s +" enable=true"
+        output, err = td3.ExecBCMshellCMD(command)
+        if err != errType.SUCCESS {
+            return
+        }
+        time.Sleep(time.Duration(4) * time.Second)
+
+    }
     
     //set pvlan
     for i:=0; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
@@ -2692,11 +3184,6 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
     }
 
 
-    err = td3.Set_Pre_Main_Post()
-    if err != errType.SUCCESS {
-        return
-    }
-
     //No return output to check on this command
     cli.Printf("i", "Enabling Vlan Translate\n")
     command = "vlan translate on"
@@ -2737,38 +3224,62 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         return
     }
 
-    //Check Link
-    cli.Printf("i", "Checking Link\n")
-    time.Sleep(time.Duration(1) * time.Second)
-    ps_output, err := td3.ExecBCMshellCMD("ps")
+    err = td3.Set_Pre_Main_Post_25G_EXT(1)
     if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on TD3 25G Ports\n")
         return
     }
-    for i:=0; i<(td3.TAOR_EXTERNAL_25G_PORTS + td3.TAOR_EXTERNAL_100G_PORTS + td3.TAOR_INTERNAL_PORTS); i++ {
-        if i >= td3.TAOR_INTERNAL_PORT_START {
-            if (elba_port_mask & (1<<uint32(i - td3.TAOR_INTERNAL_PORT_START))) == 0 {
-                continue;
+
+    err = td3.RetimerSetSI(1)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+        return
+    }
+
+    //Check Link
+    //Check Link
+    {
+        var link_rc, link_retry int
+        var ps_output string
+snakelinkcheckretry:
+        cli.Printf("i", "Checking Link\n")
+        time.Sleep(time.Duration(2) * time.Second)
+        ps_output, err = td3.ExecBCMshellCMD("ps")
+        if err != errType.SUCCESS {
+            return
+        }
+        for i:=0; i<(td3.TAOR_EXTERNAL_25G_PORTS + td3.TAOR_EXTERNAL_100G_PORTS + td3.TAOR_INTERNAL_PORTS); i++ {
+            if i >= td3.TAOR_INTERNAL_PORT_START {
+                if (elba_port_mask & (1<<uint32(i - td3.TAOR_INTERNAL_PORT_START))) == 0 {
+                    continue;
+                }
+            }
+            link_rc = td3.LinkCheck(td3.TaorPortMap[i].Name, ps_output) 
+            if link_rc == errType.LINK_UP {
+                dcli.Printf("i", "Port-%.02d  %4s: LINK UP\n", i+1, td3.TaorPortMap[i].Name)
+            } else if link_rc == errType.LINK_DOWN {
+                dcli.Printf("e", "Port-%.02d  %4s: LINK DOWN\n", i+1, td3.TaorPortMap[i].Name)
+                rc = -1
+            } else if link_rc == errType.LINK_DISABLED {
+                dcli.Printf("e", "Port-%.02d  %4s: LINK DISABLED\n", i+1, td3.TaorPortMap[i].Name)
+                rc = -1
+            } else {
+                dcli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, td3.TaorPortMap[i].Name)
+                rc = -1
             }
         }
-        link_rc := td3.LinkCheck(td3.TaorPortMap[i].Name, ps_output) 
-        if link_rc == errType.LINK_UP {
-            cli.Printf("i", "Port-%.02d  %4s: LINK UP\n", i+1, td3.TaorPortMap[i].Name)
-        } else if link_rc == errType.LINK_DOWN {
-            cli.Printf("e", "Port-%.02d  %4s: LINK DOWN\n", i+1, td3.TaorPortMap[i].Name)
-            rc = -1
-        } else if link_rc == errType.LINK_DISABLED {
-            cli.Printf("e", "Port-%.02d  %4s: LINK DISABLED\n", i+1, td3.TaorPortMap[i].Name)
-            rc = -1
-        } else {
-            cli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, td3.TaorPortMap[i].Name)
-            rc = -1
+        fmt.Printf("\n")
+        if rc != 0 {
+            if link_retry < 2 {
+                link_retry = link_retry + 1
+                rc = 0
+                goto snakelinkcheckretry
+            }
+            err = errType.FAIL
+            return
         }
     }
-    fmt.Printf("\n")
-    if rc != 0 {
-        err = errType.FAIL
-        return
-    }
+
 
     //Clear stat counters
     cli.Printf("i", "clear c\n")
@@ -2832,29 +3343,33 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                     continue;
                 }
                 internal_port++
-
-                if td3.TaorPortMap[i].ElbaNumber == 0 {
-                    command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[0].Name, td3.TaorPortMap[i].Name)
-                } else {
-                    command = fmt.Sprintf("tx 100 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[16].Name, td3.TaorPortMap[i].Name)
+                for pktsendloop:=0; pktsendloop<4; pktsendloop++ {
+                    if td3.TaorPortMap[i].ElbaNumber == 0 {
+                        command = fmt.Sprintf("tx 25 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[0].Name, td3.TaorPortMap[i].Name)
+                    } else {
+                        command = fmt.Sprintf("tx 25 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[16].Name, td3.TaorPortMap[i].Name)
+                    }
+                    cli.Printf("i", "%s\n", command)
+                    output, err = td3.ExecBCMshellCMD(command)
+                    if err != errType.SUCCESS {
+                        return
+                    }
+                    time.Sleep(time.Duration(100) * time.Millisecond)
                 }
-                cli.Printf("i", "%s\n", command)
-                output, err = td3.ExecBCMshellCMD(command)
-                if err != errType.SUCCESS {
-                    return
-                }
-                time.Sleep(time.Duration(4) * time.Second)
             }
             for i:=0; i<2; i++ {
-                if i == 0 {
-                    command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[32].Name, td3.TaorPortMap[55].Name)
-                } else {
-                    command = fmt.Sprintf("tx 300 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[48].Name, td3.TaorPortMap[55].Name)
-                }
-                cli.Printf("i", "%s\n", command)
-                output, err = td3.ExecBCMshellCMD(command)
-                if err != errType.SUCCESS {
-                    return
+                for pktsendloop:=0; pktsendloop<4; pktsendloop++ {
+                    if i == 0 {
+                        command = fmt.Sprintf("tx 75 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[32].Name, td3.TaorPortMap[55].Name)
+                    } else {
+                        command = fmt.Sprintf("tx 75 pbm=%s file=/fs/nos/home_diag/dssman/packet.hex.custom.%s", td3.TaorPortMap[48].Name, td3.TaorPortMap[55].Name)
+                    }
+                    cli.Printf("i", "%s\n", command)
+                    output, err = td3.ExecBCMshellCMD(command)
+                    if err != errType.SUCCESS {
+                        return
+                    }
+                    time.Sleep(time.Duration(100) * time.Millisecond)
                 }
                 time.Sleep(time.Duration(5) * time.Second)
             }
@@ -2929,7 +3444,9 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         var Lag522ExtPortminBandWidth uint64 = 0
         var rc int = 0
         var printRxBandwidth = 1
+        var bwERROR, bwERRORtotal int = 0, 0
         printRxBwTime := time.Now()
+        
 
         if test_type == td3.SNAKE_TEST_ENVIRONMENT {
             ElbaPortminBandwidth = 3000000000
@@ -2969,12 +3486,16 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
             // Get rx bytes for all ports and check them below 
             StatRxBytes, err = td3.GetRmonStat_AllPorts("CLMIB_RBYT") 
             if err != errType.SUCCESS {
-                return
+                cli.Printf("e", "Error reading/parsing CLMIB_RBYT for all ports\n")
+                rc = errType.FAIL
+                goto snaketestend
             }
             // Get FCS error for all ports 
             StatFCS, err = td3.GetRmonStat_AllPorts("CLMIB_RFCS") 
             if err != errType.SUCCESS {
-                return
+                cli.Printf("e", "Error reading/parsing CLMIB_RFCS for all ports\n")
+                rc = errType.FAIL
+                goto snaketestend
             }
 
             
@@ -2992,7 +3513,9 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                 
                 RxBytes, err = td3.MacStatRxByteSecond(StatRxBytes, i)
                 if err != errType.SUCCESS {
-                    return
+                    cli.Printf("e", "Port-%d (%s): Error reading/parsing RX Byte Second\n", i+1 , td3.TaorPortMap[i].Name)
+                    goto snaketestend
+                    rc = errType.FAIL
                 }
                 if printRxBandwidth == 1 {
                     fmt.Printf("Port-%d %d/s\n", i, RxBytes)
@@ -3001,20 +3524,22 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                 if test_type == td3.SNAKE_TEST_LINE_RATE || test_type == td3.SNAKE_TEST_ENVIRONMENT {
                     //lag521
                     if (i < 16) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
-                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
+                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
                         rc = errType.FAIL
                     }
                     //lag522
                     if (i >= 16) && (i < 31) {
                         if RxBytes < Lag522ExtPortminBandWidth { 
-                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
+                            bwERROR = bwERROR + 1
                             rc = errType.FAIL
                         }
                     }
                     //TD3 25G Snake ports
                     if (i >= 32) && (i < 48) {
                         if RxBytes < MinBandWidth25G { 
-                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, MinBandWidth25G)
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, MinBandWidth25G)
+                            bwERROR = bwERROR + 1
                             rc = errType.FAIL
                         }
                     }
@@ -3022,7 +3547,8 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                     //TD3 25G Snake ports
                     if (i >= 48) && (i < 54) {
                         if RxBytes < MinBandWidth100G { 
-                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, MinBandWidth100G)
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, MinBandWidth100G)
+                            bwERROR = bwERROR + 1
                             rc = errType.FAIL
                         }
                     }
@@ -3031,7 +3557,8 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                         var port uint32 = uint32(i - td3.TAOR_INTERNAL_PORT_START)
                         if (elba_port_mask & (1<<port)) > 0 {
                             if RxBytes < ElbaPortminBandwidth { 
-                                cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, ElbaPortminBandwidth)
+                                cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, ElbaPortminBandwidth)
+                                bwERROR = bwERROR + 1
                                 rc = errType.FAIL
                             }
                         }
@@ -3039,47 +3566,64 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                 } else {
                     //lag521
                     if (i < (td3.TAOR_NUMB_EXT_PORT/2)) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
-                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
+                        cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
+                        bwERROR = bwERROR + 1
                         rc = errType.FAIL
                     }
                     //lag522
                     if (i >= (td3.TAOR_NUMB_EXT_PORT/2)) && (i < td3.TAOR_NUMB_EXT_PORT) {
                         if RxBytes < Lag522ExtPortminBandWidth { 
-                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i , td3.TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
+                            cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
+                            bwERROR = bwERROR + 1
                             rc = errType.FAIL
                         }
                     }
                 }
                 FCSerror, err = td3.MacStatFCSerror(StatFCS, i)
                 if err != errType.SUCCESS {
-                    return
+                    cli.Printf("e", "Port-%d (%s): Error reading/parsing fcs error\n", i+1 , td3.TaorPortMap[i].Name)
+                    rc = errType.FAIL
                 }
+                //if FCSerror ==1  {
+                //    cli.Printf("i", "[WARN] Port-%d (%s) has %d FCS Error\n", i+1 , td3.TaorPortMap[i].Name, FCSerror)
+                //}
+                //if FCSerror > 1 {
                 if FCSerror > 0 {
-                    cli.Printf("e", "Port-%d (%s) has %d FCS Errors\n", i , td3.TaorPortMap[i].Name, FCSerror)
+                    cli.Printf("e", "Port-%d (%s) has %d FCS Errors\n", i+1 , td3.TaorPortMap[i].Name, FCSerror)
                     rc = errType.FAIL
                 }
             }
             printRxBandwidth = 0
-
-            //Temperature Check
-            if err = td3.CheckTemperatures("TD3", td3.TD3_MAX_TEMP); err != errType.SUCCESS {
-                rc = errType.FAIL
+            time.Sleep(time.Duration(500) * time.Millisecond)
+            if bwERROR > 0 {
+                bwERRORtotal = bwERRORtotal+1
+                bwERROR=0
+            }
+            if bwERRORtotal < 2 {
+                rc = errType.SUCCESS
             }
 
-            if rc == errType.FAIL {
-                fmt.Printf(" ERR BREAK\n")
-                err = errType.FAIL
-                break
-            }
+
             {
-                var highTemp float64 = 0
-                current_temperatures, _ := td3.GetTemperature("TD3")
+                var TD3highTemp float64 = 0
+                //Temperature Check
+                current_temperatures, _, errtd3 := td3.CheckTemperatures("TD3", TD3MaxTemp /*td3.TD3_MAX_TEMP*/)
+                if errtd3 != errType.SUCCESS {
+                    cli.Printf("e", "Reading Trident3 Temperatures Failed\n")
+                    rc = errType.FAIL
+                }
                 for i:=0;i<len(current_temperatures);i++ {
-                    if current_temperatures[i] > highTemp { highTemp = current_temperatures[i] }
+                    if current_temperatures[i] > TD3highTemp { TD3highTemp = current_temperatures[i] }
                 }
                 t2 := time.Now()
                 diff := t2.Sub(t1)
-                fmt.Println(" Elapsed Time=",diff," Duration=",duration," High Temp=", highTemp )
+                fmt.Println(" Elapsed Time=",diff," Duration=",duration," High Temp=", TD3highTemp )
+                //TD3MaxTemp, ElbaMaxTemp
+                //{"TSENSOR-ASIC0", taorfpga.GetTemperature},
+                //{"TSENSOR-ASIC1", taorfpga.GetTemperature},
+                //{"TSENSOR-1", tmp451.GetTemperature},
+                //{"TSENSOR-2", lm75a.GetTemperature},
+                //{"TSENSOR-3", lm75a.GetTemperature},
                 if uint32(diff.Seconds()) > duration {
                     fmt.Printf(" DUATION BREAK\n")
                     break
@@ -3094,19 +3638,16 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
                 }
             }
 
+            if rc == errType.FAIL {
+                fmt.Printf(" ERR BREAK\n")
+                err = errType.FAIL
+                break
+            }
+
         }
     }
 
-    //Check Elba for memory correctable ecc errors
-    if rc = ElbaCheckECC(0, 1, 0, 0); rc != errType.SUCCESS {
-        err = errType.FAIL
-    }
-    if rc = ElbaCheckECC(1, 1, 0, 0); rc != errType.SUCCESS {
-        err = errType.FAIL
-    } 
-    
-
-
+snaketestend:
     if test_type == td3.SNAKE_TEST_LINE_RATE || test_type == td3.SNAKE_TEST_ENVIRONMENT{
         command = "port " + td3.TaorPortMap[0].Name +" enable=false"
         command = command + ";port " + td3.TaorPortMap[16].Name +" enable=false"
@@ -3132,6 +3673,21 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
     fmt.Printf("\n")
     td3.DumpRxTxCounters()
     fmt.Printf("\n")
+
+    //Check Elba for memory correctable ecc errors
+    if rc = ElbaCheckECC(0, 1, 0, 0); rc != errType.SUCCESS {
+        err = errType.FAIL
+    }
+    if rc = ElbaCheckECC(1, 1, 0, 0); rc != errType.SUCCESS {
+        err = errType.FAIL
+    } 
+
+    //restore rpm values
+    if Fanspeed > 60 {
+        for j:=0; j<MAXFANMODULES; j++ {
+            hwdev.FanWriteReg(fan_MAP[j].dev, uint32(0xAA + fan_MAP[j].fanNum), pwm_backup[j])
+        }
+    }
 
     /* For compile error that var is not used */
     if td3.TaorPortMap[0].ElbaNumber > 100000 {

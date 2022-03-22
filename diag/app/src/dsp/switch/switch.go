@@ -92,7 +92,7 @@ func SwitchSnakeHdl(argList []string) {
     duration:=*durationPtr
     loopback:=*loopbackPtr
     
-    err = taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1)
+    err = taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -106,6 +106,7 @@ func SwitchElba_Arm_MemoryHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
     testtimePtr := fs.Int("testtime", 300, "Test timeout setting")
     maskPtr := fs.Int("mask", 3, "Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas")
+    percentPtr := fs.Int("percent", 75, "Percent of memory to test")
 
     errFs := fs.Parse(argList)
     if errFs != nil {
@@ -118,9 +119,10 @@ func SwitchElba_Arm_MemoryHdl(argList []string) {
 
     mask:=*maskPtr 
     duration:=*testtimePtr
+    percent:=*percentPtr
 
     dcli.Println("i", "START TEST")
-    err = taormina.ElbaMemoryTest(uint32(mask), uint32(duration), 0)
+    err = taormina.ElbaMemoryTest(uint32(mask), uint32(duration), uint32(percent), 0)
     dcli.Printf("i", "END TEST err=%d", err)
 
     // Inform diag engine that test handler is done

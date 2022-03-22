@@ -255,24 +255,22 @@ class nic_con:
         common.session_cmd(session, cmd)
         time.sleep(1)
 
-        uartsession = common.session_start()
-        uartsession.timeout = timeout
-        self.uart_session_start(uartsession, rate)
+        self.uart_session_start(session, rate)
         cmd = "sysreset.sh\r"
-        uartsession.sendline(cmd)
+        session.sendline(cmd)
         time.sleep(1)
         for i in range(60):
-            uartsession.timeout = 0.5
+            session.timeout = 0.5
             try:
                 print "C+C", i
-                uartsession.send(chr(3))
-                uartsession.expect(expstr)
+                session.send(chr(3))
+                session.expect(expstr)
                 ret = 0
                 break
             except pexpect.TIMEOUT:
                 print "timeout:", i
                 ret = -1
-        self.uart_session_stop(uartsession)
+        self.uart_session_stop(session)
 
         if ret == -1:
             print "=== Failed to enter uboot ==="
@@ -355,24 +353,28 @@ class nic_con:
 
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
-            #time.sleep(2)
-            cmd = self.fmt_con_cmd.format(rate)
-            session.sendline(cmd)
-            #session.expect("Terminal ready")
 
+            print "Wait for 60 seconds before entering uboot"
+            sleep(60)
+
+            uartsession = common.session_start()
+            uartsession.timeout = timeout
+            self.uart_session_start(uartsession, rate)
+            cmd = "sysreset.sh\r"
+            uartsession.sendline(cmd)
+            time.sleep(1)
             for i in range(60):
-                session.timeout = 0.5
+                uartsession.timeout = 0.5
                 try:
                     print "C+C", i
-                    session.send(chr(3))
-                    i = session.expect(expstr)
-                    #time.sleep(1)
+                    uartsession.send(chr(3))
+                    uartsession.expect(expstr)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
                     print "timeout:", i
                     ret = -1
-            self.uart_session_stop(session)
+            self.uart_session_stop(uartsession)
             if ret == 0:
                 break
 
@@ -879,10 +881,12 @@ class nic_con:
         ret = self.enter_uboot_by_sysreset_after_pwr_cycle(session, slot)
         if ret != 0:
             print "Failed to enter uboot"
+            common.session_stop(session)
             return ret
         ret = self.conn_uboot(session)
         if ret != 0:
             print "Failed to connect uboot"
+            common.session_stop(session)
             return ret
 
         pcie_config_cmds = ["setenv pcie_poll_disable 1", "saveenv", "saveenv"]
@@ -900,10 +904,12 @@ class nic_con:
         ret = self.enter_uboot_by_sysreset_after_pwr_cycle(session, slot)
         if ret != 0:
             print "Failed to enter uboot"
+            common.session_stop(session)
             return ret
         ret = self.conn_uboot(session)
         if ret != 0:
             print "Failed to connect uboot"
+            common.session_stop(session)
             return ret
 
         pcie_config_cmds = ["setenv pcie_poll_disable", "saveenv", "saveenv"]
@@ -912,6 +918,122 @@ class nic_con:
         common.session_stop(session)
         if ret == -1:
             print "Failed to set pcie_poll_disable"
+        return ret
+
+    def config_cpld_qspi_wp(self, session, enable):
+        expstr = ["Capri# ", "DSC# "]
+        ret = 0
+        try:
+            if enable == True:
+                cmd = "cpldwr 0x12 0x4"
+                rd_value = "00"
+                str = "enable"
+            else:
+                cmd = "cpldwr 0x12 0"
+                rd_value = "80"
+                str = "disable"
+            session.sendline(cmd)
+            session.expect(expstr)
+            cmd = "cpldrd 0x1"
+            session.sendline(cmd)
+            session.expect(expstr)
+
+            if rd_value not in session.before:
+                print "unexpected status after", str, "WP"
+                ret = -1
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Failed to", str, "WP ==="
+            ret = -1
+        if ret != 0:
+            print "Failed to", str, "WP on CPLD"
+        return ret
+
+    def config_esec_qspi_wp(self, session, enable):
+        expstr = ["Capri# ", "DSC# "]
+        ret = 0
+        try:
+            if enable == True:
+                cmd = "hwprot wrdis bot 0x10000"
+                str = "enable"
+            else:
+                cmd = "hwprot wren bot 0"
+                str = "disable"
+            session.sendline(cmd)
+            session.expect(expstr)
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Failed to", str, "WP ==="
+            ret = -1
+        if ret != 0:
+            print "Failed to", str, "WP in uboot"
+        return ret
+
+    def check_esec_qspi_wp(self, session, enable):
+        expstr = ["Capri# ", "DSC# "]
+        ret = 0
+        try:
+            if enable == True:
+                exp_output = "SR write-disabled, W# asserted (SR locked), BP bot 0x10000"
+                str = "enable"
+            else:
+                exp_output = "SR write-enabled, W# deasserted (SR unlocked), BP bot none"
+                str = "disable"
+            session.sendline("hwprot")
+            session.expect(expstr)
+            if exp_output not in session.before:
+                print "unexpected status after", str, "WP"
+                ret = -1
+        except pexpect.TIMEOUT:
+            self.uart_session_stop(session)
+            print "=== TIMEOUT: Failed to", str, "WP ==="
+            ret = -1
+        if ret != 0:
+            print "Failed to", str, "WP in uboot"
+        return ret
+
+    # enable = True:  enable WP
+    # enable = False: disable WP
+    def ena_dis_esec_wp(self, slot, enable):
+        ret = 0
+        session = common.session_start()
+        ret = self.enter_uboot_by_sysreset_after_pwr_cycle(session, slot)
+        if ret != 0:
+            print "Failed to enter uboot"
+            common.session_stop(session)
+            return ret
+        self.uart_session_start(session)
+        # deassert CPLD WP# to make sure SR is not in locked state
+        ret = self.config_cpld_qspi_wp(session, False)
+        if ret != 0:
+            self.uart_session_stop(session)
+            common.session_stop(session)
+            return ret
+        # change hwprot setting
+        ret = self.config_esec_qspi_wp(session, enable)
+        if ret != 0:
+            self.uart_session_stop(session)
+            common.session_stop(session)
+            return ret
+        # put CPLD WP# to the requested state
+        ret = self.config_cpld_qspi_wp(session, enable)
+        if ret != 0:
+            self.uart_session_stop(session)
+            common.session_stop(session)
+            return ret
+        # read/verify hwprot setting
+        ret = self.check_esec_qspi_wp(session, enable)
+        if ret != 0:
+            self.uart_session_stop(session)
+            common.session_stop(session)
+            return ret
+        self.uart_session_stop(session)
+        common.session_stop(session)
+        if ret == 0:
+            if enable == True:
+                print "Succeeded to set QSPI WP enable for slot", slot
+            else:
+                print "Succeeded to set QSPI WP disable for slot", slot
         return ret
 
     def setup_uboot_env(self, slot):

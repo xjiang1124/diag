@@ -320,13 +320,13 @@ class mtp_ctrl():
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
 
-        idx = handle.expect_exact(["PX2", "Schneider", pexpect.TIMEOUT], timeout=10)
+        idx = handle.expect_exact(["PX2", "Schneider", "American Power Conversion", pexpect.TIMEOUT], timeout=10)
         if idx == 0:
             handle.expect_exact("#")
             self.cli_log_err("Need to add PX2 support")
             return False
-        # Schneider apc
-        elif idx == 1:
+        # Supported apc
+        elif idx == 1 or idx == 2:
             handle.expect_exact(">")
             for port in port_list:
                 handle.send("olOff " + port + "\r")
@@ -360,13 +360,13 @@ class mtp_ctrl():
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
 
-        idx = handle.expect_exact(["PX2", "Schneider", pexpect.TIMEOUT], timeout=10)
+        idx = handle.expect_exact(["PX2", "Schneider", "American Power Conversion", pexpect.TIMEOUT], timeout=10)
         if idx == 0:
             handle.expect_exact("#")
             self.cli_log_err("Need to add PX2 support")
             return False
-        # Schneider apc
-        elif idx == 1:
+        # Supported apc
+        elif idx == 1 or idx == 2:
             handle.expect_exact(">")
             for port in port_list:
                 handle.send("olOn " + port + "\r")
@@ -394,13 +394,13 @@ class mtp_ctrl():
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
 
-        idx = handle.expect_exact(["PX2", "Schneider", pexpect.TIMEOUT], timeout=10)
+        idx = handle.expect_exact(["PX2", "Schneider", "American Power Conversion", pexpect.TIMEOUT], timeout=10)
         if idx == 0:
             handle.expect_exact("#")
             self.cli_log_err("Need to add PX2 support")
             return False
-        # Schneider apc
-        elif idx == 1:
+        # Supported apc
+        elif idx == 1 or idx == 2:
             handle.expect_exact(">")
             for port in port_list:
                 handle.send("olOff " + port + "\r")

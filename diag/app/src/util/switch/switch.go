@@ -5,7 +5,8 @@ import (
     "os"
     "fmt"
     "strconv"
-    //"common/cli"
+    "strings"
+    "common/cli"
     "common/errType"
     //"hardware/hwinfo"
     "device/bcm/td3"
@@ -17,14 +18,22 @@ const errhelp = "\nswitch:\n" +
         "switch fantest\n" +
         "\n" +
         "switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>\n" +
-        "switch td3 snake <elbPortMask> <time> <phy/ext> [pktsize] [32-bit pattern] -temp\n" +
-        "switch td3 snakeforward <elbPortMask> <time> <phy/ext> -temp\n" +
-        "switch td3 snakecompliance <elbPortMask> <time> <phy/ext> -temp\n" +
+        "switch td3 snake <elbPortMask> <time> <phy/ext>\n" +
+        "                                ///////OPTIONAL ARGS//////////\n" +
+        "                                pktsize:<size>\n" +
+        "                                pktpattern:<pattern>\n" +
+        "                                dumptemps:<0/1>\n" +
+        "                                fanspeed:<50/60/70/80/90/100>\n" +
+        "                                maxelbatemp:value\n" +
+        "                                maxtd3temp:value\n" +
+        "                                EXAMPLE pktsize:1480 pktpattern:0xFFFFFFFF dumptemps:1 fanspeed:70 maxelbatemp:65 maxtd3temp:80\n" +
+        "switch td3 snakeforward <elbPortMask> <time> <phy/ext>\n" +
+        "switch td3 snakecompliance <elbPortMask> <time> <phy/ext>\n" +
         "switch td3 vrmfix\n" +
         "\n" + 
         "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
         "switch elba rtctest <elba mask 0x1/0x2/0x3>\n" +
-        "switch elba checkecc <elba#>\n" +
+        "switch elba checkecc/checkpcilink <elba#>\n" +
         "\n" +
         "switch cpu usbtest <file size in MB> <# of files to generate>\n" +
         "switch cpu memtest <# test threads> <percent of mem to test 1-100> <time>\n" +
@@ -45,11 +54,26 @@ func main() {
         fmt.Printf(" %s \n", errhelp)
         return
     }
-    if os.Args[1] == "fantest" {
+    if os.Args[1] == "fanstuck" {
+         if argc < 3 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        pwm, _ := strconv.ParseUint(os.Args[2], 0, 32)
+        rc := taormina.Fan_FIX_Stuck_Fan(0, int(pwm))
+        if rc != errType.SUCCESS {
+            os.Exit(-1) 
+        } else {
+            os.Exit(0)
+        }
+    } else if os.Args[1] == "fantest" {
         fmt.Printf(" FAN TEST\n")
-        taormina.Fan_RPM_test(10)
-
-        return
+        rc := taormina.Fan_RPM_test(25)
+        if rc != errType.SUCCESS {
+            os.Exit(-1) 
+        } else {
+            os.Exit(0)
+        }
     } else if os.Args[1] == "resistor" {  
         if argc < 3 {
             fmt.Printf(" %s \n", errhelp)
@@ -76,7 +100,13 @@ func main() {
             err := td3.TD3FlashTest(int(cycles)) 
             if err != errType.SUCCESS { os.Exit(-1) }
         } else if os.Args[2] == "avscheck" {
-            taormina.TD3_Check_AVS_Programming("TDNT_PDVDD")
+            rc := taormina.TD3_Check_AVS_Programming("TDNT_PDVDD")
+            fmt.Printf(" CHECK AVS FIX RC=%d\n", rc)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
             return
         } else if os.Args[2] == "regread" {
             data32, _ := td3.ReadReg("TD3", os.Args[3])
@@ -88,6 +118,22 @@ func main() {
             for i:=0;i<len(temps);i++ {
                 fmt.Printf("Retimer-%d  Temp=%fC\n", i, temps[i])
             }
+        } else if os.Args[2] == "retimer_si" {
+            fmt.Printf("IN RETIMER TEMP\n")
+            rc := td3.RetimerSetSI(1)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        } else if os.Args[2] == "retimer_dumpsi" {
+            fmt.Printf("IN RETIMER TEMP\n")
+            rc := td3.RetimerDumpSI()
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
         } else if os.Args[2] == "gearbox_temperatures" {
             fmt.Printf("IN GEARBOX TEMP\n")
             temps, _ := td3.GearboxGetTemperatures()
@@ -95,50 +141,45 @@ func main() {
                 fmt.Printf("Gearbox-%d  Temp=%fC\n", i, temps[i])
             }
         } else if os.Args[2] == "vrmfix" {
-
             rc := taormina.TD3_VRM_FIX("TDNT_PDVDD")
-            fmt.Printf(" VRM FIX RC=%d\n", rc);
+            fmt.Printf(" VRM FIX RC=%d\n", rc)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
         } else if os.Args[2] == "prbs" {
             if argc < 4 { fmt.Printf(" Not enough args... prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>"); return; }
             time, err := strconv.ParseUint(os.Args[3], 0, 32)
             if err != nil {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
-            td3.Prbs(int(time), os.Args[4])
-        } else if os.Args[2] == "snakeforward" {
-            var dumptemperature uint32
+
+            rc := td3.Prbs(int(time), os.Args[4])
+            if rc != errType.SUCCESS {
+                cli.Printf("i", "PRBS FAILED\n\n")
+                os.Exit(-1) 
+            } else {
+                cli.Printf("i", "PRBS PASSED\n\n")
+                os.Exit(0)
+            }
+        } else if (os.Args[2] == "snake" || os.Args[2] == "snakecompliance" || os.Args[2] == "snakeforward") {
+            var dumptemperature uint32 = 1
+            var data32 uint32
+            var pkt_length, pkt_pattern uint64 = 0, 0  
+            var TD3MaxTemp, ElbaMaxTemp, Fanspeed int = 85, 75, 00 //00 fanspeed means dont set it.. just use what is running
+            var extraArg bool
+            var test_type uint32 = td3.SNAKE_TEST_LINE_RATE
+
             if argc < 6 { fmt.Printf(" Not enough args..."); return; }
-            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
-            if err != nil {
-                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+
+            if os.Args[2] == "snakecompliance" {
+                test_type = td3.SNAKE_TEST_ENVIRONMENT
             }
-            duration, err := strconv.ParseUint(os.Args[4], 0, 32)
-            if err != nil {
-                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            if os.Args[2] == "snakeforward" {
+                test_type = td3.SNAKE_TEST_NEXT_PORT_FORWARDING
             }
-            if contains(os.Args, "-temp") {
-                dumptemperature = 1
-            }
-            taormina.System_Snake_Test(td3.SNAKE_TEST_NEXT_PORT_FORWARDING , uint32(mask), uint32(duration), os.Args[5], 0, 0, dumptemperature)
-        } else if os.Args[2] == "snakecompliance" {
-            var dumptemperature uint32
-            if argc < 6 { fmt.Printf(" Not enough args..."); return; }
-            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
-            if err != nil {
-                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
-            }
-            duration, err := strconv.ParseUint(os.Args[4], 0, 32)
-            if err != nil {
-                fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
-            }
-            if contains(os.Args, "-temp") {
-                dumptemperature = 1
-            }
-            taormina.System_Snake_Test(td3.SNAKE_TEST_ENVIRONMENT , uint32(mask), uint32(duration), os.Args[5], 0, 0, dumptemperature)
-        } else if os.Args[2] == "snake" {
-            var dumptemperature uint32
-            var pkt_length, pkt_pattern uint64 
-            if argc < 6 { fmt.Printf(" Not enough args..."); return; }
+
             mask, err := strconv.ParseUint(os.Args[3], 0, 32)
             if err != nil {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
@@ -148,20 +189,47 @@ func main() {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
             fmt.Printf(" argc=%d\n", argc)
-            if argc == 8 {
-                pkt_length, err = strconv.ParseUint(os.Args[6], 0, 32)
-                if err != nil {
-                    fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
-                }
-                pkt_pattern, err = strconv.ParseUint(os.Args[7], 0, 32)
-                if err != nil {
-                    fmt.Printf(" Args[7] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
-                }
+/*
+        "                                ///////OPTIONAL ARGS//////////\n" +
+        "                                pktsize:<size>\n" +
+        "                                pktpattern:<pattern>\n" +
+        "                                dumptemps:<0/1>\n" +
+        "                                fanspeed:<50/60/70/80/90/100>\n" +
+        "                                maxelbatemp:value\n" +
+        "                                maxtd3temp:value\n" +
+        "                                EXAMPLE pktsize:1480 pktpattern:0xFFFFFFFF dumptemps:1 fanspeed:70 maxelbatemp:65 maxtd3temp:80\n" +
+*/
+            data32, extraArg = contains_with_a_value(os.Args, "pktsize") 
+            if extraArg == true { pkt_length = uint64(data32) }
+
+            data32, extraArg = contains_with_a_value(os.Args, "pktpattern") 
+            if extraArg == true { pkt_pattern = uint64(data32) }
+
+            data32, extraArg = contains_with_a_value(os.Args, "dumptemps") 
+            if extraArg == true { dumptemperature = uint32(data32) }
+
+            data32, extraArg = contains_with_a_value(os.Args, "fanspeed") 
+            if extraArg == true { Fanspeed = int(data32) }
+
+            data32, extraArg = contains_with_a_value(os.Args, "maxelbatemp") 
+            if extraArg == true { ElbaMaxTemp = int(data32) }
+
+            data32, extraArg = contains_with_a_value(os.Args, "maxtd3temp") 
+            if extraArg == true { TD3MaxTemp = int(data32) }
+
+            cli.Printf("i", " pkt_length=%d\n", pkt_length)
+            cli.Printf("i", " pkt_pattern=0x%x\n", pkt_pattern)
+            cli.Printf("i", " dumptemperature=%x\n", dumptemperature)
+            cli.Printf("i", " Fanspeed=%d\n", Fanspeed)
+            cli.Printf("i", " ElbaMaxTemp=%d\n", ElbaMaxTemp)
+            cli.Printf("i", " TD3MaxTemp=%d\n", TD3MaxTemp)
+
+            rc := taormina.System_Snake_Test(test_type, uint32(mask), uint32(duration), os.Args[5], pkt_length, pkt_pattern, dumptemperature, TD3MaxTemp, ElbaMaxTemp, Fanspeed)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
             }
-            if contains(os.Args, "-temp") {
-                dumptemperature = 1
-            }
-            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], pkt_length, pkt_pattern, dumptemperature)
         } else if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
         } else if os.Args[2] == "printvlan" {
@@ -170,6 +238,20 @@ func main() {
     } else if os.Args[1] == "elba" {
         if os.Args[2] == "vrmfix" {
             taormina.ElbaVRMfix()
+        } else if os.Args[2] == "checkpcilink" {
+            elba, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            fmt.Printf(" Checkking PCI LINK:\n"); 
+            e := taormina.Elba_Check_Pci_Link(int(elba), 0, 1) 
+            if e != errType.SUCCESS {
+                cli.Printf("i", "Checking PCI Link FAILED\n")
+                os.Exit(-1) 
+            } else {
+                cli.Printf("i", "Checking PCI Link PASSED\n")
+                os.Exit(0)
+            }
         } else if os.Args[2] == "checkecc" {
             elba, err := strconv.ParseUint(os.Args[3], 0, 32)
             if err != nil {
@@ -196,7 +278,7 @@ func main() {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
 
-            taormina.ElbaMemoryTest(uint32(mask), uint32(time), 1) 
+            taormina.ElbaMemoryTest(uint32(mask), uint32(time), uint32(88), 1) 
             return
         } else if os.Args[2][0] == 'r' || os.Args[2][0] == 'R' {  //rtctest
             if argc < 4 {
@@ -341,13 +423,39 @@ func main() {
 
 
 func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
+    for _, v := range s {
+            if len(v) < len(str) {
+                continue
+            }
+            if v[:len(str)] == str {
+                    return true
+            }
+    }
 
-	return false
+    return false
+}
+
+
+func contains_with_a_value(s []string, str string) (data32 uint32, found bool) {
+    fmt.Printf(" str=%s\n", str);
+    for _, v := range s {
+            if len(v) < len(str) {
+                continue
+            }
+            if v[:len(str)] == str {
+                s1 := strings.Split(v, ":")
+                tmp64, err := strconv.ParseUint(s1[1], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Parse error. %s:%s  Err return says '%s'\n", err, s1[0], s1[1], err); os.Exit(-1)
+                }
+                data32 = uint32(tmp64)
+                found=true
+                return
+            }
+    }
+
+    found = false
+    return
 }
 
 

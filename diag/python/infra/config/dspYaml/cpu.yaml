@@ -65,7 +65,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE: 
-                    ALL: 30
+                    ALL: 60
                 INFO: Test timeout setting
             filesizeMB:
                 VALUE:

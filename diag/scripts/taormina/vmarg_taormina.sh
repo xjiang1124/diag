@@ -24,12 +24,12 @@ then
     set_vmarg_taormina3v3 $percent
 elif [ "$1"  == "low" ]
 then
-    declare -a pct_list=(-1 -2 -3)
-    declare -a pct_list3V3=(-1 -2 3 4 5)
+    declare -a pct_list=(0)
+    declare -a pct_list3V3=(0)
 elif [ "$1" == "high" ]
 then
-    declare -a pct_list=(1 2 3)
-    declare -a pct_list3V3=(1 2 3 4 5)
+    declare -a pct_list=(1 2)
+    declare -a pct_list3V3=(1 2 3)
 else
     echo "Invalid parameter"
     exit 0
